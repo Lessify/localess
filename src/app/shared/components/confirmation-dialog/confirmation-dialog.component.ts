@@ -8,13 +8,11 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ConfirmationDialogModel } from './confirmation-dialog.model';
 
 @Component({
-  selector: 'lea-confirmation-dialog',
+  selector: 'll-confirmation-dialog',
   templateUrl: './confirmation-dialog.component.html',
   styleUrls: ['./confirmation-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ConfirmationDialogComponent implements OnInit {
+export class ConfirmationDialogComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public data: ConfirmationDialogModel) {}
-
-  ngOnInit(): void {}
 }
