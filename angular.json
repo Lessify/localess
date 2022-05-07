@@ -115,9 +115,21 @@
             "firebaseProject": "localess-dev",
             "firebaseHostingSite": "localess-dev"
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
+          }
         }
       }
     }
   },
-  "defaultProject": "localess"
+  "defaultProject": "localess",
+  "cli": {
+    "defaultCollection": "@angular-eslint/schematics"
+  }
 }
