@@ -105,6 +105,16 @@
             ],
             "scripts": []
           }
+        },
+        "deploy": {
+          "builder": "@angular/fire:deploy",
+          "options": {
+            "prerender": false,
+            "ssr": false,
+            "browserTarget": "localess:build:production",
+            "firebaseProject": "localess-dev",
+            "firebaseHostingSite": "localess-dev"
+          }
         }
       }
     }

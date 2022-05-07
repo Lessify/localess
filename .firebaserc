@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "localess-dev"
+  },
+  "targets": {
+    "localess-dev": {
+      "hosting": {
+        "localess": [
+          "localess-dev"
+        ]
+      }
+    }
   }
 }
