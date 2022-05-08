@@ -1,4 +1,5 @@
 export const environment = {
+  appName: "Localess",
   firebase: {
     projectId: 'localess-dev',
     appId: '1:923248451826:web:47779533df41508d8a706b',
@@ -8,5 +9,7 @@ export const environment = {
     authDomain: 'localess-dev.firebaseapp.com',
     messagingSenderId: '923248451826',
   },
-  production: true
+  production: true,
+  test: false,
+  useEmulators: false,
 };

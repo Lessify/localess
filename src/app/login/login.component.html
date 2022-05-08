@@ -1,0 +1,18 @@
+<p>
+  showLogoutButton = {{showLogoutButton}} <br/>
+  showLoginButton = {{showLoginButton}} <br/>
+  <!--user = {{ user | async | json}} <br/>-->
+  userId = {{ (user | async)?.uid }} <br/>
+  userDisplayName = {{ (user | async)?.displayName }} <br/>
+  userEmail = {{ (user | async)?.email }} <br/>
+  parsedToken = {{ parsedToken | async | json }} <br/>
+</p>
+
+<p *ngIf="showLoginButton">
+  <button (click)="loginWithGoogle()">Log in with Google</button>
+</p>
+
+<p *ngIf="showLogoutButton">
+  Hello {{ (user| async)?.displayName}} <br/>
+  <button (click)="logout()" *ngIf="showLogoutButton">Log out</button>
+</p>

@@ -1,3 +1,14 @@
+@use '@angular/material' as mat;
+
+@import 'styles-variables';
+
+@import '~bootstrap/scss/bootstrap-reboot';
+@import '~bootstrap/scss/bootstrap-grid';
+@import '~bootstrap/scss/bootstrap-utilities';
+@import '~bootstrap/scss/images';
+
+@include mat.core();
+
 /* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
