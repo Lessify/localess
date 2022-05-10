@@ -3,41 +3,69 @@
     <mat-sidenav #sidenav mode="side" opened="true">
       <div class="branding">
         <img [src]="logo" [alt]="logo"/>
-        <span>{{ 'lea.title.short'}}</span>
-        <button mat-icon-button [matMenuTriggerFor]="settingsMenu">
-          <mat-icon>settings</mat-icon>
-        </button>
-        <mat-menu #settingsMenu="matMenu">
-          <button mat-menu-item>Item 1</button>
-          <mat-divider></mat-divider>
-          <button mat-menu-item (click)="onLogoutClick()">
-            <mat-icon>logout</mat-icon>
-            <span>Log Out</span>
-          </button>
-        </mat-menu>
+        <span>Localess</span>
       </div>
       <mat-divider></mat-divider>
       <mat-nav-list>
-        <div mat-subheader>User</div>
-        <mat-list-item *ngFor="let item of userSideMenu" [routerLink]="[item.link]">
-          {{item.label}}
+
+
+        <mat-list-item *ngIf="!selectedSpace" matRipple routerLink="/features/spaces">
+          <mat-icon mat-list-icon>space_dashboard</mat-icon>
+          No Spaces. Click here to create one.
         </mat-list-item>
+
+        <ng-container *ngIf="selectedSpace">
+          <mat-list-item matRipple [matMenuTriggerFor]="menuSpaces">
+            <mat-icon mat-list-icon>space_dashboard</mat-icon>
+            {{selectedSpace.name}}
+            <span class="spacer"></span>
+            <mat-icon>arrow_drop_down</mat-icon>
+            <mat-menu #menuSpaces="matMenu">
+              <button mat-menu-item *ngFor="let space of spaces" (click)="onSpaceSelection(space)">
+                {{space.name}}
+              </button>
+            </mat-menu>
+          </mat-list-item>
+          <mat-divider></mat-divider>
+          <div mat-subheader>Spaces</div>
+
+          <mat-list-item *ngFor="let item of userSideMenu" [routerLink]="[item.link]">
+            <mat-icon mat-list-icon>{{item.icon}}</mat-icon>
+            {{item.label}}
+          </mat-list-item>
+        </ng-container>
+
+
         <ng-container *ngIf="isRoleAdmin">
           <mat-divider></mat-divider>
           <div mat-subheader>Admin</div>
           <mat-list-item *ngFor="let item of adminSideMenu" [routerLink]="[item.link]">
+            <mat-icon mat-list-icon>{{item.icon}}</mat-icon>
             {{item.label}}
           </mat-list-item>
         </ng-container>
-        <mat-divider></mat-divider>
-        <div mat-subheader>Other</div>
-        <mat-list-item *ngFor="let item of otherSideMenu" [routerLink]="[item.link]">
-          {{item.label}}
-        </mat-list-item>
+
       </mat-nav-list>
+
     </mat-sidenav>
 
     <mat-sidenav-content>
+      <mat-toolbar>
+        <mat-toolbar-row>
+          {{title}}
+          <span class="spacer"></span>
+          <button mat-icon-button [matMenuTriggerFor]="accountMenu">
+            <mat-icon>account_circle</mat-icon>
+          </button>
+          <mat-menu #accountMenu="matMenu">
+            <mat-divider></mat-divider>
+            <button mat-menu-item (click)="onLogoutClick()">
+              <mat-icon>logout</mat-icon>
+              <span>Log Out</span>
+            </button>
+          </mat-menu>
+        </mat-toolbar-row>
+      </mat-toolbar>
       <router-outlet></router-outlet>
     </mat-sidenav-content>
 

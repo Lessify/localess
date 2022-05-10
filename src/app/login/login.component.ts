@@ -23,8 +23,8 @@ import IdTokenResult = firebase.auth.IdTokenResult;
   templateUrl: './login.component.html',
   styles: []
 })
-export class LoginComponent implements OnInit, OnDestroy {
-  redirect = ['/f'];
+export class LoginComponent implements OnDestroy {
+  redirect = ['/features'];
 
   showLoginButton = false;
   showLogoutButton = false;
@@ -49,8 +49,6 @@ export class LoginComponent implements OnInit, OnDestroy {
         });
     }
   }
-
-  ngOnInit(): void {}
 
   async loginWithGoogle() {
     const provider = new GoogleAuthProvider();

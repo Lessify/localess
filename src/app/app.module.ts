@@ -21,6 +21,9 @@ import {
 } from '@angular/fire/firestore';
 import {provideStorage, getStorage, connectStorageEmulator} from '@angular/fire/storage';
 import {CoreModule} from './core/core.module';
+import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
+import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
+import {COMMA, ENTER} from '@angular/cdk/keycodes';
 
 let resolvePersistenceEnabled: (enabled: boolean) => void;
 
@@ -76,7 +79,22 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
       return storage;
     })
   ],
-  providers: [],
+  providers: [
+    {
+      provide: MAT_PAGINATOR_DEFAULT_OPTIONS,
+      useValue: {
+        pageSize: 20,
+        pageSizeOptions: [20, 50, 100],
+        showFirstLastButtons: true
+      }
+    },
+    {
+      provide: MAT_CHIPS_DEFAULT_OPTIONS,
+      useValue: {
+        separatorKeyCodes: [ENTER, COMMA]
+      }
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -12,10 +12,13 @@ import { authReducer } from './auth/auth.reducer';
 import { AuthState } from './auth/auth.models';
 import { UserState } from './user/user.model';
 import { userReducer } from './user/user.reducer';
+import {spaceReducer} from './space/space.reducer';
+import {SpaceState} from './space/space.model';
 
 export const reducers: ActionReducerMap<AppState> = {
   auth: authReducer,
   user: userReducer,
+  space: spaceReducer,
   settings: settingsReducer,
   router: routerReducer
 };
@@ -28,17 +31,18 @@ if (!environment.production) {
   }
 }
 
-export const selectAuthState = createFeatureSelector<AppState, AuthState>('auth');
+export const selectAuthState = createFeatureSelector<AuthState>('auth');
 
-export const selectUserState = createFeatureSelector<AppState, UserState>('user');
+export const selectUserState = createFeatureSelector<UserState>('user');
+export const selectSpaceState = createFeatureSelector<SpaceState>('space');
 
-export const selectSettingsState = createFeatureSelector<AppState, SettingsState>('settings');
-
-export const selectRouterState = createFeatureSelector<AppState, RouterReducerState<RouterStateUrl>>('router');
+export const selectSettingsState = createFeatureSelector<SettingsState>('settings');
+export const selectRouterState = createFeatureSelector<RouterReducerState<RouterStateUrl>>('router');
 
 export interface AppState {
   auth: AuthState;
   user: UserState;
+  space: SpaceState;
   settings: SettingsState;
   router: RouterReducerState<RouterStateUrl>;
 }

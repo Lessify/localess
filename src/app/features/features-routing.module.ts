@@ -15,6 +15,16 @@ const routes: Routes = [
   {
     path: '',
     component: FeaturesComponent,
+    children: [
+      {
+        path: 'spaces',
+        loadChildren: ()=> import('./spaces/spaces.module').then(m => m.SpacesModule),
+      },
+      {
+        path: 'translates',
+        loadChildren: ()=> import('./translates/translates.module').then(m => m.TranslatesModule),
+      },
+    ]
     // children: [
     //   {
     //     path: 'products',

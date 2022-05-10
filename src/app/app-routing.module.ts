@@ -5,7 +5,7 @@ import {AuthGuardService} from './core/core.module';
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'f',
+    redirectTo: 'features',
     pathMatch: 'full'
   },
   {
@@ -13,13 +13,13 @@ const routes: Routes = [
     loadChildren: () => import('./login/login.module').then((m) => m.LoginModule)
   },
   {
-    path: 'f',
+    path: 'features',
     loadChildren: () => import('./features/features.module').then((m) => m.FeaturesModule),
     canActivate: [AuthGuardService]
   },
   {
     path: '**',
-    redirectTo: 'f'
+    redirectTo: 'features'
   }
 ];
 
