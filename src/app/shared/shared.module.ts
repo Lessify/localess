@@ -31,6 +31,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import {ScrollingModule} from '@angular/cdk/scrolling';
 import {CopierService} from './services/copier.service';
+import {MatGridListModule} from '@angular/material/grid-list';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -61,6 +62,7 @@ const MATERIAL_MODULES: any[] = [
   MatProgressBarModule,
   MatAutocompleteModule,
   ScrollingModule,
+  MatGridListModule,
 ];
 
 @NgModule({

@@ -11,13 +11,25 @@ import {
 import {
   TranslationStringEditComponent
 } from './translation-string-edit/translation-string-edit.component';
+import {
+  TranslationAddDialogComponent
+} from './translation-add-dialog/translation-add-dialog.component';
+import {
+  TranslationEditDialogComponent
+} from './translation-edit-dialog/translation-edit-dialog.component';
 
 
 @NgModule({
-  declarations: [TranslationsComponent, TranslationStringViewComponent, TranslationStringEditComponent],
+  declarations: [
+    TranslationsComponent,
+    TranslationStringViewComponent,
+    TranslationStringEditComponent,
+    TranslationAddDialogComponent,
+    TranslationEditDialogComponent
+  ],
   imports: [CommonModule, SharedModule, TranslationsRoutingModule],
   providers: [TranslationService],
-  entryComponents: []
+  entryComponents: [TranslationAddDialogComponent, TranslationEditDialogComponent]
 })
 export class TranslationsModule {
 }

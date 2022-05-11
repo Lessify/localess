@@ -85,12 +85,10 @@ export class SpacesComponent implements OnInit {
     .subscribe({
         next: (value) => {
           console.log(value)
-          //this.dataSource.data.unshift(value);
-          //this.dataSource._updateChangeSubscription();
           this.notificationService.success('Space has been created.');
         },
         error: (err) => {
-          console.log(err)
+          console.error(err)
           this.notificationService.error('Space can not be created.');
         }
       }
@@ -115,11 +113,10 @@ export class SpacesComponent implements OnInit {
     .subscribe({
         next: (value) => {
           console.log(value)
-          //this.dataSource.data.unshift(value);
-          //this.dataSource._updateChangeSubscription();
           this.notificationService.success('Space has been updated.');
         },
-        error: () => {
+        error: (err) => {
+          console.error(err)
           this.notificationService.error('Space can not be updated.');
         }
       }
@@ -143,16 +140,10 @@ export class SpacesComponent implements OnInit {
     )
     .subscribe({
       next: () => {
-        const idx: number = this.dataSource.data.findIndex(
-          x => x.id === element.id
-        );
-        if (idx !== -1) {
-          this.dataSource.data.splice(idx, 1);
-          this.dataSource._updateChangeSubscription();
-        }
         this.notificationService.success(`Space '${element.name}' has been deleted.`);
       },
-      error: () => {
+      error: (err) => {
+        console.error(err)
         this.notificationService.error(`Space '${element.name}' can not be deleted.`);
       }
     });

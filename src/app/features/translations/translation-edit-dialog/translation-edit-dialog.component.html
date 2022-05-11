@@ -1,0 +1,46 @@
+<h1 mat-dialog-title>Translation</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Description</mat-label>
+            <textarea matInput #description maxlength="250"
+                      class="cdk-textarea-autosize"
+                      formControlName="description"></textarea>
+            <mat-hint align="end">{{description.value?.length || 0}}/250</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill" >
+            <mat-chip-list #chipList attr.aria-label="Select Label">
+              <mat-chip
+                *ngFor="let label of form.controls['labels'].value"
+                selectable
+                removable
+                (removed)="removeLabel(label)">
+                {{label}}
+                <mat-icon matChipRemove>cancel</mat-icon>
+              </mat-chip>
+              <input matInput placeholder="Add Label..."
+                     [matChipInputFor]="chipList"
+                     matChipInputAddOnBlur
+                     (matChipInputTokenEnd)="addLabel($event)">
+            </mat-chip-list>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    Save
+  </button>
+</mat-dialog-actions>

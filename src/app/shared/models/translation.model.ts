@@ -1,7 +1,6 @@
-import firebase from 'firebase/compat';
-import Timestamp = firebase.firestore.Timestamp;
+import {FieldValue, Timestamp} from '@angular/fire/firestore';
 
-enum TranslationType {
+export enum TranslationType {
   STRING = 'STRING',
   PLURAL = 'PLURAL',
   ARRAY = 'ARRAY'
@@ -13,6 +12,18 @@ export interface Translation {
   locales: { [key: string]: string };
   labels: string[]
   description: string;
-  createdOn: Timestamp | firebase.firestore.FieldValue;
-  updatedOn: Timestamp | firebase.firestore.FieldValue;
+  createdOn: Timestamp;
+  updatedOn: Timestamp;
+}
+
+export interface TranslationCreate {
+  type: TranslationType;
+  locales: { [key: string]: string };
+  labels: string[]
+  description: string;
+}
+
+export interface TranslationUpdate {
+  labels: string[]
+  description: string;
 }

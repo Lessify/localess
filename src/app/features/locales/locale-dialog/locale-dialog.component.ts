@@ -6,6 +6,7 @@ import {CommonValidator} from '../../../shared/validators/common.validator';
 import {LocaleService} from '../../../shared/services/locale.service';
 import {map} from 'rxjs/operators';
 import {Locale} from '../../../shared/models/locale.model';
+import {LocaleValidator} from '../../../shared/validators/locale.validator';
 
 @Component({
   selector: 'll-locale-dialog',
@@ -16,7 +17,7 @@ import {Locale} from '../../../shared/models/locale.model';
 export class LocaleDialogComponent implements OnInit {
   locales: Locale[] = [];
   form: FormGroup = this.fb.group({
-    locale: this.fb.control(null, [Validators.required, CommonValidator.requireMatch])
+    locale: this.fb.control(null, LocaleValidator.LOCALE)
   });
   filteredLocales: Observable<Locale[]> = this.form.controls['locale'].valueChanges.pipe(
     startWith(''),

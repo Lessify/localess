@@ -13,6 +13,12 @@
     </button>
   </div>
 
+<!--  <mat-grid-list cols="4">
+    <mat-grid-tile colspan="1">1</mat-grid-tile>
+    <mat-grid-tile colspan="2">2</mat-grid-tile>
+    <mat-grid-tile colspan="1">3</mat-grid-tile>
+  </mat-grid-list>-->
+
   <div class="d-flex flex-row justify-content-between">
     <div class="d-flex flex-row" style="width: 75%">
       <div class="p-2" style="width: 25%">
@@ -160,7 +166,7 @@
       </div>
     </div>
     <div class="col-3 overlay">
-      <!--<div *ngIf="selectedTranslation" class="d-flex flex-column">
+      <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
         <div class="p-2 align-items-start">
           <button
             mat-stroked-button matTooltip="Edit"
@@ -201,9 +207,9 @@
         <mat-divider></mat-divider>
         <div class="p-2 align-items-start">
           <p><small><strong>Labels</strong></small></p>
-          <ng-container *ngIf="selectedTranslation.labels?.length > 0; else elseLabelsContainer">
+          <ng-container *ngIf="selectedTranslation!.labels!.length > 0 ; else elseLabelsContainer">
             <mat-chip-list>
-              <mat-chip *ngFor="let item of selectedTranslation.labels">{{item}}</mat-chip>
+              <mat-chip *ngFor="let item of selectedTranslation?.labels">{{item}}</mat-chip>
             </mat-chip-list>
           </ng-container>
           <ng-template #elseLabelsContainer>
@@ -211,7 +217,7 @@
           </ng-template>
         </div>
         <mat-divider></mat-divider>
-      </div>-->
+      </div>
     </div>
   </div>
 </div>

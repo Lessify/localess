@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core'
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {SpaceDialogModel} from './space-dialog.model';
+import {SpaceValidator} from '../../../shared/validators/space.validator';
 
 @Component({
   selector: 'll-space-dialog',
@@ -11,7 +12,7 @@ import {SpaceDialogModel} from './space-dialog.model';
 })
 export class SpaceDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', [Validators.required, Validators.minLength(3), Validators.maxLength(50)])
+    name: this.fb.control('', SpaceValidator.NAME)
   });
 
   constructor(

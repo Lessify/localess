@@ -1,0 +1,86 @@
+<h1 mat-dialog-title>Add Translation</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>ID</mat-label>
+            <input matInput type="text" #id formControlName="id" required/>
+            <mat-hint align="end">{{id.value?.length || 0}}/150</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Type</mat-label>
+            <mat-select formControlName="type" required>
+              <mat-option *ngFor="let type of translationTypes" [value]="type">
+                {{type}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Description</mat-label>
+            <textarea matInput #description
+                      class="cdk-textarea-autosize"
+                      formControlName="description"></textarea>
+            <mat-hint align="end">{{description.value?.length || 0}}/250</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Value</mat-label>
+            <textarea matInput #defaultValue
+                      class="cdk-textarea-autosize"
+                      formControlName="value"></textarea>
+            <mat-hint align="end">{{defaultValue.value?.length || 0}}/500</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill" >
+            <mat-chip-list #chipList attr.aria-label="Label Selection">
+              <mat-chip
+                *ngFor="let label of form.controls['labels'].value"
+                selectable
+                removable
+                (removed)="removeLabel(label)">
+                {{label}}
+                <mat-icon matChipRemove>cancel</mat-icon>
+              </mat-chip>
+              <input matInput placeholder="Add Label..."
+                     [matChipInputFor]="chipList"
+                     [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                     matChipInputAddOnBlur
+                     (matChipInputTokenEnd)="addLabel($event)">
+            </mat-chip-list>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    Save
+  </button>
+</mat-dialog-actions>
