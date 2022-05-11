@@ -26,11 +26,11 @@ import {
 } from '../core/state/settings/settings.actions';
 import {Auth, authState, signOut} from '@angular/fire/auth';
 import {actionUserChange, actionUserRoleChange} from '../core/state/user/user.actions';
-import {Space} from './spaces/spaces.model';
-import {SpacesService} from './spaces/spaces.service';
-import {selectSpaceState} from '../core/state/core.state';
 import {actionSpaceChange} from '../core/state/space/space.actions';
 import {ActivatedRoute, ActivationEnd, Router} from '@angular/router';
+import {SpaceService} from '../shared/services/space.service';
+import {Space} from '../shared/models/space.model';
+import {selectSpace} from '../core/state/space/space.selector';
 
 interface SideMenuItem {
   icon: string;
@@ -53,11 +53,13 @@ export class FeaturesComponent implements OnInit {
   year = new Date().getFullYear();
   logo = 'assets/logo.png';
 
+  userSideMenu: SideMenuItem[] = [
+    {link: 'translations', label: 'Translations', icon: 'translate'},
+    {link: 'locales', label: 'Locales', icon: 'language'}
+  ];
+
   adminSideMenu: SideMenuItem[] = [
     {link: 'spaces', label: 'Spaces', icon: 'space_dashboard'}
-  ];
-  userSideMenu: SideMenuItem[] = [
-    {link: 'translates', label: 'Translates', icon: 'translate'}
   ];
 
   isAuthenticated$: Observable<boolean> | undefined;
@@ -65,7 +67,7 @@ export class FeaturesComponent implements OnInit {
   language$: Observable<string> | undefined;
 
   constructor(
-    private readonly spacesService: SpacesService,
+    private readonly spaceService: SpaceService,
     private readonly store: Store<AppState>,
     private readonly storageService: LocalStorageService,
     private readonly cd: ChangeDetectorRef,
@@ -103,7 +105,7 @@ export class FeaturesComponent implements OnInit {
     });
     //Read current Rout Title
     this.router.events.subscribe(event => {
-      if(event instanceof ActivationEnd) {
+      if (event instanceof ActivationEnd) {
         let lastChild = event.snapshot;
         while (lastChild.children.length) {
           lastChild = lastChild.children[0];
@@ -140,8 +142,8 @@ export class FeaturesComponent implements OnInit {
 
 
     combineLatest([
-      this.spacesService.findAll(),
-      this.store.select(selectSpaceState)
+      this.spaceService.findAll(),
+      this.store.select(selectSpace)
     ])
     .subscribe({
       next: ([spaces, space]) => {
@@ -149,11 +151,11 @@ export class FeaturesComponent implements OnInit {
           this.selectedSpace = undefined
         }
         //Spaces change
-/*        if (this.spaces.length !== spaces.length) {
-          if (this.spaces.length > spaces.length) {
-            this.selectedSpace = undefined
-          }
-        }*/
+        /*        if (this.spaces.length !== spaces.length) {
+                  if (this.spaces.length > spaces.length) {
+                    this.selectedSpace = undefined
+                  }
+                }*/
         //Selected Space change
         if (space.id !== this.selectedSpace?.id) {
           let selected = spaces.find(it => it.id === space.id)
@@ -184,7 +186,7 @@ export class FeaturesComponent implements OnInit {
     return await signOut(this.auth);
   }
 
-  onLanguageSelect(event: MatSelectChange) {
+  onLanguageSelect(event: MatSelectChange): void {
     this.store.dispatch(actionSettingsChangeLanguage({language: event.value}));
   }
 }

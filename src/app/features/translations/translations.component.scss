@@ -1,0 +1,56 @@
+.display-columns-section {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -25px;
+  margin-left: -24px;
+}
+
+.search-buttons {
+  width: 10em;
+}
+
+.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+mat-sidenav {
+  width: 30%;
+}
+
+mat-form-field.search {
+  width: 100%;
+  input {
+    width: 100%;
+  }
+}
+
+mat-form-field.edit {
+  width: 100%;
+  textarea {
+    width: 100%;
+  }
+}
+
+mat-form-field {
+  width: 100%;
+  input {
+    width: 100%;
+  }
+}
+
+mat-list-item.selected {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.overlay {
+  //overflow: overlay;
+  height: 85vh;
+  padding: inherit;
+  border: 1px solid #efefef;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent; /* make scrollbar transparent */
+}
+

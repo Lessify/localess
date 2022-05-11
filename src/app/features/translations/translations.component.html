@@ -1,0 +1,217 @@
+<div *ngIf="isLoading" class="row justify-content-md-center step-content">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid">
+  <div class="my-3 d-flex justify-content-end">
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="openAddDialog()"
+      class="add-button">
+      <mat-icon>add</mat-icon>
+      Add Translation
+    </button>
+  </div>
+
+  <div class="d-flex flex-row justify-content-between">
+    <div class="d-flex flex-row" style="width: 75%">
+      <div class="p-2" style="width: 25%">
+        <!--<mat-form-field appearance="outline">
+          <mat-label>Search Locale</mat-label>
+          <mat-select [(value)]="selectedSearchLocale">
+            <mat-option *ngFor="let locale of locales" [value]="locale.id">
+              {{locale.name}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>-->
+      </div>
+      <div class="p-2"  style="width: 25%">
+        <!--<mat-form-field appearance="outline" class="search">
+          <mat-label>Search</mat-label>
+          <input matInput #searchInput/>
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>-->
+      </div>
+      <div class="p-2"  style="width: 75%">
+        <!--<mat-form-field
+          appearance="outline"
+          class="search">
+          <mat-chip-list #chipList>
+            <mat-chip
+              *ngFor="let selectedLabel of selectedLabels"
+              selectable
+              removable
+              (removed)="removeLabel(selectedLabel)">
+              {{selectedLabel}}
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip>
+              <input
+                matInput
+                #labelsInput
+                placeholder="Label Filter"
+                [formControl]="labelCtrl"
+                [matAutocomplete]="auto"
+                [matChipInputFor]="chipList"
+              />
+          </mat-chip-list>
+          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectLabel($event)">
+            <mat-option *ngFor="let label of filteredLabels | async" [value]="label">
+              {{label}}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>-->
+      </div>
+    </div>
+
+  </div>
+  <div *ngIf="translations.length > 0" class="display-columns-section">
+    <cdk-virtual-scroll-viewport [itemSize]="translations.length" class="col-3 overlay container" >
+      <mat-nav-list dense class="container1">
+        <mat-list-item class="container2"
+          *ngFor="let translation of translations"
+          style="height: auto;" (click)="selectTranslation(translation)"
+          [class.selected]="translation === selectedTranslation">
+          <p class="pt-3 text-break">
+            <strong>{{translation.id}}</strong>
+            <br/>
+            <br/>
+            <span [ngSwitch]="translation.type">
+            <ll-translation-string-view *ngSwitchCase="'STRING'"
+                                          [value]="translation.locales[selectedSearchLocale]">
+            </ll-translation-string-view>
+<!--            <ll-translation-plural-view *ngSwitchCase="'PLURAL'"-->
+<!--                                          [value]="translation.locales[selectedSearchLocale]">-->
+<!--            </ll-translation-plural-view>-->
+<!--            <ll-translation-array-view *ngSwitchCase="'ARRAY'"-->
+<!--                                         [value]="translation.locales[selectedSearchLocale]">-->
+<!--            </ll-translation-array-view>-->
+          </span>
+          </p>
+          <mat-divider></mat-divider>
+        </mat-list-item>
+      </mat-nav-list>
+    </cdk-virtual-scroll-viewport>
+    <div class="col-6 overlay">
+      <div *ngIf="selectedTranslation" class="d-flex flex-column" style="height: 100%;">
+        <div class="p-2 align-items-start">
+          <mat-form-field appearance="outline">
+            <mat-label>Source Locale</mat-label>
+            <mat-select [(value)]="selectedSourceLocale">
+              <mat-option *ngFor="let locale of locales" [value]="locale.id">
+                {{locale.name}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start mb-auto">
+        <span [ngSwitch]="selectedTranslation.type">
+          <ll-translation-string-view *ngSwitchCase="'STRING'"
+                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-string-view>
+<!--            <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
+                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-plural-view>
+          <ll-translation-array-view *ngSwitchCase="'ARRAY'"
+                                       [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-array-view>-->
+          </span>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-end">
+          <mat-form-field appearance="outline">
+            <mat-label>Target Locale</mat-label>
+            <mat-select [(value)]="selectedTargetLocale">
+              <mat-option *ngFor="let locale of locales" [value]="locale.id">
+                {{locale.name}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-end">
+        <span [ngSwitch]="selectedTranslation.type">
+          <ll-translation-string-edit *ngSwitchCase="'STRING'"
+                                        [value]="selectedTranslation.locales[selectedTargetLocale]"
+                                        (valueChange)="selectedTranslationLocaleValue = $event">
+          </ll-translation-string-edit>
+<!--          <ll-translation-plural-edit *ngSwitchCase="'PLURAL'"
+                                        [value]="selectedTranslation.locales[selectedTargetLocale]"
+                                        (valueChange)="selectedTranslationLocaleValue = $event">
+          </ll-translation-plural-edit>
+            <ll-translation-array-edit *ngSwitchCase="'ARRAY'"
+                                       [value]="selectedTranslation.locales[selectedTargetLocale]"
+                                       (valueChange)="selectedTranslationLocaleValue = $event">
+            </ll-translation-array-edit>-->
+        </span>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-end">
+          <div class="justify-content-between">
+            <div class="my-3 d-flex justify-content-end">
+              <button mat-raised-button color="primary"
+                      (click)="save(selectedTranslation, selectedTargetLocale)">
+                <mat-icon>save</mat-icon>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-3 overlay">
+      <!--<div *ngIf="selectedTranslation" class="d-flex flex-column">
+        <div class="p-2 align-items-start">
+          <button
+            mat-stroked-button matTooltip="Edit"
+            (click)="openEditDialog(selectedTranslation)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            mat-stroked-button matTooltip="Delete"
+            (click)="deleteTranslation(selectedTranslation)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start">
+          <p><small><strong>ID</strong></small></p>
+          <p>
+            <small>{{selectedTranslation.id}}</small>
+            <button mat-icon-button (click)="copy(selectedTranslation.id)" matTooltip="Copy">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </p>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start">
+          <p><small><strong>Type</strong></small></p>
+          <p><small>{{selectedTranslation.type}}</small></p>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start">
+          <p><small><strong>Description</strong></small></p>
+          <ng-container *ngIf="selectedTranslation.description; else elseDescription">
+            <p><small>{{selectedTranslation.description}}</small></p>
+          </ng-container>
+          <ng-template #elseDescription>
+            <p><small><em>No description available.</em></small></p>
+          </ng-template>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start">
+          <p><small><strong>Labels</strong></small></p>
+          <ng-container *ngIf="selectedTranslation.labels?.length > 0; else elseLabelsContainer">
+            <mat-chip-list>
+              <mat-chip *ngFor="let item of selectedTranslation.labels">{{item}}</mat-chip>
+            </mat-chip-list>
+          </ng-container>
+          <ng-template #elseLabelsContainer>
+            <p><small><em>No label available.</em></small></p>
+          </ng-template>
+        </div>
+        <mat-divider></mat-divider>
+      </div>-->
+    </div>
+  </div>
+</div>

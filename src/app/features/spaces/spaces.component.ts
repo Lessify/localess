@@ -14,8 +14,6 @@ import {SpaceDialogModel} from './space-dialog/space-dialog.model';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
-import {Space} from './spaces.model';
-import {SpacesService} from './spaces.service';
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
 import {
@@ -24,6 +22,8 @@ import {
 import {
   ConfirmationDialogModel
 } from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
+import {SpaceService} from '../../shared/services/space.service';
+import {Space} from '../../shared/models/space.model';
 
 @Component({
   selector: 'll-spaces',
@@ -43,7 +43,7 @@ export class SpacesComponent implements OnInit {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-    private readonly spacesService: SpacesService,
+    private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
@@ -56,7 +56,7 @@ export class SpacesComponent implements OnInit {
   }
 
   loadData(): void {
-    this.spacesService.findAll()
+    this.spaceService.findAll()
     .subscribe(response => {
         this.dataSource = new MatTableDataSource<Space>(response);
         this.dataSource.sort = this.sort || null;
@@ -79,7 +79,7 @@ export class SpacesComponent implements OnInit {
     .pipe(
       filter(it => it !== undefined),
       switchMap(it =>
-        this.spacesService.create(it!)
+        this.spaceService.add(it!)
       )
     )
     .subscribe({
@@ -91,7 +91,7 @@ export class SpacesComponent implements OnInit {
         },
         error: (err) => {
           console.log(err)
-          this.notificationService.error('Environment can not be created.');
+          this.notificationService.error('Space can not be created.');
         }
       }
     );
@@ -109,7 +109,7 @@ export class SpacesComponent implements OnInit {
     .pipe(
       filter(it => it !== undefined),
       switchMap(it =>
-        this.spacesService.update(element.id, it!)
+        this.spaceService.update(element.id, it!)
       )
     )
     .subscribe({
@@ -120,7 +120,7 @@ export class SpacesComponent implements OnInit {
           this.notificationService.success('Space has been updated.');
         },
         error: () => {
-          this.notificationService.error('Environment can not be updated.');
+          this.notificationService.error('Space can not be updated.');
         }
       }
     );
@@ -138,7 +138,7 @@ export class SpacesComponent implements OnInit {
     .pipe(
       filter((it) => it || false),
       switchMap(_ =>
-        this.spacesService.delete(element.id)
+        this.spaceService.delete(element.id)
       )
     )
     .subscribe({

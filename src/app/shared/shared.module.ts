@@ -29,6 +29,8 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from './components/confirmation-dialog/confirmation-dialog.component';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import {ScrollingModule} from '@angular/cdk/scrolling';
+import {CopierService} from './services/copier.service';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -57,7 +59,8 @@ const MATERIAL_MODULES: any[] = [
   MatDialogModule,
   MatRippleModule,
   MatProgressBarModule,
-  MatAutocompleteModule
+  MatAutocompleteModule,
+  ScrollingModule,
 ];
 
 @NgModule({
@@ -76,6 +79,7 @@ const MATERIAL_MODULES: any[] = [
     MATERIAL_MODULES,
     ConfirmationDialogComponent
   ],
+  providers: [CopierService],
   entryComponents: [ConfirmationDialogComponent]
 })
 export class SharedModule {

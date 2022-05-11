@@ -21,8 +21,12 @@ const routes: Routes = [
         loadChildren: ()=> import('./spaces/spaces.module').then(m => m.SpacesModule),
       },
       {
-        path: 'translates',
-        loadChildren: ()=> import('./translates/translates.module').then(m => m.TranslatesModule),
+        path: 'translations',
+        loadChildren: ()=> import('./translations/translations.module').then(m => m.TranslationsModule),
+      },
+      {
+        path: 'locales',
+        loadChildren: ()=> import('./locales/locales.module').then(m => m.LocalesModule),
       },
     ]
     // children: [

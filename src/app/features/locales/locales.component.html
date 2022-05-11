@@ -7,21 +7,33 @@
             color="primary"
             (click)="addDialog()">
       <mat-icon>add</mat-icon>
-      Add Space
+      Add Locale
     </button>
   </div>
   <mat-table [dataSource]="dataSource" matSort>
+    <ng-container matColumnDef="id">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
     </ng-container>
+    <ng-container matColumnDef="fallback">
+      <mat-header-cell *matHeaderCellDef> Fallback </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <button *ngIf="selectedSpace?.localeFallback?.id === element.id" mat-icon-button disabled>
+          <mat-icon color="accent" matTooltip="Fallback">check_circle</mat-icon>
+        </button>
+        <button *ngIf="selectedSpace?.localeFallback?.id !== element.id" mat-icon-button (click)="markAsFallback(element)">
+          <mat-icon matTooltip="Mark as Fallback">check_circle_outline</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="editDialog(element)" matTooltip="Edit">
-          <mat-icon>edit</mat-icon>
-        </button>
-        <button mat-icon-button (click)="deleteDialog(element)" matTooltip="Delete">
+        <button mat-icon-button (click)="deleteDialog(element)" matTooltip="Delete" [disabled]="selectedSpace?.localeFallback?.id === element.id">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

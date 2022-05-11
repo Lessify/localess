@@ -1,13 +1,17 @@
-<h1 mat-dialog-title>Space Form</h1>
+<h1 mat-dialog-title>Locale Form</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
           <mat-form-field appearance="fill">
-            <mat-label>Name</mat-label>
-            <input matInput type="text" formControlName="name" required minLength="3" maxlength="50"/>
-            <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
+            <mat-label> Locale </mat-label>
+            <input matInput type="text" formControlName="locale" required [matAutocomplete]="auto"/>
+            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayLocale">
+              <mat-option *ngFor="let locale of filteredLocales | async" [value]="locale">
+                {{locale.name}} ({{locale.id}})
+              </mat-option>
+            </mat-autocomplete>
           </mat-form-field>
         </div>
       </div>
