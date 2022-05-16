@@ -6,12 +6,12 @@ import {
   OnInit,
   ViewChild
 } from '@angular/core';
-import {combineLatest} from 'rxjs';
+import {combineLatest, Observable, startWith} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
-import {filter, switchMap} from 'rxjs/operators';
+import {filter, map, switchMap} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
 import {FormBuilder, FormControl} from '@angular/forms';
-import {MatAutocomplete} from '@angular/material/autocomplete';
+import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {Store} from '@ngrx/store';
 import {TranslationService} from '../../shared/services/translation.service';
 import {SpaceService} from '../../shared/services/space.service';
@@ -58,7 +58,12 @@ export class TranslationsComponent implements OnInit {
 
   DEFAULT_LOCALE: string = 'en';
 
+  //Labels
+  availableLabels: string[] = [];
+  selectedLabels: string[] = [];
   labelCtrl: FormControl = new FormControl();
+  filteredLabels: Observable<string[]>;
+
   selectedTranslation?: Translation;
   selectedTranslationLocaleValue?: string;
 
@@ -82,6 +87,12 @@ export class TranslationsComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly copierService: CopierService
   ) {
+    this.filteredLabels = this.labelCtrl.valueChanges.pipe(
+      startWith(null),
+      map((label: string | null) =>
+        label ? this._filter(label) : this.availableLabels.slice()
+      )
+    );
   }
 
   ngOnInit(): void {
@@ -105,11 +116,21 @@ export class TranslationsComponent implements OnInit {
         this.locales = space.locales
         this.translations = translations;
         if (translations.length > 0) {
-          this.selectTranslation(translations[0]);
+          if (this.selectedTranslation) {
+            const tr = translations.find(it => it.id === this.selectedTranslation?.id)
+            if (tr) {
+              this.selectTranslation(tr);
+            } else {
+              this.selectTranslation(translations[0]);
+            }
+          } else {
+            this.selectTranslation(translations[0]);
+          }
         }
         this.selectedSearchLocale = space.localeFallback.id;
         this.selectedSourceLocale = space.localeFallback.id;
         this.selectedTargetLocale = space.localeFallback.id;
+        this.groupAvailableLabels(translations)
         this.isLoading = false;
         this.cd.markForCheck();
       }
@@ -170,7 +191,7 @@ export class TranslationsComponent implements OnInit {
           labels: it!.labels,
           description: it!.description
         }
-        return this.translationService.update(this.selectedTranslation!.id, translation.id, tu)
+        return this.translationService.update(this.selectedSpace!.id, translation.id, tu)
       })
     )
     .subscribe({
@@ -244,6 +265,69 @@ export class TranslationsComponent implements OnInit {
 
   copy(value: string): void {
     this.copierService.copyText(value);
+  }
+
+  // Labels
+  selectLabel(event: MatAutocompleteSelectedEvent): void {
+    this.selectedLabels = [...this.selectedLabels, event.option.viewValue];
+    this.labelsInput.nativeElement.value = '';
+    this.selectedTranslation = undefined;
+    this.labelCtrl.setValue(null);
+  }
+
+  removeLabel(label: string): void {
+    const tmpArray: string[] = [...this.selectedLabels];
+    const index: number = tmpArray.indexOf(label);
+    if (index >= 0) {
+      tmpArray.splice(index, 1);
+    }
+    // for translationFilter pipe do change instance.
+    this.selectedLabels = [...tmpArray];
+    this.selectedTranslation = undefined;
+  }
+
+  private _filter(value: string): string[] {
+    if (!value) {
+      return this.availableLabels;
+    }
+    const filterValue: string = value.toLowerCase();
+    return this.availableLabels.filter(
+      label => label.toLowerCase().indexOf(filterValue) === 0
+    );
+  }
+
+  groupAvailableLabels(input: Translation[]): void {
+    input
+    .map( it => it.labels)
+    .flat()
+    .forEach(it => {
+      if (!this.availableLabels.find(el => el === it)) {
+        this.availableLabels.push(it);
+      }
+    });
+
+    /*console.log(new Set<string>(labels))
+
+    Array.from(
+      input
+      .reduce(
+        (entryMap, translation) =>
+          entryMap.set(translation.labels, {
+            ...(entryMap.get(translation.id) || {}),
+            ...translation
+          }),
+        new Map()
+      )
+      .keys()
+    )
+    .filter(k => k.length)
+    .forEach((key: string[]) => {
+      key.forEach(it => {
+        if (!this.availableLabels.find(el => el === it)) {
+          this.availableLabels.push(it);
+        }
+      });
+    });*/
   }
 
 }
