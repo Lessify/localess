@@ -32,6 +32,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import {ScrollingModule} from '@angular/cdk/scrolling';
 import {CopierService} from './services/copier.service';
 import {MatGridListModule} from '@angular/material/grid-list';
+import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -65,6 +66,14 @@ const MATERIAL_MODULES: any[] = [
   MatGridListModule,
 ];
 
+const SHARED_PIPES: any[] = [
+  TranslationFilterPipe
+]
+
+const SHARED_COMPONENTS: any[] = [
+  ConfirmationDialogComponent
+]
+
 @NgModule({
   imports: [
     CommonModule,
@@ -72,14 +81,16 @@ const MATERIAL_MODULES: any[] = [
     MATERIAL_MODULES,
   ],
   declarations: [
-    ConfirmationDialogComponent
+    SHARED_COMPONENTS,
+    SHARED_PIPES
   ],
   exports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
     MATERIAL_MODULES,
-    ConfirmationDialogComponent
+    SHARED_COMPONENTS,
+    SHARED_PIPES
   ],
   providers: [CopierService],
   entryComponents: [ConfirmationDialogComponent]

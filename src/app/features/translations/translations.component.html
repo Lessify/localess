@@ -75,7 +75,7 @@
     <cdk-virtual-scroll-viewport [itemSize]="translations.length" class="col-3 overlay container">
       <mat-nav-list dense class="container1">
         <mat-list-item class="container2"
-                       *ngFor="let translation of translations"
+                       *ngFor="let translation of translations | translationFilter:searchInput.value:selectedSearchLocale:selectedLabels"
                        style="height: auto;" (click)="selectTranslation(translation)"
                        [class.selected]="translation === selectedTranslation">
           <p class="pt-3 text-break">
