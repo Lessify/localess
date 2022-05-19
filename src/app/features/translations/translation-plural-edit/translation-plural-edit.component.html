@@ -1,0 +1,33 @@
+<form [formGroup]="form">
+  <mat-form-field appearance="fill">
+    <mat-label>Zero</mat-label>
+    <input matInput #input0 formControlName="0" maxlength="250">
+    <mat-hint align="end">{{input0.value?.length || 0}}/250</mat-hint>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>One</mat-label>
+    <input matInput #input1 formControlName="1" maxlength="250">
+    <mat-hint align="end">{{input1.value?.length || 0}}/250</mat-hint>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Two</mat-label>
+    <input matInput #input2 formControlName="2" maxlength="250">
+    <mat-hint align="end">{{input2.value?.length || 0}}/250</mat-hint>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Few</mat-label>
+    <input matInput #input3 formControlName="3" maxlength="250">
+    <mat-hint align="end">{{input3.value?.length || 0}}/250</mat-hint>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Many</mat-label>
+    <input matInput #input4 formControlName="4" maxlength="250">
+    <mat-hint align="end">{{input4.value?.length || 0}}/250</mat-hint>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Other</mat-label>
+    <input matInput #input5 formControlName="5" maxlength="250">
+    <mat-hint align="end">{{input5.value?.length || 0}}/250</mat-hint>
+  </mat-form-field>
+  <mat-hint>Only not empty items will be saved.</mat-hint>
+</form>

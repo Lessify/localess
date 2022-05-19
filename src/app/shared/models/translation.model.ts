@@ -1,4 +1,4 @@
-import {FieldValue, Timestamp} from '@angular/fire/firestore';
+import {Timestamp} from '@angular/fire/firestore';
 
 export enum TranslationType {
   STRING = 'STRING',
@@ -18,9 +18,10 @@ export interface Translation {
 
 export interface TranslationCreate {
   type: TranslationType;
-  locales: { [key: string]: string };
   labels: string[]
   description: string;
+  locale: string;
+  value: string;
 }
 
 export interface TranslationUpdate {

@@ -7,10 +7,16 @@ import {
   docData,
   Firestore,
   serverTimestamp,
-  setDoc
+  setDoc,
+  updateDoc
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
-import {Translation, TranslationCreate, TranslationUpdate} from '../models/translation.model';
+import {
+  Translation,
+  TranslationCreate,
+  TranslationType,
+  TranslationUpdate
+} from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
 
@@ -36,14 +42,34 @@ export class TranslationService {
   }
 
   add(spaceId: string, id: string, entity: TranslationCreate): Observable<void> {
+    let addEntity: any = {
+      type: entity.type,
+      labels: entity.labels,
+      description: entity.description,
+      locales: {},
+      createdOn: serverTimestamp(),
+      updatedOn: serverTimestamp()
+    }
+
+    switch (entity.type) {
+      case TranslationType.STRING: {
+        addEntity.locales[entity.locale] = entity.value
+        break;
+      }
+      case TranslationType.ARRAY: {
+        addEntity.locales[entity.locale] = `["${entity.value}"]`
+        break;
+      }
+      case TranslationType.PLURAL: {
+        addEntity.locales[entity.locale] = `{"0":"${entity.value}"}`
+        break;
+      }
+    }
+
+
     return from(
       setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
-        {
-          ...entity,
-          createdOn: serverTimestamp(),
-          updatedOn: serverTimestamp()
-        },
-        {merge: true}
+        addEntity, {merge: true}
       )
     )
     .pipe(
@@ -54,13 +80,28 @@ export class TranslationService {
 
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
     return from(
-      setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
+      updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
         {
           labels: entity.labels,
           description: entity.description,
           updatedOn: serverTimestamp()
-        },
-        {merge: true}
+        }
+      )
+    )
+    .pipe(
+      traceUntilFirst('firestore'),
+      tap(it => console.log(it))
+    );
+  }
+
+  updateLocale(spaceId: string, id: string, locale: string, value: string): Observable<void> {
+    let update: any = {
+      updatedOn: serverTimestamp()
+    }
+    update[`locales.${locale}`] = value
+    return from(
+      updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
+        update
       )
     )
     .pipe(

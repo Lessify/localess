@@ -1,0 +1,5 @@
+<ul>
+  <li *ngFor="let item of extract() | keyvalue">
+    <strong>{{toPlural(item.key)}}</strong> : {{item.value}}
+  </li>
+</ul>

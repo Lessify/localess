@@ -17,13 +17,29 @@ import {
 import {
   TranslationEditDialogComponent
 } from './translation-edit-dialog/translation-edit-dialog.component';
+import {
+  TranslationArrayEditComponent
+} from './translation-array-edit/translation-array-edit.component';
+import {
+  TranslationArrayViewComponent
+} from './translation-array-view/translation-array-view.component';
+import {
+  TranslationPluralEditComponent
+} from './translation-plural-edit/translation-plural-edit.component';
+import {
+  TranslationPluralViewComponent
+} from './translation-plural-view/translation-plural-view.component';
 
 
 @NgModule({
   declarations: [
     TranslationsComponent,
-    TranslationStringViewComponent,
+    TranslationArrayEditComponent,
+    TranslationArrayViewComponent,
+    TranslationPluralEditComponent,
+    TranslationPluralViewComponent,
     TranslationStringEditComponent,
+    TranslationStringViewComponent,
     TranslationAddDialogComponent,
     TranslationEditDialogComponent
   ],

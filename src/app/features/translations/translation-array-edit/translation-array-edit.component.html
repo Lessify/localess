@@ -1,0 +1,24 @@
+<div class="container edit-array">
+<form [formGroup]="form">
+  <ng-container formArrayName="values">
+    <mat-form-field appearance="fill" *ngFor="let control of values().controls; index as i">
+      <mat-label>Item {{i}}</mat-label>
+      <input matInput [formControlName]="i" maxlength="150">
+      <button mat-icon-button matSuffix (click)="removeItem(i)">
+        <mat-icon>clear</mat-icon>
+      </button>
+      <mat-hint align="end">{{control.value?.length || 0}}/150</mat-hint>
+    </mat-form-field>
+  </ng-container>
+</form>
+<div class="justify-content-between">
+  <div class="d-flex justify-content-start">
+    <button mat-raised-button color="accent" (click)="addItem()">
+      <mat-icon>playlist_add</mat-icon>
+      Add
+    </button>
+    &nbsp;&nbsp;
+    <mat-hint>Only not empty items will be saved.</mat-hint>
+  </div>
+</div>
+</div>

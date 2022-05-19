@@ -65,11 +65,11 @@ export class TranslationsComponent implements OnInit {
   filteredLabels: Observable<string[]>;
 
   selectedTranslation?: Translation;
-  selectedTranslationLocaleValue?: string;
+  selectedTranslationLocaleValue: string = '';
 
-  selectedSearchLocale: string = this.DEFAULT_LOCALE;
-  selectedSourceLocale: string = this.DEFAULT_LOCALE;
-  selectedTargetLocale: string = this.DEFAULT_LOCALE;
+  selectedSearchLocale: string = '';
+  selectedSourceLocale: string = '';
+  selectedTargetLocale: string = '';
 
   translations: Translation[] = [];
   locales: Locale[] = [];
@@ -127,9 +127,15 @@ export class TranslationsComponent implements OnInit {
             this.selectTranslation(translations[0]);
           }
         }
-        this.selectedSearchLocale = space.localeFallback.id;
-        this.selectedSourceLocale = space.localeFallback.id;
-        this.selectedTargetLocale = space.localeFallback.id;
+        if(this.selectedSearchLocale === '') {
+          this.selectedSearchLocale = space.localeFallback.id;
+        }
+        if(this.selectedSourceLocale === '') {
+          this.selectedSourceLocale = space.localeFallback.id;
+        }
+        if(this.selectedTargetLocale === '') {
+          this.selectedTargetLocale = space.localeFallback.id;
+        }
         this.groupAvailableLabels(translations)
         this.isLoading = false;
         this.cd.markForCheck();
@@ -149,14 +155,13 @@ export class TranslationsComponent implements OnInit {
     .pipe(
       filter(it => it !== undefined),
       switchMap(it => {
-          const defaultLocale = this.selectedSpace!.localeFallback.id
           const tc: TranslationCreate = {
             type: it!.type,
+            locale: this.selectedSpace!.localeFallback.id,
+            value: it!.value,
             labels: it!.labels,
             description: it!.description,
-            locales: {}
           }
-          tc.locales[defaultLocale] = it!.value
           return this.translationService.add(this.selectedSpace!.id, it!.id, tc)
         }
       )
@@ -238,29 +243,15 @@ export class TranslationsComponent implements OnInit {
     this.selectedTranslation = translation;
   }
 
-  //value -> selectedTranslationLocaleValue
-  save(transaction: Translation, locale: string): void {
-    // this.translationService
-    // .updateSpaceTranslationLocale({
-    //   spaceId: this.spaceId,
-    //   environment: this.environment,
-    //   id: transaction.id,
-    //   locale,
-    //   body: {
-    //     value
-    //   }
-    // })
-    // .subscribe(
-    //   () => {
-    //     const change: Translation = this.translations.find(
-    //       it => it.id === transaction.id
-    //     );
-    //     change.locales[locale] = value;
-    //     this.cd.detectChanges();
-    //     this.notificationService.success('Translation has been updated.');
-    //   },
-    //   () => this.notificationService.error('Translation can not be updated.')
-    // );
+  updateLocale(transaction: Translation, locale: string, value: string): void {
+    this.translationService.updateLocale(this.selectedSpace!.id, transaction.id, locale, value)
+    .subscribe({
+        next: () => {
+          this.notificationService.success('Translation has been updated.');
+        },
+        error: () => this.notificationService.error('Translation can not be updated.')
+      }
+    );
   }
 
   copy(value: string): void {
@@ -298,7 +289,7 @@ export class TranslationsComponent implements OnInit {
 
   groupAvailableLabels(input: Translation[]): void {
     input
-    .map( it => it.labels)
+    .map(it => it.labels)
     .flat()
     .forEach(it => {
       if (!this.availableLabels.find(el => el === it)) {

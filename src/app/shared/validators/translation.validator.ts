@@ -10,17 +10,17 @@ export class TranslationValidator {
   ];
   public static STRING_VALUE: ValidatorFn[] = [
     Validators.required,
-    Validators.minLength(2),
+    Validators.minLength(1),
     Validators.maxLength(500)
   ];
   public static PLURAL_VALUE: ValidatorFn[] = [
     Validators.required,
-    Validators.minLength(2),
+    Validators.minLength(1),
     Validators.maxLength(300)
   ];
   public static ARRAY_VALUE: ValidatorFn[] = [
     Validators.required,
-    Validators.minLength(2),
+    Validators.minLength(1),
     Validators.maxLength(150)
   ];
   public static DESCRIPTION: ValidatorFn[] = [Validators.maxLength(250)];
