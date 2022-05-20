@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { MatChipInputEvent } from '@angular/material/chips';
-import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
+import {FormBuilder, FormGroup} from '@angular/forms';
+import {MatChipInputEvent} from '@angular/material/chips';
+import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {TranslationValidator} from '../../../shared/validators/translation.validator';
 
 @Component({
@@ -10,7 +10,7 @@ import {TranslationValidator} from '../../../shared/validators/translation.valid
   styleUrls: ['./translation-add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TranslationAddDialogComponent implements OnInit {
+export class TranslationAddDialogComponent {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
   translationTypes: string[] = ['STRING', 'PLURAL', 'ARRAY'];
   form: FormGroup = this.fb.group({
@@ -21,9 +21,8 @@ export class TranslationAddDialogComponent implements OnInit {
     labels: this.fb.control([], TranslationValidator.DESCRIPTION)
   });
 
-  constructor(private readonly fb: FormBuilder) {}
-
-  ngOnInit(): void {}
+  constructor(private readonly fb: FormBuilder) {
+  }
 
   addLabel(event: MatChipInputEvent): void {
     const input = event.chipInput?.inputElement;

@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnInit
-} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 
 @Component({
   selector: 'll-translation-array-view',
@@ -11,12 +6,11 @@ import {
   styleUrls: ['./translation-array-view.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TranslationArrayViewComponent implements OnInit {
+export class TranslationArrayViewComponent {
   @Input() value: string = '';
 
-  constructor() {}
-
-  ngOnInit(): void {}
+  constructor() {
+  }
 
   extract(): string[] {
     return JSON.parse(this.value || '[]');

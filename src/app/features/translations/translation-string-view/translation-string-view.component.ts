@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnInit
-} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 
 @Component({
   selector: 'll-translation-string-view',
@@ -11,10 +6,9 @@ import {
   styleUrls: ['./translation-string-view.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TranslationStringViewComponent implements OnInit {
+export class TranslationStringViewComponent {
   @Input() value: string = '';
 
-  constructor() {}
-
-  ngOnInit(): void {}
+  constructor() {
+  }
 }

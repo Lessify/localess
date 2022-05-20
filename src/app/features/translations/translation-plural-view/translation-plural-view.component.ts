@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 
 interface Plural {
   0: string,
@@ -15,13 +15,10 @@ interface Plural {
   styleUrls: ['./translation-plural-view.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TranslationPluralViewComponent implements OnInit {
+export class TranslationPluralViewComponent {
   @Input() value: string = '';
 
   constructor() {
-  }
-
-  ngOnInit(): void {
   }
 
   extract(): Plural {
