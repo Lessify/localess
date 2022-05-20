@@ -12,6 +12,10 @@ export interface Space {
 
 export interface SpaceCreate {
   name: string;
+}
+
+export interface SpaceCreateFS {
+  name: string;
   locales: Locale[];
   localeFallback: Locale;
   createdOn: FieldValue;
@@ -21,6 +25,21 @@ export interface SpaceCreate {
 export interface SpaceUpdate {
   name: string;
   locales: FieldValue;
+  localeFallback: Locale;
+  updatedOn: FieldValue;
+}
+
+export interface SpaceUpdateFS {
+  name: string;
+  updatedOn: FieldValue;
+}
+
+export interface SpaceLocalesUpdateFS {
+  locales: FieldValue;
+  updatedOn: FieldValue;
+}
+
+export interface SpaceFallbackLocaleUpdateFS {
   localeFallback: Locale;
   updatedOn: FieldValue;
 }

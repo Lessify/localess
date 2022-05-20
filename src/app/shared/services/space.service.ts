@@ -16,7 +16,7 @@ import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
 import {SpaceDialogModel} from '../../features/spaces/space-dialog/space-dialog.model';
-import {Space, SpaceCreate, SpaceUpdate} from '../models/space.model';
+import {Space, SpaceCreate, SpaceCreateFS, SpaceUpdateFS} from '../models/space.model';
 import {Locale} from '../models/locale.model';
 
 @Injectable()
@@ -40,17 +40,18 @@ export class SpaceService {
     );
   }
 
-  add(entity: SpaceDialogModel): Observable<DocumentReference<DocumentData>> {
+  add(entity: SpaceCreate): Observable<DocumentReference<DocumentData>> {
     const defaultLocale: Locale = {id: 'en', name: 'English'}
+    let add: SpaceCreateFS = {
+      name: entity.name,
+      locales: [defaultLocale],
+      localeFallback: defaultLocale,
+      createdOn: serverTimestamp(),
+      updatedOn: serverTimestamp()
+    };
     return from(
       addDoc(collection(this.firestore, 'spaces'),
-        <SpaceCreate>{
-          ...entity,
-          locales: [defaultLocale],
-          localeFallback: defaultLocale,
-          createdOn: serverTimestamp(),
-          updatedOn: serverTimestamp()
-        }
+        add
       )
     )
     .pipe(
@@ -60,9 +61,13 @@ export class SpaceService {
   }
 
   update(id: string, entity: SpaceDialogModel): Observable<void> {
+    const update: SpaceUpdateFS = {
+      name: entity.name,
+      updatedOn: serverTimestamp()
+    }
     return from(
       setDoc(doc(this.firestore, `spaces/${id}`),
-        <SpaceUpdate>{...entity, updatedOn: serverTimestamp()},
+        update,
         {merge: true}
       )
     )

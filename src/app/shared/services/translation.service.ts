@@ -13,12 +13,13 @@ import {
 import {from, Observable} from 'rxjs';
 import {
   Translation,
-  TranslationCreate,
+  TranslationCreate, TranslationCreateFS, TranslationLocaleUpdateFS,
   TranslationType,
-  TranslationUpdate
+  TranslationUpdate, TranslationUpdateFS
 } from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
+import {UpdateData} from '@firebase/firestore';
 
 @Injectable()
 export class TranslationService {
@@ -42,7 +43,7 @@ export class TranslationService {
   }
 
   add(spaceId: string, id: string, entity: TranslationCreate): Observable<void> {
-    let addEntity: any = {
+    let addEntity: TranslationCreateFS = {
       type: entity.type,
       labels: entity.labels,
       description: entity.description,
@@ -79,13 +80,15 @@ export class TranslationService {
   }
 
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
+    const update: UpdateData<TranslationUpdateFS> = {
+      labels: entity.labels,
+      description: entity.description,
+      updatedOn: serverTimestamp()
+    }
+
     return from(
       updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
-        {
-          labels: entity.labels,
-          description: entity.description,
-          updatedOn: serverTimestamp()
-        }
+        update
       )
     )
     .pipe(

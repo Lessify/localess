@@ -11,7 +11,11 @@ import {from, Observable, of} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {tap} from 'rxjs/operators';
 import {Locale} from '../models/locale.model';
-import {SpaceUpdate} from '../models/space.model';
+import {
+  SpaceFallbackLocaleUpdateFS,
+  SpaceLocalesUpdateFS,
+  SpaceUpdate
+} from '../models/space.model';
 
 @Injectable()
 export class LocaleService {
@@ -19,9 +23,12 @@ export class LocaleService {
   }
 
   markAsFallback(spaceId: string, entity: Locale): Observable<void> {
+    const update: SpaceFallbackLocaleUpdateFS = {
+      localeFallback: entity, updatedOn: serverTimestamp()
+    }
     return from(
       setDoc(doc(this.firestore, `spaces/${spaceId}`),
-        <SpaceUpdate>{localeFallback: entity, updatedOn: serverTimestamp()},
+        update,
         {merge: true}
       )
     )
@@ -32,9 +39,13 @@ export class LocaleService {
   }
 
   add(spaceId: string, entity: Locale): Observable<void> {
+    const update: SpaceLocalesUpdateFS = {
+      locales: arrayUnion(entity),
+      updatedOn: serverTimestamp()
+    }
     return from(
       setDoc(doc(this.firestore, `spaces/${spaceId}`),
-        <SpaceUpdate>{locales: arrayUnion(entity), updatedOn: serverTimestamp()},
+        update,
         {merge: true}
       )
     )
@@ -45,9 +56,13 @@ export class LocaleService {
   }
 
   delete(spaceId: string, entity: Locale): Observable<void> {
+    const update: SpaceLocalesUpdateFS = {
+      locales: arrayRemove(entity),
+      updatedOn: serverTimestamp()
+    }
     return from(
       setDoc(doc(this.firestore, `spaces/${spaceId}`),
-        <SpaceUpdate>{locales: arrayRemove(entity), updatedOn: serverTimestamp()},
+        update,
         {merge: true}
       )
     )

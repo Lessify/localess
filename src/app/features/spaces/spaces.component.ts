@@ -37,7 +37,7 @@ export class SpacesComponent implements OnInit {
 
   isLoading: boolean = true;
   dataSource: MatTableDataSource<Space> = new MatTableDataSource<Space>([]);
-  displayedColumns: string[] = ['name', 'actions'];
+  displayedColumns: string[] = ['name', 'createdOn', 'updatedOn', 'actions'];
 
 
   constructor(

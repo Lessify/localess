@@ -3,15 +3,8 @@
 </div>
 <div *ngIf="!isLoading" class="container-fluid">
 
-
-  <!--  <mat-grid-list cols="4">
-      <mat-grid-tile colspan="1">1</mat-grid-tile>
-      <mat-grid-tile colspan="2">2</mat-grid-tile>
-      <mat-grid-tile colspan="1">3</mat-grid-tile>
-    </mat-grid-list>-->
-
   <div class="d-flex flex-row justify-content-between">
-    <div class="p-2" style="width: 25%">
+    <div class="py-2" style="width: 25%">
       <mat-form-field appearance="outline">
         <mat-label>Search Locale</mat-label>
         <mat-select [(value)]="selectedSearchLocale">
@@ -21,14 +14,14 @@
         </mat-select>
       </mat-form-field>
     </div>
-    <div class="p-2" style="width: 25%">
+    <div class="py-2" style="width: 25%">
       <mat-form-field appearance="outline" class="search">
         <mat-label>Search</mat-label>
         <input matInput #searchInput/>
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
     </div>
-    <div class="p-2" style="width: 25%">
+    <div class="py-2" style="width: 25%">
       <mat-form-field
         appearance="outline"
         class="search">
@@ -57,7 +50,7 @@
         </mat-autocomplete>
       </mat-form-field>
     </div>
-    <div class="p-2" style="width: 25%">
+    <div class="py-2" style="width: 25%">
       <div class="my-3 d-flex justify-content-end">
         <button
           mat-raised-button
@@ -87,10 +80,10 @@
                                         [value]="translation.locales[selectedSearchLocale]">
             </ll-translation-string-view>
             <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
-                                          [value]="translation.locales[selectedSearchLocale]">
+                                        [value]="translation.locales[selectedSearchLocale]">
             </ll-translation-plural-view>
             <ll-translation-array-view *ngSwitchCase="'ARRAY'"
-                                         [value]="translation.locales[selectedSearchLocale]">
+                                       [value]="translation.locales[selectedSearchLocale]">
             </ll-translation-array-view>
           </span>
           </p>
@@ -117,10 +110,10 @@
                                         [value]="selectedTranslation.locales[selectedSourceLocale]">
             </ll-translation-string-view>
             <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
-                                            [value]="selectedTranslation.locales[selectedSourceLocale]">
+                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
             </ll-translation-plural-view>
             <ll-translation-array-view *ngSwitchCase="'ARRAY'"
-                                         [value]="selectedTranslation.locales[selectedSourceLocale]">
+                                       [value]="selectedTranslation.locales[selectedSourceLocale]">
             </ll-translation-array-view>
           </span>
         </div>
@@ -216,6 +209,16 @@
           <ng-template #elseLabelsContainer>
             <p><small><em>No label available.</em></small></p>
           </ng-template>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start">
+          <p><small><strong>Created On</strong></small></p>
+          <p><small>{{selectedTranslation?.createdOn?.toDate() | date:'medium'}}</small></p>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start">
+          <p><small><strong>Updated On</strong></small></p>
+          <p><small>{{selectedTranslation?.updatedOn?.toDate() | date:'medium'}}</small></p>
         </div>
         <mat-divider></mat-divider>
       </div>
