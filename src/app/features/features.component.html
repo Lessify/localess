@@ -4,6 +4,19 @@
       <div class="branding">
         <img [src]="logo" [alt]="logo"/>
         <span>Localess</span>
+        <span class="spacer"></span>
+        <span>
+          <button mat-icon-button [matMenuTriggerFor]="accountMenu">
+            <mat-icon>account_circle</mat-icon>
+          </button>
+          <mat-menu #accountMenu="matMenu">
+            <mat-divider></mat-divider>
+            <button mat-menu-item (click)="onLogoutClick()">
+              <mat-icon>logout</mat-icon>
+              <span>Log Out</span>
+            </button>
+          </mat-menu>
+        </span>
       </div>
       <mat-divider></mat-divider>
       <mat-nav-list>
@@ -50,22 +63,6 @@
     </mat-sidenav>
 
     <mat-sidenav-content>
-      <mat-toolbar color="primary">
-        <mat-toolbar-row>
-          {{title}}
-          <span class="spacer"></span>
-          <button mat-icon-button [matMenuTriggerFor]="accountMenu">
-            <mat-icon>account_circle</mat-icon>
-          </button>
-          <mat-menu #accountMenu="matMenu">
-            <mat-divider></mat-divider>
-            <button mat-menu-item (click)="onLogoutClick()">
-              <mat-icon>logout</mat-icon>
-              <span>Log Out</span>
-            </button>
-          </mat-menu>
-        </mat-toolbar-row>
-      </mat-toolbar>
       <router-outlet></router-outlet>
     </mat-sidenav-content>
 

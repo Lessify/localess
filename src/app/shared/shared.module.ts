@@ -33,6 +33,7 @@ import {ScrollingModule} from '@angular/cdk/scrolling';
 import {CopierService} from './services/copier.service';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
+import {IconComponent} from './components/icon/icon.component';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -71,7 +72,8 @@ const SHARED_PIPES: any[] = [
 ]
 
 const SHARED_COMPONENTS: any[] = [
-  ConfirmationDialogComponent
+  ConfirmationDialogComponent,
+  IconComponent
 ]
 
 @NgModule({

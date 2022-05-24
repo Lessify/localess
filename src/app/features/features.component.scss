@@ -1,9 +1,5 @@
 @import '../../styles-variables';
 
-.spacer {
-  flex: 1 1 auto;
-}
-
 mat-form-field {
   width: 100%;
 }
@@ -94,6 +90,8 @@ mat-sidenav {
     padding: 8px 10px;
     font-size: 20px;
     font-weight: 500;
+    display: flex;
+    align-items: center;
 
     img {
       height: 48px;

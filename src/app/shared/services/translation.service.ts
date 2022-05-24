@@ -13,17 +13,23 @@ import {
 import {from, Observable} from 'rxjs';
 import {
   Translation,
-  TranslationCreate, TranslationCreateFS, TranslationLocaleUpdateFS,
+  TranslationCreate,
+  TranslationCreateFS,
   TranslationType,
-  TranslationUpdate, TranslationUpdateFS
+  TranslationUpdate,
+  TranslationUpdateFS
 } from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
 import {UpdateData} from '@firebase/firestore';
+import {Functions, httpsCallableData} from '@angular/fire/functions';
 
 @Injectable()
 export class TranslationService {
-  constructor(private firestore: Firestore) {
+  constructor(
+    private readonly firestore: Firestore,
+    private readonly functions: Functions
+  ) {
   }
 
   findAll(spaceId: string): Observable<Translation[]> {
@@ -121,6 +127,11 @@ export class TranslationService {
     .pipe(
       traceUntilFirst('firestore'),
     );
+  }
+
+  publish(spaceId: string): Observable<void> {
+    const publishTranslations = httpsCallableData<{spaceId: string}, void>(this.functions, 'publishTranslations');
+    return publishTranslations({spaceId})
   }
 
 }

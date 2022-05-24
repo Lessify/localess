@@ -3,12 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --proxy-config proxy.conf.js",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "emulator": "firebase emulators:start --import .firebase_export --export-on-exit",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "build:stats": "ng build --configuration production --stats-json",
+    "stats": "webpack-bundle-analyzer dist/localess/stats.json"
   },
   "license": "MIT",
   "private": true,
@@ -58,6 +60,7 @@
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "~1.7.0",
     "typescript": "~4.6.2",
-    "postcss": "^8.4.13"
+    "postcss": "^8.4.13",
+    "webpack-bundle-analyzer": "^4.5.0"
   }
 }

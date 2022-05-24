@@ -27,7 +27,7 @@ import {
 import {Auth, authState, signOut} from '@angular/fire/auth';
 import {actionUserChange, actionUserRoleChange} from '../core/state/user/user.actions';
 import {actionSpaceChange} from '../core/state/space/space.actions';
-import {ActivatedRoute, ActivationEnd, Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {SpaceService} from '../shared/services/space.service';
 import {Space} from '../shared/models/space.model';
 import {selectSpace} from '../core/state/space/space.selector';
@@ -103,21 +103,9 @@ export class FeaturesComponent implements OnInit {
         this.store.dispatch(authLogout());
       }
     });
-    //Read current Rout Title
-    this.router.events.subscribe(event => {
-      if (event instanceof ActivationEnd) {
-        let lastChild = event.snapshot;
-        while (lastChild.children.length) {
-          lastChild = lastChild.children[0];
-        }
-        const {title} = lastChild.data;
-        this.title = title
-      }
-    })
-
   }
 
-  private static isIEorEdgeOrSafari() {
+  private static isIEorEdgeOrSafari(): boolean {
     return ['ie', 'edge', 'safari'].includes(browser().name || '');
   }
 

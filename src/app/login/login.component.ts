@@ -50,14 +50,14 @@ export class LoginComponent implements OnDestroy {
     }
   }
 
-  async loginWithGoogle() {
+  async loginWithGoogle(): Promise<void> {
     const provider = new GoogleAuthProvider();
     await signInWithPopup(this.auth, provider);
     this.store.dispatch(authLogin());
     await this.router.navigate(this.redirect);
   }
 
-  async loginAnonymously() {
+  async loginAnonymously(): Promise<void> {
     await signInAnonymously(this.auth);
     await this.router.navigate(this.redirect);
   }

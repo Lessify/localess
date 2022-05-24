@@ -1,10 +1,30 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    Translations
+    <span class="spacer"></span>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="openAddDialog()">
+      <mat-icon>add</mat-icon>
+      Add Translation
+    </button>
+
+    <button
+      mat-raised-button
+      color="accent"
+      (click)="publish()">
+      <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
+      Publish
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
 <div *ngIf="isLoading" class="row justify-content-md-center step-content">
   <mat-spinner></mat-spinner>
 </div>
 <div *ngIf="!isLoading" class="container-fluid">
-
   <div class="d-flex flex-row justify-content-between">
-    <div class="py-2" style="width: 25%">
+    <div class="py-2 pe-2" style="width: 25%">
       <mat-form-field appearance="outline">
         <mat-label>Search Locale</mat-label>
         <mat-select [(value)]="selectedSearchLocale">
@@ -14,14 +34,14 @@
         </mat-select>
       </mat-form-field>
     </div>
-    <div class="py-2" style="width: 25%">
+    <div class="p-2 " style="width: 25%">
       <mat-form-field appearance="outline" class="search">
         <mat-label>Search</mat-label>
         <input matInput #searchInput/>
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
     </div>
-    <div class="py-2" style="width: 25%">
+    <div class="p-2" style="width: 50%">
       <mat-form-field
         appearance="outline"
         class="search">
@@ -49,18 +69,6 @@
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>
-    </div>
-    <div class="py-2" style="width: 25%">
-      <div class="my-3 d-flex justify-content-end">
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="openAddDialog()"
-          class="add-button">
-          <mat-icon>add</mat-icon>
-          Add Translation
-        </button>
-      </div>
     </div>
 
   </div>

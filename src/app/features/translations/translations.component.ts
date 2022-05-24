@@ -75,6 +75,7 @@ export class TranslationsComponent implements OnInit {
   locales: Locale[] = [];
 
   isLoading: boolean = false;
+  isPublishLoading: boolean = false;
 
   constructor(
     private readonly translationService: TranslationService,
@@ -127,18 +128,39 @@ export class TranslationsComponent implements OnInit {
             this.selectTranslation(translations[0]);
           }
         }
-        if(this.selectedSearchLocale === '') {
+        if (this.selectedSearchLocale === '') {
           this.selectedSearchLocale = space.localeFallback.id;
         }
-        if(this.selectedSourceLocale === '') {
+        if (this.selectedSourceLocale === '') {
           this.selectedSourceLocale = space.localeFallback.id;
         }
-        if(this.selectedTargetLocale === '') {
+        if (this.selectedTargetLocale === '') {
           this.selectedTargetLocale = space.localeFallback.id;
         }
         this.groupAvailableLabels(translations)
         this.isLoading = false;
         this.cd.markForCheck();
+      }
+    })
+  }
+
+  publish(): void {
+    this.isPublishLoading = true
+    this.translationService.publish(this.selectedSpace!.id)
+    .subscribe({
+      next: () => {
+        this.notificationService.success('Translations has been published.');
+      },
+      error: (err) => {
+        console.error(err)
+        this.notificationService.error('Translations can not be published.');
+      },
+      complete: () => {
+        setTimeout(() => {
+          this.isPublishLoading = false
+          this.cd.markForCheck()
+        }, 1000)
+
       }
     })
   }

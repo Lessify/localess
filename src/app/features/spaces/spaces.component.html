@@ -1,15 +1,19 @@
-<div *ngIf="isLoading" class="row justify-content-md-center step-content">
-  <mat-spinner></mat-spinner>
-</div>
-<div *ngIf="!isLoading" class="container-fluid">
-  <div class="my-3 d-flex justify-content-end">
+<mat-toolbar>
+  <mat-toolbar-row>
+    Spaces
+    <span class="spacer"></span>
     <button mat-raised-button
             color="primary"
             (click)="addDialog()">
       <mat-icon>add</mat-icon>
       Add Space
     </button>
-  </div>
+  </mat-toolbar-row>
+</mat-toolbar>
+<div *ngIf="isLoading" class="row justify-content-md-center step-content">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid mt-3">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>

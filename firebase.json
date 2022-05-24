@@ -1,23 +1,10 @@
 {
+  "$schema": "https://github.com/firebase/firebase-tools/blob/master/schema/firebase-config.json",
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
   "hosting": [
-    {
-      "public": "out",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
-    },
     {
       "target": "localess",
       "public": "dist/localess",
@@ -46,6 +33,14 @@
       ],
       "rewrites": [
         {
+          "source": "/api/v1/**",
+          "function": "v1"
+        },
+        {
+          "source": "/api/publishTranslations",
+          "function": "publishTranslations"
+        },
+        {
           "source": "**",
           "destination": "/index.html"
         }
@@ -71,5 +66,9 @@
     "ui": {
       "enabled": true
     }
+  },
+  "functions": {
+    "predeploy": "npm --prefix functions run build",
+    "source": "functions"
   }
 }

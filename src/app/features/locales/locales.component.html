@@ -1,15 +1,20 @@
-<div *ngIf="isLoading" class="row justify-content-md-center step-content">
-  <mat-spinner></mat-spinner>
-</div>
-<div *ngIf="!isLoading" class="container-fluid">
-  <div class="my-3 d-flex justify-content-end">
+<mat-toolbar>
+  <mat-toolbar-row>
+    Locales
+    <span class="spacer"></span>
     <button mat-raised-button
             color="primary"
             (click)="addDialog()">
       <mat-icon>add</mat-icon>
       Add Locale
     </button>
-  </div>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div *ngIf="isLoading" class="row justify-content-md-center step-content">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid mt-3">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>

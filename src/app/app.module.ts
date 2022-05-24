@@ -1,11 +1,11 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import {NgModule} from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
 
-import { AppRoutingModule } from './app-routing.module';
-import { AppComponent } from './app.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import {AppRoutingModule} from './app-routing.module';
+import {AppComponent} from './app.component';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {getApp, initializeApp, provideFirebaseApp} from '@angular/fire/app';
-import { environment } from '../environments/environment';
+import {environment} from '../environments/environment';
 import {
   browserPopupRedirectResolver,
   connectAuthEmulator,
@@ -14,16 +14,17 @@ import {
   provideAuth
 } from '@angular/fire/auth';
 import {
-  provideFirestore,
-  getFirestore,
   connectFirestoreEmulator,
-  enableMultiTabIndexedDbPersistence
+  enableMultiTabIndexedDbPersistence,
+  getFirestore,
+  provideFirestore
 } from '@angular/fire/firestore';
-import {provideStorage, getStorage, connectStorageEmulator} from '@angular/fire/storage';
+import {connectStorageEmulator, getStorage, provideStorage} from '@angular/fire/storage';
 import {CoreModule} from './core/core.module';
 import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
 import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
+import {connectFunctionsEmulator, getFunctions, provideFunctions} from '@angular/fire/functions';
 
 let resolvePersistenceEnabled: (enabled: boolean) => void;
 
@@ -45,7 +46,6 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
 
     //Firebase
     provideFirebaseApp(() => initializeApp(environment.firebase)),
-    //provideAuth(() => getAuth()),
     provideAuth(() => {
       const auth = initializeAuth(getApp(), {
         persistence: indexedDBLocalPersistence,
@@ -58,7 +58,6 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
       }
       return auth;
     }),
-    //provideFirestore(() => getFirestore()),
     provideFirestore(() => {
       const firestore = getFirestore();
       if (environment.useEmulators) {
@@ -70,14 +69,22 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
       );
       return firestore;
     }),
-    //provideStorage(() => getStorage()),
     provideStorage(() => {
       const storage = getStorage();
       if (environment.useEmulators) {
         connectStorageEmulator(storage, 'localhost', 9199);
       }
       return storage;
-    })
+    }),
+    provideFunctions(() => {
+      const functions = getFunctions();
+      if (environment.useEmulators) {
+        //connectFunctionsEmulator(functions, 'localhost', 5001);
+        functions.customDomain = 'http://localhost:4200/api'
+      }
+
+      return functions;
+    }),
   ],
   providers: [
     {
@@ -97,4 +104,5 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
   ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+}

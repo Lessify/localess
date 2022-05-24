@@ -13,9 +13,7 @@ export class TitleService {
   ) {
   }
 
-  setTitle(
-    snapshot: ActivatedRouteSnapshot,
-  ) {
+  setTitle(snapshot: ActivatedRouteSnapshot): void {
     let lastChild = snapshot;
     while (lastChild.children.length) {
       lastChild = lastChild.children[0];
