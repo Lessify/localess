@@ -40,7 +40,7 @@ export class SpaceService {
     );
   }
 
-  add(entity: SpaceCreate): Observable<DocumentReference<DocumentData>> {
+  add(entity: SpaceCreate): Observable<DocumentReference> {
     const defaultLocale: Locale = {id: 'en', name: 'English'}
     let add: SpaceCreateFS = {
       name: entity.name,

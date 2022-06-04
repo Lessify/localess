@@ -5,14 +5,14 @@
       <div class="col-sm-12">
         <div class="form-group">
           <mat-form-field appearance="fill">
-            <mat-label>ID</mat-label>
-            <input matInput type="text" #id formControlName="id" required/>
-            <mat-hint align="end">{{id.value?.length || 0}}/150</mat-hint>
+            <mat-label>Name</mat-label>
+            <input matInput type="text" #name formControlName="name" required/>
+            <mat-hint align="end">{{name.value?.length || 0}}/150</mat-hint>
           </mat-form-field>
         </div>
       </div>
     </div>
-    <div class="row">
+    <div *ngIf="false" class="row" >
       <div class="col-sm-12">
         <div class="form-group">
           <mat-form-field appearance="fill">

@@ -1,14 +1,16 @@
 import {Injectable} from '@angular/core';
 import {
+  addDoc,
   collection,
   collectionData,
   deleteDoc,
   doc,
-  docData,
+  docData, DocumentReference,
   Firestore,
   serverTimestamp,
   setDoc,
-  updateDoc
+  updateDoc,
+  writeBatch,
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {
@@ -21,14 +23,17 @@ import {
 } from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
-import {UpdateData} from '@firebase/firestore';
+import {UpdateData, WriteBatch, documentId} from '@firebase/firestore';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
+import {importLocaleJson} from '../../../../functions/src';
+
+
 
 @Injectable()
 export class TranslationService {
   constructor(
     private readonly firestore: Firestore,
-    private readonly functions: Functions
+    private readonly functions: Functions,
   ) {
   }
 
@@ -48,8 +53,9 @@ export class TranslationService {
     );
   }
 
-  add(spaceId: string, id: string, entity: TranslationCreate): Observable<void> {
+  add(spaceId: string, entity: TranslationCreate): Observable<DocumentReference> {
     let addEntity: TranslationCreateFS = {
+      name: entity.name,
       type: entity.type,
       labels: entity.labels,
       description: entity.description,
@@ -73,10 +79,9 @@ export class TranslationService {
       }
     }
 
-
     return from(
-      setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
-        addEntity, {merge: true}
+      addDoc(collection(this.firestore, `spaces/${spaceId}/translations`),
+        addEntity
       )
     )
     .pipe(
@@ -130,8 +135,13 @@ export class TranslationService {
   }
 
   publish(spaceId: string): Observable<void> {
-    const publishTranslations = httpsCallableData<{spaceId: string}, void>(this.functions, 'publishTranslations');
+    const publishTranslations = httpsCallableData<{ spaceId: string }, void>(this.functions, 'publishTranslations');
     return publishTranslations({spaceId})
+  }
+
+  importDiffBatch(spaceId: string, locale: string, translations: { [key: string]: string }): Observable<void> {
+    const importLocaleJson = httpsCallableData<{ spaceId: string, locale: string, translations: { [key: string]: string } }, void>(this.functions, 'importLocaleJson');
+    return importLocaleJson({spaceId, locale, translations})
   }
 
 }

@@ -2,7 +2,7 @@ import { ValidatorFn, Validators } from '@angular/forms';
 import { CommonValidator } from './common.validator';
 
 export class TranslationValidator {
-  public static ID: ValidatorFn[] = [
+  public static NAME: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
     Validators.minLength(2),

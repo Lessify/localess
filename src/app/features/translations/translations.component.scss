@@ -47,6 +47,10 @@ mat-list-item.selected {
   background: rgba(0, 0, 0, 0.04);
 }
 
+mat-list-item.odd {
+  background: rgba(127, 127, 127, 0.3);
+}
+
 .overlay {
   //overflow: overlay;
   height: 87vh;
@@ -54,8 +58,8 @@ mat-list-item.selected {
   border: 1px solid #efefef;
 }
 
-::-webkit-scrollbar {
-  width: 0;
-  background: transparent; /* make scrollbar transparent */
-}
+//::-webkit-scrollbar {
+//  width: 0;
+//  background: transparent; /* make scrollbar transparent */
+//}
 

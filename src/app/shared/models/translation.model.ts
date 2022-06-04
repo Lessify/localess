@@ -8,6 +8,7 @@ export enum TranslationType {
 
 export interface Translation {
   id: string;
+  name: string;
   type: TranslationType;
   locales: { [key: string]: string };
   labels: string[]
@@ -17,6 +18,7 @@ export interface Translation {
 }
 
 export interface TranslationCreate {
+  name: string;
   type: TranslationType;
   labels: string[]
   description: string;
@@ -25,6 +27,7 @@ export interface TranslationCreate {
 }
 
 export interface TranslationCreateFS {
+  name: string;
   type: TranslationType;
   locales: { [key: string]: string };
   labels: string[]

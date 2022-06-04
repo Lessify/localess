@@ -75,7 +75,8 @@ export class FeaturesComponent implements OnInit {
     private readonly activatedRoute: ActivatedRoute,
     @Optional() private auth: Auth
   ) {
-    authState(this.auth).subscribe((user) => {
+    authState(this.auth)
+    .subscribe((user) => {
       // Sign-in
       if (user) {
         console.log(user);
@@ -89,7 +90,8 @@ export class FeaturesComponent implements OnInit {
             role: 'user'
           })
         );
-        from(user.getIdTokenResult()).subscribe((token) => {
+        from(user.getIdTokenResult())
+        .subscribe((token) => {
           if (token.claims['role']) {
             const role = token.claims['role'].toString();
             this.store.dispatch(actionUserRoleChange({role}));

@@ -6,9 +6,9 @@ import {
   OnInit,
   ViewChild
 } from '@angular/core';
-import {combineLatest, Observable, startWith} from 'rxjs';
+import {combineLatest, debounceTime, Observable, startWith} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
-import {filter, map, switchMap} from 'rxjs/operators';
+import {filter, map, switchMap, tap} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
 import {FormBuilder, FormControl} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
@@ -41,6 +41,7 @@ import {
 import {
   ConfirmationDialogModel
 } from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
+import {saveAs} from 'file-saver';
 
 @Component({
   selector: 'll-translations',
@@ -51,12 +52,15 @@ import {
 export class TranslationsComponent implements OnInit {
 
   @ViewChild('labelsInput') labelsInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
   @ViewChild('auto') matAutocomplete!: MatAutocomplete;
 
   selectedSpace?: Space;
 
   DEFAULT_LOCALE: string = 'en';
+
+  //Search
+  searchCtrl: FormControl = new FormControl();
+  searchValue: string = ''
 
   //Labels
   availableLabels: string[] = [];
@@ -98,21 +102,40 @@ export class TranslationsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData()
+    this.searchCtrl.valueChanges
+    .pipe(
+      debounceTime(300)
+    )
+    .subscribe({
+      next: value => {
+        console.log(`[TranslationsComponent:ngOnInit] search='${value}'`)
+        this.searchValue = value
+        this.cd.markForCheck()
+      }
+    })
   }
 
   loadData(): void {
     this.store.select(selectSpace)
     .pipe(
+      tap(it => console.log(`[TranslationsComponent:loadData] selectSpace ${it.id} ${Date.now()}`)),
       filter(it => it.id !== ''), // Skip initial data
       switchMap(it =>
         combineLatest([
-          this.spaceService.findById(it.id),
+          this.spaceService.findById(it.id)
+          .pipe(
+            tap(it => console.log(`[TranslationsComponent:loadData] spaceService ${Date.now()}`))
+          ),
           this.translationService.findAll(it.id)
+          .pipe(
+            tap(it => console.log(`[TranslationsComponent:loadData] translationService ${Date.now()}`))
+          )
         ])
       )
     )
     .subscribe({
       next: ([space, translations]) => {
+        console.log(`[TranslationsComponent:loadData] ${Date.now()}`)
         this.selectedSpace = space
         this.locales = space.locales
         this.translations = translations;
@@ -178,13 +201,14 @@ export class TranslationsComponent implements OnInit {
       filter(it => it !== undefined),
       switchMap(it => {
           const tc: TranslationCreate = {
+            name: it!.name,
             type: it!.type,
             locale: this.selectedSpace!.localeFallback.id,
             value: it!.value,
             labels: it!.labels,
             description: it!.description,
           }
-          return this.translationService.add(this.selectedSpace!.id, it!.id, tc)
+          return this.translationService.add(this.selectedSpace!.id, tc)
         }
       )
     )
@@ -240,7 +264,7 @@ export class TranslationsComponent implements OnInit {
       {
         data: {
           title: 'Delete Translation',
-          content: `Are you sure about deleting Translation with id '${element.id}'.`
+          content: `Are you sure about deleting Translation with name '${element.name}'.`
         }
       }
     )
@@ -318,29 +342,55 @@ export class TranslationsComponent implements OnInit {
         this.availableLabels.push(it);
       }
     });
+  }
 
-    /*console.log(new Set<string>(labels))
+  exportLocale(locale: string): void {
+    const tmp: { [key: string]: string } = {}
+    this.translations.forEach(it => {
+      if (it.locales[locale]) {
+        tmp[it.name] = it.locales[locale]
+      }
+    })
+    saveAs(new Blob([JSON.stringify(tmp)], {type: "application/json"}), `${locale}.json`)
+  }
 
-    Array.from(
-      input
-      .reduce(
-        (entryMap, translation) =>
-          entryMap.set(translation.labels, {
-            ...(entryMap.get(translation.id) || {}),
-            ...translation
-          }),
-        new Map()
-      )
-      .keys()
-    )
-    .filter(k => k.length)
-    .forEach((key: string[]) => {
-      key.forEach(it => {
-        if (!this.availableLabels.find(el => el === it)) {
-          this.availableLabels.push(it);
-        }
-      });
-    });*/
+  async onFileChange(event: Event, locale: Locale): Promise<void> {
+    let fileContent = {}
+    let contentFieldsCount = 0
+    if (event.target && event.target instanceof HTMLInputElement) {
+      const target = event.target as HTMLInputElement
+      if (target.files && target.files.length > 0) {
+        fileContent = JSON.parse(await target.files[0].text())
+        contentFieldsCount = Object.getOwnPropertyNames(fileContent).length
+        this.dialog
+        .open<ConfirmationDialogComponent, ConfirmationDialogModel>(
+          ConfirmationDialogComponent,
+          {
+            data: {
+              title: `Import Translation for ${locale.name}`,
+              content: `Are you sure about importing ${contentFieldsCount} Translations? It will update existing translation and will add new one.`
+            }
+          }
+        )
+        .afterClosed()
+        .pipe(
+          filter(it => it),
+          switchMap(() =>
+            this.translationService.importDiffBatch(this.selectedSpace!.id, locale.id, fileContent)
+          )
+        )
+        .subscribe({
+            next: () => {
+              this.notificationService.success('Translations has been imported.');
+            },
+            error: (err) => {
+              console.error(err)
+              this.notificationService.error('Translation can not be imported.')
+            }
+          }
+        );
+      }
+    }
   }
 
 }

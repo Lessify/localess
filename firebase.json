@@ -41,6 +41,10 @@
           "function": "publishTranslations"
         },
         {
+          "source": "/api/importLocaleJson",
+          "function": "importLocaleJson"
+        },
+        {
           "source": "**",
           "destination": "/index.html"
         }

@@ -9,6 +9,7 @@ export class TranslationFilterPipe implements PipeTransform {
     locale: string,
     labels: string[]
   ): Translation[] {
+    console.log(`[TranslationFilterPipe] ${Date.now()}`)
     if (!items || (!filter && !labels.length)) {
       return items;
     }
@@ -17,7 +18,7 @@ export class TranslationFilterPipe implements PipeTransform {
         !labels.length ||
         (it.labels.length > 0 &&
           labels.every(label => it.labels.includes(label)));
-      if (it.id.indexOf(filter) !== -1 && matchByLabel) {
+      if (it.name.indexOf(filter) !== -1 && matchByLabel) {
         return true;
       } else {
         if (it.locales[locale]) {
