@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import {https, logger} from "firebase-functions";
 import {App, initializeApp} from 'firebase-admin/app'
 import {FieldValue, Firestore, getFirestore, WriteBatch} from 'firebase-admin/firestore'
 import {getStorage, Storage} from 'firebase-admin/storage'
@@ -12,6 +12,9 @@ import * as cors from "cors"
 
 //Const
 const BATCH_MAX = 500
+//HTTP
+const CACHE_MAX_AGE = 60 * 60// sec * min
+const CACHE_SHARE_MAX_AGE = 60 * 60// sec * min
 
 //Init
 const app: App = initializeApp()
@@ -23,12 +26,14 @@ const bucket = storage.bucket()
 const expressV1 = express()
 expressV1.use(cors({origin: true}))
 expressV1.get("/api/v1/spaces/:spaceId/translations/:locale.json", async (req, res) => {
+  logger.info("v1 spaces : " + JSON.stringify(req.params));
   const spaceId = req.params.spaceId
   let locale = req.params.locale
-  functions.logger.info("v1 spaces : " + JSON.stringify(req.params));
   const spaceRef = await firestore.doc(`spaces/${spaceId}`).get()
   if (!spaceRef.exists) {
-    res.status(404).send(new functions.https.HttpsError('not-found', 'Space not found'))
+    res
+    .status(404)
+    .send(new https.HttpsError('not-found', 'Space not found'))
   }
   const space = spaceRef.data() as Space
   if (!space.locales.some(it => it.id === locale)) {
@@ -36,14 +41,22 @@ expressV1.get("/api/v1/spaces/:spaceId/translations/:locale.json", async (req, r
   }
   bucket.file(`spaces/${spaceId}/translations/${locale}.json`).download()
   .then((content) => {
-    res.contentType("application/json").send(content.toString())
+    res
+    .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+    .contentType("application/json")
+    .send(content.toString())
+  })
+  .catch(() => {
+    res
+    .status(404)
+    .send(new https.HttpsError('not-found', 'File not found, Publish first.'))
   })
 })
-export const v1 = functions.https.onRequest(expressV1);
+export const v1 = https.onRequest(expressV1);
 
 // Publish
-export const publishTranslations = functions.https.onCall((data, context) => {
-  functions.logger.info("publishTranslations : " + JSON.stringify(data));
+export const publishTranslations = https.onCall((data, context) => {
+  logger.info("publishTranslations : " + JSON.stringify(data));
   const spaceId: string = data.spaceId
   return Promise.all([
     firestore.doc(`spaces/${spaceId}`).get(),
@@ -65,29 +78,29 @@ export const publishTranslations = functions.https.onCall((data, context) => {
           localeJson[trRef.id] = value
         })
         //Save generated JSON
-        functions.logger.info(`Save file to spaces/${spaceId}/translations/${locale.id}.json`)
+        logger.info(`Save file to spaces/${spaceId}/translations/${locale.id}.json`)
         bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`)
         .save(
           JSON.stringify(localeJson),
           (err?: Error | null) => {
             if (err) {
-              functions.logger.error(`Can not save file for Space(${spaceId}) and Locale(${locale})`)
-              functions.logger.error(err)
+              logger.error(`Can not save file for Space(${spaceId}) and Locale(${locale})`)
+              logger.error(err)
             }
           }
         )
       })
       return
     } else {
-      functions.logger.warn(`Space ${spaceId} does not exist.`)
-      return new functions.https.HttpsError('not-found', 'Space not found')
+      logger.warn(`Space ${spaceId} does not exist.`)
+      return new https.HttpsError('not-found', 'Space not found')
     }
   })
 })
 
 //Import JSON
-export const importLocaleJson = functions.https.onCall(async (data, context) => {
-  functions.logger.info("importLocaleJson : " + JSON.stringify(data));
+export const importLocaleJson = https.onCall(async (data, context) => {
+  logger.info("importLocaleJson : " + JSON.stringify(data));
   const spaceId: string = data.spaceId
   const locale: string = data.locale
   const importT: { [key: string]: string } = data.translations
@@ -143,12 +156,12 @@ export const importLocaleJson = functions.https.onCall(async (data, context) => 
         totalChanges++
       }
     })
-    console.log("Batch size : " + (batches.length + 1))
-    console.log("Batch total changes : " + totalChanges)
+    logger.info("Batch size : " + batches.length)
+    logger.info("Batch total changes : " + totalChanges)
     return await Promise.all(batches.map(it => it.commit()))
   } else {
-    functions.logger.warn(`Space ${spaceId} does not exist.`)
-    return new functions.https.HttpsError('not-found', 'Space not found')
+    logger.warn(`Space ${spaceId} does not exist.`)
+    return new https.HttpsError('not-found', 'Space not found')
   }
 
 })

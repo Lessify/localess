@@ -369,7 +369,7 @@ export class TranslationsComponent implements OnInit {
         fileContent = JSON.parse(await target.files[0].text())
         contentFieldsCount = Object.getOwnPropertyNames(fileContent).length
         this.dialog
-        .open<ConfirmationDialogComponent, ConfirmationDialogModel>(
+        .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
           ConfirmationDialogComponent,
           {
             data: {
@@ -380,7 +380,7 @@ export class TranslationsComponent implements OnInit {
         )
         .afterClosed()
         .pipe(
-          filter(it => it),
+          filter((it) => it || false),
           switchMap(() =>
             this.translationService.importDiffBatch(this.selectedSpace!.id, locale.id, fileContent)
           )
@@ -393,12 +393,12 @@ export class TranslationsComponent implements OnInit {
               console.error(err)
               this.notificationService.error('Translation can not be imported.')
             },
-          complete: ()=>{
-            setTimeout(() => {
-              this.isImportExportLoading = false
-              this.cd.markForCheck()
-            }, 1000)
-          }
+            complete: () => {
+              setTimeout(() => {
+                this.isImportExportLoading = false
+                this.cd.markForCheck()
+              }, 1000)
+            }
           }
         );
       }

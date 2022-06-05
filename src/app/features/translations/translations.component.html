@@ -2,7 +2,6 @@
   <mat-toolbar-row>
     Translations
     <span class="spacer"></span>
-    <span class="spacer"></span>
     <button
       mat-raised-button
       color="primary"
@@ -14,12 +13,13 @@
     <button
       mat-raised-button
       color="accent"
+      matTooltip="Publish Translations to be available via API call"
       (click)="publish()">
       <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
       Publish
     </button>
 
-    <button mat-icon-button [matMenuTriggerFor]="importMenu">
+    <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
       <ll-icon [animate]="isImportExportLoading" start="more_vert" end="sync"></ll-icon>
     </button>
 
