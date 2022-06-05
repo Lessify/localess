@@ -80,6 +80,7 @@ export class TranslationsComponent implements OnInit {
 
   isLoading: boolean = false;
   isPublishLoading: boolean = false;
+  isImportExportLoading: boolean = false;
 
   constructor(
     private readonly translationService: TranslationService,
@@ -183,7 +184,6 @@ export class TranslationsComponent implements OnInit {
           this.isPublishLoading = false
           this.cd.markForCheck()
         }, 1000)
-
       }
     })
   }
@@ -345,6 +345,7 @@ export class TranslationsComponent implements OnInit {
   }
 
   exportLocale(locale: string): void {
+    this.isImportExportLoading = true
     const tmp: { [key: string]: string } = {}
     this.translations.forEach(it => {
       if (it.locales[locale]) {
@@ -352,9 +353,14 @@ export class TranslationsComponent implements OnInit {
       }
     })
     saveAs(new Blob([JSON.stringify(tmp)], {type: "application/json"}), `${locale}.json`)
+    setTimeout(() => {
+      this.isImportExportLoading = false
+      this.cd.markForCheck()
+    }, 1000)
   }
 
   async onFileChange(event: Event, locale: Locale): Promise<void> {
+    this.isImportExportLoading = true
     let fileContent = {}
     let contentFieldsCount = 0
     if (event.target && event.target instanceof HTMLInputElement) {
@@ -386,7 +392,13 @@ export class TranslationsComponent implements OnInit {
             error: (err) => {
               console.error(err)
               this.notificationService.error('Translation can not be imported.')
-            }
+            },
+          complete: ()=>{
+            setTimeout(() => {
+              this.isImportExportLoading = false
+              this.cd.markForCheck()
+            }, 1000)
+          }
           }
         );
       }
