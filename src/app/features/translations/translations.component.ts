@@ -344,7 +344,13 @@ export class TranslationsComponent implements OnInit {
     });
   }
 
-  exportLocale(locale: string): void {
+  onLocalesExportCsv(): void {
+    this.isImportExportLoading = true
+    let header = ['name']
+    this.locales.forEach( it => header.push(it.id))
+  }
+
+  onLocaleExportJson(locale: string): void {
     this.isImportExportLoading = true
     const tmp: { [key: string]: string } = {}
     this.translations.forEach(it => {
@@ -359,7 +365,7 @@ export class TranslationsComponent implements OnInit {
     }, 1000)
   }
 
-  async onFileChange(event: Event, locale: Locale): Promise<void> {
+  async onLocaleImportJson(event: Event, locale: Locale): Promise<void> {
     this.isImportExportLoading = true
     let fileContent = {}
     let contentFieldsCount = 0

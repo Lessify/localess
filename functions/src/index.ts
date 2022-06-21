@@ -65,17 +65,16 @@ export const publishTranslations = https.onCall((data, context) => {
   .then(([spaceRef, translationsRef]) => {
     if (spaceRef.exists && !translationsRef.empty) {
       const space: Space = spaceRef.data() as Space
-      const translations = translationsRef.docs.filter(it => it.exists)//.map(it => it.data() as Translation)
+      const translations = translationsRef.docs.filter(it => it.exists).map(it => it.data() as Translation)
 
       space.locales.forEach((locale) => {
         const localeJson: { [key: string]: string } = {}
-        translations.forEach(trRef => {
-          const tr = trRef.data() as Translation
+        translations.forEach(tr => {
           let value = tr.locales[locale.id]
           if (!value) {
             value = tr.locales[space.localeFallback.id]
           }
-          localeJson[trRef.id] = value
+          localeJson[tr.name] = value
         })
         //Save generated JSON
         logger.info(`Save file to spaces/${spaceId}/translations/${locale.id}.json`)
@@ -109,7 +108,7 @@ export const importLocaleJson = https.onCall(async (data, context) => {
   const spaceRef = await firestore.doc(`spaces/${spaceId}`).get()
   const translationsRef = await firestore.collection(`spaces/${spaceId}/translations`).get()
 
-  if (spaceRef.exists && !translationsRef.empty) {
+  if (spaceRef.exists) {
     //const space: Space = spaceRef.data() as Space
     const origTransMap = new Map<string, Translation>()
     const origTransIdMap = new Map<string, string>()
