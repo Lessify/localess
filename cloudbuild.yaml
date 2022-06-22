@@ -1,0 +1,17 @@
+steps:
+# installing dependencies
+- name: 'node:16'
+  id: 'install-deps'
+  entrypoint: npm
+  args: ['install']
+# build and export content
+- name: 'node:16'
+  id: 'build-prod'
+  entrypoint: npm
+  args:
+    - 'run'
+    - 'build:prod'
+# deploy to firebase
+- name: gcr.io/$PROJECT_ID/firebase
+  id: 'deploy'
+  args: ['deploy', '--project=$PROJECT_ID', '--only=hosting,functions']
