@@ -4,7 +4,23 @@ The **Localess** helps to store internationalization in form of key-values.
 The application is design to be deployed in **Firebase**. 
 
 ## Firebase
-Create firebase project
+
+### Create Project
+
+### Create Web App connection
+- Open **Firebase Settings**
+- Go to **Your apps** section
+- Select **Web App** icon
+  - Fill the **App nickname** field
+  - Check **Also set up Firebase Hosting for this app** checkbox
+  - Press **Register app**
+  - Copy **firebaseConfig** values , as they will be required in [Cloud Build](#cloud-build) section
+  - Press **Next**
+  - Press **Next** again
+  - Copy the **Hosting Site ID**, as it will be required in [Cloud Build](#cloud-build) section
+  - Press **Continue to console**
+
+
 
 ## Deployment
 
@@ -37,6 +53,7 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **LOCALESS_FIREBASE_API_KEY**
     - **LOCALESS_FIREBASE_AUTH_DOMAIN**
     - **LOCALESS_FIREBASE_MESSAGING_SENDER_ID**
+    - **LOCALESS_FIREBASE_HOST_SITE_ID**
 - Click Create to save your build trigger.
 
 ## Utils Commands
