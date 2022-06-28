@@ -45,15 +45,15 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
   - Select next for Configuration:
     - Type : *Cloud Build configuration file (YAML or JSON)*
     - Location: *Repository*
-  - In Advanced you will need to add next Environment variables, with their related Firebase values:
-    - **LOCALESS_FIREBASE_PROJECT_ID**
-    - **LOCALESS_FIREBASE_APP_ID**
-    - **LOCALESS_FIREBASE_STORAGE_BUCKET**
-    - **LOCALESS_FIREBASE_LOCATION_ID**
-    - **LOCALESS_FIREBASE_API_KEY**
-    - **LOCALESS_FIREBASE_AUTH_DOMAIN**
-    - **LOCALESS_FIREBASE_MESSAGING_SENDER_ID**
-    - **LOCALESS_FIREBASE_HOST_SITE_ID**
+  - In Advanced you will need to add next Substitution variables, with their related Firebase values:
+    - **_LOCALESS_FIREBASE_PROJECT_ID** - firebase project id
+    - **_LOCALESS_FIREBASE_APP_ID** - firebase app id
+    - **_LOCALESS_FIREBASE_STORAGE_BUCKET** - firebase storage bucket
+    - **_LOCALESS_FIREBASE_LOCATION_ID** - firebase location id
+    - **_LOCALESS_FIREBASE_API_KEY** - firebase api key
+    - **_LOCALESS_FIREBASE_AUTH_DOMAIN** - firebase auth domain
+    - **_LOCALESS_FIREBASE_MESSAGING_SENDER_ID** - firebase messaging sender id
+    - **_LOCALESS_FIREBASE_HOST_SITE_ID** - firebase host site id
 - Click Create to save your build trigger.
 
 ## Utils Commands
