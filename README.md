@@ -6,6 +6,7 @@ The application is design to be deployed in **Firebase**.
 ## Firebase
 
 ### Create Project
+Open Firebase and create a new project
 
 ### Create Web App connection
 - Open **Firebase Settings**
@@ -20,7 +21,19 @@ The application is design to be deployed in **Firebase**.
   - Copy the **Hosting Site ID**, as it will be required in [Cloud Build](#cloud-build) section
   - Press **Continue to console**
 
+### Authentication
+**Firebase** makes Authentication easier for **Localess**. Localess needs to identify identity of the users to provide custom experience and keep the data secure.
 
+#### Email/Password
+
+#### Identity Providers
+You can connect with next Identity providers:
+- Google
+- Microsoft
+- Facebook
+- Apple
+- Twitter
+- GitHub
 
 ## Deployment
 
@@ -49,7 +62,7 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **_LOCALESS_FIREBASE_PROJECT_ID** - firebase project id
     - **_LOCALESS_FIREBASE_APP_ID** - firebase app id
     - **_LOCALESS_FIREBASE_STORAGE_BUCKET** - firebase storage bucket
-    - **_LOCALESS_FIREBASE_LOCATION_ID** - firebase location id
+    - **_LOCALESS_FIREBASE_LOCATION_ID** - firebase location id (at the moment it should be always )
     - **_LOCALESS_FIREBASE_API_KEY** - firebase api key
     - **_LOCALESS_FIREBASE_AUTH_DOMAIN** - firebase auth domain
     - **_LOCALESS_FIREBASE_MESSAGING_SENDER_ID** - firebase messaging sender id
