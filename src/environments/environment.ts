@@ -13,6 +13,9 @@ export const environment = {
     authDomain: 'localess-dev.firebaseapp.com',
     messagingSenderId: '923248451826',
   },
+  auth: {
+    customDomain: '*'
+  },
   production: false,
   test: true,
   useEmulators: true,

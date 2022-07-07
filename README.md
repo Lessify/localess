@@ -9,7 +9,7 @@ The application is design to be deployed in **Firebase**.
 Open Firebase and create a new project
 
 ### Create Web App connection
-- Open **Firebase Settings**
+- In [Firebase console](https://console.firebase.google.com/), open **Firebase Settings**
 - Go to **Your apps** section
 - Select **Web App** icon
   - Fill the **App nickname** field
@@ -26,14 +26,22 @@ Open Firebase and create a new project
 
 #### Email/Password
 
-#### Identity Providers
-You can connect with next Identity providers:
-- Google
-- Microsoft
-- Facebook
-- Apple
-- Twitter
-- GitHub
+#### Google Identity Provider
+Enable Google as a sign-in method in the Firebase console:
+- In the [Firebase console](https://console.firebase.google.com/), open the **Auth** section.
+- On the **Sign in method** tab, enable the **Google sign-in** method
+- Click **Save**.
+
+In case you limit access only to organization domain, please fill the domain name in [Cloud Build](#cloud-build)
+
+#### Microsoft Identity Provider
+To sign in users using Microsoft accounts (Azure Active Directory and personal Microsoft accounts), you must first enable Microsoft as a sign-in provider for your Firebase project:
+- In the [Firebase console](https://console.firebase.google.com/), open the **Auth** section.
+- On the **Sign in method** tab, enable the **Microsoft** provider.
+- Add the **Client ID** and **Client Secret** from that provider's developer console to the provider configuration:
+  - To register a Microsoft OAuth client, follow the instructions in [Quickstart: Register an app with the Azure Active Directory v2.0 endpoint](https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-v2-register-an-app). Note that this endpoint supports sign-in using Microsoft personal accounts as well as Azure Active Directory accounts. [Learn more](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-overview) about Azure Active Directory v2.0.
+  - When registering apps with these providers, be sure to register the ``*.firebaseapp.com`` domain for your project as the redirect domain for your app.
+- Click Save.
 
 ## Deployment
 
@@ -67,6 +75,7 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **_LOCALESS_FIREBASE_AUTH_DOMAIN** - firebase auth domain
     - **_LOCALESS_FIREBASE_MESSAGING_SENDER_ID** - firebase messaging sender id
     - **_LOCALESS_FIREBASE_HOST_SITE_ID** - firebase host site id
+    - **_LOCALESS_AUTH_CUSTOM_DOMAIN** - sign in custom domain, you can use organization domain (for example, lessify.io). If not provided it will allow all domains.
 - Click Create to save your build trigger.
 
 ## Utils Commands

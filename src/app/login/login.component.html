@@ -1,4 +1,14 @@
-<p>
+<p *ngIf="showLoginButton">
+  <button (click)="loginWithGoogle()">Log in with Google</button>
+  <button (click)="loginWithMicrosoft()">Log in with Microsoft</button>
+</p>
+
+<p *ngIf="showLogoutButton">
+  Hello {{ (user| async)?.displayName}} <br/>
+  <button (click)="logout()" *ngIf="showLogoutButton">Log out</button>
+</p>
+
+<p *ngIf="isTesting" class="text-break">
   showLogoutButton = {{showLogoutButton}} <br/>
   showLoginButton = {{showLoginButton}} <br/>
   <!--user = {{ user | async | json}} <br/>-->
@@ -6,13 +16,4 @@
   userDisplayName = {{ (user | async)?.displayName }} <br/>
   userEmail = {{ (user | async)?.email }} <br/>
   parsedToken = {{ parsedToken | async | json }} <br/>
-</p>
-
-<p *ngIf="showLoginButton">
-  <button (click)="loginWithGoogle()">Log in with Google</button>
-</p>
-
-<p *ngIf="showLogoutButton">
-  Hello {{ (user| async)?.displayName}} <br/>
-  <button (click)="logout()" *ngIf="showLogoutButton">Log out</button>
 </p>
