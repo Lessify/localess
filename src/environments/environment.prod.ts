@@ -12,7 +12,8 @@ export const environment = {
     messagingSenderId: env.LOCALESS_FIREBASE_MESSAGING_SENDER_ID,
   },
   auth: {
-    customDomain: env.LOCALESS_AUTH_CUSTOM_DOMAIN
+    customDomain: env.LOCALESS_AUTH_CUSTOM_DOMAIN,
+    provider: env.LOCALESS_AUTH_PROVIDER
   },
   production: true,
   test: false,

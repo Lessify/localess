@@ -14,7 +14,8 @@ export const environment = {
     messagingSenderId: '923248451826',
   },
   auth: {
-    customDomain: '*'
+    customDomain: '*',
+    provider: ''
   },
   production: false,
   test: true,
