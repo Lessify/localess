@@ -1,20 +1,22 @@
-import { Component, OnDestroy, Optional } from '@angular/core';
+import {Component, OnDestroy, OnInit, Optional} from '@angular/core';
 import {
   Auth,
   authState,
   GoogleAuthProvider,
+  IdTokenResult,
+  OAuthProvider,
   signInWithPopup,
   signOut,
   User,
-  IdTokenResult, UserCredential, OAuthProvider
+  UserCredential
 } from '@angular/fire/auth';
-import { Router } from '@angular/router';
-import { EMPTY, Observable, Subscription } from 'rxjs';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { map, tap } from 'rxjs/operators';
-import { Store } from '@ngrx/store';
-import { AppState } from '../core/state/core.state';
-import { authLogin, authLogout } from '../core/core.module';
+import {Router} from '@angular/router';
+import {EMPTY, from, Observable, Subscription} from 'rxjs';
+import {traceUntilFirst} from '@angular/fire/performance';
+import {map, tap} from 'rxjs/operators';
+import {Store} from '@ngrx/store';
+import {AppState} from '../core/state/core.state';
+import {authLogin, authLogout} from '../core/core.module';
 import {environment} from '../../environments/environment';
 
 @Component({
@@ -22,8 +24,9 @@ import {environment} from '../../environments/environment';
   templateUrl: './login.component.html',
   styles: []
 })
-export class LoginComponent implements OnDestroy {
+export class LoginComponent implements OnInit, OnDestroy {
   redirect = ['/features'];
+  isLoading: boolean = false;
 
   showLoginButton = false;
   showLogoutButton = false;
@@ -32,48 +35,78 @@ export class LoginComponent implements OnDestroy {
   private readonly userDisposable: Subscription | undefined;
   parsedToken?: Promise<IdTokenResult>;
 
-  constructor(private store: Store<AppState>, @Optional() private auth: Auth, private router: Router) {
+  constructor(
+    private store: Store<AppState>,
+    @Optional() public auth: Auth,
+    private router: Router
+  ) {
     if (this.auth) {
       this.user = authState(this.auth);
       this.userDisposable = authState(this.auth)
-        .pipe(
-          traceUntilFirst('auth'),
-          tap((u) => {
-            this.parsedToken = u?.getIdTokenResult();
-          }),
-          map((u) => !!u)
-        )
-        .subscribe((isLoggedIn) => {
-          this.showLoginButton = !isLoggedIn;
-          this.showLogoutButton = isLoggedIn;
-        });
+      .pipe(
+        traceUntilFirst('auth'),
+        tap((u) => {
+          this.parsedToken = u?.getIdTokenResult();
+        }),
+        map((u) => !!u)
+      )
+      .subscribe((isLoggedIn) => {
+        this.showLoginButton = !isLoggedIn;
+        this.showLogoutButton = isLoggedIn;
+      });
     }
   }
 
-  async loginWithGoogle(): Promise<void> {
+  ngOnInit(): void {
+    if (environment.production) {
+      from(this.loginWithProvider())
+      .subscribe(_ => {
+
+        }
+      )
+    }
+  }
+
+  async loginWithProvider(): Promise<void> {
+    switch (environment.auth.provider) {
+      case 'GOOGLE': {
+        await this.loginWithGoogle()
+        break
+      }
+      case 'MICROSOFT': {
+        await this.loginWithMicrosoft()
+        break
+      }
+      default : {
+        await this.loginWithGoogle()
+      }
+    }
+    this.store.dispatch(authLogin());
+    await this.router.navigate(this.redirect);
+  }
+
+  async loginWithGoogle(): Promise<UserCredential> {
     const provider = new GoogleAuthProvider();
-    if(environment.auth.customDomain) {
+    if (environment.auth.customDomain) {
       provider.setCustomParameters({
         hd: environment.auth.customDomain
       });
     }
     const uc: UserCredential = await signInWithPopup(this.auth, provider);
     console.log(uc)
-    this.store.dispatch(authLogin());
-    await this.router.navigate(this.redirect);
+    return uc;
   }
 
-  async loginWithMicrosoft(): Promise<void> {
+  async loginWithMicrosoft(): Promise<UserCredential> {
     const provider = new OAuthProvider('microsoft.com');
-    if(environment.auth.customDomain) {
+    if (environment.auth.customDomain) {
       provider.setCustomParameters({
         tenant: environment.auth.customDomain
       });
     }
     const uc: UserCredential = await signInWithPopup(this.auth, provider);
     console.log(uc)
-    this.store.dispatch(authLogin());
-    await this.router.navigate(this.redirect);
+    return uc;
   }
 
   async logout(): Promise<void> {

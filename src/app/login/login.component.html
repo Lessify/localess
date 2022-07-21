@@ -1,19 +1,26 @@
-<p *ngIf="showLoginButton">
-  <button (click)="loginWithGoogle()">Log in with Google</button>
-  <button (click)="loginWithMicrosoft()">Log in with Microsoft</button>
-</p>
+<div *ngIf="isLoading" class="container">
+  <mat-spinner> </mat-spinner>
+</div>
 
-<p *ngIf="showLogoutButton">
-  Hello {{ (user| async)?.displayName}} <br/>
-  <button (click)="logout()" *ngIf="showLogoutButton">Log out</button>
-</p>
+<div *ngIf="isTesting" class="container">
+  <p *ngIf="showLoginButton">
+    <button (click)="loginWithGoogle()">Log in with Google</button>
+    <button (click)="loginWithMicrosoft()">Log in with Microsoft</button>
+  </p>
 
-<p *ngIf="isTesting" class="text-break">
-  showLogoutButton = {{showLogoutButton}} <br/>
-  showLoginButton = {{showLoginButton}} <br/>
-  <!--user = {{ user | async | json}} <br/>-->
-  userId = {{ (user | async)?.uid }} <br/>
-  userDisplayName = {{ (user | async)?.displayName }} <br/>
-  userEmail = {{ (user | async)?.email }} <br/>
-  parsedToken = {{ parsedToken | async | json }} <br/>
-</p>
+  <p *ngIf="showLogoutButton">
+    Hello {{ (user| async)?.displayName}} <br/>
+    <button (click)="logout()" *ngIf="showLogoutButton">Log out</button>
+  </p>
+
+  <p class="text-break">
+    <b>showLogoutButton</b> = {{showLogoutButton}} <br/>
+    <b>showLoginButton</b> = {{showLoginButton}} <br/>
+    <!--user = {{ user | async | json}} <br/>-->
+    <b>userId</b> = {{ (user | async)?.uid }} <br/>
+    <b>userDisplayName</b> = {{ (user | async)?.displayName }} <br/>
+    <b>userEmail</b> = {{ (user | async)?.email }} <br/>
+    <b>parsedToken</b> = {{ parsedToken | async | json }} <br/>
+    <b>auth</b> = {{ auth | json }} <br/>
+  </p>
+</div>
