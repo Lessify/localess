@@ -187,7 +187,7 @@
       </div>
     </div>
     <div class="col-3 overlay text-break">
-      <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
+      <div *ngIf="selectedTranslation != undefined" class="d-flex flex-column">
         <div class="p-2 align-items-start">
           <button
             mat-stroked-button matTooltip="Edit"
@@ -255,7 +255,7 @@
         <mat-divider></mat-divider>
         <div class="p-2 align-items-start">
           <p><small><strong>Updated On</strong></small></p>
-          <p><small>{{selectedTranslation?.updatedOn?.toDate() | date:'medium'}}</small></p>
+          <p><small>{{selectedTranslation?.updatedOn?.toMillis() | date:'medium'}}</small></p>
         </div>
         <mat-divider></mat-divider>
       </div>
