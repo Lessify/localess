@@ -1,33 +1,33 @@
-import { ActivationEnd, Router } from '@angular/router';
-import { Injectable, NgZone } from '@angular/core';
-import { OverlayContainer } from '@angular/cdk/overlay';
-import { select, Store } from '@ngrx/store';
-import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { combineLatest, merge, of } from 'rxjs';
-import { tap, withLatestFrom, distinctUntilChanged, filter } from 'rxjs/operators';
+import {ActivationEnd, Router} from '@angular/router';
+import {Injectable, NgZone} from '@angular/core';
+import {OverlayContainer} from '@angular/cdk/overlay';
+import {select, Store} from '@ngrx/store';
+import {Actions, createEffect, ofType} from '@ngrx/effects';
+import {combineLatest, merge, of} from 'rxjs';
+import {distinctUntilChanged, filter, tap, withLatestFrom} from 'rxjs/operators';
 
-import { selectSettingsState } from '../core.state';
-import { LocalStorageService } from '../../local-storage/local-storage.service';
-import { AnimationsService } from '../../animations/animations.service';
-import { TitleService } from '../../title/title.service';
+import {selectSettingsState} from '../core.state';
+import {LocalStorageService} from '../../local-storage/local-storage.service';
+import {AnimationsService} from '../../animations/animations.service';
+import {TitleService} from '../../title/title.service';
 
 import {
   actionSettingsChangeAnimationsElements,
   actionSettingsChangeAnimationsPage,
   actionSettingsChangeAnimationsPageDisabled,
   actionSettingsChangeAutoNightMode,
+  actionSettingsChangeHour,
   actionSettingsChangeLanguage,
-  actionSettingsChangeTheme,
   actionSettingsChangeStickyHeader,
-  actionSettingsChangeHour
+  actionSettingsChangeTheme
 } from './settings.actions';
 import {
   selectEffectiveTheme,
-  selectSettingsLanguage,
+  selectElementsAnimations,
   selectPageAnimations,
-  selectElementsAnimations
+  selectSettingsLanguage
 } from './settings.selectors';
-import { State } from './settings.model';
+import {State} from './settings.model';
 
 export const SETTINGS_KEY = 'SETTINGS';
 

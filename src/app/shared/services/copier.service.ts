@@ -6,7 +6,7 @@
  *
  * Both released under MIT license - © Zeno Rocha
  */
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 
 @Injectable()
 export class CopierService {

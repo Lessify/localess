@@ -1,6 +1,6 @@
-import { Action, ActionReducer, createReducer, on } from '@ngrx/store';
-import { UserState } from './user.model';
-import { actionUserChange, actionUserRoleChange } from './user.actions';
+import {Action, ActionReducer, createReducer, on} from '@ngrx/store';
+import {UserState} from './user.model';
+import {actionUserChange, actionUserRoleChange} from './user.actions';
 
 export const initialState: UserState = {
   id: '',

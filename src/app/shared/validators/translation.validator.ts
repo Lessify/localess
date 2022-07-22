@@ -1,5 +1,5 @@
-import { ValidatorFn, Validators } from '@angular/forms';
-import { CommonValidator } from './common.validator';
+import {ValidatorFn, Validators} from '@angular/forms';
+import {CommonValidator} from './common.validator';
 
 export class TranslationValidator {
   public static NAME: ValidatorFn[] = [

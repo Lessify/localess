@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnInit,
-  ViewChild
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -16,12 +10,8 @@ import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
-import {
-  ConfirmationDialogComponent
-} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
-import {
-  ConfirmationDialogModel
-} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
+import {ConfirmationDialogComponent} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
 import {LocaleService} from '../../shared/services/locale.service';
 import {SpaceService} from '../../shared/services/space.service';
 import {Space} from '../../shared/models/space.model';

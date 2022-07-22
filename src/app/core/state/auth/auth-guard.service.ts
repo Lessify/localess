@@ -1,11 +1,10 @@
-import { Injectable, Optional } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
-import { Observable } from 'rxjs';
-import { Auth, authState } from '@angular/fire/auth';
-import { map, tap } from 'rxjs/operators';
-import { Store } from '@ngrx/store';
-import { selectIsAuthenticated } from './auth.selectors';
-import { AppState } from '../core.state';
+import {Injectable, Optional} from '@angular/core';
+import {CanActivate, Router, UrlTree} from '@angular/router';
+import {Observable} from 'rxjs';
+import {Auth, authState} from '@angular/fire/auth';
+import {map, tap} from 'rxjs/operators';
+import {Store} from '@ngrx/store';
+import {AppState} from '../core.state';
 
 @Injectable({
   providedIn: 'root'

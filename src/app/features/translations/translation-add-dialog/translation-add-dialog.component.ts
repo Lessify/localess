@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
+import {FormBuilder, FormGroup} from '@angular/forms';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {TranslationValidator} from '../../../shared/validators/translation.validator';
@@ -13,7 +13,7 @@ import {TranslationValidator} from '../../../shared/validators/translation.valid
 export class TranslationAddDialogComponent {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
   translationTypes: string[] = ['STRING', 'PLURAL', 'ARRAY'];
-  form: UntypedFormGroup = this.fb.group({
+  form: FormGroup = this.fb.group({
     name: this.fb.control('', TranslationValidator.NAME),
     type: this.fb.control('STRING', TranslationValidator.TYPE),
     description: this.fb.control('', TranslationValidator.DESCRIPTION),
@@ -21,7 +21,7 @@ export class TranslationAddDialogComponent {
     labels: this.fb.control([], TranslationValidator.DESCRIPTION)
   });
 
-  constructor(private readonly fb: UntypedFormBuilder) {
+  constructor(private readonly fb: FormBuilder) {
   }
 
   addLabel(event: MatChipInputEvent): void {

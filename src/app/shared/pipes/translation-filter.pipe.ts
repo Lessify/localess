@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import {Pipe, PipeTransform} from '@angular/core';
 import {Translation} from '../models/translation.model';
 
 @Pipe({ name: 'translationFilter' })

@@ -5,12 +5,11 @@ import {
   collectionData,
   deleteDoc,
   doc,
-  docData, DocumentReference,
+  docData,
+  DocumentReference,
   Firestore,
   serverTimestamp,
-  setDoc,
   updateDoc,
-  writeBatch,
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {
@@ -23,10 +22,9 @@ import {
 } from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
-import {UpdateData, WriteBatch, documentId} from '@firebase/firestore';
+import {UpdateData} from '@firebase/firestore';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 import {importLocaleJson} from '../../../../functions/src';
-
 
 
 @Injectable()

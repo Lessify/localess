@@ -8,7 +8,7 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import {UntypedFormArray, UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
+import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {debounce} from 'rxjs/operators';
 import {interval} from 'rxjs';
 import {TranslationValidator} from '../../../shared/validators/translation.validator';
@@ -22,27 +22,27 @@ import {TranslationValidator} from '../../../shared/validators/translation.valid
 export class TranslationArrayEditComponent implements OnInit, OnChanges {
   @Input() value: string = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
-  form: UntypedFormGroup = this.fb.group({
+  form: FormGroup = this.fb.group({
     values: this.fb.array([])
   });
 
-  constructor(private readonly fb: UntypedFormBuilder) {
+  constructor(private readonly fb: FormBuilder) {
   }
 
   ngOnInit(): void {
     this.form.valueChanges
-    .pipe(debounce(() => interval(200)))
-    .subscribe(val => {
-      this.valueChange.emit(
-        JSON.stringify(
-          val.values.filter((item: string) => item != null && item.length > 0)
-        )
-      );
-    });
+      .pipe(debounce(() => interval(200)))
+      .subscribe(val => {
+        this.valueChange.emit(
+          JSON.stringify(
+            val.values.filter((item: string) => item != null && item.length > 0)
+          )
+        );
+      });
   }
 
-  values(): UntypedFormArray {
-    return this.form.controls['values'] as UntypedFormArray;
+  values(): FormArray {
+    return this.form.controls['values'] as FormArray;
   }
 
   addItem(): void {
@@ -54,9 +54,9 @@ export class TranslationArrayEditComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     this.values().clear();
     JSON.parse(changes['value'].currentValue || '[]')
-    .forEach((it: any) =>
-      this.values().push(this.fb.control(it, TranslationValidator.ARRAY_VALUE))
-    );
+      .forEach((it: any) =>
+        this.values().push(this.fb.control(it, TranslationValidator.ARRAY_VALUE))
+      );
     if (changes['value'].isFirstChange()) {
       this.valueChange.emit(changes['value'].currentValue);
     }

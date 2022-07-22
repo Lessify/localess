@@ -1,17 +1,17 @@
 import * as assert from 'assert';
-import { OverlayContainer } from '@angular/cdk/overlay';
-import { TranslateService } from '@ngx-translate/core';
-import { Actions, getEffectsMetadata } from '@ngrx/effects';
-import { TestScheduler } from 'rxjs/testing';
-import { Store } from '@ngrx/store';
-import { of } from 'rxjs';
-import { NgZone } from '@angular/core';
+import {OverlayContainer} from '@angular/cdk/overlay';
+import {TranslateService} from '@ngx-translate/core';
+import {Actions} from '@ngrx/effects';
+import {TestScheduler} from 'rxjs/testing';
+import {Store} from '@ngrx/store';
+import {of} from 'rxjs';
+import {NgZone} from '@angular/core';
 
-import { AnimationsService, AppState, LocalStorageService, TitleService } from '../../core.module';
+import {AnimationsService, AppState, LocalStorageService, TitleService} from '../../core.module';
 
-import { SettingsEffects, SETTINGS_KEY } from './settings.effects';
-import { SettingsState } from './settings.model';
-import { actionSettingsChangeTheme } from './settings.actions';
+import {SETTINGS_KEY, SettingsEffects} from './settings.effects';
+import {SettingsState} from './settings.model';
+import {actionSettingsChangeTheme} from './settings.actions';
 
 const scheduler = new TestScheduler((actual, expected) => assert.deepStrictEqual(actual, expected));
 

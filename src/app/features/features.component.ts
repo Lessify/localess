@@ -1,11 +1,5 @@
 import browser from 'browser-detect';
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnInit,
-  Optional
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, Optional} from '@angular/core';
 import {MatSelectChange} from '@angular/material/select';
 import {select, Store} from '@ngrx/store';
 import {combineLatest, from, Observable} from 'rxjs';

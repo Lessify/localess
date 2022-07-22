@@ -1,9 +1,9 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { FeaturesComponent } from './features.component';
-import { AngularFireAuthGuard, customClaims, redirectUnauthorizedTo } from '@angular/fire/compat/auth-guard';
-import { pipe } from 'rxjs';
-import { map } from 'rxjs/operators';
+import {NgModule} from '@angular/core';
+import {RouterModule, Routes} from '@angular/router';
+import {FeaturesComponent} from './features.component';
+import {customClaims} from '@angular/fire/compat/auth-guard';
+import {pipe} from 'rxjs';
+import {map} from 'rxjs/operators';
 
 const adminOnly = () =>
   pipe(

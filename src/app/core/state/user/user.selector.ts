@@ -1,7 +1,7 @@
-import { createSelector } from '@ngrx/store';
-import { AppState, selectUserState } from '../core.state';
-import { MemoizedSelector } from '@ngrx/store/src/selector';
-import { UserState } from './user.model';
+import {createSelector} from '@ngrx/store';
+import {AppState, selectUserState} from '../core.state';
+import {MemoizedSelector} from '@ngrx/store/src/selector';
+import {UserState} from './user.model';
 
 export const selectUser: MemoizedSelector<AppState, UserState> = createSelector(
   selectUserState,

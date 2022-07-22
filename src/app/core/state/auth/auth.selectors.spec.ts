@@ -1,4 +1,4 @@
-import { selectAuth, selectIsAuthenticated } from './auth.selectors';
+import {selectAuth, selectIsAuthenticated} from './auth.selectors';
 
 describe('Auth Selectors', () => {
   it('selectAuth', () => {

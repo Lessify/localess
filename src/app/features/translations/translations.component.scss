@@ -53,7 +53,8 @@ mat-list-item.odd {
 
 .overlay {
   //overflow: overlay;
-  height: 87vh;
+  //height: 87vh;
+  height: calc(100vh - 160px);
   padding: inherit;
   border: 1px solid #efefef;
 }

@@ -1,42 +1,42 @@
-import { CommonModule } from '@angular/common';
-import { NgModule, Optional, SkipSelf, ErrorHandler } from '@angular/core';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { StoreRouterConnectingModule, RouterStateSerializer } from '@ngrx/router-store';
-import { StoreModule } from '@ngrx/store';
-import { EffectsModule } from '@ngrx/effects';
-import { StoreDevtoolsModule } from '@ngrx/store-devtools';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatListModule } from '@angular/material/list';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { FormsModule } from '@angular/forms';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import {CommonModule} from '@angular/common';
+import {ErrorHandler, NgModule, Optional, SkipSelf} from '@angular/core';
+import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
+import {RouterStateSerializer, StoreRouterConnectingModule} from '@ngrx/router-store';
+import {StoreModule} from '@ngrx/store';
+import {EffectsModule} from '@ngrx/effects';
+import {StoreDevtoolsModule} from '@ngrx/store-devtools';
+import {MatSidenavModule} from '@angular/material/sidenav';
+import {MatToolbarModule} from '@angular/material/toolbar';
+import {MatListModule} from '@angular/material/list';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatIconModule} from '@angular/material/icon';
+import {MatSelectModule} from '@angular/material/select';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {FormsModule} from '@angular/forms';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
 
-import { environment } from '../../environments/environment';
+import {environment} from '../../environments/environment';
 
-import { AppState, reducers, metaReducers, selectRouterState } from './state/core.state';
-import { TitleService } from './title/title.service';
-import { ROUTE_ANIMATIONS_ELEMENTS, routeAnimations } from './animations/route.animations';
-import { AnimationsService } from './animations/animations.service';
-import { AppErrorHandler } from './error-handler/app-error-handler.service';
-import { CustomSerializer } from './router/custom-serializer';
-import { LocalStorageService } from './local-storage/local-storage.service';
-import { HttpErrorInterceptor } from './http-interceptors/http-error.interceptor';
-import { NotificationService } from './notifications/notification.service';
-import { SettingsEffects } from './state/settings/settings.effects';
+import {AppState, metaReducers, reducers, selectRouterState} from './state/core.state';
+import {TitleService} from './title/title.service';
+import {ROUTE_ANIMATIONS_ELEMENTS, routeAnimations} from './animations/route.animations';
+import {AnimationsService} from './animations/animations.service';
+import {AppErrorHandler} from './error-handler/app-error-handler.service';
+import {CustomSerializer} from './router/custom-serializer';
+import {LocalStorageService} from './local-storage/local-storage.service';
+import {HttpErrorInterceptor} from './http-interceptors/http-error.interceptor';
+import {NotificationService} from './notifications/notification.service';
+import {SettingsEffects} from './state/settings/settings.effects';
 import {
-  selectSettingsLanguage,
   selectEffectiveTheme,
+  selectSettingsLanguage,
   selectSettingsStickyHeader
 } from './state/settings/settings.selectors';
-import { MatButtonModule } from '@angular/material/button';
-import { AuthEffects } from './state/auth/auth.effects';
-import { selectAuth, selectIsAuthenticated } from './state/auth/auth.selectors';
-import { authLogin, authLogout } from './state/auth/auth.actions';
-import { AuthGuardService } from './state/auth/auth-guard.service';
+import {MatButtonModule} from '@angular/material/button';
+import {AuthEffects} from './state/auth/auth.effects';
+import {selectAuth, selectIsAuthenticated} from './state/auth/auth.selectors';
+import {authLogin, authLogout} from './state/auth/auth.actions';
+import {AuthGuardService} from './state/auth/auth-guard.service';
 
 export {
   TitleService,

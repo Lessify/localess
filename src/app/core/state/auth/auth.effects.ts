@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
-import { ofType, createEffect, Actions } from '@ngrx/effects';
-import { tap } from 'rxjs/operators';
+import {Injectable} from '@angular/core';
+import {Router} from '@angular/router';
+import {Actions, createEffect, ofType} from '@ngrx/effects';
+import {tap} from 'rxjs/operators';
 
-import { authLogin, authLogout } from './auth.actions';
-import { LocalStorageService } from '../../local-storage/local-storage.service';
+import {authLogin, authLogout} from './auth.actions';
+import {LocalStorageService} from '../../local-storage/local-storage.service';
 
 export const AUTH_KEY = 'AUTH';
 

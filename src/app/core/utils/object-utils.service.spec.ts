@@ -1,4 +1,4 @@
-import { ObjectUtils } from './object-utils.service';
+import {ObjectUtils} from './object-utils.service';
 
 describe('AddFirstOrganisationComponent', () => {
   it('is equal', () => {

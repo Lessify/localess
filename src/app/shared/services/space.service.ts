@@ -6,7 +6,6 @@ import {
   deleteDoc,
   doc,
   docData,
-  DocumentData,
   DocumentReference,
   Firestore,
   serverTimestamp,

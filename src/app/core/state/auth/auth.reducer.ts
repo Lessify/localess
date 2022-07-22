@@ -1,6 +1,6 @@
-import { AuthState } from './auth.models';
-import { authLogin, authLogout } from './auth.actions';
-import { createReducer, on, Action } from '@ngrx/store';
+import {AuthState} from './auth.models';
+import {authLogin, authLogout} from './auth.actions';
+import {Action, createReducer, on} from '@ngrx/store';
 
 export const initialState: AuthState = {
   isAuthenticated: false

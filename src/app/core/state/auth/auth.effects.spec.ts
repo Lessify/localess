@@ -1,12 +1,12 @@
 import * as assert from 'assert';
-import { Router } from '@angular/router';
-import { Actions, getEffectsMetadata } from '@ngrx/effects';
-import { EMPTY } from 'rxjs';
-import { TestScheduler } from 'rxjs/testing';
+import {Router} from '@angular/router';
+import {Actions, getEffectsMetadata} from '@ngrx/effects';
+import {EMPTY} from 'rxjs';
+import {TestScheduler} from 'rxjs/testing';
 
-import { LocalStorageService } from '../local-storage/local-storage.service';
-import { authLogin, authLogout } from './auth.actions';
-import { AuthEffects, AUTH_KEY } from './auth.effects';
+import {LocalStorageService} from '../local-storage/local-storage.service';
+import {authLogin, authLogout} from './auth.actions';
+import {AUTH_KEY, AuthEffects} from './auth.effects';
 
 const scheduler = new TestScheduler((actual, expected) => assert.deepStrictEqual(actual, expected));
 

@@ -1,4 +1,4 @@
-import { createAction, props } from '@ngrx/store';
+import {createAction, props} from '@ngrx/store';
 
 // tslint:disable-next-line:typedef
 export const actionUserChange = createAction(

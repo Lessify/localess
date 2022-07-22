@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup} from '@angular/forms';
 import {SpaceDialogModel} from './space-dialog.model';
 import {SpaceValidator} from '../../../shared/validators/space.validator';
 
@@ -11,12 +11,12 @@ import {SpaceValidator} from '../../../shared/validators/space.validator';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SpaceDialogComponent implements OnInit {
-  form: UntypedFormGroup = this.fb.group({
+  form: FormGroup = this.fb.group({
     name: this.fb.control('', SpaceValidator.NAME)
   });
 
   constructor(
-    private readonly fb: UntypedFormBuilder,
+    private readonly fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: SpaceDialogModel
   ) {
   }

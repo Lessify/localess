@@ -1,4 +1,4 @@
-import { initialState, settingsReducer } from './settings.reducer';
+import {initialState, settingsReducer} from './settings.reducer';
 
 import {
   actionSettingsChangeAnimationsElements,

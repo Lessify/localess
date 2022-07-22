@@ -24,7 +24,7 @@ import {CoreModule} from './core/core.module';
 import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
 import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {connectFunctionsEmulator, getFunctions, provideFunctions} from '@angular/fire/functions';
+import {getFunctions, provideFunctions} from '@angular/fire/functions';
 
 let resolvePersistenceEnabled: (enabled: boolean) => void;
 
