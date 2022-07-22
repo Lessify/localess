@@ -77,25 +77,24 @@ const SHARED_COMPONENTS: any[] = [
 ]
 
 @NgModule({
-  imports: [
-    CommonModule,
-    FormsModule,
-    MATERIAL_MODULES,
-  ],
-  declarations: [
-    SHARED_COMPONENTS,
-    SHARED_PIPES
-  ],
-  exports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MATERIAL_MODULES,
-    SHARED_COMPONENTS,
-    SHARED_PIPES
-  ],
-  providers: [CopierService],
-  entryComponents: [ConfirmationDialogComponent]
+    imports: [
+        CommonModule,
+        FormsModule,
+        MATERIAL_MODULES,
+    ],
+    declarations: [
+        SHARED_COMPONENTS,
+        SHARED_PIPES
+    ],
+    exports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MATERIAL_MODULES,
+        SHARED_COMPONENTS,
+        SHARED_PIPES
+    ],
+    providers: [CopierService]
 })
 export class SharedModule {
 }

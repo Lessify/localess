@@ -8,7 +8,7 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
+import {UntypedFormArray, UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
 import {debounce} from 'rxjs/operators';
 import {interval} from 'rxjs';
 import {TranslationValidator} from '../../../shared/validators/translation.validator';
@@ -22,11 +22,11 @@ import {TranslationValidator} from '../../../shared/validators/translation.valid
 export class TranslationArrayEditComponent implements OnInit, OnChanges {
   @Input() value: string = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
-  form: FormGroup = this.fb.group({
+  form: UntypedFormGroup = this.fb.group({
     values: this.fb.array([])
   });
 
-  constructor(private readonly fb: FormBuilder) {
+  constructor(private readonly fb: UntypedFormBuilder) {
   }
 
   ngOnInit(): void {
@@ -41,8 +41,8 @@ export class TranslationArrayEditComponent implements OnInit, OnChanges {
     });
   }
 
-  values(): FormArray {
-    return this.form.controls['values'] as FormArray;
+  values(): UntypedFormArray {
+    return this.form.controls['values'] as UntypedFormArray;
   }
 
   addItem(): void {

@@ -10,7 +10,7 @@ import {combineLatest, debounceTime, Observable, startWith} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
 import {filter, map, switchMap, tap} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
-import {FormBuilder, FormControl} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormControl} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {Store} from '@ngrx/store';
 import {TranslationService} from '../../shared/services/translation.service';
@@ -59,13 +59,13 @@ export class TranslationsComponent implements OnInit {
   DEFAULT_LOCALE: string = 'en';
 
   //Search
-  searchCtrl: FormControl = new FormControl();
+  searchCtrl: UntypedFormControl = new UntypedFormControl();
   searchValue: string = ''
 
   //Labels
   availableLabels: string[] = [];
   selectedLabels: string[] = [];
-  labelCtrl: FormControl = new FormControl();
+  labelCtrl: UntypedFormControl = new UntypedFormControl();
   filteredLabels: Observable<string[]>;
 
   selectedTranslation?: Translation;
@@ -87,7 +87,7 @@ export class TranslationsComponent implements OnInit {
     private readonly spaceService: SpaceService,
     private readonly notificationService: NotificationService,
     private readonly route: ActivatedRoute,
-    private readonly fb: FormBuilder,
+    private readonly fb: UntypedFormBuilder,
     private readonly dialog: MatDialog,
     private readonly store: Store<AppState>,
     private readonly cd: ChangeDetectorRef,

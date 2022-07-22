@@ -32,20 +32,19 @@ import {
 
 
 @NgModule({
-  declarations: [
-    TranslationsComponent,
-    TranslationArrayEditComponent,
-    TranslationArrayViewComponent,
-    TranslationPluralEditComponent,
-    TranslationPluralViewComponent,
-    TranslationStringEditComponent,
-    TranslationStringViewComponent,
-    TranslationAddDialogComponent,
-    TranslationEditDialogComponent
-  ],
-  imports: [CommonModule, SharedModule, TranslationsRoutingModule],
-  providers: [TranslationService],
-  entryComponents: [TranslationAddDialogComponent, TranslationEditDialogComponent]
+    declarations: [
+        TranslationsComponent,
+        TranslationArrayEditComponent,
+        TranslationArrayViewComponent,
+        TranslationPluralEditComponent,
+        TranslationPluralViewComponent,
+        TranslationStringEditComponent,
+        TranslationStringViewComponent,
+        TranslationAddDialogComponent,
+        TranslationEditDialogComponent
+    ],
+    imports: [CommonModule, SharedModule, TranslationsRoutingModule],
+    providers: [TranslationService]
 })
 export class TranslationsModule {
 }

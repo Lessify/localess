@@ -9,10 +9,9 @@ import {LocaleService} from '../../shared/services/locale.service';
 import {SpaceService} from '../../shared/services/space.service';
 
 @NgModule({
-  declarations: [LocalesComponent, LocaleDialogComponent],
-  imports: [CommonModule, SharedModule, LocalesRoutingModule],
-  providers: [LocaleService, SpaceService],
-  entryComponents: [LocaleDialogComponent]
+    declarations: [LocalesComponent, LocaleDialogComponent],
+    imports: [CommonModule, SharedModule, LocalesRoutingModule],
+    providers: [LocaleService, SpaceService]
 })
 export class LocalesModule {
 }

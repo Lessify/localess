@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 import {Observable, startWith} from 'rxjs';
 import {CommonValidator} from '../../../shared/validators/common.validator';
 import {LocaleService} from '../../../shared/services/locale.service';
@@ -16,7 +16,7 @@ import {LocaleValidator} from '../../../shared/validators/locale.validator';
 })
 export class LocaleDialogComponent implements OnInit {
   locales: Locale[] = [];
-  form: FormGroup = this.fb.group({
+  form: UntypedFormGroup = this.fb.group({
     locale: this.fb.control(null, LocaleValidator.LOCALE)
   });
   filteredLocales: Observable<Locale[]> = this.form.controls['locale'].valueChanges.pipe(
@@ -27,7 +27,7 @@ export class LocaleDialogComponent implements OnInit {
 
 
   constructor(
-    private readonly fb: FormBuilder,
+    private readonly fb: UntypedFormBuilder,
     private readonly localeService: LocaleService,
     @Inject(MAT_DIALOG_DATA) public data: Locale[]
   ) {

@@ -4,7 +4,7 @@ import {
   Inject,
   OnInit
 } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import {TranslationValidator} from '../../../shared/validators/translation.validator';
@@ -17,13 +17,13 @@ import {Translation} from '../../../shared/models/translation.model';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TranslationEditDialogComponent implements OnInit {
-  form: FormGroup = this.fb.group({
+  form: UntypedFormGroup = this.fb.group({
     description: this.fb.control('', TranslationValidator.DESCRIPTION),
     labels: this.fb.control([], TranslationValidator.DESCRIPTION)
   });
 
   constructor(
-    private readonly fb: FormBuilder,
+    private readonly fb: UntypedFormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: Translation
   ) {}
 

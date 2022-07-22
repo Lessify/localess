@@ -8,7 +8,7 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { debounce } from 'rxjs/operators';
 import { interval } from 'rxjs';
 import {TranslationValidator} from '../../../shared/validators/translation.validator';
@@ -23,7 +23,7 @@ import {ObjectUtils} from '../../../core/utils/object-utils.service';
 export class TranslationPluralEditComponent implements OnInit, OnChanges {
   @Input() value: string = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
-  form: FormGroup = this.fb.group({
+  form: UntypedFormGroup = this.fb.group({
     0: this.fb.control(null, TranslationValidator.PLURAL_VALUE),
     1: this.fb.control(null, TranslationValidator.PLURAL_VALUE),
     2: this.fb.control(null, TranslationValidator.PLURAL_VALUE),
@@ -32,7 +32,7 @@ export class TranslationPluralEditComponent implements OnInit, OnChanges {
     5: this.fb.control(null, TranslationValidator.PLURAL_VALUE)
   });
 
-  constructor(private readonly fb: FormBuilder) {}
+  constructor(private readonly fb: UntypedFormBuilder) {}
 
   ngOnInit(): void {
     this.form.valueChanges

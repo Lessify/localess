@@ -8,7 +8,7 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { debounce } from 'rxjs/operators';
 import { interval } from 'rxjs';
 
@@ -22,10 +22,10 @@ export class TranslationStringEditComponent implements OnInit, OnChanges {
   @Input() value: string = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
 
-  form: FormGroup = this.fb.group({
+  form: UntypedFormGroup = this.fb.group({
     value: this.fb.control(null)
   });
-  constructor(private readonly fb: FormBuilder) {}
+  constructor(private readonly fb: UntypedFormBuilder) {}
 
   ngOnInit(): void {
     this.form.valueChanges

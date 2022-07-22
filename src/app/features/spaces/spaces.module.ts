@@ -8,10 +8,9 @@ import {SpaceDialogComponent} from './space-dialog/space-dialog.component';
 import {SpaceService} from '../../shared/services/space.service';
 
 @NgModule({
-  declarations: [SpacesComponent, SpaceDialogComponent],
-  imports: [CommonModule, SharedModule, SpacesRoutingModule],
-  providers: [SpaceService],
-  entryComponents: [SpaceDialogComponent]
+    declarations: [SpacesComponent, SpaceDialogComponent],
+    imports: [CommonModule, SharedModule, SpacesRoutingModule],
+    providers: [SpaceService]
 })
 export class SpacesModule {
 }
