@@ -13,7 +13,7 @@ export const environment = {
   },
   auth: {
     customDomain: env.LOCALESS_AUTH_CUSTOM_DOMAIN,
-    provider: env.LOCALESS_AUTH_PROVIDER
+    providers: env.LOCALESS_AUTH_PROVIDERS
   },
   production: true,
   test: false,

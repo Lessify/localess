@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit, Optional} from '@angular/core';
+import {Component, OnDestroy, Optional} from '@angular/core';
 import {
   Auth,
   authState,
@@ -11,22 +11,34 @@ import {
   UserCredential
 } from '@angular/fire/auth';
 import {Router} from '@angular/router';
-import {EMPTY, from, Observable, Subscription} from 'rxjs';
+import {EMPTY, Observable, Subscription} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
 import {Store} from '@ngrx/store';
 import {AppState} from '../core/state/core.state';
 import {authLogin, authLogout} from '../core/core.module';
 import {environment} from '../../environments/environment';
+import {signInWithEmailAndPassword} from '@firebase/auth';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 
 @Component({
   selector: 'll-login',
   templateUrl: './login.component.html',
-  styles: []
+  styleUrls: ['./login.component.scss']
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent implements OnDestroy {
   redirect = ['/features'];
   isLoading: boolean = false;
+
+  //Form
+  form: FormGroup = this.fb.group({
+    email: this.fb.control('', [Validators.minLength(2)]),
+    password: this.fb.control('', [Validators.minLength(2)]),
+  });
+
+  //Login
+  isGoogleAuthEnabled: boolean = environment.auth.providers.includes('GOOGLE');
+  isMicrosoftAuthEnabled: boolean = environment.auth.providers.includes('MICROSOFT');
 
   showLoginButton = false;
   showLogoutButton = false;
@@ -36,9 +48,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   parsedToken?: Promise<IdTokenResult>;
 
   constructor(
-    private store: Store<AppState>,
-    @Optional() public auth: Auth,
-    private router: Router
+    private readonly store: Store<AppState>,
+    @Optional() public readonly auth: Auth,
+    private readonly router: Router,
+    private readonly fb: FormBuilder
   ) {
     if (this.auth) {
       this.user = authState(this.auth);
@@ -57,35 +70,15 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnInit(): void {
-    if (environment.production) {
-      from(this.loginWithProvider())
-      .subscribe(_ => {
-
-        }
-      )
-    }
-  }
-
-  async loginWithProvider(): Promise<void> {
-    switch (environment.auth.provider) {
-      case 'GOOGLE': {
-        await this.loginWithGoogle()
-        break
-      }
-      case 'MICROSOFT': {
-        await this.loginWithMicrosoft()
-        break
-      }
-      default : {
-        await this.loginWithGoogle()
-      }
-    }
+  async loginWithEmailAndPassword(email: string, password: string): Promise<void> {
+    console.log(`email : ${email} pass: ${password}`)
+    const uc: UserCredential = await signInWithEmailAndPassword(this.auth, email, password);
+    console.log(uc)
     this.store.dispatch(authLogin());
     await this.router.navigate(this.redirect);
   }
 
-  async loginWithGoogle(): Promise<UserCredential> {
+  async loginWithGoogle(): Promise<void> {
     const provider = new GoogleAuthProvider();
     if (environment.auth.customDomain) {
       provider.setCustomParameters({
@@ -94,10 +87,11 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
     const uc: UserCredential = await signInWithPopup(this.auth, provider);
     console.log(uc)
-    return uc;
+    this.store.dispatch(authLogin());
+    await this.router.navigate(this.redirect);
   }
 
-  async loginWithMicrosoft(): Promise<UserCredential> {
+  async loginWithMicrosoft(): Promise<void> {
     const provider = new OAuthProvider('microsoft.com');
     if (environment.auth.customDomain) {
       provider.setCustomParameters({
@@ -106,7 +100,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
     const uc: UserCredential = await signInWithPopup(this.auth, provider);
     console.log(uc)
-    return uc;
+    this.store.dispatch(authLogin());
+    await this.router.navigate(this.redirect);
   }
 
   async logout(): Promise<void> {
