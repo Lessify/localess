@@ -48,5 +48,5 @@ Thumbs.db
 .firebase
 *-debug.log
 .runtimeconfig.json
-.firebase_export
+firebase-export
 firebase-export-*

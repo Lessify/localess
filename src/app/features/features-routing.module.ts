@@ -1,14 +1,27 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {FeaturesComponent} from './features.component';
-import {customClaims} from '@angular/fire/compat/auth-guard';
+import {AuthGuard, customClaims} from '@angular/fire/auth-guard';
 import {pipe} from 'rxjs';
 import {map} from 'rxjs/operators';
 
-const adminOnly = () =>
+const ROLE_READ = 'read'
+const ROLE_WRITE = 'write'
+const ROLE_ADMIN = 'admin'
+
+const hasRoleAdmin = () =>
   pipe(
     customClaims,
-    map((claims) => claims.role === 'admin')
+    map((claims) => claims.role === ROLE_ADMIN)
+  );
+
+const hasAnyRole = (roles: string[]) =>
+  pipe(
+    customClaims,
+    map((claims) => {
+      debugger
+      roles.includes(claims.role)
+    })
   );
 
 const routes: Routes = [
@@ -18,48 +31,29 @@ const routes: Routes = [
     children: [
       {
         path: 'spaces',
-        loadChildren: ()=> import('./spaces/spaces.module').then(m => m.SpacesModule),
+        loadChildren: () => import('./spaces/spaces.module').then(m => m.SpacesModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasRoleAdmin
+        }
       },
       {
         path: 'translations',
-        loadChildren: ()=> import('./translations/translations.module').then(m => m.TranslationsModule),
+        loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
+        // canActivate: [AuthGuard],
+        // data: {
+        //   authGuardPipe: hasAnyRole([ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
+        // }
       },
       {
         path: 'locales',
-        loadChildren: ()=> import('./locales/locales.module').then(m => m.LocalesModule),
+        loadChildren: () => import('./locales/locales.module').then(m => m.LocalesModule),
+        canActivate: [AuthGuard],
+        // data: {
+        //   authGuardPipe: hasAnyRole([ROLE_WRITE, ROLE_ADMIN])
+        // }
       },
     ]
-    // children: [
-    //   {
-    //     path: 'products',
-    //     loadChildren: () => import('./products/products.module').then((m) => m.ProductsModule),
-    //     canActivate: [AngularFireAuthGuard],
-    //     data: {
-    //       authGuardPipe: adminOnly
-    //     }
-    //   },
-    //   {
-    //     path: 'variant-attributes',
-    //     loadChildren: () =>
-    //       import('./variant-attributes/variant-attributes.module').then((m) => m.VariantAttributesModule),
-    //     canActivate: [AngularFireAuthGuard],
-    //     data: {
-    //       authGuardPipe: adminOnly
-    //     }
-    //   },
-    //   {
-    //     path: 'categories',
-    //     loadChildren: () => import('./categories/categories.module').then((m) => m.CategoriesModule),
-    //     canActivate: [AngularFireAuthGuard],
-    //     data: {
-    //       authGuardPipe: adminOnly
-    //     }
-    //   },
-    //   {
-    //     path: 'settings',
-    //     loadChildren: () => import('./settings/settings.module').then((m) => m.SettingsModule)
-    //   }
-    // ]
   }
 ];
 
@@ -67,4 +61,5 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class FeaturesRoutingModule {}
+export class FeaturesRoutingModule {
+}

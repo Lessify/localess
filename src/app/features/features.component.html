@@ -21,13 +21,12 @@
       <mat-divider></mat-divider>
       <mat-nav-list>
 
-
         <mat-list-item *ngIf="!selectedSpace" matRipple routerLink="/features/spaces">
           <mat-icon mat-list-icon>space_dashboard</mat-icon>
           No Spaces. Click here to create one.
         </mat-list-item>
 
-        <ng-container *ngIf="selectedSpace">
+        <ng-container *ngIf="!isRoleNone && selectedSpace">
           <mat-list-item matRipple [matMenuTriggerFor]="menuSpaces">
             <mat-icon mat-list-icon>space_dashboard</mat-icon>
             {{selectedSpace.name}}
@@ -42,17 +41,16 @@
           <mat-divider></mat-divider>
           <div mat-subheader>Spaces</div>
 
-          <mat-list-item *ngFor="let item of userSideMenu" [routerLink]="[item.link]">
+          <mat-list-item *ngFor="let item of filterMenuByRole(userSideMenu,role)" [routerLink]="[item.link]" routerLinkActive="active">
             <mat-icon mat-list-icon>{{item.icon}}</mat-icon>
             {{item.label}}
           </mat-list-item>
         </ng-container>
 
-
         <ng-container *ngIf="isRoleAdmin">
           <mat-divider></mat-divider>
           <div mat-subheader>Admin</div>
-          <mat-list-item *ngFor="let item of adminSideMenu" [routerLink]="[item.link]">
+          <mat-list-item *ngFor="let item of adminSideMenu" [routerLink]="[item.link]" routerLinkActive="active">
             <mat-icon mat-list-icon>{{item.icon}}</mat-icon>
             {{item.label}}
           </mat-list-item>
@@ -63,6 +61,9 @@
     </mat-sidenav>
 
     <mat-sidenav-content>
+      <ng-container *ngIf="isRoleNone">
+        Please contact your administrator to grant you access to resources.
+      </ng-container>
       <router-outlet></router-outlet>
     </mat-sidenav-content>
 

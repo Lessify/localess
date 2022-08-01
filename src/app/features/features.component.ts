@@ -1,5 +1,11 @@
 import browser from 'browser-detect';
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, Optional} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  Optional
+} from '@angular/core';
 import {MatSelectChange} from '@angular/material/select';
 import {select, Store} from '@ngrx/store';
 import {combineLatest, from, Observable} from 'rxjs';
@@ -26,10 +32,15 @@ import {SpaceService} from '../shared/services/space.service';
 import {Space} from '../shared/models/space.model';
 import {selectSpace} from '../core/state/space/space.selector';
 
+const ROLE_READ = 'read';
+const ROLE_WRITE = 'write';
+const ROLE_ADMIN = 'admin';
+
 interface SideMenuItem {
   icon: string;
   link: string;
   label: string;
+  roles?: string[];
 }
 
 @Component({
@@ -40,7 +51,11 @@ interface SideMenuItem {
   animations: [routeAnimations]
 })
 export class FeaturesComponent implements OnInit {
+  isRoleNone = false;
+  isRoleRead = false;
+  isRoleWrite = false;
   isRoleAdmin = false;
+  role = 'none';
   spaces: Space[] = [];
   selectedSpace?: Space;
   title: string = 'Title'
@@ -48,8 +63,8 @@ export class FeaturesComponent implements OnInit {
   logo = 'assets/logo.png';
 
   userSideMenu: SideMenuItem[] = [
-    {link: 'translations', label: 'Translations', icon: 'translate'},
-    {link: 'locales', label: 'Locales', icon: 'language'}
+    {link: 'translations', label: 'Translations', icon: 'translate', roles: [ROLE_READ, ROLE_WRITE, ROLE_ADMIN]},
+    {link: 'locales', label: 'Locales', icon: 'language', roles: [ROLE_WRITE, ROLE_ADMIN]}
   ];
 
   adminSideMenu: SideMenuItem[] = [
@@ -81,24 +96,35 @@ export class FeaturesComponent implements OnInit {
             name: user.displayName || '',
             email: user.email || '',
             emailVerified: user.emailVerified,
-            role: 'user'
+            role: 'none'
           })
         );
         from(user.getIdTokenResult())
         .subscribe((token) => {
           if (token.claims['role']) {
             const role = token.claims['role'].toString();
+            this.role = role;
             this.store.dispatch(actionUserRoleChange({role}));
-            if (role === 'admin') {
+            if (role === ROLE_ADMIN) {
               this.isRoleAdmin = true;
-              this.cd.markForCheck();
+            } else if (role === ROLE_WRITE) {
+              this.isRoleWrite = true;
+            } else if (role === ROLE_READ) {
+              this.isRoleRead = true;
             }
+          } else {
+            this.isRoleNone = true;
           }
+          this.cd.markForCheck();
         });
       } else {
         this.store.dispatch(authLogout());
       }
     });
+  }
+
+  filterMenuByRole(menu: SideMenuItem[], role: string): SideMenuItem[] {
+    return menu.filter(it => it.roles ? it.roles.includes(role) : true)
   }
 
   private static isIEorEdgeOrSafari(): boolean {
@@ -123,8 +149,6 @@ export class FeaturesComponent implements OnInit {
   }
 
   loadData(): void {
-
-
     combineLatest([
       this.spaceService.findAll(),
       this.store.select(selectSpace)

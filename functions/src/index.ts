@@ -56,7 +56,8 @@ export const v1 = https.onRequest(expressV1);
 
 // Publish
 export const publishTranslations = https.onCall((data, context) => {
-  logger.info('publishTranslations : ' + JSON.stringify(data));
+  logger.info('[publishTranslations] data: ' + JSON.stringify(data));
+  logger.info('[publishTranslations] context: ' + JSON.stringify(context));
   const spaceId: string = data.spaceId;
   return Promise.all([
     firestore.doc(`spaces/${spaceId}`).get(),
@@ -77,13 +78,13 @@ export const publishTranslations = https.onCall((data, context) => {
             localeJson[tr.name] = value;
           });
           // Save generated JSON
-          logger.info(`Save file to spaces/${spaceId}/translations/${locale.id}.json`);
+          logger.info(`[publishTranslations] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
           bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`)
             .save(
               JSON.stringify(localeJson),
               (err?: Error | null) => {
                 if (err) {
-                  logger.error(`Can not save file for Space(${spaceId}) and Locale(${locale})`);
+                  logger.error(`[publishTranslations] Can not save file for Space(${spaceId}) and Locale(${locale})`);
                   logger.error(err);
                 }
               }
@@ -91,7 +92,7 @@ export const publishTranslations = https.onCall((data, context) => {
         });
         return;
       } else {
-        logger.warn(`Space ${spaceId} does not exist.`);
+        logger.warn(`[publishTranslations] Space ${spaceId} does not exist.`);
         return new https.HttpsError('not-found', 'Space not found');
       }
     });
@@ -99,7 +100,8 @@ export const publishTranslations = https.onCall((data, context) => {
 
 // Import JSON
 export const importLocaleJson = https.onCall(async (data, context) => {
-  logger.info('importLocaleJson : ' + JSON.stringify(data));
+  logger.info('[importLocaleJson] data: ' + JSON.stringify(data));
+  logger.info('[importLocaleJson] context: ' + JSON.stringify(context));
   const spaceId: string = data.spaceId;
   const locale: string = data.locale;
   const importT: { [key: string]: string } = data.translations;
@@ -155,11 +157,11 @@ export const importLocaleJson = https.onCall(async (data, context) => {
         totalChanges++;
       }
     });
-    logger.info('Batch size : ' + batches.length);
-    logger.info('Batch total changes : ' + totalChanges);
+    logger.info('[importLocaleJson] Batch size : ' + batches.length);
+    logger.info('[importLocaleJson] Batch total changes : ' + totalChanges);
     return await Promise.all(batches.map((it) => it.commit()));
   } else {
-    logger.warn(`Space ${spaceId} does not exist.`);
+    logger.warn(`[importLocaleJson] Space ${spaceId} does not exist.`);
     return new https.HttpsError('not-found', 'Space not found');
   }
 });

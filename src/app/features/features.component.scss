@@ -4,6 +4,10 @@ mat-form-field {
   width: 100%;
 }
 
+.mat-list-item.active{
+  background: rgba(0, 0, 0, 0.04);
+}
+
 mat-sidenav-container {
   height: 100%;
   width: 100%;

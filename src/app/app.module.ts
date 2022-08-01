@@ -13,6 +13,7 @@ import {
   initializeAuth,
   provideAuth
 } from '@angular/fire/auth';
+import {AuthGuardModule} from '@angular/fire/auth-guard';
 import {
   connectFirestoreEmulator,
   enableMultiTabIndexedDbPersistence,
@@ -45,6 +46,8 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
     CoreModule,
 
     //Firebase
+    AuthGuardModule,
+
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => {
       const auth = initializeAuth(getApp(), {

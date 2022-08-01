@@ -1,15 +1,33 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Security Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function hasRole(role) {
+      return request.auth.token.role == role
+    }
+    function hasAnyRole(roles) {
+      return request.auth.token.role in roles;
+    }
+
+    // Spaces
+    match /spaces/{space} {
+      allow read: if isSignedIn() && hasAnyRole(['read','write','admin']);
+      allow write: if isSignedIn() && hasRole('admin');
+
+      // Translations
+      match /translations/{translation} {
+        allow read: if isSignedIn() && hasAnyRole(['read','write','admin']);
+        allow write: if isSignedIn() && hasAnyRole(['write','admin']);
+      }
+    }
     match /{document=**} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function hasRole(role) {
-        return request.auth.token.role == role
-      }
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && hasRole('admin')
+
+      allow read: if isSignedIn() && hasAnyRole(['read','write','admin']);
+      allow write: if isSignedIn() && hasRole('admin');
     }
   }
 }
