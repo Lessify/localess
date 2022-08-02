@@ -6,6 +6,7 @@ import {Space} from './models/space.model';
 import {Translation, TranslationType} from './models/translation.model';
 import * as express from 'express';
 import * as cors from 'cors';
+import {SecurityUtils} from './utils/security-utils';
 
 // Start writing Firebase Functions
 // https://firebase.google.com/docs/functions/typescript
@@ -15,6 +16,10 @@ const BATCH_MAX = 500;
 // HTTP
 const CACHE_MAX_AGE = 60 * 60;// sec * min
 const CACHE_SHARE_MAX_AGE = 60 * 60;// sec * min
+// AUTH ROLE
+// const ROLE_READ = 'read';
+const ROLE_WRITE = 'write';
+const ROLE_ADMIN = 'admin';
 
 // Init
 const app: App = initializeApp();
@@ -32,76 +37,78 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
   const spaceRef = await firestore.doc(`spaces/${spaceId}`).get();
   if (!spaceRef.exists) {
     res
-      .status(404)
-      .send(new https.HttpsError('not-found', 'Space not found'));
+    .status(404)
+    .send(new https.HttpsError('not-found', 'Space not found'));
   }
   const space = spaceRef.data() as Space;
   if (!space.locales.some((it) => it.id === locale)) {
     locale = space.localeFallback.id;
   }
   bucket.file(`spaces/${spaceId}/translations/${locale}.json`).download()
-    .then((content) => {
-      res
-        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-        .contentType('application/json')
-        .send(content.toString());
-    })
-    .catch(() => {
-      res
-        .status(404)
-        .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
-    });
+  .then((content) => {
+    res
+    .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+    .contentType('application/json')
+    .send(content.toString());
+  })
+  .catch(() => {
+    res
+    .status(404)
+    .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+  });
 });
 export const v1 = https.onRequest(expressV1);
 
 // Publish
 export const publishTranslations = https.onCall((data, context) => {
-  logger.info('[publishTranslations] data: ' + JSON.stringify(data));
-  logger.info('[publishTranslations] context: ' + JSON.stringify(context));
+  //logger.info('[publishTranslations] data: ' + JSON.stringify(data));
+  logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
+  if (SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN])) return new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
   return Promise.all([
     firestore.doc(`spaces/${spaceId}`).get(),
     firestore.collection(`spaces/${spaceId}/translations`).get(),
   ])
-    .then(([spaceRef, translationsRef]) => {
-      if (spaceRef.exists && !translationsRef.empty) {
-        const space: Space = spaceRef.data() as Space;
-        const translations = translationsRef.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
+  .then(([spaceRef, translationsRef]) => {
+    if (spaceRef.exists && !translationsRef.empty) {
+      const space: Space = spaceRef.data() as Space;
+      const translations = translationsRef.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
 
-        space.locales.forEach((locale) => {
-          const localeJson: { [key: string]: string } = {};
-          translations.forEach((tr) => {
-            let value = tr.locales[locale.id];
-            if (!value) {
-              value = tr.locales[space.localeFallback.id];
-            }
-            localeJson[tr.name] = value;
-          });
-          // Save generated JSON
-          logger.info(`[publishTranslations] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
-          bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`)
-            .save(
-              JSON.stringify(localeJson),
-              (err?: Error | null) => {
-                if (err) {
-                  logger.error(`[publishTranslations] Can not save file for Space(${spaceId}) and Locale(${locale})`);
-                  logger.error(err);
-                }
-              }
-            );
+      space.locales.forEach((locale) => {
+        const localeJson: { [key: string]: string } = {};
+        translations.forEach((tr) => {
+          let value = tr.locales[locale.id];
+          if (!value) {
+            value = tr.locales[space.localeFallback.id];
+          }
+          localeJson[tr.name] = value;
         });
-        return;
-      } else {
-        logger.warn(`[publishTranslations] Space ${spaceId} does not exist.`);
-        return new https.HttpsError('not-found', 'Space not found');
-      }
-    });
+        // Save generated JSON
+        logger.info(`[publishTranslations] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
+        bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`)
+        .save(
+          JSON.stringify(localeJson),
+          (err?: Error | null) => {
+            if (err) {
+              logger.error(`[publishTranslations] Can not save file for Space(${spaceId}) and Locale(${locale})`);
+              logger.error(err);
+            }
+          }
+        );
+      });
+      return;
+    } else {
+      logger.warn(`[publishTranslations] Space ${spaceId} does not exist.`);
+      return new https.HttpsError('not-found', 'Space not found');
+    }
+  });
 });
 
 // Import JSON
 export const importLocaleJson = https.onCall(async (data, context) => {
-  logger.info('[importLocaleJson] data: ' + JSON.stringify(data));
-  logger.info('[importLocaleJson] context: ' + JSON.stringify(context));
+  //logger.info('[importLocaleJson] data: ' + JSON.stringify(data));
+  logger.info('[importLocaleJson] context.auth: ' + JSON.stringify(context.auth));
+  if (SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN])) return new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
   const locale: string = data.locale;
   const importT: { [key: string]: string } = data.translations;
@@ -115,11 +122,11 @@ export const importLocaleJson = https.onCall(async (data, context) => {
     const origTransMap = new Map<string, Translation>();
     const origTransIdMap = new Map<string, string>();
     translationsRef.docs.filter((it) => it.exists)
-      .forEach((it) => {
-        const tr = it.data() as Translation;
-        origTransMap.set(tr.name, tr);
-        origTransIdMap.set(tr.name, it.id);
-      });
+    .forEach((it) => {
+      const tr = it.data() as Translation;
+      origTransMap.set(tr.name, tr);
+      origTransIdMap.set(tr.name, it.id);
+    });
 
     const batches: WriteBatch[] = [];
 

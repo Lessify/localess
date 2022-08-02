@@ -26,7 +26,9 @@ import {MatTableModule} from '@angular/material/table';
 import {MatPaginatorModule} from '@angular/material/paginator';
 import {MatSortModule} from '@angular/material/sort';
 import {MatDialogModule} from '@angular/material/dialog';
-import {ConfirmationDialogComponent} from './components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogComponent
+} from './components/confirmation-dialog/confirmation-dialog.component';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {ScrollingModule} from '@angular/cdk/scrolling';
@@ -34,6 +36,7 @@ import {CopierService} from './services/copier.service';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
 import {IconComponent} from './components/icon/icon.component';
+import {HasAnyUserRolePipe} from './pipes/has-any-user-role.pipe';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -68,7 +71,8 @@ const MATERIAL_MODULES: any[] = [
 ];
 
 const SHARED_PIPES: any[] = [
-  TranslationFilterPipe
+  TranslationFilterPipe,
+  HasAnyUserRolePipe
 ]
 
 const SHARED_COMPONENTS: any[] = [
@@ -77,24 +81,24 @@ const SHARED_COMPONENTS: any[] = [
 ]
 
 @NgModule({
-    imports: [
-        CommonModule,
-        FormsModule,
-        MATERIAL_MODULES,
-    ],
-    declarations: [
-        SHARED_COMPONENTS,
-        SHARED_PIPES
-    ],
-    exports: [
-        CommonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MATERIAL_MODULES,
-        SHARED_COMPONENTS,
-        SHARED_PIPES
-    ],
-    providers: [CopierService]
+  imports: [
+    CommonModule,
+    FormsModule,
+    MATERIAL_MODULES,
+  ],
+  declarations: [
+    SHARED_COMPONENTS,
+    SHARED_PIPES
+  ],
+  exports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MATERIAL_MODULES,
+    SHARED_COMPONENTS,
+    SHARED_PIPES
+  ],
+  providers: [CopierService]
 })
 export class SharedModule {
 }

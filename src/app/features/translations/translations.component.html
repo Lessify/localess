@@ -2,39 +2,41 @@
   <mat-toolbar-row>
     Translations
     <span class="spacer"></span>
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="openAddDialog()">
-      <mat-icon>add</mat-icon>
-      Add Translation
-    </button>
-
-    <button
-      mat-raised-button
-      color="accent"
-      matTooltip="Publish Translations to be available via API call"
-      (click)="publish()">
-      <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
-      Publish
-    </button>
-
-    <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
-      <ll-icon [animate]="isImportExportLoading" start="more_vert" end="sync"></ll-icon>
-    </button>
-
-    <mat-menu #importMenu="matMenu">
-      <button mat-menu-item *ngFor="let locale of locales" (click)="fileInput.click()">
-        <mat-icon>cloud_upload</mat-icon>
-        <span>Import ({{locale.name}})</span>
-        <input #fileInput hidden type="file" accept="application/json" (change)="onLocaleImportJson($event, locale)"/>
+    <ng-container id="translation-add-import-export" *ngIf="['write', 'admin'] | hasAnyUserRole">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="openAddDialog()">
+        <mat-icon>add</mat-icon>
+        Add Translation
       </button>
-      <mat-divider></mat-divider>
-      <button mat-menu-item *ngFor="let locale of locales" (click)="onLocaleExportJson(locale.id)">
-        <mat-icon>cloud_download</mat-icon>
-        <span>Export ({{locale.name}})</span>
+
+      <button
+        mat-raised-button
+        color="accent"
+        matTooltip="Publish Translations to be available via API call"
+        (click)="publish()">
+        <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
+        Publish
       </button>
-    </mat-menu>
+
+      <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
+        <ll-icon [animate]="isImportExportLoading" start="more_vert" end="sync"></ll-icon>
+      </button>
+
+      <mat-menu #importMenu="matMenu">
+        <button mat-menu-item *ngFor="let locale of locales" (click)="fileInput.click()">
+          <mat-icon>cloud_upload</mat-icon>
+          <span>Import ({{locale.name}})</span>
+          <input #fileInput hidden type="file" accept="application/json" (change)="onLocaleImportJson($event, locale)"/>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item *ngFor="let locale of locales" (click)="onLocaleExportJson(locale.id)">
+          <mat-icon>cloud_download</mat-icon>
+          <span>Export ({{locale.name}})</span>
+        </button>
+      </mat-menu>
+    </ng-container>
 
   </mat-toolbar-row>
 </mat-toolbar>
@@ -130,8 +132,9 @@
             </mat-select>
           </mat-form-field>
         </div>
-        <mat-divider></mat-divider>
-        <div class="p-2 align-items-start mb-auto">
+        <ng-container id="translation-locale-edit" *ngIf="['write', 'admin'] | hasAnyUserRole">
+          <mat-divider></mat-divider>
+          <div class="p-2 align-items-start mb-auto">
           <span [ngSwitch]="selectedTranslation.type">
             <ll-translation-string-view *ngSwitchCase="'STRING'"
                                         [value]="selectedTranslation.locales[selectedSourceLocale]">
@@ -143,20 +146,20 @@
                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
             </ll-translation-array-view>
           </span>
-        </div>
-        <mat-divider></mat-divider>
-        <div class="p-2 align-items-end">
-          <mat-form-field appearance="outline">
-            <mat-label>Target Locale</mat-label>
-            <mat-select [(value)]="selectedTargetLocale">
-              <mat-option *ngFor="let locale of locales" [value]="locale.id">
-                {{locale.name}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-        <mat-divider></mat-divider>
-        <div class="p-2 align-items-end">
+          </div>
+          <mat-divider></mat-divider>
+          <div class="p-2 align-items-end">
+            <mat-form-field appearance="outline">
+              <mat-label>Target Locale</mat-label>
+              <mat-select [(value)]="selectedTargetLocale">
+                <mat-option *ngFor="let locale of locales" [value]="locale.id">
+                  {{locale.name}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <mat-divider></mat-divider>
+          <div class="p-2 align-items-end">
         <span [ngSwitch]="selectedTranslation.type">
           <ll-translation-string-edit *ngSwitchCase="'STRING'"
                                       [value]="selectedTranslation.locales[selectedTargetLocale]"
@@ -171,36 +174,41 @@
                                      (valueChange)="selectedTranslationLocaleValue = $event">
           </ll-translation-array-edit>
         </span>
-        </div>
-        <mat-divider></mat-divider>
-        <div class="p-2 align-items-end">
-          <div class="justify-content-between">
-            <div class="my-3 d-flex justify-content-end">
-              <button mat-raised-button color="primary"
-                      (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue)">
-                <mat-icon>save</mat-icon>
-                Save
-              </button>
+          </div>
+          <mat-divider></mat-divider>
+          <div class="p-2 align-items-end">
+            <div class="justify-content-between">
+              <div class="my-3 d-flex justify-content-end">
+                <button mat-raised-button color="primary"
+                        (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue)">
+                  <mat-icon>save</mat-icon>
+                  Save
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ng-container>
+
       </div>
     </div>
     <div class="col-3 overlay text-break">
       <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
-        <div class="p-2 align-items-start">
-          <button
-            mat-stroked-button matTooltip="Edit"
-            (click)="openEditDialog(selectedTranslation)">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button
-            mat-stroked-button matTooltip="Delete"
-            (click)="deleteTranslation(selectedTranslation)">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </div>
-        <mat-divider></mat-divider>
+        <ng-container id="translation-edit" *ngIf="['write', 'admin'] | hasAnyUserRole">
+          <div class="p-2 align-items-start">
+            <button
+              mat-stroked-button matTooltip="Edit"
+              (click)="openEditDialog(selectedTranslation)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              mat-stroked-button matTooltip="Delete"
+              (click)="deleteTranslation(selectedTranslation)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+          <mat-divider></mat-divider>
+        </ng-container>
+
         <div class="p-2 align-items-start">
           <p><small><strong>ID</strong></small></p>
           <p>

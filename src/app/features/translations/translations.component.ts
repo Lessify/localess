@@ -22,7 +22,7 @@ import {TranslationEditDialogComponent} from './translation-edit-dialog/translat
 import {ObjectUtils} from '../../core/utils/object-utils.service';
 import {ConfirmationDialogComponent} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
-import {saveAs} from 'file-saver';
+import {saveAs} from 'file-saver-es';
 
 @Component({
   selector: 'll-translations',

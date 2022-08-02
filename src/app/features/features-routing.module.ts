@@ -15,13 +15,16 @@ const hasRoleAdmin = () =>
     map((claims) => claims.role === ROLE_ADMIN)
   );
 
-const hasAnyRole = (roles: string[]) =>
+const hasRoleWrite = () =>
   pipe(
     customClaims,
-    map((claims) => {
-      debugger
-      roles.includes(claims.role)
-    })
+    map((claims) => [ROLE_WRITE, ROLE_ADMIN].includes(claims.role))
+  );
+
+const hasRoleRead = () =>
+  pipe(
+    customClaims,
+    map((claims) => [ROLE_READ, ROLE_WRITE, ROLE_ADMIN].includes(claims.role))
   );
 
 const routes: Routes = [
@@ -40,18 +43,18 @@ const routes: Routes = [
       {
         path: 'translations',
         loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
-        // canActivate: [AuthGuard],
-        // data: {
-        //   authGuardPipe: hasAnyRole([ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
-        // }
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasRoleRead
+        }
       },
       {
         path: 'locales',
         loadChildren: () => import('./locales/locales.module').then(m => m.LocalesModule),
         canActivate: [AuthGuard],
-        // data: {
-        //   authGuardPipe: hasAnyRole([ROLE_WRITE, ROLE_ADMIN])
-        // }
+        data: {
+          authGuardPipe: hasRoleWrite
+        }
       },
     ]
   }
