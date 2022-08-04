@@ -64,7 +64,7 @@ export class FeaturesComponent implements OnInit {
 
   userSideMenu: SideMenuItem[] = [
     {link: 'translations', label: 'Translations', icon: 'translate', roles: [ROLE_READ, ROLE_WRITE, ROLE_ADMIN]},
-    {link: 'locales', label: 'Locales', icon: 'language', roles: [ROLE_WRITE, ROLE_ADMIN]}
+    {link: 'locales', label: 'Locales', icon: 'language', roles: [ROLE_ADMIN]}
   ];
 
   adminSideMenu: SideMenuItem[] = [

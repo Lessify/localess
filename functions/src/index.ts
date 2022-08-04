@@ -1,4 +1,4 @@
-import {https, logger} from 'firebase-functions';
+import {firestore, https, logger} from 'firebase-functions';
 import {App, initializeApp} from 'firebase-admin/app';
 import {FieldValue, Firestore, getFirestore, WriteBatch} from 'firebase-admin/firestore';
 import {getStorage, Storage} from 'firebase-admin/storage';
@@ -7,6 +7,8 @@ import {Translation, TranslationType} from './models/translation.model';
 import * as express from 'express';
 import * as cors from 'cors';
 import {SecurityUtils} from './utils/security-utils';
+import {EventContext} from 'firebase-functions/lib/cloud-functions';
+import {QueryDocumentSnapshot} from 'firebase-functions/lib/providers/firestore';
 
 // Start writing Firebase Functions
 // https://firebase.google.com/docs/functions/typescript
@@ -23,7 +25,7 @@ const ROLE_ADMIN = 'admin';
 
 // Init
 const app: App = initializeApp();
-const firestore: Firestore = getFirestore(app);
+const firestoreService: Firestore = getFirestore(app);
 const storage: Storage = getStorage(app);
 const bucket = storage.bucket();
 
@@ -34,7 +36,7 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
   logger.info('v1 spaces : ' + JSON.stringify(req.params));
   const spaceId = req.params.spaceId;
   let locale = req.params.locale;
-  const spaceRef = await firestore.doc(`spaces/${spaceId}`).get();
+  const spaceRef = await firestoreService.doc(`spaces/${spaceId}`).get();
   if (!spaceRef.exists) {
     res
     .status(404)
@@ -66,8 +68,8 @@ export const publishTranslations = https.onCall((data, context) => {
   if (SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN])) return new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
   return Promise.all([
-    firestore.doc(`spaces/${spaceId}`).get(),
-    firestore.collection(`spaces/${spaceId}/translations`).get(),
+    firestoreService.doc(`spaces/${spaceId}`).get(),
+    firestoreService.collection(`spaces/${spaceId}/translations`).get(),
   ])
   .then(([spaceRef, translationsRef]) => {
     if (spaceRef.exists && !translationsRef.empty) {
@@ -98,7 +100,7 @@ export const publishTranslations = https.onCall((data, context) => {
       });
       return;
     } else {
-      logger.warn(`[publishTranslations] Space ${spaceId} does not exist.`);
+      logger.info(`[publishTranslations] Space ${spaceId} does not exist or no translations.`);
       return new https.HttpsError('not-found', 'Space not found');
     }
   });
@@ -114,8 +116,8 @@ export const importLocaleJson = https.onCall(async (data, context) => {
   const importT: { [key: string]: string } = data.translations;
   let totalChanges = 0;
 
-  const spaceRef = await firestore.doc(`spaces/${spaceId}`).get();
-  const translationsRef = await firestore.collection(`spaces/${spaceId}/translations`).get();
+  const spaceRef = await firestoreService.doc(`spaces/${spaceId}`).get();
+  const translationsRef = await firestoreService.collection(`spaces/${spaceId}/translations`).get();
 
   if (spaceRef.exists) {
     // const space: Space = spaceRef.data() as Space
@@ -133,7 +135,7 @@ export const importLocaleJson = https.onCall(async (data, context) => {
     Object.getOwnPropertyNames(importT).forEach((name, idx) => {
       const batchIdx = Math.round(idx / BATCH_MAX);
       if (batches.length < batchIdx + 1) {
-        batches.push(firestore.batch());
+        batches.push(firestoreService.batch());
       }
       const ot = origTransMap.get(name);
       const oid = origTransIdMap.get(name);
@@ -145,7 +147,7 @@ export const importLocaleJson = https.onCall(async (data, context) => {
             updatedOn: FieldValue.serverTimestamp(),
           };
           update[`locales.${locale}`] = importT[name];
-          batches[batchIdx].update(firestore.doc(`spaces/${spaceId}/translations/${oid}`), update);
+          batches[batchIdx].update(firestoreService.doc(`spaces/${spaceId}/translations/${oid}`), update);
           totalChanges++;
         }
       } else {
@@ -160,7 +162,7 @@ export const importLocaleJson = https.onCall(async (data, context) => {
           updatedOn: FieldValue.serverTimestamp(),
         };
         addEntity.locales[locale] = importT[name];
-        batches[batchIdx].set(firestore.collection(`spaces/${spaceId}/translations`).doc(), addEntity);
+        batches[batchIdx].set(firestoreService.collection(`spaces/${spaceId}/translations`).doc(), addEntity);
         totalChanges++;
       }
     });
@@ -171,4 +173,13 @@ export const importLocaleJson = https.onCall(async (data, context) => {
     logger.warn(`[importLocaleJson] Space ${spaceId} does not exist.`);
     return new https.HttpsError('not-found', 'Space not found');
   }
+});
+
+// Firestore events
+export const onDeleteSpace = firestore.document('spaces/{spaceId}')
+.onDelete((snapshot: QueryDocumentSnapshot, context: EventContext) => {
+  logger.info(`[Space::onDelete] id='${snapshot.id}' exists=${snapshot.exists} eventId='${context.eventId}'`);
+  return bucket.deleteFiles({
+    prefix: `spaces/${snapshot.id}/`
+  })
 });

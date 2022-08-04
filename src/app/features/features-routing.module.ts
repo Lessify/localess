@@ -53,7 +53,7 @@ const routes: Routes = [
         loadChildren: () => import('./locales/locales.module').then(m => m.LocalesModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleWrite
+          authGuardPipe: hasRoleAdmin
         }
       },
     ]
