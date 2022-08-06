@@ -4,8 +4,8 @@ import {AuthData} from 'firebase-functions/lib/common/providers/https';
 export class SecurityUtils {
   /**
    * Check roles of authenticated user
-   * @param role
-   * @param auth
+   * @param role roles to check
+   * @param auth request AuthData
    */
   static hasRole(role: string, auth?: AuthData): boolean {
     return auth?.token['role'] === role;
@@ -13,8 +13,8 @@ export class SecurityUtils {
 
   /**
    * Check roles of authenticated user
-   * @param roles
-   * @param auth
+   * @param roles roles to check
+   * @param auth request AuthData
    */
   static hasAnyRole(roles: string[], auth?: AuthData) {
     if (auth?.token['role']) {

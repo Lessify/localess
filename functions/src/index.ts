@@ -1,14 +1,18 @@
-import {firestore, https, logger} from 'firebase-functions';
+import {EventContext, firestore, https, logger} from 'firebase-functions';
 import {App, initializeApp} from 'firebase-admin/app';
-import {FieldValue, Firestore, getFirestore, WriteBatch} from 'firebase-admin/firestore';
+import {
+  FieldValue,
+  Firestore,
+  getFirestore,
+  QueryDocumentSnapshot,
+  WriteBatch
+} from 'firebase-admin/firestore';
 import {getStorage, Storage} from 'firebase-admin/storage';
 import {Space} from './models/space.model';
 import {Translation, TranslationType} from './models/translation.model';
 import * as express from 'express';
 import * as cors from 'cors';
 import {SecurityUtils} from './utils/security-utils';
-import {EventContext} from 'firebase-functions/lib/cloud-functions';
-import {QueryDocumentSnapshot} from 'firebase-functions/lib/providers/firestore';
 
 // Start writing Firebase Functions
 // https://firebase.google.com/docs/functions/typescript
@@ -181,5 +185,5 @@ export const onDeleteSpace = firestore.document('spaces/{spaceId}')
   logger.info(`[Space::onDelete] id='${snapshot.id}' exists=${snapshot.exists} eventId='${context.eventId}'`);
   return bucket.deleteFiles({
     prefix: `spaces/${snapshot.id}/`
-  })
+  });
 });

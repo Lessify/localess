@@ -18,7 +18,6 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {environment} from '../../environments/environment';
 
 import {AppState, metaReducers, reducers, selectRouterState} from './state/core.state';
-import {TitleService} from './title/title.service';
 import {ROUTE_ANIMATIONS_ELEMENTS, routeAnimations} from './animations/route.animations';
 import {AnimationsService} from './animations/animations.service';
 import {AppErrorHandler} from './error-handler/app-error-handler.service';
@@ -37,9 +36,10 @@ import {AuthEffects} from './state/auth/auth.effects';
 import {selectAuth, selectIsAuthenticated} from './state/auth/auth.selectors';
 import {authLogin, authLogout} from './state/auth/auth.actions';
 import {AuthGuardService} from './state/auth/auth-guard.service';
+import {TitleStrategy} from '@angular/router';
+import {PageTitleStrategy} from './title/page-title.strategy';
 
 export {
-  TitleService,
   selectAuth,
   authLogin,
   authLogout,
@@ -76,22 +76,23 @@ export {
     MatButtonModule,
 
     // ngrx
-    StoreModule.forRoot(reducers, { metaReducers }),
+    StoreModule.forRoot(reducers, {metaReducers}),
     StoreRouterConnectingModule.forRoot(),
     EffectsModule.forRoot([AuthEffects, SettingsEffects]),
     environment.production
       ? []
       : StoreDevtoolsModule.instrument({
-          name: 'Angular NgRx Material Starter'
-        }),
+        name: 'Angular NgRx Material Starter'
+      }),
 
     // 3rd party
   ],
   declarations: [],
   providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true },
-    { provide: ErrorHandler, useClass: AppErrorHandler },
-    { provide: RouterStateSerializer, useClass: CustomSerializer }
+    {provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true},
+    {provide: ErrorHandler, useClass: AppErrorHandler},
+    {provide: RouterStateSerializer, useClass: CustomSerializer},
+    {provide: TitleStrategy, useClass: PageTitleStrategy}
   ],
   exports: [
     // angular
@@ -115,7 +116,7 @@ export class CoreModule {
   constructor(
     @Optional()
     @SkipSelf()
-    parentModule: CoreModule,
+      parentModule: CoreModule,
   ) {
     if (parentModule) {
       throw new Error('CoreModule is already loaded. Import only in AppModule');

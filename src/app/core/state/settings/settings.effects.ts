@@ -1,15 +1,14 @@
-import {ActivationEnd, Router} from '@angular/router';
+import {Router} from '@angular/router';
 import {Injectable, NgZone} from '@angular/core';
 import {OverlayContainer} from '@angular/cdk/overlay';
 import {select, Store} from '@ngrx/store';
 import {Actions, createEffect, ofType} from '@ngrx/effects';
 import {combineLatest, merge, of} from 'rxjs';
-import {distinctUntilChanged, filter, tap, withLatestFrom} from 'rxjs/operators';
+import {distinctUntilChanged, tap, withLatestFrom} from 'rxjs/operators';
 
 import {selectSettingsState} from '../core.state';
 import {LocalStorageService} from '../../local-storage/local-storage.service';
 import {AnimationsService} from '../../animations/animations.service';
-import {TitleService} from '../../title/title.service';
 
 import {
   actionSettingsChangeAnimationsElements,
@@ -42,7 +41,7 @@ export class SettingsEffects {
       const hour = new Date().getHours();
       if (hour !== this.hour) {
         this.hour = hour;
-        this.ngZone.run(() => this.store.dispatch(actionSettingsChangeHour({ hour })));
+        this.ngZone.run(() => this.store.dispatch(actionSettingsChangeHour({hour})));
       }
     }, 60_000)
   );
@@ -62,7 +61,7 @@ export class SettingsEffects {
         withLatestFrom(this.store.pipe(select(selectSettingsState))),
         tap(([action, settings]) => this.localStorageService.setItem(SETTINGS_KEY, settings))
       ),
-    { dispatch: false }
+    {dispatch: false}
   );
 
   updateRouteAnimationType = createEffect(
@@ -81,7 +80,7 @@ export class SettingsEffects {
           this.animationsService.updateRouteAnimationType(pageAnimations, elementsAnimations)
         )
       ),
-    { dispatch: false }
+    {dispatch: false}
   );
 
   updateTheme = createEffect(
@@ -97,7 +96,7 @@ export class SettingsEffects {
           classList.add(effectiveTheme);
         })
       ),
-    { dispatch: false }
+    {dispatch: false}
   );
 
   setTranslateServiceLanguage = createEffect(
@@ -106,20 +105,7 @@ export class SettingsEffects {
         select(selectSettingsLanguage),
         distinctUntilChanged(),
       ),
-    { dispatch: false }
-  );
-
-  setTitle = createEffect(
-    () =>
-      merge(
-        this.actions$.pipe(ofType(actionSettingsChangeLanguage)),
-        this.router.events.pipe(filter((event) => event instanceof ActivationEnd))
-      ).pipe(
-        tap(() => {
-          this.titleService.setTitle(this.router.routerState.snapshot.root);
-        })
-      ),
-    { dispatch: false }
+    {dispatch: false}
   );
 
   constructor(
@@ -128,8 +114,8 @@ export class SettingsEffects {
     private router: Router,
     private overlayContainer: OverlayContainer,
     private localStorageService: LocalStorageService,
-    private titleService: TitleService,
     private animationsService: AnimationsService,
     private ngZone: NgZone
-  ) {}
+  ) {
+  }
 }

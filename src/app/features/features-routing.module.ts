@@ -34,6 +34,7 @@ const routes: Routes = [
     children: [
       {
         path: 'spaces',
+        title: 'Spaces',
         loadChildren: () => import('./spaces/spaces.module').then(m => m.SpacesModule),
         canActivate: [AuthGuard],
         data: {
@@ -42,6 +43,7 @@ const routes: Routes = [
       },
       {
         path: 'translations',
+        title: 'Translations',
         loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
         canActivate: [AuthGuard],
         data: {
@@ -50,6 +52,7 @@ const routes: Routes = [
       },
       {
         path: 'locales',
+        title: 'Locales',
         loadChildren: () => import('./locales/locales.module').then(m => m.LocalesModule),
         canActivate: [AuthGuard],
         data: {

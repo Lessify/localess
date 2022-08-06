@@ -6,9 +6,6 @@ const routes: Routes = [
   {
     path: '',
     component: SpacesComponent,
-    data: {
-      title: 'Space'
-    }
   }
 ];
 
