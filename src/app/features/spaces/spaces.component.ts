@@ -14,6 +14,7 @@ import {ConfirmationDialogComponent} from '../../shared/components/confirmation-
 import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
 import {SpaceService} from '../../shared/services/space.service';
 import {Space} from '../../shared/models/space.model';
+import {CopierService} from '../../shared/services/copier.service';
 
 @Component({
   selector: 'll-spaces',
@@ -27,7 +28,7 @@ export class SpacesComponent implements OnInit {
 
   isLoading: boolean = true;
   dataSource: MatTableDataSource<Space> = new MatTableDataSource<Space>([]);
-  displayedColumns: string[] = ['name', 'createdOn', 'updatedOn', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'createdOn', 'updatedOn', 'actions'];
 
 
   constructor(
@@ -37,7 +38,8 @@ export class SpacesComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>
+    private readonly store: Store<AppState>,
+    private readonly copierService: CopierService
   ) {
   }
 
@@ -137,5 +139,9 @@ export class SpacesComponent implements OnInit {
         this.notificationService.error(`Space '${element.name}' can not be deleted.`);
       }
     });
+  }
+
+  copy(value: string): void {
+    this.copierService.copyText(value);
   }
 }

@@ -3,6 +3,10 @@
 The **Localess** helps to store internationalization in form of key-values.
 The application is design to be deployed in **Firebase**. 
 
+## Supporting Localess & Lessify Project
+Lessify is part of the Lessify Project, is an open source project with its ongoing development made possible entirely by the support of Sponsors.
+If you would like to become a sponsor, please consider:
+
 ## Firebase
 
 ### Create Project
@@ -25,6 +29,7 @@ Open Firebase and create a new project
 **Firebase** makes Authentication easier for **Localess**. Localess needs to identify identity of the users to provide custom experience and keep the data secure.
 
 #### Email/Password
+Login by Email and Password is enabled by default.
 
 #### Google Identity Provider
 Enable Google as a sign-in method in the Firebase console:
@@ -79,10 +84,42 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **_LOCALESS_AUTH_PROVIDERS** - Auth providers separated by comma. Available values : GOOGLE and MICROSOFT
 - Click Create to save your build trigger.
 
-## Utils Commands
+## Integration
+You will need to know your **Firebase project ID**, **Space ID** and host domain name.
 
-Kill app
-````shell
-netstat -ano | findstr :8080
-taskkill /PID 10652 /F
-````
+Hosting domain names:
+- <firebase-project-id>.web.app
+- <firebase-project-id>.firebaseapp.com
+- custom domain name
+
+### Angular Transloco
+Detailed guid you can find on official [Transloco site](https://ngneat.github.io/transloco/docs/getting-started/installation)
+```typescript
+@Injectable({ providedIn: 'root' })
+export class TranslocoHttpLoader implements TranslocoLoader {
+  constructor(private readonly http: HttpClient) {}
+
+  getTranslation(lang: string): Observable<Translation> {
+    return this.http.get<Translation>(`https://<host-domain-name>/api/v1/spaces/<space-id>/translations/${lang}.json`);
+  }
+}
+```
+
+### React-intl
+[Official WebSite](https://formatjs.io/docs/react-intl)
+
+### React-i18next
+[Official WebSite](https://react.i18next.com/latest/using-with-hooks)
+
+### Vue-intl
+[Official WebSite](https://formatjs.io/docs/vue-intl)
+
+### Vue-i18n
+[Official WebSite](https://vue-i18n.intlify.dev/guide/advanced/lazy.html)
+
+### Other
+For any other libraries, you will need to find a way to have a network call to fetch JSON file with translations.
+
+``
+https://<host-domain-name>/api/v1/spaces/<space-id>/translations/<locale>.json
+``
