@@ -7,6 +7,7 @@ import {
   QueryDocumentSnapshot,
   WriteBatch
 } from 'firebase-admin/firestore';
+// import {getAuth, Auth} from 'firebase-admin/auth';
 import {getStorage, Storage} from 'firebase-admin/storage';
 import {Space} from './models/space.model';
 import {Translation, TranslationType} from './models/translation.model';
@@ -30,6 +31,7 @@ const ROLE_ADMIN = 'admin';
 // Init
 const app: App = initializeApp();
 const firestoreService: Firestore = getFirestore(app);
+// const authService: Auth = getAuth(app)
 const storage: Storage = getStorage(app);
 const bucket = storage.bucket();
 
@@ -66,10 +68,14 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
 export const v1 = https.onRequest(expressV1);
 
 // Publish
-export const publishTranslations = https.onCall((data, context) => {
+interface PublishTranslationsData {
+  spaceId: string
+}
+
+export const publishTranslations = https.onCall((data: PublishTranslationsData, context) => {
   //logger.info('[publishTranslations] data: ' + JSON.stringify(data));
   logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
-  if (SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN])) return new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) return new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
   return Promise.all([
     firestoreService.doc(`spaces/${spaceId}`).get(),
@@ -111,10 +117,15 @@ export const publishTranslations = https.onCall((data, context) => {
 });
 
 // Import JSON
-export const importLocaleJson = https.onCall(async (data, context) => {
+interface ImportLocaleJsonData {
+  spaceId: string
+  locale: string
+  translations: { [key: string]: string }
+}
+export const importLocaleJson = https.onCall(async (data: ImportLocaleJsonData, context) => {
   //logger.info('[importLocaleJson] data: ' + JSON.stringify(data));
   logger.info('[importLocaleJson] context.auth: ' + JSON.stringify(context.auth));
-  if (SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN])) return new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) return new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
   const locale: string = data.locale;
   const importT: { [key: string]: string } = data.translations;

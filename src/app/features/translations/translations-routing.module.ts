@@ -5,10 +5,7 @@ import {TranslationsComponent} from './translations.component';
 const routes: Routes = [
   {
     path: '',
-    component: TranslationsComponent,
-    data: {
-      title: 'Translations'
-    }
+    component: TranslationsComponent
   }
 ];
 

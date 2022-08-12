@@ -33,6 +33,15 @@ const routes: Routes = [
     component: FeaturesComponent,
     children: [
       {
+        path: 'users',
+        title: 'Users',
+        loadChildren: () => import('./users/users.module').then(m => m.UsersModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasRoleAdmin
+        }
+      },
+      {
         path: 'spaces',
         title: 'Spaces',
         loadChildren: () => import('./spaces/spaces.module').then(m => m.SpacesModule),

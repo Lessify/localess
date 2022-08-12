@@ -1,0 +1,43 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    Users
+    <span class="spacer"></span>
+    <button mat-raised-button
+            color="primary"
+            (click)="invite()">
+      <mat-icon>person_add</mat-icon>
+      Invite
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div *ngIf="isLoading" class="row justify-content-md-center step-content">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid mt-3">
+  <mat-table [dataSource]="dataSource" matSort>
+    <ng-container matColumnDef="email">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="email"> Email </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.email}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.displayName}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="role">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="role"> Role </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.customClaims?.role || 'none' | uppercase}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="actions">
+      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <button mat-icon-button (click)="deleteDialog(element)" matTooltip="Delete">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+  </mat-table>
+  <mat-paginator></mat-paginator>
+</div>

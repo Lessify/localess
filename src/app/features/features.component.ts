@@ -68,6 +68,7 @@ export class FeaturesComponent implements OnInit {
   ];
 
   adminSideMenu: SideMenuItem[] = [
+    {link: 'users', label: 'Users', icon: 'people'},
     {link: 'spaces', label: 'Spaces', icon: 'space_dashboard'}
   ];
 
