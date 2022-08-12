@@ -16,7 +16,12 @@ import {AppState} from '../../core/state/core.state';
 import {Space} from '../../shared/models/space.model';
 import {Locale} from '../../shared/models/locale.model';
 import {UserService} from '../../shared/services/user.service';
-import {UserRecord} from '../../shared/models/user.model';
+import {User} from '../../shared/models/user.model';
+import {SpaceDialogComponent} from '../spaces/space-dialog/space-dialog.component';
+import {SpaceDialogModel} from '../spaces/space-dialog/space-dialog.model';
+import {filter, switchMap} from 'rxjs/operators';
+import {UserDialogComponent} from './user-dialog/user-dialog.component';
+import {UserDialogModel} from './user-dialog/user-dialog.model';
 
 @Component({
   selector: 'll-users',
@@ -30,7 +35,7 @@ export class UsersComponent implements OnInit {
 
   isLoading: boolean = true;
   selectedSpace?: Space;
-  dataSource: MatTableDataSource<UserRecord> = new MatTableDataSource<UserRecord>([]);
+  dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
   displayedColumns: string[] = ['email', 'name', 'role', 'actions'];
 
 
@@ -52,7 +57,7 @@ export class UsersComponent implements OnInit {
   loadData(): void {
     this.userService.findAll()
     .subscribe(response => {
-        this.dataSource = new MatTableDataSource<UserRecord>(response.users);
+        this.dataSource = new MatTableDataSource<User>(response);
         this.dataSource.sort = this.sort || null;
         this.dataSource.paginator = this.paginator || null;
         this.isLoading = false;
@@ -61,40 +66,32 @@ export class UsersComponent implements OnInit {
     )
   }
 
-  deleteDialog(element: Locale): void {
-    // if (this.selectedSpace) {
-    //   const spaceId = this.selectedSpace.id
-    //   this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
-    //     ConfirmationDialogComponent, {
-    //       data: {
-    //         title: 'Delete Locale',
-    //         content: `Are you sure about deleting Locale with name '${element.name}'.`
-    //       }
-    //     })
-    //   .afterClosed()
-    //   .pipe(
-    //     filter((it) => it || false),
-    //     switchMap(_ =>
-    //       this.localeService.delete(spaceId, element)
-    //     )
-    //   )
-    //   .subscribe({
-    //     next: () => {
-    //       const idx: number = this.dataSource.data.findIndex(
-    //         x => x.id === element.id
-    //       );
-    //       if (idx !== -1) {
-    //         this.dataSource.data.splice(idx, 1);
-    //         this.dataSource._updateChangeSubscription();
-    //       }
-    //       this.notificationService.success(`Locale '${element.name}' has been deleted.`);
-    //     },
-    //     error: () => {
-    //       this.notificationService.error(`Locale '${element.name}' can not be deleted.`);
-    //     }
-    //   });
-    // }
-
+  editDialog(element: User): void {
+    this.dialog.open<UserDialogComponent, UserDialogModel, UserDialogModel>(
+      UserDialogComponent, {
+        width: '500px',
+        data: {
+          role: element.role
+        }
+      })
+    .afterClosed()
+    .pipe(
+      filter(it => it !== undefined),
+      switchMap(it =>
+        this.userService.update(element.id, it?.role!)
+      )
+    )
+    .subscribe({
+        next: (value) => {
+          console.log(value)
+          this.notificationService.success('User has been updated.');
+        },
+        error: (err) => {
+          console.error(err)
+          this.notificationService.error('User can not be updated.');
+        }
+      }
+    );
   }
 
   invite(): void {

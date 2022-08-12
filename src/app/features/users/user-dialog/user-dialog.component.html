@@ -1,0 +1,23 @@
+<h1 mat-dialog-title>User</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Role</mat-label>
+            <mat-select formControlName="role" required>
+              <mat-option *ngFor="let role of roles" [value]="role">
+                {{role | uppercase}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+</mat-dialog-actions>
