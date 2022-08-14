@@ -4,7 +4,7 @@
     <span class="spacer"></span>
     <button mat-raised-button
             color="primary"
-            (click)="invite()">
+            (click)="inviteDialog()">
       <mat-icon>person_add</mat-icon>
       Invite
     </button>
@@ -33,6 +33,9 @@
       <mat-cell *matCellDef="let element">
         <button mat-icon-button (click)="editDialog(element)" matTooltip="Update">
           <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button (click)="deleteDialog(element)" matTooltip="Delete">
+          <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>
     </ng-container>

@@ -14,14 +14,22 @@ import {Store} from '@ngrx/store';
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
 import {Space} from '../../shared/models/space.model';
-import {Locale} from '../../shared/models/locale.model';
 import {UserService} from '../../shared/services/user.service';
 import {User} from '../../shared/models/user.model';
-import {SpaceDialogComponent} from '../spaces/space-dialog/space-dialog.component';
-import {SpaceDialogModel} from '../spaces/space-dialog/space-dialog.model';
 import {filter, switchMap} from 'rxjs/operators';
 import {UserDialogComponent} from './user-dialog/user-dialog.component';
 import {UserDialogModel} from './user-dialog/user-dialog.model';
+import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog.component';
+import {
+  UserInviteDialogModel,
+  UserInviteDialogResponse
+} from './user-invite-dialog/user-invite-dialog.model';
+import {
+  ConfirmationDialogComponent
+} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
 
 @Component({
   selector: 'll-users',
@@ -56,14 +64,40 @@ export class UsersComponent implements OnInit {
 
   loadData(): void {
     this.userService.findAll()
-    .subscribe(response => {
-        this.dataSource = new MatTableDataSource<User>(response);
-        this.dataSource.sort = this.sort || null;
-        this.dataSource.paginator = this.paginator || null;
-        this.isLoading = false;
-        this.cd.detectChanges();
-      }
-    )
+      .subscribe(response => {
+          this.dataSource = new MatTableDataSource<User>(response);
+          this.dataSource.sort = this.sort || null;
+          this.dataSource.paginator = this.paginator || null;
+          this.isLoading = false;
+          this.cd.detectChanges();
+        }
+      )
+  }
+
+  inviteDialog(): void {
+    this.dialog.open<UserInviteDialogComponent, UserInviteDialogModel, UserInviteDialogResponse>(
+      UserInviteDialogComponent, {
+        width: '500px',
+        data: {}
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.userService.invite(it?.email!, it?.password!, it?.role!)
+        )
+      )
+      .subscribe({
+          next: (value) => {
+            console.log(value)
+            this.notificationService.success('User has been invited.');
+          },
+          error: (err) => {
+            console.error(err)
+            this.notificationService.error('User can not be invited.');
+          }
+        }
+      );
   }
 
   editDialog(element: User): void {
@@ -74,27 +108,50 @@ export class UsersComponent implements OnInit {
           role: element.role
         }
       })
-    .afterClosed()
-    .pipe(
-      filter(it => it !== undefined),
-      switchMap(it =>
-        this.userService.update(element.id, it?.role!)
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.userService.update(element.id, it?.role!)
+        )
       )
-    )
-    .subscribe({
-        next: (value) => {
-          console.log(value)
-          this.notificationService.success('User has been updated.');
+      .subscribe({
+          next: (value) => {
+            console.log(value)
+            this.notificationService.success('User has been updated.');
+          },
+          error: (err) => {
+            console.error(err)
+            this.notificationService.error('User can not be updated.');
+          }
+        }
+      );
+  }
+
+  deleteDialog(element: User): void {
+    this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
+      ConfirmationDialogComponent, {
+        data: {
+          title: 'Delete User',
+          content: `Are you sure about deleting User with email '${element.email}'.`
+        }
+      })
+      .afterClosed()
+      .pipe(
+        filter((it) => it || false),
+        switchMap(_ =>
+          this.userService.delete(element.id)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`User '${element.email}' has been deleted.`);
         },
         error: (err) => {
           console.error(err)
-          this.notificationService.error('User can not be updated.');
+          this.notificationService.error(`User '${element.email}' can not be deleted.`);
         }
-      }
-    );
+      });
   }
 
-  invite(): void {
-
-  }
 }

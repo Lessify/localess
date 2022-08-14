@@ -1,16 +1,18 @@
-import {auth, firestore, logger,} from 'firebase-functions';
-import {authService, firestoreService} from './config';
+import {auth, firestore, https, logger,} from 'firebase-functions';
+import {authService, firestoreService, ROLE_ADMIN} from './config';
 import {FieldValue} from 'firebase-admin/firestore';
+import {SecurityUtils} from './utils/security-utils';
 
-export const onUserCreate = auth.user()
-  .onCreate(async (user, context) => {
+export const onAuthUserCreate = auth.user()
+  .onCreate((user, context) => {
+    logger.info(`[AuthUser::onCreate] id='${user.uid}' eventId='${context.eventId}'`);
     if (!user.email) {
       return null;
     }
     const userRef = firestoreService.collection('users').doc(user.uid)
 
     const {email, displayName, photoURL, disabled} = user;
-    await userRef.set({
+    return userRef.set({
       email,
       displayName,
       photoURL,
@@ -18,15 +20,42 @@ export const onUserCreate = auth.user()
       createdOn: FieldValue.serverTimestamp(),
       updatedOn: FieldValue.serverTimestamp()
     }, {merge: true})
+  });
 
+export const onAuthUserDelete = auth.user()
+  .onDelete(async (user, context) => {
+    logger.info(`[AuthUser::onDelete] id='${user.uid}' eventId='${context.eventId}'`);
+    const userRef = firestoreService.collection('users').doc(user.uid);
+    const userDS = await userRef.get()
+    if (userDS.exists) {
+      await userRef.delete()
+    }
     return true;
   });
 
-export const onUserDelete = auth.user().onDelete(async (user, context) => {
-});
+interface UserInvite {
+  email: string
+  password: string
+  role: string
+}
+
+export const userInvite = https.onCall(async (data: UserInvite, context) => {
+  logger.info('[userInvite] data: ' + JSON.stringify(data));
+  logger.info('[userInvite] context.auth: ' + JSON.stringify(context.auth));
+  if (!SecurityUtils.hasRole(ROLE_ADMIN, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+
+  const adminUser = await authService.createUser({
+    email: data.email,
+    password: data.password,
+    emailVerified: true,
+    disabled: false
+  });
+  await authService.setCustomUserClaims(adminUser.uid, {role: data.role})
+  return true;
+})
 
 export const onUserUpdate = firestore.document('users/{userId}')
-  .onUpdate(async (change, context) => {
+  .onUpdate((change, context) => {
     logger.info(`[User::onUpdate] id='${change.before.id}' eventId='${context.eventId}'`);
     const before = change.before.data();
     const after = change.after.data();
@@ -36,7 +65,13 @@ export const onUserUpdate = firestore.document('users/{userId}')
     const roleAfter = after['role'];
     if (roleBefore !== roleAfter) {
       logger.info(`[User::onUpdate::RoleChange] id='${change.before.id}' eventId='${context.eventId}' from='${roleBefore}' to='${roleAfter}'`);
-      await authService.setCustomUserClaims(change.before.id, {role: roleAfter});
+      return authService.setCustomUserClaims(change.before.id, {role: roleAfter});
     }
     return true;
   });
+
+export const onUserDelete = firestore.document('users/{userId}')
+  .onDelete((snapshot, context) => {
+    logger.info(`[User::onDelete] id='${snapshot.id}' eventId='${context.eventId}'`);
+    return authService.deleteUser(snapshot.id)
+  })

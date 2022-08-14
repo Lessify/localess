@@ -49,6 +49,10 @@
           "function": "setup"
         },
         {
+          "source": "/api/userInvite",
+          "function": "userInvite"
+        },
+        {
           "source": "**",
           "destination": "/index.html"
         }
