@@ -84,6 +84,13 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **_LOCALESS_AUTH_PROVIDERS** - Auth providers separated by comma. Available values : GOOGLE and MICROSOFT
 - Click Create to save your build trigger.
 
+## Setup
+For the first time you will need to go to your project url under the path ``'/setup'`` :
+
+- <firebase-project-id>.web.app/setup
+- <firebase-project-id>.firebaseapp.com/setup
+
+
 ## Integration
 You will need to know your **Firebase project ID**, **Space ID** and host domain name.
 

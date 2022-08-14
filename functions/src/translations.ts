@@ -13,7 +13,7 @@ interface PublishTranslationsData {
 export const publishTranslations = https.onCall((data: PublishTranslationsData, context) => {
   //logger.info('[publishTranslations] data: ' + JSON.stringify(data));
   logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) return new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
   return Promise.all([
     firestoreService.doc(`spaces/${spaceId}`).get(),
@@ -49,7 +49,7 @@ export const publishTranslations = https.onCall((data: PublishTranslationsData, 
         return;
       } else {
         logger.info(`[publishTranslations] Space ${spaceId} does not exist or no translations.`);
-        return new https.HttpsError('not-found', 'Space not found');
+        throw new https.HttpsError('not-found', 'Space not found');
       }
     });
 });
@@ -64,7 +64,7 @@ interface ImportLocaleJsonData {
 export const importLocaleJson = https.onCall(async (data: ImportLocaleJsonData, context) => {
   //logger.info('[importLocaleJson] data: ' + JSON.stringify(data));
   logger.info('[importLocaleJson] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) return new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
   const locale: string = data.locale;
   const importT: { [key: string]: string } = data.translations;
@@ -125,6 +125,6 @@ export const importLocaleJson = https.onCall(async (data: ImportLocaleJsonData, 
     return await Promise.all(batches.map((it) => it.commit()));
   } else {
     logger.warn(`[importLocaleJson] Space ${spaceId} does not exist.`);
-    return new https.HttpsError('not-found', 'Space not found');
+    throw new https.HttpsError('not-found', 'Space not found');
   }
 });

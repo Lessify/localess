@@ -1,0 +1,39 @@
+<div class="container">
+  <div class="row">
+  </div>
+  <div class="row align-items-start">
+    <div class="col"></div>
+    <div class="col">
+      <div class="d-flex justify-content-center">
+        <h1>First Setup</h1>
+      </div>
+      <form [formGroup]="form">
+        <mat-form-field appearance="fill">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" required/>
+        </mat-form-field>
+        <mat-form-field appearance="fill">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" required/>
+        </mat-form-field>
+        <mat-form-field appearance="fill">
+          <mat-label>Display Name</mat-label>
+          <input matInput type="text" formControlName="displayName"/>
+        </mat-form-field>
+
+        <div class="d-flex justify-content-center">
+          <button mat-raised-button color="primary" (click)="setup()" [disabled]="!form.valid">
+            Setup
+          </button>
+          <div class="px-2"></div>
+          <button mat-raised-button color="accent" (click)="form.reset()">
+            Reset
+          </button>
+        </div>
+      </form>
+    </div>
+    <div class="col"></div>
+  </div>
+  <div class="row">
+  </div>
+</div>

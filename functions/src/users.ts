@@ -2,24 +2,25 @@ import {auth, firestore, logger,} from 'firebase-functions';
 import {authService, firestoreService} from './config';
 import {FieldValue} from 'firebase-admin/firestore';
 
-export const onUserCreate = auth.user().onCreate(async (user, context) => {
-  if (!user.email) {
-    return null;
-  }
-  const userRef = firestoreService.collection('users').doc(user.uid)
+export const onUserCreate = auth.user()
+  .onCreate(async (user, context) => {
+    if (!user.email) {
+      return null;
+    }
+    const userRef = firestoreService.collection('users').doc(user.uid)
 
-  const {email, displayName, photoURL, disabled} = user;
-  await userRef.set({
-    email,
-    displayName,
-    photoURL,
-    disabled,
-    createdOn: FieldValue.serverTimestamp(),
-    updatedOn: FieldValue.serverTimestamp()
-  }, {merge: true})
+    const {email, displayName, photoURL, disabled} = user;
+    await userRef.set({
+      email,
+      displayName,
+      photoURL,
+      disabled,
+      createdOn: FieldValue.serverTimestamp(),
+      updatedOn: FieldValue.serverTimestamp()
+    }, {merge: true})
 
-  return true;
-});
+    return true;
+  });
 
 export const onUserDelete = auth.user().onDelete(async (user, context) => {
 });

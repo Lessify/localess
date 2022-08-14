@@ -71,7 +71,6 @@ export class LoginComponent implements OnDestroy {
   }
 
   async loginWithEmailAndPassword(email: string, password: string): Promise<void> {
-    console.log(`email : ${email} pass: ${password}`)
     const uc: UserCredential = await signInWithEmailAndPassword(this.auth, email, password);
     console.log(uc)
     this.store.dispatch(authLogin());

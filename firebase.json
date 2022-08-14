@@ -45,8 +45,8 @@
           "function": "importLocaleJson"
         },
         {
-          "source": "/api/getUsers",
-          "function": "getUsers"
+          "source": "/api/setup",
+          "function": "setup"
         },
         {
           "source": "**",
