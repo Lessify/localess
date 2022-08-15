@@ -33,6 +33,11 @@ const routes: Routes = [
     component: FeaturesComponent,
     children: [
       {
+        path: 'me',
+        title: 'Me',
+        loadChildren: () => import('./me/me.module').then(m => m.MeModule),
+      },
+      {
         path: 'users',
         title: 'Users',
         loadChildren: () => import('./users/users.module').then(m => m.UsersModule),

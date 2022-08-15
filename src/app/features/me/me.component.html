@@ -1,0 +1,40 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    Me
+    <span class="spacer"></span>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div *ngIf="isLoading" class="row justify-content-md-center step-content">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid mt-3">
+  <div class="row" *ngIf="user">
+    <div class="col"></div>
+    <div class="col-6">
+      <mat-card>
+        <mat-card-header>
+          <img [src]="user.photoURL || '/assets/account_circle.svg'" mat-card-avatar/>
+          <mat-card-title>{{user.displayName}}</mat-card-title>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content>
+          <br/>
+          <div><b>Email : </b>{{user.email}}</div>
+          <div><b>Email Verified: </b>{{user.emailVerified ? 'Yes' : 'Not'}}</div>
+          <div><b>Role : </b>{{user.role | uppercase}}</div>
+        </mat-card-content>
+        <mat-divider></mat-divider>
+        <mat-card-actions>
+          <button mat-raised-button color="primary" (click)="openEditDialog()">Edit</button>
+          <button mat-raised-button>Change Email</button>
+          <button mat-raised-button>Change Password</button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+    <div class="col"></div>
+
+  </div>
+
+
+</div>

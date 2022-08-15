@@ -4,20 +4,22 @@ import {actionUserChange, actionUserRoleChange} from './user.actions';
 
 export const initialState: UserState = {
   id: '',
-  name: '',
-  email: '',
+  displayName: undefined,
+  email: undefined,
   emailVerified: false,
-  role: ''
+  role: '',
+  photoURL: undefined
 };
 
 const reducer: ActionReducer<UserState, Action> = createReducer(
   initialState,
-  on(actionUserChange, (state, { id, name, email, emailVerified, role }) => ({
+  on(actionUserChange, (state, { id, displayName, email, emailVerified, role, photoURL}) => ({
     id,
-    name,
+    displayName,
     email,
     emailVerified,
-    role
+    role,
+    photoURL
   })),
   on(actionUserRoleChange, (state, { role }) => ({
     ...state,

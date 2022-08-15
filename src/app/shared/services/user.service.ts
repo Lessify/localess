@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {from, Observable} from 'rxjs';
+import {from, Observable, of} from 'rxjs';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 import {User, UserUpdateFS} from '../models/user.model';
 import {
@@ -69,6 +69,10 @@ export class UserService {
   invite(email: string, password: string, role: string): Observable<void> {
     const userInvite = httpsCallableData<{ email: string, password: string, role: string }, void>(this.functions, 'userInvite');
     return userInvite({email, password, role})
+  }
+
+  updateMe(id: string): Observable<any> {
+    return of({})
   }
 
 }

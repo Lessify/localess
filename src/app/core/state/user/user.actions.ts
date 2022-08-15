@@ -5,10 +5,11 @@ export const actionUserChange = createAction(
   '[User] Change',
   props<{
     id: string;
-    name: string;
-    email: string;
+    displayName?: string | null;
+    email?: string | null;
     emailVerified: boolean;
     role: string;
+    photoURL?: string | null
   }>()
 );
 

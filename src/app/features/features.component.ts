@@ -94,10 +94,11 @@ export class FeaturesComponent implements OnInit {
         this.store.dispatch(
           actionUserChange({
             id: user.uid,
-            name: user.displayName || '',
-            email: user.email || '',
+            displayName: user.displayName,
+            email: user.email,
             emailVerified: user.emailVerified,
-            role: 'none'
+            role: 'none',
+            photoURL: user.photoURL
           })
         );
         from(user.getIdTokenResult())

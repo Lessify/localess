@@ -10,6 +10,10 @@
             <mat-icon>account_circle</mat-icon>
           </button>
           <mat-menu #accountMenu="matMenu">
+            <button mat-menu-item routerLink="/features/me">
+              <mat-icon>person</mat-icon>
+              <span>Me</span>
+            </button>
             <mat-divider></mat-divider>
             <button mat-menu-item (click)="onLogoutClick()">
               <mat-icon>logout</mat-icon>
