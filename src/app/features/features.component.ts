@@ -24,7 +24,7 @@ import {
   actionSettingsChangeAnimationsPageDisabled,
   actionSettingsChangeLanguage
 } from '../core/state/settings/settings.actions';
-import {Auth, authState, signOut} from '@angular/fire/auth';
+import {Auth, signOut, user} from '@angular/fire/auth';
 import {actionUserChange, actionUserRoleChange} from '../core/state/user/user.actions';
 import {actionSpaceChange} from '../core/state/space/space.actions';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -85,7 +85,7 @@ export class FeaturesComponent implements OnInit {
     private readonly activatedRoute: ActivatedRoute,
     @Optional() private auth: Auth
   ) {
-    authState(this.auth)
+    user(this.auth)
     .subscribe((user) => {
       // Sign-in
       if (user) {

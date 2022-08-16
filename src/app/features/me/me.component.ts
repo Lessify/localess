@@ -2,15 +2,16 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@an
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatDialog} from '@angular/material/dialog';
 import {Store} from '@ngrx/store';
+import {Auth, User, user, updateProfile} from '@angular/fire/auth';
+
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
-import {UserService} from '../../shared/services/user.service';
 import {selectUser} from '../../core/state/user/user.selector';
 import {UserState} from '../../core/state/user/user.model';
-import {Auth, authState, User} from '@angular/fire/auth';
 import {filter, switchMap} from 'rxjs/operators';
 import {MeDialogComponent} from './me-dialog/me-dialog.component';
 import {MeDialogModel} from './me-dialog/me-dialog.model';
+import {from} from 'rxjs';
 
 @Component({
   selector: 'll-me',
@@ -32,7 +33,6 @@ export class MeComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
-    private readonly userService: UserService,
     private readonly auth: Auth
   ) {
   }
@@ -44,7 +44,7 @@ export class MeComponent implements OnInit {
         this.isLoading = false;
         this.cd.detectChanges();
       })
-    authState(this.auth)
+    user(this.auth)
       .subscribe((authUser) => {
         this.authUser = authUser;
       })
@@ -52,31 +52,32 @@ export class MeComponent implements OnInit {
 
 
   openEditDialog(): void {
-    // this.dialog.open<MeDialogComponent, MeDialogModel, MeDialogModel>(
-    //   MeDialogComponent, {
-    //     width: '500px',
-    //     data: {
-    //       displayName: this.user?.displayName,
-    //       photoURL: this.user?.photoURL
-    //     }
-    //   })
-    //   .afterClosed()
-    //   .pipe(
-    //     filter(it => it !== undefined),
-    //     switchMap(it =>
-    //       this.userService.updateMe(this.user?.id!)
-    //     )
-    //   )
-    //   .subscribe({
-    //       next: (value) => {
-    //         console.log(value)
-    //         this.notificationService.success('User has been invited.');
-    //       },
-    //       error: (err) => {
-    //         console.error(err)
-    //         this.notificationService.error('User can not be invited.');
-    //       }
-    //     }
-    //   );
+    this.dialog.open<MeDialogComponent, MeDialogModel, MeDialogModel>(
+      MeDialogComponent, {
+        width: '500px',
+        data: {
+          displayName: this.authUser?.displayName || undefined,
+          photoURL: this.authUser?.photoURL || undefined
+        }
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          //TODO handle firestore update
+          from(updateProfile(this.authUser!, {displayName: it?.displayName, photoURL: it?.photoURL}))
+        )
+      )
+      .subscribe({
+          next: (value) => {
+            console.log(value)
+            this.notificationService.success('User has been updated.');
+          },
+          error: (err) => {
+            console.error(err)
+            this.notificationService.error('User can not be updated.');
+          }
+        }
+      );
   }
 }

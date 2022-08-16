@@ -71,8 +71,4 @@ export class UserService {
     return userInvite({email, password, role})
   }
 
-  updateMe(id: string): Observable<any> {
-    return of({})
-  }
-
 }

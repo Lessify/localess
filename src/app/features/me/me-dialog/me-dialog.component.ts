@@ -12,8 +12,8 @@ import {MeDialogModel} from './me-dialog.model';
 export class MeDialogComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
-    displayName: this.fb.control(null),
-    photoURL: this.fb.control(null)
+    displayName: this.fb.control(undefined),
+    photoURL: this.fb.control(undefined)
   });
 
   constructor(

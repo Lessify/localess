@@ -60,13 +60,22 @@ export const onUserUpdate = firestore.document('users/{userId}')
     const before = change.before.data();
     const after = change.after.data();
 
-    // Role change
+    // Role change from ADMIN
     const roleBefore = before['role'];
     const roleAfter = after['role'];
     if (roleBefore !== roleAfter) {
       logger.info(`[User::onUpdate::RoleChange] id='${change.before.id}' eventId='${context.eventId}' from='${roleBefore}' to='${roleAfter}'`);
       return authService.setCustomUserClaims(change.before.id, {role: roleAfter});
     }
+
+    // DisplayName change from Me
+    // const displayNameBefore = before['displayName']
+    // const displayNameAfter = after['displayName']
+    // if (displayNameBefore !== displayNameAfter) {
+    //   logger.info(`[User::onUpdate::DisplayNameChange] id='${change.before.id}' eventId='${context.eventId}' from='${displayNameBefore}' to='${displayNameAfter}'`);
+    //   return authService.updateUser(change.before.id, {displayName: displayNameAfter})
+    // }
+
     return true;
   });
 
