@@ -16,6 +16,6 @@
     "src/**/*.d.ts"
   ],
   "exclude": [
-    "functions/**"
+    "functions/**/*.ts"
   ]
 }
