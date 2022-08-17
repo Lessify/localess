@@ -10,7 +10,7 @@
     "src/polyfills.ts"
   ],
   "exclude": [
-    "functions/**/*"
+    "functions"
   ],
   "include": [
     "src/**/*.d.ts"
