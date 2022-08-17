@@ -1,24 +1,28 @@
 steps:
-- name: 'node:16'
-  id: 'install-deps'
-  entrypoint: npm
-  args: ['install']
-- name: 'node:16'
-  id: 'build-prod'
-  entrypoint: npm
-  args:
-    - 'run'
-    - 'build:prod'
-  env:
-    - 'LOCALESS_FIREBASE_PROJECT_ID=${_LOCALESS_FIREBASE_PROJECT_ID}'
-    - 'LOCALESS_FIREBASE_APP_ID=${_LOCALESS_FIREBASE_APP_ID}'
-    - 'LOCALESS_FIREBASE_STORAGE_BUCKET=${_LOCALESS_FIREBASE_STORAGE_BUCKET}'
-    - 'LOCALESS_FIREBASE_API_KEY=${_LOCALESS_FIREBASE_API_KEY}'
-    - 'LOCALESS_FIREBASE_AUTH_DOMAIN=${_LOCALESS_FIREBASE_AUTH_DOMAIN}'
-    - 'LOCALESS_FIREBASE_MESSAGING_SENDER_ID=${_LOCALESS_FIREBASE_MESSAGING_SENDER_ID}'
-    - 'LOCALESS_AUTH_CUSTOM_DOMAIN=${_LOCALESS_AUTH_CUSTOM_DOMAIN}'
-    - 'LOCALESS_AUTH_PROVIDERS=${_LOCALESS_AUTH_PROVIDERS}'
-# deploy to firebase
-- name: gcr.io/$PROJECT_ID/firebase
-  id: 'deploy'
-  args: ['deploy', '--project=$PROJECT_ID', '--only=hosting,functions']
+  - name: 'node:16'
+    id: 'install-deps'
+    entrypoint: npm
+    args: [ 'install' ]
+  - name: 'node:16'
+    id: 'install-functions-deps'
+    entrypoint: npm
+    args: [ '--prefix','functions','install' ]
+  - name: 'node:16'
+    id: 'build-prod'
+    entrypoint: npm
+    args:
+      - 'run'
+      - 'build:prod'
+    env:
+      - 'LOCALESS_FIREBASE_PROJECT_ID=${_LOCALESS_FIREBASE_PROJECT_ID}'
+      - 'LOCALESS_FIREBASE_APP_ID=${_LOCALESS_FIREBASE_APP_ID}'
+      - 'LOCALESS_FIREBASE_STORAGE_BUCKET=${_LOCALESS_FIREBASE_STORAGE_BUCKET}'
+      - 'LOCALESS_FIREBASE_API_KEY=${_LOCALESS_FIREBASE_API_KEY}'
+      - 'LOCALESS_FIREBASE_AUTH_DOMAIN=${_LOCALESS_FIREBASE_AUTH_DOMAIN}'
+      - 'LOCALESS_FIREBASE_MESSAGING_SENDER_ID=${_LOCALESS_FIREBASE_MESSAGING_SENDER_ID}'
+      - 'LOCALESS_AUTH_CUSTOM_DOMAIN=${_LOCALESS_AUTH_CUSTOM_DOMAIN}'
+      - 'LOCALESS_AUTH_PROVIDERS=${_LOCALESS_AUTH_PROVIDERS}'
+  # deploy to firebase
+  - name: gcr.io/$PROJECT_ID/firebase
+    id: 'deploy'
+    args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions' ]
