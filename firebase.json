@@ -6,7 +6,6 @@
   },
   "hosting": [
     {
-      "target": "localess",
       "public": "dist/localess",
       "ignore": [
         "**/.*"
