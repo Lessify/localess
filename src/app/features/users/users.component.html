@@ -16,6 +16,12 @@
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
   <mat-table [dataSource]="dataSource" matSort>
+    <ng-container matColumnDef="avatar">
+      <mat-header-cell *matHeaderCellDef> Avatar </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <img [src]="element.photoURL || '/assets/account_circle.svg'" mat-card-avatar/>
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="email">
       <mat-header-cell *matHeaderCellDef mat-sort-header="email"> Email </mat-header-cell>
       <mat-cell *matCellDef="let element"> {{element.email}} </mat-cell>
@@ -27,6 +33,14 @@
     <ng-container matColumnDef="role">
       <mat-header-cell *matHeaderCellDef mat-sort-header="role"> Role </mat-header-cell>
       <mat-cell *matCellDef="let element"> {{element.role || 'none' | uppercase}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="createdOn">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="createdOn"> Created On </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.createdOn?.toDate() | date:'medium'}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="updatedOn">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedOn"> Updated On </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.updatedOn?.toDate() | date:'medium'}} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>

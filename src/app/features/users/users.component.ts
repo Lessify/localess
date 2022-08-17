@@ -42,10 +42,8 @@ export class UsersComponent implements OnInit {
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
   isLoading: boolean = true;
-  selectedSpace?: Space;
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
-  displayedColumns: string[] = ['email', 'name', 'role', 'actions'];
-
+  displayedColumns: string[] = ['avatar', 'email', 'name', 'role', 'createdOn', 'updatedOn', 'actions'];
 
   constructor(
     private readonly route: ActivatedRoute,

@@ -51,7 +51,7 @@
   </div>
   <div class="row">
     <div class="col">
-      <p class="text-break">
+      <p *ngIf="isTesting" class="text-break">
         <b>showLogoutButton</b> = {{showLogoutButton}} <br/>
         <b>showLoginButton</b> = {{showLoginButton}} <br/>
         <b>isGoogleAuthEnabled</b> = {{isGoogleAuthEnabled}} <br/>

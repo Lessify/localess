@@ -26,9 +26,9 @@
         </mat-card-content>
         <mat-divider></mat-divider>
         <mat-card-actions>
-          <button mat-raised-button color="primary" (click)="openEditDialog()">Edit</button>
-          <button mat-raised-button>Change Email</button>
-          <button mat-raised-button>Change Password</button>
+          <button mat-raised-button color="primary" *ngIf="isPasswordProvider" (click)="openEditDialog()">Edit</button>
+          <button mat-raised-button *ngIf="isPasswordProvider && numberProviders === 1" (click)="openChangeEmailDialog()">Change Email</button>
+          <button mat-raised-button *ngIf="isPasswordProvider && numberProviders === 1" (click)="openChangePasswordDialog()">Change Password</button>
         </mat-card-actions>
       </mat-card>
     </div>

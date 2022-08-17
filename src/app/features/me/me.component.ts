@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@an
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatDialog} from '@angular/material/dialog';
 import {Store} from '@ngrx/store';
-import {Auth, User, user, updateProfile} from '@angular/fire/auth';
+import {Auth, updateProfile, user, User} from '@angular/fire/auth';
 
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
@@ -24,7 +24,10 @@ export class MeComponent implements OnInit {
   isLoading: boolean = true;
   user?: UserState;
   authUser?: User | null;
-
+  isPasswordProvider = false;
+  isGoogleProvider = false;
+  isMicrosoftProvider = false;
+  numberProviders = 0;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -47,6 +50,11 @@ export class MeComponent implements OnInit {
     user(this.auth)
       .subscribe((authUser) => {
         this.authUser = authUser;
+        this.numberProviders = authUser?.providerData.length || 0;
+        this.isPasswordProvider = authUser?.providerData.some(it => it.providerId === 'password') || false;
+        this.isGoogleProvider = authUser?.providerData.some(it => it.providerId === 'google.com') || false;
+        this.isMicrosoftProvider = authUser?.providerData.some(it => it.providerId === 'microsoft.com') || false;
+        this.cd.detectChanges();
       })
   }
 
@@ -65,7 +73,10 @@ export class MeComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it =>
           //TODO handle firestore update
-          from(updateProfile(this.authUser!, {displayName: it?.displayName, photoURL: it?.photoURL}))
+          from(updateProfile(this.authUser!, {
+            displayName: it?.displayName,
+            photoURL: it?.photoURL
+          }))
         )
       )
       .subscribe({
@@ -79,5 +90,13 @@ export class MeComponent implements OnInit {
           }
         }
       );
+  }
+
+  openChangeEmailDialog(): void {
+
+  }
+
+  openChangePasswordDialog(): void {
+
   }
 }
