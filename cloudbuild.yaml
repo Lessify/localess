@@ -26,4 +26,4 @@ steps:
   # deploy to firebase
   - name: gcr.io/$PROJECT_ID/firebase
     id: 'deploy'
-    args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting:localess:${_LOCALESS_FIREBASE_HOST_SITE_ID},functions' ]
+    args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting:localess,functions' ]
