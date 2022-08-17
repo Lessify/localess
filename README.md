@@ -26,7 +26,8 @@ Open Firebase and create a new project
   - Press **Continue to console**
 
 ### Authentication
-**Firebase** makes Authentication easier for **Localess**. Localess needs to identify identity of the users to provide custom experience and keep the data secure.
+**Firebase** makes Authentication easier for **Localess**. 
+Localess needs to identify identity of the users to provide custom experience and keep the data secure.
 
 #### Email/Password
 Login by Email and Password is enabled by default.
@@ -47,6 +48,12 @@ To sign in users using Microsoft accounts (Azure Active Directory and personal M
   - To register a Microsoft OAuth client, follow the instructions in [Quickstart: Register an app with the Azure Active Directory v2.0 endpoint](https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-v2-register-an-app). Note that this endpoint supports sign-in using Microsoft personal accounts as well as Azure Active Directory accounts. [Learn more](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-overview) about Azure Active Directory v2.0.
   - When registering apps with these providers, be sure to register the ``*.firebaseapp.com`` domain for your project as the redirect domain for your app.
 - Click Save.
+
+### Hosting
+Open **Hosting** tab to create a default one
+
+### Firestore
+Open **Firestore** tab to create a default one
 
 ## Deployment
 
@@ -78,7 +85,6 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **_LOCALESS_FIREBASE_API_KEY** - firebase api key
     - **_LOCALESS_FIREBASE_AUTH_DOMAIN** - firebase auth domain
     - **_LOCALESS_FIREBASE_MESSAGING_SENDER_ID** - firebase messaging sender id
-    - **_LOCALESS_FIREBASE_HOST_SITE_ID** - firebase host site id
     - **_LOCALESS_AUTH_CUSTOM_DOMAIN** - sign in custom domain, you can use organization domain (for example, lessify.io). If not provided it will allow all domains.
     - **_LOCALESS_AUTH_PROVIDERS** - Auth providers separated by comma. Available values : GOOGLE and MICROSOFT
 - Click Create to save your build trigger.
