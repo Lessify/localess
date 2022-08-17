@@ -78,7 +78,6 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **_LOCALESS_FIREBASE_API_KEY** - firebase api key
     - **_LOCALESS_FIREBASE_AUTH_DOMAIN** - firebase auth domain
     - **_LOCALESS_FIREBASE_MESSAGING_SENDER_ID** - firebase messaging sender id
-    - **_LOCALESS_FIREBASE_HOST_SITE_ID** - firebase host site id
     - **_LOCALESS_AUTH_CUSTOM_DOMAIN** - sign in custom domain, you can use organization domain (for example, lessify.io). If not provided it will allow all domains.
     - **_LOCALESS_AUTH_PROVIDERS** - Auth providers separated by comma. Available values : GOOGLE and MICROSOFT
 - Click Create to save your build trigger.
