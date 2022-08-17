@@ -9,10 +9,10 @@
     "src/main.ts",
     "src/polyfills.ts"
   ],
-  "include": [
-    "src/**/*.d.ts"
-  ],
   "exclude": [
     "functions/**/*"
+  ],
+  "include": [
+    "src/**/*.d.ts"
   ]
 }

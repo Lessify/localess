@@ -11,11 +11,11 @@
     "src/test.ts",
     "src/polyfills.ts"
   ],
+  "exclude": [
+    "functions/**/*"
+  ],
   "include": [
     "src/**/*.spec.ts",
     "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "functions/**/*.ts"
   ]
 }
