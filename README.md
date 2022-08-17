@@ -75,7 +75,6 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **_LOCALESS_FIREBASE_PROJECT_ID** - firebase project id
     - **_LOCALESS_FIREBASE_APP_ID** - firebase app id
     - **_LOCALESS_FIREBASE_STORAGE_BUCKET** - firebase storage bucket
-    - **_LOCALESS_FIREBASE_LOCATION_ID** - firebase location id (at the moment it should be always )
     - **_LOCALESS_FIREBASE_API_KEY** - firebase api key
     - **_LOCALESS_FIREBASE_AUTH_DOMAIN** - firebase auth domain
     - **_LOCALESS_FIREBASE_MESSAGING_SENDER_ID** - firebase messaging sender id
