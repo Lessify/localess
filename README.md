@@ -60,6 +60,13 @@ Open **Firestore** tab to create a default one
 ### IAM rights
 Add IAM rights to Cloud Builder. Article from official site [here](https://cloud.google.com/build/docs/deploying-builds/deploy-firebase#before_you_begin). 
 
+The **CloudBuild** account (@cloudbuild.gserviceaccount.com) should have next Roles in IAM
+- API Keys Admin
+- Cloud Build Service Account
+- Cloud Functions Developer
+- Firebase Admin
+- Service Account Use
+
 ### Create Firebase Community Builder image
 You will need first to create a **Firebase Community Builder**.
 Details how to do that you can find [here](https://cloud.google.com/build/docs/deploying-builds/deploy-firebase#using_the_firebase_community_builder) on official GCP site. 
@@ -88,6 +95,10 @@ To automatically deploy the latest changes, you will need to create *Cloud Build
     - **_LOCALESS_AUTH_CUSTOM_DOMAIN** - sign in custom domain, you can use organization domain (for example, lessify.io). If not provided it will allow all domains.
     - **_LOCALESS_AUTH_PROVIDERS** - Auth providers separated by comma. Available values : GOOGLE and MICROSOFT
 - Click Create to save your build trigger.
+
+Errors that may appear during build :
+- `functions: missing required API cloudfunctions.googleapis.com. Enabling now...` - Enable **Cloud Functions API** in Marketplace
+- `artifactregistry: missing required API artifactregistry.googleapis.com. Enabling now...` - Enable **Artifact Registry** in Marketplace
 
 ## Setup
 For the first time you will need to go to your project url under the path ``'/setup'`` :
