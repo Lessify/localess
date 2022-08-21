@@ -13,7 +13,7 @@ import {
 } from '@angular/fire/firestore';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
-import {userInvite} from '../../../../functions/src';
+import {userInvite, usersSync} from '../../../../functions/src';
 
 
 @Injectable()
@@ -71,4 +71,8 @@ export class UserService {
     return userInvite({email, password, role})
   }
 
+  sync(): Observable<void> {
+    const usersSync = httpsCallableData<void, void>(this.functions, 'usersSync');
+    return usersSync()
+  }
 }

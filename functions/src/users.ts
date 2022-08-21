@@ -6,17 +6,17 @@ import {SecurityUtils} from './utils/security-utils';
 export const onAuthUserCreate = auth.user()
   .onCreate((user, context) => {
     logger.info(`[AuthUser::onCreate] id='${user.uid}' eventId='${context.eventId}'`);
+    logger.info(`[AuthUser::onCreate] user='${JSON.stringify(user)}'`);
     if (!user.email) {
       return null;
     }
     const userRef = firestoreService.collection('users').doc(user.uid)
 
-    const {email, displayName, photoURL, disabled} = user;
     return userRef.set({
-      email,
-      displayName,
-      photoURL,
-      disabled,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      disabled: user.disabled,
       createdOn: FieldValue.serverTimestamp(),
       updatedOn: FieldValue.serverTimestamp()
     }, {merge: true})
@@ -47,10 +47,55 @@ export const userInvite = https.onCall(async (data: UserInvite, context) => {
   const adminUser = await authService.createUser({
     email: data.email,
     password: data.password,
-    emailVerified: true,
     disabled: false
   });
   await authService.setCustomUserClaims(adminUser.uid, {role: data.role})
+  return true;
+})
+
+// TODO add use case for Deleted users from Firebase directly
+export const usersSync = https.onCall(async (data, context) => {
+  logger.info('[usersSync] data: ' + JSON.stringify(data));
+  logger.info('[usersSync] context.auth: ' + JSON.stringify(context.auth));
+  if (!SecurityUtils.hasRole(ROLE_ADMIN, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+
+  const listUsers = await authService.listUsers()
+  listUsers.users.map(async (userRecord) => {
+    const userRef = firestoreService.collection('users').doc(userRecord.uid)
+    const userDS = await userRef.get()
+
+    if (userDS.exists) {
+      const user = await userDS.data()!
+
+      if (
+        userRecord.email !== user['email'] ||
+        userRecord.displayName !== user['displayName'] ||
+        userRecord.photoURL !== user['photoURL'] ||
+        userRecord.disabled !== user['disabled'] ||
+        userRecord.customClaims?.['role'] !== user['role']
+      ) {
+        await userRef.set({
+          email: userRecord.email,
+          displayName: userRecord.displayName,
+          photoURL: userRecord.photoURL,
+          disabled: userRecord.disabled,
+          role: userRecord.customClaims?.['role'],
+          updatedOn: FieldValue.serverTimestamp()
+        }, {merge: true})
+      }
+
+    } else {
+      await userRef.set({
+        email: userRecord.email,
+        displayName: userRecord.displayName,
+        photoURL: userRecord.photoURL,
+        disabled: userRecord.disabled,
+        role: userRecord.customClaims?.['role'],
+        createdOn: FieldValue.serverTimestamp(),
+        updatedOn: FieldValue.serverTimestamp()
+      }, {merge: true})
+    }
+  })
   return true;
 })
 

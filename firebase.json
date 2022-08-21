@@ -51,6 +51,10 @@
         "function": "userInvite"
       },
       {
+        "source": "/api/usersSync",
+        "function": "usersSync"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
