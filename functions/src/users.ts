@@ -53,6 +53,7 @@ export const userInvite = https.onCall(async (data: UserInvite, context) => {
   return true;
 })
 
+// TODO add use case for Deleted users from Firebase directly
 export const usersSync = https.onCall(async (data, context) => {
   logger.info('[usersSync] data: ' + JSON.stringify(data));
   logger.info('[usersSync] context.auth: ' + JSON.stringify(context.auth));
@@ -70,13 +71,15 @@ export const usersSync = https.onCall(async (data, context) => {
         userRecord.email !== user['email'] ||
         userRecord.displayName !== user['displayName'] ||
         userRecord.photoURL !== user['photoURL'] ||
-        userRecord.disabled !== user['disabled']
+        userRecord.disabled !== user['disabled'] ||
+        userRecord.customClaims?.['role'] !== user['role']
       ) {
         await userRef.set({
           email: userRecord.email,
           displayName: userRecord.displayName,
           photoURL: userRecord.photoURL,
           disabled: userRecord.disabled,
+          role: userRecord.customClaims?.['role'],
           updatedOn: FieldValue.serverTimestamp()
         }, {merge: true})
       }
@@ -87,21 +90,12 @@ export const usersSync = https.onCall(async (data, context) => {
         displayName: userRecord.displayName,
         photoURL: userRecord.photoURL,
         disabled: userRecord.disabled,
+        role: userRecord.customClaims?.['role'],
         createdOn: FieldValue.serverTimestamp(),
         updatedOn: FieldValue.serverTimestamp()
       }, {merge: true})
     }
-
-
   })
-
-  const adminUser = await authService.createUser({
-    email: data.email,
-    password: data.password,
-    emailVerified: true,
-    disabled: false
-  });
-  await authService.setCustomUserClaims(adminUser.uid, {role: data.role})
   return true;
 })
 
