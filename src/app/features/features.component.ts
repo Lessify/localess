@@ -72,6 +72,13 @@ export class FeaturesComponent implements OnInit {
     {link: 'spaces', label: 'Spaces', icon: 'space_dashboard'}
   ];
 
+  communitySideMenu: SideMenuItem[] = [
+    {link: 'https://github.com/Lessify/localess', label: 'Code', icon: 'code'},
+    {link: 'https://github.com/Lessify/localess/issues', label: 'Feedback', icon: 'forum'},
+    {link: 'https://github.com/Lessify/localess/wiki', label: 'Help', icon: 'help'},
+    {link: 'https://github.com/Lessify/localess/releases', label: 'Releases', icon: 'new_releases'},
+  ];
+
   isAuthenticated$: Observable<boolean> | undefined;
   stickyHeader$: Observable<boolean> | undefined;
   language$: Observable<string> | undefined;
@@ -198,5 +205,9 @@ export class FeaturesComponent implements OnInit {
 
   onLanguageSelect(event: MatSelectChange): void {
     this.store.dispatch(actionSettingsChangeLanguage({language: event.value}));
+  }
+
+  openNewTab(link: string): void {
+    window.open(link)
   }
 }
