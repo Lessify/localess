@@ -1,17 +1,14 @@
 name: CI Tests
 
 on:
-  - pull_request
-  - push
-
-env:
-  CI: true
-
-permissions:
-  contents: read
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
+    name: Lint and Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
