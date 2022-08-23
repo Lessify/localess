@@ -11,7 +11,7 @@ import {UserDialogModel} from './user-dialog.model';
 })
 export class UserDialogComponent implements OnInit {
 
-  roles = ['admin', 'write', 'read', 'none']
+  roles = ['admin', 'write', 'edit', 'read', 'none']
 
   form: FormGroup = this.fb.group({
     role: this.fb.control('none', Validators.required)

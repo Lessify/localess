@@ -18,13 +18,14 @@ service cloud.firestore {
 
     // Spaces
     match /spaces/{spaceId} {
-      allow read: if isSignedIn() && hasAnyRole(['read','write','admin']);
+      allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
       allow write: if isSignedIn() && hasRole('admin');
 
       // Translations
       match /translations/{translationId} {
-        allow read: if isSignedIn() && hasAnyRole(['read','write','admin']);
-        allow write: if isSignedIn() && hasAnyRole(['write','admin']);
+        allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
+        allow create, delete: if isSignedIn() && hasAnyRole(['write','admin']);
+        allow update: if isSignedIn() && hasAnyRole(['edit','write','admin']);
       }
     }
 

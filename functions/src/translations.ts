@@ -11,7 +11,7 @@ interface PublishTranslationsData {
 }
 
 export const publishTranslations = https.onCall((data: PublishTranslationsData, context) => {
-  //logger.info('[publishTranslations] data: ' + JSON.stringify(data));
+  // logger.info('[publishTranslations] data: ' + JSON.stringify(data));
   logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
@@ -62,7 +62,7 @@ interface ImportLocaleJsonData {
 }
 
 export const importLocaleJson = https.onCall(async (data: ImportLocaleJsonData, context) => {
-  //logger.info('[importLocaleJson] data: ' + JSON.stringify(data));
+  // logger.info('[importLocaleJson] data: ' + JSON.stringify(data));
   logger.info('[importLocaleJson] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
