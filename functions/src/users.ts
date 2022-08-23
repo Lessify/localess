@@ -1,4 +1,4 @@
-import {auth, firestore, https, logger,} from 'firebase-functions';
+import {auth, firestore, https, logger} from 'firebase-functions';
 import {authService, firestoreService, ROLE_ADMIN} from './config';
 import {FieldValue} from 'firebase-admin/firestore';
 import {SecurityUtils} from './utils/security-utils';
@@ -10,7 +10,7 @@ export const onAuthUserCreate = auth.user()
     if (!user.email) {
       return null;
     }
-    const userRef = firestoreService.collection('users').doc(user.uid)
+    const userRef = firestoreService.collection('users').doc(user.uid);
 
     return userRef.set({
       email: user.email,
@@ -18,17 +18,17 @@ export const onAuthUserCreate = auth.user()
       photoURL: user.photoURL,
       disabled: user.disabled,
       createdOn: FieldValue.serverTimestamp(),
-      updatedOn: FieldValue.serverTimestamp()
-    }, {merge: true})
+      updatedOn: FieldValue.serverTimestamp(),
+    }, {merge: true});
   });
 
 export const onAuthUserDelete = auth.user()
   .onDelete(async (user, context) => {
     logger.info(`[AuthUser::onDelete] id='${user.uid}' eventId='${context.eventId}'`);
     const userRef = firestoreService.collection('users').doc(user.uid);
-    const userDS = await userRef.get()
+    const userDS = await userRef.get();
     if (userDS.exists) {
-      await userRef.delete()
+      await userRef.delete();
     }
     return true;
   });
@@ -49,9 +49,9 @@ export const userInvite = https.onCall(async (data: UserInvite, context) => {
     password: data.password,
     disabled: false
   });
-  await authService.setCustomUserClaims(adminUser.uid, {role: data.role})
+  await authService.setCustomUserClaims(adminUser.uid, {role: data.role});
   return true;
-})
+});
 
 // TODO add use case for Deleted users from Firebase directly
 export const usersSync = https.onCall(async (data, context) => {
@@ -59,13 +59,13 @@ export const usersSync = https.onCall(async (data, context) => {
   logger.info('[usersSync] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasRole(ROLE_ADMIN, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
-  const listUsers = await authService.listUsers()
+  const listUsers = await authService.listUsers();
   listUsers.users.map(async (userRecord) => {
-    const userRef = firestoreService.collection('users').doc(userRecord.uid)
-    const userDS = await userRef.get()
+    const userRef = firestoreService.collection('users').doc(userRecord.uid);
+    const userDS = await userRef.get();
 
     if (userDS.exists) {
-      const user = await userDS.data()!
+      const user = await userDS.data()!;
 
       if (
         userRecord.email !== user['email'] ||
@@ -80,10 +80,9 @@ export const usersSync = https.onCall(async (data, context) => {
           photoURL: userRecord.photoURL,
           disabled: userRecord.disabled,
           role: userRecord.customClaims?.['role'],
-          updatedOn: FieldValue.serverTimestamp()
-        }, {merge: true})
+          updatedOn: FieldValue.serverTimestamp(),
+        }, {merge: true});
       }
-
     } else {
       await userRef.set({
         email: userRecord.email,
@@ -92,12 +91,12 @@ export const usersSync = https.onCall(async (data, context) => {
         disabled: userRecord.disabled,
         role: userRecord.customClaims?.['role'],
         createdOn: FieldValue.serverTimestamp(),
-        updatedOn: FieldValue.serverTimestamp()
-      }, {merge: true})
+        updatedOn: FieldValue.serverTimestamp(),
+      }, {merge: true});
     }
-  })
+  });
   return true;
-})
+});
 
 export const onUserUpdate = firestore.document('users/{userId}')
   .onUpdate((change, context) => {
@@ -127,5 +126,5 @@ export const onUserUpdate = firestore.document('users/{userId}')
 export const onUserDelete = firestore.document('users/{userId}')
   .onDelete((snapshot, context) => {
     logger.info(`[User::onDelete] id='${snapshot.id}' eventId='${context.eventId}'`);
-    return authService.deleteUser(snapshot.id)
-  })
+    return authService.deleteUser(snapshot.id);
+  });

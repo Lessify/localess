@@ -132,7 +132,8 @@
             </mat-select>
           </mat-form-field>
         </div>
-        <ng-container id="translation-locale-edit" *ngIf="['write', 'admin'] | hasAnyUserRole">
+
+        <ng-container id="translation-locale-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole">
           <mat-divider></mat-divider>
           <div class="p-2 align-items-start mb-auto">
           <span [ngSwitch]="selectedTranslation.type">
@@ -193,7 +194,7 @@
     </div>
     <div class="col-3 overlay text-break">
       <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
-        <ng-container id="translation-edit" *ngIf="['write', 'admin'] | hasAnyUserRole">
+        <ng-container id="translation-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole">
           <div class="p-2 align-items-start">
             <button
               mat-stroked-button matTooltip="Edit"

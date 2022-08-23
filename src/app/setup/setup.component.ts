@@ -9,7 +9,7 @@ import {NotificationService} from '../core/notifications/notification.service';
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.scss']
 })
-export class SetupComponent implements OnDestroy {
+export class SetupComponent {
   redirect = ['/features'];
   isLoading: boolean = false;
 
@@ -26,10 +26,6 @@ export class SetupComponent implements OnDestroy {
     private readonly setupService: SetupService,
     private readonly notificationService: NotificationService,
   ) {
-  }
-
-
-  ngOnDestroy(): void {
   }
 
   setup(): void {

@@ -9,9 +9,9 @@ import {UserInviteDialogModel} from './user-invite-dialog.model';
   styleUrls: ['./user-invite-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UserInviteDialogComponent implements OnInit {
+export class UserInviteDialogComponent {
 
-  roles = ['admin', 'write', 'read', 'none']
+  roles = ['admin', 'write', 'edit', 'read', 'none']
 
   form: FormGroup = this.fb.group({
     email: this.fb.control('', [Validators.minLength(2), Validators.email]),
@@ -23,9 +23,5 @@ export class UserInviteDialogComponent implements OnInit {
     private readonly fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: UserInviteDialogModel
   ) {
-  }
-
-  ngOnInit(): void {
-
   }
 }

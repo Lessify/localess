@@ -16,7 +16,7 @@ export class SecurityUtils {
    * @param roles roles to check
    * @param auth request AuthData
    */
-  static hasAnyRole(roles: string[], auth?: AuthData) {
+  static hasAnyRole(roles: string[], auth?: AuthData): boolean {
     if (auth?.token['role']) {
       return roles.includes(auth.token['role']);
     }

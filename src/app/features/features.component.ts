@@ -33,6 +33,7 @@ import {Space} from '../shared/models/space.model';
 import {selectSpace} from '../core/state/space/space.selector';
 
 const ROLE_READ = 'read';
+const ROLE_EDIT = 'edit';
 const ROLE_WRITE = 'write';
 const ROLE_ADMIN = 'admin';
 
@@ -53,6 +54,7 @@ interface SideMenuItem {
 export class FeaturesComponent implements OnInit {
   isRoleNone = false;
   isRoleRead = false;
+  isRoleEdit = false;
   isRoleWrite = false;
   isRoleAdmin = false;
   role = 'none';
@@ -63,7 +65,7 @@ export class FeaturesComponent implements OnInit {
   logo = 'assets/logo.png';
 
   userSideMenu: SideMenuItem[] = [
-    {link: 'translations', label: 'Translations', icon: 'translate', roles: [ROLE_READ, ROLE_WRITE, ROLE_ADMIN]},
+    {link: 'translations', label: 'Translations', icon: 'translate', roles: [ROLE_READ, ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN]},
     {link: 'locales', label: 'Locales', icon: 'language', roles: [ROLE_ADMIN]}
   ];
 
@@ -118,6 +120,8 @@ export class FeaturesComponent implements OnInit {
               this.isRoleAdmin = true;
             } else if (role === ROLE_WRITE) {
               this.isRoleWrite = true;
+            } else if (role === ROLE_EDIT) {
+              this.isRoleEdit = true;
             } else if (role === ROLE_READ) {
               this.isRoleRead = true;
             }
