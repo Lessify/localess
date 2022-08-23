@@ -144,7 +144,7 @@ export class UsersComponent implements OnInit {
     this.userService.sync()
       .subscribe({
         next: () => {
-          this.notificationService.success(`Users has been synced.`);
+          this.notificationService.success(`Sync is in progress, it may take upt to few minutes.`);
         },
         error: (err) => {
           console.error(err)
