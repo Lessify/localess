@@ -19,5 +19,6 @@ jobs:
           node-version: 16
           cache: npm
       - run: npm ci
+      - run: npm --prefix functions install
       - run: npm run lint
       - run: npm run build
