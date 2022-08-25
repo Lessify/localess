@@ -21,7 +21,7 @@ If you would like to become a sponsor, please consider:
 
 - Edit your localisation content in real time
 - Publish your changes
-- Google CDN Integration (very fast response time)
+- Google CDN Integration (very fast response time, about 300ms for 125kb of 5000 translations)
 - Import / Export content between environments and applications
 - User Management. with different roles : VIEW, EDIT, WRITE, ADMIN
 - No application build required anymore

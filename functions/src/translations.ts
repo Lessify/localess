@@ -11,8 +11,9 @@ interface PublishTranslationsData {
 }
 
 export const publishTranslations = https.onCall((data: PublishTranslationsData, context) => {
-  // logger.info('[publishTranslations] data: ' + JSON.stringify(data));
+  logger.info('[publishTranslations] data: ' + JSON.stringify(data));
   logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
+  logger.info('[publishTranslations] context.request: ' + JSON.stringify(context.rawRequest));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
   return Promise.all([
@@ -45,6 +46,11 @@ export const publishTranslations = https.onCall((data: PublishTranslationsData, 
                 }
               }
             );
+          // axios.request({
+          //   baseURL: '',
+          //   url: ``,
+          //   method: 'PURGE'
+          // })
         });
         return;
       } else {
