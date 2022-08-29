@@ -13,7 +13,7 @@ import {filter, switchMap} from 'rxjs/operators';
 import {UserDialogComponent} from './user-dialog/user-dialog.component';
 import {UserDialogModel} from './user-dialog/user-dialog.model';
 import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog.component';
-import {UserInviteDialogModel, UserInviteDialogResponse} from './user-invite-dialog/user-invite-dialog.model';
+import {UserInviteDialogResponse} from './user-invite-dialog/user-invite-dialog.model';
 import {ConfirmationDialogComponent} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
 
@@ -60,16 +60,15 @@ export class UsersComponent implements OnInit {
   }
 
   inviteDialog(): void {
-    this.dialog.open<UserInviteDialogComponent, UserInviteDialogModel, UserInviteDialogResponse>(
+    this.dialog.open<UserInviteDialogComponent, void, UserInviteDialogResponse>(
       UserInviteDialogComponent, {
         width: '500px',
-        data: {}
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.userService.invite(it?.email!, it?.password!, it?.role!)
+          this.userService.invite(it!)
         )
       )
       .subscribe({

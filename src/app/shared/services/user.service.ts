@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {from, Observable, of} from 'rxjs';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {User, UserUpdateFS} from '../models/user.model';
+import {User, UserInvite, UserUpdateFS} from '../models/user.model';
 import {
   collection,
   collectionData, deleteDoc,
@@ -14,7 +14,6 @@ import {
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
 import {userInvite, usersSync} from '../../../../functions/src';
-
 
 @Injectable()
 export class UserService {
@@ -66,9 +65,9 @@ export class UserService {
       );
   }
 
-  invite(email: string, password: string, role: string): Observable<void> {
-    const userInvite = httpsCallableData<{ email: string, password: string, role: string }, void>(this.functions, 'userInvite');
-    return userInvite({email, password, role})
+  invite(model: UserInvite): Observable<void> {
+    const userInvite = httpsCallableData<UserInvite, void>(this.functions, 'userInvite');
+    return userInvite(model)
   }
 
   sync(): Observable<void> {

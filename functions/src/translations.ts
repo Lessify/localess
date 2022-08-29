@@ -16,8 +16,8 @@ export const publishTranslations = https.onCall(async (data: PublishTranslations
   logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceId: string = data.spaceId;
-  const spaceRef = await firestoreService.doc(`spaces/${spaceId}`).get()
-  const translationsRef = await firestoreService.collection(`spaces/${spaceId}/translations`).get()
+  const spaceRef = await firestoreService.doc(`spaces/${spaceId}`).get();
+  const translationsRef = await firestoreService.collection(`spaces/${spaceId}/translations`).get();
   if (spaceRef.exists && !translationsRef.empty) {
     const space: Space = spaceRef.data() as Space;
     const translations = translationsRef.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
@@ -45,12 +45,12 @@ export const publishTranslations = https.onCall(async (data: PublishTranslations
         );
       const origin = context.rawRequest.header('origin');
       if (origin && !origin.includes('//localhost:')) {
-        const url  = `/api/v1/spaces/${spaceId}/translations/${locale.id}.json`;
+        const url = `/api/v1/spaces/${spaceId}/translations/${locale.id}.json`;
         await axios.request({
           baseURL: origin,
           url: url,
-          method: 'PURGE'
-        })
+          method: 'PURGE',
+        });
         logger.info(`[publishTranslations] purge url ${origin}${url}`);
       }
     }
@@ -59,7 +59,6 @@ export const publishTranslations = https.onCall(async (data: PublishTranslations
     logger.info(`[publishTranslations] Space ${spaceId} does not exist or no translations.`);
     throw new https.HttpsError('not-found', 'Space not found');
   }
-
 });
 
 // Import JSON
