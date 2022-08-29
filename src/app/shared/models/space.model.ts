@@ -24,9 +24,6 @@ export interface SpaceCreateFS {
 
 export interface SpaceUpdate {
   name: string;
-  locales: FieldValue;
-  localeFallback: Locale;
-  updatedOn: FieldValue;
 }
 
 export interface SpaceUpdateFS {

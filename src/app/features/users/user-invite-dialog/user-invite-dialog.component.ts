@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {UserInviteDialogModel} from './user-invite-dialog.model';
@@ -14,9 +14,10 @@ export class UserInviteDialogComponent {
   roles = ['admin', 'write', 'edit', 'read', 'none']
 
   form: FormGroup = this.fb.group({
-    email: this.fb.control('', [Validators.minLength(2), Validators.email]),
-    password: this.fb.control('', [Validators.minLength(6)]),
-    role: this.fb.control('none', Validators.required)
+    email: this.fb.control('', [Validators.required, Validators.minLength(2), Validators.email]),
+    password: this.fb.control('', [Validators.required, Validators.minLength(6)]),
+    role: this.fb.control('none', Validators.required),
+    displayName: this.fb.control('', [Validators.minLength(2)]),
   });
 
   constructor(

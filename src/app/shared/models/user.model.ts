@@ -22,10 +22,17 @@ export interface User {
    */
   readonly disabled: boolean;
 
-  readonly role?: 'admin' | 'write' | 'read' | 'none',
+  readonly role?: 'admin' | 'write' | 'edit' | 'read' | 'none',
 
   readonly createdOn: Timestamp;
   readonly updatedOn: Timestamp;
+}
+
+export interface UserInvite {
+  displayName?: string
+  email: string
+  password: string
+  role: string
 }
 
 export interface UserUpdateFS {

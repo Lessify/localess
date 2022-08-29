@@ -34,6 +34,7 @@ export const onAuthUserDelete = auth.user()
   });
 
 interface UserInvite {
+  displayName?: string
   email: string
   password: string
   role: string
@@ -45,9 +46,10 @@ export const userInvite = https.onCall(async (data: UserInvite, context) => {
   if (!SecurityUtils.hasRole(ROLE_ADMIN, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
   const adminUser = await authService.createUser({
+    displayName: data.displayName,
     email: data.email,
     password: data.password,
-    disabled: false
+    disabled: false,
   });
   await authService.setCustomUserClaims(adminUser.uid, {role: data.role});
   return true;
@@ -115,7 +117,7 @@ export const onUserUpdate = firestore.document('users/{userId}')
     const roleAfter = after['role'];
     if (roleBefore !== roleAfter) {
       logger.info(`[User::onUpdate::RoleChange] id='${change.before.id}' eventId='${context.eventId}' from='${roleBefore}' to='${roleAfter}'`);
-      const userRecord = await authService.getUser(change.before.id)
+      const userRecord = await authService.getUser(change.before.id);
       // check if role update already in Auth
       if (userRecord.customClaims?.['role'] !== roleAfter) {
         logger.debug(`[User::onUpdate::RoleChange] id='${change.before.id}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update required.`);
@@ -123,7 +125,7 @@ export const onUserUpdate = firestore.document('users/{userId}')
       } else {
         logger.debug(`[User::onUpdate::RoleChange] id='${change.before.id}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update not required.`);
       }
-      return true
+      return true;
     }
 
     // DisplayName change from Me

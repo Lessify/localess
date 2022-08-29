@@ -14,8 +14,7 @@ import {
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
-import {SpaceDialogModel} from '../../features/spaces/space-dialog/space-dialog.model';
-import {Space, SpaceCreate, SpaceCreateFS, SpaceUpdateFS} from '../models/space.model';
+import {Space, SpaceCreate, SpaceCreateFS, SpaceUpdate, SpaceUpdateFS} from '../models/space.model';
 import {Locale} from '../models/locale.model';
 
 @Injectable()
@@ -25,18 +24,18 @@ export class SpaceService {
 
   findAll(): Observable<Space[]> {
     return collectionData(collection(this.firestore, 'spaces'), {idField: 'id'})
-    .pipe(
-      traceUntilFirst('firestore'),
-      map((it) => it as Space[])
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        map((it) => it as Space[])
+      );
   }
 
   findById(id: string): Observable<Space> {
     return docData(doc(this.firestore, `spaces/${id}`), {idField: 'id'})
-    .pipe(
-      traceUntilFirst('firestore'),
-      map((it) => it as Space)
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        map((it) => it as Space)
+      );
   }
 
   add(entity: SpaceCreate): Observable<DocumentReference> {
@@ -53,13 +52,13 @@ export class SpaceService {
         add
       )
     )
-    .pipe(
-      traceUntilFirst('firestore'),
-      tap(it => console.log(it))
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        tap(it => console.log(it))
+      );
   }
 
-  update(id: string, entity: SpaceDialogModel): Observable<void> {
+  update(id: string, entity: SpaceUpdate): Observable<void> {
     const update: SpaceUpdateFS = {
       name: entity.name,
       updatedOn: serverTimestamp()
@@ -70,18 +69,18 @@ export class SpaceService {
         {merge: true}
       )
     )
-    .pipe(
-      traceUntilFirst('firestore'),
-      tap(it => console.log(it))
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        tap(it => console.log(it))
+      );
   }
 
   delete(id: string): Observable<void> {
     return from(
       deleteDoc(doc(this.firestore, `spaces/${id}`))
     )
-    .pipe(
-      traceUntilFirst('firestore'),
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+      );
   }
 }
