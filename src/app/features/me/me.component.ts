@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@an
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatDialog} from '@angular/material/dialog';
 import {Store} from '@ngrx/store';
-import {Auth, updateProfile, user, User} from '@angular/fire/auth';
+import {Auth, user, User} from '@angular/fire/auth';
 
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
@@ -11,7 +11,7 @@ import {UserState} from '../../core/state/user/user.model';
 import {filter, switchMap} from 'rxjs/operators';
 import {MeDialogComponent} from './me-dialog/me-dialog.component';
 import {MeDialogModel} from './me-dialog/me-dialog.model';
-import {from} from 'rxjs';
+import {MeService} from '../../shared/services/me.service';
 
 @Component({
   selector: 'll-me',
@@ -36,7 +36,8 @@ export class MeComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
-    private readonly auth: Auth
+    private readonly auth: Auth,
+    private readonly meService: MeService,
   ) {
   }
 
@@ -58,7 +59,6 @@ export class MeComponent implements OnInit {
       })
   }
 
-
   openEditDialog(): void {
     this.dialog.open<MeDialogComponent, MeDialogModel, MeDialogModel>(
       MeDialogComponent, {
@@ -73,16 +73,13 @@ export class MeComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it =>
           //TODO handle firestore update
-          from(updateProfile(this.authUser!, {
-            displayName: it?.displayName,
-            photoURL: it?.photoURL
-          }))
+          this.meService.update(it!)
         )
       )
       .subscribe({
-          next: (value) => {
-            console.log(value)
+          next: () => {
             this.notificationService.success('User has been updated.');
+
           },
           error: (err) => {
             console.error(err)
