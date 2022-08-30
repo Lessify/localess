@@ -15,8 +15,8 @@ export class SetupComponent {
 
   //Form
   form: FormGroup = this.fb.group({
-    email: this.fb.control('', [Validators.minLength(2), Validators.email]),
-    password: this.fb.control('', [Validators.minLength(6)]),
+    email: this.fb.control('', [Validators.required, Validators.minLength(2), Validators.email]),
+    password: this.fb.control('', [Validators.required, Validators.minLength(6)]),
     displayName: this.fb.control(undefined),
   });
 

@@ -26,9 +26,16 @@
         </mat-card-content>
         <mat-divider></mat-divider>
         <mat-card-actions>
-          <button mat-raised-button color="primary" *ngIf="isPasswordProvider" (click)="openEditDialog()">Edit</button>
-          <button mat-raised-button *ngIf="isPasswordProvider && numberProviders === 1" (click)="openChangeEmailDialog()">Change Email</button>
-          <button mat-raised-button *ngIf="isPasswordProvider && numberProviders === 1" (click)="openChangePasswordDialog()">Change Password</button>
+          <ng-container *ngIf="isPasswordProvider && numberProviders === 1; else externalAuthProviderMessage">
+            <button mat-raised-button color="primary" (click)="openEditDialog()">Edit</button>
+            <button mat-raised-button (click)="openUpdateEmailDialog()">Update Email</button>
+            <button mat-raised-button (click)="openUpdatePasswordDialog()">Update Password</button>
+          </ng-container>
+          <ng-template #externalAuthProviderMessage>
+            Your account is linked to an external authentication provider.<br/>
+            You can't manage your personal data and password here.
+          </ng-template>
+
         </mat-card-actions>
       </mat-card>
     </div>
