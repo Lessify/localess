@@ -14,6 +14,11 @@ const routes: Routes = [
     loadChildren: () => import('./login/login.module').then((m) => m.LoginModule)
   },
   {
+    path: 'reset',
+    title: 'Forgot Password',
+    loadChildren: () => import('./reset/reset.module').then((m) => m.ResetModule)
+  },
+  {
     path: 'setup',
     title: 'Initial Setup',
     loadChildren: () => import('./setup/setup.module').then((m) => m.SetupModule),
@@ -33,4 +38,5 @@ const routes: Routes = [
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {
+}

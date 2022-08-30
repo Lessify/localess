@@ -12,6 +12,10 @@ import {filter, switchMap} from 'rxjs/operators';
 import {MeDialogComponent} from './me-dialog/me-dialog.component';
 import {MeDialogModel} from './me-dialog/me-dialog.model';
 import {MeService} from '../../shared/services/me.service';
+import {MePasswordDialogComponent} from './me-password-dialog/me-password-dialog.component';
+import {MePasswordDialogModel} from './me-password-dialog/me-password-dialog.model';
+import {MeEmailDialogComponent} from './me-email-dialog/me-email-dialog.component';
+import {MeEmailDialogModel} from './me-email-dialog/me-email-dialog.model';
 
 @Component({
   selector: 'll-me',
@@ -73,13 +77,13 @@ export class MeComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it =>
           //TODO handle firestore update
-          this.meService.update(it!)
-        )
+          this.meService.update(this.authUser!, it!)
+        ),
       )
       .subscribe({
           next: () => {
             this.notificationService.success('User has been updated.');
-
+            this.authUser?.reload()
           },
           error: (err) => {
             console.error(err)
@@ -89,11 +93,55 @@ export class MeComponent implements OnInit {
       );
   }
 
-  openChangeEmailDialog(): void {
-
+  openUpdateEmailDialog(): void {
+    this.dialog.open<MeEmailDialogComponent, void, MeEmailDialogModel>(
+      MeEmailDialogComponent, {
+        width: '500px',
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.meService.updateEmail(this.authUser!, it?.newEmail!)
+        )
+      )
+      .subscribe({
+          next: () => {
+            this.notificationService.success('User email has been updated.');
+            this.authUser?.reload()
+          },
+          error: (err) => {
+            console.error(err)
+            this.notificationService.error('User email can not be updated.');
+          }
+        }
+      );
   }
 
-  openChangePasswordDialog(): void {
+  openUpdatePasswordDialog(): void {
+    this.dialog.open<MePasswordDialogComponent, void, MePasswordDialogModel>(
+      MePasswordDialogComponent, {
+        width: '500px',
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.meService.updatePassword(this.authUser!, it?.newPassword!)
+        )
+      )
+      .subscribe({
+          next: () => {
+            this.notificationService.success('User password has been updated.');
 
+          },
+          error: (err) => {
+            console.error(err)
+            this.notificationService.error('User password can not be updated.');
+          }
+        }
+      );
   }
+
+
 }

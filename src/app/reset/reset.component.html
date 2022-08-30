@@ -1,0 +1,32 @@
+<div class="container">
+  <div class="row">
+  </div>
+  <div class="row align-items-start">
+    <div class="col"></div>
+    <div class="col">
+      <div class="d-flex justify-content-center">
+        <h1>Forgot Password</h1>
+      </div>
+      <form [formGroup]="form">
+        <mat-form-field appearance="fill">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" required/>
+          <mat-hint>Sends a password reset email to the given email address.</mat-hint>
+        </mat-form-field>
+        <div class="py-2"></div>
+        <div class="d-flex justify-content-center">
+          <button mat-raised-button color="primary" (click)="passwordReset()">
+            Reset Password
+          </button>
+          <div class="px-2"></div>
+          <button mat-stroked-button routerLink="/login">
+            Back to Login
+          </button>
+        </div>
+      </form>
+    </div>
+    <div class="col"></div>
+  </div>
+  <div class="row">
+  </div>
+</div>

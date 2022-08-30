@@ -14,17 +14,17 @@ The **Localess** helps to store internationalization in form of key-values.
 The application is design to be deployed in **Firebase**. 
 
 ## Supporting Localess & Lessify Project
-Localess is part of the Lessify Project, is an open source project with its ongoing development made possible entirely by the support of Sponsors.
+**Localess** is part of the **Lessify Project**, is an open source project with its ongoing development made possible entirely by the support of Sponsors.
 If you would like to become a sponsor, please consider:
 
 ## Key Features
 
 - Edit your localisation content in real time
-- Publish your changes
+- No application build required anymore
+- Publish your changes (instant update)
 - Google CDN Integration (very fast response time, about 300ms for 125kb of 5000 translations)
 - Import / Export content between environments and applications
 - User Management. with different roles : VIEW, EDIT, WRITE, ADMIN
-- No application build required anymore
 - Integration with any programming language
 - Few lines of integration with your project
 
