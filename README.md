@@ -28,6 +28,11 @@ If you would like to become a sponsor, please consider:
 - Integration with any programming language
 - Few lines of integration with your project
 
+## Documentation
+1. [Overview](https://github.com/Lessify/localess/wiki)
+2. [Setup](https://github.com/Lessify/localess/wiki/Setup)
+3. [Integration](https://github.com/Lessify/localess/wiki/Integration)
+
 ## How it works
 **Localess** is using Firebase products to run the application.
 
@@ -35,11 +40,3 @@ If you would like to become a sponsor, please consider:
 
 Lessify UI is design to manage data in firestore, authentication and storage via Firebase SDK.
 Generated data used by exposed API's is store in Storage to make it even faster to access and GCP CDN will cache it for even faster response.
-
-
-## Documentation
-1. [Overview](https://github.com/Lessify/localess/wiki)
-2. [Setup](https://github.com/Lessify/localess/wiki/Setup)
-3. [Integration](https://github.com/Lessify/localess/wiki/Integration)
-
-
