@@ -10,16 +10,16 @@
       <form [formGroup]="form">
         <mat-form-field appearance="fill">
           <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" required/>
+          <input matInput type="email" formControlName="email" required autocomplete="off"/>
         </mat-form-field>
         <mat-form-field appearance="fill">
           <mat-label>Password</mat-label>
-          <input matInput type="password" formControlName="password" required/>
+          <input matInput type="password" formControlName="password" required autocomplete="off"/>
           <mat-hint>Minimum 6 character</mat-hint>
         </mat-form-field>
         <mat-form-field appearance="fill">
           <mat-label>Display Name</mat-label>
-          <input matInput type="text" formControlName="displayName"/>
+          <input matInput type="text" formControlName="displayName" autocomplete="off"/>
         </mat-form-field>
 
         <div class="d-flex justify-content-center">
@@ -29,6 +29,13 @@
           <div class="px-2"></div>
           <button mat-raised-button color="accent" (click)="form.reset()">
             Reset
+          </button>
+        </div>
+        <div class="py-2"></div>
+        <div class="d-flex justify-content-center">
+          <button mat-stroked-button routerLink="/features">
+            Back to Login
+            <ng-container *ngIf="backCounter !== -1">({{backCounter}})</ng-container>
           </button>
         </div>
       </form>

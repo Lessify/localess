@@ -13,6 +13,8 @@
 The **Localess** helps to store internationalization in form of key-values.
 The application is design to be deployed in **Firebase**. 
 
+![Localess Video](https://github.com/Lessify/localess/wiki/img/app_animation.gif)
+
 ## Supporting Localess & Lessify Project
 **Localess** is part of the **Lessify Project**, is an open source project with its ongoing development made possible entirely by the support of Sponsors.
 If you would like to become a sponsor, please consider:

@@ -6,7 +6,7 @@
         <div class="form-group">
           <mat-form-field appearance="fill">
             <mat-label>Name</mat-label>
-            <input matInput type="text" formControlName="name" required minLength="3" maxlength="50"/>
+            <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off"/>
             <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
           </mat-form-field>
         </div>

@@ -1,4 +1,4 @@
-import {Component, OnDestroy} from '@angular/core';
+import {ChangeDetectorRef, Component} from '@angular/core';
 import {Router} from '@angular/router';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {SetupService} from './setup.service';
@@ -12,6 +12,7 @@ import {NotificationService} from '../core/notifications/notification.service';
 export class SetupComponent {
   redirect = ['/features'];
   isLoading: boolean = false;
+  backCounter = -1
 
   //Form
   form: FormGroup = this.fb.group({
@@ -25,21 +26,35 @@ export class SetupComponent {
     private readonly fb: FormBuilder,
     private readonly setupService: SetupService,
     private readonly notificationService: NotificationService,
+    private readonly cd: ChangeDetectorRef,
   ) {
   }
 
   setup(): void {
     this.setupService.init(this.form.value)
       .subscribe({
-        next: (response) => {
-          this.notificationService.success('Setup has been finished.');
-          this.router.navigate(this.redirect);
+        next: () => {
+          console.info('next')
+          this.backTimer()
+          this.notificationService.success('Setup has been finished, you will be redirected in 5 seconds.');
         },
-        error: err => {
+        error: (err) => {
           console.error(err)
-          this.notificationService.error('Setup can not be finished.');
-          this.router.navigate(this.redirect);
+          this.backTimer()
+          this.notificationService.error('Setup can not be finished, you will be redirected in 5 seconds.');
         }
       })
+  }
+
+  backTimer(): void {
+    this.backCounter = 5
+    const timer = setInterval(() => {
+      this.cd.markForCheck()
+      this.backCounter--;
+      if (this.backCounter === -1) {
+        clearInterval(timer)
+        this.router.navigate(this.redirect);
+      }
+    }, 1000);
   }
 }
