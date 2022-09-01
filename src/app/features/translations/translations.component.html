@@ -35,6 +35,10 @@
           <mat-icon>cloud_download</mat-icon>
           <span>Export ({{locale.name}})</span>
         </button>
+        <button mat-menu-item (click)="openExportDialog()">
+          <mat-icon>cloud_download</mat-icon>
+          <span>Export</span>
+        </button>
       </mat-menu>
     </ng-container>
 
@@ -203,7 +207,7 @@
             </button>
             <button
               mat-stroked-button matTooltip="Delete"
-              (click)="deleteTranslation(selectedTranslation)">
+              (click)="openDeleteDialog(selectedTranslation)">
               <mat-icon>delete</mat-icon>
             </button>
           </div>

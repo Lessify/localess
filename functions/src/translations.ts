@@ -2,7 +2,14 @@ import {https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
 import {BATCH_MAX, bucket, firestoreService, ROLE_ADMIN, ROLE_WRITE} from './config';
 import {Space} from './models/space.model';
-import {Translation, TranslationType} from './models/translation.model';
+import {
+  Translation,
+  TranslationExportImport,
+  TranslationLocale,
+  TranslationsExportData,
+  TranslationsImportData,
+  TranslationType
+} from './models/translation.model';
 import {FieldValue, WriteBatch} from 'firebase-admin/firestore';
 import axios from 'axios';
 
@@ -57,6 +64,78 @@ export const publishTranslations = https.onCall(async (data: PublishTranslations
     return;
   } else {
     logger.info(`[publishTranslations] Space ${spaceId} does not exist or no translations.`);
+    throw new https.HttpsError('not-found', 'Space not found');
+  }
+});
+
+// Export
+export const translationsExport = https.onCall(async (data: TranslationsExportData, context) => {
+  logger.info('[exportTranslations] data: ' + JSON.stringify(data));
+  logger.info('[exportTranslations] context.auth: ' + JSON.stringify(context.auth));
+  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+
+  const spaceRef = await firestoreService.doc(`spaces/${data.spaceId}`).get();
+  const translationsRef = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
+
+  if (spaceRef.exists) {
+    // const space: Space = spaceRef.data() as Space
+    // FLAT
+    if (data.kind === 'FLAT') {
+      const exportedTr: TranslationLocale = {};
+      translationsRef.docs.filter((it) => it.exists)
+        .forEach((it) => {
+          const tr = it.data() as Translation;
+          const value = tr.locales[data.locale];
+          if (value) {
+            exportedTr[tr.name] = tr.locales[data.locale]
+          }
+        });
+      return exportedTr;
+    } else if (data.kind === 'FULL') {
+      const exportedTr: TranslationExportImport[] = [];
+      translationsRef.docs.filter((it) => it.exists)
+        .forEach((it) => {
+          const tr = it.data() as Translation;
+          exportedTr.push({
+            name: tr.name,
+            locales: tr.locales,
+            labels: tr.labels,
+            description: tr.description
+          })
+        });
+      return exportedTr;
+    } else {
+      logger.warn(`[exportTranslations] Kind is invalid.`);
+      throw new https.HttpsError('invalid-argument', 'Invalid kind argument');
+    }
+  } else {
+    logger.warn(`[exportTranslations] Space ${data.spaceId} does not exist.`);
+    throw new https.HttpsError('not-found', 'Space not found');
+  }
+})
+
+// Import
+export const translationsImport = https.onCall(async (data: TranslationsImportData, context) => {
+  logger.info('[translationsImport] data: ' + JSON.stringify(data));
+  logger.info('[translationsImport] context.auth: ' + JSON.stringify(context.auth));
+  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+
+  const spaceRef = await firestoreService.doc(`spaces/${data.spaceId}`).get();
+  // const translationsRef = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
+
+  if (spaceRef.exists) {
+    // const space: Space = spaceRef.data() as Space
+    // FLAT
+    if (data.kind === 'FLAT') {
+
+    } else if (data.kind === 'FULL') {
+
+    } else {
+      logger.warn(`[translationsImport] Kind is invalid.`);
+      throw new https.HttpsError('invalid-argument', 'Invalid kind argument');
+    }
+  } else {
+    logger.warn(`[translationsImport] Space ${data.spaceId} does not exist.`);
     throw new https.HttpsError('not-found', 'Space not found');
   }
 });

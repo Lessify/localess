@@ -23,6 +23,12 @@ import {ObjectUtils} from '../../core/utils/object-utils.service';
 import {ConfirmationDialogComponent} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
 import {saveAs} from 'file-saver-es';
+import {TranslationExportDialogComponent} from './translation-export-dialog/translation-export-dialog.component';
+import {
+  TranslationExportDialogModel,
+  TranslationExportDialogReturn
+} from './translation-export-dialog/translation-export-dialog.model';
+import {NameUtils} from '../../core/utils/name-utils.service';
 
 @Component({
   selector: 'll-translations',
@@ -238,7 +244,7 @@ export class TranslationsComponent implements OnInit {
       );
   }
 
-  deleteTranslation(element: Translation): void {
+  openDeleteDialog(element: Translation): void {
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel>(
         ConfirmationDialogComponent,
@@ -261,6 +267,49 @@ export class TranslationsComponent implements OnInit {
             this.notificationService.success('Translation has been deleted.');
           },
           error: () => this.notificationService.error('Translation can not be deleted.')
+        }
+      );
+  }
+
+  openExportDialog(): void {
+    this.isImportExportLoading = true;
+    let fileName = this.selectedSpace?.name || ''
+    this.dialog
+      .open<TranslationExportDialogComponent, TranslationExportDialogModel, TranslationExportDialogReturn>(
+        TranslationExportDialogComponent,
+        {
+          width: '500px',
+          data: {
+            locales: this.locales
+          }
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => {
+          if(it?.type === 'FLAT' && it?.locale) {
+            fileName = `${fileName}-${it?.locale}`
+          }
+          return this.translationService.export(this.selectedSpace!.id, it?.type!, it?.locale)
+        })
+      )
+      .subscribe({
+          next: (result) => {
+            this.notificationService.success('Translations has been exported.');
+            saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}.json`)
+
+          },
+          error: (err) => {
+            console.error(err)
+            this.notificationService.error('Translation can not be exported.');
+          },
+          complete: () => {
+            setTimeout(() => {
+              this.isImportExportLoading = false
+              this.cd.markForCheck()
+            }, 1000)
+          }
         }
       );
   }

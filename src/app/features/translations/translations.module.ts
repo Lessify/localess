@@ -13,22 +13,24 @@ import {TranslationArrayEditComponent} from './translation-array-edit/translatio
 import {TranslationArrayViewComponent} from './translation-array-view/translation-array-view.component';
 import {TranslationPluralEditComponent} from './translation-plural-edit/translation-plural-edit.component';
 import {TranslationPluralViewComponent} from './translation-plural-view/translation-plural-view.component';
+import {TranslationExportDialogComponent} from './translation-export-dialog/translation-export-dialog.component';
 
 
 @NgModule({
-    declarations: [
-        TranslationsComponent,
-        TranslationArrayEditComponent,
-        TranslationArrayViewComponent,
-        TranslationPluralEditComponent,
-        TranslationPluralViewComponent,
-        TranslationStringEditComponent,
-        TranslationStringViewComponent,
-        TranslationAddDialogComponent,
-        TranslationEditDialogComponent
-    ],
-    imports: [CommonModule, SharedModule, TranslationsRoutingModule],
-    providers: [TranslationService]
+  declarations: [
+    TranslationsComponent,
+    TranslationArrayEditComponent,
+    TranslationArrayViewComponent,
+    TranslationPluralEditComponent,
+    TranslationPluralViewComponent,
+    TranslationStringEditComponent,
+    TranslationStringViewComponent,
+    TranslationAddDialogComponent,
+    TranslationEditDialogComponent,
+    TranslationExportDialogComponent
+  ],
+  imports: [CommonModule, SharedModule, TranslationsRoutingModule],
+  providers: [TranslationService]
 })
 export class TranslationsModule {
 }

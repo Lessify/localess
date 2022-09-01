@@ -2,7 +2,7 @@ export {setup} from './setup';
 
 export {onSpaceDelete} from './spaces';
 
-export {publishTranslations, importLocaleJson} from './translations';
+export {publishTranslations, translationsExport, translationsImport, importLocaleJson} from './translations';
 
 export {onAuthUserCreate, onUserUpdate, userInvite, onUserDelete, usersSync} from './users';
 

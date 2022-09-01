@@ -16,6 +16,10 @@ import {
   Translation,
   TranslationCreate,
   TranslationCreateFS,
+  TranslationExportImport,
+  TranslationLocale,
+  TranslationsExportData,
+  TranslationsImportData,
   TranslationType,
   TranslationUpdate,
   TranslationUpdateFS
@@ -24,7 +28,6 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
 import {UpdateData} from '@firebase/firestore';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {importLocaleJson} from '../../../../functions/src';
 
 
 @Injectable()
@@ -37,18 +40,18 @@ export class TranslationService {
 
   findAll(spaceId: string): Observable<Translation[]> {
     return collectionData(collection(this.firestore, `spaces/${spaceId}/translations`), {idField: 'id'})
-    .pipe(
-      traceUntilFirst('firestore'),
-      map((it) => it as Translation[])
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        map((it) => it as Translation[])
+      );
   }
 
   findById(spaceId: string, id: string): Observable<Translation> {
     return docData(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), {idField: 'id'})
-    .pipe(
-      traceUntilFirst('firestore'),
-      map((it) => it as Translation)
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        map((it) => it as Translation)
+      );
   }
 
   add(spaceId: string, entity: TranslationCreate): Observable<DocumentReference> {
@@ -82,10 +85,10 @@ export class TranslationService {
         addEntity
       )
     )
-    .pipe(
-      traceUntilFirst('firestore'),
-      tap(it => console.log(it))
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        tap(it => console.log(it))
+      );
   }
 
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
@@ -100,10 +103,10 @@ export class TranslationService {
         update
       )
     )
-    .pipe(
-      traceUntilFirst('firestore'),
-      tap(it => console.log(it))
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        tap(it => console.log(it))
+      );
   }
 
   updateLocale(spaceId: string, id: string, locale: string, value: string): Observable<void> {
@@ -116,10 +119,10 @@ export class TranslationService {
         update
       )
     )
-    .pipe(
-      traceUntilFirst('firestore'),
-      tap(it => console.log(it))
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+        tap(it => console.log(it))
+      );
   }
 
   delete(spaceId: string, id: string): Observable<void> {
@@ -127,9 +130,9 @@ export class TranslationService {
     return from(
       deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`))
     )
-    .pipe(
-      traceUntilFirst('firestore'),
-    );
+      .pipe(
+        traceUntilFirst('firestore'),
+      );
   }
 
   publish(spaceId: string): Observable<void> {
@@ -140,6 +143,16 @@ export class TranslationService {
   importDiffBatch(spaceId: string, locale: string, translations: { [key: string]: string }): Observable<void> {
     const importLocaleJson = httpsCallableData<{ spaceId: string, locale: string, translations: { [key: string]: string } }, void>(this.functions, 'importLocaleJson');
     return importLocaleJson({spaceId, locale, translations})
+  }
+
+  export(data: TranslationsExportData): Observable<TranslationLocale | TranslationExportImport[]> {
+    const translationsExport = httpsCallableData<TranslationsExportData, TranslationLocale | TranslationExportImport[]>(this.functions, 'translationsExport');
+    return translationsExport(data)
+  }
+
+  import(data: TranslationsImportData): Observable<void> {
+    const translationsImport = httpsCallableData<TranslationsImportData, void>(this.functions, 'translationsImport');
+    return translationsImport(data)
   }
 
 }

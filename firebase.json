@@ -43,6 +43,14 @@
         "function": "importLocaleJson"
       },
       {
+        "source": "/api/translationsExport",
+        "function": "translationsExport"
+      },
+      {
+        "source": "/api/translationsImport",
+        "function": "translationsImport"
+      },
+      {
         "source": "/api/setup",
         "function": "setup"
       },
