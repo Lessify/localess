@@ -58,11 +58,16 @@ export class TranslationService {
     let addEntity: TranslationCreateFS = {
       name: entity.name,
       type: entity.type,
-      labels: entity.labels,
-      description: entity.description,
       locales: {},
       createdOn: serverTimestamp(),
       updatedOn: serverTimestamp()
+    }
+
+    if (entity.labels && entity.labels.length > 0) {
+      addEntity.labels = entity.labels
+    }
+    if (entity.description && entity.description.length > 0) {
+      addEntity.description = entity.description
     }
 
     switch (entity.type) {
@@ -93,9 +98,14 @@ export class TranslationService {
 
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
     const update: UpdateData<TranslationUpdateFS> = {
-      labels: entity.labels,
-      description: entity.description,
       updatedOn: serverTimestamp()
+    }
+
+    if (entity.labels && entity.labels.length > 0) {
+      update.labels = entity.labels
+    }
+    if (entity.description && entity.description.length > 0) {
+      update.description = entity.description
     }
 
     return from(

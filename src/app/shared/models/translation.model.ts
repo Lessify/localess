@@ -11,8 +11,8 @@ export interface Translation {
   name: string;
   type: TranslationType;
   locales: { [key: string]: string };
-  labels: string[]
-  description: string;
+  labels?: string[]
+  description?: string;
   createdOn: Timestamp;
   updatedOn: Timestamp;
 }
@@ -20,8 +20,8 @@ export interface Translation {
 export interface TranslationCreate {
   name: string;
   type: TranslationType;
-  labels: string[]
-  description: string;
+  labels?: string[]
+  description?: string;
   locale: string;
   value: string;
 }
@@ -30,8 +30,8 @@ export interface TranslationCreateFS {
   name: string;
   type: TranslationType;
   locales: { [key: string]: string };
-  labels: string[]
-  description: string;
+  labels?: string[]
+  description?: string;
   createdOn: FieldValue;
   updatedOn: FieldValue;
 }
@@ -47,17 +47,13 @@ export interface TranslationUpdateFS {
   updatedOn: FieldValue;
 }
 
-export interface TranslationLocaleUpdateFS {
-  updatedOn: FieldValue;
-}
-
 export type TranslationLocale = { [key: string]: string }
 
 export interface TranslationExportImport {
   name: string;
   locales: { [key: string]: string };
-  labels: string[]
-  description: string;
+  labels?: string[]
+  description?: string;
 }
 
 export interface TranslationsExportFlatData {

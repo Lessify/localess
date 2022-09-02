@@ -1,4 +1,4 @@
-<h1 mat-dialog-title>Translations Export</h1>
+<h1 mat-dialog-title>Translations Import</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
     <div class="row">
@@ -6,7 +6,7 @@
         <div class="form-group">
           <mat-form-field appearance="fill">
             <mat-label>Type</mat-label>
-            <mat-select formControlName="kind" required>
+            <mat-select formControlName="kind" required (selectionChange)="onKindSelectionChange()">
               <mat-option *ngFor="let kind of exportKind" [value]="kind">
                 {{kind}}
               </mat-option>
@@ -31,11 +31,24 @@
       </div>
     </div>
 
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <button mat-icon-button (click)="fileInput.click()">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
   </form>
+  <mat-error *ngIf="fileWrong">The selected file does not comply with import type.</mat-error>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
-    Export
+    Import
+    <ng-container *ngIf="contentFieldsCount > 0">({{contentFieldsCount}})</ng-container>
   </button>
 </mat-dialog-actions>
+<input hidden type="file" accept=".json" #fileInput (change)="onFileChange($event)"/>

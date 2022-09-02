@@ -10,12 +10,12 @@ import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
-import {ConfirmationDialogComponent} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
-import {LocaleService} from '../../shared/services/locale.service';
-import {SpaceService} from '../../shared/services/space.service';
-import {Space} from '../../shared/models/space.model';
-import {Locale} from '../../shared/models/locale.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {LocaleService} from '@shared/services/locale.service';
+import {SpaceService} from '@shared/services/space.service';
+import {Space} from '@shared/models/space.model';
+import {Locale} from '@shared/models/locale.model';
 import {selectSpace} from '../../core/state/space/space.selector';
 
 @Component({

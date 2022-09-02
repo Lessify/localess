@@ -28,8 +28,8 @@ import {Auth, signOut, user} from '@angular/fire/auth';
 import {actionUserChange, actionUserRoleChange} from '../core/state/user/user.actions';
 import {actionSpaceChange} from '../core/state/space/space.actions';
 import {ActivatedRoute, Router} from '@angular/router';
-import {SpaceService} from '../shared/services/space.service';
-import {Space} from '../shared/models/space.model';
+import {SpaceService} from '@shared/services/space.service';
+import {Space} from '@shared/models/space.model';
 import {selectSpace} from '../core/state/space/space.selector';
 
 const ROLE_READ = 'read';

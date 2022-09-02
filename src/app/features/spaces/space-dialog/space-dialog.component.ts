@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core'
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {SpaceDialogModel} from './space-dialog.model';
-import {SpaceValidator} from '../../../shared/validators/space.validator';
+import {SpaceValidator} from '@shared/validators/space.validator';
 
 @Component({
   selector: 'll-space-dialog',

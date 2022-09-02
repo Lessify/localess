@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {TranslationValidator} from '../../../shared/validators/translation.validator';
+import {TranslationValidator} from '@shared/validators/translation.validator';
 
 @Component({
   selector: 'll-translation-add-dialog',

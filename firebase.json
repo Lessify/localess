@@ -39,10 +39,6 @@
         "function": "publishTranslations"
       },
       {
-        "source": "/api/importLocaleJson",
-        "function": "importLocaleJson"
-      },
-      {
         "source": "/api/translationsExport",
         "function": "translationsExport"
       },

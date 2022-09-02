@@ -11,10 +11,10 @@ import {TranslationExportDialogModel} from './translation-export-dialog.model';
 })
 export class TranslationExportDialogComponent {
 
-  exportTypes = ['FULL', 'FLAT']
+  exportKind = ['FULL', 'FLAT']
 
   form: FormGroup = this.fb.group({
-    type: this.fb.control('FULL', [Validators.required]),
+    kind: this.fb.control('FULL', [Validators.required]),
     locale: this.fb.control(undefined),
   });
 

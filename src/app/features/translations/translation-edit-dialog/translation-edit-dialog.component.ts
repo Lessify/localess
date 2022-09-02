@@ -2,8 +2,8 @@ import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core'
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {TranslationValidator} from '../../../shared/validators/translation.validator';
-import {Translation} from '../../../shared/models/translation.model';
+import {TranslationValidator} from '@shared/validators/translation.validator';
+import {Translation} from '@shared/models/translation.model';
 
 @Component({
   selector: 'll-translation-edit-dialog',

@@ -12,8 +12,8 @@ export interface Translation {
   name: string;
   type: TranslationType;
   locales: { [key: string]: string };
-  labels: string[]
-  description: string;
+  labels?: string[]
+  description?: string;
   createdOn: Timestamp;
   updatedOn: Timestamp;
 }
@@ -21,8 +21,8 @@ export interface Translation {
 export interface TranslationExportImport {
   name: string;
   locales: { [key: string]: string };
-  labels: string[]
-  description: string;
+  labels?: string[]
+  description?: string;
 }
 
 export interface TranslationsExportFlatData {
