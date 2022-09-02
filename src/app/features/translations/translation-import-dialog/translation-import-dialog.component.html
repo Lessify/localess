@@ -34,8 +34,9 @@
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
-          <button mat-icon-button (click)="fileInput.click()">
-            <mat-icon>add</mat-icon>
+          <button mat-stroked-button (click)="fileInput.click()">
+            <mat-icon>upload_file</mat-icon>
+            Upload File
           </button>
         </div>
       </div>
@@ -47,6 +48,7 @@
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    <mat-icon>cloud_upload</mat-icon>
     Import
     <ng-container *ngIf="contentFieldsCount > 0">({{contentFieldsCount}})</ng-container>
   </button>

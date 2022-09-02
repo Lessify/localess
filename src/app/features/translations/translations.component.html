@@ -33,17 +33,6 @@
           <mat-icon>cloud_download</mat-icon>
           <span>Export</span>
         </button>
-        <mat-divider></mat-divider>
-        <button mat-menu-item *ngFor="let locale of locales" (click)="fileInput.click()">
-          <mat-icon>cloud_upload</mat-icon>
-          <span>Import ({{locale.name}})</span>
-          <input #fileInput hidden type="file" accept="application/json" (change)="onLocaleImportJson($event, locale)"/>
-        </button>
-        <mat-divider></mat-divider>
-        <button mat-menu-item *ngFor="let locale of locales" (click)="onLocaleExportJson(locale.id)">
-          <mat-icon>cloud_download</mat-icon>
-          <span>Export ({{locale.name}})</span>
-        </button>
       </mat-menu>
     </ng-container>
 

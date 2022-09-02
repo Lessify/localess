@@ -70,8 +70,8 @@ export const publishTranslations = https.onCall(async (data: PublishTranslations
 
 // Export
 export const translationsExport = https.onCall(async (data: TranslationsExportData, context) => {
-  logger.info('[exportTranslations] data: ' + JSON.stringify(data));
-  logger.info('[exportTranslations] context.auth: ' + JSON.stringify(context.auth));
+  logger.info('[translationsExport] data: ' + JSON.stringify(data));
+  logger.info('[translationsExport] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
   const spaceRef = await firestoreService.doc(`spaces/${data.spaceId}`).get();
@@ -110,11 +110,11 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
         });
       return exportedTrs;
     } else {
-      logger.warn(`[exportTranslations] Kind is invalid.`);
+      logger.warn(`[translationsExport] Kind is invalid.`);
       throw new https.HttpsError('invalid-argument', 'Invalid kind argument');
     }
   } else {
-    logger.warn(`[exportTranslations] Space ${data.spaceId} does not exist.`);
+    logger.warn(`[translationsExport] Space ${data.spaceId} does not exist.`);
     throw new https.HttpsError('not-found', 'Space not found');
   }
 })
@@ -220,6 +220,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
             // add label
             update.labels = value.locales
           }
+          logger.info('sdgsdg')
           if (Object.getOwnPropertyNames(update).length > 1) {
             batches[batchIdx].update(firestoreService.doc(`spaces/${data.spaceId}/translations/${oid}`), update);
             totalChanges++;
@@ -233,11 +234,11 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
             createdOn: FieldValue.serverTimestamp(),
             updatedOn: FieldValue.serverTimestamp(),
           };
-          // update description
+          // add description
           if (value.description && value.description.length > 0) {
             addEntity.description = value.description;
           }
-          // update labels
+          // add labels
           if (value.labels && value.labels.length > 0) {
             addEntity.labels = value.labels;
           }
