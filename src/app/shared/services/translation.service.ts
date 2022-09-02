@@ -150,11 +150,6 @@ export class TranslationService {
     return publishTranslations({spaceId})
   }
 
-  importDiffBatch(spaceId: string, locale: string, translations: { [key: string]: string }): Observable<void> {
-    const importLocaleJson = httpsCallableData<{ spaceId: string, locale: string, translations: { [key: string]: string } }, void>(this.functions, 'importLocaleJson');
-    return importLocaleJson({spaceId, locale, translations})
-  }
-
   export(data: TranslationsExportData): Observable<TranslationLocale | TranslationExportImport[]> {
     const translationsExport = httpsCallableData<TranslationsExportData, TranslationLocale | TranslationExportImport[]>(this.functions, 'translationsExport');
     return translationsExport(data)
