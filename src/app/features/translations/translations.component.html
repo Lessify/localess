@@ -25,15 +25,13 @@
       </button>
 
       <mat-menu #importMenu="matMenu">
-        <button mat-menu-item *ngFor="let locale of locales" (click)="fileInput.click()">
+        <button mat-menu-item (click)="openImportDialog()">
           <mat-icon>cloud_upload</mat-icon>
-          <span>Import ({{locale.name}})</span>
-          <input #fileInput hidden type="file" accept="application/json" (change)="onLocaleImportJson($event, locale)"/>
+          <span>Import</span>
         </button>
-        <mat-divider></mat-divider>
-        <button mat-menu-item *ngFor="let locale of locales" (click)="onLocaleExportJson(locale.id)">
+        <button mat-menu-item (click)="openExportDialog()">
           <mat-icon>cloud_download</mat-icon>
-          <span>Export ({{locale.name}})</span>
+          <span>Export</span>
         </button>
       </mat-menu>
     </ng-container>
@@ -203,7 +201,7 @@
             </button>
             <button
               mat-stroked-button matTooltip="Delete"
-              (click)="deleteTranslation(selectedTranslation)">
+              (click)="openDeleteDialog(selectedTranslation)">
               <mat-icon>delete</mat-icon>
             </button>
           </div>
@@ -247,7 +245,7 @@
         <mat-divider></mat-divider>
         <div class="p-2 align-items-start">
           <p><small><strong>Labels</strong></small></p>
-          <ng-container *ngIf="selectedTranslation!.labels!.length > 0 ; else elseLabelsContainer">
+          <ng-container *ngIf="selectedTranslation?.labels?.length > 0 ; else elseLabelsContainer">
             <mat-chip-list>
               <mat-chip *ngFor="let item of selectedTranslation?.labels">{{item}}</mat-chip>
             </mat-chip-list>

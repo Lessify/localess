@@ -2,10 +2,10 @@ import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core'
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {Observable, startWith} from 'rxjs';
-import {LocaleService} from '../../../shared/services/locale.service';
+import {LocaleService} from '@shared/services/locale.service';
 import {map} from 'rxjs/operators';
-import {Locale} from '../../../shared/models/locale.model';
-import {LocaleValidator} from '../../../shared/validators/locale.validator';
+import {Locale} from '@shared/models/locale.model';
+import {LocaleValidator} from '@shared/validators/locale.validator';
 
 @Component({
   selector: 'll-locale-dialog',

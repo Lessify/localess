@@ -7,15 +7,15 @@ import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
-import {UserService} from '../../shared/services/user.service';
-import {User} from '../../shared/models/user.model';
+import {UserService} from '@shared/services/user.service';
+import {User} from '@shared/models/user.model';
 import {filter, switchMap} from 'rxjs/operators';
 import {UserDialogComponent} from './user-dialog/user-dialog.component';
 import {UserDialogModel} from './user-dialog/user-dialog.model';
 import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog.component';
 import {UserInviteDialogResponse} from './user-invite-dialog/user-invite-dialog.model';
-import {ConfirmationDialogComponent} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 
 @Component({
   selector: 'll-users',

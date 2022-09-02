@@ -1,4 +1,4 @@
-import {TranslationType} from '../../../shared/models/translation.model';
+import {TranslationType} from '@shared/models/translation.model';
 
 export interface TranslationAddDialogModel {
   name: string;

@@ -11,7 +11,7 @@ import {UserState} from '../../core/state/user/user.model';
 import {filter, switchMap} from 'rxjs/operators';
 import {MeDialogComponent} from './me-dialog/me-dialog.component';
 import {MeDialogModel} from './me-dialog/me-dialog.model';
-import {MeService} from '../../shared/services/me.service';
+import {MeService} from '@shared/services/me.service';
 import {MePasswordDialogComponent} from './me-password-dialog/me-password-dialog.component';
 import {MePasswordDialogModel} from './me-password-dialog/me-password-dialog.model';
 import {MeEmailDialogComponent} from './me-email-dialog/me-email-dialog.component';

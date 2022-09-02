@@ -10,11 +10,11 @@ import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
-import {ConfirmationDialogComponent} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
-import {SpaceService} from '../../shared/services/space.service';
-import {Space} from '../../shared/models/space.model';
-import {CopierService} from '../../shared/services/copier.service';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {SpaceService} from '@shared/services/space.service';
+import {Space} from '@shared/models/space.model';
+import {CopierService} from '@shared/services/copier.service';
 
 @Component({
   selector: 'll-spaces',

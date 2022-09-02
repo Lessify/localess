@@ -1,28 +1,39 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {combineLatest, debounceTime, Observable, startWith} from 'rxjs';
+import {combineLatest, debounceTime, EMPTY, Observable, startWith} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
 import {filter, map, switchMap, tap} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
 import {FormBuilder, FormControl} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {Store} from '@ngrx/store';
-import {TranslationService} from '../../shared/services/translation.service';
-import {SpaceService} from '../../shared/services/space.service';
+import {TranslationService} from '@shared/services/translation.service';
+import {SpaceService} from '@shared/services/space.service';
 import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
-import {Locale} from '../../shared/models/locale.model';
-import {Translation, TranslationCreate, TranslationUpdate} from '../../shared/models/translation.model';
+import {Locale} from '@shared/models/locale.model';
+import {Translation, TranslationCreate, TranslationUpdate} from '@shared/models/translation.model';
 import {selectSpace} from '../../core/state/space/space.selector';
-import {Space} from '../../shared/models/space.model';
-import {CopierService} from '../../shared/services/copier.service';
+import {Space} from '@shared/models/space.model';
+import {CopierService} from '@shared/services/copier.service';
 import {TranslationAddDialogComponent} from './translation-add-dialog/translation-add-dialog.component';
 import {TranslationAddDialogModel} from './translation-add-dialog/translation-add-dialog.model';
 import {TranslationEditDialogModel} from './translation-edit-dialog/translation-edit-dialog.model';
 import {TranslationEditDialogComponent} from './translation-edit-dialog/translation-edit-dialog.component';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
-import {ConfirmationDialogComponent} from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '../../shared/components/confirmation-dialog/confirmation-dialog.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {saveAs} from 'file-saver-es';
+import {TranslationExportDialogComponent} from './translation-export-dialog/translation-export-dialog.component';
+import {
+  TranslationExportDialogModel,
+  TranslationExportDialogReturn
+} from './translation-export-dialog/translation-export-dialog.model';
+import {NameUtils} from '../../core/utils/name-utils.service';
+import {TranslationImportDialogComponent} from './translation-import-dialog/translation-import-dialog.component';
+import {
+  TranslationImportDialogModel,
+  TranslationImportDialogReturn
+} from './translation-import-dialog/translation-import-dialog.model';
 
 @Component({
   selector: 'll-translations',
@@ -171,7 +182,7 @@ export class TranslationsComponent implements OnInit {
 
   openAddDialog(): void {
     this.dialog
-      .open<TranslationAddDialogComponent, any, TranslationAddDialogModel>(
+      .open<TranslationAddDialogComponent, void, TranslationAddDialogModel>(
         TranslationAddDialogComponent,
         {
           width: '500px'
@@ -186,8 +197,8 @@ export class TranslationsComponent implements OnInit {
               type: it!.type,
               locale: this.selectedSpace!.localeFallback.id,
               value: it!.value,
-              labels: it!.labels,
-              description: it!.description,
+              labels: it?.labels,
+              description: it?.description,
             }
             return this.translationService.add(this.selectedSpace!.id, tc)
           }
@@ -238,7 +249,7 @@ export class TranslationsComponent implements OnInit {
       );
   }
 
-  deleteTranslation(element: Translation): void {
+  openDeleteDialog(element: Translation): void {
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel>(
         ConfirmationDialogComponent,
@@ -265,6 +276,118 @@ export class TranslationsComponent implements OnInit {
       );
   }
 
+  openImportDialog(): void {
+    this.isImportExportLoading = true;
+    this.dialog
+      .open<TranslationImportDialogComponent, TranslationImportDialogModel, TranslationImportDialogReturn>(
+        TranslationImportDialogComponent,
+        {
+          width: '500px',
+          data: {
+            locales: this.locales
+          }
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => {
+          console.log(it)
+          if (it?.kind === 'FLAT') {
+            return this.translationService.import(
+              {
+                spaceId: this.selectedSpace!.id,
+                kind: it.kind,
+                locale: it.locale,
+                translations: it.translations
+              }
+            )
+          } else if (it?.kind === 'FULL') {
+            return this.translationService.import(
+              {
+                spaceId: this.selectedSpace!.id,
+                kind: it.kind,
+                translations: it.translations
+              }
+            )
+          }
+          return EMPTY
+        })
+      )
+      .subscribe({
+          next: (result) => {
+            this.notificationService.success('Translations has been imported.');
+          },
+          error: (err) => {
+            console.error(err)
+            this.notificationService.error('Translation can not be imported.');
+          },
+          complete: () => {
+            setTimeout(() => {
+              this.isImportExportLoading = false
+              this.cd.markForCheck()
+            }, 1000)
+          }
+        }
+      );
+  }
+
+  openExportDialog(): void {
+    this.isImportExportLoading = true;
+    let fileName = this.selectedSpace?.name || ''
+    this.dialog
+      .open<TranslationExportDialogComponent, TranslationExportDialogModel, TranslationExportDialogReturn>(
+        TranslationExportDialogComponent,
+        {
+          width: '500px',
+          data: {
+            locales: this.locales
+          }
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => {
+          console.log(it)
+          if (it?.kind === 'FLAT') {
+            fileName = `${fileName}-${it.locale}`
+            return this.translationService.export(
+              {
+                spaceId: this.selectedSpace!.id,
+                kind: it.kind,
+                locale: it.locale
+              }
+            )
+          } else if (it?.kind === 'FULL') {
+            return this.translationService.export(
+              {
+                spaceId: this.selectedSpace!.id,
+                kind: it.kind
+              }
+            )
+          }
+          return EMPTY
+        })
+      )
+      .subscribe({
+          next: (result) => {
+            this.notificationService.success('Translations has been exported.');
+            saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}.json`)
+          },
+          error: (err) => {
+            console.error(err)
+            this.notificationService.error('Translation can not be exported.');
+          },
+          complete: () => {
+            setTimeout(() => {
+              this.isImportExportLoading = false
+              this.cd.markForCheck()
+            }, 1000)
+          }
+        }
+      );
+  }
 
   selectTranslation(translation: Translation): void {
     this.selectedTranslation = translation;
@@ -319,7 +442,7 @@ export class TranslationsComponent implements OnInit {
       .map(it => it.labels)
       .flat()
       .forEach(it => {
-        if (!this.availableLabels.find(el => el === it)) {
+        if (it && !this.availableLabels.find(el => el === it)) {
           this.availableLabels.push(it);
         }
       });

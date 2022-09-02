@@ -1,9 +1,9 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 
-import {SharedModule} from '../../shared/shared.module';
+import {SharedModule} from '@shared/shared.module';
 import {TranslationsRoutingModule} from './translations-routing.module';
-import {TranslationService} from '../../shared/services/translation.service';
+import {TranslationService} from '@shared/services/translation.service';
 import {TranslationsComponent} from './translations.component';
 import {TranslationStringViewComponent} from './translation-string-view/translation-string-view.component';
 import {TranslationStringEditComponent} from './translation-string-edit/translation-string-edit.component';
@@ -13,22 +13,26 @@ import {TranslationArrayEditComponent} from './translation-array-edit/translatio
 import {TranslationArrayViewComponent} from './translation-array-view/translation-array-view.component';
 import {TranslationPluralEditComponent} from './translation-plural-edit/translation-plural-edit.component';
 import {TranslationPluralViewComponent} from './translation-plural-view/translation-plural-view.component';
+import {TranslationExportDialogComponent} from './translation-export-dialog/translation-export-dialog.component';
+import {TranslationImportDialogComponent} from './translation-import-dialog/translation-import-dialog.component';
 
 
 @NgModule({
-    declarations: [
-        TranslationsComponent,
-        TranslationArrayEditComponent,
-        TranslationArrayViewComponent,
-        TranslationPluralEditComponent,
-        TranslationPluralViewComponent,
-        TranslationStringEditComponent,
-        TranslationStringViewComponent,
-        TranslationAddDialogComponent,
-        TranslationEditDialogComponent
-    ],
-    imports: [CommonModule, SharedModule, TranslationsRoutingModule],
-    providers: [TranslationService]
+  declarations: [
+    TranslationsComponent,
+    TranslationArrayEditComponent,
+    TranslationArrayViewComponent,
+    TranslationPluralEditComponent,
+    TranslationPluralViewComponent,
+    TranslationStringEditComponent,
+    TranslationStringViewComponent,
+    TranslationAddDialogComponent,
+    TranslationEditDialogComponent,
+    TranslationExportDialogComponent,
+    TranslationImportDialogComponent
+  ],
+  imports: [CommonModule, SharedModule, TranslationsRoutingModule],
+  providers: [TranslationService]
 })
 export class TranslationsModule {
 }

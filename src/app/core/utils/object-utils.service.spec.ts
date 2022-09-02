@@ -1,6 +1,6 @@
 import {ObjectUtils} from './object-utils.service';
 
-describe('AddFirstOrganisationComponent', () => {
+describe('Test Object Utils', () => {
   it('is equal', () => {
     const original: any = {
       number: 1,

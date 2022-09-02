@@ -1,0 +1,42 @@
+<h1 mat-dialog-title>Translations Export</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Type</mat-label>
+            <mat-select formControlName="kind" required>
+              <mat-option *ngFor="let kind of exportKind" [value]="kind">
+                {{kind}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" *ngIf="form.value.kind === 'FLAT'">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Type</mat-label>
+            <mat-select formControlName="locale" required>
+              <mat-option *ngFor="let locale of data.locales" [value]="locale.id">
+                {{locale.name}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    <mat-icon>cloud_download</mat-icon>
+    Export
+  </button>
+</mat-dialog-actions>

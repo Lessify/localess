@@ -11,7 +11,7 @@ import {
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {debounce} from 'rxjs/operators';
 import {interval} from 'rxjs';
-import {TranslationValidator} from '../../../shared/validators/translation.validator';
+import {TranslationValidator} from '@shared/validators/translation.validator';
 
 @Component({
   selector: 'll-translation-array-edit',
