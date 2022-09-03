@@ -26,9 +26,7 @@ export const reducers: ActionReducerMap<AppState> = {
 export const metaReducers: MetaReducer<AppState>[] = [initStateFromLocalStorage];
 
 if (!environment.production) {
-  if (!environment.test) {
-    metaReducers.unshift(debug);
-  }
+  metaReducers.unshift(debug);
 }
 
 export const selectAuthState = createFeatureSelector<AuthState>('auth');

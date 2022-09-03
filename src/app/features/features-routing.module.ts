@@ -6,6 +6,7 @@ import {pipe} from 'rxjs';
 import {map} from 'rxjs/operators';
 
 const ROLE_READ = 'read'
+const ROLE_EDIT = 'edit'
 const ROLE_WRITE = 'write'
 const ROLE_ADMIN = 'admin'
 
@@ -24,7 +25,7 @@ const hasRoleWrite = () =>
 const hasRoleRead = () =>
   pipe(
     customClaims,
-    map((claims) => [ROLE_READ, ROLE_WRITE, ROLE_ADMIN].includes(claims.role))
+    map((claims) => [ROLE_READ, ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN].includes(claims.role))
   );
 
 const routes: Routes = [

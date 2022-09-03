@@ -271,7 +271,9 @@ export class TranslationsComponent implements OnInit {
           next: () => {
             this.notificationService.success('Translation has been deleted.');
           },
-          error: () => this.notificationService.error('Translation can not be deleted.')
+          error: () => {
+            this.notificationService.error('Translation can not be deleted.')
+          }
         }
       );
   }

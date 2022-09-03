@@ -2,7 +2,7 @@
   <mat-toolbar-row>
     Translations
     <span class="spacer"></span>
-    <ng-container id="translation-add-import-export" *ngIf="['write', 'admin'] | hasAnyUserRole">
+    <ng-container id="translation-add-import-export" *ngIf="['write', 'admin'] | hasAnyUserRole | async">
       <button
         mat-raised-button
         color="primary"
@@ -131,7 +131,7 @@
           </mat-form-field>
         </div>
 
-        <ng-container id="translation-locale-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole">
+        <ng-container id="translation-locale-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
           <mat-divider></mat-divider>
           <div class="p-2 align-items-start mb-auto">
           <span [ngSwitch]="selectedTranslation.type">
@@ -192,7 +192,7 @@
     </div>
     <div class="col-3 overlay text-break">
       <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
-        <ng-container id="translation-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole">
+        <ng-container id="translation-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
           <div class="p-2 align-items-start">
             <button
               mat-stroked-button matTooltip="Edit"
@@ -200,6 +200,7 @@
               <mat-icon>edit</mat-icon>
             </button>
             <button
+              *ngIf="['write', 'admin'] | hasAnyUserRole | async"
               mat-stroked-button matTooltip="Delete"
               (click)="openDeleteDialog(selectedTranslation)">
               <mat-icon>delete</mat-icon>
