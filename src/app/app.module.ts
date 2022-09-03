@@ -26,6 +26,7 @@ import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
 import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {getFunctions, provideFunctions} from '@angular/fire/functions';
+import {getPerformance, providePerformance} from '@angular/fire/performance';
 
 let resolvePersistenceEnabled: (enabled: boolean) => void;
 
@@ -88,6 +89,12 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
 
       return functions;
     }),
+    providePerformance(() => {
+      const performance = getPerformance()
+      performance.dataCollectionEnabled = true;
+      performance.instrumentationEnabled = true;
+      return performance;
+    })
   ],
   providers: [
     {
