@@ -17,3 +17,23 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .spacer {
   flex: 1 1 auto;
 }
+
+.error-notification-overlay {
+  color: mat.get-color-from-palette($error-colors, default-contrast);
+  background-color: mat.get-color-from-palette($error-colors);
+}
+
+.info-notification-overlay {
+  color: mat.get-color-from-palette($info-colors, default-contrast);
+  background-color: mat.get-color-from-palette($info-colors);
+}
+
+.success-notification-overlay {
+  color: mat.get-color-from-palette($success-colors, default-contrast);
+  background-color: mat.get-color-from-palette($success-colors);
+}
+
+.warning-notification-overlay {
+  color: mat.get-color-from-palette($warning-colors, default-contrast);
+  background-color: mat.get-color-from-palette($warning-colors);
+}
