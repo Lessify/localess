@@ -14,6 +14,7 @@ export class TranslationImportDialogComponent {
   exportKind = ['FULL', 'FLAT']
   contentFieldsCount = 0;
   fileWrong = false;
+  fileName = ''
 
   form: FormGroup = this.fb.group({
     kind: this.fb.control('FULL', [Validators.required]),
@@ -34,15 +35,17 @@ export class TranslationImportDialogComponent {
     if (event.target && event.target instanceof HTMLInputElement) {
       const target = event.target as HTMLInputElement
       if (target.files && target.files.length > 0) {
+        this.fileName = target.files[0].name;
         fileContent = JSON.parse(await target.files[0].text())
-        if (this.form.value.kind === 'FULL' && fileContent instanceof Array) {
+        if (this.form.value.kind === 'FULL' && Array.isArray(fileContent)) {
           // Full file
           this.contentFieldsCount = fileContent.length
           this.form.patchValue({
             translations: fileContent
           })
-        } else if (this.form.value.kind === 'FLAT' && fileContent instanceof Object) {
+        } else if (this.form.value.kind === 'FLAT' && !Array.isArray(fileContent)) {
           // Flat file
+          console.log(typeof fileContent)
           this.contentFieldsCount = Object.getOwnPropertyNames(fileContent).length
           this.form.patchValue({
             translations: fileContent
@@ -60,6 +63,8 @@ export class TranslationImportDialogComponent {
   onKindSelectionChange(): void {
     this.form.controls['translations'].setValue(undefined);
     this.contentFieldsCount = 0;
+    this.fileName = '';
+    this.fileWrong = false;
     this.cd.markForCheck()
   }
 }

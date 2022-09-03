@@ -34,7 +34,6 @@ If you would like to become a sponsor, please consider:
 1. [Overview](https://github.com/Lessify/localess/wiki)
 2. [Setup](https://github.com/Lessify/localess/wiki/Setup)
 3. [Integration](https://github.com/Lessify/localess/wiki/Integration)
-4. [Errors](https://github.com/Lessify/localess/wiki/Errors)
 
 ## How it works
 **Localess** is using Firebase products to run the application.
