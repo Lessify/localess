@@ -1,11 +1,9 @@
 import {Component, Optional} from '@angular/core';
-import {Auth, User, UserCredential} from '@angular/fire/auth';
+import {Auth, User, sendPasswordResetEmail} from '@angular/fire/auth';
 import {Router} from '@angular/router';
-import {EMPTY, Observable, Subscription} from 'rxjs';
+import {EMPTY, Observable} from 'rxjs';
 import {Store} from '@ngrx/store';
 import {AppState} from '../core/state/core.state';
-import {authLogin} from '../core/core.module';
-import {sendPasswordResetEmail, signInWithEmailAndPassword} from '@firebase/auth';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 
 @Component({

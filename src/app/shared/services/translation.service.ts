@@ -10,6 +10,7 @@ import {
   Firestore,
   serverTimestamp,
   updateDoc,
+  UpdateData
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {
@@ -26,7 +27,6 @@ import {
 } from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
-import {UpdateData} from '@firebase/firestore';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 
 

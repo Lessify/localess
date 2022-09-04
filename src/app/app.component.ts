@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {Performance} from '@angular/fire/performance';
 
 @Component({
   selector: 'll-root',
@@ -6,5 +7,10 @@ import {Component} from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
+
+  constructor(
+    private readonly performance: Performance,
+  ) {
+  }
   title = 'localess';
 }

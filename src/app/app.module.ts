@@ -86,14 +86,10 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
         //connectFunctionsEmulator(functions, 'localhost', 5001);
         functions.customDomain = 'http://localhost:4200/api'
       }
-
       return functions;
     }),
     providePerformance(() => {
-      const performance = getPerformance()
-      performance.dataCollectionEnabled = true;
-      performance.instrumentationEnabled = true;
-      return performance;
+      return getPerformance();
     })
   ],
   providers: [

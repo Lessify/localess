@@ -5,6 +5,7 @@ import {
   GoogleAuthProvider,
   IdTokenResult,
   OAuthProvider,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
   User,
@@ -18,7 +19,6 @@ import {Store} from '@ngrx/store';
 import {AppState} from '../core/state/core.state';
 import {authLogin, authLogout} from '../core/core.module';
 import {environment} from '../../environments/environment';
-import {signInWithEmailAndPassword} from '@firebase/auth';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 
 @Component({
@@ -56,17 +56,17 @@ export class LoginComponent implements OnDestroy {
     if (this.auth) {
       this.user = authState(this.auth);
       this.userDisposable = authState(this.auth)
-      .pipe(
-        traceUntilFirst('auth'),
-        tap((u) => {
-          this.parsedToken = u?.getIdTokenResult();
-        }),
-        map((u) => !!u)
-      )
-      .subscribe((isLoggedIn) => {
-        this.showLoginButton = !isLoggedIn;
-        this.showLogoutButton = isLoggedIn;
-      });
+        .pipe(
+          traceUntilFirst('auth'),
+          tap((u) => {
+            this.parsedToken = u?.getIdTokenResult();
+          }),
+          map((u) => !!u)
+        )
+        .subscribe((isLoggedIn) => {
+          this.showLoginButton = !isLoggedIn;
+          this.showLogoutButton = isLoggedIn;
+        });
     }
   }
 
