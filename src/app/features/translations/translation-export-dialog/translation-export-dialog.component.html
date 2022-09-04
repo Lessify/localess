@@ -7,8 +7,8 @@
           <mat-form-field appearance="fill">
             <mat-label>Type</mat-label>
             <mat-select formControlName="kind" required>
-              <mat-option *ngFor="let kind of exportKind" [value]="kind">
-                {{kind}}
+              <mat-option *ngFor="let kind of exportKinds" [value]="kind.key">
+                {{kind.value}}
               </mat-option>
             </mat-select>
           </mat-form-field>
@@ -26,6 +26,23 @@
                 {{locale.name}}
               </mat-option>
             </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>From Date</mat-label>
+            <input matInput [matDatepicker]="picker" readonly [max]="today"
+                   (click)="picker.open()" (dateChange)="dateChange($event)">
+            <mat-datepicker-toggle matSuffix (click)="picker.select(null)">
+              <mat-icon matDatepickerToggleIcon>clear</mat-icon>
+            </mat-datepicker-toggle>
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
           </mat-form-field>
         </div>
       </div>

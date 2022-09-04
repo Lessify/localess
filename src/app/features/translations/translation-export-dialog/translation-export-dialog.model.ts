@@ -8,9 +8,17 @@ export type TranslationExportDialogReturn = TranslationExportFullDialogReturn | 
 
 export interface TranslationExportFullDialogReturn {
   kind: 'FULL'
+  /**
+   * number of milliseconds.
+   */
+  fromDate?: number
 }
 
 export interface TranslationExportFlatDialogReturn {
   kind: 'FLAT'
   locale: string
+  /**
+   * number of milliseconds.
+   */
+  fromDate?: number
 }
