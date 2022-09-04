@@ -35,8 +35,8 @@
         "function": "v1"
       },
       {
-        "source": "/api/publishTranslations",
-        "function": "publishTranslations"
+        "source": "/api/translationsPublish",
+        "function": "translationsPublish"
       },
       {
         "source": "/api/translationsExport",

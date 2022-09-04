@@ -9,8 +9,8 @@ import {
   DocumentReference,
   Firestore,
   serverTimestamp,
-  updateDoc,
-  UpdateData
+  UpdateData,
+  updateDoc
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {
@@ -26,8 +26,9 @@ import {
   TranslationUpdateFS
 } from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {map, tap} from 'rxjs/operators';
+import {map} from 'rxjs/operators';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
+import {translationsPublish} from '../../../../functions/src';
 
 
 @Injectable()
@@ -142,8 +143,8 @@ export class TranslationService {
   }
 
   publish(spaceId: string): Observable<void> {
-    const publishTranslations = httpsCallableData<{ spaceId: string }, void>(this.functions, 'publishTranslations');
-    return publishTranslations({spaceId})
+    const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translationsPublish');
+    return translationsPublish({spaceId})
       .pipe(
         traceUntilFirst('Firestore:Translations:publish'),
       );

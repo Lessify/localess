@@ -18,7 +18,7 @@ interface PublishTranslationsData {
   spaceId: string
 }
 
-export const publishTranslations = https.onCall(async (data: PublishTranslationsData, context) => {
+export const translationsPublish = https.onCall(async (data: PublishTranslationsData, context) => {
   logger.info('[publishTranslations] data: ' + JSON.stringify(data));
   logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
