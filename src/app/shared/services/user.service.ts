@@ -1,10 +1,11 @@
 import {Injectable} from '@angular/core';
-import {from, Observable, of} from 'rxjs';
+import {from, Observable} from 'rxjs';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 import {User, UserInvite, UserUpdateFS} from '../models/user.model';
 import {
   collection,
-  collectionData, deleteDoc,
+  collectionData,
+  deleteDoc,
   doc,
   docData,
   Firestore,
@@ -26,7 +27,7 @@ export class UserService {
   findAll(): Observable<User[]> {
     return collectionData(collection(this.firestore, 'users'), {idField: 'id'})
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Users:findAll'),
         map((it) => it as User[])
       );
   }
@@ -34,7 +35,7 @@ export class UserService {
   findById(id: string): Observable<User> {
     return docData(doc(this.firestore, `users/${id}`), {idField: 'id'})
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Users:findById'),
         map((it) => it as User)
       );
   }
@@ -51,8 +52,7 @@ export class UserService {
       )
     )
       .pipe(
-        traceUntilFirst('firestore'),
-        tap(it => console.log(it))
+        traceUntilFirst('Firestore:Users:update'),
       );
   }
 
@@ -61,17 +61,23 @@ export class UserService {
       deleteDoc(doc(this.firestore, `users/${id}`))
     )
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Users:delete'),
       );
   }
 
   invite(model: UserInvite): Observable<void> {
     const userInvite = httpsCallableData<UserInvite, void>(this.functions, 'userInvite');
     return userInvite(model)
+      .pipe(
+        traceUntilFirst('Firestore:Users:invite'),
+      )
   }
 
   sync(): Observable<void> {
     const usersSync = httpsCallableData<void, void>(this.functions, 'usersSync');
     return usersSync()
+      .pipe(
+        traceUntilFirst('Firestore:Users:sync'),
+      )
   }
 }

@@ -12,5 +12,4 @@ export class AppComponent {
     private readonly performance: Performance,
   ) {
   }
-  title = 'localess';
 }

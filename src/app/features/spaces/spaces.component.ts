@@ -76,11 +76,9 @@ export class SpacesComponent implements OnInit {
     )
     .subscribe({
         next: (value) => {
-          console.log(value)
           this.notificationService.success('Space has been created.');
         },
         error: (err) => {
-          console.error(err)
           this.notificationService.error('Space can not be created.');
         }
       }
@@ -103,12 +101,10 @@ export class SpacesComponent implements OnInit {
       )
     )
     .subscribe({
-        next: (value) => {
-          console.log(value)
+        next: () => {
           this.notificationService.success('Space has been updated.');
         },
         error: (err) => {
-          console.error(err)
           this.notificationService.error('Space can not be updated.');
         }
       }
@@ -135,7 +131,6 @@ export class SpacesComponent implements OnInit {
         this.notificationService.success(`Space '${element.name}' has been deleted.`);
       },
       error: (err) => {
-        console.error(err)
         this.notificationService.error(`Space '${element.name}' can not be deleted.`);
       }
     });

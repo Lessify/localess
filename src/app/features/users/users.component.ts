@@ -72,12 +72,10 @@ export class UsersComponent implements OnInit {
         )
       )
       .subscribe({
-          next: (value) => {
-            console.log(value)
+          next: () => {
             this.notificationService.success('User has been invited.');
           },
-          error: (err) => {
-            console.error(err)
+          error: () => {
             this.notificationService.error('User can not be invited.');
           }
         }
@@ -100,12 +98,10 @@ export class UsersComponent implements OnInit {
         )
       )
       .subscribe({
-          next: (value) => {
-            console.log(value)
+          next: () => {
             this.notificationService.success('User has been updated.');
           },
-          error: (err) => {
-            console.error(err)
+          error: () => {
             this.notificationService.error('User can not be updated.');
           }
         }
@@ -131,8 +127,7 @@ export class UsersComponent implements OnInit {
         next: () => {
           this.notificationService.success(`User '${element.email}' has been deleted.`);
         },
-        error: (err) => {
-          console.error(err)
+        error: () => {
           this.notificationService.error(`User '${element.email}' can not be deleted.`);
         }
       });
@@ -145,8 +140,7 @@ export class UsersComponent implements OnInit {
         next: () => {
           this.notificationService.success(`Sync is in progress, it may take upt to few minutes.`);
         },
-        error: (err) => {
-          console.error(err)
+        error: () => {
           this.notificationService.error(`Users can not be synced.`);
         },
         complete: () => {

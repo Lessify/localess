@@ -22,8 +22,7 @@ export class LocaleService {
       )
     )
     .pipe(
-      traceUntilFirst('firestore'),
-      tap(it => console.log(it))
+      traceUntilFirst('Firestore:Locales:markAsFallback'),
     );
   }
 
@@ -39,8 +38,7 @@ export class LocaleService {
       )
     )
     .pipe(
-      traceUntilFirst('firestore'),
-      tap(it => console.log(it))
+      traceUntilFirst('Firestore:Locales:add'),
     );
   }
 
@@ -56,8 +54,7 @@ export class LocaleService {
       )
     )
     .pipe(
-      traceUntilFirst('firestore'),
-      tap(it => console.log(it))
+      traceUntilFirst('Firestore:Locales:delete'),
     );
   }
 

@@ -98,7 +98,7 @@ export class FeaturesComponent implements OnInit {
     .subscribe((user) => {
       // Sign-in
       if (user) {
-        console.log(user);
+        // console.log(user);
         // const tokenResult = await user.getIdTokenResult()
         this.store.dispatch(
           actionUserChange({

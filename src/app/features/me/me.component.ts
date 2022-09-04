@@ -77,7 +77,7 @@ export class MeComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it =>
           //TODO handle firestore update
-          this.meService.update(this.authUser!, it!)
+          this.meService.updateProfile(this.authUser!, it!)
         ),
       )
       .subscribe({
@@ -86,7 +86,6 @@ export class MeComponent implements OnInit {
             this.authUser?.reload()
           },
           error: (err) => {
-            console.error(err)
             this.notificationService.error('User can not be updated.');
           }
         }
@@ -111,7 +110,6 @@ export class MeComponent implements OnInit {
             this.authUser?.reload()
           },
           error: (err) => {
-            console.error(err)
             this.notificationService.error('User email can not be updated.');
           }
         }
@@ -136,7 +134,6 @@ export class MeComponent implements OnInit {
 
           },
           error: (err) => {
-            console.error(err)
             this.notificationService.error('User password can not be updated.');
           }
         }

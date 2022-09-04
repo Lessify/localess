@@ -25,7 +25,7 @@ export class SpaceService {
   findAll(): Observable<Space[]> {
     return collectionData(collection(this.firestore, 'spaces'), {idField: 'id'})
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Spaces:findAll'),
         map((it) => it as Space[])
       );
   }
@@ -33,7 +33,7 @@ export class SpaceService {
   findById(id: string): Observable<Space> {
     return docData(doc(this.firestore, `spaces/${id}`), {idField: 'id'})
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Spaces:findById'),
         map((it) => it as Space)
       );
   }
@@ -53,8 +53,7 @@ export class SpaceService {
       )
     )
       .pipe(
-        traceUntilFirst('firestore'),
-        tap(it => console.log(it))
+        traceUntilFirst('Firestore:Spaces:add'),
       );
   }
 
@@ -70,8 +69,7 @@ export class SpaceService {
       )
     )
       .pipe(
-        traceUntilFirst('firestore'),
-        tap(it => console.log(it))
+        traceUntilFirst('Firestore:Spaces:update'),
       );
   }
 
@@ -80,7 +78,7 @@ export class SpaceService {
       deleteDoc(doc(this.firestore, `spaces/${id}`))
     )
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Spaces:delete'),
       );
   }
 }

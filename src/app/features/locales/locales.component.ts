@@ -89,11 +89,9 @@ export class LocalesComponent implements OnInit {
       )
       .subscribe({
           next: (value) => {
-            console.log(value)
             this.notificationService.success('Locale has been added.');
           },
           error: (err) => {
-            console.log(err)
             this.notificationService.error('Locale can not be added.');
           }
         }

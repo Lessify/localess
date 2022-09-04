@@ -101,7 +101,6 @@ export class TranslationsComponent implements OnInit {
       )
       .subscribe({
         next: value => {
-          console.log(`[TranslationsComponent:ngOnInit] search='${value}'`)
           this.searchValue = value
           this.cd.markForCheck()
         }
@@ -111,24 +110,16 @@ export class TranslationsComponent implements OnInit {
   loadData(): void {
     this.store.select(selectSpace)
       .pipe(
-        tap(it => console.log(`[TranslationsComponent:loadData] selectSpace ${it.id} ${Date.now()}`)),
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it =>
           combineLatest([
-            this.spaceService.findById(it.id)
-              .pipe(
-                tap(it => console.log(`[TranslationsComponent:loadData] spaceService ${Date.now()}`))
-              ),
+            this.spaceService.findById(it.id),
             this.translationService.findAll(it.id)
-              .pipe(
-                tap(it => console.log(`[TranslationsComponent:loadData] translationService ${Date.now()}`))
-              )
           ])
         )
       )
       .subscribe({
         next: ([space, translations]) => {
-          console.log(`[TranslationsComponent:loadData] ${Date.now()}`)
           this.selectedSpace = space
           this.locales = space.locales
           this.translations = translations;
@@ -167,8 +158,7 @@ export class TranslationsComponent implements OnInit {
         next: () => {
           this.notificationService.success('Translations has been published.');
         },
-        error: (err) => {
-          console.error(err)
+        error: () => {
           this.notificationService.error('Translations can not be published.');
         },
         complete: () => {
@@ -209,8 +199,7 @@ export class TranslationsComponent implements OnInit {
           next: () => {
             this.notificationService.success('Translation has been added.');
           },
-          error: (err) => {
-            console.error(err)
+          error: () => {
             this.notificationService.error('Translation can not be added.');
           }
         }
@@ -241,8 +230,7 @@ export class TranslationsComponent implements OnInit {
           next: () => {
             this.notificationService.success('Translation has been updated.');
           },
-          error: (err) => {
-            console.error(err)
+          error: () => {
             this.notificationService.error('Translation can not be updated.');
           }
         }
@@ -294,7 +282,6 @@ export class TranslationsComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it => {
-          console.log(it)
           if (it?.kind === 'FLAT') {
             return this.translationService.import(
               {
@@ -320,8 +307,7 @@ export class TranslationsComponent implements OnInit {
           next: (result) => {
             this.notificationService.success('Translations has been imported.');
           },
-          error: (err) => {
-            console.error(err)
+          error: () => {
             this.notificationService.error('Translation can not be imported.');
           },
           complete: () => {
@@ -351,7 +337,6 @@ export class TranslationsComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it => {
-          console.log(it)
           if (it?.kind === 'FLAT') {
             fileName = `${fileName}-${it.locale}`
             return this.translationService.export(
@@ -377,8 +362,7 @@ export class TranslationsComponent implements OnInit {
             this.notificationService.success('Translations has been exported.');
             saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}.json`)
           },
-          error: (err) => {
-            console.error(err)
+          error: () => {
             this.notificationService.error('Translation can not be exported.');
           },
           complete: () => {

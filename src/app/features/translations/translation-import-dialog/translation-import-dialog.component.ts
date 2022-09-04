@@ -45,7 +45,6 @@ export class TranslationImportDialogComponent {
           })
         } else if (this.form.value.kind === 'FLAT' && !Array.isArray(fileContent)) {
           // Flat file
-          console.log(typeof fileContent)
           this.contentFieldsCount = Object.getOwnPropertyNames(fileContent).length
           this.form.patchValue({
             translations: fileContent
@@ -57,7 +56,6 @@ export class TranslationImportDialogComponent {
       }
     }
     this.cd.markForCheck()
-    console.log(this.contentFieldsCount)
   }
 
   onKindSelectionChange(): void {

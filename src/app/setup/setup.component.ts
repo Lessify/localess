@@ -34,12 +34,10 @@ export class SetupComponent {
     this.setupService.init(this.form.value)
       .subscribe({
         next: () => {
-          console.info('next')
           this.backTimer()
           this.notificationService.success('Setup has been finished, you will be redirected in 5 seconds.');
         },
-        error: (err) => {
-          console.error(err)
+        error: () => {
           this.backTimer()
           this.notificationService.error('Setup can not be finished, you will be redirected in 5 seconds.');
         }

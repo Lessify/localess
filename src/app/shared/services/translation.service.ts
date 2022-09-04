@@ -41,7 +41,7 @@ export class TranslationService {
   findAll(spaceId: string): Observable<Translation[]> {
     return collectionData(collection(this.firestore, `spaces/${spaceId}/translations`), {idField: 'id'})
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Translations:findAll'),
         map((it) => it as Translation[])
       );
   }
@@ -49,7 +49,7 @@ export class TranslationService {
   findById(spaceId: string, id: string): Observable<Translation> {
     return docData(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), {idField: 'id'})
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Translations:findById'),
         map((it) => it as Translation)
       );
   }
@@ -91,8 +91,7 @@ export class TranslationService {
       )
     )
       .pipe(
-        traceUntilFirst('firestore'),
-        tap(it => console.log(it))
+        traceUntilFirst('Firestore:Translations:add'),
       );
   }
 
@@ -114,8 +113,7 @@ export class TranslationService {
       )
     )
       .pipe(
-        traceUntilFirst('firestore'),
-        tap(it => console.log(it))
+        traceUntilFirst('Firestore:Translations:update'),
       );
   }
 
@@ -130,34 +128,41 @@ export class TranslationService {
       )
     )
       .pipe(
-        traceUntilFirst('firestore'),
-        tap(it => console.log(it))
+        traceUntilFirst('Firestore:Translations:updateLocale'),
       );
   }
 
   delete(spaceId: string, id: string): Observable<void> {
-    console.log(`TranslationService::delete spaceId:${spaceId} id:${id}`)
     return from(
       deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`))
     )
       .pipe(
-        traceUntilFirst('firestore'),
+        traceUntilFirst('Firestore:Translations:delete'),
       );
   }
 
   publish(spaceId: string): Observable<void> {
     const publishTranslations = httpsCallableData<{ spaceId: string }, void>(this.functions, 'publishTranslations');
     return publishTranslations({spaceId})
+      .pipe(
+        traceUntilFirst('Firestore:Translations:publish'),
+      );
   }
 
   export(data: TranslationsExportData): Observable<TranslationLocale | TranslationExportImport[]> {
     const translationsExport = httpsCallableData<TranslationsExportData, TranslationLocale | TranslationExportImport[]>(this.functions, 'translationsExport');
     return translationsExport(data)
+      .pipe(
+        traceUntilFirst(`Firestore:Translations:export:${data.kind}`),
+      );
   }
 
   import(data: TranslationsImportData): Observable<void> {
     const translationsImport = httpsCallableData<TranslationsImportData, void>(this.functions, 'translationsImport');
     return translationsImport(data)
+      .pipe(
+        traceUntilFirst(`Firestore:Translations:import:${data.kind}`),
+      );
   }
 
 }
