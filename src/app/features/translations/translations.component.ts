@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {combineLatest, debounceTime, EMPTY, Observable, startWith} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
-import {filter, map, switchMap, tap} from 'rxjs/operators';
+import {filter, map, switchMap} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
 import {FormBuilder, FormControl} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
@@ -343,14 +343,16 @@ export class TranslationsComponent implements OnInit {
               {
                 spaceId: this.selectedSpace!.id,
                 kind: it.kind,
-                locale: it.locale
+                locale: it.locale,
+                fromDate: it.fromDate
               }
             )
           } else if (it?.kind === 'FULL') {
             return this.translationService.export(
               {
                 spaceId: this.selectedSpace!.id,
-                kind: it.kind
+                kind: it.kind,
+                fromDate: it.fromDate
               }
             )
           }

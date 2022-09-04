@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@an
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {TranslationImportDialogModel} from './translation-import-dialog.model';
+import {KeyValue} from '@angular/common';
 
 @Component({
   selector: 'll-translation-import-dialog',
@@ -11,7 +12,10 @@ import {TranslationImportDialogModel} from './translation-import-dialog.model';
 })
 export class TranslationImportDialogComponent {
 
-  exportKind = ['FULL', 'FLAT']
+  exportKinds: KeyValue<string, string>[] = [
+    {key: 'FULL', value: 'JSON FULL'},
+    {key: 'FLAT', value: 'JSON FLAT'}
+  ]
   contentFieldsCount = 0;
   fileWrong = false;
   fileName = ''

@@ -29,11 +29,19 @@ export interface TranslationsExportFlatData {
   kind: 'FLAT'
   spaceId: string
   locale: string
+  /**
+   * number of milliseconds.
+   */
+  fromDate?: number
 }
 
 export interface TranslationsExportFullData {
   kind: 'FULL'
   spaceId: string
+  /**
+   * number of milliseconds.
+   */
+  fromDate?: number
 }
 
 export type TranslationsExportData = TranslationsExportFlatData | TranslationsExportFullData

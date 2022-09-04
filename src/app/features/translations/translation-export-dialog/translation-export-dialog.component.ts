@@ -2,6 +2,8 @@ import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {TranslationExportDialogModel} from './translation-export-dialog.model';
+import {KeyValue} from '@angular/common';
+import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 
 @Component({
   selector: 'll-translation-export-dialog',
@@ -11,11 +13,17 @@ import {TranslationExportDialogModel} from './translation-export-dialog.model';
 })
 export class TranslationExportDialogComponent {
 
-  exportKind = ['FULL', 'FLAT']
+  today = new Date
+
+  exportKinds: KeyValue<string, string>[] = [
+    {key: 'FULL', value: 'JSON FULL'},
+    {key: 'FLAT', value: 'JSON FLAT'}
+  ]
 
   form: FormGroup = this.fb.group({
     kind: this.fb.control('FULL', [Validators.required]),
     locale: this.fb.control(undefined),
+    fromDate: this.fb.control(undefined),
   });
 
   constructor(
@@ -25,4 +33,9 @@ export class TranslationExportDialogComponent {
   }
 
 
+  dateChange(event: MatDatepickerInputEvent<unknown>): void {
+    if (event.value instanceof Date) {
+      this.form.controls['fromDate'].setValue(event.value.getTime());
+    }
+  }
 }

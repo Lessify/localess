@@ -13,8 +13,8 @@ export const setup = https.onCall(async (data: Setup, context) => {
   logger.info('[setup] context.auth: ' + JSON.stringify(context.auth));
 
   const setupRef = firestoreService.doc('configs/setup');
-  const setupDS = await setupRef.get();
-  if (setupDS.exists) {
+  const setupSnapshot = await setupRef.get();
+  if (setupSnapshot.exists) {
     logger.info('[setup] The configuration already exists.');
     throw new https.HttpsError('already-exists', 'The configuration already exists.');
   } else {

@@ -7,8 +7,8 @@
           <mat-form-field appearance="fill">
             <mat-label>Type</mat-label>
             <mat-select formControlName="kind" required (selectionChange)="onKindSelectionChange()">
-              <mat-option *ngFor="let kind of exportKind" [value]="kind">
-                {{kind}}
+              <mat-option *ngFor="let kind of exportKinds" [value]="kind.key">
+                {{kind.value}}
               </mat-option>
             </mat-select>
           </mat-form-field>

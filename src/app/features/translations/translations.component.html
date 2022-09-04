@@ -258,7 +258,7 @@
         <mat-divider></mat-divider>
         <div class="p-2 align-items-start">
           <p><small><strong>Created On</strong></small></p>
-          <p><small>{{selectedTranslation?.createdOn?.toDate() | date:'medium'}}</small></p>
+          <p><small>{{selectedTranslation?.createdOn?.toMillis() | date:'medium'}}</small></p>
         </div>
         <mat-divider></mat-divider>
         <div class="p-2 align-items-start">

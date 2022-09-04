@@ -65,11 +65,11 @@ export const usersSync = https.onCall(async (data, context) => {
   listUsers.users.map(async (userRecord) => {
     logger.debug('[usersSync] userRecord: ' + JSON.stringify(userRecord));
     const userRef = firestoreService.collection('users').doc(userRecord.uid);
-    const userDS = await userRef.get();
+    const userSnapshot = await userRef.get();
 
-    logger.debug(`[usersSync] userDS: id='${userDS.id}' exist=${userDS.exists}`);
-    if (userDS.exists) {
-      const user = await userDS.data()!;
+    logger.debug(`[usersSync] userDS: id='${userSnapshot.id}' exist=${userSnapshot.exists}`);
+    if (userSnapshot.exists) {
+      const user = await userSnapshot.data()!;
       logger.debug('[usersSync] user: ' + JSON.stringify(user));
       if (
         userRecord.email !== user['email'] ||
@@ -78,7 +78,7 @@ export const usersSync = https.onCall(async (data, context) => {
         userRecord.disabled !== user['disabled'] ||
         userRecord.customClaims?.['role'] !== user['role']
       ) {
-        logger.debug(`[usersSync] user: id='${userDS.id}' to be updated`);
+        logger.debug(`[usersSync] user: id='${userSnapshot.id}' to be updated`);
         await userRef.set({
           email: userRecord.email,
           displayName: userRecord.displayName || FieldValue.delete(),
@@ -88,10 +88,10 @@ export const usersSync = https.onCall(async (data, context) => {
           updatedOn: FieldValue.serverTimestamp(),
         }, {merge: true});
       } else {
-        logger.debug(`[usersSync] user: id='${userDS.id}' no updates required`);
+        logger.debug(`[usersSync] user: id='${userSnapshot.id}' no updates required`);
       }
     } else {
-      logger.debug(`[usersSync] user: id='${userDS.id}' to be added`);
+      logger.debug(`[usersSync] user: id='${userSnapshot.id}' to be added`);
       await userRef.set({
         email: userRecord.email,
         displayName: userRecord.displayName || FieldValue.delete(),

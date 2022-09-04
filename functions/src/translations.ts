@@ -10,7 +10,7 @@ import {
   TranslationsImportData,
   TranslationType
 } from './models/translation.model';
-import {FieldValue, WriteBatch} from 'firebase-admin/firestore';
+import {FieldValue, QuerySnapshot, Timestamp, WriteBatch} from 'firebase-admin/firestore';
 import axios from 'axios';
 
 // Publish
@@ -22,12 +22,11 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
   logger.info('[publishTranslations] data: ' + JSON.stringify(data));
   logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
-  const spaceId: string = data.spaceId;
-  const spaceRef = await firestoreService.doc(`spaces/${spaceId}`).get();
-  const translationsRef = await firestoreService.collection(`spaces/${spaceId}/translations`).get();
-  if (spaceRef.exists && !translationsRef.empty) {
-    const space: Space = spaceRef.data() as Space;
-    const translations = translationsRef.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
+  const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
+  const translationsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
+  if (spaceSnapshot.exists && !translationsSnapshot.empty) {
+    const space: Space = spaceSnapshot.data() as Space;
+    const translations = translationsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
 
     for (const locale of space.locales) {
       const localeJson: { [key: string]: string } = {};
@@ -39,20 +38,20 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
         localeJson[tr.name] = value;
       }
       // Save generated JSON
-      logger.info(`[publishTranslations] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
-      bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`)
+      logger.info(`[publishTranslations] Save file to spaces/${data.spaceId}/translations/${locale.id}.json`);
+      bucket.file(`spaces/${data.spaceId}/translations/${locale.id}.json`)
         .save(
           JSON.stringify(localeJson),
           (err?: Error | null) => {
             if (err) {
-              logger.error(`[publishTranslations] Can not save file for Space(${spaceId}) and Locale(${locale})`);
+              logger.error(`[publishTranslations] Can not save file for Space(${data.spaceId}) and Locale(${locale})`);
               logger.error(err);
             }
           }
         );
       const origin = context.rawRequest.header('origin');
       if (origin && !origin.includes('//localhost:')) {
-        const url = `/api/v1/spaces/${spaceId}/translations/${locale.id}.json`;
+        const url = `/api/v1/spaces/${data.spaceId}/translations/${locale.id}.json`;
         await axios.request({
           baseURL: origin,
           url: url,
@@ -63,7 +62,7 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
     }
     return;
   } else {
-    logger.info(`[publishTranslations] Space ${spaceId} does not exist or no translations.`);
+    logger.info(`[publishTranslations] Space ${data.spaceId} does not exist or no translations.`);
     throw new https.HttpsError('not-found', 'Space not found');
   }
 });
@@ -74,15 +73,22 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
   logger.info('[translationsExport] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
-  const spaceRef = await firestoreService.doc(`spaces/${data.spaceId}`).get();
-  const translationsRef = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
+  const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
+  const translationsRef = firestoreService.collection(`spaces/${data.spaceId}/translations`);
 
-  if (spaceRef.exists) {
-    // const space: Space = spaceRef.data() as Space
+  let translationsSnapshot: QuerySnapshot;
+  if (data.fromDate) {
+    translationsSnapshot = await translationsRef.where('updatedOn', '>=', Timestamp.fromMillis(data.fromDate)).get()
+  } else {
+    translationsSnapshot = await translationsRef.get();
+  }
+
+  if (spaceSnapshot.exists) {
+    // const space: Space = spaceSnapshot.data() as Space
     // FLAT
     if (data.kind === 'FLAT') {
       const exportedTr: TranslationLocale = {};
-      translationsRef.docs.filter((it) => it.exists)
+      translationsSnapshot.docs.filter((it) => it.exists)
         .forEach((it) => {
           const tr = it.data() as Translation;
           const value = tr.locales[data.locale];
@@ -93,7 +99,7 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
       return exportedTr;
     } else if (data.kind === 'FULL') {
       const exportedTrs: TranslationExportImport[] = [];
-      translationsRef.docs.filter((it) => it.exists)
+      translationsSnapshot.docs.filter((it) => it.exists)
         .forEach((it) => {
           const tr = it.data() as Translation;
           const exportedTr: TranslationExportImport = {
@@ -125,19 +131,19 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
   logger.info('[translationsImport] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
-  const spaceRef = await firestoreService.doc(`spaces/${data.spaceId}`).get();
-  const translationsRef = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
+  const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
+  const translationsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
 
   let totalChanges = 0;
   const origTransMap = new Map<string, Translation>();
   const origTransIdMap = new Map<string, string>();
   const batches: WriteBatch[] = [];
 
-  if (spaceRef.exists) {
+  if (spaceSnapshot.exists) {
     // FLAT
     if (data.kind === 'FLAT') {
       const importT: { [key: string]: string } = data.translations;
-      translationsRef.docs.filter((it) => it.exists)
+      translationsSnapshot.docs.filter((it) => it.exists)
         .forEach((it) => {
           const tr = it.data() as Translation;
           origTransMap.set(tr.name, tr);
@@ -183,7 +189,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
     } else if (data.kind === 'FULL') {
 
       const importT: TranslationExportImport[] = data.translations;
-      translationsRef.docs.filter((it) => it.exists)
+      translationsSnapshot.docs.filter((it) => it.exists)
         .forEach((it) => {
           const tr = it.data() as Translation;
           origTransMap.set(tr.name, tr);
@@ -198,7 +204,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
         const ot = origTransMap.get(value.name);
         const oid = origTransIdMap.get(value.name);
         if (ot && oid) {
-          const space: Space = spaceRef.data() as Space
+          const space: Space = spaceSnapshot.data() as Space
           // update
           const update: any = {
             updatedOn: FieldValue.serverTimestamp(),
