@@ -33,6 +33,11 @@
           <mat-icon>cloud_download</mat-icon>
           <span>Export</span>
         </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item *ngFor="let locale of locales" (click)="openPublishedInNewTab(locale.id)">
+          <mat-icon>public</mat-icon>
+          <span>Published {{locale.name}} JSON</span>
+        </button>
       </mat-menu>
     </ng-container>
 

@@ -2,7 +2,6 @@ import {Injectable} from '@angular/core';
 import {arrayRemove, arrayUnion, doc, Firestore, serverTimestamp, setDoc} from '@angular/fire/firestore';
 import {from, Observable, of} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {tap} from 'rxjs/operators';
 import {Locale} from '../models/locale.model';
 import {SpaceFallbackLocaleUpdateFS, SpaceLocalesUpdateFS} from '../models/space.model';
 

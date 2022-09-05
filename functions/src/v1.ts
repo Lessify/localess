@@ -16,6 +16,7 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
     res
       .status(404)
       .send(new https.HttpsError('not-found', 'Space not found'));
+    return
   }
   const space = spaceRef.data() as Space;
   if (!space.locales.some((it) => it.id === locale)) {

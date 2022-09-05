@@ -436,4 +436,9 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
+  openPublishedInNewTab(locale: string): void {
+    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/translations/${locale}.json`
+    window.open(url, '_blank')
+  }
+
 }
