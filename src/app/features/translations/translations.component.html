@@ -15,12 +15,17 @@
         mat-raised-button
         color="accent"
         matTooltip="Publish Translations to be available via API call"
+        [disabled]="isPublishLoading"
         (click)="publish()">
         <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
         Publish
       </button>
 
-      <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
+      <button
+        mat-icon-button
+        [matMenuTriggerFor]="importMenu"
+        [disabled]="isImportExportLoading"
+        matTooltip="Import and Export">
         <ll-icon [animate]="isImportExportLoading" start="more_vert" end="sync"></ll-icon>
       </button>
 
@@ -183,9 +188,9 @@
           <div class="p-2 align-items-end">
             <div class="justify-content-between">
               <div class="my-3 d-flex justify-content-end">
-                <button mat-raised-button color="primary"
+                <button mat-raised-button color="primary" [disabled]="isLocaleUpdateLoading"
                         (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue)">
-                  <mat-icon>save</mat-icon>
+                  <ll-icon [animate]="isLocaleUpdateLoading" start="save" end="sync"></ll-icon>
                   Save
                 </button>
               </div>
@@ -234,11 +239,11 @@
           </p>
         </div>
         <mat-divider></mat-divider>
-<!--        <div class="p-2 align-items-start">-->
-<!--          <p><small><strong>Type</strong></small></p>-->
-<!--          <p><small>{{selectedTranslation.type}}</small></p>-->
-<!--        </div>-->
-<!--        <mat-divider></mat-divider>-->
+        <!--        <div class="p-2 align-items-start">-->
+        <!--          <p><small><strong>Type</strong></small></p>-->
+        <!--          <p><small>{{selectedTranslation.type}}</small></p>-->
+        <!--        </div>-->
+        <!--        <mat-divider></mat-divider>-->
         <div class="p-2 align-items-start">
           <p><small><strong>Description</strong></small></p>
           <ng-container *ngIf="selectedTranslation.description; else elseDescription">

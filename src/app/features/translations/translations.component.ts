@@ -70,9 +70,11 @@ export class TranslationsComponent implements OnInit {
   translations: Translation[] = [];
   locales: Locale[] = [];
 
+  //Loadings
   isLoading: boolean = false;
   isPublishLoading: boolean = false;
   isImportExportLoading: boolean = false;
+  isLocaleUpdateLoading: boolean = false;
 
   constructor(
     private readonly translationService: TranslationService,
@@ -382,12 +384,21 @@ export class TranslationsComponent implements OnInit {
   }
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
+    this.isLocaleUpdateLoading = true
     this.translationService.updateLocale(this.selectedSpace!.id, transaction.id, locale, value)
       .subscribe({
           next: () => {
             this.notificationService.success('Translation has been updated.');
           },
-          error: () => this.notificationService.error('Translation can not be updated.')
+          error: () => {
+            this.notificationService.error('Translation can not be updated.')
+          },
+          complete: () => {
+            setTimeout(() => {
+              this.isLocaleUpdateLoading = false
+              this.cd.markForCheck()
+            }, 1000)
+          }
         }
       );
   }
