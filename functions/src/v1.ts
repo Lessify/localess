@@ -15,6 +15,7 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
   if (!spaceRef.exists) {
     res
       .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
       .send(new https.HttpsError('not-found', 'Space not found'));
     return
   }
