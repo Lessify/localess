@@ -50,7 +50,7 @@ export class MeComponent implements OnInit {
       .subscribe((user) => {
         this.user = user;
         this.isLoading = false;
-        this.cd.detectChanges();
+        this.cd.markForCheck();
       })
     user(this.auth)
       .subscribe((authUser) => {
@@ -59,7 +59,7 @@ export class MeComponent implements OnInit {
         this.isPasswordProvider = authUser?.providerData.some(it => it.providerId === 'password') || false;
         this.isGoogleProvider = authUser?.providerData.some(it => it.providerId === 'google.com') || false;
         this.isMicrosoftProvider = authUser?.providerData.some(it => it.providerId === 'microsoft.com') || false;
-        this.cd.detectChanges();
+        this.cd.markForCheck();
       })
   }
 

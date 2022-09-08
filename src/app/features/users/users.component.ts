@@ -54,7 +54,7 @@ export class UsersComponent implements OnInit {
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;
-          this.cd.detectChanges();
+          this.cd.markForCheck();
         }
       )
   }
