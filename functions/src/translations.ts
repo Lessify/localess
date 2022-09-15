@@ -127,7 +127,7 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
 
 // Import
 export const translationsImport = https.onCall(async (data: TranslationsImportData, context) => {
-  logger.info('[translationsImport] data: ' + JSON.stringify(data));
+  // logger.info('[translationsImport] data: ' + JSON.stringify(data));
   logger.info('[translationsImport] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
