@@ -14,7 +14,8 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
   logger.info('[translate] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
-  logger.info(JSON.stringify(process.env))
+  logger.info(JSON.stringify(process.env['FIREBASE_CONFIG']))
+  logger.info(JSON.stringify(process.env['GCLOUD_PROJECT']))
 
   // const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
   //   //parent: `projects/${projectId}/locations/${location}`,
