@@ -35,6 +35,10 @@
         "function": "v1"
       },
       {
+        "source": "/api/translate",
+        "function": "translate"
+      },
+      {
         "source": "/api/translationsPublish",
         "function": "translationsPublish"
       },

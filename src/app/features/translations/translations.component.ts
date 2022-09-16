@@ -1,4 +1,11 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import {combineLatest, debounceTime, EMPTY, Observable, startWith} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
 import {filter, map, switchMap} from 'rxjs/operators';
@@ -15,25 +22,38 @@ import {Translation, TranslationCreate, TranslationUpdate} from '@shared/models/
 import {selectSpace} from '../../core/state/space/space.selector';
 import {Space} from '@shared/models/space.model';
 import {CopierService} from '@shared/services/copier.service';
-import {TranslationAddDialogComponent} from './translation-add-dialog/translation-add-dialog.component';
+import {
+  TranslationAddDialogComponent
+} from './translation-add-dialog/translation-add-dialog.component';
 import {TranslationAddDialogModel} from './translation-add-dialog/translation-add-dialog.model';
 import {TranslationEditDialogModel} from './translation-edit-dialog/translation-edit-dialog.model';
-import {TranslationEditDialogComponent} from './translation-edit-dialog/translation-edit-dialog.component';
+import {
+  TranslationEditDialogComponent
+} from './translation-edit-dialog/translation-edit-dialog.component';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  ConfirmationDialogComponent
+} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {saveAs} from 'file-saver-es';
-import {TranslationExportDialogComponent} from './translation-export-dialog/translation-export-dialog.component';
+import {
+  TranslationExportDialogComponent
+} from './translation-export-dialog/translation-export-dialog.component';
 import {
   TranslationExportDialogModel,
   TranslationExportDialogReturn
 } from './translation-export-dialog/translation-export-dialog.model';
 import {NameUtils} from '../../core/utils/name-utils.service';
-import {TranslationImportDialogComponent} from './translation-import-dialog/translation-import-dialog.component';
+import {
+  TranslationImportDialogComponent
+} from './translation-import-dialog/translation-import-dialog.component';
 import {
   TranslationImportDialogModel,
   TranslationImportDialogReturn
 } from './translation-import-dialog/translation-import-dialog.model';
+import {TranslateService} from '@shared/services/translate.service';
 
 @Component({
   selector: 'll-translations',
@@ -85,7 +105,8 @@ export class TranslationsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly store: Store<AppState>,
     private readonly cd: ChangeDetectorRef,
-    private readonly copierService: CopierService
+    private readonly copierService: CopierService,
+    private readonly translateService: TranslateService,
   ) {
     this.filteredLabels = this.labelCtrl.valueChanges.pipe(
       startWith(null),
@@ -450,6 +471,22 @@ export class TranslationsComponent implements OnInit {
   openPublishedInNewTab(locale: string): void {
     const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/translations/${locale}.json`
     window.open(url, '_blank')
+  }
+
+  translate(): void {
+    this.translateService.translate({
+      content: 'Hello',
+      sourceLocale: 'en',
+      targetLocale: 'ro'
+    })
+      .subscribe({
+        next: (value) => {
+          console.log(value)
+        },
+        error: (err) => {
+          console.error(err)
+        }
+      })
   }
 
 }

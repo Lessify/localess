@@ -60,3 +60,7 @@ export interface TranslationsImportFullData {
 }
 
 export type  TranslationsImportData = TranslationsImportFlatData | TranslationsImportFullData
+
+export interface PublishTranslationsData {
+  spaceId: string
+}

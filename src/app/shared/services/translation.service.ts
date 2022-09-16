@@ -146,7 +146,7 @@ export class TranslationService {
     const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translationsPublish');
     return translationsPublish({spaceId})
       .pipe(
-        traceUntilFirst('Firestore:Translations:publish'),
+        traceUntilFirst('Functions:Translations:publish'),
       );
   }
 
@@ -154,7 +154,7 @@ export class TranslationService {
     const translationsExport = httpsCallableData<TranslationsExportData, TranslationLocale | TranslationExportImport[]>(this.functions, 'translationsExport');
     return translationsExport(data)
       .pipe(
-        traceUntilFirst(`Firestore:Translations:export:${data.kind}`),
+        traceUntilFirst(`Functions:Translations:export:${data.kind}`),
       );
   }
 
@@ -162,7 +162,7 @@ export class TranslationService {
     const translationsImport = httpsCallableData<TranslationsImportData, void>(this.functions, 'translationsImport');
     return translationsImport(data)
       .pipe(
-        traceUntilFirst(`Firestore:Translations:import:${data.kind}`),
+        traceUntilFirst(`Functions:Translations:import:${data.kind}`),
       );
   }
 

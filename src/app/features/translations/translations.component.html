@@ -2,6 +2,13 @@
   <mat-toolbar-row>
     Translations
     <span class="spacer"></span>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="translate()">
+      <mat-icon>translate</mat-icon>
+      Translate
+    </button>
     <ng-container id="translation-add-import-export" *ngIf="['write', 'admin'] | hasAnyUserRole | async">
       <button
         mat-raised-button

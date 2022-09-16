@@ -3,6 +3,7 @@ import {App, initializeApp} from 'firebase-admin/app';
 import {Firestore, getFirestore} from 'firebase-admin/firestore';
 import {getStorage, Storage} from 'firebase-admin/storage';
 import {getAuth, Auth} from 'firebase-admin/auth';
+import {TranslationServiceClient} from '@google-cloud/translate';
 
 // BATCH OPERATION
 export const BATCH_MAX = 500;
@@ -25,3 +26,4 @@ export const firestoreService: Firestore = getFirestore(app);
 export const authService: Auth = getAuth(app);
 export const storageService: Storage = getStorage(app);
 export const bucket = storageService.bucket();
+export const translationService = new TranslationServiceClient()
