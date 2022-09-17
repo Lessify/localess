@@ -13,7 +13,7 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
   const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '')
   const projectId = firebaseConfig.projectId
   let locationId; //firebaseConfig.locationId || 'global'
-  if (firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us')) {
+  if (firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us-')) {
     locationId = 'us-central1'
   } else {
     locationId = 'global'
@@ -31,14 +31,13 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
     // Run request
     const [response] = await translationService.translateText(request);
 
-    if (response.translations) {
-      for (const translation of response.translations) {
-        logger.info(`Translation: ${translation.translatedText}`);
-      }
+    if (response.translations && response.translations.length > 0) {
+      return response.translations[0]
+    } else {
+      return ''
     }
   } catch (e) {
     logger.error(e)
     throw new https.HttpsError('failed-precondition', `Cloud Translation API has not been used in project ${projectId} before or it is disabled`);
   }
-  return process.env
 });
