@@ -485,6 +485,7 @@ export class TranslationsComponent implements OnInit {
         },
         error: (err) => {
           console.error(err)
+          this.notificationService.error(err.message)
         }
       })
   }
