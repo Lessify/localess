@@ -40,5 +40,5 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
     logger.error(e)
     throw new https.HttpsError('failed-precondition', `Cloud Translation API has not been used in project ${projectId} before or it is disabled`);
   }
-  return
+  return process.env
 });
