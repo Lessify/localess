@@ -19,7 +19,12 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
     locationId = 'global'
   }
 
-  const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
+  const request: protos.google.cloud.translation.v3.IGetSupportedLanguagesRequest = {
+    parent: `projects/${projectId}/locations/${location}`,
+    //displayLanguageCode: 'en',
+  };
+
+  const textRequest: protos.google.cloud.translation.v3.ITranslateTextRequest = {
     parent: `projects/${projectId}/locations/${locationId}`,
     contents: [data.content],
     mimeType: 'text/plain',
@@ -28,11 +33,16 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
   };
 
   try {
-    // Run request
-    const [response] = await translationService.translateText(request);
 
-    if (response.translations && response.translations.length > 0) {
-      return response.translations[0]
+    // Get supported languages
+    const [responseSupportedLanguages] = await translationService.getSupportedLanguages(request);
+    logger.info(JSON.stringify(responseSupportedLanguages.languages))
+
+    // Run request
+    const [responseTranslateText] = await translationService.translateText(textRequest);
+
+    if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
+      return responseTranslateText.translations[0]
     } else {
       return ''
     }
