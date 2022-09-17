@@ -12,7 +12,7 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
 
   const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '')
   const projectId = firebaseConfig.projectId
-  const locationId = firebaseConfig.locationId || 'global'
+  const locationId = 'global' //firebaseConfig.locationId
 
   const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
     parent: `projects/${projectId}/locations/${locationId}`,
