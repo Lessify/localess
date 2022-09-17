@@ -12,7 +12,12 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
 
   const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '')
   const projectId = firebaseConfig.projectId
-  const locationId = 'global' //firebaseConfig.locationId
+  let locationId; //firebaseConfig.locationId || 'global'
+  if (firebaseConfig.locationId && firebaseConfig.locationId === 'us-central1') {
+    locationId = firebaseConfig.locationId
+  } else {
+    locationId = 'global'
+  }
 
   const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
     parent: `projects/${projectId}/locations/${locationId}`,
