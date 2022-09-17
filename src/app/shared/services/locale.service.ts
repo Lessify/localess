@@ -1,5 +1,12 @@
 import {Injectable} from '@angular/core';
-import {arrayRemove, arrayUnion, doc, Firestore, serverTimestamp, setDoc} from '@angular/fire/firestore';
+import {
+  arrayRemove,
+  arrayUnion,
+  doc,
+  Firestore,
+  serverTimestamp,
+  setDoc
+} from '@angular/fire/firestore';
 import {from, Observable, of} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {Locale} from '../models/locale.model';
@@ -20,9 +27,9 @@ export class LocaleService {
         {merge: true}
       )
     )
-    .pipe(
-      traceUntilFirst('Firestore:Locales:markAsFallback'),
-    );
+      .pipe(
+        traceUntilFirst('Firestore:Locales:markAsFallback'),
+      );
   }
 
   add(spaceId: string, entity: Locale): Observable<void> {
@@ -36,9 +43,9 @@ export class LocaleService {
         {merge: true}
       )
     )
-    .pipe(
-      traceUntilFirst('Firestore:Locales:add'),
-    );
+      .pipe(
+        traceUntilFirst('Firestore:Locales:add'),
+      );
   }
 
   delete(spaceId: string, entity: Locale): Observable<void> {
@@ -52,17 +59,32 @@ export class LocaleService {
         {merge: true}
       )
     )
-    .pipe(
-      traceUntilFirst('Firestore:Locales:delete'),
-    );
+      .pipe(
+        traceUntilFirst('Firestore:Locales:delete'),
+      );
   }
 
   findAllLocales(): Observable<Locale[]> {
-    return of(locales);
+    return of(AVAILABLE_LOCALES);
+  }
+
+  isLocaleTranslatable(locale: string): boolean {
+    return SUPPORT_LOCALES.has(locale)
   }
 }
 
-const locales: Locale[] =
+export const SUPPORT_LOCALES = new Set([
+    "af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "ceb", "ckb", "co", "cs", "cy", "da", "de",
+    "el", "en", "eo", "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gd", "gl", "gu", "ha", "haw",
+    "he", "hi", "hmn", "hr", "ht", "hu", "hy", "id", "ig", "is", "it", "iw", "ja", "jw", "ka", "kk",
+    "km", "kn", "ko", "ku", "ky", "la", "lb", "lo", "lt", "lv", "mai", "mg", "mi", "mk", "ml", "mn",
+    "mr", "ms", "mt", "my", "ne", "nl", "no", "ny", "or", "pa", "pl", "ps", "pt", "ro", "ru", "rw",
+    "sd", "si", "sk", "sl", "sm", "sn", "so", "sq", "sr", "st", "su", "sv", "sw", "ta", "te", "tg",
+    "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "xh", "yi", "yo", "zh", "zh-TW", "zu"
+  ]
+)
+
+const AVAILABLE_LOCALES: Locale[] =
   [
     {id: 'af', name: 'Afrikaans'},
     {id: 'af-NA', name: 'Afrikaans (Namibia)'},

@@ -1,6 +1,6 @@
 import {https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
-import {ROLE_ADMIN, ROLE_EDIT, ROLE_WRITE, translationService} from './config';
+import {ROLE_ADMIN, ROLE_EDIT, ROLE_WRITE, SUPPORT_LOCALES, translationService} from './config';
 import {FIREBASE_CONFIG, FirebaseConfig} from './models/firebase.model';
 import {TranslateData} from './models/translate.model';
 import {protos} from '@google-cloud/translate';
@@ -9,8 +9,10 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
   logger.info('[translate] data: ' + JSON.stringify(data));
   logger.info('[translate] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!(SUPPORT_LOCALES.has(data.sourceLocale) && SUPPORT_LOCALES.has(data.targetLocale))) throw new https.HttpsError('invalid-argument', 'Unsupported language');
 
-  const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '')
+
+    const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '')
   const projectId = firebaseConfig.projectId
   let locationId; //firebaseConfig.locationId || 'global'
   if (firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us-')) {
@@ -19,12 +21,8 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
     locationId = 'global'
   }
 
-  const request: protos.google.cloud.translation.v3.IGetSupportedLanguagesRequest = {
-    parent: `projects/${projectId}/locations/${locationId}`,
-    //displayLanguageCode: 'en',
-  };
 
-  const textRequest: protos.google.cloud.translation.v3.ITranslateTextRequest = {
+  const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
     parent: `projects/${projectId}/locations/${locationId}`,
     contents: [data.content],
     mimeType: 'text/plain',
@@ -34,17 +32,13 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
 
   try {
 
-    // Get supported languages
-    const [responseSupportedLanguages] = await translationService.getSupportedLanguages(request);
-    logger.info(JSON.stringify(responseSupportedLanguages.languages))
-
     // Run request
-    const [responseTranslateText] = await translationService.translateText(textRequest);
+    const [responseTranslateText] = await translationService.translateText(request);
 
     if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
-      return responseTranslateText.translations[0]
+      return responseTranslateText.translations[0].translatedText
     } else {
-      return ''
+      return null
     }
   } catch (e) {
     logger.error(e)

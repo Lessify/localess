@@ -2,7 +2,7 @@
 import {App, initializeApp} from 'firebase-admin/app';
 import {Firestore, getFirestore} from 'firebase-admin/firestore';
 import {getStorage, Storage} from 'firebase-admin/storage';
-import {getAuth, Auth} from 'firebase-admin/auth';
+import {Auth, getAuth} from 'firebase-admin/auth';
 import {TranslationServiceClient} from '@google-cloud/translate';
 
 // BATCH OPERATION
@@ -27,3 +27,15 @@ export const authService: Auth = getAuth(app);
 export const storageService: Storage = getStorage(app);
 export const bucket = storageService.bucket();
 export const translationService = new TranslationServiceClient()
+
+// Translation
+export const SUPPORT_LOCALES = new Set([
+    "af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "ceb", "ckb", "co", "cs", "cy", "da", "de",
+    "el", "en", "eo", "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gd", "gl", "gu", "ha", "haw",
+    "he", "hi", "hmn", "hr", "ht", "hu", "hy", "id", "ig", "is", "it", "iw", "ja", "jw", "ka", "kk",
+    "km", "kn", "ko", "ku", "ky", "la", "lb", "lo", "lt", "lv", "mai", "mg", "mi", "mk", "ml", "mn",
+    "mr", "ms", "mt", "my", "ne", "nl", "no", "ny", "or", "pa", "pl", "ps", "pt", "ro", "ru", "rw",
+    "sd", "si", "sk", "sl", "sm", "sn", "so", "sq", "sr", "st", "su", "sv", "sw", "ta", "te", "tg",
+    "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "xh", "yi", "yo", "zh", "zh-TW", "zu"
+  ]
+)
