@@ -17,6 +17,8 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
   logger.info(JSON.stringify(process.env['FIREBASE_CONFIG']))
   logger.info(JSON.stringify(process.env['GCLOUD_PROJECT']))
 
+  return process.env
+
   // const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
   //   //parent: `projects/${projectId}/locations/${location}`,
   //   contents: [data.content],

@@ -12,8 +12,8 @@ export class TranslateService {
   ) {
   }
 
-  translate(data: TranslateData): Observable<void> {
-    const translate = httpsCallableData<TranslateData, void>(this.functions, 'translate');
+  translate(data: TranslateData): Observable<string> {
+    const translate = httpsCallableData<TranslateData, string>(this.functions, 'translate');
     return translate(data)
       .pipe(
         traceUntilFirst('Functions:Translate:translate'),
