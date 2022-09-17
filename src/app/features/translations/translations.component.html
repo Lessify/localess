@@ -71,16 +71,14 @@
       </mat-form-field>
     </div>
     <div class="p-2 " style="width: 25%">
-      <mat-form-field appearance="outline" class="search">
+      <mat-form-field appearance="outline">
         <mat-label>Search</mat-label>
         <input matInput [formControl]="searchCtrl" autocomplete="off"/>
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
     </div>
     <div class="p-2" style="width: 50%">
-      <mat-form-field
-        appearance="outline"
-        class="search">
+      <mat-form-field appearance="outline">
         <mat-chip-list #chipList>
           <mat-chip
             *ngFor="let selectedLabel of selectedLabels"
@@ -165,7 +163,7 @@
           </div>
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" class="with-button">
               <mat-label>Target Locale</mat-label>
               <mat-select [(value)]="selectedTargetLocale">
                 <mat-option *ngFor="let locale of locales" [value]="locale.id">
@@ -173,6 +171,10 @@
                 </mat-option>
               </mat-select>
             </mat-form-field>
+            <button mat-icon-button>
+              <mat-icon>g_translate</mat-icon>
+            </button>
+
           </div>
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">

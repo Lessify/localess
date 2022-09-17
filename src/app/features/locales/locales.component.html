@@ -24,6 +24,12 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
     </ng-container>
+    <ng-container matColumnDef="isLocaleTranslatable">
+      <mat-header-cell *matHeaderCellDef> Translatable </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <mat-icon color="primary">{{localeService.isLocaleTranslatable(element.id) ? 'check': 'clear'}}</mat-icon>
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="fallback">
       <mat-header-cell *matHeaderCellDef> Fallback </mat-header-cell>
       <mat-cell *matCellDef="let element">

@@ -54,6 +54,7 @@ import {
   TranslationImportDialogReturn
 } from './translation-import-dialog/translation-import-dialog.model';
 import {TranslateService} from '@shared/services/translate.service';
+import {LocaleService} from '@shared/services/locale.service';
 
 @Component({
   selector: 'll-translations',
@@ -98,6 +99,7 @@ export class TranslationsComponent implements OnInit {
 
   constructor(
     private readonly translationService: TranslationService,
+    readonly localeService: LocaleService,
     private readonly spaceService: SpaceService,
     private readonly notificationService: NotificationService,
     private readonly route: ActivatedRoute,

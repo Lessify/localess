@@ -22,6 +22,7 @@ If you would like to become a sponsor, please consider:
 ## Key Features
 
 - Edit your localisation content in real time
+- Translate with Google Translate
 - No application build required anymore
 - Publish your changes (instant update)
 - Google CDN Integration (very fast response time, about 300ms for 125kb of 5000 translations)

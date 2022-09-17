@@ -36,6 +36,7 @@ import {
   TranslationImportDialogComponent
 } from './translation-import-dialog/translation-import-dialog.component';
 import {TranslateService} from '@shared/services/translate.service';
+import {LocaleService} from '@shared/services/locale.service';
 
 
 @NgModule({
@@ -53,7 +54,7 @@ import {TranslateService} from '@shared/services/translate.service';
     TranslationImportDialogComponent
   ],
   imports: [CommonModule, SharedModule, TranslationsRoutingModule],
-  providers: [TranslationService, TranslateService]
+  providers: [TranslationService, TranslateService, LocaleService]
 })
 export class TranslationsModule {
 }
