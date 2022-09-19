@@ -149,17 +149,17 @@
         <ng-container id="translation-locale-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
           <mat-divider></mat-divider>
           <div class="p-2 align-items-start mb-auto">
-          <span [ngSwitch]="selectedTranslation.type">
-            <ll-translation-string-view *ngSwitchCase="'STRING'"
-                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-string-view>
-            <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
-                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-plural-view>
-            <ll-translation-array-view *ngSwitchCase="'ARRAY'"
-                                       [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-array-view>
-          </span>
+            <span [ngSwitch]="selectedTranslation.type">
+              <ll-translation-string-view *ngSwitchCase="'STRING'"
+                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
+              </ll-translation-string-view>
+              <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
+                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
+              </ll-translation-plural-view>
+              <ll-translation-array-view *ngSwitchCase="'ARRAY'"
+                                         [value]="selectedTranslation.locales[selectedSourceLocale]">
+              </ll-translation-array-view>
+            </span>
           </div>
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
