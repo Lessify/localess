@@ -40,7 +40,8 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
         logger.info(JSON.stringify(tr))
       }
 
-      return responseTranslateText.translations[0].translatedText
+      return responseTranslateText.translations
+      //return responseTranslateText.translations[0].translatedText
     } else {
       return null
     }

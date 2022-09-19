@@ -2,13 +2,6 @@
   <mat-toolbar-row>
     Translations
     <span class="spacer"></span>
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="translate()">
-      <mat-icon>translate</mat-icon>
-      Translate
-    </button>
     <ng-container id="translation-add-import-export" *ngIf="['write', 'admin'] | hasAnyUserRole | async">
       <button
         mat-raised-button
@@ -171,7 +164,7 @@
                 </mat-option>
               </mat-select>
             </mat-form-field>
-            <button mat-icon-button>
+            <button mat-icon-button (click)="translate()">
               <mat-icon>g_translate</mat-icon>
             </button>
 

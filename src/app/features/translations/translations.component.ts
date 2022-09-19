@@ -477,9 +477,9 @@ export class TranslationsComponent implements OnInit {
 
   translate(): void {
     this.translateService.translate({
-      content: 'Hello',
-      sourceLocale: 'en',
-      targetLocale: 'ro'
+      content: this.selectedTranslation?.locales[this.selectedSourceLocale] || '',
+      sourceLocale: this.selectedSourceLocale,
+      targetLocale: this.selectedTargetLocale
     })
       .subscribe({
         next: (value) => {
