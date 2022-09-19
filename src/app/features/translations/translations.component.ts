@@ -492,4 +492,10 @@ export class TranslationsComponent implements OnInit {
       })
   }
 
+  isLocaleTranslatable(sourceLocale: string, targetLocale: string): boolean {
+    if (sourceLocale === targetLocale) {
+      return false
+    }
+    return this.localeService.isLocaleTranslatable(sourceLocale) && this.localeService.isLocaleTranslatable(targetLocale);
+  }
 }

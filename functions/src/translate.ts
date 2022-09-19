@@ -36,12 +36,7 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
     const [responseTranslateText] = await translationService.translateText(request);
 
     if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
-      for (const tr of responseTranslateText.translations) {
-        logger.info(JSON.stringify(tr))
-      }
-
-      return responseTranslateText.translations
-      //return responseTranslateText.translations[0].translatedText
+      return responseTranslateText.translations[0].translatedText
     } else {
       return null
     }
