@@ -486,7 +486,7 @@ export class TranslationsComponent implements OnInit {
       .subscribe({
         next: (value) => {
           console.log(value)
-          this.translateValue = value
+          this.translateValue = value;
         },
         error: (err) => {
           console.error(err)

@@ -147,7 +147,7 @@
           <div class="p-2 align-items-start mb-auto">
             <span [ngSwitch]="selectedTranslation.type">
               <ll-translation-string-view *ngSwitchCase="'STRING'"
-                                          [value]="translateValue || selectedTranslation.locales[selectedSourceLocale]">
+                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
               </ll-translation-string-view>
               <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
                                           [value]="selectedTranslation.locales[selectedSourceLocale]">
@@ -177,7 +177,7 @@
           <div class="p-2 align-items-end">
             <span [ngSwitch]="selectedTranslation.type">
               <ll-translation-string-edit *ngSwitchCase="'STRING'"
-                                          [value]="selectedTranslation.locales[selectedTargetLocale]"
+                                          [value]="translateValue || selectedTranslation.locales[selectedTargetLocale]"
                                           (valueChange)="selectedTranslationLocaleValue = $event">
               </ll-translation-string-edit>
               <ll-translation-plural-edit *ngSwitchCase="'PLURAL'"
