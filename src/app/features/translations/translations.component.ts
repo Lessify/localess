@@ -82,7 +82,7 @@ export class TranslationsComponent implements OnInit {
   filteredLabels: Observable<string[]>;
 
   selectedTranslation?: Translation;
-  selectedTranslationLocaleValue: string = '';
+  selectedTranslationLocaleValue?: string;
   translateValue?: string;
 
   selectedSearchLocale: string = '';
@@ -487,9 +487,9 @@ export class TranslationsComponent implements OnInit {
     })
       .subscribe({
         next: (value) => {
-          console.log(value)
           this.translateValue = value;
           this.notificationService.success('Translated')
+          this.cd.markForCheck()
         },
         error: (err) => {
           console.error(err)
