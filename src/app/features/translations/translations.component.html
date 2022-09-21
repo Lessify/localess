@@ -147,7 +147,7 @@
           <div class="p-2 align-items-start mb-auto">
             <span [ngSwitch]="selectedTranslation.type">
               <ll-translation-string-view *ngSwitchCase="'STRING'"
-                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
+                                          [value]="translateValue || selectedTranslation.locales[selectedSourceLocale]">
               </ll-translation-string-view>
               <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
                                           [value]="selectedTranslation.locales[selectedSourceLocale]">
@@ -194,7 +194,8 @@
           <div class="p-2 align-items-end">
             <div class="justify-content-between">
               <div class="my-3 d-flex justify-content-end">
-                <button mat-raised-button color="primary" [disabled]="isLocaleUpdateLoading"
+                <button mat-raised-button color="primary"
+                        [disabled]="isLocaleUpdateLoading || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue"
                         (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue)">
                   <ll-icon [animate]="isLocaleUpdateLoading" start="save" end="sync"></ll-icon>
                   Save

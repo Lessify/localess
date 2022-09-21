@@ -83,6 +83,7 @@ export class TranslationsComponent implements OnInit {
 
   selectedTranslation?: Translation;
   selectedTranslationLocaleValue: string = '';
+  translateValue?: string;
 
   selectedSearchLocale: string = '';
   selectedSourceLocale: string = '';
@@ -404,6 +405,7 @@ export class TranslationsComponent implements OnInit {
 
   selectTranslation(translation: Translation): void {
     this.selectedTranslation = translation;
+    this.translateValue = undefined;
   }
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
@@ -484,6 +486,7 @@ export class TranslationsComponent implements OnInit {
       .subscribe({
         next: (value) => {
           console.log(value)
+          this.translateValue = value
         },
         error: (err) => {
           console.error(err)
