@@ -487,6 +487,7 @@ export class TranslationsComponent implements OnInit {
         next: (value) => {
           console.log(value)
           this.translateValue = value;
+          this.cd.markForCheck();
         },
         error: (err) => {
           console.error(err)
