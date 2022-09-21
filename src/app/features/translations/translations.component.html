@@ -161,7 +161,7 @@
           <div class="p-2 align-items-end">
             <mat-form-field appearance="outline" class="with-button">
               <mat-label>Target Locale</mat-label>
-              <mat-select [(value)]="selectedTargetLocale">
+              <mat-select [(value)]="selectedTargetLocale" (selectionChange)="translateValue = undefined;">
                 <mat-option *ngFor="let locale of locales" [value]="locale.id">
                   {{locale.name}}
                 </mat-option>
@@ -169,7 +169,7 @@
             </mat-form-field>
             <button mat-icon-button matTooltip="Translate" (click)="translate()"
                     [disabled]="!isLocaleTranslatable(selectedSourceLocale, selectedTargetLocale)">
-              <mat-icon>g_translate</mat-icon>
+              <ll-icon [animate]="isTranslateLoading" start="g_translate" end="sync"></ll-icon>
             </button>
 
           </div>

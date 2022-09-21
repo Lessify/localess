@@ -97,6 +97,7 @@ export class TranslationsComponent implements OnInit {
   isPublishLoading: boolean = false;
   isImportExportLoading: boolean = false;
   isLocaleUpdateLoading: boolean = false;
+  isTranslateLoading: boolean = false;
 
   constructor(
     private readonly translationService: TranslationService,
@@ -478,6 +479,7 @@ export class TranslationsComponent implements OnInit {
   }
 
   translate(): void {
+    this.isTranslateLoading = true;
     this.translateService.translate({
       content: this.selectedTranslation?.locales[this.selectedSourceLocale] || '',
       sourceLocale: this.selectedSourceLocale,
@@ -487,11 +489,17 @@ export class TranslationsComponent implements OnInit {
         next: (value) => {
           console.log(value)
           this.translateValue = value;
-          this.cd.markForCheck();
+          this.notificationService.success('Translated')
         },
         error: (err) => {
           console.error(err)
-          this.notificationService.error(err.message)
+          this.notificationService.error('Can not be translation.')
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isTranslateLoading = false
+            this.cd.markForCheck()
+          }, 1000)
         }
       })
   }
