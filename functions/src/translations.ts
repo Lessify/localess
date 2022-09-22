@@ -3,21 +3,18 @@ import {SecurityUtils} from './utils/security-utils';
 import {BATCH_MAX, bucket, firestoreService, ROLE_ADMIN, ROLE_WRITE} from './config';
 import {Space} from './models/space.model';
 import {
+  PublishTranslationsData,
   Translation,
   TranslationExportImport,
   TranslationLocale,
   TranslationsExportData,
   TranslationsImportData,
   TranslationType
-} from './models/translation.model';
+} from './models/translations.model';
 import {FieldValue, QuerySnapshot, Timestamp, WriteBatch} from 'firebase-admin/firestore';
 import axios from 'axios';
 
 // Publish
-interface PublishTranslationsData {
-  spaceId: string
-}
-
 export const translationsPublish = https.onCall(async (data: PublishTranslationsData, context) => {
   logger.info('[publishTranslations] data: ' + JSON.stringify(data));
   logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));

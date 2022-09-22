@@ -77,7 +77,7 @@ export class UserService {
     const usersSync = httpsCallableData<void, void>(this.functions, 'usersSync');
     return usersSync()
       .pipe(
-        traceUntilFirst('Firestore:Users:sync'),
+        traceUntilFirst('Functions:Users:sync'),
       )
   }
 }

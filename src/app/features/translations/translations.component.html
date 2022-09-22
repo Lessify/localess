@@ -2,7 +2,8 @@
   <mat-toolbar-row>
     Translations
     <span class="spacer"></span>
-    <ng-container id="translation-add-import-export" *ngIf="['write', 'admin'] | hasAnyUserRole | async">
+    <ng-container id="translation-add-import-export"
+                  *ngIf="['write', 'admin'] | hasAnyUserRole | async">
       <button
         mat-raised-button
         color="primary"
@@ -39,7 +40,8 @@
           <span>Export</span>
         </button>
         <mat-divider></mat-divider>
-        <button mat-menu-item *ngFor="let locale of locales" (click)="openPublishedInNewTab(locale.id)">
+        <button mat-menu-item *ngFor="let locale of locales"
+                (click)="openPublishedInNewTab(locale.id)">
           <mat-icon>public</mat-icon>
           <span>Published {{locale.name}} JSON</span>
         </button>
@@ -64,16 +66,14 @@
       </mat-form-field>
     </div>
     <div class="p-2 " style="width: 25%">
-      <mat-form-field appearance="outline" class="search">
+      <mat-form-field appearance="outline">
         <mat-label>Search</mat-label>
         <input matInput [formControl]="searchCtrl" autocomplete="off"/>
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
     </div>
     <div class="p-2" style="width: 50%">
-      <mat-form-field
-        appearance="outline"
-        class="search">
+      <mat-form-field appearance="outline">
         <mat-chip-list #chipList>
           <mat-chip
             *ngFor="let selectedLabel of selectedLabels"
@@ -141,54 +141,61 @@
           </mat-form-field>
         </div>
 
-        <ng-container id="translation-locale-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
+        <ng-container id="translation-locale-edit"
+                      *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
           <mat-divider></mat-divider>
           <div class="p-2 align-items-start mb-auto">
-          <span [ngSwitch]="selectedTranslation.type">
-            <ll-translation-string-view *ngSwitchCase="'STRING'"
-                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-string-view>
-            <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
-                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-plural-view>
-            <ll-translation-array-view *ngSwitchCase="'ARRAY'"
-                                       [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-array-view>
-          </span>
+            <span [ngSwitch]="selectedTranslation.type">
+              <ll-translation-string-view *ngSwitchCase="'STRING'"
+                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
+              </ll-translation-string-view>
+              <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
+                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
+              </ll-translation-plural-view>
+              <ll-translation-array-view *ngSwitchCase="'ARRAY'"
+                                         [value]="selectedTranslation.locales[selectedSourceLocale]">
+              </ll-translation-array-view>
+            </span>
           </div>
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" class="with-button">
               <mat-label>Target Locale</mat-label>
-              <mat-select [(value)]="selectedTargetLocale">
+              <mat-select [(value)]="selectedTargetLocale" (selectionChange)="translateValue = undefined;">
                 <mat-option *ngFor="let locale of locales" [value]="locale.id">
                   {{locale.name}}
                 </mat-option>
               </mat-select>
             </mat-form-field>
+            <button mat-icon-button matTooltip="Translate" (click)="translate()"
+                    [disabled]="!isLocaleTranslatable(selectedSourceLocale, selectedTargetLocale)">
+              <ll-icon [animate]="isTranslateLoading" start="g_translate" end="sync"></ll-icon>
+            </button>
+
           </div>
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
-        <span [ngSwitch]="selectedTranslation.type">
-          <ll-translation-string-edit *ngSwitchCase="'STRING'"
-                                      [value]="selectedTranslation.locales[selectedTargetLocale]"
-                                      (valueChange)="selectedTranslationLocaleValue = $event">
-          </ll-translation-string-edit>
-          <ll-translation-plural-edit *ngSwitchCase="'PLURAL'"
-                                      [value]="selectedTranslation.locales[selectedTargetLocale]"
-                                      (valueChange)="selectedTranslationLocaleValue = $event">
-          </ll-translation-plural-edit>
-          <ll-translation-array-edit *ngSwitchCase="'ARRAY'"
-                                     [value]="selectedTranslation.locales[selectedTargetLocale]"
-                                     (valueChange)="selectedTranslationLocaleValue = $event">
-          </ll-translation-array-edit>
-        </span>
+            <span [ngSwitch]="selectedTranslation.type">
+              <ll-translation-string-edit *ngSwitchCase="'STRING'"
+                                          [value]="translateValue || selectedTranslation.locales[selectedTargetLocale]"
+                                          (valueChange)="selectedTranslationLocaleValue = $event">
+              </ll-translation-string-edit>
+              <ll-translation-plural-edit *ngSwitchCase="'PLURAL'"
+                                          [value]="selectedTranslation.locales[selectedTargetLocale]"
+                                          (valueChange)="selectedTranslationLocaleValue = $event">
+              </ll-translation-plural-edit>
+              <ll-translation-array-edit *ngSwitchCase="'ARRAY'"
+                                         [value]="selectedTranslation.locales[selectedTargetLocale]"
+                                         (valueChange)="selectedTranslationLocaleValue = $event">
+              </ll-translation-array-edit>
+            </span>
           </div>
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
             <div class="justify-content-between">
               <div class="my-3 d-flex justify-content-end">
-                <button mat-raised-button color="primary" [disabled]="isLocaleUpdateLoading"
+                <button mat-raised-button color="primary"
+                        [disabled]="isLocaleUpdateLoading || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue"
                         (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue)">
                   <ll-icon [animate]="isLocaleUpdateLoading" start="save" end="sync"></ll-icon>
                   Save
@@ -202,7 +209,8 @@
     </div>
     <div class="col-3 overlay text-break">
       <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
-        <ng-container id="translation-edit" *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
+        <ng-container id="translation-edit"
+                      *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
           <div class="p-2 align-items-start">
             <button
               mat-stroked-button matTooltip="Edit"
@@ -223,7 +231,7 @@
           <p><small><strong>ID</strong></small></p>
           <p>
             <small>{{selectedTranslation.id}}</small>
-            <button mat-icon-button (click)="copy(selectedTranslation.id)" matTooltip="Copy">
+            <button mat-icon-button (click)="copy(selectedTranslation.id)" matTooltip="Copy Id">
               <mat-icon>content_copy</mat-icon>
             </button>
           </p>
@@ -233,7 +241,7 @@
           <p><small><strong>Name</strong></small></p>
           <p>
             <small>{{selectedTranslation.name}}</small>
-            <button mat-icon-button (click)="copy(selectedTranslation.name)" matTooltip="Copy">
+            <button mat-icon-button (click)="copy(selectedTranslation.name)" matTooltip="Copy Name">
               <mat-icon>content_copy</mat-icon>
             </button>
           </p>

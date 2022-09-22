@@ -31,13 +31,13 @@ export class LocalesComponent implements OnInit {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Locale> = new MatTableDataSource<Locale>([]);
-  displayedColumns: string[] = ['id', 'name', 'fallback', 'actions'];
+  displayedColumns: string[] = ['id', 'name' ,'isLocaleTranslatable', 'fallback', 'actions'];
 
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-    private readonly localeService: LocaleService,
+    readonly localeService: LocaleService,
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
@@ -147,5 +147,9 @@ export class LocalesComponent implements OnInit {
         }
       })
     }
+  }
+
+  isSupport(locale: string): boolean {
+    return this.localeService.isLocaleTranslatable(locale)
   }
 }

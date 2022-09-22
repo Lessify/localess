@@ -22,22 +22,15 @@ mat-sidenav {
   width: 30%;
 }
 
-mat-form-field.search {
+mat-form-field {
   width: 100%;
   input {
     width: 100%;
   }
 }
 
-mat-form-field.edit {
-  width: 100%;
-  textarea {
-    width: 100%;
-  }
-}
-
-mat-form-field {
-  width: 100%;
+mat-form-field.with-button {
+  width: calc(100% - 40px);
   input {
     width: 100%;
   }
