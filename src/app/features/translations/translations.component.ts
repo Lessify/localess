@@ -487,8 +487,11 @@ export class TranslationsComponent implements OnInit {
     })
       .subscribe({
         next: (value) => {
-          this.translateValue = value;
+          // make sure the component is updated
+          this.translateValue = '';
+          this.cd.detectChanges()
           this.notificationService.success('Translated')
+          this.translateValue = value;
           this.cd.markForCheck()
         },
         error: (err) => {
