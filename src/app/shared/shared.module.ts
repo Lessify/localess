@@ -37,6 +37,8 @@ import {MatGridListModule} from '@angular/material/grid-list';
 import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
 import {IconComponent} from './components/icon/icon.component';
 import {HasAnyUserRolePipe} from './pipes/has-any-user-role.pipe';
+import {CustomSnackBarComponent} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
+import {RouterLink} from '@angular/router';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -68,6 +70,7 @@ const MATERIAL_MODULES: any[] = [
   MatAutocompleteModule,
   ScrollingModule,
   MatGridListModule,
+  MatSnackBarModule
 ];
 
 const SHARED_PIPES: any[] = [
@@ -77,7 +80,8 @@ const SHARED_PIPES: any[] = [
 
 const SHARED_COMPONENTS: any[] = [
   ConfirmationDialogComponent,
-  IconComponent
+  IconComponent,
+  CustomSnackBarComponent
 ]
 
 @NgModule({
@@ -85,6 +89,7 @@ const SHARED_COMPONENTS: any[] = [
     CommonModule,
     FormsModule,
     MATERIAL_MODULES,
+    RouterLink,
   ],
   declarations: [
     SHARED_COMPONENTS,

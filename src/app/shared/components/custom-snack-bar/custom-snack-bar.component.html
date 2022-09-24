@@ -1,0 +1,6 @@
+<span class="mat-simple-snack-bar-content">{{data.message}}</span>
+<div class="mat-simple-snackbar-action"  *ngIf="data.actions">
+  <button mat-button *ngFor="let action of data.actions" (click)="navigate(action.link)">
+    {{action.label}}
+  </button>
+</div>

@@ -5,7 +5,6 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
-import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
 import {UserService} from '@shared/services/user.service';
 import {User} from '@shared/models/user.model';
@@ -16,6 +15,7 @@ import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog
 import {UserInviteDialogResponse} from './user-invite-dialog/user-invite-dialog.model';
 import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {NotificationService} from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-users',

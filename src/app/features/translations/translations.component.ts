@@ -15,7 +15,6 @@ import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/a
 import {Store} from '@ngrx/store';
 import {TranslationService} from '@shared/services/translation.service';
 import {SpaceService} from '@shared/services/space.service';
-import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
 import {Locale} from '@shared/models/locale.model';
 import {Translation, TranslationCreate, TranslationUpdate} from '@shared/models/translation.model';
@@ -55,6 +54,7 @@ import {
 } from './translation-import-dialog/translation-import-dialog.model';
 import {TranslateService} from '@shared/services/translate.service';
 import {LocaleService} from '@shared/services/locale.service';
+import {NotificationService} from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-translations',
@@ -496,7 +496,13 @@ export class TranslationsComponent implements OnInit {
         },
         error: (err) => {
           console.error(err)
-          this.notificationService.error('Can not be translation.')
+          this.notificationService.error(
+            'Can not be translation.',
+            [{
+              label: 'Documentation',
+              link: 'https://github.com/Lessify/localess/wiki/Setup#cloud-translation-api-not-enabled'
+            }]
+          )
         },
         complete: () => {
           setTimeout(() => {

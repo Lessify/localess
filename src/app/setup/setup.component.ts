@@ -2,7 +2,7 @@ import {ChangeDetectorRef, Component} from '@angular/core';
 import {Router} from '@angular/router';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {SetupService} from './setup.service';
-import {NotificationService} from '../core/notifications/notification.service';
+import {NotificationService} from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-setup',

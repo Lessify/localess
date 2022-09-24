@@ -4,7 +4,6 @@ import {MatDialog} from '@angular/material/dialog';
 import {Store} from '@ngrx/store';
 import {Auth, user, User} from '@angular/fire/auth';
 
-import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
 import {selectUser} from '../../core/state/user/user.selector';
 import {UserState} from '../../core/state/user/user.model';
@@ -16,6 +15,7 @@ import {MePasswordDialogComponent} from './me-password-dialog/me-password-dialog
 import {MePasswordDialogModel} from './me-password-dialog/me-password-dialog.model';
 import {MeEmailDialogComponent} from './me-email-dialog/me-email-dialog.component';
 import {MeEmailDialogModel} from './me-email-dialog/me-email-dialog.model';
+import {NotificationService} from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-me',

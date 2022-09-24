@@ -8,13 +8,13 @@ import {SpaceDialogModel} from './space-dialog/space-dialog.model';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
-import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
 import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {CopierService} from '@shared/services/copier.service';
+import {NotificationService} from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-spaces',

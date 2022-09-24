@@ -24,7 +24,6 @@ import {AppErrorHandler} from './error-handler/app-error-handler.service';
 import {CustomSerializer} from './router/custom-serializer';
 import {LocalStorageService} from './local-storage/local-storage.service';
 import {HttpErrorInterceptor} from './http-interceptors/http-error.interceptor';
-import {NotificationService} from './notifications/notification.service';
 import {SettingsEffects} from './state/settings/settings.effects';
 import {
   selectEffectiveTheme,
@@ -51,7 +50,6 @@ export {
   AnimationsService,
   AuthGuardService,
   selectRouterState,
-  NotificationService,
   selectEffectiveTheme,
   selectSettingsLanguage,
   selectSettingsStickyHeader

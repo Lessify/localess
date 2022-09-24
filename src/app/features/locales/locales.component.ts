@@ -8,7 +8,6 @@ import {LocaleDialogModel} from './locale-dialog/locale-dialog.model';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
-import {NotificationService} from '../../core/notifications/notification.service';
 import {AppState} from '../../core/state/core.state';
 import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -17,6 +16,7 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {Locale} from '@shared/models/locale.model';
 import {selectSpace} from '../../core/state/space/space.selector';
+import {NotificationService} from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-locales',
