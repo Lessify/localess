@@ -316,10 +316,8 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
         sourceLanguageCode: space.localeFallback.id,
         targetLanguageCode: locale.id,
       };
-      logger.info(`[Translation::onCreate] request : ${JSON.stringify(request)}`)
       try {
         const [responseTranslateText] = await translationService.translateText(request);
-        logger.info(`[Translation::onCreate] response : ${JSON.stringify(responseTranslateText)}`)
         if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
           update[`locales.${locale.id}`] = responseTranslateText.translations[0].translatedText;
         }
