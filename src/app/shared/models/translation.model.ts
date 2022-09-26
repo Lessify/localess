@@ -7,53 +7,56 @@ export enum TranslationType {
 }
 
 export interface Translation {
-  id: string;
-  name: string;
-  type: TranslationType;
-  locales: { [key: string]: string };
+  id: string
+  name: string
+  type: TranslationType
+  locales: { [key: string]: string }
   labels?: string[]
-  description?: string;
-  createdOn: Timestamp;
-  updatedOn: Timestamp;
+  description?: string
+  translate?: boolean
+  createdOn: Timestamp
+  updatedOn: Timestamp
 }
 
 export interface TranslationCreate {
-  name: string;
-  type: TranslationType;
+  name: string
+  type: TranslationType
   labels?: string[]
-  description?: string;
-  locale: string;
-  value: string;
+  description?: string
+  locale: string
+  value: string
+  translate?: boolean
 }
 
 export interface TranslationCreateFS {
-  name: string;
-  type: TranslationType;
-  locales: { [key: string]: string };
+  name: string
+  type: TranslationType
+  locales: { [key: string]: string }
   labels?: string[]
-  description?: string;
-  createdOn: FieldValue;
-  updatedOn: FieldValue;
+  description?: string
+  translate?: boolean
+  createdOn: FieldValue
+  updatedOn: FieldValue
 }
 
 export interface TranslationUpdate {
   labels: string[]
-  description: string;
+  description: string
 }
 
 export interface TranslationUpdateFS {
   labels: string[]
-  description: string;
-  updatedOn: FieldValue;
+  description: string
+  updatedOn: FieldValue
 }
 
 export type TranslationLocale = { [key: string]: string }
 
 export interface TranslationExportImport {
-  name: string;
-  locales: { [key: string]: string };
+  name: string
+  locales: { [key: string]: string }
   labels?: string[]
-  description?: string;
+  description?: string
 }
 
 export interface TranslationsExportFlatData {

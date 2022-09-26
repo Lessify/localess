@@ -1,6 +1,6 @@
 import {Timestamp} from 'firebase-admin/firestore';
 
-export type TranslationLocale =  { [key: string]: string }
+export type TranslationLocale = { [key: string]: string }
 
 export enum TranslationType {
   STRING = 'STRING',
@@ -9,13 +9,14 @@ export enum TranslationType {
 }
 
 export interface Translation {
-  name: string;
-  type: TranslationType;
-  locales: { [key: string]: string };
+  name: string
+  type: TranslationType
+  locales: { [key: string]: string }
   labels?: string[]
-  description?: string;
-  createdOn: Timestamp;
-  updatedOn: Timestamp;
+  translate?: boolean
+  description?: string
+  createdOn: Timestamp
+  updatedOn: Timestamp
 }
 
 export interface TranslationExportImport {

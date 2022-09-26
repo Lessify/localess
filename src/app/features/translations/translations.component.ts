@@ -216,6 +216,7 @@ export class TranslationsComponent implements OnInit {
               value: it!.value,
               labels: it?.labels,
               description: it?.description,
+              translate: it?.translate
             }
             return this.translationService.add(this.selectedSpace!.id, tc)
           }
