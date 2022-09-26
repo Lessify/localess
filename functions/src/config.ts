@@ -4,6 +4,7 @@ import {Firestore, getFirestore} from 'firebase-admin/firestore';
 import {getStorage, Storage} from 'firebase-admin/storage';
 import {Auth, getAuth} from 'firebase-admin/auth';
 import {TranslationServiceClient} from '@google-cloud/translate';
+import {FIREBASE_CONFIG, FirebaseConfig} from './models/firebase.model';
 
 // BATCH OPERATION
 export const BATCH_MAX = 500;
@@ -39,3 +40,5 @@ export const SUPPORT_LOCALES = new Set([
     "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "xh", "yi", "yo", "zh", "zh-TW", "zu"
   ]
 )
+
+export const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '')

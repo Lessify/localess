@@ -1,6 +1,15 @@
-import {https, logger} from 'firebase-functions';
+import {firestore, https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
-import {BATCH_MAX, bucket, firestoreService, ROLE_ADMIN, ROLE_WRITE} from './config';
+import {
+  BATCH_MAX,
+  bucket,
+  firebaseConfig,
+  firestoreService,
+  ROLE_ADMIN,
+  ROLE_WRITE,
+  SUPPORT_LOCALES,
+  translationService
+} from './config';
 import {Space} from './models/space.model';
 import {
   PublishTranslationsData,
@@ -13,6 +22,7 @@ import {
 } from './models/translations.model';
 import {FieldValue, QuerySnapshot, Timestamp, WriteBatch} from 'firebase-admin/firestore';
 import axios from 'axios';
+import {protos} from '@google-cloud/translate';
 
 // Publish
 export const translationsPublish = https.onCall(async (data: PublishTranslationsData, context) => {
@@ -223,7 +233,6 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
             // add label
             update.labels = value.locales
           }
-          logger.info('sdgsdg')
           if (Object.getOwnPropertyNames(update).length > 1) {
             batches[batchIdx].update(firestoreService.doc(`spaces/${data.spaceId}/translations/${oid}`), update);
             totalChanges++;
@@ -265,3 +274,60 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
     throw new https.HttpsError('not-found', 'Space not found');
   }
 });
+
+export const onTranslationCreate = firestore.document('spaces/{spaceId}/translations/{translationId}')
+  .onCreate(async (snapshot, context) => {
+    logger.info(`[Translation::onCreate] id='${snapshot.id}' eventId='${context.eventId}'`);
+    const spaceId: string = context.params['spaceId'];
+    // const translationId: string = context.params.translationId
+
+    const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
+
+    const space = spaceSnapshot.data() as Space;
+    // is incoming locale supporting translation ?
+    if (!SUPPORT_LOCALES.has(space.localeFallback.id)) return;
+
+    const translation = snapshot.data() as Translation;
+    const localeValue = translation.locales[space.localeFallback.id]
+
+    const projectId = firebaseConfig.projectId
+    let locationId; //firebaseConfig.locationId || 'global'
+    if (firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us-')) {
+      locationId = 'us-central1'
+    } else {
+      locationId = 'global'
+    }
+
+    const update: any = {
+      translate: FieldValue.delete(),
+      updatedOn: FieldValue.serverTimestamp(),
+    };
+
+    for (const locale of space.locales) {
+      // skip already filled data
+      if (locale.id === space.localeFallback.id) continue;
+      // skip unsupported locale
+      if (!SUPPORT_LOCALES.has(locale.id)) continue;
+
+      const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
+        parent: `projects/${projectId}/locations/${locationId}`,
+        contents: [localeValue],
+        mimeType: 'text/plain',
+        sourceLanguageCode: space.localeFallback.id,
+        targetLanguageCode: locale.id,
+      };
+
+      try {
+        const [responseTranslateText] = await translationService.translateText(request);
+        if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
+          update[`locales.${locale.id}`] = responseTranslateText.translations[0].translatedText;
+        }
+      } catch (e) {
+        logger.error(e)
+      }
+    }
+    logger.info(`[Translation::onCreate] Update : ${JSON.stringify(update)}`)
+    await snapshot.ref.set(update, {merge: true})
+
+    return
+  });

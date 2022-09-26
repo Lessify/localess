@@ -18,7 +18,8 @@ export class TranslationAddDialogComponent {
     type: this.fb.control('STRING', TranslationValidator.TYPE),
     description: this.fb.control('', TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
-    labels: this.fb.control([], TranslationValidator.DESCRIPTION)
+    labels: this.fb.control([], TranslationValidator.DESCRIPTION),
+    translate: this.fb.control(false)
   });
 
   constructor(private readonly fb: FormBuilder) {
