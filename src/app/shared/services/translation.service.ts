@@ -87,6 +87,8 @@ export class TranslationService {
       }
     }
 
+    console.log(addEntity)
+
     return from(
       addDoc(collection(this.firestore, `spaces/${spaceId}/translations`),
         addEntity
