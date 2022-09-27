@@ -25,4 +25,9 @@ export class TranslationValidator {
   ];
   public static DESCRIPTION: ValidatorFn[] = [Validators.maxLength(250)];
   public static TYPE: ValidatorFn[] = [Validators.required];
+  public static LABEL: ValidatorFn[] = [
+    CommonValidator.noSpace,
+    Validators.minLength(2),
+    Validators.maxLength(50)
+  ];
 }

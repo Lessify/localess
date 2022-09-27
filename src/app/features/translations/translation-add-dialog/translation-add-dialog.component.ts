@@ -18,11 +18,12 @@ export class TranslationAddDialogComponent {
     type: this.fb.control('STRING', TranslationValidator.TYPE),
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
-    labels: this.fb.control([], TranslationValidator.DESCRIPTION),
-    translate: this.fb.control(false)
+    labels: this.fb.control([], TranslationValidator.LABEL),
+    translate: this.fb.control(undefined)
   });
 
   constructor(private readonly fb: FormBuilder) {
+    this.form.valueChanges.subscribe(it => console.log(it))
   }
 
   addLabel(event: MatChipInputEvent): void {

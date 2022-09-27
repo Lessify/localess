@@ -303,28 +303,32 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
       updatedOn: FieldValue.serverTimestamp(),
     };
 
-    for (const locale of space.locales) {
-      // skip already filled data
-      if (locale.id === space.localeFallback.id) continue;
-      // skip unsupported locale
-      if (!SUPPORT_LOCALES.has(locale.id)) continue;
+    // translate only when it is required
+    if (translation.translate) {
+      for (const locale of space.locales) {
+        // skip already filled data
+        if (locale.id === space.localeFallback.id) continue;
+        // skip unsupported locale
+        if (!SUPPORT_LOCALES.has(locale.id)) continue;
 
-      const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
-        parent: `projects/${projectId}/locations/${locationId}`,
-        contents: [localeValue],
-        mimeType: 'text/plain',
-        sourceLanguageCode: space.localeFallback.id,
-        targetLanguageCode: locale.id,
-      };
-      try {
-        const [responseTranslateText] = await translationService.translateText(request);
-        if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
-          update[`locales.${locale.id}`] = responseTranslateText.translations[0].translatedText;
+        const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
+          parent: `projects/${projectId}/locations/${locationId}`,
+          contents: [localeValue],
+          mimeType: 'text/plain',
+          sourceLanguageCode: space.localeFallback.id,
+          targetLanguageCode: locale.id,
+        };
+        try {
+          const [responseTranslateText] = await translationService.translateText(request);
+          if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
+            update[`locales.${locale.id}`] = responseTranslateText.translations[0].translatedText;
+          }
+        } catch (e) {
+          logger.error(e)
         }
-      } catch (e) {
-        logger.error(e)
       }
     }
+
     logger.info(`[Translation::onCreate] Update : ${JSON.stringify(update)}`)
     await snapshot.ref.update(update)
 
