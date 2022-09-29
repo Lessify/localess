@@ -23,6 +23,7 @@ export class TranslationImportDialogComponent {
   form: FormGroup = this.fb.group({
     kind: this.fb.control('FULL', [Validators.required]),
     locale: this.fb.control(undefined),
+    onlyNewKeys: this.fb.control(undefined),
     translations: this.fb.control(undefined, [Validators.required]),
   });
 

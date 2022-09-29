@@ -134,7 +134,7 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
 
 // Import
 export const translationsImport = https.onCall(async (data: TranslationsImportData, context) => {
-  // logger.info('[translationsImport] data: ' + JSON.stringify(data));
+  logger.info(`[translationsImport] data: ${JSON.stringify(data)}`);
   logger.info('[translationsImport] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
@@ -165,6 +165,8 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
         const ot = origTransMap.get(name);
         const oid = origTransIdMap.get(name);
         if (ot && oid) {
+          // no updates in case onlyNewKeys == true
+          if (data.onlyNewKeys) return;
           // update
           if (ot.locales[data.locale] !== importT[name]) {
             // update if locale values are different
@@ -211,6 +213,8 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
         const ot = origTransMap.get(value.name);
         const oid = origTransIdMap.get(value.name);
         if (ot && oid) {
+          // no updates in case onlyNewKeys == true
+          if (data.onlyNewKeys) return;
           const space: Space = spaceSnapshot.data() as Space
           // update
           const update: any = {

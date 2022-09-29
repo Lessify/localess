@@ -10,10 +10,12 @@ export type TranslationImportDialogReturn = TranslationImportFullDialogReturn | 
 export interface TranslationImportFullDialogReturn {
   kind: 'FULL'
   translations: TranslationExportImport[]
+  onlyNewKeys?: boolean
 }
 
 export interface TranslationImportFlatDialogReturn {
   kind: 'FLAT'
   locale: string
   translations: TranslationLocale
+  onlyNewKeys?: boolean
 }

@@ -316,7 +316,8 @@ export class TranslationsComponent implements OnInit {
                 spaceId: this.selectedSpace!.id,
                 kind: it.kind,
                 locale: it.locale,
-                translations: it.translations
+                translations: it.translations,
+                onlyNewKeys: it.onlyNewKeys
               }
             )
           } else if (it?.kind === 'FULL') {
@@ -324,7 +325,8 @@ export class TranslationsComponent implements OnInit {
               {
                 spaceId: this.selectedSpace!.id,
                 kind: it.kind,
-                translations: it.translations
+                translations: it.translations,
+                onlyNewKeys: it.onlyNewKeys
               }
             )
           }
