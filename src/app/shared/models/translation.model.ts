@@ -85,12 +85,14 @@ export interface TranslationsImportFlatData {
   spaceId: string
   locale: string
   translations: TranslationLocale
+  onlyNewKeys?: boolean
 }
 
 export interface TranslationsImportFullData {
   kind: 'FULL'
   spaceId: string
   translations: TranslationExportImport[]
+  onlyNewKeys?: boolean
 }
 
 export type TranslationsImportData = TranslationsImportFlatData | TranslationsImportFullData
