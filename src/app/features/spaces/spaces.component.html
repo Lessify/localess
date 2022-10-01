@@ -17,7 +17,12 @@
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> ID </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
+      <mat-cell *matCellDef="let element">
+        {{element.id}}
+        <button mat-icon-button (click)="copy(element.id)" matTooltip="Copy Id">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
@@ -34,9 +39,6 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="copy(element.id)" matTooltip="Copy Id">
-          <mat-icon>content_copy</mat-icon>
-        </button>
         <button mat-icon-button (click)="editDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
