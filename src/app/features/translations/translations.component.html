@@ -110,7 +110,8 @@
                        [class.selected]="translation.id === selectedTranslation?.id">
           <mat-icon mat-list-icon
                     [class]="identifyStatusColor(translation)"
-                    matTooltip="Green - translated, Amber - partially-translated, Red - untranslated.">
+                    matTooltipClass="allow-cr"
+                    matTooltip="Green - translated. &#10; Amber - partially-translated. &#10; Red - untranslated.">
             adjust
           </mat-icon>
           <div mat-line>
