@@ -13,7 +13,7 @@ export interface Translation {
   type: TranslationType
   locales: { [key: string]: string }
   labels?: string[]
-  translate?: boolean
+  autoTranslate?: boolean
   description?: string
   createdOn: Timestamp
   updatedOn: Timestamp

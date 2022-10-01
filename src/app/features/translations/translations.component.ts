@@ -17,7 +17,12 @@ import {TranslationService} from '@shared/services/translation.service';
 import {SpaceService} from '@shared/services/space.service';
 import {AppState} from '../../core/state/core.state';
 import {Locale} from '@shared/models/locale.model';
-import {Translation, TranslationCreate, TranslationUpdate} from '@shared/models/translation.model';
+import {
+  Translation,
+  TranslationCreate,
+  TranslationStatus,
+  TranslationUpdate
+} from '@shared/models/translation.model';
 import {selectSpace} from '../../core/state/space/space.selector';
 import {Space} from '@shared/models/space.model';
 import {CopierService} from '@shared/services/copier.service';
@@ -216,7 +221,7 @@ export class TranslationsComponent implements OnInit {
               value: it!.value,
               labels: it?.labels,
               description: it?.description,
-              translate: it?.translate
+              autoTranslate: it?.autoTranslate
             }
             return this.translationService.add(this.selectedSpace!.id, tc)
           }
@@ -521,5 +526,31 @@ export class TranslationsComponent implements OnInit {
       return false
     }
     return this.localeService.isLocaleTranslatable(sourceLocale) && this.localeService.isLocaleTranslatable(targetLocale);
+  }
+
+  identifyStatus(translate: Translation): TranslationStatus {
+    const locales = this.selectedSpace?.locales || [];
+    if (Object.getOwnPropertyNames(translate.locales).length === 0) return TranslationStatus.UNTRANSLATED
+
+    let translateCount = 0;
+    for (const locale of locales) {
+      if (locale.id in translate.locales && translate.locales[locale.id] !== '') {
+        translateCount++;
+      }
+    }
+
+    if (locales.length === translateCount) {
+      return TranslationStatus.TRANSLATED
+    }
+
+    return TranslationStatus.PARTIALLY_TRANSLATED;
+  }
+
+  identifyStatusColor(translate: Translation): string {
+    switch (this.identifyStatus(translate)) {
+      case TranslationStatus.TRANSLATED: return 'translated';
+      case TranslationStatus.PARTIALLY_TRANSLATED: return 'partially-translated';
+      case TranslationStatus.UNTRANSLATED: return 'untranslated';
+    }
   }
 }

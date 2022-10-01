@@ -6,5 +6,5 @@ export interface TranslationAddDialogModel {
   value: string
   labels: string[]
   description: string
-  translate?: boolean
+  autoTranslate?: boolean
 }

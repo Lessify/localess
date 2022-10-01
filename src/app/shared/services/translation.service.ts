@@ -60,7 +60,7 @@ export class TranslationService {
       name: entity.name,
       type: entity.type,
       locales: {},
-      translate: entity.translate,
+      autoTranslate: entity.autoTranslate,
       createdOn: serverTimestamp(),
       updatedOn: serverTimestamp()
     }

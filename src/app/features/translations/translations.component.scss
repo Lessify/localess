@@ -1,3 +1,5 @@
+@use '@angular/material' as mat;
+
 mat-toolbar-row .mat-button-base {
   margin: 8px 0 8px 8px;
 }
@@ -18,12 +20,14 @@ mat-toolbar-row .mat-button-base {
   pointer-events: none;
   opacity: 0.5;
 }
+
 mat-sidenav {
   width: 30%;
 }
 
 mat-form-field {
   width: 100%;
+
   input {
     width: 100%;
   }
@@ -31,18 +35,12 @@ mat-form-field {
 
 mat-form-field.with-button {
   width: calc(100% - 40px);
+
   input {
     width: 100%;
   }
 }
 
-mat-list-item.selected {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-mat-list-item.odd {
-  background: rgba(127, 127, 127, 0.3);
-}
 
 .overlay {
   //overflow: overlay;
@@ -56,4 +54,46 @@ mat-list-item.odd {
 //  width: 0;
 //  background: transparent; /* make scrollbar transparent */
 //}
+
+
+mat-list-item.selected {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+mat-list-item.odd {
+  background: rgba(127, 127, 127, 0.3);
+}
+
+:host ::ng-deep .mat-list-item {
+  height: auto !important;
+
+  .mat-list-item-content {
+    padding: 0 !important;
+
+    .mat-icon {
+      &.translated {
+        color: mat.get-color-from-palette(mat.$green-palette, 400);
+      }
+
+      &.partially-translated {
+        color: mat.get-color-from-palette(mat.$amber-palette, 400);
+      }
+
+      &.untranslated {
+        color: mat.get-color-from-palette(mat.$red-palette, 400);
+      }
+    }
+
+
+    .mat-line {
+      white-space: inherit !important;
+      word-wrap: break-word !important;
+      word-break: break-word !important;
+    }
+
+    .mat-list-text {
+      padding-left: 5px !important;
+    }
+  }
+}
 

@@ -6,6 +6,12 @@ export enum TranslationType {
   ARRAY = 'ARRAY'
 }
 
+export enum TranslationStatus {
+  TRANSLATED = 'TRANSLATED',
+  PARTIALLY_TRANSLATED = 'PARTIALLY_TRANSLATED',
+  UNTRANSLATED = 'UNTRANSLATED'
+}
+
 export interface Translation {
   id: string
   name: string
@@ -13,7 +19,7 @@ export interface Translation {
   locales: { [key: string]: string }
   labels?: string[]
   description?: string
-  translate?: boolean
+  autoTranslate?: boolean
   createdOn: Timestamp
   updatedOn: Timestamp
 }
@@ -25,7 +31,7 @@ export interface TranslationCreate {
   description?: string
   locale: string
   value: string
-  translate?: boolean
+  autoTranslate?: boolean
 }
 
 export interface TranslationCreateFS {
@@ -34,7 +40,7 @@ export interface TranslationCreateFS {
   locales: { [key: string]: string }
   labels?: string[]
   description?: string
-  translate?: boolean
+  autoTranslate?: boolean
   createdOn: FieldValue
   updatedOn: FieldValue
 }

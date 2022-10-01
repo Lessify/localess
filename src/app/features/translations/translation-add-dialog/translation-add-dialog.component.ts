@@ -19,7 +19,7 @@ export class TranslationAddDialogComponent {
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
     labels: this.fb.control([], TranslationValidator.LABEL),
-    translate: this.fb.control(undefined)
+    autoTranslate: this.fb.control(undefined)
   });
 
   constructor(private readonly fb: FormBuilder) {

@@ -39,7 +39,10 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
       const localeJson: { [key: string]: string } = {};
       for (const tr of translations) {
         let value = tr.locales[locale.id];
-        if (!value) {
+        if (value) {
+          // check the value is not empty string
+          value = value || tr.locales[space.localeFallback.id];
+        } else {
           value = tr.locales[space.localeFallback.id];
         }
         localeJson[tr.name] = value;
@@ -307,8 +310,8 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
       updatedOn: FieldValue.serverTimestamp(),
     };
 
-    // translate only when it is required
-    if (translation.translate) {
+    // autoTranslate only when it is required
+    if (translation.autoTranslate) {
       for (const locale of space.locales) {
         // skip already filled data
         if (locale.id === space.localeFallback.id) continue;
