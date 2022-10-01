@@ -27,7 +27,7 @@
     <ng-container matColumnDef="isLocaleTranslatable">
       <mat-header-cell *matHeaderCellDef> Translatable </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <mat-icon color="primary">{{localeService.isLocaleTranslatable(element.id) ? 'check': 'clear'}}</mat-icon>
+        <mat-icon color="primary">{{isSupport(element.id) ? 'check': 'clear'}}</mat-icon>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="fallback">

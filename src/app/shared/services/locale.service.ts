@@ -73,7 +73,7 @@ export class LocaleService {
   }
 }
 
-export const SUPPORT_LOCALES = new Set([
+const SUPPORT_LOCALES = new Set([
     "af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "ceb", "ckb", "co", "cs", "cy", "da", "de",
     "el", "en", "eo", "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gd", "gl", "gu", "ha", "haw",
     "he", "hi", "hmn", "hr", "ht", "hu", "hy", "id", "ig", "is", "it", "iw", "ja", "jw", "ka", "kk",
