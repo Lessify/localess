@@ -6,12 +6,25 @@
 <br/>
 </h1>
 
-[![Twitter URL](https://img.shields.io/twitter/url?label=Share%20on%20Twitter&style=social&url=https%3A%2F%2Fgithub.com%2FLessify%2Flocaless)](https://twitter.com/intent/tweet?text=Easy%20way%20to%20manage%20your%20app%20localisation&url=https://github.com/Lessify/localess&hashtags=i18n,internationalization,localization)
-[![Twitter Follow](https://img.shields.io/twitter/follow/Lessifyio?style=social)](https://twitter.com/intent/follow?screen_name=lessifyio)
+![GitHub](https://img.shields.io/github/license/Lessify/localess?style=for-the-badge)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Lessify/localess/CI%20Tests/main?style=for-the-badge)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/Lessify?style=for-the-badge)
+![GitHub Repo stars](https://img.shields.io/github/stars/Lessify/Localess?style=for-the-badge)
 
+[![Twitter URL](https://img.shields.io/twitter/url?label=Share%20on%20Twitter&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2FLessify%2Flocaless)](https://twitter.com/intent/tweet?text=Easy%20way%20to%20manage%20your%20app%20localisation&url=https://github.com/Lessify/localess&hashtags=i18n,internationalization,localization)
+![Twitter Follow](https://img.shields.io/twitter/follow/Lessifyio?style=for-the-badge)
 
-The **Localess** helps to store internationalization in form of key-values.
+The **Localess** it is a translation management tool with Artificial Intelligence integration.
 The application is design to be deployed in **Firebase**. 
+
+**Facts**
+
+- It is **Free** forever, you or your company doesn't need to pay.
+- It is **Open Source** Software, you also can contribute with code and feedback.
+- You pay only for infrastructure where you deploy the **Localess**.
+- **Localess** is a translation management tool, and not a **Content Management System (CMS)**.
+
+
 
 ![Localess Video](https://github.com/Lessify/localess/wiki/img/app_animation.gif)
 

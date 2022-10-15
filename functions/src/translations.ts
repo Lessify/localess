@@ -288,30 +288,31 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
     const spaceId: string = context.params['spaceId'];
     // const translationId: string = context.params.translationId
 
-    const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
-
-    const space = spaceSnapshot.data() as Space;
-    // is incoming locale supporting translation ?
-    if (!SUPPORT_LOCALES.has(space.localeFallback.id)) return;
-
     const translation = snapshot.data() as Translation;
-    const localeValue = translation.locales[space.localeFallback.id]
-
-    const projectId = firebaseConfig.projectId
-    let locationId; //firebaseConfig.locationId || 'global'
-    if (firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us-')) {
-      locationId = 'us-central1'
-    } else {
-      locationId = 'global'
-    }
 
     const update: any = {
-      translate: FieldValue.delete(),
+      autoTranslate: FieldValue.delete(),
       updatedOn: FieldValue.serverTimestamp(),
     };
 
     // autoTranslate only when it is required
     if (translation.autoTranslate) {
+      const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
+
+      const space = spaceSnapshot.data() as Space;
+      // is incoming locale supporting translation ?
+      if (!SUPPORT_LOCALES.has(space.localeFallback.id)) return;
+
+      const localeValue = translation.locales[space.localeFallback.id]
+
+      const projectId = firebaseConfig.projectId
+      let locationId; //firebaseConfig.locationId || 'global'
+      if (firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us-')) {
+        locationId = 'us-central1'
+      } else {
+        locationId = 'global'
+      }
+
       for (const locale of space.locales) {
         // skip already filled data
         if (locale.id === space.localeFallback.id) continue;
