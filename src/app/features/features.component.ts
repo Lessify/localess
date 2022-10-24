@@ -31,6 +31,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '../core/state/space/space.selector';
+import {environment} from '../../environments/environment';
 
 const ROLE_READ = 'read';
 const ROLE_EDIT = 'edit';
@@ -63,6 +64,7 @@ export class FeaturesComponent implements OnInit {
   title: string = 'Title'
   year = new Date().getFullYear();
   logo = 'assets/logo.png';
+  version = environment.version
 
   userSideMenu: SideMenuItem[] = [
     {link: 'translations', label: 'Translations', icon: 'translate', roles: [ROLE_READ, ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN]},

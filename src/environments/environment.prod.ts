@@ -1,4 +1,5 @@
 import {env} from './env'
+import packageInfo from '../../package.json';
 
 export const environment = {
   appName: "Localess",
@@ -17,4 +18,5 @@ export const environment = {
   production: true,
   test: false,
   useEmulators: false,
+  version: packageInfo.version,
 };
