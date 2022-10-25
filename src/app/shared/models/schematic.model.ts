@@ -1,6 +1,25 @@
-import {Timestamp} from '@angular/fire/firestore';
+import {FieldValue, Timestamp} from '@angular/fire/firestore';
 
-export enum SchematicKind {
+export enum SchematicType {
+  ROOT = 'ROOT',
+  NODE = 'NODE'
+}
+
+export interface Schematic {
+  id: string;
+  name: string;
+  type: SchematicType;
+  components?: SchematicComponents;
+
+  createdOn: Timestamp;
+  updatedOn: Timestamp;
+}
+
+export type SchematicComponents = { [key: string]: SchematicComponent };
+
+export type SchematicComponent = SchematicComponentNumber | SchematicComponentText | SchematicComponentTextarea | SchematicComponentDate | SchematicComponentBoolean;
+
+export enum SchematicComponentKind {
   NUMBER = 'NUMBER',
   TEXT = 'TEXT',
   TEXTAREA = 'TEXTAREA',
@@ -8,52 +27,63 @@ export enum SchematicKind {
   BOOLEAN = 'BOOLEAN'
 }
 
-export interface Schematic {
-  kind: SchematicKind;
+export interface SchematicComponentBase {
+  kind: SchematicComponentKind;
   displayName?: string;
   required?: boolean;
   description?: string;
-
 }
 
-export interface SchematicNumber extends Schematic {
-  kind: SchematicKind.NUMBER;
+export interface SchematicComponentNumber extends SchematicComponentBase {
+  kind: SchematicComponentKind.NUMBER;
   defaultValue?: number;
   minValue?: number;
   maxValue?: number;
 }
 
-export interface SchematicText extends Schematic {
-  kind: SchematicKind.TEXT;
+export interface SchematicComponentNumber extends SchematicComponentBase {
+  kind: SchematicComponentKind.NUMBER;
+  defaultValue?: number;
+  minValue?: number;
+  maxValue?: number;
+}
+
+export interface SchematicComponentText extends SchematicComponentBase {
+  kind: SchematicComponentKind.TEXT;
   defaultValue?: string;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface SchematicTextarea extends Schematic {
-  kind: SchematicKind.TEXTAREA;
+export interface SchematicComponentTextarea extends SchematicComponentBase {
+  kind: SchematicComponentKind.TEXTAREA;
   defaultValue?: string;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface SchematicDate extends Schematic {
-  kind: SchematicKind.DATE;
+export interface SchematicComponentDate extends SchematicComponentBase {
+  kind: SchematicComponentKind.DATE;
   defaultValue?: string;
 }
 
-export interface SchematicBoolean extends Schematic {
-  kind: SchematicKind.BOOLEAN;
+export interface SchematicComponentBoolean extends SchematicComponentBase {
+  kind: SchematicComponentKind.BOOLEAN;
   defaultValue?: boolean;
 }
 
-export type Schematics = { [key: string]: Schematic };
+// Service
 
-export interface Component {
-  id: string;
+export interface SchematicCreate {
   name: string;
-  schematics: Schematics;
+  type: SchematicType;
+}
 
-  createdOn: Timestamp;
-  updatedOn: Timestamp;
+// Firestore
+
+export interface SchematicCreateFS {
+  name: string;
+  type: SchematicType;
+  createdOn: FieldValue;
+  updatedOn: FieldValue;
 }

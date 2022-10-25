@@ -129,15 +129,13 @@ export class MeComponent implements OnInit {
         )
       )
       .subscribe({
-          next: () => {
-            this.notificationService.success('User password has been updated.');
-
-          },
-          error: (err) => {
-            this.notificationService.error('User password can not be updated.');
-          }
+        next: () => {
+          this.notificationService.success('User password has been updated.');
+        },
+        error: (err) => {
+          this.notificationService.error('User password can not be updated.');
         }
-      );
+      });
   }
 
 

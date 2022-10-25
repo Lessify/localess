@@ -235,8 +235,7 @@ export class TranslationsComponent implements OnInit {
           error: () => {
             this.notificationService.error('Translation can not be added.');
           }
-        }
-      );
+        });
   }
 
   openEditDialog(translation: Translation): void {
@@ -260,14 +259,13 @@ export class TranslationsComponent implements OnInit {
         })
       )
       .subscribe({
-          next: () => {
-            this.notificationService.success('Translation has been updated.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be updated.');
-          }
+        next: () => {
+          this.notificationService.success('Translation has been updated.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be updated.');
         }
-      );
+      });
   }
 
   openDeleteDialog(element: Translation): void {
@@ -289,14 +287,13 @@ export class TranslationsComponent implements OnInit {
         )
       )
       .subscribe({
-          next: () => {
-            this.notificationService.success('Translation has been deleted.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be deleted.')
-          }
+        next: () => {
+          this.notificationService.success('Translation has been deleted.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be deleted.')
         }
-      );
+      });
   }
 
   openImportDialog(): void {
@@ -339,20 +336,19 @@ export class TranslationsComponent implements OnInit {
         })
       )
       .subscribe({
-          next: (result) => {
-            this.notificationService.success('Translations has been imported.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be imported.');
-          },
-          complete: () => {
-            setTimeout(() => {
-              this.isImportExportLoading = false
-              this.cd.markForCheck()
-            }, 1000)
-          }
+        next: (result) => {
+          this.notificationService.success('Translations has been imported.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be imported.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isImportExportLoading = false
+            this.cd.markForCheck()
+          }, 1000)
         }
-      );
+      });
   }
 
   openExportDialog(): void {
@@ -395,21 +391,20 @@ export class TranslationsComponent implements OnInit {
         })
       )
       .subscribe({
-          next: (result) => {
-            this.notificationService.success('Translations has been exported.');
-            saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}.json`)
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be exported.');
-          },
-          complete: () => {
-            setTimeout(() => {
-              this.isImportExportLoading = false
-              this.cd.markForCheck()
-            }, 1000)
-          }
+        next: (result) => {
+          this.notificationService.success('Translations has been exported.');
+          saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}.json`)
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be exported.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isImportExportLoading = false
+            this.cd.markForCheck()
+          }, 1000)
         }
-      );
+      });
   }
 
   selectTranslation(translation: Translation): void {
@@ -421,20 +416,19 @@ export class TranslationsComponent implements OnInit {
     this.isLocaleUpdateLoading = true
     this.translationService.updateLocale(this.selectedSpace!.id, transaction.id, locale, value)
       .subscribe({
-          next: () => {
-            this.notificationService.success('Translation has been updated.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be updated.')
-          },
-          complete: () => {
-            setTimeout(() => {
-              this.isLocaleUpdateLoading = false
-              this.cd.markForCheck()
-            }, 1000)
-          }
+        next: () => {
+          this.notificationService.success('Translation has been updated.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be updated.')
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isLocaleUpdateLoading = false
+            this.cd.markForCheck()
+          }, 1000)
         }
-      );
+      });
   }
 
   copy(value: string): void {
@@ -548,9 +542,12 @@ export class TranslationsComponent implements OnInit {
 
   identifyStatusColor(translate: Translation): string {
     switch (this.identifyStatus(translate)) {
-      case TranslationStatus.TRANSLATED: return 'translated';
-      case TranslationStatus.PARTIALLY_TRANSLATED: return 'partially-translated';
-      case TranslationStatus.UNTRANSLATED: return 'untranslated';
+      case TranslationStatus.TRANSLATED:
+        return 'translated';
+      case TranslationStatus.PARTIALLY_TRANSLATED:
+        return 'partially-translated';
+      case TranslationStatus.UNTRANSLATED:
+        return 'untranslated';
     }
   }
 }

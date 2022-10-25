@@ -71,7 +71,7 @@ export class LocalesComponent implements OnInit {
     )
   }
 
-  addDialog(): void {
+  openAddDialog(): void {
     if (this.selectedSpace) {
       const spaceId = this.selectedSpace.id
       const locales = this.selectedSpace.locales
@@ -99,7 +99,7 @@ export class LocalesComponent implements OnInit {
     }
   }
 
-  deleteDialog(element: Locale): void {
+  openDeleteDialog(element: Locale): void {
     if (this.selectedSpace) {
       const spaceId = this.selectedSpace.id
       this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(

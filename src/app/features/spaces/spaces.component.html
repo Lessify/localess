@@ -4,7 +4,7 @@
     <span class="spacer"></span>
     <button mat-raised-button
             color="primary"
-            (click)="addDialog()">
+            (click)="openAddDialog()">
       <mat-icon>add</mat-icon>
       Add Space
     </button>
@@ -39,10 +39,10 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="editDialog(element)" matTooltip="Edit">
+        <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button (click)="deleteDialog(element)" matTooltip="Delete">
+        <button mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

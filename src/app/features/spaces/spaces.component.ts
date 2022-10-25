@@ -1,4 +1,10 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -9,8 +15,12 @@ import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../core/state/core.state';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  ConfirmationDialogComponent
+} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {CopierService} from '@shared/services/copier.service';
@@ -49,17 +59,17 @@ export class SpacesComponent implements OnInit {
 
   loadData(): void {
     this.spaceService.findAll()
-    .subscribe(response => {
-        this.dataSource = new MatTableDataSource<Space>(response);
-        this.dataSource.sort = this.sort || null;
-        this.dataSource.paginator = this.paginator || null;
-        this.isLoading = false;
-        this.cd.markForCheck();
-      }
-    )
+      .subscribe(response => {
+          this.dataSource = new MatTableDataSource<Space>(response);
+          this.dataSource.sort = this.sort || null;
+          this.dataSource.paginator = this.paginator || null;
+          this.isLoading = false;
+          this.cd.markForCheck();
+        }
+      )
   }
 
-  addDialog(): void {
+  openAddDialog(): void {
     this.dialog.open<SpaceDialogComponent, SpaceDialogModel, SpaceDialogModel>(
       SpaceDialogComponent, {
         width: '500px',
@@ -67,25 +77,24 @@ export class SpacesComponent implements OnInit {
           name: ''
         }
       })
-    .afterClosed()
-    .pipe(
-      filter(it => it !== undefined),
-      switchMap(it =>
-        this.spaceService.add(it!)
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.spaceService.add(it!)
+        )
       )
-    )
-    .subscribe({
+      .subscribe({
         next: (value) => {
           this.notificationService.success('Space has been created.');
         },
         error: (err) => {
           this.notificationService.error('Space can not be created.');
         }
-      }
-    );
+      });
   }
 
-  editDialog(element: Space): void {
+  openEditDialog(element: Space): void {
     this.dialog.open<SpaceDialogComponent, SpaceDialogModel, SpaceDialogModel>(
       SpaceDialogComponent, {
         width: '500px',
@@ -93,25 +102,24 @@ export class SpacesComponent implements OnInit {
           name: element.name
         }
       })
-    .afterClosed()
-    .pipe(
-      filter(it => it !== undefined),
-      switchMap(it =>
-        this.spaceService.update(element.id, it!)
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.spaceService.update(element.id, it!)
+        )
       )
-    )
-    .subscribe({
+      .subscribe({
         next: () => {
           this.notificationService.success('Space has been updated.');
         },
         error: (err) => {
           this.notificationService.error('Space can not be updated.');
         }
-      }
-    );
+      });
   }
 
-  deleteDialog(element: Space): void {
+  openDeleteDialog(element: Space): void {
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {
@@ -119,21 +127,21 @@ export class SpacesComponent implements OnInit {
           content: `Are you sure about deleting Space with name '${element.name}'.`
         }
       })
-    .afterClosed()
-    .pipe(
-      filter((it) => it || false),
-      switchMap(_ =>
-        this.spaceService.delete(element.id)
+      .afterClosed()
+      .pipe(
+        filter((it) => it || false),
+        switchMap(_ =>
+          this.spaceService.delete(element.id)
+        )
       )
-    )
-    .subscribe({
-      next: () => {
-        this.notificationService.success(`Space '${element.name}' has been deleted.`);
-      },
-      error: (err) => {
-        this.notificationService.error(`Space '${element.name}' can not be deleted.`);
-      }
-    });
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`Space '${element.name}' has been deleted.`);
+        },
+        error: (err) => {
+          this.notificationService.error(`Space '${element.name}' can not be deleted.`);
+        }
+      });
   }
 
   copy(value: string): void {

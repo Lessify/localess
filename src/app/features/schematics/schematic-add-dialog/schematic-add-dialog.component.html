@@ -1,0 +1,34 @@
+<h1 mat-dialog-title>Space Form</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Name</mat-label>
+            <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off"/>
+            <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="form-group">
+          <mat-form-field appearance="fill">
+            <mat-label>Type</mat-label>
+            <mat-select formControlName="type" required>
+              <mat-option *ngFor="let type of types" [value]="type">
+                {{type }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+</mat-dialog-actions>
