@@ -28,17 +28,11 @@ export enum SchematicComponentKind {
 }
 
 export interface SchematicComponentBase {
+  name: string;
   kind: SchematicComponentKind;
   displayName?: string;
   required?: boolean;
   description?: string;
-}
-
-export interface SchematicComponentNumber extends SchematicComponentBase {
-  kind: SchematicComponentKind.NUMBER;
-  defaultValue?: number;
-  minValue?: number;
-  maxValue?: number;
 }
 
 export interface SchematicComponentNumber extends SchematicComponentBase {

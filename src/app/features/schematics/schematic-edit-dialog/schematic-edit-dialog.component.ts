@@ -1,9 +1,9 @@
 import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {SchematicEditDialogModel} from './schematic-edit-dialog.model';
 import {SchemaValidator} from '@shared/validators/schema.validator';
-import {SchematicType} from '@shared/models/schematic.model';
+import {SchematicComponentKind, SchematicType} from '@shared/models/schematic.model';
 
 @Component({
   selector: 'll-schematic-edit-dialog',
@@ -13,10 +13,11 @@ import {SchematicType} from '@shared/models/schematic.model';
 })
 export class SchematicEditDialogComponent implements OnInit {
 
+  componentKinds = Object.keys(SchematicComponentKind)
 
   form: FormGroup = this.fb.group({
     name: this.fb.control('', SchemaValidator.NAME),
-    type: this.fb.control(SchematicType.ROOT, Validators.required)
+    components: this.fb.array([])
   });
 
   constructor(
@@ -29,5 +30,19 @@ export class SchematicEditDialogComponent implements OnInit {
     if (this.data != null) {
       this.form.patchValue(this.data.schematic);
     }
+  }
+
+  get components(): FormArray {
+    return this.form.controls['components'] as FormArray;
+  }
+
+  addComponent() {
+    this.components.push(this.fb.group({
+      name: this.fb.control('', SchemaValidator.COMPONENT_NAME),
+      kind: this.fb.control(SchematicComponentKind.TEXT, SchemaValidator.COMPONENT_NAME),
+      displayName: this.fb.control(undefined, SchemaValidator.COMPONENT_DISPLAY_NAME),
+      required: this.fb.control(undefined),
+      description: this.fb.control(undefined, SchemaValidator.COMPONENT_DESCRIPTION),
+    }));
   }
 }
