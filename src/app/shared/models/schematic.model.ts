@@ -79,11 +79,20 @@ export interface SchematicCreate {
   type: SchematicType;
 }
 
+export interface SchematicUpdate {
+  name: string;
+}
+
 // Firestore
 
 export interface SchematicCreateFS {
   name: string;
   type: SchematicType;
   createdOn: FieldValue;
+  updatedOn: FieldValue;
+}
+
+export interface SchematicUpdateFS {
+  name: string;
   updatedOn: FieldValue;
 }

@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnInit,
-  ViewChild
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -17,10 +11,15 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '../../core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
-import {Schematic, SchematicCreate} from '@shared/models/schematic.model';
+import {Schematic, SchematicCreate, SchematicUpdate} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
 import {combineLatest} from 'rxjs';
 import {SchematicAddDialogComponent} from './schematic-add-dialog/schematic-add-dialog.component';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {SchematicEditDialogComponent} from './schematic-edit-dialog/schematic-edit-dialog.component';
+import {SchematicEditDialogModel} from './schematic-edit-dialog/schematic-edit-dialog.model';
+import {ObjectUtils} from '../../core/utils/object-utils.service';
 
 @Component({
   selector: 'll-schematics',
@@ -87,7 +86,7 @@ export class SchematicsComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.schematicService.add(this.selectedSpace!.id, it!)
+          this.schematicService.create(this.selectedSpace!.id, it!)
         )
       )
       .subscribe({
@@ -100,7 +99,53 @@ export class SchematicsComponent implements OnInit {
       });
   }
 
-  deleteDialog(element: Schematic): void {
+  openEditDialog(element: Schematic): void {
+    this.dialog.open<SchematicEditDialogComponent, SchematicEditDialogModel, SchematicUpdate>(
+      SchematicEditDialogComponent, {
+        width: '500px',
+        data: {
+          schematic: ObjectUtils.clone(element)
+        }
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.schematicService.update(this.selectedSpace!.id, element.id, it!)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Schematic has been created.');
+        },
+        error: () => {
+          this.notificationService.error('Schematic can not be created.');
+        }
+      });
+  }
 
+  openDeleteDialog(element: Schematic): void {
+    this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
+      ConfirmationDialogComponent, {
+        data: {
+          title: 'Delete Schematic',
+          content: `Are you sure about deleting Schematic with name '${element.name}'.`
+        }
+      })
+      .afterClosed()
+      .pipe(
+        filter((it) => it || false),
+        switchMap(_ =>
+          this.schematicService.delete(this.selectedSpace!.id, element.id)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`Schematic '${element.name}' has been deleted.`);
+        },
+        error: (err) => {
+          this.notificationService.error(`Schematic '${element.name}' can not be deleted.`);
+        }
+      });
   }
 }

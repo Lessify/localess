@@ -27,7 +27,7 @@ export class SchematicEditDialogComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.data != null) {
-      this.form.patchValue(this.data);
+      this.form.patchValue(this.data.schematic);
     }
   }
 }

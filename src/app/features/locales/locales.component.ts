@@ -84,7 +84,7 @@ export class LocalesComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.localeService.add(spaceId, it?.locale!)
+          this.localeService.create(spaceId, it?.locale!)
         )
       )
       .subscribe({

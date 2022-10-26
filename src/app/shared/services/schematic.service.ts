@@ -25,8 +25,13 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 import {translationsPublish} from '../../../../functions/src';
-import {Schematic, SchematicCreate, SchematicCreateFS} from '@shared/models/schematic.model';
-
+import {
+  Schematic,
+  SchematicCreate,
+  SchematicCreateFS,
+  SchematicUpdate,
+  SchematicUpdateFS
+} from '@shared/models/schematic.model';
 
 @Injectable()
 export class SchematicService {
@@ -52,7 +57,7 @@ export class SchematicService {
       );
   }
 
-  add(spaceId: string, entity: SchematicCreate): Observable<DocumentReference> {
+  create(spaceId: string, entity: SchematicCreate): Observable<DocumentReference> {
     let addEntity: SchematicCreateFS = {
       name: entity.name,
       type: entity.type,
@@ -66,77 +71,32 @@ export class SchematicService {
       )
     )
       .pipe(
-        traceUntilFirst('Firestore:Schematics:add'),
+        traceUntilFirst('Firestore:Schematics:create'),
       );
   }
 
-  update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
-    const update: UpdateData<TranslationUpdateFS> = {
+  update(spaceId: string, id: string, entity: SchematicUpdate): Observable<void> {
+    const update: UpdateData<SchematicUpdateFS> = {
+      name: entity.name,
       updatedOn: serverTimestamp()
     }
 
-    if (entity.labels && entity.labels.length > 0) {
-      update.labels = entity.labels
-    }
-    if (entity.description && entity.description.length > 0) {
-      update.description = entity.description
-    }
-
     return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
+      updateDoc(doc(this.firestore, `spaces/${spaceId}/schematics/${id}`),
         update
       )
     )
       .pipe(
-        traceUntilFirst('Firestore:Translations:update'),
-      );
-  }
-
-  updateLocale(spaceId: string, id: string, locale: string, value: string): Observable<void> {
-    let update: any = {
-      updatedOn: serverTimestamp()
-    }
-    update[`locales.${locale}`] = value
-    return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
-        update
-      )
-    )
-      .pipe(
-        traceUntilFirst('Firestore:Translations:updateLocale'),
+        traceUntilFirst('Firestore:Schematics:update'),
       );
   }
 
   delete(spaceId: string, id: string): Observable<void> {
     return from(
-      deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`))
+      deleteDoc(doc(this.firestore, `spaces/${spaceId}/schematics/${id}`))
     )
       .pipe(
-        traceUntilFirst('Firestore:Translations:delete'),
-      );
-  }
-
-  publish(spaceId: string): Observable<void> {
-    const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translationsPublish');
-    return translationsPublish({spaceId})
-      .pipe(
-        traceUntilFirst('Functions:Translations:publish'),
-      );
-  }
-
-  export(data: TranslationsExportData): Observable<TranslationLocale | TranslationExportImport[]> {
-    const translationsExport = httpsCallableData<TranslationsExportData, TranslationLocale | TranslationExportImport[]>(this.functions, 'translationsExport');
-    return translationsExport(data)
-      .pipe(
-        traceUntilFirst(`Functions:Translations:export:${data.kind}`),
-      );
-  }
-
-  import(data: TranslationsImportData): Observable<void> {
-    const translationsImport = httpsCallableData<TranslationsImportData, void>(this.functions, 'translationsImport');
-    return translationsImport(data)
-      .pipe(
-        traceUntilFirst(`Functions:Translations:import:${data.kind}`),
+        traceUntilFirst('Firestore:Schematics:delete'),
       );
   }
 

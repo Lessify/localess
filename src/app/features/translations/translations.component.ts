@@ -223,7 +223,7 @@ export class TranslationsComponent implements OnInit {
               description: it?.description,
               autoTranslate: it?.autoTranslate
             }
-            return this.translationService.add(this.selectedSpace!.id, tc)
+            return this.translationService.create(this.selectedSpace!.id, tc)
           }
         )
       )

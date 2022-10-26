@@ -81,7 +81,7 @@ export class SpacesComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.spaceService.add(it!)
+          this.spaceService.create(it!)
         )
       )
       .subscribe({

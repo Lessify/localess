@@ -38,7 +38,7 @@ export class SpaceService {
       );
   }
 
-  add(entity: SpaceCreate): Observable<DocumentReference> {
+  create(entity: SpaceCreate): Observable<DocumentReference> {
     const defaultLocale: Locale = {id: 'en', name: 'English'}
     let add: SpaceCreateFS = {
       name: entity.name,
@@ -53,7 +53,7 @@ export class SpaceService {
       )
     )
       .pipe(
-        traceUntilFirst('Firestore:Spaces:add'),
+        traceUntilFirst('Firestore:Spaces:create'),
       );
   }
 

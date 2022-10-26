@@ -32,7 +32,7 @@ export class LocaleService {
       );
   }
 
-  add(spaceId: string, entity: Locale): Observable<void> {
+  create(spaceId: string, entity: Locale): Observable<void> {
     const update: SpaceLocalesUpdateFS = {
       locales: arrayUnion(entity),
       updatedOn: serverTimestamp()
@@ -44,7 +44,7 @@ export class LocaleService {
       )
     )
       .pipe(
-        traceUntilFirst('Firestore:Locales:add'),
+        traceUntilFirst('Firestore:Locales:create'),
       );
   }
 

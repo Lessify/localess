@@ -55,7 +55,7 @@ export class TranslationService {
       );
   }
 
-  add(spaceId: string, entity: TranslationCreate): Observable<DocumentReference> {
+  create(spaceId: string, entity: TranslationCreate): Observable<DocumentReference> {
     let addEntity: TranslationCreateFS = {
       name: entity.name,
       type: entity.type,
@@ -93,7 +93,7 @@ export class TranslationService {
       )
     )
       .pipe(
-        traceUntilFirst('Firestore:Translations:add'),
+        traceUntilFirst('Firestore:Translations:create'),
       );
   }
 
