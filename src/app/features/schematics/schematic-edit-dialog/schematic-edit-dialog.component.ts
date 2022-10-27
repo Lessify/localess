@@ -37,12 +37,23 @@ export class SchematicEditDialogComponent implements OnInit {
   }
 
   addComponent() {
-    this.components.push(this.fb.group({
+    const form = this.fb.group({
+      // Base
       name: this.fb.control('', SchemaValidator.COMPONENT_NAME),
       kind: this.fb.control(SchematicComponentKind.TEXT, SchemaValidator.COMPONENT_NAME),
-      displayName: this.fb.control(undefined, SchemaValidator.COMPONENT_DISPLAY_NAME),
-      required: this.fb.control(undefined),
-      description: this.fb.control(undefined, SchemaValidator.COMPONENT_DESCRIPTION),
-    }));
+      displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.COMPONENT_DISPLAY_NAME),
+      required: this.fb.control<boolean | undefined>(undefined),
+      description: this.fb.control<string | undefined>(undefined, SchemaValidator.COMPONENT_DESCRIPTION),
+      defaultValue: this.fb.control<string | undefined>(undefined, SchemaValidator.COMPONENT_DEFAULT_VALUE),
+      // Number
+      minValue: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_VALUE),
+      maxValue: this.fb.control<number| undefined>(undefined, SchemaValidator.COMPONENT_MAX_VALUE),
+      //Text and Textarea
+      minLength: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_LENGTH),
+      maxLength: this.fb.control<number| undefined>(undefined, SchemaValidator.COMPONENT_MAX_LENGTH),
+
+
+    })
+    this.components.push(form);
   }
 }

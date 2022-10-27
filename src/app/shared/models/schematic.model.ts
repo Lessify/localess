@@ -9,13 +9,11 @@ export interface Schematic {
   id: string;
   name: string;
   type: SchematicType;
-  components?: SchematicComponents;
+  components?: SchematicComponent[];
 
   createdOn: Timestamp;
   updatedOn: Timestamp;
 }
-
-export type SchematicComponents = { [key: string]: SchematicComponent };
 
 export type SchematicComponent = SchematicComponentNumber | SchematicComponentText | SchematicComponentTextarea | SchematicComponentDate | SchematicComponentBoolean;
 
@@ -33,37 +31,33 @@ export interface SchematicComponentBase {
   displayName?: string;
   required?: boolean;
   description?: string;
+  defaultValue?: string;
 }
 
 export interface SchematicComponentNumber extends SchematicComponentBase {
   kind: SchematicComponentKind.NUMBER;
-  defaultValue?: number;
   minValue?: number;
   maxValue?: number;
 }
 
 export interface SchematicComponentText extends SchematicComponentBase {
   kind: SchematicComponentKind.TEXT;
-  defaultValue?: string;
   minLength?: number;
   maxLength?: number;
 }
 
 export interface SchematicComponentTextarea extends SchematicComponentBase {
   kind: SchematicComponentKind.TEXTAREA;
-  defaultValue?: string;
   minLength?: number;
   maxLength?: number;
 }
 
 export interface SchematicComponentDate extends SchematicComponentBase {
   kind: SchematicComponentKind.DATE;
-  defaultValue?: string;
 }
 
 export interface SchematicComponentBoolean extends SchematicComponentBase {
   kind: SchematicComponentKind.BOOLEAN;
-  defaultValue?: boolean;
 }
 
 // Service

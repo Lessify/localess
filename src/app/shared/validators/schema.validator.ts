@@ -28,4 +28,23 @@ export class SchemaValidator {
   public static COMPONENT_DESCRIPTION: ValidatorFn[] = [
     Validators.maxLength(250)
   ];
+
+  public static COMPONENT_DEFAULT_VALUE: ValidatorFn[] = [
+    Validators.maxLength(250)
+  ];
+
+  public static COMPONENT_MIN_VALUE: ValidatorFn[] = [
+  ];
+
+  public static COMPONENT_MAX_VALUE: ValidatorFn[] = [
+  ];
+
+  public static COMPONENT_MIN_LENGTH: ValidatorFn[] = [
+    Validators.maxLength(0)
+  ];
+
+  public static COMPONENT_MAX_LENGTH: ValidatorFn[] = [
+    Validators.min(0)
+  ];
+
 }
