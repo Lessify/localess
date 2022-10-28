@@ -9,6 +9,12 @@ export class SchemaValidator {
     Validators.maxLength(30)
   ];
 
+  public static DISPLAY_NAME: ValidatorFn[] = [
+    CommonValidator.noSpaceAround,
+    Validators.minLength(3),
+    Validators.maxLength(30)
+  ];
+
   public static DESCRIPTION: ValidatorFn[] = [Validators.maxLength(250)];
 
   // Component
@@ -19,8 +25,12 @@ export class SchemaValidator {
     Validators.maxLength(30)
   ];
 
+  public static COMPONENT_KIND: ValidatorFn[] = [
+    Validators.required
+  ];
+
   public static COMPONENT_DISPLAY_NAME: ValidatorFn[] = [
-    CommonValidator.noSpaceAtStartAndEnd,
+    CommonValidator.noSpaceAround,
     Validators.minLength(3),
     Validators.maxLength(30)
   ];

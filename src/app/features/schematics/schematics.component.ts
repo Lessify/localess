@@ -102,7 +102,7 @@ export class SchematicsComponent implements OnInit {
   openEditDialog(element: Schematic): void {
     this.dialog.open<SchematicEditDialogComponent, SchematicEditDialogModel, SchematicUpdate>(
       SchematicEditDialogComponent, {
-        width: '500px',
+        width: '1000px',
         data: {
           schematic: ObjectUtils.clone(element)
         }

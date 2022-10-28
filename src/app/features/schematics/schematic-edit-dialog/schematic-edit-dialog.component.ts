@@ -1,9 +1,9 @@
-import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {SchematicEditDialogModel} from './schematic-edit-dialog.model';
 import {SchemaValidator} from '@shared/validators/schema.validator';
-import {SchematicComponentKind, SchematicType} from '@shared/models/schematic.model';
+import {SchematicComponentKind} from '@shared/models/schematic.model';
 
 @Component({
   selector: 'll-schematic-edit-dialog',
@@ -14,14 +14,22 @@ import {SchematicComponentKind, SchematicType} from '@shared/models/schematic.mo
 export class SchematicEditDialogComponent implements OnInit {
 
   componentKinds = Object.keys(SchematicComponentKind)
+  nameReadonly = true;
+  componentNameReadonly = true;
+
+  selectedComponentIdx?: number;
+
+  newComponentName = this.fb.control('', SchemaValidator.COMPONENT_NAME);
 
   form: FormGroup = this.fb.group({
     name: this.fb.control('', SchemaValidator.NAME),
+    displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     components: this.fb.array([])
   });
 
   constructor(
     private readonly fb: FormBuilder,
+    private readonly cd: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA) public data: SchematicEditDialogModel
   ) {
   }
@@ -39,8 +47,8 @@ export class SchematicEditDialogComponent implements OnInit {
   addComponent() {
     const form = this.fb.group({
       // Base
-      name: this.fb.control('', SchemaValidator.COMPONENT_NAME),
-      kind: this.fb.control(SchematicComponentKind.TEXT, SchemaValidator.COMPONENT_NAME),
+      name: this.fb.control(this.newComponentName.value, SchemaValidator.COMPONENT_NAME),
+      kind: this.fb.control(SchematicComponentKind.TEXT, SchemaValidator.COMPONENT_KIND),
       displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.COMPONENT_DISPLAY_NAME),
       required: this.fb.control<boolean | undefined>(undefined),
       description: this.fb.control<string | undefined>(undefined, SchemaValidator.COMPONENT_DESCRIPTION),
@@ -51,9 +59,18 @@ export class SchematicEditDialogComponent implements OnInit {
       //Text and Textarea
       minLength: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_LENGTH),
       maxLength: this.fb.control<number| undefined>(undefined, SchemaValidator.COMPONENT_MAX_LENGTH),
-
-
     })
     this.components.push(form);
+    this.newComponentName.reset();
+    this.selectComponent(this.components.length - 1)
+  }
+
+  // handle form array element selection, by enforcing refresh
+  selectComponent(index: number): void {
+    this.selectedComponentIdx = undefined;
+    this.componentNameReadonly = true;
+    this.cd.detectChanges();
+    this.selectedComponentIdx = index;
+    this.cd.markForCheck();
   }
 }

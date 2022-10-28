@@ -9,6 +9,7 @@ export interface Schematic {
   id: string;
   name: string;
   type: SchematicType;
+  displayName?: string;
   components?: SchematicComponent[];
 
   createdOn: Timestamp;

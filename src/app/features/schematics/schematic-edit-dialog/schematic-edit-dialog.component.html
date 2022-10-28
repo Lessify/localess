@@ -2,29 +2,84 @@
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
     <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
+      <div class="col-6">
+        <mat-form-field appearance="fill">
+          <mat-label>Name</mat-label>
+          <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off" [readonly]="nameReadonly"/>
+          <button mat-icon-button matSuffix (click)="nameReadonly = !nameReadonly">
+            <mat-icon>{{nameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
+          </button>
+          <mat-hint>Will be used in JSON structure.</mat-hint>
+          <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="fill">
+          <mat-label>Display Name</mat-label>
+          <input matInput type="text" formControlName="displayName" minLength="3" maxlength="50" autocomplete="off"/>
+          <mat-hint align="end">{{form.controls['displayName'].value?.length || 0}}/50</mat-hint>
+        </mat-form-field>
+
+        <mat-nav-list>
+          <mat-divider></mat-divider>
+          <div mat-subheader>Components</div>
           <mat-form-field appearance="fill">
             <mat-label>Name</mat-label>
-            <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off"/>
-            <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
+            <input matInput type="text" autocomplete="off" [formControl]="newComponentName"/>
+            <button mat-raised-button matSuffix
+                    color="accent"
+                    (click)="addComponent()"
+                    [disabled]="!newComponentName.valid">
+              Add
+            </button>
           </mat-form-field>
-        </div>
+          <mat-list-item *ngFor="let component of components.controls; let index = index"
+                         (click)="selectComponent(index)"
+                         [class.active]="index == selectedComponentIdx">
+            <div mat-line>{{component.value.name}}</div>
+            <div mat-line>{{component.value.displayName}}</div>
+
+            <span class="spacer"></span>
+            <mat-icon>delete</mat-icon>
+            <mat-icon>navigate_next</mat-icon>
+          </mat-list-item>
+        </mat-nav-list>
+
+      </div>
+      <div class="col-6" formArrayName="components" *ngIf="selectedComponentIdx !== undefined">
+        <mat-card>
+            <ng-container  [formGroupName]="selectedComponentIdx">
+              <mat-form-field appearance="fill">
+                <mat-label>Name</mat-label>
+                <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off" [readonly]="componentNameReadonly"/>
+                <button mat-icon-button matSuffix (click)="componentNameReadonly = !componentNameReadonly">
+                  <mat-icon>{{componentNameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
+                </button>
+                <mat-hint align="end">{{components.at(selectedComponentIdx).value.name.length || 0}}/50</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="fill">
+                <mat-label>Display Name</mat-label>
+                <input matInput type="text" formControlName="displayName" minLength="3" maxlength="50" autocomplete="off"/>
+              </mat-form-field>
+              <mat-form-field appearance="fill">
+                <mat-label>Type</mat-label>
+                <mat-select formControlName="kind" required>
+                  <mat-option *ngFor="let kind of componentKinds" [value]="kind">
+                    {{kind}}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              {{components.at(selectedComponentIdx).value | json}}
+            </ng-container>
+        </mat-card>
+
+
       </div>
     </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-         <button (click)="addComponent()">Add Component</button>
-        </div>
-      </div>
-    </div>
-
-
-
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    Save
+  </button>
 </mat-dialog-actions>
+{{form.value | json}}
