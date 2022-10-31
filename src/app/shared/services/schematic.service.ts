@@ -13,18 +13,8 @@ import {
   updateDoc
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
-import {
-  TranslationExportImport,
-  TranslationLocale,
-  TranslationsExportData,
-  TranslationsImportData,
-  TranslationUpdate,
-  TranslationUpdateFS
-} from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {translationsPublish} from '../../../../functions/src';
 import {
   Schematic,
   SchematicCreate,
@@ -32,12 +22,13 @@ import {
   SchematicUpdate,
   SchematicUpdateFS
 } from '@shared/models/schematic.model';
+import {ObjectUtils} from '../../core/utils/object-utils.service';
+import {deleteField} from '@firebase/firestore';
 
 @Injectable()
 export class SchematicService {
   constructor(
-    private readonly firestore: Firestore,
-    private readonly functions: Functions,
+    private readonly firestore: Firestore
   ) {
   }
 
@@ -76,8 +67,11 @@ export class SchematicService {
   }
 
   update(spaceId: string, id: string, entity: SchematicUpdate): Observable<void> {
+    ObjectUtils.clean(entity);
     const update: UpdateData<SchematicUpdateFS> = {
       name: entity.name,
+      displayName: entity.displayName || deleteField(),
+      components: entity.components || deleteField(),
       updatedOn: serverTimestamp()
     }
 

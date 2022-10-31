@@ -9,7 +9,7 @@
           <button mat-icon-button matSuffix (click)="nameReadonly = !nameReadonly">
             <mat-icon>{{nameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
           </button>
-          <mat-hint>Will be used in JSON structure.</mat-hint>
+          <mat-hint>Will be used in JSON structure. Updating it will bring to braking changes.</mat-hint>
           <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
         </mat-form-field>
         <mat-form-field appearance="fill">
@@ -34,6 +34,7 @@
           <mat-list-item *ngFor="let component of components.controls; let index = index"
                          (click)="selectComponent(index)"
                          [class.active]="index == selectedComponentIdx">
+            <mat-icon mat-list-icon>{{componentKindDescriptions[component.value.kind].icon}}</mat-icon>
             <div mat-line>{{component.value.name}}</div>
             <div mat-line>{{component.value.displayName}}</div>
 
@@ -46,27 +47,69 @@
       </div>
       <div class="col-6" formArrayName="components" *ngIf="selectedComponentIdx !== undefined">
         <mat-card>
-            <ng-container  [formGroupName]="selectedComponentIdx">
+            <ng-container [formGroupName]="selectedComponentIdx">
               <mat-form-field appearance="fill">
                 <mat-label>Name</mat-label>
-                <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off" [readonly]="componentNameReadonly"/>
+                <input matInput type="text" formControlName="name" autocomplete="off" [readonly]="componentNameReadonly"/>
                 <button mat-icon-button matSuffix (click)="componentNameReadonly = !componentNameReadonly">
                   <mat-icon>{{componentNameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
                 </button>
+                <mat-hint>Will be used in JSON structure. Updating it will bring to braking changes.</mat-hint>
                 <mat-hint align="end">{{components.at(selectedComponentIdx).value.name.length || 0}}/50</mat-hint>
               </mat-form-field>
               <mat-form-field appearance="fill">
-                <mat-label>Display Name</mat-label>
-                <input matInput type="text" formControlName="displayName" minLength="3" maxlength="50" autocomplete="off"/>
-              </mat-form-field>
-              <mat-form-field appearance="fill">
-                <mat-label>Type</mat-label>
-                <mat-select formControlName="kind" required>
+                <mat-label>Kind</mat-label>
+                <mat-select formControlName="kind" (selectionChange)="selectComponentKind($event)">
+                  <mat-select-trigger>
+                    <mat-icon>{{selectedComponentKind.icon}}</mat-icon>{{selectedComponentKind.name}}
+                  </mat-select-trigger>
                   <mat-option *ngFor="let kind of componentKinds" [value]="kind">
-                    {{kind}}
+                    <mat-icon>{{componentKindDescriptions[kind].icon}}</mat-icon>
+                    {{componentKindDescriptions[kind].name}}
                   </mat-option>
                 </mat-select>
               </mat-form-field>
+              <mat-form-field appearance="fill">
+                <mat-label>Display Name</mat-label>
+                <input matInput type="text" formControlName="displayName" autocomplete="off"/>
+                <mat-hint align="end">{{components.at(selectedComponentIdx).value.displayName?.length || 0}}/50</mat-hint>
+              </mat-form-field>
+              <mat-checkbox formControlName="required">Required</mat-checkbox>
+              <mat-form-field appearance="fill">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>
+                <mat-hint align="end">{{components.at(selectedComponentIdx).value.description?.length || 0}}/250</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="fill">
+                <mat-label>Default Value</mat-label>
+                <textarea matInput formControlName="defaultValue" class="cdk-textarea-autosize"></textarea>
+                <mat-hint align="end">{{components.at(selectedComponentIdx).value.defaultValue?.length || 0}}/250</mat-hint>
+              </mat-form-field>
+
+              <!--Number-->
+              <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'NUMBER'">
+                <mat-form-field appearance="fill">
+                  <mat-label>Min Value</mat-label>
+                  <input matInput type="number" formControlName="minValue" autocomplete="off"/>
+                </mat-form-field>
+                <mat-form-field appearance="fill">
+                  <mat-label>Max Value</mat-label>
+                  <input matInput type="number" formControlName="maxValue" autocomplete="off"/>
+                </mat-form-field>
+              </ng-container>
+
+              <!--Text and Textarea-->
+              <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'TEXT' || components.at(selectedComponentIdx).value.kind === 'TEXTAREA'">
+                <mat-form-field appearance="fill">
+                  <mat-label>Min Length</mat-label>
+                  <input matInput type="number" formControlName="minLength" autocomplete="off"/>
+                </mat-form-field>
+                <mat-form-field appearance="fill">
+                  <mat-label>Max Length</mat-label>
+                  <input matInput type="number" formControlName="maxLength" autocomplete="off"/>
+                </mat-form-field>
+              </ng-container>
+
               {{components.at(selectedComponentIdx).value | json}}
             </ng-container>
         </mat-card>

@@ -31,6 +31,11 @@ export class SchematicsComponent implements OnInit {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
+  schematicTypeIcons : { [key: string]: string } = {
+    'ROOT': 'margin',
+    'NODE': 'polyline'
+  }
+
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Schematic> = new MatTableDataSource<Schematic>([]);
@@ -116,10 +121,10 @@ export class SchematicsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Schematic has been created.');
+          this.notificationService.success('Schematic has been updated.');
         },
         error: () => {
-          this.notificationService.error('Schematic can not be created.');
+          this.notificationService.error('Schematic can not be updated.');
         }
       });
   }

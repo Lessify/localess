@@ -11,11 +11,8 @@ export class SchemaValidator {
 
   public static DISPLAY_NAME: ValidatorFn[] = [
     CommonValidator.noSpaceAround,
-    Validators.minLength(3),
     Validators.maxLength(30)
   ];
-
-  public static DESCRIPTION: ValidatorFn[] = [Validators.maxLength(250)];
 
   // Component
   public static COMPONENT_NAME: ValidatorFn[] = [
@@ -31,7 +28,6 @@ export class SchemaValidator {
 
   public static COMPONENT_DISPLAY_NAME: ValidatorFn[] = [
     CommonValidator.noSpaceAround,
-    Validators.minLength(3),
     Validators.maxLength(30)
   ];
 
@@ -50,11 +46,9 @@ export class SchemaValidator {
   ];
 
   public static COMPONENT_MIN_LENGTH: ValidatorFn[] = [
-    Validators.maxLength(0)
   ];
 
   public static COMPONENT_MAX_LENGTH: ValidatorFn[] = [
-    Validators.min(0)
   ];
 
 }

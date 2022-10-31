@@ -22,11 +22,17 @@
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
+      <mat-cell *matCellDef="let element">
+        {{element.name}} <br/>
+        {{element.displayName}}
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="type">
       <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.type}} </mat-cell>
+      <mat-cell *matCellDef="let element">
+        <mat-icon>{{schematicTypeIcons[element.type]}}</mat-icon>
+        {{element.type}}
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>

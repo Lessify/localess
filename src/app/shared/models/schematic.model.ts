@@ -70,6 +70,8 @@ export interface SchematicCreate {
 
 export interface SchematicUpdate {
   name: string;
+  displayName?: string;
+  components?: SchematicComponent[];
 }
 
 // Firestore
@@ -83,5 +85,7 @@ export interface SchematicCreateFS {
 
 export interface SchematicUpdateFS {
   name: string;
+  displayName?: string;
+  components?: SchematicComponent[];
   updatedOn: FieldValue;
 }
