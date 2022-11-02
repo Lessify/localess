@@ -27,6 +27,19 @@ service cloud.firestore {
         allow create, delete: if isSignedIn() && hasAnyRole(['write','admin']);
         allow update: if isSignedIn() && hasAnyRole(['edit','write','admin']);
       }
+
+      // Schematics
+      match /schematics/{schematicId} {
+        allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
+        allow write: if isSignedIn() && hasRole('admin');
+      }
+
+      // Contents
+      match /contents/{contentId} {
+        allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
+        allow create, delete: if isSignedIn() && hasAnyRole(['write','admin']);
+        allow update: if isSignedIn() && hasAnyRole(['edit','write','admin']);
+      }
     }
 
     // Users
