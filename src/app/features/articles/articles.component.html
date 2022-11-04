@@ -1,12 +1,12 @@
 <mat-toolbar>
   <mat-toolbar-row>
-    Schematics
+    Articles
     <span class="spacer"></span>
     <button mat-raised-button
             color="primary"
             (click)="openAddDialog()">
       <mat-icon>add</mat-icon>
-      Add Schematic
+      Add Article
     </button>
   </mat-toolbar-row>
 </mat-toolbar>
@@ -24,16 +24,15 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div>
-          <div class="fw-semibold">{{element.displayName}}</div>
-          <div class="fw-normal">{{element.name}}</div>
+          <div class="fw-semibold">{{element.name}}</div>
+          <div class="fw-normal">{{element.slug}}</div>
         </div>
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="type">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type </mat-header-cell>
+    <ng-container matColumnDef="schematic">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="schematic"> Schematic </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <mat-icon>{{schematicTypeIcons[element.type]}}</mat-icon>
-        {{element.type}}
+        {{schematicsMap.get(element.schematicId).displayName || schematicsMap.get(element.schematicId).name || 'unknown...'}}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdOn">
@@ -49,6 +48,9 @@
       <mat-cell *matCellDef="let element">
         <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button (click)="openContentEditDialog(element)" [disabled]="schematicsMap.get(element.schematicId) === undefined" matTooltip="Edit Content">
+          <mat-icon>design_services</mat-icon>
         </button>
         <button mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>

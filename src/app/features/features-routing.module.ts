@@ -80,6 +80,15 @@ const routes: Routes = [
         loadChildren: () => import('./schematics/schematics.module').then(m => m.SchematicsModule),
         canActivate: [AuthGuard],
         data: {
+          authGuardPipe: hasRoleAdmin
+        }
+      },
+      {
+        path: 'articles',
+        title: 'Articles',
+        loadChildren: () => import('./articles/articles.module').then(m => m.ArticlesModule),
+        canActivate: [AuthGuard],
+        data: {
           authGuardPipe: hasRoleRead
         }
       },

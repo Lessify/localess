@@ -7,7 +7,7 @@ import {
   doc,
   docData,
   DocumentReference,
-  Firestore,
+  Firestore, query,
   serverTimestamp,
   UpdateData,
   updateDoc
@@ -18,12 +18,12 @@ import {map} from 'rxjs/operators';
 import {
   Schematic,
   SchematicCreate,
-  SchematicCreateFS,
+  SchematicCreateFS, SchematicType,
   SchematicUpdate,
   SchematicUpdateFS
 } from '@shared/models/schematic.model';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
-import {deleteField} from '@firebase/firestore';
+import {deleteField, QueryConstraint, where} from '@firebase/firestore';
 
 @Injectable()
 export class SchematicService {
@@ -32,8 +32,21 @@ export class SchematicService {
   ) {
   }
 
-  findAll(spaceId: string): Observable<Schematic[]> {
-    return collectionData(collection(this.firestore, `spaces/${spaceId}/schematics`), {idField: 'id'})
+  findAll(spaceId: string, type?: SchematicType): Observable<Schematic[]> {
+    const queryConstrains: QueryConstraint[] = []
+
+    if (type) {
+      queryConstrains.push(
+        where('type', '==', type)
+      )
+    }
+
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces/${spaceId}/schematics`),
+        ...queryConstrains
+      ), {idField: 'id'}
+    )
       .pipe(
         traceUntilFirst('Firestore:Schematics:findAll'),
         map((it) => it as Schematic[])

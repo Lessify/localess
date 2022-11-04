@@ -9,6 +9,10 @@ export class SchemaValidator {
     Validators.maxLength(30)
   ];
 
+  public static TYPE: ValidatorFn[] = [
+    Validators.required,
+  ];
+
   public static DISPLAY_NAME: ValidatorFn[] = [
     CommonValidator.noSpaceAround,
     Validators.maxLength(30)
@@ -29,6 +33,9 @@ export class SchemaValidator {
   public static COMPONENT_DISPLAY_NAME: ValidatorFn[] = [
     CommonValidator.noSpaceAround,
     Validators.maxLength(30)
+  ];
+
+  public static COMPONENT_REQUIRED: ValidatorFn[] = [
   ];
 
   public static COMPONENT_DESCRIPTION: ValidatorFn[] = [

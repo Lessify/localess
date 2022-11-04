@@ -34,8 +34,8 @@ service cloud.firestore {
         allow write: if isSignedIn() && hasRole('admin');
       }
 
-      // Contents
-      match /contents/{contentId} {
+      // Articles
+      match /articles/{articleId} {
         allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
         allow create, delete: if isSignedIn() && hasAnyRole(['write','admin']);
         allow update: if isSignedIn() && hasAnyRole(['edit','write','admin']);

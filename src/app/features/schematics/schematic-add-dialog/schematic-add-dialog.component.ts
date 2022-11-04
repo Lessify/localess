@@ -17,7 +17,7 @@ export class SchematicAddDialogComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
     name: this.fb.control('', SchemaValidator.NAME),
-    type: this.fb.control(SchematicType.ROOT, Validators.required)
+    type: this.fb.control(SchematicType.ROOT, SchemaValidator.TYPE)
   });
 
   constructor(

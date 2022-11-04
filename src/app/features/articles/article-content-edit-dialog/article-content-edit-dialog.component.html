@@ -1,0 +1,50 @@
+<h1 mat-dialog-title>Edit Article</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+    <ng-container *ngFor="let component of data.schematic.components" [ngSwitch]="component.kind">
+      <ng-container *ngSwitchCase="'TEXT'">
+        <mat-form-field appearance="fill">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <input matInput type="text" autocomplete="off"
+                 [formControlName]="component.name"
+                 [required]="component.required"
+                 [attr.minlength]="component.minLength"
+                 [attr.maxlength]="component.maxLength"/>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'TEXTAREA'">
+        <mat-form-field appearance="fill">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <textarea matInput autocomplete="off" rows="6"
+                    [formControlName]="component.name"
+                    [required]="component.required"
+                    [attr.minLength]="component.minLength"
+                    [attr.maxlength]="component.maxLength"></textarea>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'NUMBER'">
+        <mat-form-field appearance="fill">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <input matInput type="number" autocomplete="off"
+                 [formControlName]="component.name"
+                 [required]="component.required"
+                 [attr.min]="component.minValue"
+                 [attr.max]="component.maxValue"/>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+        </mat-form-field>
+      </ng-container>
+
+    </ng-container>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value"
+          [disabled]="!form.valid">
+    Save
+  </button>
+</mat-dialog-actions>

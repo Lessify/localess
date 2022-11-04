@@ -71,7 +71,7 @@ export class SchematicEditDialogComponent implements OnInit {
       name: this.fb.control(element?.name || this.newComponentName.value, SchemaValidator.COMPONENT_NAME),
       kind: this.fb.control(element?.kind || defaultKind, SchemaValidator.COMPONENT_KIND),
       displayName: this.fb.control<string | undefined>(element?.displayName, SchemaValidator.COMPONENT_DISPLAY_NAME),
-      required: this.fb.control<boolean | undefined>(element?.required),
+      required: this.fb.control<boolean | undefined>(element?.required, SchemaValidator.COMPONENT_REQUIRED),
       description: this.fb.control<string | undefined>(element?.description, SchemaValidator.COMPONENT_DESCRIPTION),
       defaultValue: this.fb.control<string | undefined>(element?.defaultValue, SchemaValidator.COMPONENT_DEFAULT_VALUE),
       // Number
