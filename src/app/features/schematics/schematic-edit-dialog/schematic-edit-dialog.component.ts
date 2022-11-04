@@ -29,7 +29,8 @@ export class SchematicEditDialogComponent implements OnInit {
     'TEXT': {name: 'Text', icon: 'title'},
     'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
     'DATE': {name: 'Date', icon: 'event'},
-    'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'}
+    'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
+    'SCHEMATIC': {name: 'Schematic', icon: 'polyline'}
   }
 
   selectedComponentKind ?: ComponentKindDescription;
@@ -89,9 +90,11 @@ export class SchematicEditDialogComponent implements OnInit {
       // Number
       minValue: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_VALUE),
       maxValue: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_VALUE),
-      //Text and Textarea
+      // Text and Textarea
       minLength: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_LENGTH),
       maxLength: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_LENGTH),
+      // Schematic
+      schematic: this.fb.control<string | undefined>(undefined, SchemaValidator.COMPONENT_SCHEMATIC),
     })
     if (element?.kind === SchematicComponentKind.NUMBER) {
       form.controls['minValue'].setValue(element.minValue)
@@ -100,6 +103,9 @@ export class SchematicEditDialogComponent implements OnInit {
     if (element?.kind === SchematicComponentKind.TEXT || element?.kind === SchematicComponentKind.TEXTAREA) {
       form.controls['minLength'].setValue(element.minLength)
       form.controls['maxLength'].setValue(element.maxLength)
+    }
+    if(element?.kind === SchematicComponentKind.SCHEMATIC) {
+      form.controls['schematic'].setValue(element.schematic)
     }
 
     this.selectedComponentKind = this.componentKindDescriptions[defaultKind];
@@ -121,5 +127,8 @@ export class SchematicEditDialogComponent implements OnInit {
   selectComponentKind(event: MatSelectChange): void {
     const value: string = event.value;
     this.selectedComponentKind = this.componentKindDescriptions[value];
+    this.components.at(this.selectedComponentIdx || 0).updateValueAndValidity()
+    console.log(this.components.at(this.selectedComponentIdx || 0).value)
+    this.cd.markForCheck();
   }
 }

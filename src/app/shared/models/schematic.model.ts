@@ -16,14 +16,15 @@ export interface Schematic {
   updatedOn: Timestamp;
 }
 
-export type SchematicComponent = SchematicComponentNumber | SchematicComponentText | SchematicComponentTextarea | SchematicComponentDate | SchematicComponentBoolean;
+export type SchematicComponent = SchematicComponentNumber | SchematicComponentText | SchematicComponentTextarea | SchematicComponentDate | SchematicComponentBoolean | SchematicComponentSchematic;
 
 export enum SchematicComponentKind {
   NUMBER = 'NUMBER',
   TEXT = 'TEXT',
   TEXTAREA = 'TEXTAREA',
   DATE = 'DATE',
-  BOOLEAN = 'BOOLEAN'
+  BOOLEAN = 'BOOLEAN',
+  SCHEMATIC = 'SCHEMATIC'
 }
 
 export interface SchematicComponentBase {
@@ -59,6 +60,11 @@ export interface SchematicComponentDate extends SchematicComponentBase {
 
 export interface SchematicComponentBoolean extends SchematicComponentBase {
   kind: SchematicComponentKind.BOOLEAN;
+}
+
+export interface SchematicComponentSchematic extends SchematicComponentBase {
+  kind: SchematicComponentKind.SCHEMATIC;
+  schematic?: string;
 }
 
 // Service

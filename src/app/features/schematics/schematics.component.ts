@@ -1,4 +1,10 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -11,13 +17,24 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '../../core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
-import {Schematic, SchematicCreate, SchematicUpdate} from '@shared/models/schematic.model';
+import {
+  Schematic,
+  SchematicCreate,
+  SchematicType,
+  SchematicUpdate
+} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
 import {combineLatest} from 'rxjs';
 import {SchematicAddDialogComponent} from './schematic-add-dialog/schematic-add-dialog.component';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {SchematicEditDialogComponent} from './schematic-edit-dialog/schematic-edit-dialog.component';
+import {
+  ConfirmationDialogComponent
+} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  SchematicEditDialogComponent
+} from './schematic-edit-dialog/schematic-edit-dialog.component';
 import {SchematicEditDialogModel} from './schematic-edit-dialog/schematic-edit-dialog.model';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
 
@@ -109,7 +126,8 @@ export class SchematicsComponent implements OnInit {
       SchematicEditDialogComponent, {
         width: '1000px',
         data: {
-          schematic: ObjectUtils.clone(element)
+          schematic: ObjectUtils.clone(element),
+          schematics: this.schematics.filter( it => it.type === SchematicType.NODE)
         }
       })
       .afterClosed()

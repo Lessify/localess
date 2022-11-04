@@ -5,11 +5,12 @@
       <ng-container *ngSwitchCase="'TEXT'">
         <mat-form-field appearance="fill">
           <mat-label>{{component.displayName || component.name}}</mat-label>
-          <input matInput type="text" autocomplete="off"
+          <input matInput type="text"
                  [formControlName]="component.name"
                  [required]="component.required"
                  [attr.minlength]="component.minLength"
-                 [attr.maxlength]="component.maxLength"/>
+                 [attr.maxlength]="component.maxLength"
+                 autocomplete="off"/>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
@@ -18,11 +19,12 @@
       <ng-container *ngSwitchCase="'TEXTAREA'">
         <mat-form-field appearance="fill">
           <mat-label>{{component.displayName || component.name}}</mat-label>
-          <textarea matInput autocomplete="off" rows="6"
+          <textarea matInput rows="6"
                     [formControlName]="component.name"
                     [required]="component.required"
                     [attr.minLength]="component.minLength"
-                    [attr.maxlength]="component.maxLength"></textarea>
+                    [attr.maxlength]="component.maxLength"
+                    autocomplete="off"></textarea>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
@@ -31,11 +33,12 @@
       <ng-container *ngSwitchCase="'NUMBER'">
         <mat-form-field appearance="fill">
           <mat-label>{{component.displayName || component.name}}</mat-label>
-          <input matInput type="number" autocomplete="off"
+          <input matInput type="number"
                  [formControlName]="component.name"
                  [required]="component.required"
                  [attr.min]="component.minValue"
-                 [attr.max]="component.maxValue"/>
+                 [attr.max]="component.maxValue"
+                 autocomplete="off"/>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
@@ -43,9 +46,10 @@
       <ng-container *ngSwitchCase="'DATE'">
         <mat-form-field appearance="fill">
           <mat-label>{{component.displayName || component.name}}</mat-label>
-          <input matInput type="date" autocomplete="off"
+          <input matInput type="date"
                  [formControlName]="component.name"
-                 [required]="component.required"/>
+                 [required]="component.required"
+                 autocomplete="off"/>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
@@ -69,4 +73,4 @@
     Save
   </button>
 </mat-dialog-actions>
-{{form.value | json}}
+<!--{{form.value | json}}-->

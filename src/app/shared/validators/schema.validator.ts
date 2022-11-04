@@ -59,4 +59,7 @@ export class SchemaValidator {
   public static COMPONENT_MAX_LENGTH: ValidatorFn[] = [
   ];
 
+  public static COMPONENT_SCHEMATIC: ValidatorFn[] = [
+  ];
+
 }

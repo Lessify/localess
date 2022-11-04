@@ -5,7 +5,7 @@
       <div class="col-6">
         <mat-form-field appearance="fill">
           <mat-label>Name</mat-label>
-          <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off" [readonly]="nameReadonly"/>
+          <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" [readonly]="nameReadonly" autocomplete="off"/>
           <button mat-icon-button matSuffix (click)="nameReadonly = !nameReadonly">
             <mat-icon>{{nameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
           </button>
@@ -25,7 +25,7 @@
           <div mat-subheader>Components</div>
           <mat-form-field appearance="fill">
             <mat-label>Name</mat-label>
-            <input matInput type="text" autocomplete="off" [formControl]="newComponentName"/>
+            <input matInput type="text" [formControl]="newComponentName" autocomplete="off"/>
             <button mat-raised-button matSuffix
                     color="accent"
                     (click)="addComponent()"
@@ -53,7 +53,7 @@
             <ng-container [formGroupName]="selectedComponentIdx">
               <mat-form-field appearance="fill">
                 <mat-label>Name</mat-label>
-                <input matInput type="text" formControlName="name" autocomplete="off" [readonly]="componentNameReadonly"/>
+                <input matInput type="text" formControlName="name" [readonly]="componentNameReadonly" autocomplete="off"/>
                 <button mat-icon-button matSuffix (click)="componentNameReadonly = !componentNameReadonly">
                   <mat-icon>{{componentNameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
                 </button>
@@ -74,6 +74,20 @@
                 </mat-select>
                 <mat-error *ngIf="componentAt(selectedComponentIdx, 'kind').errors">{{fe.controlError(componentAt(selectedComponentIdx,'kind'))}}</mat-error>
               </mat-form-field>
+
+              <!--SCHEMATIC-->
+              <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'SCHEMATIC'">
+                <mat-form-field appearance="fill">
+                  <mat-label>Schematic</mat-label>
+                  <mat-select formControlName="schematic" [required]="components.at(selectedComponentIdx).value.kind === 'SCHEMATIC'">
+                    <mat-option *ngFor="let schematic of data.schematics" [value]="schematic.id">
+                      {{schematic.displayName || schematic.name}}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="componentAt(selectedComponentIdx, 'kind').errors">{{fe.controlError(componentAt(selectedComponentIdx,'kind'))}}</mat-error>
+                </mat-form-field>
+              </ng-container>
+
               <mat-form-field appearance="fill">
                 <mat-label>Display Name</mat-label>
                 <input matInput type="text" formControlName="displayName" autocomplete="off"/>
@@ -123,7 +137,9 @@
               </ng-container>
             </ng-container>
         </mat-card>
-<!--        {{components.at(selectedComponentIdx).value | json}}-->
+        {{components.at(selectedComponentIdx).value | json}} <br/>
+        {{components.at(selectedComponentIdx).status | json}} <br/>
+        {{components.at(selectedComponentIdx).errors | json}}
       </div>
     </div>
   </form>
