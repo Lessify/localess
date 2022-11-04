@@ -1,8 +1,9 @@
 import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {FormBuilder, FormGroup} from '@angular/forms';
+import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {ArticleContentEditDialogModel} from './article-content-edit-dialog.model';
-import {ArticleValidator} from '@shared/validators/article.validator';
+import {SchematicComponentKind} from '@shared/models/schematic.model';
+import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-article-content-edit-dialog',
@@ -12,24 +13,54 @@ import {ArticleValidator} from '@shared/validators/article.validator';
 })
 export class ArticleContentEditDialogComponent implements OnInit {
 
-  form: FormGroup = this.fb.group({
-    name: this.fb.control('', ArticleValidator.NAME),
-    slug: this.fb.control('', ArticleValidator.SLUG)
-  });
+  form: FormRecord = this.fb.record({});
 
   constructor(
     private readonly fb: FormBuilder,
+    readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA)
     public data: ArticleContentEditDialogModel
   ) {
   }
 
   ngOnInit(): void {
-    if (this.data != null) {
-      this.form.patchValue(this.data.article);
+    for (const component of this.data.schematic.components || []) {
+      const validators: ValidatorFn[] = []
+      if (component.required) {
+        validators.push(Validators.required)
+      }
+      switch (component.kind) {
+        case SchematicComponentKind.TEXT:
+        case SchematicComponentKind.TEXTAREA: {
+          if (component.minLength) {
+            validators.push(Validators.minLength(component.minLength))
+          }
+          if (component.maxLength) {
+            validators.push(Validators.maxLength(component.maxLength))
+          }
+          this.form.addControl(component.name, this.fb.control(component.defaultValue, validators))
+          break;
+        }
+        case SchematicComponentKind.NUMBER: {
+          if (component.minValue) {
+            validators.push(Validators.min(component.minValue))
+          }
+          if (component.maxValue) {
+            validators.push(Validators.max(component.maxValue))
+          }
+          this.form.addControl(component.name, this.fb.control(component.defaultValue, validators))
+          break;
+        }
+        case SchematicComponentKind.BOOLEAN: {
+          this.form.addControl(component.name, this.fb.control(false, validators))
+          break;
+        }
+        case SchematicComponentKind.DATE: {
+          this.form.addControl(component.name, this.fb.control(component.defaultValue, validators))
+          break;
+        }
+      }
     }
-
-    this.data.schematic.components
   }
 
 }

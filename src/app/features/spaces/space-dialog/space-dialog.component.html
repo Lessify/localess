@@ -8,6 +8,7 @@
             <mat-label>Name</mat-label>
             <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off"/>
             <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
+            <mat-error *ngIf="form.controls['name'].errors">{{fe.controlError(form.controls['name'])}}</mat-error>
           </mat-form-field>
         </div>
       </div>

@@ -7,6 +7,7 @@
           <mat-form-field appearance="fill">
             <mat-label>Email</mat-label>
             <input matInput type="email" formControlName="email" required autocomplete="off"/>
+            <mat-error *ngIf="form.controls['email'].errors">{{fe.controlError(form.controls['email'])}}</mat-error>
           </mat-form-field>
         </div>
       </div>
@@ -17,7 +18,7 @@
           <mat-form-field appearance="fill">
             <mat-label>Password</mat-label>
             <input matInput type="password" formControlName="password" required autocomplete="off"/>
-            <mat-hint>Minimum 6 character</mat-hint>
+            <mat-error *ngIf="form.controls['password'].errors">{{fe.controlError(form.controls['password'])}}</mat-error>
           </mat-form-field>
         </div>
       </div>

@@ -28,7 +28,6 @@ import {
 } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {
   Article,
-  ArticleContentUpdate,
   ArticleCreate,
   ArticleUpdate
 } from '@shared/models/article.model';
@@ -162,7 +161,7 @@ export class ArticlesComponent implements OnInit {
   openContentEditDialog(element: Article): void {
     const schematic = this.schematicsMap.get(element.schematicId)
     if(schematic) {
-      this.dialog.open<ArticleContentEditDialogComponent, ArticleContentEditDialogModel, ArticleContentUpdate>(
+      this.dialog.open<ArticleContentEditDialogComponent, ArticleContentEditDialogModel, any>(
         ArticleContentEditDialogComponent, {
           width: '500px',
           data: {
@@ -174,7 +173,7 @@ export class ArticlesComponent implements OnInit {
         .pipe(
           filter(it => it !== undefined),
           switchMap(it =>
-            this.articleService.update(this.selectedSpace!.id, element.id, it!)
+            this.articleService.updateContent(this.selectedSpace!.id, element.id, it)
           )
         )
         .subscribe({

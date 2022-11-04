@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {UserInviteDialogModel} from './user-invite-dialog.model';
+import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-user-invite-dialog',
@@ -22,6 +23,7 @@ export class UserInviteDialogComponent {
 
   constructor(
     private readonly fb: FormBuilder,
+    readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: UserInviteDialogModel
   ) {
   }

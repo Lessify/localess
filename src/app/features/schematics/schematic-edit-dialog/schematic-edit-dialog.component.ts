@@ -1,10 +1,11 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
+import {AbstractControl, FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {SchematicEditDialogModel} from './schematic-edit-dialog.model';
 import {SchemaValidator} from '@shared/validators/schema.validator';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
 import {MatSelectChange} from '@angular/material/select';
+import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 
 interface ComponentKindDescription {
   name: string
@@ -46,6 +47,7 @@ export class SchematicEditDialogComponent implements OnInit {
   });
 
   constructor(
+    readonly fe: FormErrorHandlerService,
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA)
@@ -60,8 +62,18 @@ export class SchematicEditDialogComponent implements OnInit {
     }
   }
 
-  get components(): FormArray {
-    return this.form.controls['components'] as FormArray;
+  get components(): FormArray<FormGroup> {
+    return this.form.controls['components'] as FormArray<FormGroup>;
+  }
+
+  componentAt(index: number, controlName?: string): AbstractControl | undefined {
+    let control: AbstractControl;
+    if (controlName) {
+      control = this.components.at(index).controls[controlName]
+    } else {
+      control = this.components.at(index)
+    }
+    return control;
   }
 
   addComponent(element ?: SchematicComponent) {

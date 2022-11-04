@@ -12,6 +12,7 @@
                  [attr.maxlength]="component.maxLength"/>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'TEXTAREA'">
@@ -24,6 +25,7 @@
                     [attr.maxlength]="component.maxLength"></textarea>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'NUMBER'">
@@ -35,7 +37,26 @@
                  [attr.min]="component.minValue"
                  [attr.max]="component.maxValue"/>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'DATE'">
+        <mat-form-field appearance="fill">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <input matInput type="date" autocomplete="off"
+                 [formControlName]="component.name"
+                 [required]="component.required"/>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'BOOLEAN'">
+        <mat-checkbox [formControlName]="component.name">
+          {{component.displayName || component.name}}
+        </mat-checkbox>
+        <br/>
+        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
+        <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
       </ng-container>
 
     </ng-container>
@@ -48,3 +69,4 @@
     Save
   </button>
 </mat-dialog-actions>
+{{form.value | json}}

@@ -17,7 +17,7 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
 import {
-  Article,
+  Article, ArticleContentUpdateFS,
   ArticleCreate,
   ArticleCreateFS,
   ArticleUpdate,
@@ -71,6 +71,23 @@ export class ArticleService {
     const update: UpdateData<ArticleUpdateFS> = {
       name: entity.name,
       slug: entity.slug,
+      updatedOn: serverTimestamp()
+    }
+
+    return from(
+      updateDoc(doc(this.firestore, `spaces/${spaceId}/articles/${id}`),
+        update
+      )
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Articles:update'),
+      );
+  }
+
+  updateContent(spaceId: string, id: string, entity: any): Observable<void> {
+    ObjectUtils.clean(entity);
+    const update: UpdateData<ArticleContentUpdateFS> = {
+      content: entity,
       updatedOn: serverTimestamp()
     }
 

@@ -10,6 +10,7 @@
                       class="cdk-textarea-autosize"
                       formControlName="description"></textarea>
             <mat-hint align="end">{{description.value?.length || 0}}/250</mat-hint>
+            <mat-error *ngIf="form.controls['description'].errors">{{fe.controlError(form.controls['description'])}}</mat-error>
           </mat-form-field>
         </div>
       </div>

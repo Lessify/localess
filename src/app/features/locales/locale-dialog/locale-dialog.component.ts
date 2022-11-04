@@ -6,6 +6,7 @@ import {LocaleService} from '@shared/services/locale.service';
 import {map} from 'rxjs/operators';
 import {Locale} from '@shared/models/locale.model';
 import {LocaleValidator} from '@shared/validators/locale.validator';
+import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-locale-dialog',
@@ -28,6 +29,7 @@ export class LocaleDialogComponent implements OnInit {
   constructor(
     private readonly fb:FormBuilder,
     private readonly localeService: LocaleService,
+    readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: Locale[]
   ) {
   }

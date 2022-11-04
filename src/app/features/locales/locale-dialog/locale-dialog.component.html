@@ -12,6 +12,7 @@
                 {{locale.name}} ({{locale.id}})
               </mat-option>
             </mat-autocomplete>
+            <mat-error *ngIf="form.controls['locale'].errors">{{fe.controlError(form.controls['locale'])}}</mat-error>
           </mat-form-field>
         </div>
       </div>

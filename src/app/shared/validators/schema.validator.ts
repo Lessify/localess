@@ -53,6 +53,7 @@ export class SchemaValidator {
   ];
 
   public static COMPONENT_MIN_LENGTH: ValidatorFn[] = [
+    Validators.min(0)
   ];
 
   public static COMPONENT_MAX_LENGTH: ValidatorFn[] = [

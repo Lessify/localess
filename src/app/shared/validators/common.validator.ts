@@ -51,7 +51,7 @@ export class CommonValidator {
       (control.value as string).startsWith(' ') ||
       (control.value as string).endsWith(' ')
     ) {
-      return { noSpaceAtStartAndEnd: true };
+      return { noSpaceAround: true };
     }
     return null;
   }

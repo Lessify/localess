@@ -23,11 +23,6 @@ export interface ArticleUpdate {
   slug: string;
 }
 
-export interface ArticleContentUpdate {
-  name: string;
-  slug: string;
-}
-
 // Firestore
 
 export interface ArticleCreateFS {
@@ -41,5 +36,10 @@ export interface ArticleCreateFS {
 export interface ArticleUpdateFS {
   name: string;
   slug: string;
+  updatedOn: FieldValue;
+}
+
+export interface ArticleContentUpdateFS {
+  content: any;
   updatedOn: FieldValue;
 }

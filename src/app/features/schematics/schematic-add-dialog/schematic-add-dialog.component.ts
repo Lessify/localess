@@ -4,6 +4,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {SchematicAddDialogModel} from './schematic-add-dialog.model';
 import {SchemaValidator} from '@shared/validators/schema.validator';
 import {SchematicType} from '@shared/models/schematic.model';
+import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-schematic-add-dialog',
@@ -22,6 +23,7 @@ export class SchematicAddDialogComponent implements OnInit {
 
   constructor(
     private readonly fb: FormBuilder,
+    readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: SchematicAddDialogModel
   ) {
   }

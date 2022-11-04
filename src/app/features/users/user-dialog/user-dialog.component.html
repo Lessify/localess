@@ -11,6 +11,7 @@
                 {{role | uppercase}}
               </mat-option>
             </mat-select>
+            <mat-error *ngIf="form.controls['role'].errors">{{fe.controlError(form.controls['role'])}}</mat-error>
           </mat-form-field>
         </div>
       </div>
