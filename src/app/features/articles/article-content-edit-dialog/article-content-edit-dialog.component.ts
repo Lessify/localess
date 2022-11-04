@@ -24,6 +24,14 @@ export class ArticleContentEditDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.generateForm()
+    if(this.data.article.content) {
+      this.form.reset()
+      this.form.patchValue(this.data.article.content);
+    }
+  }
+
+  generateForm(): void {
     for (const component of this.data.schematic.components || []) {
       const validators: ValidatorFn[] = []
       if (component.required) {
@@ -38,7 +46,7 @@ export class ArticleContentEditDialogComponent implements OnInit {
           if (component.maxLength) {
             validators.push(Validators.maxLength(component.maxLength))
           }
-          this.form.addControl(component.name, this.fb.control(component.defaultValue, validators))
+          this.form.addControl(component.name, this.fb.control<string | undefined>(component.defaultValue, validators))
           break;
         }
         case SchematicComponentKind.NUMBER: {
@@ -48,15 +56,15 @@ export class ArticleContentEditDialogComponent implements OnInit {
           if (component.maxValue) {
             validators.push(Validators.max(component.maxValue))
           }
-          this.form.addControl(component.name, this.fb.control(component.defaultValue, validators))
+          this.form.addControl(component.name, this.fb.control<number | undefined>(component.defaultValue ? Number.parseInt(component.defaultValue) : undefined, validators))
           break;
         }
         case SchematicComponentKind.BOOLEAN: {
-          this.form.addControl(component.name, this.fb.control(false, validators))
+          this.form.addControl(component.name, this.fb.control<boolean | undefined>(component.defaultValue === 'true' , validators))
           break;
         }
         case SchematicComponentKind.DATE: {
-          this.form.addControl(component.name, this.fb.control(component.defaultValue, validators))
+          this.form.addControl(component.name, this.fb.control<string | undefined>(component.defaultValue, validators))
           break;
         }
       }

@@ -6,6 +6,8 @@ export interface Article {
   slug: string;
   schematicId: string;
 
+  content?: any;
+
   createdOn: Timestamp;
   updatedOn: Timestamp;
 }
