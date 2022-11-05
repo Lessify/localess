@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {AbstractControl, FormArray, FormBuilder, FormGroup} from '@angular/forms';
+import {AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord} from '@angular/forms';
 import {SchematicEditDialogModel} from './schematic-edit-dialog.model';
 import {SchemaValidator} from '@shared/validators/schema.validator';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
@@ -41,7 +41,7 @@ export class SchematicEditDialogComponent implements OnInit {
 
   newComponentName = this.fb.control('', SchemaValidator.COMPONENT_NAME);
 
-  form: FormGroup = this.fb.group({
+  form: FormRecord = this.fb.record({
     name: this.fb.control('', SchemaValidator.NAME),
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     components: this.fb.array<SchematicComponent>([])
@@ -77,9 +77,9 @@ export class SchematicEditDialogComponent implements OnInit {
     return control;
   }
 
-  addComponent(element ?: SchematicComponent) {
+  addComponent(element?: SchematicComponent) {
     const defaultKind = SchematicComponentKind.TEXT;
-    const form = this.fb.group({
+    const componentForm = this.fb.record<any>({
       // Base
       name: this.fb.control(element?.name || this.newComponentName.value, SchemaValidator.COMPONENT_NAME),
       kind: this.fb.control(element?.kind || defaultKind, SchemaValidator.COMPONENT_KIND),
@@ -88,33 +88,51 @@ export class SchematicEditDialogComponent implements OnInit {
       description: this.fb.control<string | undefined>(element?.description, SchemaValidator.COMPONENT_DESCRIPTION),
       defaultValue: this.fb.control<string | undefined>(element?.defaultValue, SchemaValidator.COMPONENT_DEFAULT_VALUE),
       // Number
-      minValue: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_VALUE),
-      maxValue: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_VALUE),
+      // minValue: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_VALUE),
+      // maxValue: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_VALUE),
       // Text and Textarea
-      minLength: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_LENGTH),
-      maxLength: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_LENGTH),
+      // minLength: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_LENGTH),
+      // maxLength: this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_LENGTH),
       // Schematic
-      schematic: this.fb.control<string | undefined>(undefined, SchemaValidator.COMPONENT_SCHEMATIC),
+      // schematic: this.fb.control<string | undefined>(undefined),
     })
-    if (element?.kind === SchematicComponentKind.NUMBER) {
-      form.controls['minValue'].setValue(element.minValue)
-      form.controls['maxValue'].setValue(element.maxValue)
-    }
-    if (element?.kind === SchematicComponentKind.TEXT || element?.kind === SchematicComponentKind.TEXTAREA) {
-      form.controls['minLength'].setValue(element.minLength)
-      form.controls['maxLength'].setValue(element.maxLength)
-    }
-    if(element?.kind === SchematicComponentKind.SCHEMATIC) {
-      form.controls['schematic'].setValue(element.schematic)
-    }
 
+    switch (element?.kind) {
+      case SchematicComponentKind.TEXT:
+      case SchematicComponentKind.TEXTAREA: {
+        componentForm.addControl('minLength', this.fb.control<number | undefined>(element.minLength, SchemaValidator.COMPONENT_MIN_LENGTH))
+        componentForm.addControl('maxLength', this.fb.control<number | undefined>(element.maxLength, SchemaValidator.COMPONENT_MAX_LENGTH))
+        break;
+      }
+      case SchematicComponentKind.NUMBER: {
+        componentForm.addControl('minValue', this.fb.control<number | undefined>(element.minValue, SchemaValidator.COMPONENT_MIN_VALUE));
+        componentForm.addControl('maxValue', this.fb.control<number | undefined>(element.maxValue, SchemaValidator.COMPONENT_MAX_VALUE));
+        break;
+      }
+      case SchematicComponentKind.SCHEMATIC: {
+        componentForm.addControl('schematic', this.fb.control<string | undefined>(element.schematic));
+        break;
+      }
+      case SchematicComponentKind.DATE: {
+        break;
+      }
+      case SchematicComponentKind.BOOLEAN: {
+        break;
+      }
+      // By default, it is a new TEXT
+      default: {
+        componentForm.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_LENGTH))
+        componentForm.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_LENGTH))
+      }
+    }
+    console.log(componentForm)
     this.selectedComponentKind = this.componentKindDescriptions[defaultKind];
-    this.components.push(form);
+    this.components.push(componentForm);
     this.newComponentName.reset();
     this.selectComponent(this.components.length - 1)
   }
 
-// handle form array element selection, by enforcing refresh
+  // handle form array element selection, by enforcing refresh
   selectComponent(index: number): void {
     this.selectedComponentIdx = undefined;
     this.cd.detectChanges();
@@ -125,10 +143,16 @@ export class SchematicEditDialogComponent implements OnInit {
   }
 
   selectComponentKind(event: MatSelectChange): void {
+    console.log(event)
     const value: string = event.value;
     this.selectedComponentKind = this.componentKindDescriptions[value];
-    this.components.at(this.selectedComponentIdx || 0).updateValueAndValidity()
-    console.log(this.components.at(this.selectedComponentIdx || 0).value)
-    this.cd.markForCheck();
+    const schematicCtrl = this.componentAt(this.selectedComponentIdx || 0,'schematic');
+    if(value === SchematicComponentKind.SCHEMATIC) {
+      schematicCtrl?.updateValueAndValidity();
+    } else {
+      schematicCtrl?.setValue(undefined);
+      schematicCtrl?.clearValidators();
+      schematicCtrl?.updateValueAndValidity();
+    }
   }
 }

@@ -6,11 +6,11 @@ import {AbstractControl, ValidationErrors} from '@angular/forms';
 })
 export class FormErrorHandlerService {
 
-  controlError(control: AbstractControl): string | undefined | null {
-    return this.errors(control.errors)
+  controlError(control?: AbstractControl): string | undefined | null {
+    return this.errors(control?.errors)
   }
 
-  private errors(errors: ValidationErrors | null): string | undefined | null {
+  private errors(errors: ValidationErrors | null | undefined): string | undefined | null {
     if (errors) {
       if (errors['minlength']) {
         return `Minimum length is ${errors['minlength'].requiredLength}.`
