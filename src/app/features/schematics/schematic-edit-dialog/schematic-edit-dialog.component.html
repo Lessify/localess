@@ -36,7 +36,7 @@
           </mat-form-field>
           <mat-list-item *ngFor="let component of components.controls; let index = index"
                          (click)="selectComponent(index)"
-                         [class.active]="index == selectedComponentIdx"
+                         [class.active]="index === selectedComponentIdx"
                          [class.invalid]="component.invalid">
             <mat-icon mat-list-icon>{{componentKindDescriptions[component.value.kind].icon}}</mat-icon>
             <div mat-line>{{component.value.name}}</div>
