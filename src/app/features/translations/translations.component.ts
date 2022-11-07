@@ -74,7 +74,7 @@ export class TranslationsComponent implements OnInit {
   locales: Locale[] = [];
 
   //Loadings
-  isLoading: boolean = false;
+  isLoading: boolean = true;
   isPublishLoading: boolean = false;
   isImportExportLoading: boolean = false;
   isLocaleUpdateLoading: boolean = false;

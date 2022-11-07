@@ -25,9 +25,9 @@ export class SchematicEditDialogComponent implements OnInit {
   componentKinds = Object.keys(SchematicComponentKind)
 
   componentKindDescriptions: ComponentKindDescriptions = {
-    'NUMBER': {name: 'Number', icon: 'pin'},
     'TEXT': {name: 'Text', icon: 'title'},
     'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
+    'NUMBER': {name: 'Number', icon: 'pin'},
     'DATE': {name: 'Date', icon: 'event'},
     'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
     'SCHEMATIC': {name: 'Schematic', icon: 'polyline'}
@@ -63,18 +63,16 @@ export class SchematicEditDialogComponent implements OnInit {
     }
   }
 
-  get components(): FormArray<FormGroup> {
-    return this.form.controls['components'] as FormArray<FormGroup>;
+  get components(): FormArray<FormRecord> {
+    return this.form.controls['components'] as FormArray<FormRecord>;
   }
 
-  componentAt(index: number, controlName?: string): AbstractControl | undefined {
-    let control: AbstractControl;
-    if (controlName) {
-      control = this.components.at(index).controls[controlName]
-    } else {
-      control = this.components.at(index)
-    }
-    return control;
+  componentControlAt(index: number, controlName: string): AbstractControl | undefined {
+    return this.components.at(index)?.controls[controlName]
+  }
+
+  componentAt(index: number): FormRecord | undefined {
+    return this.components.at(index)
   }
 
   addComponent(element?: SchematicComponent) {
@@ -125,7 +123,6 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_LENGTH))
       }
     }
-    console.log(componentForm)
     this.selectedComponentKind = this.componentKindDescriptions[defaultKind];
     this.components.push(componentForm);
     this.newComponentName.reset();
@@ -138,21 +135,66 @@ export class SchematicEditDialogComponent implements OnInit {
     this.cd.detectChanges();
     this.componentNameReadonly = true;
     this.selectedComponentIdx = index;
-    this.selectedComponentKind = this.componentKindDescriptions[this.components.at(index).value.kind];
+    this.selectedComponentKind = this.componentKindDescriptions[this.components.at(index).value['kind']];
     this.cd.markForCheck();
   }
 
   selectComponentKind(event: MatSelectChange): void {
-    console.log(event)
     const value: string = event.value;
     this.selectedComponentKind = this.componentKindDescriptions[value];
-    const schematicCtrl = this.componentAt(this.selectedComponentIdx || 0,'schematic');
-    if(value === SchematicComponentKind.SCHEMATIC) {
-      schematicCtrl?.updateValueAndValidity();
-    } else {
-      schematicCtrl?.setValue(undefined);
-      schematicCtrl?.clearValidators();
-      schematicCtrl?.updateValueAndValidity();
+    const componentForm = this.componentAt(this.selectedComponentIdx || 0);
+    switch (value) {
+      case SchematicComponentKind.TEXT:
+      case SchematicComponentKind.TEXTAREA: {
+        // ADD
+        componentForm?.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_LENGTH))
+        componentForm?.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_LENGTH))
+        // REMOVE
+        componentForm?.removeControl('minValue')
+        componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('schematic')
+        break;
+      }
+      case SchematicComponentKind.NUMBER: {
+        // ADD
+        componentForm?.addControl('minValue', this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MIN_VALUE));
+        componentForm?.addControl('maxValue', this.fb.control<number | undefined>(undefined, SchemaValidator.COMPONENT_MAX_VALUE));
+        // REMOVE
+        componentForm?.removeControl('minLength')
+        componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('schematic')
+        break;
+      }
+      case SchematicComponentKind.SCHEMATIC: {
+        // ADD
+        componentForm?.addControl('schematic', this.fb.control<string | undefined>(undefined));
+        // REMOVE
+        componentForm?.removeControl('minLength')
+        componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('minValue')
+        componentForm?.removeControl('maxValue')
+        // schematicCtrl?.updateValueAndValidity();
+        break;
+      }
+      case SchematicComponentKind.DATE: {
+        // REMOVE
+        componentForm?.removeControl('minLength')
+        componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('minValue')
+        componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('schematic')
+        break;
+      }
+      case SchematicComponentKind.BOOLEAN: {
+        // REMOVE
+        componentForm?.removeControl('minLength')
+        componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('minValue')
+        componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('schematic')
+        break;
+      }
     }
+    //this.cd.markForCheck();
   }
 }

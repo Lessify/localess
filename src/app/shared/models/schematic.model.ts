@@ -19,9 +19,9 @@ export interface Schematic {
 export type SchematicComponent = SchematicComponentNumber | SchematicComponentText | SchematicComponentTextarea | SchematicComponentDate | SchematicComponentBoolean | SchematicComponentSchematic;
 
 export enum SchematicComponentKind {
-  NUMBER = 'NUMBER',
   TEXT = 'TEXT',
   TEXTAREA = 'TEXTAREA',
+  NUMBER = 'NUMBER',
   DATE = 'DATE',
   BOOLEAN = 'BOOLEAN',
   SCHEMATIC = 'SCHEMATIC'

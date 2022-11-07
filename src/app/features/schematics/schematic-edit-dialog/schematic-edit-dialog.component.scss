@@ -12,6 +12,8 @@ mat-form-field {
 
 .mat-list-item {
   border: solid 1px #dfe3e8;
+  border-radius: 5px;
+  margin-bottom: 10px;
   &.active {
     background: rgba(0, 0, 0, 0.04);
   }
