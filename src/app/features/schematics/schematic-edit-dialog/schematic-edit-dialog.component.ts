@@ -31,7 +31,7 @@ export class SchematicEditDialogComponent implements OnInit {
     'COLOR': {name: 'Color', icon: 'colorize'},
     'DATE': {name: 'Date', icon: 'event'},
     'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
-    'SCHEMATIC': {name: 'Schematic', icon: 'polyline'}
+    'SCHEMATIC': {name: 'Schematic (Beta)', icon: 'polyline'}
   }
 
   selectedComponentKind ?: ComponentKindDescription;
