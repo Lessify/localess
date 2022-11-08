@@ -56,3 +56,6 @@ If you would like to become a sponsor, please consider:
 
 Lessify UI is design to manage data in firestore, authentication and storage via Firebase SDK.
 Generated data used by exposed API's is store in Storage to make it even faster to access and GCP CDN will cache it for even faster response.
+
+[//]: # (netstat -aon | findstr 4000)
+[//]: # (taskkill /PID <PID> /F)

@@ -4,7 +4,7 @@
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="outline">
             <mat-label>Description</mat-label>
             <textarea matInput #description maxlength="250"
                       class="cdk-textarea-autosize"
@@ -18,7 +18,7 @@
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
-          <mat-form-field appearance="fill" >
+          <mat-form-field appearance="outline" >
             <mat-chip-list #chipList attr.aria-label="Select Label">
               <mat-chip
                 *ngFor="let label of form.controls['labels'].value"

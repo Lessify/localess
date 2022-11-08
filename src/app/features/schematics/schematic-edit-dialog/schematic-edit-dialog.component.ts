@@ -28,6 +28,7 @@ export class SchematicEditDialogComponent implements OnInit {
     'TEXT': {name: 'Text', icon: 'title'},
     'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
     'NUMBER': {name: 'Number', icon: 'pin'},
+    'COLOR': {name: 'Color', icon: 'colorize'},
     'DATE': {name: 'Date', icon: 'event'},
     'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
     'SCHEMATIC': {name: 'Schematic', icon: 'polyline'}
@@ -107,6 +108,9 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm.addControl('maxValue', this.fb.control<number | undefined>(element.maxValue, SchemaValidator.COMPONENT_MAX_VALUE));
         break;
       }
+      case SchematicComponentKind.COLOR: {
+        break;
+      }
       case SchematicComponentKind.SCHEMATIC: {
         componentForm.addControl('schematic', this.fb.control<string | undefined>(element.schematic));
         break;
@@ -162,6 +166,15 @@ export class SchematicEditDialogComponent implements OnInit {
         // REMOVE
         componentForm?.removeControl('minLength')
         componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('schematic')
+        break;
+      }
+      case SchematicComponentKind.COLOR: {
+        // REMOVE
+        componentForm?.removeControl('minLength')
+        componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('minValue')
+        componentForm?.removeControl('maxValue')
         componentForm?.removeControl('schematic')
         break;
       }

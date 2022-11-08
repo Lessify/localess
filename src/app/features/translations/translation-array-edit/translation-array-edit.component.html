@@ -1,7 +1,7 @@
 <div class="container edit-array">
 <form [formGroup]="form">
   <ng-container formArrayName="values">
-    <mat-form-field appearance="fill" *ngFor="let control of values().controls; index as i">
+    <mat-form-field appearance="outline" *ngFor="let control of values().controls; index as i">
       <mat-label>Item {{i}}</mat-label>
       <input matInput [formControlName]="i" maxlength="150">
       <button mat-icon-button matSuffix (click)="removeItem(i)">

@@ -59,6 +59,10 @@ export class ArticleContentEditDialogComponent implements OnInit {
           this.form.addControl(component.name, this.fb.control<number | undefined>(component.defaultValue ? Number.parseInt(component.defaultValue) : undefined, validators))
           break;
         }
+        case SchematicComponentKind.COLOR: {
+          this.form.addControl(component.name, this.fb.control<string | undefined>(component.defaultValue, validators))
+          break;
+        }
         case SchematicComponentKind.BOOLEAN: {
           this.form.addControl(component.name, this.fb.control<boolean | undefined>(component.defaultValue === 'true' , validators))
           break;

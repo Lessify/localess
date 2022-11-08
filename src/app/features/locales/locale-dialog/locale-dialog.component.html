@@ -4,7 +4,7 @@
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="outline">
             <mat-label> Locale </mat-label>
             <input matInput type="text" formControlName="locale" required [matAutocomplete]="auto"/>
             <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayLocale">

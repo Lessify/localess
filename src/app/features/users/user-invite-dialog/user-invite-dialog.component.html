@@ -4,7 +4,7 @@
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="outline">
             <mat-label>Email</mat-label>
             <input matInput type="email" formControlName="email" required autocomplete="off"/>
             <mat-error *ngIf="form.controls['email'].errors">{{fe.controlError(form.controls['email'])}}</mat-error>
@@ -15,7 +15,7 @@
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="outline">
             <mat-label>Password</mat-label>
             <input matInput type="password" formControlName="password" required autocomplete="off"/>
             <mat-error *ngIf="form.controls['password'].errors">{{fe.controlError(form.controls['password'])}}</mat-error>
@@ -26,7 +26,7 @@
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="outline">
             <mat-label>Display Name</mat-label>
             <input matInput type="text" formControlName="displayName" autocomplete="off"/>
           </mat-form-field>
@@ -36,7 +36,7 @@
     <div class="row">
       <div class="col-sm-12">
         <div class="form-group">
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="outline">
             <mat-label>Role</mat-label>
             <mat-select formControlName="role" required>
               <mat-option *ngFor="let role of roles" [value]="role">
