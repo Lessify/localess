@@ -16,7 +16,7 @@ export interface Schematic {
   updatedOn: Timestamp;
 }
 
-export type SchematicComponent = SchematicComponentText | SchematicComponentTextarea | SchematicComponentNumber | SchematicComponentColor | SchematicComponentDate | SchematicComponentBoolean | SchematicComponentSchematic;
+export type SchematicComponent = SchematicComponentText | SchematicComponentTextarea | SchematicComponentNumber | SchematicComponentColor | SchematicComponentDate | SchematicComponentDateTime | SchematicComponentBoolean | SchematicComponentSchematic;
 
 export enum SchematicComponentKind {
   TEXT = 'TEXT',
@@ -24,6 +24,7 @@ export enum SchematicComponentKind {
   NUMBER = 'NUMBER',
   COLOR = 'COLOR',
   DATE = 'DATE',
+  DATETIME = 'DATETIME',
   BOOLEAN = 'BOOLEAN',
   SCHEMATIC = 'SCHEMATIC'
 }
@@ -61,6 +62,10 @@ export interface SchematicComponentColor extends SchematicComponentBase {
 
 export interface SchematicComponentDate extends SchematicComponentBase {
   kind: SchematicComponentKind.DATE;
+}
+
+export interface SchematicComponentDateTime extends SchematicComponentBase {
+  kind: SchematicComponentKind.DATETIME;
 }
 
 export interface SchematicComponentBoolean extends SchematicComponentBase {

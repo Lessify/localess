@@ -76,17 +76,17 @@
               </mat-form-field>
 
               <!--SCHEMATIC-->
-              <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'SCHEMATIC'">
-                <mat-form-field appearance="outline">
-                  <mat-label>Schematic</mat-label>
-                  <mat-select formControlName="schematic" required>
-                    <mat-option *ngFor="let schematic of data.schematics" [value]="schematic.id">
-                      {{schematic.displayName || schematic.name}}
-                    </mat-option>
-                  </mat-select>
-                  <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'schematic')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'schematic'))}}</mat-error>
-                </mat-form-field>
-              </ng-container>
+<!--              <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'SCHEMATIC'">-->
+<!--                <mat-form-field appearance="outline">-->
+<!--                  <mat-label>Schematic</mat-label>-->
+<!--                  <mat-select formControlName="schematic" required>-->
+<!--                    <mat-option *ngFor="let schematic of data.schematics" [value]="schematic.id">-->
+<!--                      {{schematic.displayName || schematic.name}}-->
+<!--                    </mat-option>-->
+<!--                  </mat-select>-->
+<!--                  <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'schematic')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'schematic'))}}</mat-error>-->
+<!--                </mat-form-field>-->
+<!--              </ng-container>-->
 
               <mat-form-field appearance="outline">
                 <mat-label>Display Name</mat-label>

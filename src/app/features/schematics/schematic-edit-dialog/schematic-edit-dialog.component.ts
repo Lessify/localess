@@ -30,6 +30,7 @@ export class SchematicEditDialogComponent implements OnInit {
     'NUMBER': {name: 'Number', icon: 'pin'},
     'COLOR': {name: 'Color', icon: 'colorize'},
     'DATE': {name: 'Date', icon: 'event'},
+    'DATETIME': {name: 'Date and Time', icon: 'schedule'},
     'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
     'SCHEMATIC': {name: 'Schematic (Beta)', icon: 'polyline'}
   }
@@ -156,7 +157,7 @@ export class SchematicEditDialogComponent implements OnInit {
         // REMOVE
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
-        componentForm?.removeControl('schematic')
+        //componentForm?.removeControl('schematic')
         break;
       }
       case SchematicComponentKind.NUMBER: {
@@ -166,7 +167,7 @@ export class SchematicEditDialogComponent implements OnInit {
         // REMOVE
         componentForm?.removeControl('minLength')
         componentForm?.removeControl('maxLength')
-        componentForm?.removeControl('schematic')
+        //componentForm?.removeControl('schematic')
         break;
       }
       case SchematicComponentKind.COLOR: {
@@ -175,12 +176,12 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm?.removeControl('maxLength')
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
-        componentForm?.removeControl('schematic')
+        //componentForm?.removeControl('schematic')
         break;
       }
       case SchematicComponentKind.SCHEMATIC: {
         // ADD
-        componentForm?.addControl('schematic', this.fb.control<string | undefined>(undefined));
+        //componentForm?.addControl('schematic', this.fb.control<string | undefined>(undefined));
         // REMOVE
         componentForm?.removeControl('minLength')
         componentForm?.removeControl('maxLength')
@@ -195,7 +196,16 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm?.removeControl('maxLength')
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
-        componentForm?.removeControl('schematic')
+        //componentForm?.removeControl('schematic')
+        break;
+      }
+      case SchematicComponentKind.DATETIME: {
+        // REMOVE
+        componentForm?.removeControl('minLength')
+        componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('minValue')
+        componentForm?.removeControl('maxValue')
+        //componentForm?.removeControl('schematic')
         break;
       }
       case SchematicComponentKind.BOOLEAN: {
@@ -204,7 +214,7 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm?.removeControl('maxLength')
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
-        componentForm?.removeControl('schematic')
+        //componentForm?.removeControl('schematic')
         break;
       }
     }

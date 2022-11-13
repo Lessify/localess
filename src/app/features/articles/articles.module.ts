@@ -10,11 +10,11 @@ import {ArticleService} from '@shared/services/article.service';
 import {ArticleAddDialogComponent} from './article-add-dialog/article-add-dialog.component';
 import {ArticleEditDialogComponent} from './article-edit-dialog/article-edit-dialog.component';
 import {
-  ArticleContentEditDialogComponent
-} from './article-content-edit-dialog/article-content-edit-dialog.component';
+  ArticleContentEditComponent
+} from './article-content-edit/article-content-edit.component';
 
 @NgModule({
-  declarations: [ArticlesComponent, ArticleAddDialogComponent, ArticleEditDialogComponent, ArticleContentEditDialogComponent],
+  declarations: [ArticlesComponent, ArticleAddDialogComponent, ArticleEditDialogComponent, ArticleContentEditComponent],
   imports: [CommonModule, SharedModule, ArticlesRoutingModule],
   providers: [SpaceService, SchematicService, ArticleService]
 })

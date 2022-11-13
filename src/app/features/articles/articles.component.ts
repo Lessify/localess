@@ -39,12 +39,6 @@ import {
 } from './article-edit-dialog/article-edit-dialog.component';
 import {ArticleEditDialogModel} from './article-edit-dialog/article-edit-dialog.model';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
-import {
-  ArticleContentEditDialogComponent
-} from './article-content-edit-dialog/article-content-edit-dialog.component';
-import {
-  ArticleContentEditDialogModel
-} from './article-content-edit-dialog/article-content-edit-dialog.model';
 
 @Component({
   selector: 'll-articles',
@@ -102,7 +96,7 @@ export class ArticlesComponent implements OnInit {
           this.dataSource = new MatTableDataSource<Article>(articles);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
-          this.isLoading = false;
+          //this.isLoading = false;
           this.cd.markForCheck();
         }
       })
@@ -159,34 +153,35 @@ export class ArticlesComponent implements OnInit {
   }
 
   openContentEditDialog(element: Article): void {
-    const schematic = this.schematicsMap.get(element.schematicId)
-    if(schematic) {
-      this.dialog.open<ArticleContentEditDialogComponent, ArticleContentEditDialogModel, any>(
-        ArticleContentEditDialogComponent, {
-          width: '500px',
-          data: {
-            article: ObjectUtils.clone(element),
-            schematic: schematic
-          }
-        })
-        .afterClosed()
-        .pipe(
-          filter(it => it !== undefined),
-          switchMap(it =>
-            this.articleService.updateContent(this.selectedSpace!.id, element.id, it)
-          )
-        )
-        .subscribe({
-          next: () => {
-            this.notificationService.success('Article has been updated.');
-          },
-          error: () => {
-            this.notificationService.error('Article can not be updated.');
-          }
-        });
-    } else {
-      this.notificationService.error('Schematic associated with the article can not be found.');
-    }
+    this.router.navigate(['features','articles',element.id]);
+    // const schematic = this.schematicsMap.get(element.schematicId)
+    // if(schematic) {
+    //   this.dialog.open<ArticleContentEditComponent, ArticleContentEditModel, any>(
+    //     ArticleContentEditComponent, {
+    //       width: '500px',
+    //       data: {
+    //         article: ObjectUtils.clone(element),
+    //         schematic: schematic
+    //       }
+    //     })
+    //     .afterClosed()
+    //     .pipe(
+    //       filter(it => it !== undefined),
+    //       switchMap(it =>
+    //         this.articleService.updateContent(this.selectedSpace!.id, element.id, it)
+    //       )
+    //     )
+    //     .subscribe({
+    //       next: () => {
+    //         this.notificationService.success('Article has been updated.');
+    //       },
+    //       error: () => {
+    //         this.notificationService.error('Article can not be updated.');
+    //       }
+    //     });
+    // } else {
+    //   this.notificationService.error('Schematic associated with the article can not be found.');
+    // }
   }
 
   openDeleteDialog(element: Article): void {
