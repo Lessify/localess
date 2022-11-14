@@ -23,11 +23,13 @@ import {
   ArticleUpdate,
   ArticleUpdateFS
 } from '@shared/models/article.model';
+import {Functions, httpsCallableData} from '@angular/fire/functions';
 
 @Injectable()
 export class ArticleService {
   constructor(
-    private readonly firestore: Firestore
+    private readonly firestore: Firestore,
+    private readonly functions: Functions,
   ) {
   }
 
@@ -107,6 +109,14 @@ export class ArticleService {
     )
       .pipe(
         traceUntilFirst('Firestore:Articles:delete'),
+      );
+  }
+
+  publish(spaceId: string, id: string): Observable<void> {
+    const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'articlePublish');
+    return translationsPublish({spaceId})
+      .pipe(
+        traceUntilFirst('Functions:Articles:publish'),
       );
   }
 

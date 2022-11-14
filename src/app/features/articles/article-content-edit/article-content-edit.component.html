@@ -1,10 +1,14 @@
 <mat-toolbar>
   <mat-toolbar-row>
-    Articles
+    <button mat-icon-button (click)="back()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    {{article?.name}}
     <span class="spacer"></span>
     <button
       mat-raised-button
       color="primary"
+      [disabled]="!form.valid || isSaveLoading"
       (click)="save()">
       <ll-icon [animate]="isSaveLoading" start="save" end="sync"></ll-icon>
       Save
@@ -14,7 +18,7 @@
       mat-raised-button
       color="accent"
       matTooltip="Publish to be available via API call"
-      [disabled]="isPublishLoading"
+      [disabled]="!form.valid || isPublishLoading"
       (click)="publish()">
       <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
       Publish
@@ -26,107 +30,98 @@
   <mat-spinner></mat-spinner>
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
+  <ng-container *ngIf="schematic">
+
+  <form [formGroup]="form" class="step-container">
+    <ng-container *ngFor="let component of schematic.components" [ngSwitch]="component.kind">
+      <ng-container *ngSwitchCase="'TEXT'">
+        <mat-form-field appearance="outline">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <input matInput type="text"
+                 [formControlName]="component.name"
+                 [required]="component.required"
+                 [attr.minlength]="component.minLength"
+                 [attr.maxlength]="component.maxLength"
+                 autocomplete="off"/>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'TEXTAREA'">
+        <mat-form-field appearance="outline">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <textarea matInput rows="6"
+                    [formControlName]="component.name"
+                    [required]="component.required"
+                    [attr.minLength]="component.minLength"
+                    [attr.maxlength]="component.maxLength"
+                    autocomplete="off"></textarea>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'NUMBER'">
+        <mat-form-field appearance="outline">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <input matInput type="number"
+                 [formControlName]="component.name"
+                 [required]="component.required"
+                 [attr.min]="component.minValue"
+                 [attr.max]="component.maxValue"
+                 autocomplete="off"/>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'COLOR'">
+        <mat-form-field appearance="outline">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <input matInput type="color"
+                 [formControlName]="component.name"
+                 [required]="component.required"
+                 [attr.min]="component.minValue"
+                 [attr.max]="component.maxValue"
+                 autocomplete="off"/>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'DATE'">
+        <mat-form-field appearance="outline">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <input matInput type="date"
+                 [formControlName]="component.name"
+                 [required]="component.required"
+                 autocomplete="off"/>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'DATETIME'">
+        <mat-form-field appearance="outline">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <input matInput type="datetime-local"
+                 [formControlName]="component.name"
+                 [required]="component.required"
+                 autocomplete="off"/>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+      <ng-container *ngSwitchCase="'BOOLEAN'">
+        <mat-checkbox [formControlName]="component.name">
+          {{component.displayName || component.name}}
+        </mat-checkbox>
+        <br/>
+        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
+        <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+      </ng-container>
+
+    </ng-container>
+  </form>
+  </ng-container>
   {{form.value | json}}
+
 </div>
-
-
-<!--<h1 mat-dialog-title>Edit Article</h1>-->
-<!--<mat-dialog-content>-->
-<!--  <form [formGroup]="form" class="step-container">-->
-<!--    <ng-container *ngFor="let component of data.schematic.components" [ngSwitch]="component.kind">-->
-<!--      <ng-container *ngSwitchCase="'TEXT'">-->
-<!--        <mat-form-field appearance="outline">-->
-<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
-<!--          <input matInput type="text"-->
-<!--                 [formControlName]="component.name"-->
-<!--                 [required]="component.required"-->
-<!--                 [attr.minlength]="component.minLength"-->
-<!--                 [attr.maxlength]="component.maxLength"-->
-<!--                 autocomplete="off"/>-->
-<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
-<!--          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>-->
-<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
-<!--        </mat-form-field>-->
-<!--      </ng-container>-->
-<!--      <ng-container *ngSwitchCase="'TEXTAREA'">-->
-<!--        <mat-form-field appearance="outline">-->
-<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
-<!--          <textarea matInput rows="6"-->
-<!--                    [formControlName]="component.name"-->
-<!--                    [required]="component.required"-->
-<!--                    [attr.minLength]="component.minLength"-->
-<!--                    [attr.maxlength]="component.maxLength"-->
-<!--                    autocomplete="off"></textarea>-->
-<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
-<!--          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>-->
-<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
-<!--        </mat-form-field>-->
-<!--      </ng-container>-->
-<!--      <ng-container *ngSwitchCase="'NUMBER'">-->
-<!--        <mat-form-field appearance="outline">-->
-<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
-<!--          <input matInput type="number"-->
-<!--                 [formControlName]="component.name"-->
-<!--                 [required]="component.required"-->
-<!--                 [attr.min]="component.minValue"-->
-<!--                 [attr.max]="component.maxValue"-->
-<!--                 autocomplete="off"/>-->
-<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
-<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
-<!--        </mat-form-field>-->
-<!--      </ng-container>-->
-<!--      <ng-container *ngSwitchCase="'COLOR'">-->
-<!--        <mat-form-field appearance="outline">-->
-<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
-<!--          <input matInput type="color"-->
-<!--                 [formControlName]="component.name"-->
-<!--                 [required]="component.required"-->
-<!--                 [attr.min]="component.minValue"-->
-<!--                 [attr.max]="component.maxValue"-->
-<!--                 autocomplete="off"/>-->
-<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
-<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
-<!--        </mat-form-field>-->
-<!--      </ng-container>-->
-<!--      <ng-container *ngSwitchCase="'DATE'">-->
-<!--        <mat-form-field appearance="outline">-->
-<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
-<!--          <input matInput type="date"-->
-<!--                 [formControlName]="component.name"-->
-<!--                 [required]="component.required"-->
-<!--                 autocomplete="off"/>-->
-<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
-<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
-<!--        </mat-form-field>-->
-<!--      </ng-container>-->
-<!--      <ng-container *ngSwitchCase="'DATETIME'">-->
-<!--        <mat-form-field appearance="outline">-->
-<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
-<!--          <input matInput type="datetime-local"-->
-<!--                 [formControlName]="component.name"-->
-<!--                 [required]="component.required"-->
-<!--                 autocomplete="off"/>-->
-<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
-<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
-<!--        </mat-form-field>-->
-<!--      </ng-container>-->
-<!--      <ng-container *ngSwitchCase="'BOOLEAN'">-->
-<!--        <mat-checkbox [formControlName]="component.name">-->
-<!--          {{component.displayName || component.name}}-->
-<!--        </mat-checkbox>-->
-<!--        <br/>-->
-<!--        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>-->
-<!--        <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
-<!--      </ng-container>-->
-
-<!--    </ng-container>-->
-<!--  </form>-->
-<!--</mat-dialog-content>-->
-<!--<mat-dialog-actions align="end">-->
-<!--  <button mat-button [mat-dialog-close]="undefined">Cancel</button>-->
-<!--  <button mat-raised-button color="primary" [mat-dialog-close]="form.value"-->
-<!--          [disabled]="!form.valid">-->
-<!--    Save-->
-<!--  </button>-->
-<!--</mat-dialog-actions>-->
-

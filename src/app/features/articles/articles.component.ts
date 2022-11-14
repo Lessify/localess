@@ -96,7 +96,7 @@ export class ArticlesComponent implements OnInit {
           this.dataSource = new MatTableDataSource<Article>(articles);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
-          //this.isLoading = false;
+          this.isLoading = false;
           this.cd.markForCheck();
         }
       })
