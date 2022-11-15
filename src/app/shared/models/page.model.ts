@@ -1,12 +1,14 @@
 import {FieldValue, Timestamp} from '@angular/fire/firestore';
 
+export type PageContent = { [key: string]: string }
+
 export interface Page {
   id: string;
   name: string;
   slug: string;
   schematic: string;
 
-  content?: any;
+  content?: PageContent;
 
   createdOn: Timestamp;
   updatedOn: Timestamp;

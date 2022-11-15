@@ -95,7 +95,12 @@
                 <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'displayName')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'displayName'))}}</mat-error>
               </mat-form-field>
               <mat-checkbox formControlName="required">Required</mat-checkbox><br/>
-              <mat-checkbox formControlName="translatable">Translatable</mat-checkbox><br/><br/>
+
+              <ng-container *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN'].includes(components.at(selectedComponentIdx).value.kind)">
+                <mat-checkbox formControlName="translatable">Translatable</mat-checkbox><br/>
+              </ng-container>
+
+              <br/>
               <mat-form-field appearance="outline">
                 <mat-label>Description</mat-label>
                 <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>
@@ -124,7 +129,7 @@
               </ng-container>
 
               <!--Text and Textarea-->
-              <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'TEXT' || components.at(selectedComponentIdx).value.kind === 'TEXTAREA'">
+              <ng-container *ngIf="['TEXT','TEXTAREA'].includes(components.at(selectedComponentIdx).value.kind)">
                 <mat-form-field appearance="outline">
                   <mat-label>Min Length</mat-label>
                   <input matInput type="number" formControlName="minLength" autocomplete="off"/>
