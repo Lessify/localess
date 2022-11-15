@@ -94,7 +94,8 @@
                 <mat-hint align="end">{{components.at(selectedComponentIdx).value.displayName?.length || 0}}/50</mat-hint>
                 <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'displayName')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'displayName'))}}</mat-error>
               </mat-form-field>
-              <mat-checkbox formControlName="required">Required</mat-checkbox>
+              <mat-checkbox formControlName="required">Required</mat-checkbox><br/>
+              <mat-checkbox formControlName="translatable">Translatable</mat-checkbox><br/><br/>
               <mat-form-field appearance="outline">
                 <mat-label>Description</mat-label>
                 <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>

@@ -49,7 +49,7 @@
         <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button (click)="openContentEditDialog(element)" [disabled]="schematicsMap.get(element.schematicId) === undefined" matTooltip="Edit Content">
+        <button mat-icon-button (click)="openContentEditDialog(element)" [disabled]="schematicsMap.get(element.schematic) === undefined" matTooltip="Edit Content">
           <mat-icon>design_services</mat-icon>
         </button>
         <button mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">

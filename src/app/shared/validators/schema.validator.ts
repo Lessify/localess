@@ -38,6 +38,9 @@ export class SchemaValidator {
   public static COMPONENT_REQUIRED: ValidatorFn[] = [
   ];
 
+  public static COMPONENT_TRANSLATABLE: ValidatorFn[] = [
+  ];
+
   public static COMPONENT_DESCRIPTION: ValidatorFn[] = [
     Validators.maxLength(250)
   ];

@@ -34,6 +34,7 @@ export interface SchematicComponentBase {
   kind: SchematicComponentKind;
   displayName?: string;
   required?: boolean;
+  translatable? : boolean;
   description?: string;
   defaultValue?: string;
 }
