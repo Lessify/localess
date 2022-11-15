@@ -20,49 +20,39 @@ import {NotificationService} from '@shared/services/notification.service';
 import {Schematic, SchematicType} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
 import {combineLatest} from 'rxjs';
-import {
-  ConfirmationDialogComponent
-} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {
-  ConfirmationDialogModel
-} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {
-  Article,
-  ArticleCreate,
-  ArticleUpdate
-} from '@shared/models/article.model';
-import {ArticleService} from '@shared/services/article.service';
-import {ArticleAddDialogComponent} from './article-add-dialog/article-add-dialog.component';
-import {ArticleAddDialogModel} from './article-add-dialog/article-add-dialog.model';
-import {
-  ArticleEditDialogComponent
-} from './article-edit-dialog/article-edit-dialog.component';
-import {ArticleEditDialogModel} from './article-edit-dialog/article-edit-dialog.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {Page, PageCreate, PageUpdate} from '@shared/models/page.model';
+import {PageService} from '@shared/services/page.service';
+import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';
+import {PageAddDialogModel} from './page-add-dialog/page-add-dialog.model';
+import {PageEditDialogComponent} from './page-edit-dialog/page-edit-dialog.component';
+import {PageEditDialogModel} from './page-edit-dialog/page-edit-dialog.model';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
 
 @Component({
-  selector: 'll-articles',
-  templateUrl: './articles.component.html',
-  styleUrls: ['./articles.component.scss'],
+  selector: 'll-pages',
+  templateUrl: './pages.component.html',
+  styleUrls: ['./pages.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ArticlesComponent implements OnInit {
+export class PagesComponent implements OnInit {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
   isLoading: boolean = true;
   selectedSpace?: Space;
-  dataSource: MatTableDataSource<Article> = new MatTableDataSource<Article>([]);
+  dataSource: MatTableDataSource<Page> = new MatTableDataSource<Page>([]);
   displayedColumns: string[] = ['id', 'name', 'schematic', 'createdOn', 'updatedOn', 'actions'];
   schematics: Schematic[] = [];
   schematicsMap: Map<string, Schematic> = new Map<string, Schematic>();
-  articles: Article[] = [];
+  articles: Page[] = [];
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly schematicService: SchematicService,
-    private readonly articleService: ArticleService,
+    private readonly articleService: PageService,
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
@@ -93,7 +83,7 @@ export class ArticlesComponent implements OnInit {
           this.schematics = schematics;
           this.schematicsMap = schematics.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schematic>())
           this.articles = articles;
-          this.dataSource = new MatTableDataSource<Article>(articles);
+          this.dataSource = new MatTableDataSource<Page>(articles);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;
@@ -103,8 +93,8 @@ export class ArticlesComponent implements OnInit {
   }
 
   openAddDialog(): void {
-    this.dialog.open<ArticleAddDialogComponent, ArticleAddDialogModel, ArticleCreate>(
-      ArticleAddDialogComponent, {
+    this.dialog.open<PageAddDialogComponent, PageAddDialogModel, PageCreate>(
+      PageAddDialogComponent, {
         width: '500px',
         data: {
           schematics: this.schematics
@@ -119,20 +109,20 @@ export class ArticlesComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Article has been created.');
+          this.notificationService.success('Page has been created.');
         },
         error: () => {
-          this.notificationService.error('Article can not be created.');
+          this.notificationService.error('Page can not be created.');
         }
       });
   }
 
-  openEditDialog(element: Article): void {
-    this.dialog.open<ArticleEditDialogComponent, ArticleEditDialogModel, ArticleUpdate>(
-      ArticleEditDialogComponent, {
+  openEditDialog(element: Page): void {
+    this.dialog.open<PageEditDialogComponent, PageEditDialogModel, PageUpdate>(
+      PageEditDialogComponent, {
         width: '500px',
         data: {
-          article: ObjectUtils.clone(element)
+          page: ObjectUtils.clone(element)
         }
       })
       .afterClosed()
@@ -144,16 +134,16 @@ export class ArticlesComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Article has been updated.');
+          this.notificationService.success('Page has been updated.');
         },
         error: () => {
-          this.notificationService.error('Article can not be updated.');
+          this.notificationService.error('Page can not be updated.');
         }
       });
   }
 
-  openContentEditDialog(element: Article): void {
-    this.router.navigate(['features','articles',element.id]);
+  openContentEditDialog(element: Page): void {
+    this.router.navigate(['features','pages',element.id]);
     // const schematic = this.schematicsMap.get(element.schematicId)
     // if(schematic) {
     //   this.dialog.open<ArticleContentEditComponent, ArticleContentEditModel, any>(
@@ -184,12 +174,12 @@ export class ArticlesComponent implements OnInit {
     // }
   }
 
-  openDeleteDialog(element: Article): void {
+  openDeleteDialog(element: Page): void {
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {
-          title: 'Delete Schematic',
-          content: `Are you sure about deleting Schematic with name '${element.name}'.`
+          title: 'Delete Page',
+          content: `Are you sure about deleting Page with name '${element.name}'.`
         }
       })
       .afterClosed()
@@ -201,10 +191,10 @@ export class ArticlesComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success(`Article '${element.name}' has been deleted.`);
+          this.notificationService.success(`Page '${element.name}' has been deleted.`);
         },
         error: (err) => {
-          this.notificationService.error(`Article '${element.name}' can not be deleted.`);
+          this.notificationService.error(`Page '${element.name}' can not be deleted.`);
         }
       });
   }

@@ -1,6 +1,6 @@
 import {FieldValue, Timestamp} from '@angular/fire/firestore';
 
-export interface Article {
+export interface Page {
   id: string;
   name: string;
   slug: string;
@@ -14,20 +14,20 @@ export interface Article {
 
 // Service
 
-export interface ArticleCreate {
+export interface PageCreate {
   name: string;
   slug: string;
   schematicId: string;
 }
 
-export interface ArticleUpdate {
+export interface PageUpdate {
   name: string;
   slug: string;
 }
 
 // Firestore
 
-export interface ArticleCreateFS {
+export interface PageCreateFS {
   name: string;
   slug: string;
   schematicId: string;
@@ -35,13 +35,13 @@ export interface ArticleCreateFS {
   updatedOn: FieldValue;
 }
 
-export interface ArticleUpdateFS {
+export interface PageUpdateFS {
   name: string;
   slug: string;
   updatedOn: FieldValue;
 }
 
-export interface ArticleContentUpdateFS {
+export interface PageContentUpdateFS {
   content: any;
   updatedOn: FieldValue;
 }

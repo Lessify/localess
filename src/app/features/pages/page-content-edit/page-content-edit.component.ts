@@ -4,8 +4,8 @@ import {Schematic, SchematicComponentKind} from '@shared/models/schematic.model'
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchematicService} from '@shared/services/schematic.service';
-import {ArticleService} from '@shared/services/article.service';
-import {Article} from '@shared/models/article.model';
+import {PageService} from '@shared/services/page.service';
+import {Page} from '@shared/models/page.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../../core/state/core.state';
 import {selectSpace} from '../../../core/state/space/space.selector';
@@ -16,16 +16,16 @@ import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 
 @Component({
-  selector: 'll-article-content-edit',
-  templateUrl: './article-content-edit.component.html',
-  styleUrls: ['./article-content-edit.component.scss'],
+  selector: 'll-page-content-edit',
+  templateUrl: './page-content-edit.component.html',
+  styleUrls: ['./page-content-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ArticleContentEditComponent implements OnInit {
+export class PageContentEditComponent implements OnInit {
 
   selectedSpace?: Space;
-  articleId: string;
-  article?: Article;
+  pageId: string;
+  page?: Page;
   schematic?: Schematic;
   schematics: Schematic[] = []
 
@@ -43,40 +43,40 @@ export class ArticleContentEditComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly spaceService: SpaceService,
     private readonly schematicService: SchematicService,
-    private readonly articleService: ArticleService,
+    private readonly pageService: PageService,
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
     readonly fe: FormErrorHandlerService,
   ) {
-    this.articleId = this.activatedRoute.snapshot.paramMap.get('id') || "";
+    this.pageId = this.activatedRoute.snapshot.paramMap.get('id') || "";
   }
 
   ngOnInit(): void {
-    this.loadData(this.articleId)
+    this.loadData(this.pageId)
   }
 
-  loadData(articleId: string): void {
+  loadData(pageId: string): void {
     this.store.select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it =>
           combineLatest([
             this.spaceService.findById(it.id),
-            this.articleService.findById(it.id, articleId),
+            this.pageService.findById(it.id, pageId),
             this.schematicService.findAll(it.id)
           ])
         )
       )
       .subscribe({
-        next: ([space, article, schematics]) => {
+        next: ([space, page, schematics]) => {
           this.selectedSpace = space;
-          this.article = article;
-          this.schematic = schematics.find(it => it.id === article.schematicId)
+          this.page = page;
+          this.schematic = schematics.find(it => it.id === page.schematicId)
           this.schematics = schematics;
           this.generateForm();
-          if (article.content) {
+          if (page.content) {
             this.form.reset()
-            this.form.patchValue(article.content);
+            this.form.patchValue(page.content);
           }
           this.isLoading = false;
           this.cd.markForCheck();
@@ -139,7 +139,7 @@ export class ArticleContentEditComponent implements OnInit {
 
   save(): void {
     this.isSaveLoading = true;
-    this.articleService.updateContent(this.selectedSpace!.id, this.articleId, this.form.value)
+    this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.form.value)
       .subscribe({
         next: () => {
           this.notificationService.success('Article has been updated.');
@@ -157,6 +157,6 @@ export class ArticleContentEditComponent implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['features', 'articles']);
+    this.router.navigate(['features', 'pages']);
   }
 }
