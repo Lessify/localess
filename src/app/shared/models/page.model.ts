@@ -4,7 +4,7 @@ export interface Page {
   id: string;
   name: string;
   slug: string;
-  schematicId: string;
+  schematic: string;
 
   content?: any;
 
@@ -17,7 +17,7 @@ export interface Page {
 export interface PageCreate {
   name: string;
   slug: string;
-  schematicId: string;
+  schematic: string;
 }
 
 export interface PageUpdate {
@@ -30,7 +30,7 @@ export interface PageUpdate {
 export interface PageCreateFS {
   name: string;
   slug: string;
-  schematicId: string;
+  schematic: string;
   createdOn: FieldValue;
   updatedOn: FieldValue;
 }

@@ -53,7 +53,7 @@ export class PageService {
     let addEntity: PageCreateFS = {
       name: entity.name,
       slug: entity.slug,
-      schematicId: entity.schematicId,
+      schematic: entity.schematic,
       createdOn: serverTimestamp(),
       updatedOn: serverTimestamp()
     }

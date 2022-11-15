@@ -32,7 +32,7 @@
     <ng-container matColumnDef="schematic">
       <mat-header-cell *matHeaderCellDef mat-sort-header="schematic"> Schematic </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{schematicsMap.get(element.schematicId).displayName || schematicsMap.get(element.schematicId).name || 'unknown...'}}
+        {{schematicsMap.get(element.schematic).displayName || schematicsMap.get(element.schematic).name || 'unknown...'}}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdOn">

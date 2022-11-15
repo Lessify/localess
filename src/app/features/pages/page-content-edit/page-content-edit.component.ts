@@ -71,7 +71,7 @@ export class PageContentEditComponent implements OnInit {
         next: ([space, page, schematics]) => {
           this.selectedSpace = space;
           this.page = page;
-          this.schematic = schematics.find(it => it.id === page.schematicId)
+          this.schematic = schematics.find(it => it.id === page.schematic)
           this.schematics = schematics;
           this.generateForm();
           if (page.content) {

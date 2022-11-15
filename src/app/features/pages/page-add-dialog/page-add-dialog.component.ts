@@ -16,7 +16,7 @@ export class PageAddDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({
     name: this.fb.control('', ArticleValidator.NAME),
     slug: this.fb.control('', ArticleValidator.SLUG),
-    schematicId: this.fb.control(undefined, ArticleValidator.SCHEMA)
+    schematic: this.fb.control(undefined, ArticleValidator.SCHEMA)
   });
 
   constructor(
