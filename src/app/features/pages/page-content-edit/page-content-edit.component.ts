@@ -9,11 +9,12 @@ import {Page} from '@shared/models/page.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../../core/state/core.state';
 import {selectSpace} from '../../../core/state/space/space.selector';
-import {filter, switchMap} from 'rxjs/operators';
+import {distinctUntilChanged, filter, switchMap, tap} from 'rxjs/operators';
 import {combineLatest} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
+import {Locale} from '@shared/models/locale.model';
 
 @Component({
   selector: 'll-page-content-edit',
@@ -24,6 +25,8 @@ import {NotificationService} from '@shared/services/notification.service';
 export class PageContentEditComponent implements OnInit {
 
   selectedSpace?: Space;
+  selectedLocale?: Locale;
+  fallbackLocale?: Locale;
   pageId: string;
   page?: Page;
   schematic?: Schematic;
@@ -70,8 +73,10 @@ export class PageContentEditComponent implements OnInit {
       .subscribe({
         next: ([space, page, schematics]) => {
           this.selectedSpace = space;
+          this.selectedLocale = space.localeFallback;
+          this.fallbackLocale = space.localeFallback;
           this.page = page;
-          this.schematic = schematics.find(it => it.id === page.schematic)
+          this.schematic = schematics.find(it => it.id === page.schematic);
           this.schematics = schematics;
           this.generateForm();
           if (page.content) {
@@ -139,7 +144,7 @@ export class PageContentEditComponent implements OnInit {
 
   save(): void {
     this.isSaveLoading = true;
-    this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.form.value)
+    this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.form.value, {})
       .subscribe({
         next: () => {
           this.notificationService.success('Article has been updated.');
@@ -158,5 +163,9 @@ export class PageContentEditComponent implements OnInit {
 
   back(): void {
     this.router.navigate(['features', 'pages']);
+  }
+
+  onLocaleChanged(locale: Locale): void {
+    this.selectedLocale = locale;
   }
 }

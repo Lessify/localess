@@ -5,9 +5,24 @@
     </button>
     {{page?.name}}
     <span class="spacer"></span>
+
+    <button mat-stroked-button
+            [matMenuTriggerFor]="localesMenu"
+            matTooltip="Select a locale">
+      {{selectedLocale?.name}}
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+
+    <mat-menu #localesMenu="matMenu">
+      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="onLocaleChanged(locale)">
+        <span [class.fw-semibold]="locale.id === selectedLocale?.id">{{locale.name}}</span>
+      </button>
+    </mat-menu>
+
     <button
       mat-raised-button
       color="primary"
+      matTooltip="Save the page"
       [disabled]="!form.valid || isSaveLoading"
       (click)="save()">
       <ll-icon [animate]="isSaveLoading" start="save" end="sync"></ll-icon>

@@ -36,7 +36,7 @@
             {{selectedSpace.name}}
             <span class="spacer"></span>
             <mat-icon>arrow_drop_down</mat-icon>
-            <mat-menu #menuSpaces="matMenu">
+            <mat-menu #menuSpaces="matMenu" yPosition="below" xPosition="after">
               <button mat-menu-item *ngFor="let space of spaces" (click)="onSpaceSelection(space)">
                 {{space.name}}
               </button>
