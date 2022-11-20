@@ -26,7 +26,6 @@ export class PageContentEditComponent implements OnInit {
 
   selectedSpace?: Space;
   selectedLocale?: Locale;
-  fallbackLocale?: Locale;
   pageId: string;
   page?: Page;
   schematic?: Schematic;
@@ -74,7 +73,6 @@ export class PageContentEditComponent implements OnInit {
         next: ([space, page, schematics]) => {
           this.selectedSpace = space;
           this.selectedLocale = space.localeFallback;
-          this.fallbackLocale = space.localeFallback;
           this.page = page;
           this.schematic = schematics.find(it => it.id === page.schematic);
           this.schematics = schematics;
