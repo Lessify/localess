@@ -142,7 +142,7 @@ export class PageContentEditComponent implements OnInit {
 
   save(): void {
     this.isSaveLoading = true;
-    this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.form.value, {})
+    this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.form.value)
       .subscribe({
         next: () => {
           this.notificationService.success('Article has been updated.');

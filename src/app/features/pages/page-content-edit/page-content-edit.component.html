@@ -61,6 +61,7 @@
                  [attr.minlength]="component.minLength"
                  [attr.maxlength]="component.maxLength"
                  autocomplete="off"/>
+          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
@@ -75,6 +76,7 @@
                     [attr.minLength]="component.minLength"
                     [attr.maxlength]="component.maxLength"
                     autocomplete="off"></textarea>
+          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
@@ -89,6 +91,7 @@
                  [attr.min]="component.minValue"
                  [attr.max]="component.maxValue"
                  autocomplete="off"/>
+          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
@@ -102,6 +105,7 @@
                  [attr.min]="component.minValue"
                  [attr.max]="component.maxValue"
                  autocomplete="off"/>
+          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
@@ -113,6 +117,7 @@
                  [formControlName]="component.name"
                  [required]="component.required"
                  autocomplete="off"/>
+          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
@@ -124,6 +129,7 @@
                  [formControlName]="component.name"
                  [required]="component.required"
                  autocomplete="off"/>
+          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
         </mat-form-field>
@@ -132,6 +138,8 @@
         <mat-checkbox [formControlName]="component.name">
           {{component.displayName || component.name}}
         </mat-checkbox>
+        &nbsp;
+        <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
         <br/>
         <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
         <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>

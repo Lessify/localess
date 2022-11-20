@@ -17,7 +17,7 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
 import {
-  Page, PageContentLocales, PageContentUpdateFS,
+  Page, PageContentUpdateFS,
   PageCreate,
   PageCreateFS,
   PageUpdate,
@@ -86,12 +86,10 @@ export class PageService {
       );
   }
 
-  updateContent(spaceId: string, id: string, content: any, contentLocales: PageContentLocales): Observable<void> {
+  updateContent(spaceId: string, id: string, content: any): Observable<void> {
     ObjectUtils.clean(content);
-    ObjectUtils.clean(contentLocales);
     const update: UpdateData<PageContentUpdateFS> = {
       content: content,
-      contentLocales: contentLocales,
       updatedOn: serverTimestamp()
     }
 

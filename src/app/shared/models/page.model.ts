@@ -1,7 +1,5 @@
 import {FieldValue, Timestamp} from '@angular/fire/firestore';
 
-export type PageContentLocales = { [key: string]: any }
-
 export interface Page {
   id: string;
   name: string;
@@ -9,7 +7,6 @@ export interface Page {
   schematic: string;
 
   content?: any;
-  contentLocales?: PageContentLocales;
 
   createdOn: Timestamp;
   updatedOn: Timestamp;
@@ -46,6 +43,5 @@ export interface PageUpdateFS {
 
 export interface PageContentUpdateFS {
   content: any;
-  contentLocales?: PageContentLocales;
   updatedOn: FieldValue;
 }
