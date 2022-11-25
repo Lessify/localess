@@ -38,12 +38,13 @@
                          (click)="selectComponent(index)"
                          [class.active]="index === selectedComponentIdx"
                          [class.invalid]="component.invalid">
-            <mat-icon mat-list-icon>{{componentKindDescriptions[component.value.kind].icon}}</mat-icon>
-            <div mat-line>{{component.value.name}}</div>
-            <div mat-line>{{component.value.displayName}}</div>
-            <span class="spacer"></span>
-            <mat-icon>delete</mat-icon>
-            <mat-icon>navigate_next</mat-icon>
+            <mat-icon matListItemIcon>{{componentKindDescriptions[component.value.kind].icon}}</mat-icon>
+            <span matListItemTitle>{{component.value.name}}</span>
+            <span matListItemLine>{{component.value.displayName}}</span>
+            <span matListItemMeta>
+              <mat-icon>delete</mat-icon>
+              <mat-icon>navigate_next</mat-icon>
+            </span>
           </mat-list-item>
         </mat-nav-list>
 
@@ -94,13 +95,13 @@
                 <mat-hint align="end">{{components.at(selectedComponentIdx).value.displayName?.length || 0}}/50</mat-hint>
                 <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'displayName')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'displayName'))}}</mat-error>
               </mat-form-field>
-              <mat-checkbox formControlName="required">Required</mat-checkbox><br/>
+
+              <mat-checkbox formControlName="required">Required</mat-checkbox>
 
               <ng-container *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN'].includes(components.at(selectedComponentIdx).value.kind)">
-                <mat-checkbox formControlName="translatable">Translatable</mat-checkbox><br/>
+                <mat-checkbox formControlName="translatable">Translatable</mat-checkbox>
               </ng-container>
 
-              <br/>
               <mat-form-field appearance="outline">
                 <mat-label>Description</mat-label>
                 <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>

@@ -7,19 +7,29 @@ mat-form-field {
 }
 
 /* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
-:host ::ng-deep div.mat-form-field-suffix {
-  margin-bottom: auto;
-  margin-top: auto;
+:host ::ng-deep div.mat-mdc-form-field-icon-suffix {
+  margin-right: 10px;
 }
 
 .mat-mdc-list-item {
   border: solid 1px #dfe3e8;
   border-radius: 5px;
   margin-bottom: 10px;
+
   &.active {
     background: rgba(0, 0, 0, 0.04);
   }
+
   &.invalid{
     border: solid 2px mat.get-color-from-palette($error-colors);
+  }
+
+  .mat-mdc-list-item-icon {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+  .mat-mdc-list-item-meta {
+    margin-top: auto;
+    margin-bottom: auto;
   }
 }

@@ -34,7 +34,7 @@ mat-form-field {
 }
 
 mat-form-field.with-button {
-  width: calc(100% - 40px);
+  width: calc(100% - 50px);
 
   input {
     width: 100%;
@@ -56,7 +56,6 @@ mat-form-field.with-button {
 //}
 
 
-/*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
 mat-list-item.selected {
   background: rgba(0, 0, 0, 0.04);
 }
@@ -66,14 +65,20 @@ mat-list-item.odd {
   background: rgba(127, 127, 127, 0.3);
 }
 
-:host ::ng-deep .mat-mdc-list-item {
-  height: auto !important;
-  /*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
-  /*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
-  .mat-list-item-content {
-    padding: 0 !important;
+:host ::ng-deep .cdk-virtual-scroll-content-wrapper {
+  max-width: 100%;
+
+  .mat-mdc-list-base {
+    padding: 0;
+  }
+
+  .mat-mdc-list-item {
+    height: auto;
 
     .mat-icon {
+      margin-left: 10px;
+      margin-right: 10px;
+
       &.translated {
         color: mat.get-color-from-palette(mat.$green-palette, 400);
       }
@@ -87,16 +92,38 @@ mat-list-item.odd {
       }
     }
 
-
-    .mat-line {
+    .mdc-list-item__content {
+      padding: 0 !important;
       white-space: inherit !important;
       word-wrap: break-word !important;
       word-break: break-word !important;
+
+      .mat-mdc-list-item-title {
+        white-space: inherit !important;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+      }
+
+      .mat-mdc-list-item-line {
+        white-space: inherit !important;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+      }
     }
-    /*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
-    .mat-list-text {
-      padding-left: 5px !important;
+
+    .mat-list-item-content {
+      padding: 0 !important;
+
+      .mat-line {
+        white-space: inherit !important;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+      }
+
+      /*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
+      .mat-list-text {
+        padding-left: 5px !important;
+      }
     }
   }
 }
-
