@@ -33,7 +33,7 @@
     "@ngrx/router-store": "^14.2.0",
     "@ngrx/store": "^14.2.0",
     "@ngrx/store-devtools": "^14.2.0",
-    "bootstrap": "^5.2.2",
+    "bootstrap": "^5.2.3",
     "browser-detect": "^0.2.28",
     "file-saver-es": "^2.0.5",
     "firebase": "~9.12.1",
