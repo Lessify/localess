@@ -6,7 +6,7 @@ import {
   OnInit,
   Optional
 } from '@angular/core';
-import {MatSelectChange} from '@angular/material/select';
+import {MatLegacySelectChange as MatSelectChange} from '@angular/material/legacy-select';
 import {select, Store} from '@ngrx/store';
 import {combineLatest, from, Observable} from 'rxjs';
 

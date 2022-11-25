@@ -1,12 +1,12 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {MatTableDataSource} from '@angular/material/table';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyTableDataSource as MatTableDataSource} from '@angular/material/legacy-table';
+import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
 import {filter, switchMap} from 'rxjs/operators';
 import {LocaleDialogComponent} from './locale-dialog/locale-dialog.component';
 import {LocaleDialogModel} from './locale-dialog/locale-dialog.model';
 import {MatSort} from '@angular/material/sort';
-import {MatPaginator} from '@angular/material/paginator';
+import {MatLegacyPaginator as MatPaginator} from '@angular/material/legacy-paginator';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../core/state/core.state';
 import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';

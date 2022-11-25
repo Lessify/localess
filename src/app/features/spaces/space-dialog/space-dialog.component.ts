@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA} from '@angular/material/legacy-dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {SpaceDialogModel} from './space-dialog.model';
 import {SpaceValidator} from '@shared/validators/space.validator';

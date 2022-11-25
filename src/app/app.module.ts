@@ -22,8 +22,8 @@ import {
 } from '@angular/fire/firestore';
 import {connectStorageEmulator, getStorage, provideStorage} from '@angular/fire/storage';
 import {CoreModule} from './core/core.module';
-import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
-import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
+import {MAT_LEGACY_PAGINATOR_DEFAULT_OPTIONS as MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/legacy-paginator';
+import {MAT_LEGACY_CHIPS_DEFAULT_OPTIONS as MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/legacy-chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {getFunctions, provideFunctions} from '@angular/fire/functions';
 import {getPerformance, providePerformance} from '@angular/fire/performance';

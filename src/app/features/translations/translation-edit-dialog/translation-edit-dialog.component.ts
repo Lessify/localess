@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
-import {MatChipInputEvent} from '@angular/material/chips';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
+import {MatLegacyChipInputEvent as MatChipInputEvent} from '@angular/material/legacy-chips';
+import {MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA} from '@angular/material/legacy-dialog';
 import {TranslationValidator} from '@shared/validators/translation.validator';
 import {Translation} from '@shared/models/translation.model';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';

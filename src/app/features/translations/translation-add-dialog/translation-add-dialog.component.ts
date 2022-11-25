@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
-import {MatChipInputEvent} from '@angular/material/chips';
+import {MatLegacyChipInputEvent as MatChipInputEvent} from '@angular/material/legacy-chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {TranslationValidator} from '@shared/validators/translation.validator';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
