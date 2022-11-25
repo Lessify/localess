@@ -1,93 +1,57 @@
 <h1 mat-dialog-title>Add Translation</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Name</mat-label>
-            <input matInput type="text" #name formControlName="name" required autocomplete="off"/>
-            <mat-hint align="end">{{name.value?.length || 0}}/150</mat-hint>
-            <mat-error *ngIf="form.controls['name'].errors">{{fe.controlError(form.controls['name'])}}</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div *ngIf="false" class="row" >
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Type</mat-label>
-            <mat-select formControlName="type" required>
-              <mat-option *ngFor="let type of translationTypes" [value]="type">
-                {{type}}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="form.controls['type'].errors">{{fe.controlError(form.controls['type'])}}</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Description</mat-label>
-            <textarea matInput #description
-                      class="cdk-textarea-autosize"
-                      formControlName="description"></textarea>
-            <mat-hint align="end">{{description.value?.length || 0}}/250</mat-hint>
-            <mat-error *ngIf="form.controls['description'].errors">{{fe.controlError(form.controls['description'])}}</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Value</mat-label>
-            <textarea matInput #defaultValue
-                      class="cdk-textarea-autosize"
-                      formControlName="value"></textarea>
-            <mat-hint align="end">{{defaultValue.value?.length || 0}}/500</mat-hint>
-            <mat-error *ngIf="form.controls['value'].errors">{{fe.controlError(form.controls['value'])}}</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput type="text" #name formControlName="name" required autocomplete="off"/>
+      <mat-hint align="end">{{name.value?.length || 0}}/150</mat-hint>
+      <mat-error *ngIf="form.controls['name'].errors">{{fe.controlError(form.controls['name'])}}</mat-error>
+    </mat-form-field>
+    <mat-form-field *ngIf="false" appearance="outline">
+      <mat-label>Type</mat-label>
+      <mat-select formControlName="type" required>
+        <mat-option *ngFor="let type of translationTypes" [value]="type">
+          {{type}}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.controls['type'].errors">{{fe.controlError(form.controls['type'])}}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Description</mat-label>
+      <textarea matInput #description
+                class="cdk-textarea-autosize"
+                formControlName="description"></textarea>
+      <mat-hint align="end">{{description.value?.length || 0}}/250</mat-hint>
+      <mat-error *ngIf="form.controls['description'].errors">{{fe.controlError(form.controls['description'])}}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Value</mat-label>
+      <textarea matInput #defaultValue
+                class="cdk-textarea-autosize"
+                formControlName="value"></textarea>
+      <mat-hint align="end">{{defaultValue.value?.length || 0}}/500</mat-hint>
+      <mat-error *ngIf="form.controls['value'].errors">{{fe.controlError(form.controls['value'])}}</mat-error>
+    </mat-form-field>
 
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline" >
-            <mat-chip-list #chipList aria-label="Label Selection">
-              <mat-chip
-                *ngFor="let label of form.controls['labels'].value"
-                selectable
-                removable
-                (removed)="removeLabel(label)">
-                {{label}}
-                <mat-icon matChipRemove>cancel</mat-icon>
-              </mat-chip>
-              <input matInput placeholder="Add Label..."
-                     [matChipInputFor]="chipList"
-                     [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                     matChipInputAddOnBlur
-                     (matChipInputTokenEnd)="addLabel($event)">
-            </mat-chip-list>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
+    <mat-form-field appearance="outline" >
+      <mat-chip-grid #chipList aria-label="Label Selection">
+        <mat-chip-row
+          *ngFor="let label of form.controls['labels'].value"
+          selectable
+          removable
+          (removed)="removeLabel(label)">
+          {{label}}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip-row>
+        <input matInput placeholder="Add Label..."
+               [matChipInputFor]="chipList"
+               [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+               matChipInputAddOnBlur
+               (matChipInputTokenEnd)="addLabel($event)">
+      </mat-chip-grid>
+    </mat-form-field>
 
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-checkbox formControlName="autoTranslate">Translate other locales with Google Translate ?</mat-checkbox>
-        </div>
-      </div>
-    </div>
+    <mat-checkbox formControlName="autoTranslate">Translate other locales with Google Translate ?</mat-checkbox>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

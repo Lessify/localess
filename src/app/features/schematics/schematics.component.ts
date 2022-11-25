@@ -6,11 +6,11 @@ import {
   ViewChild
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {MatLegacyTableDataSource as MatTableDataSource} from '@angular/material/legacy-table';
-import {MatLegacyDialog as MatDialog} from '@angular/material/legacy-dialog';
+import {MatTableDataSource} from '@angular/material/table';
+import {MatDialog} from '@angular/material/dialog';
 import {filter, switchMap} from 'rxjs/operators';
 import {MatSort} from '@angular/material/sort';
-import {MatLegacyPaginator as MatPaginator} from '@angular/material/legacy-paginator';
+import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../core/state/core.state';
 import {SpaceService} from '@shared/services/space.service';

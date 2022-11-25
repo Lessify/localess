@@ -6,12 +6,13 @@ mat-form-field {
   width: 100%;
 }
 
+/* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
 :host ::ng-deep div.mat-form-field-suffix {
   margin-bottom: auto;
   margin-top: auto;
 }
 
-.mat-list-item {
+.mat-mdc-list-item {
   border: solid 1px #dfe3e8;
   border-radius: 5px;
   margin-bottom: 10px;

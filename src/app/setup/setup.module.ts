@@ -3,10 +3,10 @@ import {CommonModule} from '@angular/common';
 
 import {SetupRoutingModule} from './setup-routing.module';
 import {SetupComponent} from './setup.component';
-import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
-import {MatLegacyFormFieldModule as MatFormFieldModule} from '@angular/material/legacy-form-field';
+import {MatButtonModule} from '@angular/material/button';
+import {MatFormFieldModule} from '@angular/material/form-field';
 import {ReactiveFormsModule} from '@angular/forms';
-import {MatLegacyInputModule as MatInputModule} from '@angular/material/legacy-input';
+import {MatInputModule} from '@angular/material/input';
 import {SetupService} from './setup.service';
 
 @NgModule({

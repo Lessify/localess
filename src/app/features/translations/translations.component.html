@@ -74,15 +74,15 @@
     </div>
     <div class="p-2" style="width: 50%">
       <mat-form-field appearance="outline">
-        <mat-chip-list #chipList>
-          <mat-chip
+        <mat-chip-grid #chipList>
+          <mat-chip-row
             *ngFor="let selectedLabel of selectedLabels"
             selectable
             removable
             (removed)="removeLabel(selectedLabel)">
             {{selectedLabel}}
             <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip>
+          </mat-chip-row>
           <input
             matInput
             #labelsInput
@@ -91,7 +91,7 @@
             [matAutocomplete]="auto"
             [matChipInputFor]="chipList"
           />
-        </mat-chip-list>
+        </mat-chip-grid>
         <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectLabel($event)">
           <mat-option *ngFor="let label of filteredLabels | async" [value]="label">
             {{label}}
@@ -279,9 +279,9 @@
         <div class="p-2 align-items-start">
           <p><small><strong>Labels</strong></small></p>
           <ng-container *ngIf="selectedTranslation?.labels?.length > 0 ; else elseLabelsContainer">
-            <mat-chip-list>
-              <mat-chip *ngFor="let item of selectedTranslation?.labels">{{item}}</mat-chip>
-            </mat-chip-list>
+            <mat-chip-listbox>
+              <mat-chip-option *ngFor="let item of selectedTranslation?.labels">{{item}}</mat-chip-option>
+            </mat-chip-listbox>
           </ng-container>
           <ng-template #elseLabelsContainer>
             <p><small><em>No label available.</em></small></p>

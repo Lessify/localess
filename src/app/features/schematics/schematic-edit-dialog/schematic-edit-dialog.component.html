@@ -49,7 +49,7 @@
 
       </div>
       <div class="col-6" formArrayName="components" *ngIf="selectedComponentIdx !== undefined">
-        <mat-card>
+        <mat-card appearance="outlined">
             <ng-container [formGroupName]="selectedComponentIdx">
               <mat-form-field appearance="outline">
                 <mat-label>Name</mat-label>

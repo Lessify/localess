@@ -1,52 +1,28 @@
 <h1 mat-dialog-title>User Invite</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Email</mat-label>
-            <input matInput type="email" formControlName="email" required autocomplete="off"/>
-            <mat-error *ngIf="form.controls['email'].errors">{{fe.controlError(form.controls['email'])}}</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Password</mat-label>
-            <input matInput type="password" formControlName="password" required autocomplete="off"/>
-            <mat-error *ngIf="form.controls['password'].errors">{{fe.controlError(form.controls['password'])}}</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Display Name</mat-label>
-            <input matInput type="text" formControlName="displayName" autocomplete="off"/>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Role</mat-label>
-            <mat-select formControlName="role" required>
-              <mat-option *ngFor="let role of roles" [value]="role">
-                {{role | uppercase}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" required autocomplete="off"/>
+      <mat-error *ngIf="form.controls['email'].errors">{{fe.controlError(form.controls['email'])}}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Password</mat-label>
+      <input matInput type="password" formControlName="password" required autocomplete="off"/>
+      <mat-error *ngIf="form.controls['password'].errors">{{fe.controlError(form.controls['password'])}}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Display Name</mat-label>
+      <input matInput type="text" formControlName="displayName" autocomplete="off"/>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Role</mat-label>
+      <mat-select formControlName="role" required>
+        <mat-option *ngFor="let role of roles" [value]="role">
+          {{role | uppercase}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

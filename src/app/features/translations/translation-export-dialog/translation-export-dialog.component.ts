@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {TranslationExportDialogModel} from './translation-export-dialog.model';
 import {KeyValue} from '@angular/common';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';

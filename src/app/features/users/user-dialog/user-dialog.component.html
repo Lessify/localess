@@ -1,21 +1,15 @@
 <h1 mat-dialog-title>User</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="outline">
-            <mat-label>Role</mat-label>
-            <mat-select formControlName="role" required>
-              <mat-option *ngFor="let role of roles" [value]="role">
-                {{role | uppercase}}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="form.controls['role'].errors">{{fe.controlError(form.controls['role'])}}</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
+    <mat-form-field appearance="outline">
+      <mat-label>Role</mat-label>
+      <mat-select formControlName="role" required>
+        <mat-option *ngFor="let role of roles" [value]="role">
+          {{role | uppercase}}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.controls['role'].errors">{{fe.controlError(form.controls['role'])}}</mat-error>
+    </mat-form-field>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

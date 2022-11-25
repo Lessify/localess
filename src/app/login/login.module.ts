@@ -3,11 +3,11 @@ import {CommonModule} from '@angular/common';
 
 import {LoginRoutingModule} from './login-routing.module';
 import {LoginComponent} from './login.component';
-import {MatLegacyButtonModule as MatButtonModule} from '@angular/material/legacy-button';
+import {MatButtonModule} from '@angular/material/button';
 import {MatDividerModule} from '@angular/material/divider';
-import {MatLegacyFormFieldModule as MatFormFieldModule} from '@angular/material/legacy-form-field';
+import {MatFormFieldModule} from '@angular/material/form-field';
 import {ReactiveFormsModule} from '@angular/forms';
-import {MatLegacyInputModule as MatInputModule} from '@angular/material/legacy-input';
+import {MatInputModule} from '@angular/material/input';
 
 @NgModule({
   declarations: [LoginComponent],

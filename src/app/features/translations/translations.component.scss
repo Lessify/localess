@@ -1,6 +1,6 @@
 @use '@angular/material' as mat;
 
-mat-toolbar-row .mat-button-base {
+mat-toolbar-row .mat-mdc-button-base {
   margin: 8px 0 8px 8px;
 }
 
@@ -56,17 +56,20 @@ mat-form-field.with-button {
 //}
 
 
+/*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
 mat-list-item.selected {
   background: rgba(0, 0, 0, 0.04);
 }
 
+/*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
 mat-list-item.odd {
   background: rgba(127, 127, 127, 0.3);
 }
 
-:host ::ng-deep .mat-list-item {
+:host ::ng-deep .mat-mdc-list-item {
   height: auto !important;
-
+  /*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
+  /*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
   .mat-list-item-content {
     padding: 0 !important;
 
@@ -90,7 +93,7 @@ mat-list-item.odd {
       word-wrap: break-word !important;
       word-break: break-word !important;
     }
-
+    /*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
     .mat-list-text {
       padding-left: 5px !important;
     }
