@@ -230,4 +230,10 @@ export class SchematicEditDialogComponent implements OnInit {
     }
     //this.cd.markForCheck();
   }
+
+  delete(event: any): void {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    console.log(event)
+  }
 }

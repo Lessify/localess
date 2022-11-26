@@ -31,22 +31,32 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   white-space: pre-line;
 }
 
-.error-notification-overlay {
-  color: mat.get-color-from-palette($error-colors, default-contrast);
-  background-color: mat.get-color-from-palette($error-colors);
+// Notifications
+mat-snack-bar-container.error-notification-overlay {
+  .mdc-snackbar__surface {
+    color: mat.get-color-from-palette($error-colors, default-contrast);
+    background-color: mat.get-color-from-palette($error-colors, 700);
+  }
 }
 
-.info-notification-overlay {
-  color: mat.get-color-from-palette($info-colors, default-contrast);
-  background-color: mat.get-color-from-palette($info-colors);
+mat-snack-bar-container.info-notification-overlay {
+  .mdc-snackbar__surface {
+    color: mat.get-color-from-palette($info-colors, default-contrast);
+    background-color: mat.get-color-from-palette($info-colors, 700);
+  }
 }
 
-.success-notification-overlay {
-  color: mat.get-color-from-palette($success-colors, default-contrast);
-  background-color: mat.get-color-from-palette($success-colors);
+mat-snack-bar-container.success-notification-overlay {
+  .mdc-snackbar__surface {
+    color: mat.get-color-from-palette($success-colors, default-contrast);
+    background-color: mat.get-color-from-palette($success-colors, 700);
+  }
+
 }
 
-.warning-notification-overlay {
-  color: mat.get-color-from-palette($warning-colors, default-contrast);
-  background-color: mat.get-color-from-palette($warning-colors);
+mat-snack-bar-container.warning-notification-overlay {
+  .mdc-snackbar__surface {
+    color: mat.get-color-from-palette($warning-colors, default-contrast);
+    background-color: mat.get-color-from-palette($warning-colors, 700);
+  }
 }

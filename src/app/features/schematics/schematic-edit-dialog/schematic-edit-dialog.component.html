@@ -42,7 +42,9 @@
             <span matListItemTitle>{{component.value.name}}</span>
             <span matListItemLine>{{component.value.displayName}}</span>
             <span matListItemMeta>
-              <mat-icon>delete</mat-icon>
+              <button mat-icon-button (click)="delete($event)">
+                <mat-icon>delete</mat-icon>
+              </button>
               <mat-icon>navigate_next</mat-icon>
             </span>
           </mat-list-item>
