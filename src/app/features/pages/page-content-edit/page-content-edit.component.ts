@@ -1,6 +1,10 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {Schematic, SchematicComponentKind} from '@shared/models/schematic.model';
+import {
+  Schematic,
+  SchematicComponent,
+  SchematicComponentKind
+} from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchematicService} from '@shared/services/schematic.service';
@@ -9,12 +13,20 @@ import {Page} from '@shared/models/page.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../../core/state/core.state';
 import {selectSpace} from '../../../core/state/space/space.selector';
-import {distinctUntilChanged, filter, switchMap, tap} from 'rxjs/operators';
-import {combineLatest} from 'rxjs';
+import {
+  debounce,
+  distinctUntilChanged,
+  distinctUntilKeyChanged,
+  filter,
+  switchMap,
+  tap
+} from 'rxjs/operators';
+import {combineLatest, debounceTime} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {Locale} from '@shared/models/locale.model';
+import {ObjectUtils} from '../../../core/utils/object-utils.service';
 
 @Component({
   selector: 'll-page-content-edit',
@@ -28,7 +40,9 @@ export class PageContentEditComponent implements OnInit {
   selectedLocale?: Locale;
   pageId: string;
   page?: Page;
+  content?: any;
   schematic?: Schematic;
+  schematicComponentsMap?: Map<string, SchematicComponent>;
   schematics: Schematic[] = []
 
   //Loadings
@@ -55,6 +69,16 @@ export class PageContentEditComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData(this.pageId)
+    this.form.valueChanges
+      .pipe(
+        debounceTime(500)
+      )
+      .subscribe({
+        next: (value) => {
+          Object.getOwnPropertyNames(value)
+          console.log(value)
+        }
+      })
   }
 
   loadData(pageId: string): void {
@@ -72,14 +96,16 @@ export class PageContentEditComponent implements OnInit {
       .subscribe({
         next: ([space, page, schematics]) => {
           this.selectedSpace = space;
-          this.selectedLocale = space.localeFallback;
+          //this.selectedLocale = space.localeFallback;
           this.page = page;
+          this.content = ObjectUtils.clone(page.content);
           this.schematic = schematics.find(it => it.id === page.schematic);
           this.schematics = schematics;
+          this.schematicComponentsMap = new Map<string, SchematicComponent>(this.schematic?.components?.map(it => [it.name, it]));
           this.generateForm();
-          if (page.content) {
+          if (this.content) {
             this.form.reset()
-            this.form.patchValue(page.content);
+            this.form.patchValue(this.content);
           }
           this.isLoading = false;
           this.cd.markForCheck();
@@ -138,10 +164,17 @@ export class PageContentEditComponent implements OnInit {
   publish(): void {
     this.isPublishLoading = true;
 
+    setTimeout(() => {
+      this.isPublishLoading = false
+      this.cd.markForCheck()
+    }, 1000)
   }
 
   save(): void {
     this.isSaveLoading = true;
+
+
+
     this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.form.value)
       .subscribe({
         next: () => {
@@ -163,7 +196,7 @@ export class PageContentEditComponent implements OnInit {
     this.router.navigate(['features', 'pages']);
   }
 
-  onLocaleChanged(locale: Locale): void {
+  onLocaleChanged(locale?: Locale): void {
     this.selectedLocale = locale;
   }
 }

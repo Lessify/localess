@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {debounce} from 'rxjs/operators';
-import {interval} from 'rxjs';
+import {debounceTime, interval} from 'rxjs';
 import {TranslationValidator} from '@shared/validators/translation.validator';
 
 @Component({
@@ -31,7 +31,9 @@ export class TranslationArrayEditComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.form.valueChanges
-      .pipe(debounce(() => interval(200)))
+      .pipe(
+        debounceTime(200)
+      )
       .subscribe(val => {
         this.valueChange.emit(
           JSON.stringify(

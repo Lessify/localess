@@ -5,6 +5,8 @@ export enum SchematicType {
   NODE = 'NODE'
 }
 
+export type SchematicComponents = {[key: string]: SchematicComponent};
+
 export interface Schematic {
   id: string;
   name: string;

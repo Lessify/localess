@@ -3,17 +3,20 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    {{page?.name}}
+    <span>{{page?.name}}</span>
     <span class="spacer"></span>
 
-    <button mat-stroked-button
-            [matMenuTriggerFor]="localesMenu"
-            matTooltip="Select a locale">
-      {{selectedLocale?.name}}
+    <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
+      {{selectedLocale?.name || "Default"}}
       <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
     </button>
 
     <mat-menu #localesMenu="matMenu">
+      <button mat-menu-item (click)="onLocaleChanged(undefined)">
+        <span [class.fw-semibold]="undefined === selectedLocale">
+          Default
+        </span>
+      </button>
       <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="onLocaleChanged(locale)">
         <span [class.fw-semibold]="locale.id === selectedLocale?.id">
           {{locale.name}}
@@ -22,20 +25,14 @@
       </button>
     </mat-menu>
 
-    <button
-      mat-raised-button
-      color="primary"
-      matTooltip="Save the page"
+    <button mat-raised-button color="primary" matTooltip="Save the page"
       [disabled]="!form.valid || isSaveLoading"
       (click)="save()">
       <ll-icon [animate]="isSaveLoading" start="save" end="sync"></ll-icon>
       Save
     </button>
 
-    <button
-      mat-raised-button
-      color="accent"
-      matTooltip="Publish to be available via API call"
+    <button mat-raised-button color="accent" matTooltip="Publish to be available via API call"
       [disabled]="!form.valid || isPublishLoading"
       (click)="publish()">
       <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
@@ -148,6 +145,7 @@
     </ng-container>
   </form>
   </ng-container>
-  {{form.value | json}}
+  {{form.value | json}} <br/>
+  {{content | json}}
 
 </div>
