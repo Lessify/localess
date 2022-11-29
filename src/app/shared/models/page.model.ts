@@ -1,8 +1,7 @@
 import {FieldValue, Timestamp} from '@angular/fire/firestore';
 
-export interface PageContent {
-  id: string;
-  [key: string]: any
+export interface PageContent extends Record<string, any>{
+  //id: string;
 }
 
 export interface Page {

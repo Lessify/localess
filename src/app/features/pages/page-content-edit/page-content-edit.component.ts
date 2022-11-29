@@ -9,18 +9,11 @@ import {FormErrorHandlerService} from '../../../core/error-handler/form-error-ha
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchematicService} from '@shared/services/schematic.service';
 import {PageService} from '@shared/services/page.service';
-import {Page} from '@shared/models/page.model';
+import {Page, PageContent} from '@shared/models/page.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../../core/state/core.state';
 import {selectSpace} from '../../../core/state/space/space.selector';
-import {
-  debounce,
-  distinctUntilChanged,
-  distinctUntilKeyChanged,
-  filter,
-  switchMap,
-  tap
-} from 'rxjs/operators';
+import {filter, switchMap} from 'rxjs/operators';
 import {combineLatest, debounceTime} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
@@ -40,7 +33,7 @@ export class PageContentEditComponent implements OnInit {
   selectedLocale?: Locale;
   pageId: string;
   page?: Page;
-  content?: any;
+  content: PageContent = {};
   schematic?: Schematic;
   schematicComponentsMap?: Map<string, SchematicComponent>;
   schematics: Schematic[] = []
@@ -49,6 +42,7 @@ export class PageContentEditComponent implements OnInit {
   isLoading: boolean = true;
   isPublishLoading: boolean = false;
   isSaveLoading: boolean = false;
+  isFormLoading: boolean = false;
 
   form: FormRecord = this.fb.record({});
 
@@ -74,10 +68,24 @@ export class PageContentEditComponent implements OnInit {
         debounceTime(500)
       )
       .subscribe({
-        next: (value) => {
-          Object.getOwnPropertyNames(value)
-          console.log(value)
-        }
+        next: (formValue) => {
+          console.log(Object.getOwnPropertyNames(formValue))
+          console.log(formValue)
+          console.log(this.schematicComponentsMap)
+
+          for (const key of Object.getOwnPropertyNames(formValue)) {
+            const value = formValue[key]
+            if(value !== null) {
+              if (this.selectedLocale) {
+                this.content[`${key}_i18n_${this.selectedLocale.id}`] = value
+              } else {
+                this.content[key] = value
+              }
+            }
+          }
+        },
+        error: (err) => console.log(err),
+        complete: () => console.log('completed')
       })
   }
 
@@ -128,7 +136,8 @@ export class PageContentEditComponent implements OnInit {
           if (component.maxLength) {
             validators.push(Validators.maxLength(component.maxLength))
           }
-          this.form.addControl(component.name, this.fb.control<string | undefined>(component.defaultValue, validators))
+          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
+          this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
           break;
         }
         case SchematicComponentKind.NUMBER: {
@@ -138,23 +147,28 @@ export class PageContentEditComponent implements OnInit {
           if (component.maxValue) {
             validators.push(Validators.max(component.maxValue))
           }
-          this.form.addControl(component.name, this.fb.control<number | undefined>(component.defaultValue ? Number.parseInt(component.defaultValue) : undefined, validators))
+          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
+          this.form.setControl(component.name, this.fb.control<number | undefined>({ value: component.defaultValue ? Number.parseInt(component.defaultValue) : undefined, disabled: disabled}, validators))
           break;
         }
         case SchematicComponentKind.COLOR: {
-          this.form.addControl(component.name, this.fb.control<string | undefined>(component.defaultValue, validators))
+          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
+          this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
           break;
         }
         case SchematicComponentKind.BOOLEAN: {
-          this.form.addControl(component.name, this.fb.control<boolean | undefined>(component.defaultValue === 'true', validators))
+          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
+          this.form.setControl(component.name, this.fb.control<boolean | undefined>({ value: component.defaultValue === 'true', disabled: disabled}, validators))
           break;
         }
         case SchematicComponentKind.DATE: {
-          this.form.addControl(component.name, this.fb.control<string | undefined>(component.defaultValue, validators))
+          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
+          this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
           break;
         }
         case SchematicComponentKind.DATETIME: {
-          this.form.addControl(component.name, this.fb.control<string | undefined>(component.defaultValue, validators))
+          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
+          this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
           break;
         }
       }
@@ -172,7 +186,6 @@ export class PageContentEditComponent implements OnInit {
 
   save(): void {
     this.isSaveLoading = true;
-
 
 
     this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.form.value)
@@ -198,5 +211,11 @@ export class PageContentEditComponent implements OnInit {
 
   onLocaleChanged(locale?: Locale): void {
     this.selectedLocale = locale;
+    //this.form = this.fb.record({});
+    this.isFormLoading = true;
+    this.cd.detectChanges();
+    this.generateForm();
+    this.isFormLoading = false;
+    this.cd.markForCheck();
   }
 }

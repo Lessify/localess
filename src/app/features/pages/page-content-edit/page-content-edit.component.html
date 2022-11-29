@@ -47,7 +47,7 @@
 <div *ngIf="!isLoading" class="container-fluid mt-3">
   <ng-container *ngIf="schematic">
 
-  <form [formGroup]="form" class="step-container">
+  <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">
     <ng-container *ngFor="let component of schematic.components" [ngSwitch]="component.kind">
       <ng-container *ngSwitchCase="'TEXT'">
         <mat-form-field appearance="outline">
