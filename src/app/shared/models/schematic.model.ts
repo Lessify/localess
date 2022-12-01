@@ -38,43 +38,40 @@ export interface SchematicComponentBase {
   required?: boolean;
   description?: string;
   defaultValue?: string;
-}
-
-export interface SchematicComponentTranslatable extends SchematicComponentBase{
   translatable? : boolean;
 }
 
-export interface SchematicComponentText extends SchematicComponentTranslatable {
+export interface SchematicComponentText extends SchematicComponentBase {
   kind: SchematicComponentKind.TEXT;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface SchematicComponentTextarea extends SchematicComponentTranslatable {
+export interface SchematicComponentTextarea extends SchematicComponentBase {
   kind: SchematicComponentKind.TEXTAREA;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface SchematicComponentNumber extends SchematicComponentTranslatable {
+export interface SchematicComponentNumber extends SchematicComponentBase {
   kind: SchematicComponentKind.NUMBER;
   minValue?: number;
   maxValue?: number;
 }
 
-export interface SchematicComponentColor extends SchematicComponentTranslatable {
+export interface SchematicComponentColor extends SchematicComponentBase {
   kind: SchematicComponentKind.COLOR;
 }
 
-export interface SchematicComponentDate extends SchematicComponentTranslatable {
+export interface SchematicComponentDate extends SchematicComponentBase {
   kind: SchematicComponentKind.DATE;
 }
 
-export interface SchematicComponentDateTime extends SchematicComponentTranslatable {
+export interface SchematicComponentDateTime extends SchematicComponentBase {
   kind: SchematicComponentKind.DATETIME;
 }
 
-export interface SchematicComponentBoolean extends SchematicComponentTranslatable {
+export interface SchematicComponentBoolean extends SchematicComponentBase {
   kind: SchematicComponentKind.BOOLEAN;
 }
 

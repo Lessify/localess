@@ -20,7 +20,7 @@ import {Store} from '@ngrx/store';
 import {AppState} from '../../../core/state/core.state';
 import {selectSpace} from '../../../core/state/space/space.selector';
 import {filter, switchMap, takeUntil} from 'rxjs/operators';
-import {combineLatest, debounceTime, Subject, Subscription} from 'rxjs';
+import {combineLatest, debounceTime, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
@@ -40,7 +40,7 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   selectedLocale?: Locale;
   pageId: string;
   page?: Page;
-  content: PageContentComponent = {_id: '', schematic: '' };
+  content: PageContentComponent = {_id: '', schematic: ''};
   schematic?: Schematic;
   schematicComponentsMap?: Map<string, SchematicComponent>;
   schematics: Schematic[] = []
@@ -89,8 +89,9 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
 
           for (const key of Object.getOwnPropertyNames(formValue)) {
             const value = formValue[key]
+            const schematic = this.schematicComponentsMap?.get(key)
             if (value !== null) {
-              if (this.selectedLocale) {
+              if (schematic?.translatable && this.selectedLocale) {
                 this.content[`${key}_i18n_${this.selectedLocale.id}`] = value
               } else {
                 this.content[key] = value
@@ -122,9 +123,13 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
       .subscribe({
         next: ([space, page, schematics]) => {
           this.selectedSpace = space;
+          this.selectedLocale = space.localeFallback;
           this.page = page;
           this.schematic = schematics.find(it => it.id === page.schematic);
-          this.content = page.content ? ObjectUtils.clone(page.content) : {_id: v4(), schematic: this.schematic?.name || ''};
+          this.content = page.content ? ObjectUtils.clone(page.content) : {
+            _id: v4(),
+            schematic: this.schematic?.name || ''
+          };
           this.schematics = schematics;
           this.schematicComponentsMap = new Map<string, SchematicComponent>(this.schematic?.components?.map(it => [it.name, it]));
           this.generateForm();
@@ -144,6 +149,11 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
       if (component.required) {
         validators.push(Validators.required)
       }
+      // translatable + fallBackLocale => disabled = false
+      // translatable + !fallBackLocale => disabled = false
+      // !translatable + fallBackLocale => disabled = false
+      // !translatable + !fallBackLocale => disabled = true
+      const disabled = !((component.translatable === true) || (this.selectedLocale?.id === this.selectedSpace?.localeFallback.id))
       switch (component.kind) {
         case SchematicComponentKind.TEXT:
         case SchematicComponentKind.TEXTAREA: {
@@ -153,7 +163,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           if (component.maxLength) {
             validators.push(Validators.maxLength(component.maxLength))
           }
-          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
           this.form.setControl(component.name, this.fb.control<string | undefined>({
             value: undefined,
             disabled: disabled
@@ -168,7 +177,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           if (component.maxValue) {
             validators.push(Validators.max(component.maxValue))
           }
-          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
           //this.form.setControl(component.name, this.fb.control<number | undefined>({ value: component.defaultValue ? Number.parseInt(component.defaultValue) : undefined, disabled: disabled}, validators))
           this.form.setControl(component.name, this.fb.control<number | undefined>({
             value: undefined,
@@ -177,7 +185,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           break;
         }
         case SchematicComponentKind.COLOR: {
-          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
           //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
           this.form.setControl(component.name, this.fb.control<string | undefined>({
             value: undefined,
@@ -186,7 +193,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           break;
         }
         case SchematicComponentKind.BOOLEAN: {
-          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
           //this.form.setControl(component.name, this.fb.control<boolean | undefined>({ value: component.defaultValue === 'true', disabled: disabled}, validators))
           this.form.setControl(component.name, this.fb.control<boolean | undefined>({
             value: undefined,
@@ -195,7 +201,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           break;
         }
         case SchematicComponentKind.DATE: {
-          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
           //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
           this.form.setControl(component.name, this.fb.control<string | undefined>({
             value: undefined,
@@ -204,7 +209,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           break;
         }
         case SchematicComponentKind.DATETIME: {
-          const disabled = (this.selectedLocale === undefined) === (component.translatable === true)
           //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
           this.form.setControl(component.name, this.fb.control<string | undefined>({
             value: undefined,
@@ -228,7 +232,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   save(): void {
     this.isSaveLoading = true;
 
-
     this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.content)
       .subscribe({
         next: () => {
@@ -250,7 +253,7 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     this.router.navigate(['features', 'pages']);
   }
 
-  onLocaleChanged(locale?: Locale): void {
+  onLocaleChanged(locale: Locale): void {
     this.selectedLocale = locale;
     this.isFormLoading = true;
     this.cd.detectChanges();
@@ -261,24 +264,22 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     this.cd.markForCheck();
   }
 
-  extractLocaleContent(locale?: Locale): Record<string, any> {
+  extractLocaleContent(locale: Locale): Record<string, any> {
     const result: Record<string, any> = {}
-    if (locale) {
-      this.schematic?.components?.forEach((comp) => {
-        const value = this.content[`${comp.name}_i18n_${locale.id}`]
-        if (value) {
-          result[comp.name] = this.content[`${comp.name}_i18n_${locale.id}`]
-        }
-
-      })
-    } else {
-      this.schematic?.components?.forEach((comp) => {
-        const value = this.content[comp.name]
-        if (value) {
-          result[comp.name] = value
-        }
-      })
-    }
+    // Extract Locale specific values
+    this.schematic?.components?.forEach((comp) => {
+      const value = this.content[`${comp.name}_i18n_${locale.id}`]
+      if (value) {
+        result[comp.name] = this.content[`${comp.name}_i18n_${locale.id}`]
+      }
+    })
+    // Extract not translatable values in fallback locale
+    this.schematic?.components?.forEach((comp) => {
+      const value = this.content[comp.name]
+      if (value) {
+        result[comp.name] = value
+      }
+    })
     return result
   }
 
