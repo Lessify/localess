@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord} from '@angular/forms';
+import {AbstractControl, FormArray, FormBuilder, FormRecord} from '@angular/forms';
 import {SchematicEditDialogModel} from './schematic-edit-dialog.model';
 import {SchemaValidator} from '@shared/validators/schema.validator';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
@@ -132,6 +132,22 @@ export class SchematicEditDialogComponent implements OnInit {
     this.selectComponent(this.components.length - 1)
   }
 
+  removeComponent(event: Event, index: number): void {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.components.removeAt(index);
+    if (this.components.length === 0) {
+      this.selectedComponentIdx = undefined;
+      this.cd.markForCheck();
+    } else if (this.selectedComponentIdx) {
+      if (index == 0 && this.selectedComponentIdx == 0) {
+        this.selectComponent(0);
+      } else if (index <= this.selectedComponentIdx) {
+        this.selectComponent(this.selectedComponentIdx - 1);
+      }
+    }
+  }
+
   // handle form array element selection, by enforcing refresh
   selectComponent(index: number): void {
     this.selectedComponentIdx = undefined;
@@ -231,9 +247,5 @@ export class SchematicEditDialogComponent implements OnInit {
     //this.cd.markForCheck();
   }
 
-  delete(event: any): void {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    console.log(event)
-  }
+
 }

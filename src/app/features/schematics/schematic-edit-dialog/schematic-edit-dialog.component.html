@@ -42,7 +42,7 @@
             <span matListItemTitle>{{component.value.name}}</span>
             <span matListItemLine>{{component.value.displayName}}</span>
             <span matListItemMeta>
-              <button mat-icon-button (click)="delete($event)">
+              <button mat-icon-button (click)="removeComponent($event, index)">
                 <mat-icon>delete</mat-icon>
               </button>
               <mat-icon>navigate_next</mat-icon>
@@ -147,9 +147,9 @@
             </ng-container>
 
         </mat-card>
-        {{components.at(selectedComponentIdx).value | json}} <br/>
-        {{components.at(selectedComponentIdx).status | json}} <br/>
-        {{components.at(selectedComponentIdx).errors | json}}
+        <pre>{{componentAt(selectedComponentIdx).value | json}}</pre>
+        <pre>{{componentAt(selectedComponentIdx).status | json}}</pre>
+        <pre>{{componentAt(selectedComponentIdx).errors | json}}</pre>
       </div>
     </div>
   </form>
