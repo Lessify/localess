@@ -1,3 +1,5 @@
+export {pagePublish} from './pages';
+
 export {setup} from './setup';
 
 export {onSpaceDelete} from './spaces';

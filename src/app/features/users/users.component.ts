@@ -40,7 +40,7 @@ export class UsersComponent implements OnInit {
   isLoading: boolean = true;
   isSyncLoading: boolean = false;
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
-  displayedColumns: string[] = ['avatar', 'email', 'name', 'role', 'createdOn', 'updatedOn', 'actions'];
+  displayedColumns: string[] = ['avatar', 'email', 'name', 'role', 'createdAt', 'updatedAt', 'actions'];
 
   constructor(
     private readonly route: ActivatedRoute,

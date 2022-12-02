@@ -1,4 +1,4 @@
-import {FieldValue, Timestamp} from '@angular/fire/firestore';
+import {Timestamp} from 'firebase-admin/firestore';
 
 export enum SchematicType {
   ROOT = 'ROOT',
@@ -76,33 +76,4 @@ export interface SchematicComponentBoolean extends SchematicComponentBase {
 export interface SchematicComponentSchematic extends SchematicComponentBase {
   kind: SchematicComponentKind.SCHEMATIC;
   schematic?: string;
-}
-
-// Service
-
-export interface SchematicCreate {
-  name: string;
-  type: SchematicType;
-}
-
-export interface SchematicUpdate {
-  name: string;
-  displayName?: string;
-  components?: SchematicComponent[];
-}
-
-// Firestore
-
-export interface SchematicCreateFS {
-  name: string;
-  type: SchematicType;
-  createdAt: FieldValue;
-  updatedAt: FieldValue;
-}
-
-export interface SchematicUpdateFS {
-  name: string;
-  displayName?: string;
-  components?: SchematicComponent[];
-  updatedAt: FieldValue;
 }

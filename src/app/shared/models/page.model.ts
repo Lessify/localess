@@ -1,5 +1,4 @@
 import {FieldValue, Timestamp} from '@angular/fire/firestore';
-import {Schematic} from '@shared/models/schematic.model';
 
 export interface PageContentComponent extends Record<string, any>{
   _id: string;
@@ -14,8 +13,9 @@ export interface Page {
 
   content?: PageContentComponent;
 
-  createdOn: Timestamp;
-  updatedOn: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  publishedAt?: Timestamp;
 }
 
 // Service
@@ -37,17 +37,17 @@ export interface PageCreateFS {
   name: string;
   slug: string;
   schematic: string;
-  createdOn: FieldValue;
-  updatedOn: FieldValue;
+  createdAt: FieldValue;
+  updatedAt: FieldValue;
 }
 
 export interface PageUpdateFS {
   name: string;
   slug: string;
-  updatedOn: FieldValue;
+  updatedAt: FieldValue;
 }
 
 export interface PageContentUpdateFS {
   content: PageContentComponent;
-  updatedOn: FieldValue;
+  updatedAt: FieldValue;
 }

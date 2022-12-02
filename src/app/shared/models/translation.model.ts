@@ -22,8 +22,8 @@ export interface Translation {
   labels?: string[]
   description?: string
   autoTranslate?: boolean
-  createdOn: Timestamp
-  updatedOn: Timestamp
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 
 export interface TranslationCreate {
@@ -43,8 +43,8 @@ export interface TranslationCreateFS {
   labels?: string[]
   description?: string
   autoTranslate?: boolean
-  createdOn: FieldValue
-  updatedOn: FieldValue
+  createdAt: FieldValue
+  updatedAt: FieldValue
 }
 
 export interface TranslationUpdate {
@@ -55,7 +55,7 @@ export interface TranslationUpdate {
 export interface TranslationUpdateFS {
   labels: string[]
   description: string
-  updatedOn: FieldValue
+  updatedAt: FieldValue
 }
 
 export interface TranslationExportImport {

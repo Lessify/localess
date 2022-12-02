@@ -43,7 +43,7 @@ export class PagesComponent implements OnInit {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Page> = new MatTableDataSource<Page>([]);
-  displayedColumns: string[] = ['id', 'name', 'schematic', 'createdOn', 'updatedOn', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'schematic', 'createdAt', 'updatedAt', 'actions'];
   schematics: Schematic[] = [];
   schematicsMap: Map<string, Schematic> = new Map<string, Schematic>();
   articles: Page[] = [];
@@ -144,34 +144,6 @@ export class PagesComponent implements OnInit {
 
   openContentEditDialog(element: Page): void {
     this.router.navigate(['features','pages',element.id]);
-    // const schematic = this.schematicsMap.get(element.schematicId)
-    // if(schematic) {
-    //   this.dialog.open<ArticleContentEditComponent, ArticleContentEditModel, any>(
-    //     ArticleContentEditComponent, {
-    //       width: '500px',
-    //       data: {
-    //         article: ObjectUtils.clone(element),
-    //         schematic: schematic
-    //       }
-    //     })
-    //     .afterClosed()
-    //     .pipe(
-    //       filter(it => it !== undefined),
-    //       switchMap(it =>
-    //         this.articleService.updateContent(this.selectedSpace!.id, element.id, it)
-    //       )
-    //     )
-    //     .subscribe({
-    //       next: () => {
-    //         this.notificationService.success('Article has been updated.');
-    //       },
-    //       error: () => {
-    //         this.notificationService.error('Article can not be updated.');
-    //       }
-    //     });
-    // } else {
-    //   this.notificationService.error('Schematic associated with the article can not be found.');
-    // }
   }
 
   openDeleteDialog(element: Page): void {

@@ -19,7 +19,7 @@ export class LocaleService {
 
   markAsFallback(spaceId: string, entity: Locale): Observable<void> {
     const update: SpaceFallbackLocaleUpdateFS = {
-      localeFallback: entity, updatedOn: serverTimestamp()
+      localeFallback: entity, updatedAt: serverTimestamp()
     }
     return from(
       setDoc(doc(this.firestore, `spaces/${spaceId}`),
@@ -35,7 +35,7 @@ export class LocaleService {
   create(spaceId: string, entity: Locale): Observable<void> {
     const update: SpaceLocalesUpdateFS = {
       locales: arrayUnion(entity),
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
     return from(
       setDoc(doc(this.firestore, `spaces/${spaceId}`),
@@ -51,7 +51,7 @@ export class LocaleService {
   delete(spaceId: string, entity: Locale): Observable<void> {
     const update: SpaceLocalesUpdateFS = {
       locales: arrayRemove(entity),
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
     return from(
       setDoc(doc(this.firestore, `spaces/${spaceId}`),

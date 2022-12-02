@@ -24,8 +24,8 @@ export interface User {
 
   readonly role?: 'admin' | 'write' | 'edit' | 'read' | 'none',
 
-  readonly createdOn: Timestamp;
-  readonly updatedOn: Timestamp;
+  readonly createdAt: Timestamp;
+  readonly updatedAt: Timestamp;
 }
 
 export interface UserInvite {
@@ -37,5 +37,5 @@ export interface UserInvite {
 
 export interface UserUpdateFS {
   role: string,
-  updatedOn: FieldValue;
+  updatedAt: FieldValue;
 }

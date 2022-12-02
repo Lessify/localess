@@ -6,6 +6,6 @@ export interface Space {
   name: string;
   locales: Locale[];
   localeFallback: Locale;
-  createdOn: Timestamp;
-  updatedOn: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }

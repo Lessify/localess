@@ -54,8 +54,8 @@ export class PageService {
       name: entity.name,
       slug: entity.slug,
       schematic: entity.schematic,
-      createdOn: serverTimestamp(),
-      updatedOn: serverTimestamp()
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     }
 
     return from(
@@ -73,7 +73,7 @@ export class PageService {
     const update: UpdateData<PageUpdateFS> = {
       name: entity.name,
       slug: entity.slug,
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
 
     return from(
@@ -90,7 +90,7 @@ export class PageService {
     ObjectUtils.clean(content);
     const update: UpdateData<PageContentUpdateFS> = {
       content: content,
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
 
     return from(
@@ -113,8 +113,8 @@ export class PageService {
   }
 
   publish(spaceId: string, id: string): Observable<void> {
-    const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'pagePublish');
-    return translationsPublish({spaceId})
+    const translationsPublish = httpsCallableData<{ spaceId: string, pageId: string }, void>(this.functions, 'pagePublish');
+    return translationsPublish({spaceId, pageId: id})
       .pipe(
         traceUntilFirst('Functions:Pages:publish'),
       );

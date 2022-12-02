@@ -222,11 +222,23 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
 
   publish(): void {
     this.isPublishLoading = true;
+    this.pageService.publish(this.selectedSpace!.id, this.pageId)
+    .subscribe({
+      next: () => {
+        this.notificationService.success('Page has been published.');
+      },
+      error: () => {
+        this.notificationService.error('Page can not be published.');
+      },
+      complete: () => {
+        setTimeout(() => {
+          this.isPublishLoading = false
+          this.cd.markForCheck()
+        }, 1000)
+      }
+    })
 
-    setTimeout(() => {
-      this.isPublishLoading = false
-      this.cd.markForCheck()
-    }, 1000)
+
   }
 
   save(): void {

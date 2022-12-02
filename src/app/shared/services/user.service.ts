@@ -13,7 +13,7 @@ import {
   setDoc
 } from '@angular/fire/firestore';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {map, tap} from 'rxjs/operators';
+import {map} from 'rxjs/operators';
 import {userInvite, usersSync} from '../../../../functions/src';
 
 @Injectable()
@@ -43,7 +43,7 @@ export class UserService {
   update(id: string, role: string): Observable<void> {
     const update: UserUpdateFS = {
       role: role,
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
     return from(
       setDoc(doc(this.firestore, `users/${id}`),

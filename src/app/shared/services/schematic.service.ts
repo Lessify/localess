@@ -65,8 +65,8 @@ export class SchematicService {
     let addEntity: SchematicCreateFS = {
       name: entity.name,
       type: entity.type,
-      createdOn: serverTimestamp(),
-      updatedOn: serverTimestamp()
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     }
 
     return from(
@@ -85,7 +85,7 @@ export class SchematicService {
       name: entity.name,
       displayName: entity.displayName || deleteField(),
       components: entity.components || deleteField(),
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
 
     return from(

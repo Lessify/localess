@@ -26,8 +26,8 @@ import {protos} from '@google-cloud/translate';
 
 // Publish
 export const translationsPublish = https.onCall(async (data: PublishTranslationsData, context) => {
-  logger.info('[publishTranslations] data: ' + JSON.stringify(data));
-  logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
+  logger.info('[translationsPublish] data: ' + JSON.stringify(data));
+  logger.info('[translationsPublish] context.auth: ' + JSON.stringify(context.auth));
   if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const translationsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
@@ -36,7 +36,7 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
     const translations = translationsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
 
     for (const locale of space.locales) {
-      const localeJson: { [key: string]: string } = {};
+      const localeJson: Record<string, string> = {};
       for (const tr of translations) {
         let value = tr.locales[locale.id];
         if (value) {
@@ -48,13 +48,13 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
         localeJson[tr.name] = value;
       }
       // Save generated JSON
-      logger.info(`[publishTranslations] Save file to spaces/${data.spaceId}/translations/${locale.id}.json`);
+      logger.info(`[translationsPublish] Save file to spaces/${data.spaceId}/translations/${locale.id}.json`);
       bucket.file(`spaces/${data.spaceId}/translations/${locale.id}.json`)
         .save(
           JSON.stringify(localeJson),
           (err?: Error | null) => {
             if (err) {
-              logger.error(`[publishTranslations] Can not save file for Space(${data.spaceId}) and Locale(${locale})`);
+              logger.error(`[translationsPublish] Can not save file for Space(${data.spaceId}) and Locale(${locale})`);
               logger.error(err);
             }
           }
@@ -67,12 +67,12 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
           url: url,
           method: 'PURGE',
         });
-        logger.info(`[publishTranslations] purge url ${origin}${url}`);
+        logger.info(`[translationsPublish] purge url ${origin}${url}`);
       }
     }
     return;
   } else {
-    logger.info(`[publishTranslations] Space ${data.spaceId} does not exist or no translations.`);
+    logger.info(`[translationsPublish] Space ${data.spaceId} does not exist or no translations.`);
     throw new https.HttpsError('not-found', 'Space not found');
   }
 });
@@ -88,7 +88,7 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
 
   let translationsSnapshot: QuerySnapshot;
   if (data.fromDate) {
-    translationsSnapshot = await translationsRef.where('updatedOn', '>=', Timestamp.fromMillis(data.fromDate)).get()
+    translationsSnapshot = await translationsRef.where('updatedAt', '>=', Timestamp.fromMillis(data.fromDate)).get()
   } else {
     translationsSnapshot = await translationsRef.get();
   }
@@ -174,7 +174,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
           if (ot.locales[data.locale] !== importT[name]) {
             // update if locale values are different
             const update: any = {
-              updatedOn: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             };
             update[`locales.${data.locale}`] = importT[name];
             batches[batchIdx].update(firestoreService.doc(`spaces/${data.spaceId}/translations/${oid}`), update);
@@ -186,8 +186,8 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
             name: name,
             type: TranslationType.STRING,
             locales: {},
-            createdOn: FieldValue.serverTimestamp(),
-            updatedOn: FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           };
           addEntity.locales[data.locale] = importT[name];
           batches[batchIdx].set(firestoreService.collection(`spaces/${data.spaceId}/translations`).doc(), addEntity);
@@ -221,7 +221,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
           const space: Space = spaceSnapshot.data() as Space
           // update
           const update: any = {
-            updatedOn: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           };
           // update locales
           space.locales.forEach(locale => {
@@ -250,8 +250,8 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
             name: value.name,
             type: TranslationType.STRING,
             locales: value.locales,
-            createdOn: FieldValue.serverTimestamp(),
-            updatedOn: FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           };
           // add description
           if (value.description && value.description.length > 0) {
@@ -292,7 +292,7 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
 
     const update: any = {
       autoTranslate: FieldValue.delete(),
-      updatedOn: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     // autoTranslate only when it is required

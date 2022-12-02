@@ -17,8 +17,8 @@ export const onAuthUserCreate = auth.user()
       displayName: user.displayName || FieldValue.delete(),
       photoURL: user.photoURL || FieldValue.delete(),
       disabled: user.disabled,
-      createdOn: FieldValue.serverTimestamp(),
-      updatedOn: FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }, {merge: true});
   });
 
@@ -85,7 +85,7 @@ export const usersSync = https.onCall(async (data, context) => {
           photoURL: userRecord.photoURL || FieldValue.delete(),
           disabled: userRecord.disabled,
           role: userRecord.customClaims?.['role'],
-          updatedOn: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         }, {merge: true});
       } else {
         logger.debug(`[usersSync] user: id='${userSnapshot.id}' no updates required`);
@@ -98,8 +98,8 @@ export const usersSync = https.onCall(async (data, context) => {
         photoURL: userRecord.photoURL || FieldValue.delete(),
         disabled: userRecord.disabled,
         role: userRecord.customClaims?.['role'],
-        createdOn: FieldValue.serverTimestamp(),
-        updatedOn: FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       }, {merge: true});
     }
   });

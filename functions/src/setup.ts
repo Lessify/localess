@@ -28,7 +28,7 @@ export const setup = https.onCall(async (data: Setup, context) => {
     await authService.setCustomUserClaims(adminUser.uid, {role: 'admin'});
 
     await setupRef.set({
-      createdOn: FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     }, {merge: true});
 
     // TODO update user role in firestore

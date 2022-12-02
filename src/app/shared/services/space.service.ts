@@ -44,8 +44,8 @@ export class SpaceService {
       name: entity.name,
       locales: [defaultLocale],
       localeFallback: defaultLocale,
-      createdOn: serverTimestamp(),
-      updatedOn: serverTimestamp()
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     };
     return from(
       addDoc(collection(this.firestore, 'spaces'),
@@ -60,7 +60,7 @@ export class SpaceService {
   update(id: string, entity: SpaceUpdate): Observable<void> {
     const update: SpaceUpdateFS = {
       name: entity.name,
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
     return from(
       setDoc(doc(this.firestore, `spaces/${id}`),

@@ -15,8 +15,8 @@ export interface Translation {
   labels?: string[]
   autoTranslate?: boolean
   description?: string
-  createdOn: Timestamp
-  updatedOn: Timestamp
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 
 export interface TranslationExportImport {

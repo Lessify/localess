@@ -56,7 +56,7 @@ export class SchematicsComponent implements OnInit {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Schematic> = new MatTableDataSource<Schematic>([]);
-  displayedColumns: string[] = ['id', 'name', 'type', 'createdOn', 'updatedOn', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'type', 'createdAt', 'updatedAt', 'actions'];
   schematics: Schematic[] = [];
 
   constructor(

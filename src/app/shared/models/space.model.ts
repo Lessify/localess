@@ -6,8 +6,8 @@ export interface Space {
   name: string;
   locales: Locale[];
   localeFallback: Locale;
-  createdOn: Timestamp;
-  updatedOn: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface SpaceCreate {
@@ -18,8 +18,8 @@ export interface SpaceCreateFS {
   name: string;
   locales: Locale[];
   localeFallback: Locale;
-  createdOn: FieldValue;
-  updatedOn: FieldValue;
+  createdAt: FieldValue;
+  updatedAt: FieldValue;
 }
 
 export interface SpaceUpdate {
@@ -28,15 +28,15 @@ export interface SpaceUpdate {
 
 export interface SpaceUpdateFS {
   name: string;
-  updatedOn: FieldValue;
+  updatedAt: FieldValue;
 }
 
 export interface SpaceLocalesUpdateFS {
   locales: FieldValue;
-  updatedOn: FieldValue;
+  updatedAt: FieldValue;
 }
 
 export interface SpaceFallbackLocaleUpdateFS {
   localeFallback: Locale;
-  updatedOn: FieldValue;
+  updatedAt: FieldValue;
 }
