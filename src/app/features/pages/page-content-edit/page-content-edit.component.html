@@ -34,6 +34,16 @@
       Publish
     </button>
 
+    <ng-container *ngIf="page?.publishedAt == undefined">
+      <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
+    </ng-container>
+    <ng-container *ngIf="page?.publishedAt?.seconds > page?.updatedAt?.seconds">
+      <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
+    </ng-container>
+    <ng-container *ngIf="page?.publishedAt && page?.publishedAt?.seconds < page?.updatedAt?.seconds">
+      <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
+    </ng-container>
+
     <button
       mat-icon-button
       [matMenuTriggerFor]="importMenu">

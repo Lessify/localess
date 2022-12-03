@@ -5,6 +5,7 @@ import {Space} from './models/space.model';
 import axios from 'axios';
 import {Page, PublishPageData} from './models/pages.model';
 import {Schematic} from './models/schematic.model';
+import {FieldValue} from 'firebase-admin/firestore';
 
 // Publish
 export const pagePublish = https.onCall(async (data: PublishPageData, context) => {
@@ -27,6 +28,7 @@ export const pagePublish = https.onCall(async (data: PublishPageData, context) =
       localeJson['slug'] = page.slug;
       localeJson['createdAt'] = page.createdAt.toDate().toISOString();
       localeJson['updatedAt'] = page.updatedAt.toDate().toISOString();
+      localeJson['publishedAt'] = new Date().toISOString();
 
       if (page.content) {
         localeJson['content'] = {};
@@ -69,6 +71,7 @@ export const pagePublish = https.onCall(async (data: PublishPageData, context) =
         logger.info(`[pagesPublish] purge url ${origin}${url}`);
       }
     }
+    await pageSnapshot.ref.update({publishedAt: FieldValue.serverTimestamp()})
     return;
   } else {
     logger.info(`[pagesPublish] Page ${data.pageId} does not exist.`);

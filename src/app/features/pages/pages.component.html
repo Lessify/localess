@@ -20,6 +20,20 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>
       <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
     </ng-container>
+    <ng-container matColumnDef="status">
+      <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <ng-container *ngIf="element?.publishedAt == undefined">
+          <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
+        </ng-container>
+        <ng-container *ngIf="element?.publishedAt?.seconds > element?.updatedAt?.seconds">
+          <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
+        </ng-container>
+        <ng-container *ngIf="element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds">
+          <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">

@@ -1,5 +1,7 @@
-mat-toolbar-row .mat-mdc-button-base {
-  margin: 8px 0 8px 8px;
+mat-toolbar-row {
+  .mat-mdc-button-base {
+    margin: 8px 8px 8px 8px;
+  }
 }
 
 table {

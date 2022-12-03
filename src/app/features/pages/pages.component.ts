@@ -43,7 +43,7 @@ export class PagesComponent implements OnInit {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Page> = new MatTableDataSource<Page>([]);
-  displayedColumns: string[] = ['id', 'name', 'schematic', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'status', 'name', 'schematic', 'createdAt', 'updatedAt', 'actions'];
   schematics: Schematic[] = [];
   schematicsMap: Map<string, Schematic> = new Map<string, Schematic>();
   articles: Page[] = [];
