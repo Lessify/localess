@@ -6,6 +6,7 @@ import {SchematicValidator} from '@shared/validators/schematic.validator';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
 import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {environment} from '../../../../environments/environment';
 
 interface ComponentKindDescription {
   name: string
@@ -21,6 +22,7 @@ interface ComponentKindDescription {
 export class SchematicEditDialogComponent implements OnInit {
 
   componentKinds = Object.keys(SchematicComponentKind)
+  isTest = environment.test
 
   componentKindDescriptions: Record<string, ComponentKindDescription> = {
     'TEXT': {name: 'Text', icon: 'title'},

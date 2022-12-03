@@ -145,11 +145,13 @@
                 </mat-form-field>
               </ng-container>
             </ng-container>
-
         </mat-card>
-        <pre>{{componentAt(selectedComponentIdx).value | json}}</pre>
-        <pre>{{componentAt(selectedComponentIdx).status | json}}</pre>
-        <pre>{{componentAt(selectedComponentIdx).errors | json}}</pre>
+
+        <ng-container *ngIf="isTest">
+          <pre>{{componentAt(selectedComponentIdx).value | json}}</pre>
+          <pre>{{componentAt(selectedComponentIdx).status | json}}</pre>
+          <pre>{{componentAt(selectedComponentIdx).errors | json}}</pre>
+        </ng-container>
       </div>
     </div>
   </form>

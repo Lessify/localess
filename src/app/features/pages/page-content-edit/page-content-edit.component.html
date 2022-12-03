@@ -156,7 +156,9 @@
   </form>
   </ng-container>
 
-  <pre>{{form.value | json}}</pre>
-  <pre>{{content | json}}</pre>
+  <ng-container *ngIf="isTest">
+    <pre>{{form.value | json}}</pre>
+    <pre>{{content | json}}</pre>
+  </ng-container>
 
 </div>

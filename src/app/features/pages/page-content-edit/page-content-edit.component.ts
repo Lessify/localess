@@ -27,6 +27,7 @@ import {NotificationService} from '@shared/services/notification.service';
 import {Locale} from '@shared/models/locale.model';
 import {ObjectUtils} from '../../../core/utils/object-utils.service';
 import {v4} from 'uuid';
+import {environment} from '../../../../environments/environment';
 
 @Component({
   selector: 'll-page-content-edit',
@@ -36,6 +37,7 @@ import {v4} from 'uuid';
 })
 export class PageContentEditComponent implements OnInit, OnDestroy {
 
+  isTest = environment.test
   selectedSpace?: Space;
   selectedLocale?: Locale;
   pageId: string;
