@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
 import {AbstractControl, ValidationErrors} from '@angular/forms';
+import {CommonPattern} from '@shared/validators/common.validator';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,9 @@ export class FormErrorHandlerService {
 
   private errors(errors: ValidationErrors | null | undefined): string | undefined | null {
     if (errors) {
+      if (errors['required']) {
+        return `Field is required.`
+      }
       if (errors['minlength']) {
         return `Minimum length is ${errors['minlength'].requiredLength}.`
       }
@@ -24,8 +28,12 @@ export class FormErrorHandlerService {
       if (errors['max']) {
         return `Maximum value is ${errors['max'].max}.`
       }
-      if (errors['required']) {
-        return `Field is required.`
+      if (errors['pattern']) { // ^$
+        switch (errors['pattern'].requiredPattern) {
+          case `^${CommonPattern.JSON_NAME}$`: return `Should start with a-z, and continue with a-z, A-Z, 0-9, and underscore (_).`
+          case `^${CommonPattern.URL_SLUG}$`: return `Should contain only a-z, A-Z, 0-9, - and underscore (_).`
+          default: return `Doesn't match the pattern ${errors['pattern'].requiredPattern}`
+        }
       }
       if (errors['email']) {
         return `Field should be email.`

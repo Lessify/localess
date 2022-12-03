@@ -20,25 +20,28 @@ export const pagePublish = https.onCall(async (data: PublishPageData, context) =
     const schematics = schematicsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schematic);
 
     for (const locale of space.locales) {
-      schematics.length
       const localeJson: Record<string, any> = {};
 
-      localeJson['id'] = page.id
-      localeJson['name'] = page.name
-      localeJson['slug'] = page.slug
-      localeJson['createdAt'] = page.createdAt.valueOf()
-      localeJson['updatedAt'] = page.updatedAt.valueOf()
+      localeJson['id'] = page.id;
+      localeJson['name'] = page.name;
+      localeJson['slug'] = page.slug;
+      localeJson['createdAt'] = page.createdAt.toDate().toISOString();
+      localeJson['updatedAt'] = page.updatedAt.toDate().toISOString();
 
       if (page.content) {
-        localeJson['content'] = {}
-        localeJson['content']._id = page.content._id
-        localeJson['content'].schematic = page.content.schematic
-        const schematic = schematics.find(it => it.name == page.content?.schematic)
+        localeJson['content'] = {};
+        localeJson['content']._id = page.content._id;
+        localeJson['content'].schematic = page.content.schematic;
+        const schematic = schematics.find(it => it.name == page.content?.schematic);
         for (const component of schematic?.components || []) {
           if (component.translatable) {
-            localeJson['content'][component.name] = page.content[`${component.name}_i18n_${locale.id}`]
+            let value = page.content[`${component.name}_i18n_${locale.id}`];
+            if (!value) {
+              value = page.content[`${component.name}_i18n_${space.localeFallback.id}`];
+            }
+            localeJson['content'][component.name] = value;
           } else {
-            localeJson['content'][component.name] = page.content[component.name]
+            localeJson['content'][component.name] = page.content[component.name];
           }
         }
       }

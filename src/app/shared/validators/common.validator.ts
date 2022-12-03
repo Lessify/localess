@@ -63,3 +63,8 @@ export class CommonValidator {
     return null;
   }
 }
+
+export enum CommonPattern {
+  JSON_NAME= '[a-z]+[a-zA-Z0-9_]+',
+  URL_SLUG= '[a-zA-Z0-9-_]+'
+}

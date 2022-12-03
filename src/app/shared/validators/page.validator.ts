@@ -1,7 +1,7 @@
 import {ValidatorFn, Validators} from '@angular/forms';
-import {CommonValidator} from './common.validator';
+import {CommonPattern, CommonValidator} from './common.validator';
 
-export class ArticleValidator {
+export class PageValidator {
   public static NAME: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpaceAround,
@@ -12,6 +12,7 @@ export class ArticleValidator {
   public static SLUG: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
+    Validators.pattern(CommonPattern.URL_SLUG),
     Validators.minLength(3),
     Validators.maxLength(50)
   ];

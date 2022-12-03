@@ -295,6 +295,11 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     return result
   }
 
+  openPublishedInNewTab(locale: string): void {
+    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/pages/${this.pageId}/${locale}.json`
+    window.open(url, '_blank')
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
     this.destroy$.complete()

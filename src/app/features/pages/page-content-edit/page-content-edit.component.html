@@ -33,6 +33,21 @@
       <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
       Publish
     </button>
+
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="importMenu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+
+    <mat-menu #importMenu="matMenu">
+      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales"
+              (click)="openPublishedInNewTab(locale.id)">
+        <mat-icon>public</mat-icon>
+        <span>Published {{locale.name}} JSON</span>
+      </button>
+    </mat-menu>
+
   </mat-toolbar-row>
 </mat-toolbar>
 
