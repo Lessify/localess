@@ -17,7 +17,9 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
 import {
-  Page, PageContentComponent, PageContentUpdateFS,
+  Page,
+  PageContentComponent,
+  PageContentUpdateFS,
   PageCreate,
   PageCreateFS,
   PageUpdate,

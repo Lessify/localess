@@ -1,7 +1,8 @@
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component, OnDestroy,
+  Component,
+  OnDestroy,
   OnInit,
   ViewChild
 } from '@angular/core';
@@ -20,8 +21,12 @@ import {NotificationService} from '@shared/services/notification.service';
 import {Schematic, SchematicType} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
 import {combineLatest, Subject} from 'rxjs';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  ConfirmationDialogComponent
+} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {Page, PageCreate, PageUpdate} from '@shared/models/page.model';
 import {PageService} from '@shared/services/page.service';
 import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';

@@ -7,7 +7,8 @@ import {
   doc,
   docData,
   DocumentReference,
-  Firestore, query,
+  Firestore,
+  query,
   serverTimestamp,
   UpdateData,
   updateDoc
@@ -18,7 +19,8 @@ import {map} from 'rxjs/operators';
 import {
   Schematic,
   SchematicCreate,
-  SchematicCreateFS, SchematicType,
+  SchematicCreateFS,
+  SchematicType,
   SchematicUpdate,
   SchematicUpdateFS
 } from '@shared/models/schematic.model';

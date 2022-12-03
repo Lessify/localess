@@ -13,7 +13,7 @@ import {
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {map, tap} from 'rxjs/operators';
+import {map} from 'rxjs/operators';
 import {Space, SpaceCreate, SpaceCreateFS, SpaceUpdate, SpaceUpdateFS} from '../models/space.model';
 import {Locale} from '../models/locale.model';
 

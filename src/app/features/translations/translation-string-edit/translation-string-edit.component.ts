@@ -9,8 +9,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
-import {debounce} from 'rxjs/operators';
-import {debounceTime, interval} from 'rxjs';
+import {debounceTime} from 'rxjs';
 
 @Component({
   selector: 'll-translation-string-edit',

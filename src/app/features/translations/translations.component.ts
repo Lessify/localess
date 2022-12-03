@@ -18,25 +18,42 @@ import {TranslationService} from '@shared/services/translation.service';
 import {SpaceService} from '@shared/services/space.service';
 import {AppState} from '../../core/state/core.state';
 import {Locale} from '@shared/models/locale.model';
-import {Translation, TranslationCreate, TranslationStatus, TranslationUpdate} from '@shared/models/translation.model';
+import {
+  Translation,
+  TranslationCreate,
+  TranslationStatus,
+  TranslationUpdate
+} from '@shared/models/translation.model';
 import {selectSpace} from '../../core/state/space/space.selector';
 import {Space} from '@shared/models/space.model';
 import {CopierService} from '@shared/services/copier.service';
-import {TranslationAddDialogComponent} from './translation-add-dialog/translation-add-dialog.component';
+import {
+  TranslationAddDialogComponent
+} from './translation-add-dialog/translation-add-dialog.component';
 import {TranslationAddDialogModel} from './translation-add-dialog/translation-add-dialog.model';
 import {TranslationEditDialogModel} from './translation-edit-dialog/translation-edit-dialog.model';
-import {TranslationEditDialogComponent} from './translation-edit-dialog/translation-edit-dialog.component';
+import {
+  TranslationEditDialogComponent
+} from './translation-edit-dialog/translation-edit-dialog.component';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  ConfirmationDialogComponent
+} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {saveAs} from 'file-saver-es';
-import {TranslationExportDialogComponent} from './translation-export-dialog/translation-export-dialog.component';
+import {
+  TranslationExportDialogComponent
+} from './translation-export-dialog/translation-export-dialog.component';
 import {
   TranslationExportDialogModel,
   TranslationExportDialogReturn
 } from './translation-export-dialog/translation-export-dialog.model';
 import {NameUtils} from '../../core/utils/name-utils.service';
-import {TranslationImportDialogComponent} from './translation-import-dialog/translation-import-dialog.component';
+import {
+  TranslationImportDialogComponent
+} from './translation-import-dialog/translation-import-dialog.component';
 import {
   TranslationImportDialogModel,
   TranslationImportDialogReturn

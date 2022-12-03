@@ -37,7 +37,9 @@ import {MatGridListModule} from '@angular/material/grid-list';
 import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
 import {IconComponent} from './components/icon/icon.component';
 import {HasAnyUserRolePipe} from './pipes/has-any-user-role.pipe';
-import {CustomSnackBarComponent} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
+import {
+  CustomSnackBarComponent
+} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
 import {RouterLink} from '@angular/router';
 
 const MATERIAL_MODULES: any[] = [
