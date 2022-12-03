@@ -48,7 +48,7 @@ export class SchematicsComponent implements OnInit {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
-  schematicTypeIcons : { [key: string]: string } = {
+  schematicTypeIcons : Record<string, string> = {
     'ROOT': 'margin',
     'NODE': 'polyline'
   }

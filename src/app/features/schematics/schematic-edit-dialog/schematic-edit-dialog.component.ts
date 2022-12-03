@@ -12,8 +12,6 @@ interface ComponentKindDescription {
   icon: string
 }
 
-type ComponentKindDescriptions = { [key: string]: ComponentKindDescription }
-
 @Component({
   selector: 'll-schematic-edit-dialog',
   templateUrl: './schematic-edit-dialog.component.html',
@@ -24,7 +22,7 @@ export class SchematicEditDialogComponent implements OnInit {
 
   componentKinds = Object.keys(SchematicComponentKind)
 
-  componentKindDescriptions: ComponentKindDescriptions = {
+  componentKindDescriptions: Record<string, ComponentKindDescription> = {
     'TEXT': {name: 'Text', icon: 'title'},
     'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
     'NUMBER': {name: 'Number', icon: 'pin'},
