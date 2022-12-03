@@ -1,14 +1,14 @@
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component,
+  Component, OnDestroy,
   OnInit,
   ViewChild
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
-import {filter, switchMap} from 'rxjs/operators';
+import {filter, switchMap, takeUntil} from 'rxjs/operators';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
@@ -19,7 +19,7 @@ import {selectSpace} from '../../core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
 import {Schematic, SchematicType} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
-import {combineLatest} from 'rxjs';
+import {combineLatest, Subject} from 'rxjs';
 import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {Page, PageCreate, PageUpdate} from '@shared/models/page.model';
@@ -36,7 +36,7 @@ import {ObjectUtils} from '../../core/utils/object-utils.service';
   styleUrls: ['./pages.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PagesComponent implements OnInit {
+export class PagesComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
@@ -47,6 +47,9 @@ export class PagesComponent implements OnInit {
   schematics: Schematic[] = [];
   schematicsMap: Map<string, Schematic> = new Map<string, Schematic>();
   articles: Page[] = [];
+
+  // Subscriptions
+  private destroy$ = new Subject();
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -75,7 +78,8 @@ export class PagesComponent implements OnInit {
             this.schematicService.findAll(it.id, SchematicType.ROOT),
             this.articleService.findAll(it.id)
           ])
-        )
+        ),
+        takeUntil(this.destroy$),
       )
       .subscribe({
         next: ([space, schematics, articles]) => {
@@ -169,5 +173,10 @@ export class PagesComponent implements OnInit {
           this.notificationService.error(`Page '${element.name}' can not be deleted.`);
         }
       });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(undefined)
+    this.destroy$.complete()
   }
 }

@@ -2,13 +2,14 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  OnDestroy,
   OnInit,
   ViewChild
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
-import {filter, switchMap} from 'rxjs/operators';
+import {filter, switchMap, takeUntil} from 'rxjs/operators';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
@@ -24,7 +25,7 @@ import {
   SchematicUpdate
 } from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
-import {combineLatest} from 'rxjs';
+import {combineLatest, Subject} from 'rxjs';
 import {SchematicAddDialogComponent} from './schematic-add-dialog/schematic-add-dialog.component';
 import {
   ConfirmationDialogComponent
@@ -44,11 +45,11 @@ import {ObjectUtils} from '../../core/utils/object-utils.service';
   styleUrls: ['./schematics.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SchematicsComponent implements OnInit {
+export class SchematicsComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
-  schematicTypeIcons : Record<string, string> = {
+  schematicTypeIcons: Record<string, string> = {
     'ROOT': 'margin',
     'NODE': 'polyline'
   }
@@ -58,6 +59,9 @@ export class SchematicsComponent implements OnInit {
   dataSource: MatTableDataSource<Schematic> = new MatTableDataSource<Schematic>([]);
   displayedColumns: string[] = ['id', 'name', 'type', 'createdAt', 'updatedAt', 'actions'];
   schematics: Schematic[] = [];
+
+  // Subscriptions
+  private destroy$ = new Subject();
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -84,7 +88,8 @@ export class SchematicsComponent implements OnInit {
             this.spaceService.findById(it.id),
             this.schematicService.findAll(it.id)
           ])
-        )
+        ),
+        takeUntil(this.destroy$),
       )
       .subscribe({
         next: ([space, schematics]) => {
@@ -127,7 +132,7 @@ export class SchematicsComponent implements OnInit {
         width: '1000px',
         data: {
           schematic: ObjectUtils.clone(element),
-          schematics: this.schematics.filter( it => it.type === SchematicType.NODE)
+          schematics: this.schematics.filter(it => it.type === SchematicType.NODE)
         }
       })
       .afterClosed()
@@ -170,5 +175,10 @@ export class SchematicsComponent implements OnInit {
           this.notificationService.error(`Schematic '${element.name}' can not be deleted.`);
         }
       });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(undefined)
+    this.destroy$.complete()
   }
 }

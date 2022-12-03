@@ -1,7 +1,15 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {combineLatest, debounceTime, EMPTY, Observable, startWith} from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild
+} from '@angular/core';
+import {combineLatest, debounceTime, EMPTY, Observable, startWith, Subject} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
-import {filter, map, switchMap} from 'rxjs/operators';
+import {filter, map, switchMap, takeUntil} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
 import {FormBuilder, FormControl} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
@@ -43,7 +51,7 @@ import {NotificationService} from '@shared/services/notification.service';
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TranslationsComponent implements OnInit {
+export class TranslationsComponent implements OnInit, OnDestroy {
 
   @ViewChild('labelsInput') labelsInput!: ElementRef<HTMLInputElement>;
   @ViewChild('auto') matAutocomplete!: MatAutocomplete;
@@ -80,6 +88,9 @@ export class TranslationsComponent implements OnInit {
   isLocaleUpdateLoading: boolean = false;
   isTranslateLoading: boolean = false;
 
+  // Subscriptions
+  private destroy$ = new Subject();
+
   constructor(
     private readonly translationService: TranslationService,
     readonly localeService: LocaleService,
@@ -105,6 +116,7 @@ export class TranslationsComponent implements OnInit {
     this.loadData()
     this.searchCtrl.valueChanges
       .pipe(
+        takeUntil(this.destroy$),
         debounceTime(300)
       )
       .subscribe({
@@ -124,7 +136,8 @@ export class TranslationsComponent implements OnInit {
             this.spaceService.findById(it.id),
             this.translationService.findAll(it.id)
           ])
-        )
+        ),
+        takeUntil(this.destroy$),
       )
       .subscribe({
         next: ([space, translations]) => {
@@ -524,5 +537,10 @@ export class TranslationsComponent implements OnInit {
       case TranslationStatus.UNTRANSLATED:
         return 'untranslated';
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(undefined)
+    this.destroy$.complete()
   }
 }

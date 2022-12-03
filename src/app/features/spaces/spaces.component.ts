@@ -1,14 +1,14 @@
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component,
+  Component, OnDestroy,
   OnInit,
   ViewChild
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
-import {filter, switchMap} from 'rxjs/operators';
+import {filter, switchMap, takeUntil} from 'rxjs/operators';
 import {SpaceDialogComponent} from './space-dialog/space-dialog.component';
 import {SpaceDialogModel} from './space-dialog/space-dialog.model';
 import {MatSort} from '@angular/material/sort';
@@ -25,6 +25,7 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {CopierService} from '@shared/services/copier.service';
 import {NotificationService} from '@shared/services/notification.service';
+import {Subject} from 'rxjs';
 
 @Component({
   selector: 'll-spaces',
@@ -32,7 +33,7 @@ import {NotificationService} from '@shared/services/notification.service';
   styleUrls: ['./spaces.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SpacesComponent implements OnInit {
+export class SpacesComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
@@ -40,6 +41,8 @@ export class SpacesComponent implements OnInit {
   dataSource: MatTableDataSource<Space> = new MatTableDataSource<Space>([]);
   displayedColumns: string[] = ['id', 'name', 'createdAt', 'updatedAt', 'actions'];
 
+  // Subscriptions
+  private destroy$ = new Subject();
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -59,6 +62,9 @@ export class SpacesComponent implements OnInit {
 
   loadData(): void {
     this.spaceService.findAll()
+      .pipe(
+        takeUntil(this.destroy$),
+      )
       .subscribe(response => {
           this.dataSource = new MatTableDataSource<Space>(response);
           this.dataSource.sort = this.sort || null;
@@ -146,5 +152,10 @@ export class SpacesComponent implements OnInit {
 
   copy(value: string): void {
     this.copierService.copyText(value);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(undefined)
+    this.destroy$.complete()
   }
 }
