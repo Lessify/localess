@@ -4,7 +4,7 @@ export {setup} from './setup';
 
 export {onSpaceDelete} from './spaces';
 
-export {translate} from './translate'
+export {translate} from './translate';
 
 export {translationsPublish, translationsExport, translationsImport, onTranslationCreate} from './translations';
 

@@ -17,7 +17,7 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
       .send(new https.HttpsError('not-found', 'Space not found'));
-    return
+    return;
   }
   const space = spaceRef.data() as Space;
   if (!space.locales.some((it) => it.id === locale)) {
@@ -48,7 +48,7 @@ expressV1.get('/api/v1/spaces/:spaceId/pages/:pageId/:locale.json', async (req, 
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
       .send(new https.HttpsError('not-found', 'Space not found'));
-    return
+    return;
   }
   const space = spaceRef.data() as Space;
   if (!space.locales.some((it) => it.id === locale)) {

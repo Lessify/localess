@@ -12,13 +12,11 @@ export enum TranslationStatus {
   UNTRANSLATED = 'UNTRANSLATED'
 }
 
-export type TranslationLocales = { [key: string]: string }
-
 export interface Translation {
   id: string
   name: string
   type: TranslationType
-  locales: TranslationLocales
+  locales: Record<string, string>
   labels?: string[]
   description?: string
   autoTranslate?: boolean
@@ -39,7 +37,7 @@ export interface TranslationCreate {
 export interface TranslationCreateFS {
   name: string
   type: TranslationType
-  locales: TranslationLocales
+  locales: Record<string, string>
   labels?: string[]
   description?: string
   autoTranslate?: boolean
@@ -60,7 +58,7 @@ export interface TranslationUpdateFS {
 
 export interface TranslationExportImport {
   name: string
-  locales: TranslationLocales
+  locales: Record<string, string>
   labels?: string[]
   description?: string
 }

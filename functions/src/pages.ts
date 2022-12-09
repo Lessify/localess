@@ -3,7 +3,7 @@ import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService, ROLE_ADMIN, ROLE_EDIT, ROLE_WRITE} from './config';
 import {Space} from './models/space.model';
 import axios from 'axios';
-import {Page, PublishPageData} from './models/pages.model';
+import {Page, PageStorage, PublishPageData} from './models/pages.model';
 import {Schematic} from './models/schematic.model';
 import {FieldValue} from 'firebase-admin/firestore';
 
@@ -21,29 +21,31 @@ export const pagePublish = https.onCall(async (data: PublishPageData, context) =
     const schematics = schematicsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schematic);
 
     for (const locale of space.locales) {
-      const localeJson: Record<string, any> = {};
-
-      localeJson['id'] = page.id;
-      localeJson['name'] = page.name;
-      localeJson['slug'] = page.slug;
-      localeJson['createdAt'] = page.createdAt.toDate().toISOString();
-      localeJson['updatedAt'] = page.updatedAt.toDate().toISOString();
-      localeJson['publishedAt'] = new Date().toISOString();
+      const pageStorage: PageStorage = {
+        id: page.id,
+        name: page.name,
+        slug: page.slug,
+        schematic: page.schematic,
+        createdAt: page.createdAt.toDate().toISOString(),
+        updatedAt: page.updatedAt.toDate().toISOString(),
+        publishedAt: new Date().toISOString(),
+      };
 
       if (page.content) {
-        localeJson['content'] = {};
-        localeJson['content']._id = page.content._id;
-        localeJson['content'].schematic = page.content.schematic;
-        const schematic = schematics.find(it => it.name == page.content?.schematic);
+        pageStorage.content = {
+          _id: page.content._id,
+          schematic: page.content.schematic,
+        };
+        const schematic = schematics.find((it) => it.name == page.content?.schematic);
         for (const component of schematic?.components || []) {
           if (component.translatable) {
             let value = page.content[`${component.name}_i18n_${locale.id}`];
             if (!value) {
               value = page.content[`${component.name}_i18n_${space.localeFallback.id}`];
             }
-            localeJson['content'][component.name] = value;
+            pageStorage.content[component.name] = value;
           } else {
-            localeJson['content'][component.name] = page.content[component.name];
+            pageStorage.content[component.name] = page.content[component.name];
           }
         }
       }
@@ -52,7 +54,7 @@ export const pagePublish = https.onCall(async (data: PublishPageData, context) =
       logger.info(`[pagesPublish] Save file to spaces/${data.spaceId}/pages/${data.pageId}/${locale.id}.json`);
       bucket.file(`spaces/${data.spaceId}/pages/${data.pageId}/${locale.id}.json`)
         .save(
-          JSON.stringify(localeJson),
+          JSON.stringify(pageStorage),
           (err?: Error | null) => {
             if (err) {
               logger.error(`[pagesPublish] Can not save file for Space(${data.spaceId}), Page(${data.pageId}) and Locale(${locale})`);
@@ -71,7 +73,7 @@ export const pagePublish = https.onCall(async (data: PublishPageData, context) =
         logger.info(`[pagesPublish] purge url ${origin}${url}`);
       }
     }
-    await pageSnapshot.ref.update({publishedAt: FieldValue.serverTimestamp()})
+    await pageSnapshot.ref.update({publishedAt: FieldValue.serverTimestamp()});
     return;
   } else {
     logger.info(`[pagesPublish] Page ${data.pageId} does not exist.`);

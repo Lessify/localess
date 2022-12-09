@@ -4,7 +4,7 @@ import {Actions, getEffectsMetadata} from '@ngrx/effects';
 import {EMPTY} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
 
-import {LocalStorageService} from '../local-storage/local-storage.service';
+import {LocalStorageService} from '../../local-storage/local-storage.service';
 import {authLogin, authLogout} from './auth.actions';
 import {AUTH_KEY, AuthEffects} from './auth.effects';
 
