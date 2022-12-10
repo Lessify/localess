@@ -10,7 +10,13 @@ const routes: Routes = [
   },
   {
     path: ':id',
-    component: PageContentEditComponent
+    component: PageContentEditComponent,
+    children: [
+      {
+        path: 'schematic/:schematicId',
+        component: PageContentEditComponent
+      }
+    ]
   }
 ];
 

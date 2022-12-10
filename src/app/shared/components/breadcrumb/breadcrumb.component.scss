@@ -1,0 +1,25 @@
+@import "../../../../styles-variables";
+
+section {
+  width: 100%;
+  // padding-top: 1rem;
+  padding-bottom: 2rem;
+  padding-left: 1rem;
+}
+
+
+:host ::ng-deep ll-breadcrumb-item:not(:last-child):after {
+  content: '>';
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+:host ::ng-deep ll-breadcrumb-item:last-child {
+  a {
+    color: $gray-color;
+    pointer-events: none;
+  }
+}
+//:last-child {
+//    border: 2px solid orange;
+//}

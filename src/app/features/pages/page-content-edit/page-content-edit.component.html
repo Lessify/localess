@@ -66,6 +66,12 @@
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
   <ng-container *ngIf="schematic">
+    <ll-breadcrumb>
+      <ll-breadcrumb-item>{{schematic.displayName || schematic.name}}</ll-breadcrumb-item>
+      <ll-breadcrumb-item>Level 2</ll-breadcrumb-item>
+      <ll-breadcrumb-item>Level 3</ll-breadcrumb-item>
+      <ll-breadcrumb-item>Level 4</ll-breadcrumb-item>
+    </ll-breadcrumb>
 
   <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">
     <ng-container *ngFor="let component of schematic.components" [ngSwitch]="component.kind">

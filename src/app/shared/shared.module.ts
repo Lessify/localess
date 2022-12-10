@@ -41,6 +41,8 @@ import {
   CustomSnackBarComponent
 } from '@shared/components/custom-snack-bar/custom-snack-bar.component';
 import {RouterLink} from '@angular/router';
+import {BreadcrumbComponent} from '@shared/components/breadcrumb/breadcrumb.component';
+import {BreadcrumbItemComponent} from '@shared/components/breadcrumb/breadcrumb-item.component';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -81,9 +83,11 @@ const SHARED_PIPES: any[] = [
 ]
 
 const SHARED_COMPONENTS: any[] = [
+  BreadcrumbComponent,
+  BreadcrumbItemComponent,
   ConfirmationDialogComponent,
+  CustomSnackBarComponent,
   IconComponent,
-  CustomSnackBarComponent
 ]
 
 @NgModule({

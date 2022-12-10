@@ -1,5 +1,8 @@
 @use '@angular/material' as mat;
 
+// Use the default configuration.
+$typography: mat.define-typography-config();
+
 $toolbar-breakpoint: 600px;
 
 $link-hover-decoration: none;
@@ -17,3 +20,6 @@ $success-colors: mat.define-palette(mat.$green-palette, 400);
 $warning-colors: mat.define-palette(mat.$amber-palette, 400);
 $info-colors: mat.define-palette(mat.$blue-palette, 400);
 $error-colors: mat.define-palette(mat.$red-palette, 400);
+
+$link-color: mat.get-color-from-palette(mat.$indigo-palette, A400);
+$gray-color: mat.get-color-from-palette(mat.$gray-palette, 600);
