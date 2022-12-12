@@ -1,4 +1,4 @@
-@import "../../../../styles-variables";
+@import "../../../../styles/styles-variables";
 
 section {
   width: 100%;
@@ -10,13 +10,13 @@ section {
 
 :host ::ng-deep ll-breadcrumb-item:not(:last-child):after {
   content: '>';
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 :host ::ng-deep ll-breadcrumb-item:last-child {
   a {
-    color: $gray-color;
+    color: $grey-color;
     pointer-events: none;
   }
 }

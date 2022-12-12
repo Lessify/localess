@@ -20,7 +20,7 @@
           <mat-error *ngIf="form.controls['displayName'].errors">{{fe.controlError(form.controls['displayName'])}}</mat-error>
         </mat-form-field>
 
-        <mat-nav-list>
+        <mat-nav-list class="ll-mat-nav-list-gap">
           <mat-divider></mat-divider>
           <div mat-subheader>Components</div>
           <mat-form-field appearance="outline">
@@ -53,98 +53,101 @@
       </div>
       <div class="col-6" formArrayName="components" *ngIf="selectedComponentIdx !== undefined">
         <mat-card appearance="outlined">
-            <ng-container [formGroupName]="selectedComponentIdx">
+          <ng-container [formGroupName]="selectedComponentIdx">
+            <mat-form-field appearance="outline">
+              <mat-label>Name</mat-label>
+              <input matInput type="text" formControlName="name" [readonly]="componentNameReadonly" autocomplete="off"/>
+              <button mat-icon-button matSuffix (click)="componentNameReadonly = !componentNameReadonly">
+                <mat-icon>{{componentNameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
+              </button>
+              <mat-hint>Will be used in JSON structure.</mat-hint>
+              <mat-hint align="end">{{components.at(selectedComponentIdx).value.name.length || 0}}/50</mat-hint>
+              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'name')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'name'))}}</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Kind</mat-label>
+              <mat-select formControlName="kind" (selectionChange)="selectComponentKind($event)">
+                <mat-select-trigger>
+                  <mat-icon>{{selectedComponentKind.icon}}</mat-icon>{{selectedComponentKind.name}}
+                </mat-select-trigger>
+                <mat-option *ngFor="let kind of componentKinds" [value]="kind">
+                  <mat-icon>{{componentKindDescriptions[kind].icon}}</mat-icon>
+                  {{componentKindDescriptions[kind].name}}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'kind')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'kind'))}}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Display Name</mat-label>
+              <input matInput type="text" formControlName="displayName" autocomplete="off"/>
+              <mat-hint align="end">{{components.at(selectedComponentIdx).value.displayName?.length || 0}}/50</mat-hint>
+              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'displayName')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'displayName'))}}</mat-error>
+            </mat-form-field>
+
+            <mat-checkbox formControlName="required">Required</mat-checkbox>
+
+            <ng-container *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN'].includes(components.at(selectedComponentIdx).value.kind)">
+              <mat-checkbox formControlName="translatable">Translatable</mat-checkbox>
+            </ng-container>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>
+              <mat-hint align="end">{{components.at(selectedComponentIdx).value.description?.length || 0}}/250</mat-hint>
+              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'description')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'description'))}}</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Default Value</mat-label>
+              <textarea matInput formControlName="defaultValue" class="cdk-textarea-autosize"></textarea>
+              <mat-hint align="end">{{components.at(selectedComponentIdx).value.defaultValue?.length || 0}}/250</mat-hint>
+              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'defaultValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'defaultValue'))}}</mat-error>
+            </mat-form-field>
+
+            <!--Number-->
+            <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'NUMBER'">
               <mat-form-field appearance="outline">
-                <mat-label>Name</mat-label>
-                <input matInput type="text" formControlName="name" [readonly]="componentNameReadonly" autocomplete="off"/>
-                <button mat-icon-button matSuffix (click)="componentNameReadonly = !componentNameReadonly">
-                  <mat-icon>{{componentNameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
-                </button>
-                <mat-hint>Will be used in JSON structure.</mat-hint>
-                <mat-hint align="end">{{components.at(selectedComponentIdx).value.name.length || 0}}/50</mat-hint>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'name')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'name'))}}</mat-error>
+                <mat-label>Min Value</mat-label>
+                <input matInput type="number" formControlName="minValue" autocomplete="off"/>
+                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'minValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'minValue'))}}</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline">
-                <mat-label>Kind</mat-label>
-                <mat-select formControlName="kind" (selectionChange)="selectComponentKind($event)">
-                  <mat-select-trigger>
-                    <mat-icon>{{selectedComponentKind.icon}}</mat-icon>{{selectedComponentKind.name}}
-                  </mat-select-trigger>
-                  <mat-option *ngFor="let kind of componentKinds" [value]="kind">
-                    <mat-icon>{{componentKindDescriptions[kind].icon}}</mat-icon>
-                    {{componentKindDescriptions[kind].name}}
+                <mat-label>Max Value</mat-label>
+                <input matInput type="number" formControlName="maxValue" autocomplete="off"/>
+                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxValue'))}}</mat-error>
+              </mat-form-field>
+            </ng-container>
+
+            <!--Text and Textarea-->
+            <ng-container *ngIf="['TEXT','TEXTAREA'].includes(components.at(selectedComponentIdx).value.kind)">
+              <mat-form-field appearance="outline">
+                <mat-label>Min Length</mat-label>
+                <input matInput type="number" formControlName="minLength" autocomplete="off"/>
+                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'minLength')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'minLength'))}}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Max Length</mat-label>
+                <input matInput type="number" formControlName="maxLength" autocomplete="off"/>
+                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxLength')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxLength'))}}</mat-error>
+              </mat-form-field>
+            </ng-container>
+
+            <!--SCHEMATIC-->
+            <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'SCHEMATIC'">
+              <mat-form-field appearance="outline">
+                <mat-label>Schematic</mat-label>
+                <mat-select formControlName="schematics" multiple>
+                  <mat-option *ngFor="let schematic of data.schematics" [value]="schematic.id">
+                    {{schematic.name}}
+                    <span *ngIf="schematic.displayName"> ({{schematic.displayName}})</span>
                   </mat-option>
                 </mat-select>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'kind')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'kind'))}}</mat-error>
+
+                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'schematic')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'schematic'))}}</mat-error>
               </mat-form-field>
-
-              <!--SCHEMATIC-->
-<!--              <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'SCHEMATIC'">-->
-<!--                <mat-form-field appearance="outline">-->
-<!--                  <mat-label>Schematic</mat-label>-->
-<!--                  <mat-select formControlName="schematic" required>-->
-<!--                    <mat-option *ngFor="let schematic of data.schematics" [value]="schematic.id">-->
-<!--                      {{schematic.displayName || schematic.name}}-->
-<!--                    </mat-option>-->
-<!--                  </mat-select>-->
-<!--                  <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'schematic')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'schematic'))}}</mat-error>-->
-<!--                </mat-form-field>-->
-<!--              </ng-container>-->
-
-              <mat-form-field appearance="outline">
-                <mat-label>Display Name</mat-label>
-                <input matInput type="text" formControlName="displayName" autocomplete="off"/>
-                <mat-hint align="end">{{components.at(selectedComponentIdx).value.displayName?.length || 0}}/50</mat-hint>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'displayName')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'displayName'))}}</mat-error>
-              </mat-form-field>
-
-              <mat-checkbox formControlName="required">Required</mat-checkbox>
-
-              <ng-container *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN'].includes(components.at(selectedComponentIdx).value.kind)">
-                <mat-checkbox formControlName="translatable">Translatable</mat-checkbox>
-              </ng-container>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Description</mat-label>
-                <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>
-                <mat-hint align="end">{{components.at(selectedComponentIdx).value.description?.length || 0}}/250</mat-hint>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'description')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'description'))}}</mat-error>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Default Value</mat-label>
-                <textarea matInput formControlName="defaultValue" class="cdk-textarea-autosize"></textarea>
-                <mat-hint align="end">{{components.at(selectedComponentIdx).value.defaultValue?.length || 0}}/250</mat-hint>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'defaultValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'defaultValue'))}}</mat-error>
-              </mat-form-field>
-
-              <!--Number-->
-              <ng-container *ngIf="components.at(selectedComponentIdx).value.kind === 'NUMBER'">
-                <mat-form-field appearance="outline">
-                  <mat-label>Min Value</mat-label>
-                  <input matInput type="number" formControlName="minValue" autocomplete="off"/>
-                  <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'minValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'minValue'))}}</mat-error>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Max Value</mat-label>
-                  <input matInput type="number" formControlName="maxValue" autocomplete="off"/>
-                  <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxValue'))}}</mat-error>
-                </mat-form-field>
-              </ng-container>
-
-              <!--Text and Textarea-->
-              <ng-container *ngIf="['TEXT','TEXTAREA'].includes(components.at(selectedComponentIdx).value.kind)">
-                <mat-form-field appearance="outline">
-                  <mat-label>Min Length</mat-label>
-                  <input matInput type="number" formControlName="minLength" autocomplete="off"/>
-                  <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'minLength')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'minLength'))}}</mat-error>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Max Length</mat-label>
-                  <input matInput type="number" formControlName="maxLength" autocomplete="off"/>
-                  <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxLength')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxLength'))}}</mat-error>
-                </mat-form-field>
-              </ng-container>
             </ng-container>
+
+          </ng-container>
         </mat-card>
 
         <ng-container *ngIf="isTest">

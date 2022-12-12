@@ -1,0 +1,35 @@
+@use '@angular/material' as mat;
+
+@import 'styles-variables';
+
+mat-nav-list.ll-mat-nav-list-gap {
+  mat-list-item {
+    border-width: 1px;
+    border-color: $border-grey-color;
+    border-style: solid;
+    border-radius: 5px;
+    margin-bottom: 10px;
+
+    &:hover {
+      border-color: $border-hover-grey-color;
+    }
+
+    &.active {
+      border-color: $border-hover-grey-color;
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    &.invalid{
+      border: solid 2px mat.get-color-from-palette($error-colors);
+    }
+
+    .mat-mdc-list-item-icon {
+      margin-top: auto !important;
+      margin-bottom: auto;
+    }
+    .mat-mdc-list-item-meta {
+      margin-top: auto !important;
+      margin-bottom: auto;
+    }
+  }
+}

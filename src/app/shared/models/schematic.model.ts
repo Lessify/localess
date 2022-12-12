@@ -75,7 +75,7 @@ export interface SchematicComponentBoolean extends SchematicComponentBase {
 
 export interface SchematicComponentSchematic extends SchematicComponentBase {
   kind: SchematicComponentKind.SCHEMATIC;
-  schematic?: string;
+  schematics?: string[];
 }
 
 // Service

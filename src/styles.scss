@@ -1,11 +1,15 @@
 @use '@angular/material' as mat;
 
-@import 'styles-variables';
+@import './styles/styles-variables';
 
 @import 'bootstrap/scss/bootstrap-reboot';
 @import 'bootstrap/scss/bootstrap-grid';
 @import 'bootstrap/scss/bootstrap-utilities';
 @import 'bootstrap/scss/images';
+
+@import 'styles/mat-card';
+@import 'styles/mat-list';
+@import 'styles/mat-snack-bar';
 
 @include mat.all-component-typographies();
 @include mat.core();
@@ -29,32 +33,4 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 .allow-cr {
   white-space: pre-line;
-}
-
-// Notifications
-mat-snack-bar-container {
-  &.error-notification-overlay {
-    .mdc-snackbar__surface {
-      color: mat.get-color-from-palette($error-colors, default-contrast);
-      background-color: mat.get-color-from-palette($error-colors, 700);
-    }
-  }
-  &.info-notification-overlay {
-    .mdc-snackbar__surface {
-      color: mat.get-color-from-palette($info-colors, default-contrast);
-      background-color: mat.get-color-from-palette($info-colors, 700);
-    }
-  }
-  &.success-notification-overlay {
-    .mdc-snackbar__surface {
-      color: mat.get-color-from-palette($success-colors, default-contrast);
-      background-color: mat.get-color-from-palette($success-colors, 700);
-    }
-  }
-  &.warning-notification-overlay {
-    .mdc-snackbar__surface {
-      color: mat.get-color-from-palette($warning-colors, default-contrast);
-      background-color: mat.get-color-from-palette($warning-colors, 700);
-    }
-  }
 }

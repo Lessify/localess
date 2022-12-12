@@ -44,8 +44,11 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   page?: Page;
   content: PageContentComponent = {_id: '', schematic: ''};
   schematic?: Schematic;
+  schematicMapById?: Map<string, Schematic>;
+  schematicMapByName?: Map<string, Schematic>;
   schematicComponentsMap?: Map<string, SchematicComponent>;
-  schematics: Schematic[] = []
+  schematicPath: Schematic[] = [];
+  schematics: Schematic[] = [];
 
   //Loadings
   isLoading: boolean = true;
@@ -128,11 +131,16 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           this.selectedLocale = space.localeFallback;
           this.page = page;
           this.schematic = schematics.find(it => it.id === page.schematic);
+          if (this.schematic) {
+            this.schematicPath = [this.schematic];
+          }
           this.content = page.content ? ObjectUtils.clone(page.content) : {
             _id: v4(),
             schematic: this.schematic?.name || ''
           };
           this.schematics = schematics;
+          this.schematicMapById = new Map<string, Schematic>(this.schematics?.map(it => [it.id, it]));
+          this.schematicMapByName = new Map<string, Schematic>(this.schematics?.map(it => [it.name, it]));
           this.schematicComponentsMap = new Map<string, SchematicComponent>(this.schematic?.components?.map(it => [it.name, it]));
           this.generateForm();
           if (this.content) {
@@ -225,20 +233,20 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   publish(): void {
     this.isPublishLoading = true;
     this.pageService.publish(this.selectedSpace!.id, this.pageId)
-    .subscribe({
-      next: () => {
-        this.notificationService.success('Page has been published.');
-      },
-      error: () => {
-        this.notificationService.error('Page can not be published.');
-      },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading = false
-          this.cd.markForCheck()
-        }, 1000)
-      }
-    })
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Page has been published.');
+        },
+        error: () => {
+          this.notificationService.error('Page can not be published.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isPublishLoading = false
+            this.cd.markForCheck()
+          }, 1000)
+        }
+      })
 
 
   }
@@ -302,8 +310,42 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     window.open(url, '_blank')
   }
 
+  filterSchematic(ids?: string[]): Schematic[] {
+    if (ids) {
+      const result: Schematic[] = [];
+      for (const id of ids) {
+        const r = this.schematicMapById?.get(id)
+        if (r) {
+          result.push(r)
+        }
+      }
+      return result;
+    }
+    return this.schematics
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
     this.destroy$.complete()
+  }
+
+  addSchematic(component: SchematicComponent, schematic: Schematic) {
+    let sch: any[] = this.content[component.name];
+    if (sch) {
+      sch.push(
+        {
+          _id: v4(),
+          schematic: schematic.name
+        }
+      )
+    } else {
+      this.content[component.name] = [
+        {
+          _id: v4(),
+          schematic: schematic.name
+        }
+      ]
+    }
+    this.cd.markForCheck()
   }
 }

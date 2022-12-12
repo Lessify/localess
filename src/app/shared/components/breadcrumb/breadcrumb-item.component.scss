@@ -1,6 +1,6 @@
 @use '@angular/material' as mat;
 
-@import "../../../../styles-variables";
+@import "../../../../styles/styles-variables";
 
 a {
   @include mat.typography-level($typography, 'subtitle-1');
