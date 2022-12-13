@@ -1,6 +1,10 @@
 import {FieldValue, Timestamp} from '@angular/fire/firestore';
 
-export interface PageContentComponent extends Record<string, any>{
+export function isPageContentComponent(obj: any): boolean {
+  return '_id' in obj && 'schematic' in obj;
+}
+
+export interface PageContentComponent extends Record<string, any> {
   _id: string;
   schematic: string;
 }

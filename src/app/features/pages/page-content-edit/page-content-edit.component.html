@@ -70,9 +70,6 @@
       <ll-breadcrumb-item *ngFor="let schematicPathItem of schematicPath">
         {{schematicPathItem.displayName || schematicPathItem.name}}
       </ll-breadcrumb-item>
-      <ll-breadcrumb-item>Level 2</ll-breadcrumb-item>
-      <ll-breadcrumb-item>Level 3</ll-breadcrumb-item>
-      <ll-breadcrumb-item>Level 4</ll-breadcrumb-item>
     </ll-breadcrumb>
 
   <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">
@@ -182,8 +179,8 @@
                 <mat-icon>add_circle</mat-icon>
               </button>
               <mat-menu #schematicsMenu="matMenu">
-                <button mat-menu-item *ngFor="let schematic of filterSchematic(component.schematics)" (click)="addSchematic(component, schematic)">
-                  {{schematic.displayName || schematic.name}}
+                <button mat-menu-item *ngFor="let sch of filterSchematic(component.schematics)" (click)="addSchematic(component, sch)">
+                  {{sch.displayName || sch.name}}
                 </button>
               </mat-menu>
 
@@ -193,11 +190,11 @@
           <mat-card-content>
             <mat-nav-list class="ll-mat-nav-list-gap">
               <mat-list-item *ngFor="let item of content[component.name]">
-                <mat-icon matListItemIcon>drag_handle</mat-icon>
+                <mat-icon matListItemIcon matTooltip="Feature with drag and drop will come later">drag_handle</mat-icon>
                 <span matListItemTitle *ngIf="schematicMapByName.get(item.schematic) as sch">{{sch.displayName || sch.name}}</span>
                 <span matListItemLine>{{item._id}}</span>
                 <span matListItemMeta>
-                  <button mat-icon-button >
+                  <button mat-icon-button (click)="removeSchematic(component, item._id)">
                     <mat-icon>delete</mat-icon>
                   </button>
                   <mat-icon>navigate_next</mat-icon>

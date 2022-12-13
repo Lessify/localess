@@ -329,8 +329,8 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     this.destroy$.complete()
   }
 
-  addSchematic(component: SchematicComponent, schematic: Schematic) {
-    let sch: any[] = this.content[component.name];
+  addSchematic(component: SchematicComponent, schematic: Schematic): void {
+    let sch: PageContentComponent[] | undefined = this.content[component.name];
     if (sch) {
       sch.push(
         {
@@ -346,6 +346,18 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
         }
       ]
     }
-    this.cd.markForCheck()
+  }
+
+  removeSchematic(component: SchematicComponent, schematicId: string): void {
+    let sch: PageContentComponent[] | undefined = this.content[component.name];
+    if (sch) {
+      let idx = sch.findIndex(it => it._id == schematicId);
+      if (idx >= 0) {
+        sch.splice(idx)
+      }
+      if (sch.length == 0) {
+        delete this.content[component.name];
+      }
+    }
   }
 }
