@@ -2,9 +2,9 @@
 
 @import "../../../../styles/styles-variables";
 
-a {
+span {
   @include mat.typography-level($typography, 'subtitle-1');
-  //color: $link-color !important;
+  color: $link-color;
   cursor: pointer;
   text-decoration: none;
 }

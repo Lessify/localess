@@ -117,8 +117,8 @@
           <mat-divider></mat-divider>
           <mat-card-content>
             <mat-nav-list class="ll-mat-nav-list-gap">
-              <mat-list-item *ngFor="let item of content[component.name]" (click)="navigationTo(item._id,component.name,item.schematic)">
-                <mat-icon matListItemIcon matTooltip="Feature with drag and drop will come later">drag_handle</mat-icon>
+              <mat-list-item *ngFor="let item of content[component.name]" (click)="navigationTo(item._id, component.name, item.schematic)">
+                <mat-icon matListItemIcon matTooltip="Drag and drop feature will come later">drag_handle</mat-icon>
                 <span matListItemTitle *ngIf="schematicMapByName.get(item.schematic) as sch">{{sch.displayName || sch.name}}</span>
                 <span matListItemLine>{{item._id}}</span>
                 <span matListItemMeta>

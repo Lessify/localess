@@ -20,7 +20,7 @@ import {Store} from '@ngrx/store';
 import {AppState} from '../../../core/state/core.state';
 import {selectSpace} from '../../../core/state/space/space.selector';
 import {filter, switchMap, takeUntil} from 'rxjs/operators';
-import {combineLatest, debounceTime, Subject} from 'rxjs';
+import {combineLatest, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
@@ -33,8 +33,9 @@ import {
 } from '../page-content-schematic-edit/page-content-schematic-edit.component';
 
 interface SchematicPathItem {
-  id: string
-  name: string
+  contentId: string
+  fieldName: string
+  schematicName: string
 }
 
 @Component({
@@ -146,7 +147,11 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           };
           this.selectedContent = this.content
           if (this.schematic) {
-            this.schematicPath = [{id: this.content._id, name: this.content.schematic}];
+            this.schematicPath = [{
+              contentId: this.content._id,
+              schematicName: this.content.schematic,
+              fieldName: ''
+            }];
           }
 
           this.schematics = schematics;
@@ -372,23 +377,25 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     }
   }
 
-  onContentChange(event: any) {
+  onContentChange(event: any): void {
     console.log(event)
   }
 
-  onSchematicChange(event: SchematicSelectChange) {
+  onSchematicChange(event: SchematicSelectChange): void {
+    this.schematicPath.push({
+      contentId: event.contentId,
+      schematicName: event.schematicName,
+      fieldName: event.fieldName
+    })
+    this.selectedContent = this.selectedContent[event.fieldName].find((it: PageContentComponent) => it._id == event.contentId)
+  }
 
-    this.schematicPath.push({id: event.contentId, name: event.componentName})
-
-    this.content
-
-    this.selectedContent = this.selectedContent[event.fieldName].find( (it: PageContentComponent) => it._id == event.contentId)
-
-
-    /*for( let path of this.schematicPath) {
-      console.log(path)
-    }*/
-    console.log(this.schematicPath)
-    console.log(event)
+  navigateToSchematic(pathItem: SchematicPathItem): void {
+    console.log(pathItem)
+    const idx = this.schematicPath.findIndex((it) => it.contentId == pathItem.contentId)
+    if (idx == 0) {
+      this.selectedContent = this.content
+    }
+    this.schematicPath.splice(idx + 1, this.schematicPath.length - 1);
   }
 }

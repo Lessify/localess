@@ -27,7 +27,7 @@ export interface SchematicSelectChange {
   // id, componentName, fieldName
   contentId: string
   fieldName: string
-  componentName: string
+  schematicName: string
 }
 
 @Component({
@@ -302,7 +302,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     }
   }
 
-  navigationTo(contentId: string, fieldName: string,  componentName: string): void {
-    this.schematicChange.emit({contentId, fieldName, componentName})
+  navigationTo(contentId: string, fieldName: string,  schematicName: string): void {
+    this.schematicChange.emit({contentId, fieldName, schematicName})
   }
 }

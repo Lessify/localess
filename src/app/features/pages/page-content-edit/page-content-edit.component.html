@@ -21,14 +21,14 @@
     </mat-menu>
 
     <button mat-raised-button color="primary" matTooltip="Save the page"
-      [disabled]="!form.valid || isSaveLoading"
+      [disabled]="isSaveLoading"
       (click)="save()">
       <ll-icon [animate]="isSaveLoading" start="save" end="sync"></ll-icon>
       Save
     </button>
 
     <button mat-raised-button color="accent" matTooltip="Publish to be available via API call"
-      [disabled]="!form.valid || isPublishLoading"
+      [disabled]="isPublishLoading"
       (click)="publish()">
       <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
       Publish
@@ -71,8 +71,8 @@
   <ng-container *ngIf="schematic">
 
     <ll-breadcrumb>
-      <ll-breadcrumb-item *ngFor="let schematicPathItem of schematicPath" [matTooltip]="schematicPathItem.id">
-        <ng-container *ngIf="schematicMapByName.get(schematicPathItem.name) as sch">
+      <ll-breadcrumb-item *ngFor="let schematicPathItem of schematicPath" (click)="navigateToSchematic(schematicPathItem)">
+        <ng-container *ngIf="schematicMapByName.get(schematicPathItem.schematicName) as sch">
           {{sch.displayName || sch.name}}
         </ng-container>
       </ll-breadcrumb-item>
