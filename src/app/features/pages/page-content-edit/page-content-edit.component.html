@@ -65,156 +65,170 @@
   <mat-spinner></mat-spinner>
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
+
+
+
   <ng-container *ngIf="schematic">
+
     <ll-breadcrumb>
-      <ll-breadcrumb-item *ngFor="let schematicPathItem of schematicPath">
-        {{schematicPathItem.displayName || schematicPathItem.name}}
+      <ll-breadcrumb-item *ngFor="let schematicPathItem of schematicPath" [matTooltip]="schematicPathItem.id">
+        <ng-container *ngIf="schematicMapByName.get(schematicPathItem.name) as sch">
+          {{sch.displayName || sch.name}}
+        </ng-container>
       </ll-breadcrumb-item>
     </ll-breadcrumb>
 
-  <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">
-    <ng-container *ngFor="let component of schematic.components" [ngSwitch]="component.kind">
-      <ng-container *ngSwitchCase="'TEXT'">
-        <mat-form-field appearance="outline">
-          <mat-label>{{component.displayName || component.name}}</mat-label>
-          <input matInput type="text"
-                 [formControlName]="component.name"
-                 [required]="component.required"
-                 [attr.minlength]="component.minLength"
-                 [attr.maxlength]="component.maxLength"
-                 autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
-        </mat-form-field>
-      </ng-container>
-      <ng-container *ngSwitchCase="'TEXTAREA'">
-        <mat-form-field appearance="outline">
-          <mat-label>{{component.displayName || component.name}}</mat-label>
-          <textarea matInput rows="6"
-                    [formControlName]="component.name"
-                    [required]="component.required"
-                    [attr.minLength]="component.minLength"
-                    [attr.maxlength]="component.maxLength"
-                    autocomplete="off"></textarea>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
-        </mat-form-field>
-      </ng-container>
-      <ng-container *ngSwitchCase="'NUMBER'">
-        <mat-form-field appearance="outline">
-          <mat-label>{{component.displayName || component.name}}</mat-label>
-          <input matInput type="number"
-                 [formControlName]="component.name"
-                 [required]="component.required"
-                 [attr.min]="component.minValue"
-                 [attr.max]="component.maxValue"
-                 autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
-        </mat-form-field>
-      </ng-container>
-      <ng-container *ngSwitchCase="'COLOR'">
-        <mat-form-field appearance="outline">
-          <mat-label>{{component.displayName || component.name}}</mat-label>
-          <input matInput type="color"
-                 [formControlName]="component.name"
-                 [required]="component.required"
-                 [attr.min]="component.minValue"
-                 [attr.max]="component.maxValue"
-                 autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
-        </mat-form-field>
-      </ng-container>
-      <ng-container *ngSwitchCase="'DATE'">
-        <mat-form-field appearance="outline">
-          <mat-label>{{component.displayName || component.name}}</mat-label>
-          <input matInput type="date"
-                 [formControlName]="component.name"
-                 [required]="component.required"
-                 autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
-        </mat-form-field>
-      </ng-container>
-      <ng-container *ngSwitchCase="'DATETIME'">
-        <mat-form-field appearance="outline">
-          <mat-label>{{component.displayName || component.name}}</mat-label>
-          <input matInput type="datetime-local"
-                 [formControlName]="component.name"
-                 [required]="component.required"
-                 autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
-        </mat-form-field>
-      </ng-container>
-      <ng-container *ngSwitchCase="'BOOLEAN'">
-        <mat-checkbox [formControlName]="component.name">
-          {{component.displayName || component.name}}
-        </mat-checkbox>
-        &nbsp;
-        <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-        <br/>
-        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
-        <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
-      </ng-container>
+    <ll-page-content-schematic-edit
+      [content]="selectedContent"
+      [schematics]="schematics"
+      [locale]="selectedLocale.id"
+      [localeFallback]="selectedSpace.localeFallback.id"
+      (contentChange)="onContentChange($event)"
+      (schematicChange)="onSchematicChange($event)"
+    ></ll-page-content-schematic-edit>
 
-      <ng-container *ngSwitchCase="'SCHEMATIC'">
-        <mat-card class="ll-not-shadow">
-          <mat-card-header>
-            <mat-card-title-group>
-              <mat-card-title>
-                {{component.displayName || component.name}}
-              </mat-card-title>
+<!--  <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">-->
+<!--    <ng-container *ngFor="let component of schematic.components" [ngSwitch]="component.kind">-->
+<!--      <ng-container *ngSwitchCase="'TEXT'">-->
+<!--        <mat-form-field appearance="outline">-->
+<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
+<!--          <input matInput type="text"-->
+<!--                 [formControlName]="component.name"-->
+<!--                 [required]="component.required"-->
+<!--                 [attr.minlength]="component.minLength"-->
+<!--                 [attr.maxlength]="component.maxLength"-->
+<!--                 autocomplete="off"/>-->
+<!--          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>-->
+<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
+<!--          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>-->
+<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
+<!--        </mat-form-field>-->
+<!--      </ng-container>-->
+<!--      <ng-container *ngSwitchCase="'TEXTAREA'">-->
+<!--        <mat-form-field appearance="outline">-->
+<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
+<!--          <textarea matInput rows="6"-->
+<!--                    [formControlName]="component.name"-->
+<!--                    [required]="component.required"-->
+<!--                    [attr.minLength]="component.minLength"-->
+<!--                    [attr.maxlength]="component.maxLength"-->
+<!--                    autocomplete="off"></textarea>-->
+<!--          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>-->
+<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
+<!--          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>-->
+<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
+<!--        </mat-form-field>-->
+<!--      </ng-container>-->
+<!--      <ng-container *ngSwitchCase="'NUMBER'">-->
+<!--        <mat-form-field appearance="outline">-->
+<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
+<!--          <input matInput type="number"-->
+<!--                 [formControlName]="component.name"-->
+<!--                 [required]="component.required"-->
+<!--                 [attr.min]="component.minValue"-->
+<!--                 [attr.max]="component.maxValue"-->
+<!--                 autocomplete="off"/>-->
+<!--          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>-->
+<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
+<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
+<!--        </mat-form-field>-->
+<!--      </ng-container>-->
+<!--      <ng-container *ngSwitchCase="'COLOR'">-->
+<!--        <mat-form-field appearance="outline">-->
+<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
+<!--          <input matInput type="color"-->
+<!--                 [formControlName]="component.name"-->
+<!--                 [required]="component.required"-->
+<!--                 [attr.min]="component.minValue"-->
+<!--                 [attr.max]="component.maxValue"-->
+<!--                 autocomplete="off"/>-->
+<!--          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>-->
+<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
+<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
+<!--        </mat-form-field>-->
+<!--      </ng-container>-->
+<!--      <ng-container *ngSwitchCase="'DATE'">-->
+<!--        <mat-form-field appearance="outline">-->
+<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
+<!--          <input matInput type="date"-->
+<!--                 [formControlName]="component.name"-->
+<!--                 [required]="component.required"-->
+<!--                 autocomplete="off"/>-->
+<!--          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>-->
+<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
+<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
+<!--        </mat-form-field>-->
+<!--      </ng-container>-->
+<!--      <ng-container *ngSwitchCase="'DATETIME'">-->
+<!--        <mat-form-field appearance="outline">-->
+<!--          <mat-label>{{component.displayName || component.name}}</mat-label>-->
+<!--          <input matInput type="datetime-local"-->
+<!--                 [formControlName]="component.name"-->
+<!--                 [required]="component.required"-->
+<!--                 autocomplete="off"/>-->
+<!--          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>-->
+<!--          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>-->
+<!--          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
+<!--        </mat-form-field>-->
+<!--      </ng-container>-->
+<!--      <ng-container *ngSwitchCase="'BOOLEAN'">-->
+<!--        <mat-checkbox [formControlName]="component.name">-->
+<!--          {{component.displayName || component.name}}-->
+<!--        </mat-checkbox>-->
+<!--        &nbsp;-->
+<!--        <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>-->
+<!--        <br/>-->
+<!--        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>-->
+<!--        <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>-->
+<!--      </ng-container>-->
 
-              <button mat-icon-button [matMenuTriggerFor]="schematicsMenu" matTooltip="Add Schematic">
-                <mat-icon>add_circle</mat-icon>
-              </button>
-              <mat-menu #schematicsMenu="matMenu">
-                <button mat-menu-item *ngFor="let sch of filterSchematic(component.schematics)" (click)="addSchematic(component, sch)">
-                  {{sch.displayName || sch.name}}
-                </button>
-              </mat-menu>
+<!--      <ng-container *ngSwitchCase="'SCHEMATIC'">-->
+<!--        <mat-card class="ll-not-shadow">-->
+<!--          <mat-card-header>-->
+<!--            <mat-card-title-group>-->
+<!--              <mat-card-title>-->
+<!--                {{component.displayName || component.name}}-->
+<!--              </mat-card-title>-->
 
-            </mat-card-title-group>
-          </mat-card-header>
-          <mat-divider></mat-divider>
-          <mat-card-content>
-            <mat-nav-list class="ll-mat-nav-list-gap">
-              <mat-list-item *ngFor="let item of content[component.name]">
-                <mat-icon matListItemIcon matTooltip="Feature with drag and drop will come later">drag_handle</mat-icon>
-                <span matListItemTitle *ngIf="schematicMapByName.get(item.schematic) as sch">{{sch.displayName || sch.name}}</span>
-                <span matListItemLine>{{item._id}}</span>
-                <span matListItemMeta>
-                  <button mat-icon-button (click)="removeSchematic(component, item._id)">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                  <mat-icon>navigate_next</mat-icon>
-                </span>
-              </mat-list-item>
+<!--              <button mat-icon-button [matMenuTriggerFor]="schematicsMenu" matTooltip="Add Schematic">-->
+<!--                <mat-icon>add_circle</mat-icon>-->
+<!--              </button>-->
+<!--              <mat-menu #schematicsMenu="matMenu">-->
+<!--                <button mat-menu-item *ngFor="let sch of filterSchematic(component.schematics)" (click)="addSchematic(component, sch)">-->
+<!--                  {{sch.displayName || sch.name}}-->
+<!--                </button>-->
+<!--              </mat-menu>-->
 
-            </mat-nav-list>
-          </mat-card-content>
-        </mat-card>
+<!--            </mat-card-title-group>-->
+<!--          </mat-card-header>-->
+<!--          <mat-divider></mat-divider>-->
+<!--          <mat-card-content>-->
+<!--            <mat-nav-list class="ll-mat-nav-list-gap">-->
+<!--              <mat-list-item *ngFor="let item of content[component.name]">-->
+<!--                <mat-icon matListItemIcon matTooltip="Feature with drag and drop will come later">drag_handle</mat-icon>-->
+<!--                <span matListItemTitle *ngIf="schematicMapByName.get(item.schematic) as sch">{{sch.displayName || sch.name}}</span>-->
+<!--                <span matListItemLine>{{item._id}}</span>-->
+<!--                <span matListItemMeta>-->
+<!--                  <button mat-icon-button (click)="removeSchematic(component, item._id)">-->
+<!--                    <mat-icon>delete</mat-icon>-->
+<!--                  </button>-->
+<!--                  <mat-icon>navigate_next</mat-icon>-->
+<!--                </span>-->
+<!--              </mat-list-item>-->
 
-        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
-      </ng-container>
+<!--            </mat-nav-list>-->
+<!--          </mat-card-content>-->
+<!--        </mat-card>-->
 
-    </ng-container>
-  </form>
+<!--        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>-->
+<!--      </ng-container>-->
+
+<!--    </ng-container>-->
+<!--  </form>-->
   </ng-container>
 
   <ng-container *ngIf="isTest">
     <mat-divider></mat-divider>
-    <pre>{{form.value | json}}</pre>
     <pre>{{content | json}}</pre>
   </ng-container>
 

@@ -10,9 +10,18 @@ import {PageService} from '@shared/services/page.service';
 import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';
 import {PageEditDialogComponent} from './page-edit-dialog/page-edit-dialog.component';
 import {PageContentEditComponent} from './page-content-edit/page-content-edit.component';
+import {
+  PageContentSchematicEditComponent
+} from './page-content-schematic-edit/page-content-schematic-edit.component';
 
 @NgModule({
-  declarations: [PagesComponent, PageAddDialogComponent, PageEditDialogComponent, PageContentEditComponent],
+  declarations: [
+    PagesComponent,
+    PageAddDialogComponent,
+    PageEditDialogComponent,
+    PageContentEditComponent,
+    PageContentSchematicEditComponent
+  ],
   imports: [CommonModule, SharedModule, PagesRoutingModule],
   providers: [SpaceService, SchematicService, PageService]
 })

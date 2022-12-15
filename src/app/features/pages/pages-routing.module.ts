@@ -9,14 +9,8 @@ const routes: Routes = [
     component: PagesComponent
   },
   {
-    path: ':id',
-    component: PageContentEditComponent,
-    children: [
-      {
-        path: 'schematic/:schematicId',
-        component: PageContentEditComponent
-      }
-    ]
+    path: ':pageId',
+    component: PageContentEditComponent
   }
 ];
 

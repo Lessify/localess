@@ -2,8 +2,13 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  EventEmitter,
+  Input,
+  OnChanges,
   OnDestroy,
-  OnInit
+  OnInit,
+  Output,
+  SimpleChanges
 } from '@angular/core';
 import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {
@@ -12,82 +17,100 @@ import {
   SchematicComponentKind
 } from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {SchematicService} from '@shared/services/schematic.service';
-import {PageService} from '@shared/services/page.service';
-import {Page, PageContentComponent} from '@shared/models/page.model';
-import {Store} from '@ngrx/store';
-import {AppState} from '../../../core/state/core.state';
-import {selectSpace} from '../../../core/state/space/space.selector';
-import {filter, switchMap, takeUntil} from 'rxjs/operators';
-import {combineLatest, debounceTime, Subject} from 'rxjs';
-import {SpaceService} from '@shared/services/space.service';
-import {Space} from '@shared/models/space.model';
-import {NotificationService} from '@shared/services/notification.service';
-import {Locale} from '@shared/models/locale.model';
-import {ObjectUtils} from '../../../core/utils/object-utils.service';
+import {PageContentComponent} from '@shared/models/page.model';
+import {takeUntil} from 'rxjs/operators';
+import {debounceTime, Subject} from 'rxjs';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
-import {
-  SchematicSelectChange
-} from '../page-content-schematic-edit/page-content-schematic-edit.component';
 
-interface SchematicPathItem {
-  id: string
-  name: string
+export interface SchematicSelectChange {
+  // id, componentName, fieldName
+  contentId: string
+  fieldName: string
+  componentName: string
 }
 
 @Component({
-  selector: 'll-page-content-edit',
-  templateUrl: './page-content-edit.component.html',
-  styleUrls: ['./page-content-edit.component.scss'],
+  selector: 'll-page-content-schematic-edit',
+  templateUrl: './page-content-schematic-edit.component.html',
+  styleUrls: ['./page-content-schematic-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PageContentEditComponent implements OnInit, OnDestroy {
-
-  isTest = environment.test
-  selectedSpace?: Space;
-  selectedLocale?: Locale;
-  pageId: string;
-  page?: Page;
-  content: PageContentComponent = {_id: '', schematic: ''};
-  selectedContent: PageContentComponent = {_id: '', schematic: ''};
-  schematic?: Schematic;
-  schematicMapById?: Map<string, Schematic>;
-  schematicMapByName?: Map<string, Schematic>;
-  schematicComponentsMap?: Map<string, SchematicComponent>;
-  schematicPath: SchematicPathItem[] = [];
-  schematics: Schematic[] = [];
-
-  //Loadings
-  isLoading: boolean = true;
-  isPublishLoading: boolean = false;
-  isSaveLoading: boolean = false;
-  isFormLoading: boolean = false;
+export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnDestroy {
 
   // Form
   form: FormRecord = this.fb.record({});
-
   // Subscriptions
   private destroy$ = new Subject();
 
+  @Input() content: PageContentComponent = {_id: '', schematic: ''};
+  @Input() schematics: Schematic[] = [];
+  @Input() locale: string = 'en';
+  @Input() localeFallback: string = 'en';
+  @Output() contentChange = this.form.valueChanges.pipe(
+    takeUntil(this.destroy$),
+    debounceTime(500)
+  )
+  @Output() schematicChange = new EventEmitter<SchematicSelectChange>();
+
+  isTest = environment.test
+  rootSchematic?: Schematic;
+  schematicMapById: Map<string, Schematic> = new Map<string, Schematic>();
+  schematicMapByName: Map<string, Schematic> = new Map<string, Schematic>();
+  schematicComponentsMap: Map<string, SchematicComponent> = new Map<string, SchematicComponent>();
+  //Loadings
+  isFormLoading: boolean = true;
+
   constructor(
     private readonly fb: FormBuilder,
-    private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
     private readonly cd: ChangeDetectorRef,
-    private readonly spaceService: SpaceService,
-    private readonly schematicService: SchematicService,
-    private readonly pageService: PageService,
-    private readonly store: Store<AppState>,
-    private readonly notificationService: NotificationService,
     readonly fe: FormErrorHandlerService,
   ) {
-    this.pageId = this.activatedRoute.snapshot.paramMap.get('pageId') || "";
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    console.group('ngOnChanges')
+    console.log(changes)
+
+    const localeChange = changes['locale'];
+    if (localeChange) {
+      this.onChanged();
+    }
+
+    const contentChange = changes['content'];
+    if(contentChange && !contentChange.isFirstChange()) {
+      // Update only when content is different
+      if(contentChange.currentValue._id != contentChange.previousValue._id) {
+        // Find new root schematic and regenerate the form
+        this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
+        this.form = this.fb.record({});
+        this.onChanged();
+      }
+    }
+
+    console.groupEnd()
   }
 
   ngOnInit(): void {
-    this.loadData(this.pageId)
+    console.group('ngOnInit')
+    //console.log(`content : ${JSON.stringify(this.content)}`)
+    //console.log(`schematics : ${JSON.stringify(this.schematics)}`)
+    console.log(`locale : ${this.locale}`)
+    console.log(`localeFallback : ${this.localeFallback}`)
+    console.groupEnd()
+
+    this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
+    this.schematicMapById = new Map<string, Schematic>(this.schematics.map(it => [it.id, it]));
+    this.schematicMapByName = new Map<string, Schematic>(this.schematics.map(it => [it.name, it]));
+    this.schematicComponentsMap = new Map<string, SchematicComponent>(this.rootSchematic?.components?.map(it => [it.name, it]));
+    this.generateForm();
+    if (this.content) {
+      this.form.reset()
+      this.form.patchValue(this.extractLocaleContent(this.locale));
+    }
+    //this.isFormLoading = false;
+    // this.cd.markForCheck();
+
     // this.form.valueChanges
     //   .pipe(
     //     takeUntil(this.destroy$),
@@ -105,8 +128,8 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     //         const value = formValue[key]
     //         const schematic = this.schematicComponentsMap?.get(key)
     //         if (value !== null) {
-    //           if (schematic?.translatable && this.selectedLocale) {
-    //             this.content[`${key}_i18n_${this.selectedLocale.id}`] = value
+    //           if (schematic?.translatable) {
+    //             this.content[`${key}_i18n_${this.locale}`] = value
     //           } else {
     //             this.content[key] = value
     //           }
@@ -121,51 +144,9 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     //   })
   }
 
-  loadData(pageId: string): void {
-    this.store.select(selectSpace)
-      .pipe(
-        filter(it => it.id !== ''), // Skip initial data
-        switchMap(it =>
-          combineLatest([
-            this.spaceService.findById(it.id),
-            this.pageService.findById(it.id, pageId),
-            this.schematicService.findAll(it.id)
-          ])
-        ),
-        takeUntil(this.destroy$),
-      )
-      .subscribe({
-        next: ([space, page, schematics]) => {
-          this.selectedSpace = space;
-          this.selectedLocale = space.localeFallback;
-          this.page = page;
-          this.schematic = schematics.find(it => it.id === page.schematic);
-          this.content = page.content ? ObjectUtils.clone(page.content) : {
-            _id: v4(),
-            schematic: this.schematic?.name || ''
-          };
-          this.selectedContent = this.content
-          if (this.schematic) {
-            this.schematicPath = [{id: this.content._id, name: this.content.schematic}];
-          }
-
-          this.schematics = schematics;
-          this.schematicMapById = new Map<string, Schematic>(this.schematics?.map(it => [it.id, it]));
-          this.schematicMapByName = new Map<string, Schematic>(this.schematics?.map(it => [it.name, it]));
-          this.schematicComponentsMap = new Map<string, SchematicComponent>(this.schematic?.components?.map(it => [it.name, it]));
-          this.generateForm();
-          if (this.content) {
-            this.form.reset()
-            this.form.patchValue(this.extractLocaleContent(this.selectedLocale));
-          }
-          this.isLoading = false;
-          this.cd.markForCheck();
-        }
-      })
-  }
 
   generateForm(): void {
-    for (const component of this.schematic?.components || []) {
+    for (const component of this.rootSchematic?.components || []) {
       const validators: ValidatorFn[] = []
       if (component.required) {
         validators.push(Validators.required)
@@ -174,7 +155,7 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
       // translatable + !fallBackLocale => disabled = false
       // !translatable + fallBackLocale => disabled = false
       // !translatable + !fallBackLocale => disabled = true
-      const disabled = !((component.translatable === true) || (this.selectedLocale?.id === this.selectedSpace?.localeFallback.id))
+      const disabled = !((component.translatable === true) || (this.locale === this.localeFallback))
       switch (component.kind) {
         case SchematicComponentKind.TEXT:
         case SchematicComponentKind.TEXTAREA: {
@@ -241,84 +222,33 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     }
   }
 
-  publish(): void {
-    this.isPublishLoading = true;
-    this.pageService.publish(this.selectedSpace!.id, this.pageId)
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Page has been published.');
-        },
-        error: () => {
-          this.notificationService.error('Page can not be published.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isPublishLoading = false
-            this.cd.markForCheck()
-          }, 1000)
-        }
-      })
-
-
-  }
-
-  save(): void {
-    this.isSaveLoading = true;
-
-    this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.content)
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Article has been updated.');
-        },
-        error: () => {
-          this.notificationService.error('Article can not be updated.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isSaveLoading = false
-            this.cd.markForCheck()
-          }, 1000)
-        }
-      })
-  }
-
-  back(): void {
-    this.router.navigate(['features', 'pages']);
-  }
-
-  onLocaleChanged(locale: Locale): void {
-    this.selectedLocale = locale;
+  onChanged(): void {
     this.isFormLoading = true;
     this.cd.detectChanges();
     this.generateForm();
     this.form.reset()
-    this.form.patchValue(this.extractLocaleContent(locale));
+    this.form.patchValue(this.extractLocaleContent(this.locale));
     this.isFormLoading = false;
     this.cd.markForCheck();
   }
 
-  extractLocaleContent(locale: Locale): Record<string, any> {
+  extractLocaleContent(locale: string): Record<string, any> {
     const result: Record<string, any> = {}
     // Extract Locale specific values
-    this.schematic?.components?.forEach((comp) => {
-      const value = this.content[`${comp.name}_i18n_${locale.id}`]
+    this.rootSchematic?.components?.forEach((comp) => {
+      const value = this.content[`${comp.name}_i18n_${locale}`]
       if (value) {
-        result[comp.name] = this.content[`${comp.name}_i18n_${locale.id}`]
+        result[comp.name] = this.content[`${comp.name}_i18n_${locale}`]
       }
     })
     // Extract not translatable values in fallback locale
-    this.schematic?.components?.forEach((comp) => {
+    this.rootSchematic?.components?.forEach((comp) => {
       const value = this.content[comp.name]
       if (value) {
         result[comp.name] = value
       }
     })
     return result
-  }
-
-  openPublishedInNewTab(locale: string): void {
-    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/pages/${this.pageId}/${locale}.json`
-    window.open(url, '_blank')
   }
 
   filterSchematic(ids?: string[]): Schematic[] {
@@ -372,23 +302,7 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     }
   }
 
-  onContentChange(event: any) {
-    console.log(event)
-  }
-
-  onSchematicChange(event: SchematicSelectChange) {
-
-    this.schematicPath.push({id: event.contentId, name: event.componentName})
-
-    this.content
-
-    this.selectedContent = this.selectedContent[event.fieldName].find( (it: PageContentComponent) => it._id == event.contentId)
-
-
-    /*for( let path of this.schematicPath) {
-      console.log(path)
-    }*/
-    console.log(this.schematicPath)
-    console.log(event)
+  navigationTo(contentId: string, fieldName: string,  componentName: string): void {
+    this.schematicChange.emit({contentId, fieldName, componentName})
   }
 }
