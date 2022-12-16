@@ -5,12 +5,8 @@ import {
   OnDestroy,
   OnInit
 } from '@angular/core';
-import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {
-  Schematic,
-  SchematicComponent,
-  SchematicComponentKind
-} from '@shared/models/schematic.model';
+import {FormBuilder} from '@angular/forms';
+import {Schematic,} from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchematicService} from '@shared/services/schematic.service';
@@ -25,7 +21,6 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {Locale} from '@shared/models/locale.model';
-import {ObjectUtils} from '../../../core/utils/object-utils.service';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
 import {
@@ -53,10 +48,8 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   page?: Page;
   content: PageContentComponent = {_id: '', schematic: ''};
   selectedContent: PageContentComponent = {_id: '', schematic: ''};
-  schematic?: Schematic;
-  schematicMapById?: Map<string, Schematic>;
+  rootSchematic?: Schematic;
   schematicMapByName?: Map<string, Schematic>;
-  schematicComponentsMap?: Map<string, SchematicComponent>;
   schematicPath: SchematicPathItem[] = [];
   schematics: Schematic[] = [];
 
@@ -64,7 +57,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   isPublishLoading: boolean = false;
   isSaveLoading: boolean = false;
-  isFormLoading: boolean = false;
 
   // Subscriptions
   private destroy$ = new Subject();
@@ -103,27 +95,36 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: ([space, page, schematics]) => {
+          console.log('load')
           this.selectedSpace = space;
           this.selectedLocale = space.localeFallback;
           this.page = page;
-          this.schematic = schematics.find(it => it.id === page.schematic);
-          this.content = page.content ? ObjectUtils.clone(page.content) : {
+          this.rootSchematic = schematics.find(it => it.id === page.schematic);
+          this.content = page.content || {
             _id: v4(),
-            schematic: this.schematic?.name || ''
+            schematic: this.rootSchematic?.name || ''
           };
-          this.selectedContent = this.content
-          if (this.schematic) {
+
+          // Generate initial path only once
+          if (this.rootSchematic && this.schematicPath.length == 0) {
             this.schematicPath = [{
               contentId: this.content._id,
               schematicName: this.content.schematic,
               fieldName: ''
             }];
           }
+          // Select content base on path
+          if (this.schematicPath.length == 1) {
+            this.selectedContent = this.content;
+          } else {
+            for (const item of this.schematicPath) {
+              if (item.fieldName === '') continue;
+              this.selectedContent = this.content[item.fieldName].find((it: PageContentComponent) => it._id == item.contentId)
+            }
+          }
 
           this.schematics = schematics;
-          this.schematicMapById = new Map<string, Schematic>(this.schematics?.map(it => [it.id, it]));
           this.schematicMapByName = new Map<string, Schematic>(this.schematics?.map(it => [it.name, it]));
-          this.schematicComponentsMap = new Map<string, SchematicComponent>(this.schematic?.components?.map(it => [it.name, it]));
           this.isLoading = false;
           this.cd.markForCheck();
         }
@@ -185,25 +186,26 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     this.destroy$.complete()
   }
 
-  onContentChange(event: any): void {
-    console.log(event)
-  }
-
   onSchematicChange(event: SchematicSelectChange): void {
     this.schematicPath.push({
       contentId: event.contentId,
       schematicName: event.schematicName,
       fieldName: event.fieldName
-    })
-    this.selectedContent = this.selectedContent[event.fieldName].find((it: PageContentComponent) => it._id == event.contentId)
+    });
+    this.selectedContent = this.selectedContent[event.fieldName].find((it: PageContentComponent) => it._id == event.contentId);
   }
 
   navigateToSchematic(pathItem: SchematicPathItem): void {
     console.log(pathItem)
-    const idx = this.schematicPath.findIndex((it) => it.contentId == pathItem.contentId)
+    const idx = this.schematicPath.findIndex((it) => it.contentId == pathItem.contentId);
+    // Select Root
     if (idx == 0) {
-      this.selectedContent = this.content
+      this.selectedContent = this.content;
     }
-    this.schematicPath.splice(idx + 1, this.schematicPath.length - 1);
+    // TODO select other deap
+    // Delete remaining path
+    // l=2, idx = 0, => (1, 1)
+    // l=5, idx = 0, => (1, 4)
+    this.schematicPath.splice(idx + 1, this.schematicPath.length - (idx + 1));
   }
 }

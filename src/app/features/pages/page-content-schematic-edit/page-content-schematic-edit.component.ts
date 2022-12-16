@@ -47,10 +47,6 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
   @Input() schematics: Schematic[] = [];
   @Input() locale: string = 'en';
   @Input() localeFallback: string = 'en';
-  @Output() contentChange = this.form.valueChanges.pipe(
-    takeUntil(this.destroy$),
-    debounceTime(500)
-  )
   @Output() schematicChange = new EventEmitter<SchematicSelectChange>();
 
   isTest = environment.test
@@ -84,7 +80,6 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
         // Find new root schematic and regenerate the form
         this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
         this.schematicComponentsMap = new Map<string, SchematicComponent>(this.rootSchematic?.components?.map(it => [it.name, it]));
-        //this.form = this.fb.record({});
         this.clearForm();
         this.onChanged();
       }
@@ -114,7 +109,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     this.form.valueChanges
       .pipe(
         takeUntil(this.destroy$),
-        debounceTime(500)
+        debounceTime(500),
       )
       .subscribe({
         next: (formValue) => {
