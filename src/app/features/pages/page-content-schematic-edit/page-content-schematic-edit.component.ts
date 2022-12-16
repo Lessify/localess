@@ -83,7 +83,9 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
       if(contentChange.currentValue._id != contentChange.previousValue._id) {
         // Find new root schematic and regenerate the form
         this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
-        this.form = this.fb.record({});
+        this.schematicComponentsMap = new Map<string, SchematicComponent>(this.rootSchematic?.components?.map(it => [it.name, it]));
+        //this.form = this.fb.record({});
+        this.clearForm();
         this.onChanged();
       }
     }
@@ -108,40 +110,38 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
       this.form.reset()
       this.form.patchValue(this.extractLocaleContent(this.locale));
     }
-    //this.isFormLoading = false;
-    // this.cd.markForCheck();
 
-    // this.form.valueChanges
-    //   .pipe(
-    //     takeUntil(this.destroy$),
-    //     debounceTime(500)
-    //   )
-    //   .subscribe({
-    //     next: (formValue) => {
-    //       console.group('form')
-    //       console.log(Object.getOwnPropertyNames(formValue))
-    //       console.log(formValue)
-    //       console.log('Before')
-    //       console.log(this.content)
-    //
-    //       for (const key of Object.getOwnPropertyNames(formValue)) {
-    //         const value = formValue[key]
-    //         const schematic = this.schematicComponentsMap?.get(key)
-    //         if (value !== null) {
-    //           if (schematic?.translatable) {
-    //             this.content[`${key}_i18n_${this.locale}`] = value
-    //           } else {
-    //             this.content[key] = value
-    //           }
-    //         }
-    //       }
-    //       console.log('After')
-    //       console.log(this.content)
-    //       console.groupEnd()
-    //     },
-    //     error: (err) => console.log(err),
-    //     complete: () => console.log('completed')
-    //   })
+    this.form.valueChanges
+      .pipe(
+        takeUntil(this.destroy$),
+        debounceTime(500)
+      )
+      .subscribe({
+        next: (formValue) => {
+          console.group('form')
+          console.log(Object.getOwnPropertyNames(formValue))
+          console.log(formValue)
+          console.log('Before')
+          console.log(this.content)
+
+          for (const key of Object.getOwnPropertyNames(formValue)) {
+            const value = formValue[key]
+            const schematic = this.schematicComponentsMap?.get(key)
+            if (value !== null) {
+              if (schematic?.translatable) {
+                this.content[`${key}_i18n_${this.locale}`] = value
+              } else {
+                this.content[key] = value
+              }
+            }
+          }
+          console.log('After')
+          console.log(this.content)
+          console.groupEnd()
+        },
+        error: (err) => console.log(err),
+        complete: () => console.log('completed')
+      })
   }
 
 
@@ -220,6 +220,14 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
         }
       }
     }
+  }
+
+  clearForm(): void {
+    console.group('clearForm')
+    for (const ctrlName in this.form.controls) {
+      this.form.removeControl(ctrlName)
+    }
+    console.groupEnd()
   }
 
   onChanged(): void {

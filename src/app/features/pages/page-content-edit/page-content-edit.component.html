@@ -78,6 +78,10 @@
       </ll-breadcrumb-item>
     </ll-breadcrumb>
 
+    <ng-container *ngIf="isTest">
+      <pre>{{schematicPath | json}}</pre>
+    </ng-container>
+
     <ll-page-content-schematic-edit
       [content]="selectedContent"
       [schematics]="schematics"

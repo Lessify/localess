@@ -66,9 +66,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   isSaveLoading: boolean = false;
   isFormLoading: boolean = false;
 
-  // Form
-  form: FormRecord = this.fb.record({});
-
   // Subscriptions
   private destroy$ = new Subject();
 
@@ -89,37 +86,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData(this.pageId)
-    // this.form.valueChanges
-    //   .pipe(
-    //     takeUntil(this.destroy$),
-    //     debounceTime(500)
-    //   )
-    //   .subscribe({
-    //     next: (formValue) => {
-    //       console.group('form')
-    //       console.log(Object.getOwnPropertyNames(formValue))
-    //       console.log(formValue)
-    //       console.log('Before')
-    //       console.log(this.content)
-    //
-    //       for (const key of Object.getOwnPropertyNames(formValue)) {
-    //         const value = formValue[key]
-    //         const schematic = this.schematicComponentsMap?.get(key)
-    //         if (value !== null) {
-    //           if (schematic?.translatable && this.selectedLocale) {
-    //             this.content[`${key}_i18n_${this.selectedLocale.id}`] = value
-    //           } else {
-    //             this.content[key] = value
-    //           }
-    //         }
-    //       }
-    //       console.log('After')
-    //       console.log(this.content)
-    //       console.groupEnd()
-    //     },
-    //     error: (err) => console.log(err),
-    //     complete: () => console.log('completed')
-    //   })
   }
 
   loadData(pageId: string): void {
@@ -158,92 +124,10 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           this.schematicMapById = new Map<string, Schematic>(this.schematics?.map(it => [it.id, it]));
           this.schematicMapByName = new Map<string, Schematic>(this.schematics?.map(it => [it.name, it]));
           this.schematicComponentsMap = new Map<string, SchematicComponent>(this.schematic?.components?.map(it => [it.name, it]));
-          this.generateForm();
-          if (this.content) {
-            this.form.reset()
-            this.form.patchValue(this.extractLocaleContent(this.selectedLocale));
-          }
           this.isLoading = false;
           this.cd.markForCheck();
         }
       })
-  }
-
-  generateForm(): void {
-    for (const component of this.schematic?.components || []) {
-      const validators: ValidatorFn[] = []
-      if (component.required) {
-        validators.push(Validators.required)
-      }
-      // translatable + fallBackLocale => disabled = false
-      // translatable + !fallBackLocale => disabled = false
-      // !translatable + fallBackLocale => disabled = false
-      // !translatable + !fallBackLocale => disabled = true
-      const disabled = !((component.translatable === true) || (this.selectedLocale?.id === this.selectedSpace?.localeFallback.id))
-      switch (component.kind) {
-        case SchematicComponentKind.TEXT:
-        case SchematicComponentKind.TEXTAREA: {
-          if (component.minLength) {
-            validators.push(Validators.minLength(component.minLength))
-          }
-          if (component.maxLength) {
-            validators.push(Validators.maxLength(component.maxLength))
-          }
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
-          break;
-        }
-        case SchematicComponentKind.NUMBER: {
-          if (component.minValue) {
-            validators.push(Validators.min(component.minValue))
-          }
-          if (component.maxValue) {
-            validators.push(Validators.max(component.maxValue))
-          }
-          //this.form.setControl(component.name, this.fb.control<number | undefined>({ value: component.defaultValue ? Number.parseInt(component.defaultValue) : undefined, disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<number | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.COLOR: {
-          //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.BOOLEAN: {
-          //this.form.setControl(component.name, this.fb.control<boolean | undefined>({ value: component.defaultValue === 'true', disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<boolean | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.DATE: {
-          //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.DATETIME: {
-          //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-      }
-    }
   }
 
   publish(): void {
@@ -291,90 +175,14 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     this.router.navigate(['features', 'pages']);
   }
 
-  onLocaleChanged(locale: Locale): void {
-    this.selectedLocale = locale;
-    this.isFormLoading = true;
-    this.cd.detectChanges();
-    this.generateForm();
-    this.form.reset()
-    this.form.patchValue(this.extractLocaleContent(locale));
-    this.isFormLoading = false;
-    this.cd.markForCheck();
-  }
-
-  extractLocaleContent(locale: Locale): Record<string, any> {
-    const result: Record<string, any> = {}
-    // Extract Locale specific values
-    this.schematic?.components?.forEach((comp) => {
-      const value = this.content[`${comp.name}_i18n_${locale.id}`]
-      if (value) {
-        result[comp.name] = this.content[`${comp.name}_i18n_${locale.id}`]
-      }
-    })
-    // Extract not translatable values in fallback locale
-    this.schematic?.components?.forEach((comp) => {
-      const value = this.content[comp.name]
-      if (value) {
-        result[comp.name] = value
-      }
-    })
-    return result
-  }
-
   openPublishedInNewTab(locale: string): void {
     const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/pages/${this.pageId}/${locale}.json`
     window.open(url, '_blank')
   }
 
-  filterSchematic(ids?: string[]): Schematic[] {
-    if (ids) {
-      const result: Schematic[] = [];
-      for (const id of ids) {
-        const r = this.schematicMapById?.get(id)
-        if (r) {
-          result.push(r)
-        }
-      }
-      return result;
-    }
-    return this.schematics
-  }
-
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
     this.destroy$.complete()
-  }
-
-  addSchematic(component: SchematicComponent, schematic: Schematic): void {
-    let sch: PageContentComponent[] | undefined = this.content[component.name];
-    if (sch) {
-      sch.push(
-        {
-          _id: v4(),
-          schematic: schematic.name
-        }
-      )
-    } else {
-      this.content[component.name] = [
-        {
-          _id: v4(),
-          schematic: schematic.name
-        }
-      ]
-    }
-  }
-
-  removeSchematic(component: SchematicComponent, schematicId: string): void {
-    let sch: PageContentComponent[] | undefined = this.content[component.name];
-    if (sch) {
-      let idx = sch.findIndex(it => it._id == schematicId);
-      if (idx >= 0) {
-        sch.splice(idx)
-      }
-      if (sch.length == 0) {
-        delete this.content[component.name];
-      }
-    }
   }
 
   onContentChange(event: any): void {
