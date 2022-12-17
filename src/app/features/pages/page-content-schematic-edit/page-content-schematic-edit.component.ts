@@ -22,13 +22,8 @@ import {takeUntil} from 'rxjs/operators';
 import {debounceTime, Subject} from 'rxjs';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
-
-export interface SchematicSelectChange {
-  // id, componentName, fieldName
-  contentId: string
-  fieldName: string
-  schematicName: string
-}
+import {SchematicSelectChange} from './page-content-schematic-edit.model';
+import {ContentService} from '@shared/services/content.service';
 
 @Component({
   selector: 'll-page-content-schematic-edit',
@@ -60,6 +55,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
   constructor(
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
+    private readonly contentService: ContentService,
     readonly fe: FormErrorHandlerService,
   ) {
   }
@@ -68,21 +64,32 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     console.group('ngOnChanges')
     console.log(changes)
 
-    const localeChange = changes['locale'];
-    if (localeChange) {
-      this.onChanged();
+    const schematicsChange = changes['schematics'];
+    if (schematicsChange) {
+      this.schematicMapById = new Map<string, Schematic>(this.schematics.map(it => [it.id, it]));
+      this.schematicMapByName = new Map<string, Schematic>(this.schematics.map(it => [it.name, it]));
     }
 
     const contentChange = changes['content'];
-    if(contentChange && !contentChange.isFirstChange()) {
-      // Update only when content is different
-      if(contentChange.currentValue._id != contentChange.previousValue._id) {
-        // Find new root schematic and regenerate the form
+    if (contentChange) {
+      if (contentChange.isFirstChange()) {
         this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
         this.schematicComponentsMap = new Map<string, SchematicComponent>(this.rootSchematic?.components?.map(it => [it.name, it]));
-        this.clearForm();
-        this.onChanged();
+      } else {
+        // Update only when content is different
+        if (contentChange.currentValue._id != contentChange.previousValue._id) {
+          // Find new root schematic and regenerate the form
+          this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
+          this.schematicComponentsMap = new Map<string, SchematicComponent>(this.rootSchematic?.components?.map(it => [it.name, it]));
+          this.clearForm();
+          this.onChanged();
+        }
       }
+    }
+
+    const localeChange = changes['locale'];
+    if (localeChange) {
+      this.onChanged();
     }
 
     console.groupEnd()
@@ -92,18 +99,14 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     console.group('ngOnInit')
     //console.log(`content : ${JSON.stringify(this.content)}`)
     //console.log(`schematics : ${JSON.stringify(this.schematics)}`)
-    console.log(`locale : ${this.locale}`)
-    console.log(`localeFallback : ${this.localeFallback}`)
+    //console.log(`locale : ${this.locale}`)
+    //console.log(`localeFallback : ${this.localeFallback}`)
     console.groupEnd()
 
-    this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
-    this.schematicMapById = new Map<string, Schematic>(this.schematics.map(it => [it.id, it]));
-    this.schematicMapByName = new Map<string, Schematic>(this.schematics.map(it => [it.name, it]));
-    this.schematicComponentsMap = new Map<string, SchematicComponent>(this.rootSchematic?.components?.map(it => [it.name, it]));
     this.generateForm();
     if (this.content) {
       this.form.reset()
-      this.form.patchValue(this.extractLocaleContent(this.locale));
+      this.form.patchValue(this.contentService.extractSchematicContent(this.content, this.rootSchematic!, this.locale));
     }
 
     this.form.valueChanges
@@ -114,14 +117,14 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
       .subscribe({
         next: (formValue) => {
           console.group('form')
-          console.log(Object.getOwnPropertyNames(formValue))
-          console.log(formValue)
-          console.log('Before')
-          console.log(this.content)
+          // console.log(Object.getOwnPropertyNames(formValue))
+          //console.log(formValue)
+          // console.log('Before')
+          // console.log(this.content)
 
           for (const key of Object.getOwnPropertyNames(formValue)) {
             const value = formValue[key]
-            const schematic = this.schematicComponentsMap?.get(key)
+            const schematic = this.schematicComponentsMap.get(key)
             if (value !== null) {
               if (schematic?.translatable) {
                 this.content[`${key}_i18n_${this.locale}`] = value
@@ -130,8 +133,8 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
               }
             }
           }
-          console.log('After')
-          console.log(this.content)
+          // console.log('After')
+          //console.log(this.content)
           console.groupEnd()
         },
         error: (err) => console.log(err),
@@ -229,35 +232,16 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     this.cd.detectChanges();
     this.generateForm();
     this.form.reset();
-    this.form.patchValue(this.extractLocaleContent(this.locale));
+    this.form.patchValue(this.contentService.extractSchematicContent(this.content, this.rootSchematic!, this.locale));
     this.isFormLoading = false;
     this.cd.markForCheck();
-  }
-
-  extractLocaleContent(locale: string): Record<string, any> {
-    const result: Record<string, any> = {}
-
-    this.rootSchematic?.components?.forEach((comp) => {
-      let value;
-      if (comp.translatable) {
-        // Extract Locale specific values
-        value = this.content[`${comp.name}_i18n_${locale}`]
-      } else {
-        // Extract not translatable values in fallback locale
-        value = this.content[comp.name]
-      }
-      if (value) {
-        result[comp.name] = value;
-      }
-    })
-    return result
   }
 
   filterSchematic(ids?: string[]): Schematic[] {
     if (ids) {
       const result: Schematic[] = [];
       for (const id of ids) {
-        const r = this.schematicMapById?.get(id)
+        const r = this.schematicMapById.get(id)
         if (r) {
           result.push(r)
         }
@@ -304,7 +288,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     }
   }
 
-  navigationTo(contentId: string, fieldName: string,  schematicName: string): void {
+  navigationTo(contentId: string, fieldName: string, schematicName: string): void {
     this.schematicChange.emit({contentId, fieldName, schematicName})
   }
 }

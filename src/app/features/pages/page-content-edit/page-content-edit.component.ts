@@ -5,8 +5,8 @@ import {
   OnDestroy,
   OnInit
 } from '@angular/core';
-import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {Schematic, SchematicComponentKind,} from '@shared/models/schematic.model';
+import {FormBuilder} from '@angular/forms';
+import {Schematic,} from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchematicService} from '@shared/services/schematic.service';
@@ -20,18 +20,14 @@ import {combineLatest, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
-import {Locale} from '@shared/models/locale.model';
+import {DEFAULT_LOCALE, Locale} from '@shared/models/locale.model';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
 import {
   SchematicSelectChange
-} from '../page-content-schematic-edit/page-content-schematic-edit.component';
-
-interface SchematicPathItem {
-  contentId: string
-  fieldName: string
-  schematicName: string
-}
+} from '../page-content-schematic-edit/page-content-schematic-edit.model';
+import {ContentService} from '@shared/services/content.service';
+import {SchematicPathItem} from './page-content-edit.model';
 
 @Component({
   selector: 'll-page-content-edit',
@@ -43,7 +39,8 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
 
   isTest = environment.test
   selectedSpace?: Space;
-  selectedLocale?: Locale;
+  selectedLocale: Locale = DEFAULT_LOCALE;
+  availableLocales: Locale[] = [];
   pageId: string;
   page?: Page;
   content: PageContentComponent = {_id: '', schematic: ''};
@@ -71,6 +68,7 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     private readonly pageService: PageService,
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
+    private readonly contentService: ContentService,
     readonly fe: FormErrorHandlerService,
   ) {
     this.pageId = this.activatedRoute.snapshot.paramMap.get('pageId') || "";
@@ -98,6 +96,7 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           console.log('load')
           this.selectedSpace = space;
           this.selectedLocale = space.localeFallback;
+          this.availableLocales = space.locales;
           this.page = page;
           this.rootSchematic = schematics.find(it => it.id === page.schematic);
           this.content = page.content || {
@@ -151,25 +150,30 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
+    console.group('save')
     this.isSaveLoading = true;
 
-    // TODO add deep validation
-
-    this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.content)
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Content has been updated.');
-        },
-        error: () => {
-          this.notificationService.error('Content can not be updated.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isSaveLoading = false
-            this.cd.markForCheck()
-          }, 1000)
-        }
-      })
+    if (this.validateContent()) {
+      this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.content)
+        .subscribe({
+          next: () => {
+            this.notificationService.success('Content has been updated.');
+          },
+          error: () => {
+            this.notificationService.error('Content can not be updated.');
+          },
+          complete: () => {
+            setTimeout(() => {
+              this.isSaveLoading = false
+              this.cd.markForCheck()
+            }, 1000)
+          }
+        })
+    } else {
+      this.notificationService.warn('Content is not valid. Please check all fields are filled correctly.')
+      this.isSaveLoading = false;
+    }
+    console.groupEnd()
   }
 
   back(): void {
@@ -214,56 +218,10 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   }
 
   validateContent(): boolean {
-    let form: FormRecord = this.fb.record({});
-
-    for (const component of this.rootSchematic?.components || []) {
-      const validators: ValidatorFn[] = []
-      if (component.required) {
-        validators.push(Validators.required)
-      }
-      switch (component.kind) {
-        case SchematicComponentKind.TEXT:
-        case SchematicComponentKind.TEXTAREA: {
-          if (component.minLength) {
-            validators.push(Validators.minLength(component.minLength))
-          }
-          if (component.maxLength) {
-            validators.push(Validators.maxLength(component.maxLength))
-          }
-          form.setControl(component.name, this.fb.control<string | undefined>(undefined, validators))
-          break;
-        }
-        case SchematicComponentKind.NUMBER: {
-          if (component.minValue) {
-            validators.push(Validators.min(component.minValue))
-          }
-          if (component.maxValue) {
-            validators.push(Validators.max(component.maxValue))
-          }
-          form.setControl(component.name, this.fb.control<number | undefined>(undefined, validators))
-          break;
-        }
-        case SchematicComponentKind.COLOR: {
-          form.setControl(component.name, this.fb.control<string | undefined>(undefined, validators))
-          break;
-        }
-        case SchematicComponentKind.BOOLEAN: {
-          form.setControl(component.name, this.fb.control<boolean | undefined>(undefined, validators))
-          break;
-        }
-        case SchematicComponentKind.DATE: {
-          form.setControl(component.name, this.fb.control<string | undefined>(undefined, validators))
-          break;
-        }
-        case SchematicComponentKind.DATETIME: {
-          form.setControl(component.name, this.fb.control<string | undefined>(undefined, validators))
-          break;
-        }
-      }
-    }
-
-    form.patchValue(this.content)
-
-    return true;
+    console.group('validateContent')
+    const errors = this.contentService.validateContent(this.content, this.schematics, this.selectedLocale.id)
+    console.log(errors)
+    console.groupEnd()
+    return errors == null;
   }
 }

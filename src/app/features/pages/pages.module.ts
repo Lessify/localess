@@ -13,6 +13,7 @@ import {PageContentEditComponent} from './page-content-edit/page-content-edit.co
 import {
   PageContentSchematicEditComponent
 } from './page-content-schematic-edit/page-content-schematic-edit.component';
+import {ContentService} from '@shared/services/content.service';
 
 @NgModule({
   declarations: [
@@ -23,7 +24,7 @@ import {
     PageContentSchematicEditComponent
   ],
   imports: [CommonModule, SharedModule, PagesRoutingModule],
-  providers: [SpaceService, SchematicService, PageService]
+  providers: [SpaceService, SchematicService, PageService, ContentService]
 })
 export class PagesModule {
 }

@@ -7,13 +7,13 @@
     <span class="spacer"></span>
 
     <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
-      {{selectedLocale?.name}}
+      {{selectedLocale.name}}
       <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
     </button>
 
     <mat-menu #localesMenu="matMenu">
-      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="onLocaleChanged(locale)">
-        <span [class.fw-semibold]="locale.id === selectedLocale?.id">
+      <button mat-menu-item *ngFor="let locale of availableLocales" (click)="onLocaleChanged(locale)">
+        <span [class.fw-semibold]="locale.id === selectedLocale.id">
           {{locale.name}}
           <span *ngIf="locale.id === selectedSpace?.localeFallback.id"> (Fallback)</span>
         </span>
