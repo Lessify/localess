@@ -136,10 +136,10 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     this.pageService.publish(this.selectedSpace!.id, this.pageId)
       .subscribe({
         next: () => {
-          this.notificationService.success('Page has been published.');
+          this.notificationService.success('Content has been published.');
         },
         error: () => {
-          this.notificationService.error('Page can not be published.');
+          this.notificationService.error('Content can not be published.');
         },
         complete: () => {
           setTimeout(() => {
@@ -148,20 +148,20 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
           }, 1000)
         }
       })
-
-
   }
 
   save(): void {
     this.isSaveLoading = true;
 
+    // TODO add deep validation
+
     this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.content)
       .subscribe({
         next: () => {
-          this.notificationService.success('Article has been updated.');
+          this.notificationService.success('Content has been updated.');
         },
         error: () => {
-          this.notificationService.error('Article can not be updated.');
+          this.notificationService.error('Content can not be updated.');
         },
         complete: () => {
           setTimeout(() => {
