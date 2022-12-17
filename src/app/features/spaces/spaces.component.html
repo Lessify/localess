@@ -19,7 +19,7 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> ID </mat-header-cell>
       <mat-cell *matCellDef="let element">
         {{element.id}}
-        <button mat-icon-button (click)="copy(element.id)" matTooltip="Copy Id">
+        <button mat-icon-button [cdkCopyToClipboard]="element.id" matTooltip="Copy Id">
           <mat-icon>content_copy</mat-icon>
         </button>
       </mat-cell>

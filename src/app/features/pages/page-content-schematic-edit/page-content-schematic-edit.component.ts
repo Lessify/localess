@@ -139,7 +139,6 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
       })
   }
 
-
   generateForm(): void {
     for (const component of this.rootSchematic?.components || []) {
       const validators: ValidatorFn[] = []
@@ -229,7 +228,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     this.isFormLoading = true;
     this.cd.detectChanges();
     this.generateForm();
-    this.form.reset()
+    this.form.reset();
     this.form.patchValue(this.extractLocaleContent(this.locale));
     this.isFormLoading = false;
     this.cd.markForCheck();
@@ -237,18 +236,18 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
 
   extractLocaleContent(locale: string): Record<string, any> {
     const result: Record<string, any> = {}
-    // Extract Locale specific values
+
     this.rootSchematic?.components?.forEach((comp) => {
-      const value = this.content[`${comp.name}_i18n_${locale}`]
-      if (value) {
-        result[comp.name] = this.content[`${comp.name}_i18n_${locale}`]
+      let value;
+      if (comp.translatable) {
+        // Extract Locale specific values
+        value = this.content[`${comp.name}_i18n_${locale}`]
+      } else {
+        // Extract not translatable values in fallback locale
+        value = this.content[comp.name]
       }
-    })
-    // Extract not translatable values in fallback locale
-    this.rootSchematic?.components?.forEach((comp) => {
-      const value = this.content[comp.name]
       if (value) {
-        result[comp.name] = value
+        result[comp.name] = value;
       }
     })
     return result

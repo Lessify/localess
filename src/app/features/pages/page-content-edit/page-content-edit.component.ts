@@ -5,8 +5,8 @@ import {
   OnDestroy,
   OnInit
 } from '@angular/core';
-import {FormBuilder} from '@angular/forms';
-import {Schematic,} from '@shared/models/schematic.model';
+import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
+import {Schematic, SchematicComponentKind,} from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchematicService} from '@shared/services/schematic.service';
@@ -186,6 +186,10 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     this.destroy$.complete()
   }
 
+  onLocaleChanged(locale: Locale): void {
+    this.selectedLocale = locale;
+  }
+
   onSchematicChange(event: SchematicSelectChange): void {
     this.schematicPath.push({
       contentId: event.contentId,
@@ -207,5 +211,59 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     // l=2, idx = 0, => (1, 1)
     // l=5, idx = 0, => (1, 4)
     this.schematicPath.splice(idx + 1, this.schematicPath.length - (idx + 1));
+  }
+
+  validateContent(): boolean {
+    let form: FormRecord = this.fb.record({});
+
+    for (const component of this.rootSchematic?.components || []) {
+      const validators: ValidatorFn[] = []
+      if (component.required) {
+        validators.push(Validators.required)
+      }
+      switch (component.kind) {
+        case SchematicComponentKind.TEXT:
+        case SchematicComponentKind.TEXTAREA: {
+          if (component.minLength) {
+            validators.push(Validators.minLength(component.minLength))
+          }
+          if (component.maxLength) {
+            validators.push(Validators.maxLength(component.maxLength))
+          }
+          form.setControl(component.name, this.fb.control<string | undefined>(undefined, validators))
+          break;
+        }
+        case SchematicComponentKind.NUMBER: {
+          if (component.minValue) {
+            validators.push(Validators.min(component.minValue))
+          }
+          if (component.maxValue) {
+            validators.push(Validators.max(component.maxValue))
+          }
+          form.setControl(component.name, this.fb.control<number | undefined>(undefined, validators))
+          break;
+        }
+        case SchematicComponentKind.COLOR: {
+          form.setControl(component.name, this.fb.control<string | undefined>(undefined, validators))
+          break;
+        }
+        case SchematicComponentKind.BOOLEAN: {
+          form.setControl(component.name, this.fb.control<boolean | undefined>(undefined, validators))
+          break;
+        }
+        case SchematicComponentKind.DATE: {
+          form.setControl(component.name, this.fb.control<string | undefined>(undefined, validators))
+          break;
+        }
+        case SchematicComponentKind.DATETIME: {
+          form.setControl(component.name, this.fb.control<string | undefined>(undefined, validators))
+          break;
+        }
+      }
+    }
+
+    form.patchValue(this.content)
+
+    return true;
   }
 }

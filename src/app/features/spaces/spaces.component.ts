@@ -24,7 +24,6 @@ import {
 } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
-import {CopierService} from '@shared/services/copier.service';
 import {NotificationService} from '@shared/services/notification.service';
 import {Subject} from 'rxjs';
 
@@ -53,7 +52,6 @@ export class SpacesComponent implements OnInit, OnDestroy {
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
-    private readonly copierService: CopierService
   ) {
   }
 
@@ -149,10 +147,6 @@ export class SpacesComponent implements OnInit, OnDestroy {
           this.notificationService.error(`Space '${element.name}' can not be deleted.`);
         }
       });
-  }
-
-  copy(value: string): void {
-    this.copierService.copyText(value);
   }
 
   ngOnDestroy(): void {

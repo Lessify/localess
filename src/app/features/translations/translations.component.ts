@@ -26,7 +26,6 @@ import {
 } from '@shared/models/translation.model';
 import {selectSpace} from '../../core/state/space/space.selector';
 import {Space} from '@shared/models/space.model';
-import {CopierService} from '@shared/services/copier.service';
 import {
   TranslationAddDialogComponent
 } from './translation-add-dialog/translation-add-dialog.component';
@@ -118,7 +117,6 @@ export class TranslationsComponent implements OnInit, OnDestroy {
     private readonly dialog: MatDialog,
     private readonly store: Store<AppState>,
     private readonly cd: ChangeDetectorRef,
-    private readonly copierService: CopierService,
     private readonly translateService: TranslateService,
   ) {
     this.filteredLabels = this.labelCtrl.valueChanges.pipe(
@@ -434,10 +432,6 @@ export class TranslationsComponent implements OnInit, OnDestroy {
           }, 1000)
         }
       });
-  }
-
-  copy(value: string): void {
-    this.copierService.copyText(value);
   }
 
   // Labels

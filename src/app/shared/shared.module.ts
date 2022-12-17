@@ -32,7 +32,6 @@ import {
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {ScrollingModule} from '@angular/cdk/scrolling';
-import {CopierService} from './services/copier.service';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
 import {IconComponent} from './components/icon/icon.component';
@@ -43,6 +42,7 @@ import {
 import {RouterLink} from '@angular/router';
 import {BreadcrumbComponent} from '@shared/components/breadcrumb/breadcrumb.component';
 import {BreadcrumbItemComponent} from '@shared/components/breadcrumb/breadcrumb-item.component';
+import {ClipboardModule} from '@angular/cdk/clipboard';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -74,7 +74,8 @@ const MATERIAL_MODULES: any[] = [
   MatAutocompleteModule,
   ScrollingModule,
   MatGridListModule,
-  MatSnackBarModule
+  MatSnackBarModule,
+  ClipboardModule
 ];
 
 const SHARED_PIPES: any[] = [
@@ -109,7 +110,7 @@ const SHARED_COMPONENTS: any[] = [
     SHARED_COMPONENTS,
     SHARED_PIPES
   ],
-  providers: [CopierService]
+  providers: []
 })
 export class SharedModule {
 }

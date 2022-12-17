@@ -237,7 +237,7 @@
           <p><small><strong>ID</strong></small></p>
           <p>
             <small>{{selectedTranslation.id}}</small>
-            <button mat-icon-button (click)="copy(selectedTranslation.id)" matTooltip="Copy Id">
+            <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.id" matTooltip="Copy Id">
               <mat-icon>content_copy</mat-icon>
             </button>
           </p>
@@ -247,7 +247,7 @@
           <p><small><strong>Name</strong></small></p>
           <p>
             <small>{{selectedTranslation.name}}</small>
-            <button mat-icon-button (click)="copy(selectedTranslation.name)" matTooltip="Copy Name">
+            <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.name" matTooltip="Copy Name">
               <mat-icon>content_copy</mat-icon>
             </button>
           </p>
