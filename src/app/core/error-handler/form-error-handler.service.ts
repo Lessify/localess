@@ -11,7 +11,7 @@ export class FormErrorHandlerService {
     return this.errors(control?.errors)
   }
 
-  private errors(errors: ValidationErrors | null | undefined): string | undefined | null {
+  errors(errors: ValidationErrors | null | undefined): string | undefined | null {
     if (errors) {
       if (errors['required']) {
         return `Field is required.`

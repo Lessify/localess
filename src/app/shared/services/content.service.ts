@@ -1,13 +1,11 @@
 import {Injectable} from '@angular/core';
-import {Schematic, SchematicComponentKind} from '@shared/models/schematic.model';
-import {FormBuilder, FormRecord, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
-import {PageContentComponent} from '@shared/models/page.model';
-
-export interface ContentError {
-  contentId: string;
-  fieldName: string;
-  errors: ValidationErrors | null;
-}
+import {
+  Schematic,
+  SchematicComponent,
+  SchematicComponentKind
+} from '@shared/models/schematic.model';
+import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
+import {ContentError, PageContentComponent} from '@shared/models/page.model';
 
 @Injectable()
 export class ContentService {
@@ -26,15 +24,19 @@ export class ContentService {
     while (selectedContent) {
       const schematic = schematicsByName.get(selectedContent.schematic)
       if (schematic) {
+        const schematicComponentsMap = new Map<string, SchematicComponent>(schematic.components?.map(it => [it.name, it]));
         const form = this.generateSchematicForm(schematic, true)
         form.patchValue(this.extractSchematicContent(selectedContent, schematic, locale))
         if (!form.valid) {
           for (const controlName in form.controls) {
+            const component = schematicComponentsMap.get(controlName);
             const control = form.controls[controlName];
             if (control && !control.valid) {
               errors.push({
                 contentId: selectedContent._id,
+                schematic: schematic.displayName || schematic.name,
                 fieldName: controlName,
+                fieldDisplayName: component?.displayName,
                 errors: control.errors
               })
             }
@@ -67,7 +69,6 @@ export class ContentService {
         result[comp.name] = value;
       }
     })
-
     return result
   }
 

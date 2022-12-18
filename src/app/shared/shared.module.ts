@@ -43,6 +43,7 @@ import {RouterLink} from '@angular/router';
 import {BreadcrumbComponent} from '@shared/components/breadcrumb/breadcrumb.component';
 import {BreadcrumbItemComponent} from '@shared/components/breadcrumb/breadcrumb-item.component';
 import {ClipboardModule} from '@angular/cdk/clipboard';
+import {MatBadgeModule} from '@angular/material/badge';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -75,7 +76,8 @@ const MATERIAL_MODULES: any[] = [
   ScrollingModule,
   MatGridListModule,
   MatSnackBarModule,
-  ClipboardModule
+  ClipboardModule,
+  MatBadgeModule
 ];
 
 const SHARED_PIPES: any[] = [

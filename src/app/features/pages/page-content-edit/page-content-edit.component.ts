@@ -11,7 +11,7 @@ import {FormErrorHandlerService} from '../../../core/error-handler/form-error-ha
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchematicService} from '@shared/services/schematic.service';
 import {PageService} from '@shared/services/page.service';
-import {Page, PageContentComponent} from '@shared/models/page.model';
+import {ContentError, Page, PageContentComponent} from '@shared/models/page.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../../core/state/core.state';
 import {selectSpace} from '../../../core/state/space/space.selector';
@@ -49,6 +49,7 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   schematicMapByName?: Map<string, Schematic>;
   schematicPath: SchematicPathItem[] = [];
   schematics: Schematic[] = [];
+  contentErrors: ContentError[] | null = null;
 
   //Loadings
   isLoading: boolean = true;
@@ -153,7 +154,9 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     console.group('save')
     this.isSaveLoading = true;
 
-    if (this.validateContent()) {
+    this.contentErrors = this.contentService.validateContent(this.content, this.schematics, this.selectedLocale.id)
+
+    if (!this.contentErrors) {
       this.pageService.updateContent(this.selectedSpace!.id, this.pageId, this.content)
         .subscribe({
           next: () => {
@@ -215,13 +218,5 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
     // l=2, idx = 0, => (1, 1)
     // l=5, idx = 0, => (1, 4)
     this.schematicPath.splice(idx + 1, this.schematicPath.length - (idx + 1));
-  }
-
-  validateContent(): boolean {
-    console.group('validateContent')
-    const errors = this.contentService.validateContent(this.content, this.schematics, this.selectedLocale.id)
-    console.log(errors)
-    console.groupEnd()
-    return errors == null;
   }
 }

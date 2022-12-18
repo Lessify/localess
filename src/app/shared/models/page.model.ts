@@ -1,4 +1,13 @@
 import {FieldValue, Timestamp} from '@angular/fire/firestore';
+import {ValidationErrors} from '@angular/forms';
+
+export interface ContentError {
+  contentId: string;
+  schematic: string;
+  fieldName: string;
+  fieldDisplayName?: string;
+  errors: ValidationErrors | null;
+}
 
 export function isPageContentComponent(obj: any): boolean {
   return '_id' in obj && 'schematic' in obj;
