@@ -11,7 +11,7 @@ export class TranslationValidator {
   public static STRING_VALUE: ValidatorFn[] = [
     Validators.required,
     Validators.minLength(1),
-    Validators.maxLength(500)
+    Validators.maxLength(1000)
   ];
   public static PLURAL_VALUE: ValidatorFn[] = [
     Validators.required,
