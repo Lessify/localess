@@ -29,7 +29,7 @@
       <mat-list>
         <mat-list-item *ngFor="let error of contentErrors">
           <mat-icon color="warn" matListItemIcon>warning</mat-icon>
-          In {{error.schematic}} the {{error.fieldDisplayName || error.fieldName}} {{fe.errors(error.errors)}}
+          In <b>{{error.schematic}}</b> the <b>{{error.fieldDisplayName || error.fieldName}}</b> {{fe.errors(error.errors)}}
         </mat-list-item>
       </mat-list>
     </mat-menu>
