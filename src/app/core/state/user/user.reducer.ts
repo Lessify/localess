@@ -7,23 +7,26 @@ export const initialState: UserState = {
   displayName: undefined,
   email: undefined,
   emailVerified: false,
-  role: '',
-  photoURL: undefined
+  role: undefined,
+  photoURL: undefined,
+  permissions: undefined
 };
 
 const reducer: ActionReducer<UserState, Action> = createReducer(
   initialState,
-  on(actionUserChange, (state, { id, displayName, email, emailVerified, role, photoURL}) => ({
+  on(actionUserChange, (state, { id, displayName, email, emailVerified, role, permissions, photoURL}) => ({
     id,
     displayName,
     email,
     emailVerified,
     role,
+    permissions,
     photoURL
   })),
-  on(actionUserRoleChange, (state, { role }) => ({
+  on(actionUserRoleChange, (state, { role, permissions }) => ({
     ...state,
-    role
+    role,
+    permissions
   }))
 );
 

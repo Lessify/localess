@@ -1,4 +1,6 @@
 import {AuthData} from 'firebase-functions/lib/common/providers/https';
+import {ROLE_CUSTOM} from '../config';
+import {UserPermission} from '../models/user.model';
 
 
 export class SecurityUtils {
@@ -21,5 +23,9 @@ export class SecurityUtils {
       return roles.includes(auth.token['role']);
     }
     return false;
+  }
+
+  static hasPermission(permission: UserPermission, auth?: AuthData): boolean {
+    return this.hasRole(ROLE_CUSTOM) && auth?.token['permissions'].includes(permission);
   }
 }

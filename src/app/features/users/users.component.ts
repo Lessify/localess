@@ -104,7 +104,8 @@ export class UsersComponent implements OnInit, OnDestroy {
       UserDialogComponent, {
         width: '500px',
         data: {
-          role: element.role
+          role: element.role,
+          permissions: element.permissions,
         }
       })
       .afterClosed()

@@ -35,7 +35,6 @@ import {ScrollingModule} from '@angular/cdk/scrolling';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
 import {IconComponent} from './components/icon/icon.component';
-import {HasAnyUserRolePipe} from './pipes/has-any-user-role.pipe';
 import {
   CustomSnackBarComponent
 } from '@shared/components/custom-snack-bar/custom-snack-bar.component';
@@ -44,6 +43,7 @@ import {BreadcrumbComponent} from '@shared/components/breadcrumb/breadcrumb.comp
 import {BreadcrumbItemComponent} from '@shared/components/breadcrumb/breadcrumb-item.component';
 import {ClipboardModule} from '@angular/cdk/clipboard';
 import {MatBadgeModule} from '@angular/material/badge';
+import {CanUserPerformPipe} from '@shared/pipes/can-user-perform.pipe';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -82,7 +82,7 @@ const MATERIAL_MODULES: any[] = [
 
 const SHARED_PIPES: any[] = [
   TranslationFilterPipe,
-  HasAnyUserRolePipe
+  CanUserPerformPipe
 ]
 
 const SHARED_COMPONENTS: any[] = [

@@ -32,17 +32,15 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '../core/state/space/space.selector';
 import {environment} from '../../environments/environment';
+import {UserPermission} from '@shared/models/user.model';
 
-const ROLE_READ = 'read';
-const ROLE_EDIT = 'edit';
-const ROLE_WRITE = 'write';
 const ROLE_ADMIN = 'admin';
 
 interface SideMenuItem {
   icon: string;
   link: string;
   label: string;
-  roles?: string[];
+  permission?: UserPermission;
 }
 
 @Component({
@@ -54,28 +52,22 @@ interface SideMenuItem {
 })
 export class FeaturesComponent implements OnInit {
   isRoleNone = false;
-  isRoleRead = false;
-  isRoleEdit = false;
-  isRoleWrite = false;
   isRoleAdmin = false;
-  role = 'none';
   spaces: Space[] = [];
   selectedSpace?: Space;
-  title: string = 'Title'
-  year = new Date().getFullYear();
   logo = 'assets/logo.png';
   version = environment.version
 
   userSideMenu: SideMenuItem[] = [
-    {link: 'translations', label: 'Translations', icon: 'translate', roles: [ROLE_READ, ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN]},
-    {link: 'pages', label: 'Content (Beta)', icon: 'web_stories', roles: [ROLE_READ, ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN]},
-    {link: 'schematics', label: 'Schematics (Beta)', icon: 'schema', roles: [ROLE_ADMIN]},
-    {link: 'locales', label: 'Locales', icon: 'language', roles: [ROLE_ADMIN]}
+    {link: 'translations', label: 'Translations', icon: 'translate', permission: UserPermission.TRANSLATION_READ},
+    {link: 'pages', label: 'Content (Beta)', icon: 'web_stories', permission: UserPermission.CONTENT_READ},
+    {link: 'schematics', label: 'Schematics (Beta)', icon: 'schema', permission: UserPermission.SCHEMATIC_READ},
+    {link: 'locales', label: 'Locales', icon: 'language', permission: UserPermission.SPACE_MANAGEMENT}
   ];
 
   adminSideMenu: SideMenuItem[] = [
-    {link: 'users', label: 'Users', icon: 'people'},
-    {link: 'spaces', label: 'Spaces', icon: 'space_dashboard'}
+    {link: 'users', label: 'Users', icon: 'people', permission: UserPermission.USER_MANAGEMENT},
+    {link: 'spaces', label: 'Spaces', icon: 'space_dashboard', permission: UserPermission.SPACE_MANAGEMENT}
   ];
 
   communitySideMenu: SideMenuItem[] = [
@@ -110,24 +102,19 @@ export class FeaturesComponent implements OnInit {
             displayName: user.displayName,
             email: user.email,
             emailVerified: user.emailVerified,
-            role: 'none',
-            photoURL: user.photoURL
+            role: undefined,
+            photoURL: user.photoURL,
+            permissions: undefined
           })
         );
         from(user.getIdTokenResult())
         .subscribe((token) => {
-          if (token.claims['role']) {
+          if (token.claims['role'] || token.claims['permissions']) {
             const role = token.claims['role'].toString();
-            this.role = role;
-            this.store.dispatch(actionUserRoleChange({role}));
+            const permissions = token.claims['permissions'] as string[] | undefined;
+            this.store.dispatch(actionUserRoleChange({role, permissions}));
             if (role === ROLE_ADMIN) {
               this.isRoleAdmin = true;
-            } else if (role === ROLE_WRITE) {
-              this.isRoleWrite = true;
-            } else if (role === ROLE_EDIT) {
-              this.isRoleEdit = true;
-            } else if (role === ROLE_READ) {
-              this.isRoleRead = true;
             }
           } else {
             this.isRoleNone = true;
@@ -138,10 +125,6 @@ export class FeaturesComponent implements OnInit {
         this.store.dispatch(authLogout());
       }
     });
-  }
-
-  filterMenuByRole(menu: SideMenuItem[], role: string): SideMenuItem[] {
-    return menu.filter(it => it.roles ? it.roles.includes(role) : true)
   }
 
   private static isIEorEdgeOrSafari(): boolean {

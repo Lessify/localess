@@ -4,29 +4,58 @@ import {FeaturesComponent} from './features.component';
 import {AuthGuard, customClaims} from '@angular/fire/auth-guard';
 import {pipe} from 'rxjs';
 import {map} from 'rxjs/operators';
+import {UserPermission} from '@shared/models/user.model';
 
-const ROLE_READ = 'read'
-const ROLE_EDIT = 'edit'
-const ROLE_WRITE = 'write'
 const ROLE_ADMIN = 'admin'
+const ROLE_CUSTOM = 'custom'
 
-const hasRoleAdmin = () =>
-  pipe(
+const hasRoleAdmin = () => {
+  console.log('hasRoleAdmin')
+  return pipe(
     customClaims,
     map((claims) => claims.role === ROLE_ADMIN)
-  );
+  )
+};
 
-const hasRoleWrite = () =>
-  pipe(
+const hasPermissionUserManagement = () => {
+  console.log('hasPermissionUserManagement')
+  return pipe(
     customClaims,
-    map((claims) => [ROLE_WRITE, ROLE_ADMIN].includes(claims.role))
-  );
+    map((claims) => claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.USER_MANAGEMENT) || false)
+  )
+};
 
-const hasRoleRead = () =>
-  pipe(
+const hasPermissionSpaceManagement = () => {
+  console.log('hasPermissionSpaceManagement')
+  return pipe(
     customClaims,
-    map((claims) => [ROLE_READ, ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN].includes(claims.role))
-  );
+    map((claims) => claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.SPACE_MANAGEMENT) || false)
+  )
+};
+
+const hasPermissionTranslationRead = () => {
+  console.log('hasPermissionTranslationRead')
+  return pipe(
+    customClaims,
+    map((claims) => claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.TRANSLATION_READ) || false)
+  )
+};
+
+const hasPermissionSchemaRead = () => {
+  console.log('hasPermissionSchemaRead')
+  return pipe(
+    customClaims,
+    map((claims) => claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.SCHEMATIC_READ) || false)
+  )
+};
+
+const hasPermissionContentRead = () => {
+  console.log('hasPermissionContentRead')
+  return pipe(
+    customClaims,
+    map((claims) => claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.CONTENT_READ) || false)
+  )
+};
 
 const routes: Routes = [
   {
@@ -44,7 +73,7 @@ const routes: Routes = [
         loadChildren: () => import('./users/users.module').then(m => m.UsersModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleAdmin
+          authGuardPipe: hasRoleAdmin || hasPermissionUserManagement
         }
       },
       {
@@ -53,7 +82,7 @@ const routes: Routes = [
         loadChildren: () => import('./spaces/spaces.module').then(m => m.SpacesModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleAdmin
+          authGuardPipe: hasRoleAdmin || hasPermissionSpaceManagement
         }
       },
       {
@@ -62,7 +91,7 @@ const routes: Routes = [
         loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleRead
+          authGuardPipe: hasRoleAdmin || hasPermissionTranslationRead
         }
       },
       {
@@ -71,7 +100,7 @@ const routes: Routes = [
         loadChildren: () => import('./locales/locales.module').then(m => m.LocalesModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleAdmin
+          authGuardPipe: hasRoleAdmin || hasPermissionSpaceManagement
         }
       },
       {
@@ -80,7 +109,7 @@ const routes: Routes = [
         loadChildren: () => import('./schematics/schematics.module').then(m => m.SchematicsModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleAdmin
+          authGuardPipe: hasRoleAdmin || hasPermissionSchemaRead
         }
       },
       {
@@ -89,7 +118,7 @@ const routes: Routes = [
         loadChildren: () => import('./pages/pages.module').then(m => m.PagesModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleRead
+          authGuardPipe: hasRoleAdmin || hasPermissionContentRead
         }
       },
     ]

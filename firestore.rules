@@ -15,37 +15,47 @@ service cloud.firestore {
     function hasAnyRole(roles) {
       return request.auth.token.role in roles;
     }
+    function hasPermission(permission) {
+      return hasRole('custom') && permission in request.auth.token.permissions;
+    }
+    function hasAnyPermission(permissions) {
+      return hasRole('custom') && request.auth.token.permissions.hasAny(permissions);
+    }
 
     // Spaces
     match /spaces/{spaceId} {
-      allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
-      allow write: if isSignedIn() && hasRole('admin');
+      allow read: if isSignedIn() && hasAnyRole(['custom','admin']);
+      allow write: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
 
       // Translations
       match /translations/{translationId} {
-        allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
-        allow create, delete: if isSignedIn() && hasAnyRole(['write','admin']);
-        allow update: if isSignedIn() && hasAnyRole(['edit','write','admin']);
+        allow read: if isSignedIn() && (hasRole('admin') || hasPermission('TRANSLATION_READ'));
+        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('TRANSLATION_CREATE'));
+        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('TRANSLATION_UPDATE'));
+        allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('TRANSLATION_DELETE'));
       }
 
       // Schematics
       match /schematics/{schematicId} {
-        allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
-        allow write: if isSignedIn() && hasRole('admin');
+        allow read: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['SCHEMATIC_READ','CONTENT_READ']));
+        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMATIC_CREATE'));
+        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMATIC_UPDATE'));
+        allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMATIC_DELETE'));
       }
 
       // Pages
       match /pages/{pageId} {
-        allow read: if isSignedIn() && hasAnyRole(['read','edit','write','admin']);
-        allow create, delete: if isSignedIn() && hasAnyRole(['write','admin']);
-        allow update: if isSignedIn() && hasAnyRole(['edit','write','admin']);
+        allow read: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_READ'));
+        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_CREATE'));
+        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_UPDATE'));
+        allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_DELETE'));
       }
     }
 
     // Users
     match /users/{userId} {
-      allow read: if isSignedIn() && ( isSignedInWithUser(userId) || hasRole('admin') );
-      allow write: if isSignedIn() && hasRole('admin');
+      allow read: if isSignedIn() && ( isSignedInWithUser(userId) || (hasRole('admin') || hasPermission('USER_MANAGEMENT')));
+      allow write: if isSignedIn() && (hasRole('admin') || hasPermission('USER_MANAGEMENT'));
     }
 
     // Configs Setup
@@ -61,7 +71,7 @@ service cloud.firestore {
     }
 
     match /{document=**} {
-      allow read: if isSignedIn() && hasAnyRole(['read','write','admin']);
+      allow read: if isSignedIn() && hasAnyRole(['custom','admin']);
       allow write: if isSignedIn() && hasRole('admin');
     }
   }

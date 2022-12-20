@@ -8,7 +8,12 @@ export const selectUser: MemoizedSelector<AppState, UserState> = createSelector(
   (state: UserState) => state
 );
 
-export const selectUserRole: MemoizedSelector<AppState, string> = createSelector(
+export const selectUserRole: MemoizedSelector<AppState, string | undefined> = createSelector(
   selectUserState,
   (state: UserState) => state.role
+);
+
+export const selectUserPermissions: MemoizedSelector<AppState, string[] | undefined> = createSelector(
+  selectUserState,
+  (state: UserState) => state.permissions
 );

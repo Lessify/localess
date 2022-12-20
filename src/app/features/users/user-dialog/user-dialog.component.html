@@ -3,16 +3,63 @@
   <form [formGroup]="form" class="step-container">
     <mat-form-field appearance="outline">
       <mat-label>Role</mat-label>
-      <mat-select formControlName="role" required>
-        <mat-option *ngFor="let role of roles" [value]="role">
-          {{role | uppercase}}
-        </mat-option>
+      <mat-select formControlName="role">
+        <mat-option [value]="undefined">None</mat-option>
+        <mat-option value="custom">Custom</mat-option>
+        <mat-option value="admin">Admin</mat-option>
       </mat-select>
       <mat-error *ngIf="form.controls['role'].errors">{{fe.controlError(form.controls['role'])}}</mat-error>
     </mat-form-field>
+
+    <ng-container *ngIf="form.value.role === 'custom'">
+      <b>Permissions</b>
+      <mat-selection-list formControlName="permissions">
+
+        <div mat-subheader>Administration</div>
+        <mat-list-option checkboxPosition="before" value="USER_MANAGEMENT">
+          <span matListItemTitle>User Management</span>
+          <span matListItemLine>Invite, Delete users and change roles.</span>
+        </mat-list-option>
+        <mat-list-option checkboxPosition="before" value="SPACE_MANAGEMENT">
+          <span matListItemTitle>Space Management</span>
+          <span matListItemLine>Create, Update and Delete. </span>
+        </mat-list-option>
+
+        <mat-divider></mat-divider>
+        <div mat-subheader>Translation</div>
+        <mat-list-option checkboxPosition="before" value="TRANSLATION_READ">Read</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="TRANSLATION_UPDATE">Updated</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="TRANSLATION_CREATE">Create</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="TRANSLATION_DELETE">Delete</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="TRANSLATION_PUBLISH">Publish</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="TRANSLATION_EXPORT">Export</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="TRANSLATION_IMPORT">Import</mat-list-option>
+
+        <mat-divider></mat-divider>
+        <div mat-subheader>Schematic <b>(Beta)</b></div>
+        <mat-list-option checkboxPosition="before" value="SCHEMATIC_READ">Read</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="SCHEMATIC_UPDATE">Updated</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="SCHEMATIC_CREATE">Create</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="SCHEMATIC_DELETE">Delete</mat-list-option>
+
+        <mat-divider></mat-divider>
+        <div mat-subheader>Content <b>(Beta)</b></div>
+        <mat-list-option checkboxPosition="before" value="CONTENT_READ">Read</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="CONTENT_UPDATE">Updated</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="CONTENT_CREATE">Create</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="CONTENT_DELETE">Delete</mat-list-option>
+        <mat-list-option checkboxPosition="before" value="CONTENT_PUBLISH">Publish</mat-list-option>
+
+      </mat-selection-list>
+    </ng-container>
   </form>
+
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>
+
+<ng-container *ngIf="isTest">
+  <pre>{{form.value | json}}</pre>
+</ng-container>

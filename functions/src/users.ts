@@ -2,6 +2,7 @@ import {auth, firestore, https, logger} from 'firebase-functions';
 import {authService, firestoreService, ROLE_ADMIN} from './config';
 import {FieldValue} from 'firebase-admin/firestore';
 import {SecurityUtils} from './utils/security-utils';
+import {UserInvite} from './models/user.model';
 
 export const onAuthUserCreate = auth.user()
   .onCreate((user, context) => {
@@ -32,13 +33,6 @@ export const onAuthUserDelete = auth.user()
     }
     return true;
   });
-
-interface UserInvite {
-  displayName?: string
-  email: string
-  password: string
-  role: string
-}
 
 export const userInvite = https.onCall(async (data: UserInvite, context) => {
   logger.info('[userInvite] data: ' + JSON.stringify(data));
@@ -76,7 +70,8 @@ export const usersSync = https.onCall(async (data, context) => {
         userRecord.displayName !== user['displayName'] ||
         userRecord.photoURL !== user['photoURL'] ||
         userRecord.disabled !== user['disabled'] ||
-        userRecord.customClaims?.['role'] !== user['role']
+        userRecord.customClaims?.['role'] !== user['role'] ||
+        userRecord.customClaims?.['permissions'] !== user['permissions']
       ) {
         logger.debug(`[usersSync] user: id='${userSnapshot.id}' to be updated`);
         await userRef.set({
@@ -84,7 +79,8 @@ export const usersSync = https.onCall(async (data, context) => {
           displayName: userRecord.displayName || FieldValue.delete(),
           photoURL: userRecord.photoURL || FieldValue.delete(),
           disabled: userRecord.disabled,
-          role: userRecord.customClaims?.['role'],
+          role: userRecord.customClaims?.['role'] || FieldValue.delete(),
+          permissions: userRecord.customClaims?.['permissions'] || FieldValue.delete(),
           updatedAt: FieldValue.serverTimestamp(),
         }, {merge: true});
       } else {
@@ -98,6 +94,7 @@ export const usersSync = https.onCall(async (data, context) => {
         photoURL: userRecord.photoURL || FieldValue.delete(),
         disabled: userRecord.disabled,
         role: userRecord.customClaims?.['role'],
+        permissions: userRecord.customClaims?.['permissions'],
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       }, {merge: true});
@@ -115,15 +112,22 @@ export const onUserUpdate = firestore.document('users/{userId}')
     // Role change from ADMIN
     const roleBefore = before['role'];
     const roleAfter = after['role'];
-    if (roleBefore !== roleAfter) {
+    // Role change from ADMIN
+    const permissionsBefore = before['permissions'];
+    const permissionsAfter = after['permissions'];
+
+    if (roleBefore !== roleAfter || permissionsBefore !== permissionsAfter) {
       logger.info(`[User::onUpdate::RoleChange] id='${change.before.id}' eventId='${context.eventId}' from='${roleBefore}' to='${roleAfter}'`);
+      logger.info(`[User::onUpdate::PermissionsChange] id='${change.before.id}' eventId='${context.eventId}' from='${permissionsBefore}' to='${permissionsAfter}'`);
       const userRecord = await authService.getUser(change.before.id);
       // check if role update already in Auth
-      if (userRecord.customClaims?.['role'] !== roleAfter) {
+      if (userRecord.customClaims?.['role'] !== roleAfter || userRecord.customClaims?.['permissions'] !== permissionsAfter) {
         logger.debug(`[User::onUpdate::RoleChange] id='${change.before.id}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update required.`);
-        return await authService.setCustomUserClaims(change.before.id, {role: roleAfter});
+        logger.debug(`[User::onUpdate::PermissionsChange] id='${change.before.id}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update required.`);
+        return await authService.setCustomUserClaims(change.before.id, {role: roleAfter, permissions: permissionsAfter});
       } else {
         logger.debug(`[User::onUpdate::RoleChange] id='${change.before.id}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update not required.`);
+        logger.debug(`[User::onUpdate::PermissionsChange] id='${change.before.id}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update not required.`);
       }
       return true;
     }

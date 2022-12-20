@@ -3,18 +3,20 @@ import {SecurityUtils} from './utils/security-utils';
 import {
   firebaseConfig,
   ROLE_ADMIN,
-  ROLE_EDIT,
-  ROLE_WRITE,
   SUPPORT_LOCALES,
   translationService,
 } from './config';
 import {TranslateData} from './models/translate.model';
 import {protos} from '@google-cloud/translate';
+import {UserPermission} from './models/user.model';
 
 export const translate = https.onCall(async (data: TranslateData, context) => {
   logger.info('[translate] data: ' + JSON.stringify(data));
   logger.info('[translate] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.hasAnyRole([ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (
+    !SecurityUtils.hasRole(ROLE_ADMIN, context.auth) ||
+    !SecurityUtils.hasPermission(UserPermission.TRANSLATION_UPDATE, context.auth)
+  ) throw new https.HttpsError('permission-denied', 'permission-denied');
   if (!(SUPPORT_LOCALES.has(data.sourceLocale) && SUPPORT_LOCALES.has(data.targetLocale))) throw new https.HttpsError('invalid-argument', 'Unsupported language');
 
 

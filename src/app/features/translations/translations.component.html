@@ -2,9 +2,7 @@
   <mat-toolbar-row>
     Translations
     <span class="spacer"></span>
-    <ng-container id="translation-add-import-export"
-                  *ngIf="['write', 'admin'] | hasAnyUserRole | async">
-      <button
+      <button *ngIf="'TRANSLATION_CREATE' | canUserPerform | async"
         mat-raised-button
         color="primary"
         (click)="openAddDialog()">
@@ -12,7 +10,7 @@
         Add Translation
       </button>
 
-      <button
+      <button *ngIf="'TRANSLATION_PUBLISH' | canUserPerform | async"
         mat-raised-button
         color="accent"
         matTooltip="Publish Translations to be available via API call"
@@ -31,11 +29,13 @@
       </button>
 
       <mat-menu #importMenu="matMenu">
-        <button mat-menu-item (click)="openImportDialog()">
+        <button *ngIf="'TRANSLATION_IMPORT' | canUserPerform | async"
+          mat-menu-item (click)="openImportDialog()">
           <mat-icon>cloud_upload</mat-icon>
           <span>Import</span>
         </button>
-        <button mat-menu-item (click)="openExportDialog()">
+        <button *ngIf="'TRANSLATION_EXPORT' | canUserPerform | async"
+                mat-menu-item (click)="openExportDialog()">
           <mat-icon>cloud_download</mat-icon>
           <span>Export</span>
         </button>
@@ -46,7 +46,6 @@
           <span>Published {{locale.name}} JSON</span>
         </button>
       </mat-menu>
-    </ng-container>
 
   </mat-toolbar-row>
 </mat-toolbar>
@@ -145,23 +144,22 @@
             </mat-select>
           </mat-form-field>
         </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start mb-auto">
+          <span [ngSwitch]="selectedTranslation.type">
+            <ll-translation-string-view *ngSwitchCase="'STRING'"
+                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-string-view>
+            <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
+                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-plural-view>
+            <ll-translation-array-view *ngSwitchCase="'ARRAY'"
+                                       [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-array-view>
+          </span>
+        </div>
 
-        <ng-container id="translation-locale-edit"
-                      *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
-          <mat-divider></mat-divider>
-          <div class="p-2 align-items-start mb-auto">
-            <span [ngSwitch]="selectedTranslation.type">
-              <ll-translation-string-view *ngSwitchCase="'STRING'"
-                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
-              </ll-translation-string-view>
-              <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
-                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
-              </ll-translation-plural-view>
-              <ll-translation-array-view *ngSwitchCase="'ARRAY'"
-                                         [value]="selectedTranslation.locales[selectedSourceLocale]">
-              </ll-translation-array-view>
-            </span>
-          </div>
+        <ng-container id="translation-locale-edit" *ngIf="'TRANSLATION_UPDATE' | canUserPerform | async">
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
             <mat-form-field appearance="outline" class="with-button">
@@ -177,7 +175,6 @@
                     [disabled]="!isLocaleTranslatable(selectedSourceLocale, selectedTargetLocale)">
               <ll-icon [animate]="isTranslateLoading" start="g_translate" end="sync"></ll-icon>
             </button>
-
           </div>
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
@@ -215,23 +212,19 @@
     </div>
     <div class="col-3 overlay text-break">
       <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
-        <ng-container id="translation-edit"
-                      *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
-          <div class="p-2 align-items-start">
-            <button
-              mat-stroked-button matTooltip="Edit"
-              (click)="openEditDialog(selectedTranslation)">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button
-              *ngIf="['write', 'admin'] | hasAnyUserRole | async"
-              mat-stroked-button matTooltip="Delete"
-              (click)="openDeleteDialog(selectedTranslation)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </div>
-          <mat-divider></mat-divider>
-        </ng-container>
+        <div class="p-2 align-items-start">
+          <button *ngIf="'TRANSLATION_UPDATE' | canUserPerform | async"
+            mat-stroked-button matTooltip="Edit"
+            (click)="openEditDialog(selectedTranslation)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button *ngIf="'TRANSLATION_DELETE' | canUserPerform | async"
+            mat-stroked-button matTooltip="Delete"
+            (click)="openDeleteDialog(selectedTranslation)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+        <mat-divider></mat-divider>
 
         <div class="p-2 align-items-start">
           <p><small><strong>ID</strong></small></p>

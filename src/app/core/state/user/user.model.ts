@@ -3,6 +3,7 @@ export interface UserState {
   displayName?: string | null;
   email?: string | null;
   emailVerified: boolean;
-  role: string;
+  role?: string;
+  permissions?: string[];
   photoURL?: string | null;
 }

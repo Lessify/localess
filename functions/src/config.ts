@@ -16,10 +16,8 @@ export const DAY = 24 * HOUR;
 export const CACHE_MAX_AGE = DAY;
 export const CACHE_SHARE_MAX_AGE = DAY;
 // AUTH ROLE
-export const ROLE_READ = 'read';
-export const ROLE_EDIT = 'edit';
-export const ROLE_WRITE = 'write';
 export const ROLE_ADMIN = 'admin';
+export const ROLE_CUSTOM = 'custom';
 
 // Init
 export const app: App = initializeApp();
