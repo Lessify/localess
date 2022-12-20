@@ -2,9 +2,11 @@ export interface UserInvite {
   displayName?: string
   email: string
   password: string
-  role?: string
+  role?: UserRole
   permissions?: string[]
 }
+
+export type UserRole = 'admin' | 'custom';
 
 export enum UserPermission {
   USER_MANAGEMENT = 'USER_MANAGEMENT',

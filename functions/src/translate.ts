@@ -1,10 +1,6 @@
 import {https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
-import {
-  firebaseConfig,
-  SUPPORT_LOCALES,
-  translationService,
-} from './config';
+import {firebaseConfig, SUPPORT_LOCALES, translationService,} from './config';
 import {TranslateData} from './models/translate.model';
 import {protos} from '@google-cloud/translate';
 import {UserPermission} from './models/user.model';

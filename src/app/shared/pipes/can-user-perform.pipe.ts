@@ -4,7 +4,6 @@ import {map} from 'rxjs/operators';
 import {Store} from '@ngrx/store';
 import {AppState} from '../../core/state/core.state';
 import {selectUser} from '../../core/state/user/user.selector';
-import {UserPermission} from '@shared/models/user.model';
 
 @Pipe({name: 'canUserPerform'})
 export class CanUserPerformPipe implements PipeTransform {

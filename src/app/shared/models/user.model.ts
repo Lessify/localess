@@ -22,7 +22,7 @@ export interface User {
    */
   readonly disabled: boolean;
 
-  readonly role?: 'admin' | 'custom';
+  readonly role?: UserRole;
 
   readonly permissions?: string[];
 
@@ -42,6 +42,8 @@ export interface UserUpdateFS {
   permissions?: string[];
   updatedAt: FieldValue;
 }
+
+export type UserRole = 'admin' | 'custom';
 
 export enum UserPermission {
   USER_MANAGEMENT = 'USER_MANAGEMENT',
