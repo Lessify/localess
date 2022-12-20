@@ -5,7 +5,6 @@ import {
   bucket,
   firebaseConfig,
   firestoreService,
-  ROLE_ADMIN,
   SUPPORT_LOCALES,
   translationService,
 } from './config';
@@ -27,10 +26,7 @@ import {UserPermission} from './models/user.model';
 export const translationsPublish = https.onCall(async (data: PublishTranslationsData, context) => {
   logger.info('[translationsPublish] data: ' + JSON.stringify(data));
   logger.info('[translationsPublish] context.auth: ' + JSON.stringify(context.auth));
-  if (
-    !SecurityUtils.hasRole(ROLE_ADMIN, context.auth) ||
-    !SecurityUtils.hasPermission(UserPermission.TRANSLATION_PUBLISH, context.auth)
-  ) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_PUBLISH, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const translationsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {
@@ -83,10 +79,7 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
 export const translationsExport = https.onCall(async (data: TranslationsExportData, context) => {
   logger.info('[translationsExport] data: ' + JSON.stringify(data));
   logger.info('[translationsExport] context.auth: ' + JSON.stringify(context.auth));
-  if (
-    !SecurityUtils.hasRole(ROLE_ADMIN, context.auth) ||
-    !SecurityUtils.hasPermission(UserPermission.TRANSLATION_EXPORT, context.auth)
-  ) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_EXPORT, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const translationsRef = firestoreService.collection(`spaces/${data.spaceId}/translations`);
@@ -144,10 +137,7 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
 export const translationsImport = https.onCall(async (data: TranslationsImportData, context) => {
   logger.info(`[translationsImport] data: ${JSON.stringify(data)}`);
   logger.info('[translationsImport] context.auth: ' + JSON.stringify(context.auth));
-  if (
-    !SecurityUtils.hasRole(ROLE_ADMIN, context.auth) ||
-    !SecurityUtils.hasPermission(UserPermission.TRANSLATION_IMPORT, context.auth)
-  ) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_IMPORT, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const translationsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();

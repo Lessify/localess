@@ -2,7 +2,8 @@
   <mat-toolbar-row>
     Schematics (Beta)
     <span class="spacer"></span>
-    <button mat-raised-button color="primary" (click)="openAddDialog()">
+    <button *ngIf="'SCHEMATIC_CREATE' | canUserPerform | async"
+            mat-raised-button color="primary" (click)="openAddDialog()">
       <mat-icon>add</mat-icon>
       Add Schematic
     </button>
@@ -45,10 +46,12 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
+        <button *ngIf="'SCHEMATIC_UPDATE' | canUserPerform | async"
+                mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
+        <button *ngIf="'SCHEMATIC_DELETE' | canUserPerform | async"
+                mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

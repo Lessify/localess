@@ -1,8 +1,8 @@
 import {auth, firestore, https, logger} from 'firebase-functions';
-import {authService, firestoreService, ROLE_ADMIN} from './config';
+import {authService, firestoreService} from './config';
 import {FieldValue} from 'firebase-admin/firestore';
 import {SecurityUtils} from './utils/security-utils';
-import {UserInvite} from './models/user.model';
+import {UserInvite, UserPermission} from './models/user.model';
 
 export const onAuthUserCreate = auth.user()
   .onCreate((user, context) => {
@@ -37,7 +37,7 @@ export const onAuthUserDelete = auth.user()
 export const userInvite = https.onCall(async (data: UserInvite, context) => {
   logger.info('[userInvite] data: ' + JSON.stringify(data));
   logger.info('[userInvite] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.hasRole(ROLE_ADMIN, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.canPerform(UserPermission.USER_MANAGEMENT, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
   const adminUser = await authService.createUser({
     displayName: data.displayName,
@@ -53,7 +53,7 @@ export const userInvite = https.onCall(async (data: UserInvite, context) => {
 export const usersSync = https.onCall(async (data, context) => {
   logger.info('[usersSync] data: ' + JSON.stringify(data));
   logger.info('[usersSync] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.hasRole(ROLE_ADMIN, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.canPerform(UserPermission.USER_MANAGEMENT, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
   const listUsers = await authService.listUsers();
   listUsers.users.map(async (userRecord) => {

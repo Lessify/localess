@@ -34,21 +34,23 @@
       </mat-list>
     </mat-menu>
 
-    <button mat-raised-button color="primary" matTooltip="Save the page"
+    <button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
+            mat-raised-button color="primary" matTooltip="Save the page"
             [disabled]="isSaveLoading"
             (click)="save()">
       <ll-icon [animate]="isSaveLoading" start="save" end="sync"></ll-icon>
       Save
     </button>
 
-    <button mat-raised-button color="accent" matTooltip="Publish to be available via API call"
+    <button *ngIf="'CONTENT_PUBLISH' | canUserPerform | async"
+            mat-raised-button color="accent" matTooltip="Publish to be available via API call"
             [disabled]="isPublishLoading"
             (click)="publish()">
       <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
       Publish
     </button>
 
-    <ng-container *ngIf="page?.publishedAt == undefined">
+    <ng-container *ngIf="page?.publishedAt === undefined">
       <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
     </ng-container>
     <ng-container *ngIf="page?.publishedAt?.seconds > page?.updatedAt?.seconds">

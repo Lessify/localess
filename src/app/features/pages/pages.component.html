@@ -2,7 +2,8 @@
   <mat-toolbar-row>
     Pages (Beta)
     <span class="spacer"></span>
-    <button mat-raised-button
+    <button *ngIf="'CONTENT_CREATE' | canUserPerform | async"
+            mat-raised-button
             color="primary"
             (click)="openAddDialog()">
       <mat-icon>add</mat-icon>
@@ -23,7 +24,7 @@
     <ng-container matColumnDef="status">
       <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <ng-container *ngIf="element?.publishedAt == undefined">
+        <ng-container *ngIf="element?.publishedAt === undefined">
           <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
         </ng-container>
         <ng-container *ngIf="element?.publishedAt?.seconds > element?.updatedAt?.seconds">
@@ -60,13 +61,16 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
+        <button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
+                mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button (click)="openContentEditDialog(element)" [disabled]="schematicsMap.get(element.schematic) === undefined" matTooltip="Edit Content">
+        <button *ngIf="'CONTENT_READ' | canUserPerform | async"
+                mat-icon-button (click)="openContentEditDialog(element)" [disabled]="schematicsMap.get(element.schematic) === undefined" matTooltip="Edit Content">
           <mat-icon>design_services</mat-icon>
         </button>
-        <button mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
+        <button *ngIf="'CONTENT_DELETE' | canUserPerform | async"
+                mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

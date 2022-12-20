@@ -16,39 +16,87 @@
       <mat-selection-list formControlName="permissions">
 
         <div mat-subheader>Administration</div>
-        <mat-list-option checkboxPosition="before" value="USER_MANAGEMENT">
+        <mat-list-option value="USER_MANAGEMENT">
           <span matListItemTitle>User Management</span>
           <span matListItemLine>Invite, Delete users and change roles.</span>
         </mat-list-option>
-        <mat-list-option checkboxPosition="before" value="SPACE_MANAGEMENT">
+        <mat-list-option value="SPACE_MANAGEMENT">
           <span matListItemTitle>Space Management</span>
           <span matListItemLine>Create, Update and Delete. </span>
         </mat-list-option>
 
         <mat-divider></mat-divider>
         <div mat-subheader>Translation</div>
-        <mat-list-option checkboxPosition="before" value="TRANSLATION_READ">Read</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="TRANSLATION_UPDATE">Updated</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="TRANSLATION_CREATE">Create</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="TRANSLATION_DELETE">Delete</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="TRANSLATION_PUBLISH">Publish</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="TRANSLATION_EXPORT">Export</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="TRANSLATION_IMPORT">Import</mat-list-option>
+        <mat-list-option value="TRANSLATION_READ">
+          <span matListItemTitle>Read</span>
+          <span matListItemLine>Read Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_CREATE">
+          <span matListItemTitle>Create</span>
+          <span matListItemLine>Create Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_UPDATE">
+          <span matListItemTitle>Updated</span>
+          <span matListItemLine>Updated Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_DELETE">
+          <span matListItemTitle>Delete</span>
+          <span matListItemLine>Delete Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_PUBLISH">
+          <span matListItemTitle>Publish</span>
+          <span matListItemLine>Publish Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_EXPORT">
+          <span matListItemTitle>Export</span>
+          <span matListItemLine>Export Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_IMPORT">
+          <span matListItemTitle>Import</span>
+          <span matListItemLine>Import Translation.</span>
+        </mat-list-option>
 
         <mat-divider></mat-divider>
         <div mat-subheader>Schematic <b>(Beta)</b></div>
-        <mat-list-option checkboxPosition="before" value="SCHEMATIC_READ">Read</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="SCHEMATIC_UPDATE">Updated</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="SCHEMATIC_CREATE">Create</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="SCHEMATIC_DELETE">Delete</mat-list-option>
+        <mat-list-option value="SCHEMATIC_READ">
+          <span matListItemTitle>Read</span>
+          <span matListItemLine>Read Schematic.</span>
+        </mat-list-option>
+        <mat-list-option value="SCHEMATIC_CREATE">
+          <span matListItemTitle>Create</span>
+          <span matListItemLine>Create Schematic.</span>
+        </mat-list-option>
+        <mat-list-option value="SCHEMATIC_UPDATE">
+          <span matListItemTitle>Updated</span>
+          <span matListItemLine>Updated Schematic.</span>
+        </mat-list-option>
+        <mat-list-option value="SCHEMATIC_DELETE">
+          <span matListItemTitle>Delete</span>
+          <span matListItemLine>Delete Schematic.</span>
+        </mat-list-option>
 
         <mat-divider></mat-divider>
         <div mat-subheader>Content <b>(Beta)</b></div>
-        <mat-list-option checkboxPosition="before" value="CONTENT_READ">Read</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="CONTENT_UPDATE">Updated</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="CONTENT_CREATE">Create</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="CONTENT_DELETE">Delete</mat-list-option>
-        <mat-list-option checkboxPosition="before" value="CONTENT_PUBLISH">Publish</mat-list-option>
+        <mat-list-option value="CONTENT_READ">
+          <span matListItemTitle>Read</span>
+          <span matListItemLine>Read Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_CREATE">
+          <span matListItemTitle>Create</span>
+          <span matListItemLine>Create Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_UPDATE">
+          <span matListItemTitle>Updated</span>
+          <span matListItemLine>Updated Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_DELETE">
+          <span matListItemTitle>Delete</span>
+          <span matListItemLine>Delete Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_PUBLISH">
+          <span matListItemTitle>Publish</span>
+          <span matListItemLine>Publish Content.</span>
+        </mat-list-option>
 
       </mat-selection-list>
     </ng-container>

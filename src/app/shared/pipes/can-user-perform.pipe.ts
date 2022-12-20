@@ -12,7 +12,7 @@ export class CanUserPerformPipe implements PipeTransform {
   }
 
   transform(permission: string): Observable<boolean> {
-    console.log('canUserPerform : ' + permission)
+    // console.log('canUserPerform : ' + permission)
     return this.store.select(selectUser).pipe(
       map(user => {
         if (user.role) {

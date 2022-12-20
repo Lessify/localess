@@ -14,7 +14,7 @@ export class AuthGuardService implements CanActivate {
 
   canActivate(): Observable<boolean | UrlTree> {
     return authState(this.auth).pipe(
-      tap((it) => console.log(it)),
+      // tap((it) => console.log(it)),
       map((u) => !!u),
       map((it) => {
         if (it) {

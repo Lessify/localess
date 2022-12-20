@@ -10,11 +10,12 @@ import {
   docData,
   Firestore,
   serverTimestamp,
-  setDoc
+  setDoc, UpdateData
 } from '@angular/fire/firestore';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {userInvite, usersSync} from '../../../../functions/src';
+import {deleteField} from '@firebase/firestore';
 
 @Injectable()
 export class UserService {
@@ -40,11 +41,30 @@ export class UserService {
       );
   }
 
-  update(id: string, role: string): Observable<void> {
-    const update: UserUpdateFS = {
+  update(id: string, role?: string, permissions?: string[]): Observable<void> {
+    const update: UpdateData<UserUpdateFS> = {
       role: role,
+      permissions: permissions,
       updatedAt: serverTimestamp()
     }
+    switch (role) {
+      case 'admin': {
+        update.role = role;
+        update.permissions = deleteField();
+        break;
+      }
+      case 'custom': {
+        update.role = role;
+        update.permissions = permissions;
+        break;
+      }
+      case undefined : {
+        update.role = deleteField();
+        update.permissions = deleteField();
+        break;
+      }
+    }
+
     return from(
       setDoc(doc(this.firestore, `users/${id}`),
         update,

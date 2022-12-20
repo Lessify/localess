@@ -1,5 +1,5 @@
 import {AuthData} from 'firebase-functions/lib/common/providers/https';
-import {ROLE_CUSTOM} from '../config';
+import {ROLE_ADMIN, ROLE_CUSTOM} from '../config';
 import {UserPermission} from '../models/user.model';
 
 
@@ -25,7 +25,13 @@ export class SecurityUtils {
     return false;
   }
 
-  static hasPermission(permission: UserPermission, auth?: AuthData): boolean {
-    return this.hasRole(ROLE_CUSTOM) && auth?.token['permissions'].includes(permission);
+  static canPerform(permission: UserPermission, auth?: AuthData): boolean {
+    if (this.hasRole(ROLE_ADMIN, auth)) {
+      return true;
+    }
+    if (this.hasRole(ROLE_CUSTOM, auth)) {
+      return auth?.token['permissions'].includes(permission) || false;
+    }
+    return false;
   }
 }

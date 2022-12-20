@@ -1,6 +1,6 @@
 import {https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
-import {bucket, firestoreService, ROLE_ADMIN} from './config';
+import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
 import axios from 'axios';
 import {Page, PageStorage, PublishPageData} from './models/page.model';
@@ -12,10 +12,7 @@ import {UserPermission} from './models/user.model';
 export const pagePublish = https.onCall(async (data: PublishPageData, context) => {
   logger.info('[pagesPublish] data: ' + JSON.stringify(data));
   logger.info('[pagesPublish] context.auth: ' + JSON.stringify(context.auth));
-  if (
-    !SecurityUtils.hasRole(ROLE_ADMIN, context.auth) ||
-    !SecurityUtils.hasPermission(UserPermission.CONTENT_PUBLISH, context.auth)
-  ) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.canPerform(UserPermission.CONTENT_PUBLISH, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const pageSnapshot = await firestoreService.doc(`spaces/${data.spaceId}/pages/${data.pageId}`).get();
   const schematicsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/schematics`).get();

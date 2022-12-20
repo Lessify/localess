@@ -61,8 +61,8 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.group('ngOnChanges')
-    console.log(changes)
+    // console.group('ngOnChanges')
+    // console.log(changes)
 
     const schematicsChange = changes['schematics'];
     if (schematicsChange) {
@@ -92,16 +92,16 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
       this.onChanged();
     }
 
-    console.groupEnd()
+    // console.groupEnd()
   }
 
   ngOnInit(): void {
-    console.group('ngOnInit')
+    // console.group('ngOnInit')
     //console.log(`content : ${JSON.stringify(this.content)}`)
     //console.log(`schematics : ${JSON.stringify(this.schematics)}`)
     //console.log(`locale : ${this.locale}`)
     //console.log(`localeFallback : ${this.localeFallback}`)
-    console.groupEnd()
+    // console.groupEnd()
 
     this.generateForm();
     if (this.content) {
@@ -116,7 +116,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
       )
       .subscribe({
         next: (formValue) => {
-          console.group('form')
+          // console.group('form')
           // console.log(Object.getOwnPropertyNames(formValue))
           //console.log(formValue)
           // console.log('Before')
@@ -135,7 +135,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
           }
           // console.log('After')
           //console.log(this.content)
-          console.groupEnd()
+          // console.groupEnd()
         },
         error: (err) => console.log(err),
         complete: () => console.log('completed')
@@ -220,11 +220,11 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
   }
 
   clearForm(): void {
-    console.group('clearForm')
+    // console.group('clearForm')
     for (const ctrlName in this.form.controls) {
       this.form.removeControl(ctrlName)
     }
-    console.groupEnd()
+    // console.groupEnd()
   }
 
   onChanged(): void {

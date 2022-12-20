@@ -112,7 +112,7 @@ export class UsersComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.userService.update(element.id, it?.role!)
+          this.userService.update(element.id, it?.role, it?.permissions)
         )
       )
       .subscribe({
