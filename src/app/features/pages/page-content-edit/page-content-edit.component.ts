@@ -94,7 +94,6 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: ([space, page, schematics]) => {
-          console.log('load')
           this.selectedSpace = space;
           this.selectedLocale = space.localeFallback;
           this.availableLocales = space.locales;
@@ -113,15 +112,9 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
               fieldName: ''
             }];
           }
+
           // Select content base on path
-          if (this.schematicPath.length == 1) {
-            this.selectedContent = this.content;
-          } else {
-            for (const item of this.schematicPath) {
-              if (item.fieldName === '') continue;
-              this.selectedContent = this.content[item.fieldName].find((it: PageContentComponent) => it._id == item.contentId)
-            }
-          }
+          this.navigateToSchematic(this.schematicPath[this.schematicPath.length - 1])
 
           this.schematics = schematics;
           this.schematicMapByName = new Map<string, Schematic>(this.schematics?.map(it => [it.name, it]));
@@ -207,16 +200,18 @@ export class PageContentEditComponent implements OnInit, OnDestroy {
   }
 
   navigateToSchematic(pathItem: SchematicPathItem): void {
-    console.log(pathItem)
     const idx = this.schematicPath.findIndex((it) => it.contentId == pathItem.contentId);
+    this.schematicPath.splice(idx + 1);
     // Select Root
     if (idx == 0) {
       this.selectedContent = this.content;
+    } else {
+      let localSelectedContent = this.content;
+      for (const path of this.schematicPath) {
+        if (path.fieldName === '') continue;
+        localSelectedContent = localSelectedContent[path.fieldName].find((it: PageContentComponent) => it._id == path.contentId);
+      }
+      this.selectedContent = localSelectedContent;
     }
-    // TODO select other deap
-    // Delete remaining path
-    // l=2, idx = 0, => (1, 1)
-    // l=5, idx = 0, => (1, 4)
-    this.schematicPath.splice(idx + 1, this.schematicPath.length - (idx + 1));
   }
 }

@@ -92,7 +92,8 @@
       </ll-breadcrumb-item>
     </ll-breadcrumb>
 
-    <ng-container *ngIf="false && isTest">
+    <ng-container *ngIf="isTest">
+      Schematic Path :
       <pre>{{schematicPath | json}}</pre>
     </ng-container>
 
@@ -108,6 +109,7 @@
 
   <ng-container *ngIf="isTest">
     <mat-divider></mat-divider>
+    Content :
     <pre>{{content | json}}</pre>
   </ng-container>
 

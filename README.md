@@ -22,9 +22,6 @@ The application is design to be deployed in **Firebase**.
 - It is **Free** forever, you or your company doesn't need to pay.
 - It is **Open Source** Software, you also can contribute with code and feedback.
 - You pay only for infrastructure where you deploy the **Localess**.
-- **Localess** is a translation management tool, and not a **Content Management System (CMS)**.
-
-
 
 ![Localess Video](https://github.com/Lessify/localess/wiki/img/app_animation.gif)
 
@@ -39,14 +36,14 @@ If you would like to become a sponsor, please consider:
   - Translate with Google Translate.
   - No application build required anymore.
 - Content Management System **(BETA)** :
-  - Define content data structure with Schematic (type, requirements).
+  - Define content data structure with Schematic (type, requirements, validation).
   - Create hierarchical content.
   - Content validation.
 - Publish your changes (instant update).
 - Google CDN Integration (very fast response time, about 300ms for 125kb of 5000 translations).
 - Import / Export content between environments and applications.
 - User Management with granular permissions.
-- Integration with any programming language.
+- Integration via API with any programming language.
 - Few lines of integration with your project.
 
 ## Documentation
