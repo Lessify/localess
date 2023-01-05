@@ -1,5 +1,5 @@
 import {Component, Optional} from '@angular/core';
-import {Auth, User, sendPasswordResetEmail} from '@angular/fire/auth';
+import {Auth, sendPasswordResetEmail, User} from '@angular/fire/auth';
 import {Router} from '@angular/router';
 import {EMPTY, Observable} from 'rxjs';
 import {Store} from '@ngrx/store';

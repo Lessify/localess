@@ -1,7 +1,9 @@
 import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup} from '@angular/forms';
 import {UserDialogModel} from './user-dialog.model';
+import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {environment} from '../../../../environments/environment';
 
 @Component({
   selector: 'll-user-dialog',
@@ -11,14 +13,16 @@ import {UserDialogModel} from './user-dialog.model';
 })
 export class UserDialogComponent implements OnInit {
 
-  roles = ['admin', 'write', 'edit', 'read', 'none']
+  isTest = environment.test;
 
   form: FormGroup = this.fb.group({
-    role: this.fb.control('none', Validators.required)
+    role: this.fb.control<string | undefined>(undefined),
+    permissions: this.fb.control<string[] | undefined>(undefined)
   });
 
   constructor(
     private readonly fb: FormBuilder,
+    readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: UserDialogModel
   ) {
   }

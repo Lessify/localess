@@ -1,0 +1,7 @@
+@use '@angular/material' as mat;
+
+@import 'styles-variables';
+
+.mat-menu-error-messages {
+  max-width: 500px !important;
+}

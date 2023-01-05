@@ -1,13 +1,12 @@
 import * as assert from 'assert';
 import {OverlayContainer} from '@angular/cdk/overlay';
-import {TranslateService} from '@ngx-translate/core';
 import {Actions} from '@ngrx/effects';
 import {TestScheduler} from 'rxjs/testing';
 import {Store} from '@ngrx/store';
 import {of} from 'rxjs';
 import {NgZone} from '@angular/core';
 
-import {AnimationsService, AppState, LocalStorageService, TitleService} from '../../core.module';
+import {AnimationsService, AppState, LocalStorageService} from '../../core.module';
 
 import {SETTINGS_KEY, SettingsEffects} from './settings.effects';
 import {SettingsState} from './settings.model';
@@ -19,9 +18,7 @@ describe('SettingsEffects', () => {
   let router: any;
   let localStorageService: jasmine.SpyObj<LocalStorageService>;
   let overlayContainer: jasmine.SpyObj<OverlayContainer>;
-  let titleService: jasmine.SpyObj<TitleService>;
   let animationsService: jasmine.SpyObj<AnimationsService>;
-  let translateService: jasmine.SpyObj<TranslateService>;
   let store: jasmine.SpyObj<Store<AppState>>;
   let ngZone: jasmine.SpyObj<NgZone>;
 
@@ -36,9 +33,7 @@ describe('SettingsEffects', () => {
     };
     localStorageService = jasmine.createSpyObj('LocalStorageService', ['setItem']);
     overlayContainer = jasmine.createSpyObj('OverlayContainer', ['getContainerElement']);
-    titleService = jasmine.createSpyObj('TitleService', ['setTitle']);
     animationsService = jasmine.createSpyObj('AnimationsService', ['updateRouteAnimationType']);
-    translateService = jasmine.createSpyObj('TranslateService', ['use']);
     store = jasmine.createSpyObj('store', ['pipe']);
     ngZone = jasmine.createSpyObj('mockNgZone', ['run', 'runOutsideAngular']);
     ngZone.run.and.callFake((fn) => fn());
@@ -69,9 +64,7 @@ describe('SettingsEffects', () => {
         router,
         overlayContainer,
         localStorageService,
-        titleService,
         animationsService,
-        translateService,
         ngZone
       );
 

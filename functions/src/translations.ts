@@ -5,30 +5,28 @@ import {
   bucket,
   firebaseConfig,
   firestoreService,
-  ROLE_ADMIN,
-  ROLE_WRITE,
   SUPPORT_LOCALES,
-  translationService
+  translationService,
 } from './config';
 import {Space} from './models/space.model';
 import {
   PublishTranslationsData,
   Translation,
   TranslationExportImport,
-  TranslationLocale,
   TranslationsExportData,
   TranslationsImportData,
-  TranslationType
-} from './models/translations.model';
+  TranslationType,
+} from './models/translation.model';
 import {FieldValue, QuerySnapshot, Timestamp, WriteBatch} from 'firebase-admin/firestore';
 import axios from 'axios';
 import {protos} from '@google-cloud/translate';
+import {UserPermission} from './models/user.model';
 
 // Publish
 export const translationsPublish = https.onCall(async (data: PublishTranslationsData, context) => {
-  logger.info('[publishTranslations] data: ' + JSON.stringify(data));
-  logger.info('[publishTranslations] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+  logger.info('[translationsPublish] data: ' + JSON.stringify(data));
+  logger.info('[translationsPublish] context.auth: ' + JSON.stringify(context.auth));
+  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_PUBLISH, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const translationsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {
@@ -36,7 +34,7 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
     const translations = translationsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
 
     for (const locale of space.locales) {
-      const localeJson: { [key: string]: string } = {};
+      const localeStorage: Record<string, string> = {};
       for (const tr of translations) {
         let value = tr.locales[locale.id];
         if (value) {
@@ -45,16 +43,16 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
         } else {
           value = tr.locales[space.localeFallback.id];
         }
-        localeJson[tr.name] = value;
+        localeStorage[tr.name] = value;
       }
       // Save generated JSON
-      logger.info(`[publishTranslations] Save file to spaces/${data.spaceId}/translations/${locale.id}.json`);
+      logger.info(`[translationsPublish] Save file to spaces/${data.spaceId}/translations/${locale.id}.json`);
       bucket.file(`spaces/${data.spaceId}/translations/${locale.id}.json`)
         .save(
-          JSON.stringify(localeJson),
+          JSON.stringify(localeStorage),
           (err?: Error | null) => {
             if (err) {
-              logger.error(`[publishTranslations] Can not save file for Space(${data.spaceId}) and Locale(${locale})`);
+              logger.error(`[translationsPublish] Can not save file for Space(${data.spaceId}) and Locale(${locale})`);
               logger.error(err);
             }
           }
@@ -67,12 +65,12 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
           url: url,
           method: 'PURGE',
         });
-        logger.info(`[publishTranslations] purge url ${origin}${url}`);
+        logger.info(`[translationsPublish] purge url ${origin}${url}`);
       }
     }
     return;
   } else {
-    logger.info(`[publishTranslations] Space ${data.spaceId} does not exist or no translations.`);
+    logger.info(`[translationsPublish] Space ${data.spaceId} does not exist or no translations.`);
     throw new https.HttpsError('not-found', 'Space not found');
   }
 });
@@ -81,14 +79,14 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
 export const translationsExport = https.onCall(async (data: TranslationsExportData, context) => {
   logger.info('[translationsExport] data: ' + JSON.stringify(data));
   logger.info('[translationsExport] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_EXPORT, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const translationsRef = firestoreService.collection(`spaces/${data.spaceId}/translations`);
 
   let translationsSnapshot: QuerySnapshot;
   if (data.fromDate) {
-    translationsSnapshot = await translationsRef.where('updatedOn', '>=', Timestamp.fromMillis(data.fromDate)).get()
+    translationsSnapshot = await translationsRef.where('updatedAt', '>=', Timestamp.fromMillis(data.fromDate)).get();
   } else {
     translationsSnapshot = await translationsRef.get();
   }
@@ -97,13 +95,13 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
     // const space: Space = spaceSnapshot.data() as Space
     // FLAT
     if (data.kind === 'FLAT') {
-      const exportedTr: TranslationLocale = {};
+      const exportedTr: Record<string, string> = {};
       translationsSnapshot.docs.filter((it) => it.exists)
         .forEach((it) => {
           const tr = it.data() as Translation;
           const value = tr.locales[data.locale];
           if (value) {
-            exportedTr[tr.name] = tr.locales[data.locale]
+            exportedTr[tr.name] = tr.locales[data.locale];
           }
         });
       return exportedTr;
@@ -114,32 +112,32 @@ export const translationsExport = https.onCall(async (data: TranslationsExportDa
           const tr = it.data() as Translation;
           const exportedTr: TranslationExportImport = {
             name: tr.name,
-            locales: tr.locales
-          }
+            locales: tr.locales,
+          };
           if (tr.labels && tr.labels.length > 0) {
-            exportedTr.labels = tr.labels
+            exportedTr.labels = tr.labels;
           }
           if (tr.description && tr.description.length > 0) {
-            exportedTr.description = tr.description
+            exportedTr.description = tr.description;
           }
-          exportedTrs.push(exportedTr)
+          exportedTrs.push(exportedTr);
         });
       return exportedTrs;
     } else {
-      logger.warn(`[translationsExport] Kind is invalid.`);
+      logger.warn('[translationsExport] Kind is invalid.');
       throw new https.HttpsError('invalid-argument', 'Invalid kind argument');
     }
   } else {
     logger.warn(`[translationsExport] Space ${data.spaceId} does not exist.`);
     throw new https.HttpsError('not-found', 'Space not found');
   }
-})
+});
 
 // Import
 export const translationsImport = https.onCall(async (data: TranslationsImportData, context) => {
   logger.info(`[translationsImport] data: ${JSON.stringify(data)}`);
   logger.info('[translationsImport] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.hasAnyRole([ROLE_WRITE, ROLE_ADMIN], context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
+  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_IMPORT, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
 
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const translationsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/translations`).get();
@@ -152,7 +150,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
   if (spaceSnapshot.exists) {
     // FLAT
     if (data.kind === 'FLAT') {
-      const importT: { [key: string]: string } = data.translations;
+      const importT: Record<string, string> = data.translations;
       translationsSnapshot.docs.filter((it) => it.exists)
         .forEach((it) => {
           const tr = it.data() as Translation;
@@ -174,7 +172,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
           if (ot.locales[data.locale] !== importT[name]) {
             // update if locale values are different
             const update: any = {
-              updatedOn: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             };
             update[`locales.${data.locale}`] = importT[name];
             batches[batchIdx].update(firestoreService.doc(`spaces/${data.spaceId}/translations/${oid}`), update);
@@ -186,8 +184,8 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
             name: name,
             type: TranslationType.STRING,
             locales: {},
-            createdOn: FieldValue.serverTimestamp(),
-            updatedOn: FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           };
           addEntity.locales[data.locale] = importT[name];
           batches[batchIdx].set(firestoreService.collection(`spaces/${data.spaceId}/translations`).doc(), addEntity);
@@ -197,9 +195,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
       logger.info('[translationsImport] Batch size : ' + batches.length);
       logger.info('[translationsImport] Batch total changes : ' + totalChanges);
       return await Promise.all(batches.map((it) => it.commit()));
-
     } else if (data.kind === 'FULL') {
-
       const importT: TranslationExportImport[] = data.translations;
       translationsSnapshot.docs.filter((it) => it.exists)
         .forEach((it) => {
@@ -218,17 +214,17 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
         if (ot && oid) {
           // no updates in case onlyNewKeys == true
           if (data.onlyNewKeys) return;
-          const space: Space = spaceSnapshot.data() as Space
+          const space: Space = spaceSnapshot.data() as Space;
           // update
           const update: any = {
-            updatedOn: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           };
           // update locales
-          space.locales.forEach(locale => {
+          space.locales.forEach( (locale) => {
             if (ot.locales[locale.id] !== value.locales[locale.id]) {
               update[`locales.${locale.id}`] = value.locales[locale.id];
             }
-          })
+          });
           // update description
           if (value.description && value.description.length > 0 && ot.description !== value.description) {
             update.description = value.description;
@@ -238,7 +234,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
             update.labels = [...new Set([...ot.labels, ...value.labels])];
           } else if (value.labels && value.labels.length > 0) {
             // add label
-            update.labels = value.locales
+            update.labels = value.locales;
           }
           if (Object.getOwnPropertyNames(update).length > 1) {
             batches[batchIdx].update(firestoreService.doc(`spaces/${data.spaceId}/translations/${oid}`), update);
@@ -250,8 +246,8 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
             name: value.name,
             type: TranslationType.STRING,
             locales: value.locales,
-            createdOn: FieldValue.serverTimestamp(),
-            updatedOn: FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           };
           // add description
           if (value.description && value.description.length > 0) {
@@ -264,16 +260,15 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
           batches[batchIdx].set(firestoreService.collection(`spaces/${data.spaceId}/translations`).doc(), addEntity);
           totalChanges++;
         }
-
-      })
+      });
       logger.info('[translationsImport] Batch size : ' + batches.length);
       logger.info('[translationsImport] Batch total changes : ' + totalChanges);
       if (totalChanges > 0) {
         return await Promise.all(batches.map((it) => it.commit()));
       }
-      return "no-changes"
+      return 'no-changes';
     } else {
-      logger.warn(`[translationsImport] Kind is invalid.`);
+      logger.warn('[translationsImport] Kind is invalid.');
       throw new https.HttpsError('invalid-argument', 'Invalid kind argument');
     }
   } else {
@@ -292,7 +287,7 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
 
     const update: any = {
       autoTranslate: FieldValue.delete(),
-      updatedOn: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     // autoTranslate only when it is required
@@ -303,14 +298,14 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
       // is incoming locale supporting translation ?
       if (!SUPPORT_LOCALES.has(space.localeFallback.id)) return;
 
-      const localeValue = translation.locales[space.localeFallback.id]
+      const localeValue = translation.locales[space.localeFallback.id];
 
-      const projectId = firebaseConfig.projectId
-      let locationId; //firebaseConfig.locationId || 'global'
+      const projectId = firebaseConfig.projectId;
+      let locationId; // firebaseConfig.locationId || 'global'
       if (firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us-')) {
-        locationId = 'us-central1'
+        locationId = 'us-central1';
       } else {
-        locationId = 'global'
+        locationId = 'global';
       }
 
       for (const locale of space.locales) {
@@ -332,13 +327,13 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
             update[`locales.${locale.id}`] = responseTranslateText.translations[0].translatedText;
           }
         } catch (e) {
-          logger.error(e)
+          logger.error(e);
         }
       }
     }
 
-    logger.info(`[Translation::onCreate] Update : ${JSON.stringify(update)}`)
-    await snapshot.ref.update(update)
+    logger.info(`[Translation::onCreate] Update : ${JSON.stringify(update)}`);
+    await snapshot.ref.update(update);
 
-    return
+    return;
   });

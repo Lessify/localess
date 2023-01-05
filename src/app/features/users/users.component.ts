@@ -1,4 +1,11 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -8,14 +15,19 @@ import {Store} from '@ngrx/store';
 import {AppState} from '../../core/state/core.state';
 import {UserService} from '@shared/services/user.service';
 import {User} from '@shared/models/user.model';
-import {filter, switchMap} from 'rxjs/operators';
+import {filter, switchMap, takeUntil} from 'rxjs/operators';
 import {UserDialogComponent} from './user-dialog/user-dialog.component';
 import {UserDialogModel} from './user-dialog/user-dialog.model';
 import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog.component';
 import {UserInviteDialogResponse} from './user-invite-dialog/user-invite-dialog.model';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  ConfirmationDialogComponent
+} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {NotificationService} from '@shared/services/notification.service';
+import {Subject} from 'rxjs';
 
 @Component({
   selector: 'll-users',
@@ -23,14 +35,17 @@ import {NotificationService} from '@shared/services/notification.service';
   styleUrls: ['./users.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UsersComponent implements OnInit {
+export class UsersComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
   isLoading: boolean = true;
   isSyncLoading: boolean = false;
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
-  displayedColumns: string[] = ['avatar', 'email', 'name', 'role', 'createdOn', 'updatedOn', 'actions'];
+  displayedColumns: string[] = ['avatar', 'email', 'name', 'role', 'createdAt', 'updatedAt', 'actions'];
+
+  // Subscriptions
+  private destroy$ = new Subject();
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -49,6 +64,9 @@ export class UsersComponent implements OnInit {
 
   loadData(): void {
     this.userService.findAll()
+      .pipe(
+        takeUntil(this.destroy$),
+      )
       .subscribe(response => {
           this.dataSource = new MatTableDataSource<User>(response);
           this.dataSource.sort = this.sort || null;
@@ -72,14 +90,13 @@ export class UsersComponent implements OnInit {
         )
       )
       .subscribe({
-          next: () => {
-            this.notificationService.success('User has been invited.');
-          },
-          error: () => {
-            this.notificationService.error('User can not be invited.');
-          }
+        next: () => {
+          this.notificationService.success('User has been invited.');
+        },
+        error: () => {
+          this.notificationService.error('User can not be invited.');
         }
-      );
+      });
   }
 
   editDialog(element: User): void {
@@ -87,25 +104,25 @@ export class UsersComponent implements OnInit {
       UserDialogComponent, {
         width: '500px',
         data: {
-          role: element.role
+          role: element.role,
+          permissions: element.permissions,
         }
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.userService.update(element.id, it?.role!)
+          this.userService.update(element.id, it?.role, it?.permissions)
         )
       )
       .subscribe({
-          next: () => {
-            this.notificationService.success('User has been updated.');
-          },
-          error: () => {
-            this.notificationService.error('User can not be updated.');
-          }
+        next: () => {
+          this.notificationService.success('User has been updated.');
+        },
+        error: () => {
+          this.notificationService.error('User can not be updated.');
         }
-      );
+      });
   }
 
   deleteDialog(element: User): void {
@@ -150,5 +167,10 @@ export class UsersComponent implements OnInit {
           }, 1000)
         }
       })
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(undefined)
+    this.destroy$.complete()
   }
 }

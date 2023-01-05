@@ -4,29 +4,52 @@ import {FeaturesComponent} from './features.component';
 import {AuthGuard, customClaims} from '@angular/fire/auth-guard';
 import {pipe} from 'rxjs';
 import {map} from 'rxjs/operators';
+import {UserPermission} from '@shared/models/user.model';
 
-const ROLE_READ = 'read'
-const ROLE_EDIT = 'edit'
-const ROLE_WRITE = 'write'
 const ROLE_ADMIN = 'admin'
+const ROLE_CUSTOM = 'custom'
 
-const hasRoleAdmin = () =>
-  pipe(
+const hasRoleAdmin = () => {
+  return pipe(
     customClaims,
     map((claims) => claims.role === ROLE_ADMIN)
-  );
+  )
+};
 
-const hasRoleWrite = () =>
-  pipe(
+const hasPermissionUserManagement = () => {
+  return pipe(
     customClaims,
-    map((claims) => [ROLE_WRITE, ROLE_ADMIN].includes(claims.role))
-  );
+    map((claims) => claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.USER_MANAGEMENT) || false))
+  )
+};
 
-const hasRoleRead = () =>
-  pipe(
+const hasPermissionSpaceManagement = () => {
+  return pipe(
     customClaims,
-    map((claims) => [ROLE_READ, ROLE_EDIT, ROLE_WRITE, ROLE_ADMIN].includes(claims.role))
-  );
+    map((claims) => claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.SPACE_MANAGEMENT) || false))
+  )
+};
+
+const hasPermissionTranslationRead = () => {
+  return pipe(
+    customClaims,
+    map((claims) => claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.TRANSLATION_READ) || false))
+  )
+};
+
+const hasPermissionSchemaRead = () => {
+  return pipe(
+    customClaims,
+    map((claims) => claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.SCHEMATIC_READ) || false))
+  )
+};
+
+const hasPermissionContentRead = () => {
+  return pipe(
+    customClaims,
+    map((claims) => claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.CONTENT_READ) || false))
+  )
+};
 
 const routes: Routes = [
   {
@@ -44,7 +67,7 @@ const routes: Routes = [
         loadChildren: () => import('./users/users.module').then(m => m.UsersModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleAdmin
+          authGuardPipe: hasPermissionUserManagement
         }
       },
       {
@@ -53,7 +76,7 @@ const routes: Routes = [
         loadChildren: () => import('./spaces/spaces.module').then(m => m.SpacesModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleAdmin
+          authGuardPipe: hasPermissionSpaceManagement
         }
       },
       {
@@ -62,7 +85,7 @@ const routes: Routes = [
         loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleRead
+          authGuardPipe: hasPermissionTranslationRead
         }
       },
       {
@@ -71,7 +94,25 @@ const routes: Routes = [
         loadChildren: () => import('./locales/locales.module').then(m => m.LocalesModule),
         canActivate: [AuthGuard],
         data: {
-          authGuardPipe: hasRoleAdmin
+          authGuardPipe: hasPermissionSpaceManagement
+        }
+      },
+      {
+        path: 'schematics',
+        title: 'Schematics',
+        loadChildren: () => import('./schematics/schematics.module').then(m => m.SchematicsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionSchemaRead
+        }
+      },
+      {
+        path: 'pages',
+        title: 'Pages',
+        loadChildren: () => import('./pages/pages.module').then(m => m.PagesModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionContentRead
         }
       },
     ]

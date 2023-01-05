@@ -13,7 +13,7 @@ import {
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {map, tap} from 'rxjs/operators';
+import {map} from 'rxjs/operators';
 import {Space, SpaceCreate, SpaceCreateFS, SpaceUpdate, SpaceUpdateFS} from '../models/space.model';
 import {Locale} from '../models/locale.model';
 
@@ -38,14 +38,14 @@ export class SpaceService {
       );
   }
 
-  add(entity: SpaceCreate): Observable<DocumentReference> {
+  create(entity: SpaceCreate): Observable<DocumentReference> {
     const defaultLocale: Locale = {id: 'en', name: 'English'}
     let add: SpaceCreateFS = {
       name: entity.name,
       locales: [defaultLocale],
       localeFallback: defaultLocale,
-      createdOn: serverTimestamp(),
-      updatedOn: serverTimestamp()
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     };
     return from(
       addDoc(collection(this.firestore, 'spaces'),
@@ -53,14 +53,14 @@ export class SpaceService {
       )
     )
       .pipe(
-        traceUntilFirst('Firestore:Spaces:add'),
+        traceUntilFirst('Firestore:Spaces:create'),
       );
   }
 
   update(id: string, entity: SpaceUpdate): Observable<void> {
     const update: SpaceUpdateFS = {
       name: entity.name,
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
     return from(
       setDoc(doc(this.firestore, `spaces/${id}`),

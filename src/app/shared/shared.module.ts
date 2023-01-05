@@ -32,13 +32,18 @@ import {
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {ScrollingModule} from '@angular/cdk/scrolling';
-import {CopierService} from './services/copier.service';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
 import {IconComponent} from './components/icon/icon.component';
-import {HasAnyUserRolePipe} from './pipes/has-any-user-role.pipe';
-import {CustomSnackBarComponent} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
+import {
+  CustomSnackBarComponent
+} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
 import {RouterLink} from '@angular/router';
+import {BreadcrumbComponent} from '@shared/components/breadcrumb/breadcrumb.component';
+import {BreadcrumbItemComponent} from '@shared/components/breadcrumb/breadcrumb-item.component';
+import {ClipboardModule} from '@angular/cdk/clipboard';
+import {MatBadgeModule} from '@angular/material/badge';
+import {CanUserPerformPipe} from '@shared/pipes/can-user-perform.pipe';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -70,18 +75,22 @@ const MATERIAL_MODULES: any[] = [
   MatAutocompleteModule,
   ScrollingModule,
   MatGridListModule,
-  MatSnackBarModule
+  MatSnackBarModule,
+  ClipboardModule,
+  MatBadgeModule
 ];
 
 const SHARED_PIPES: any[] = [
   TranslationFilterPipe,
-  HasAnyUserRolePipe
+  CanUserPerformPipe
 ]
 
 const SHARED_COMPONENTS: any[] = [
+  BreadcrumbComponent,
+  BreadcrumbItemComponent,
   ConfirmationDialogComponent,
+  CustomSnackBarComponent,
   IconComponent,
-  CustomSnackBarComponent
 ]
 
 @NgModule({
@@ -103,7 +112,7 @@ const SHARED_COMPONENTS: any[] = [
     SHARED_COMPONENTS,
     SHARED_PIPES
   ],
-  providers: [CopierService]
+  providers: []
 })
 export class SharedModule {
 }

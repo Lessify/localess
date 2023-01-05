@@ -42,7 +42,7 @@ export class LoginComponent implements OnDestroy {
 
   showLoginButton = false;
   showLogoutButton = false;
-  isTesting: boolean = environment.test
+  isTest: boolean = environment.test
   public readonly user: Observable<User | null> = EMPTY;
   private readonly userDisposable: Subscription | undefined;
   parsedToken?: Promise<IdTokenResult>;

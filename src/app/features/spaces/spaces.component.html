@@ -4,13 +4,13 @@
     <span class="spacer"></span>
     <button mat-raised-button
             color="primary"
-            (click)="addDialog()">
+            (click)="openAddDialog()">
       <mat-icon>add</mat-icon>
       Add Space
     </button>
   </mat-toolbar-row>
 </mat-toolbar>
-<div *ngIf="isLoading" class="row justify-content-md-center step-content">
+<div *ngIf="isLoading" class="loader">
   <mat-spinner></mat-spinner>
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
@@ -19,7 +19,7 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> ID </mat-header-cell>
       <mat-cell *matCellDef="let element">
         {{element.id}}
-        <button mat-icon-button (click)="copy(element.id)" matTooltip="Copy Id">
+        <button mat-icon-button [cdkCopyToClipboard]="element.id" matTooltip="Copy Id">
           <mat-icon>content_copy</mat-icon>
         </button>
       </mat-cell>
@@ -28,21 +28,21 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="createdOn">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="createdOn"> Created On </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.createdOn?.toDate() | date:'medium'}} </mat-cell>
+    <ng-container matColumnDef="createdAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.createdAt?.toDate() | date:'medium'}} </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="updatedOn">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedOn"> Updated On </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.updatedOn?.toDate() | date:'medium'}} </mat-cell>
+    <ng-container matColumnDef="updatedAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.updatedAt?.toDate() | date:'medium'}} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="editDialog(element)" matTooltip="Edit">
+        <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button (click)="deleteDialog(element)" matTooltip="Delete">
+        <button mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

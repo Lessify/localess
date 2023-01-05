@@ -1,7 +1,5 @@
 import {Timestamp} from 'firebase-admin/firestore';
 
-export type TranslationLocale = { [key: string]: string }
-
 export enum TranslationType {
   STRING = 'STRING',
   PLURAL = 'PLURAL',
@@ -11,17 +9,17 @@ export enum TranslationType {
 export interface Translation {
   name: string
   type: TranslationType
-  locales: { [key: string]: string }
+  locales: Record<string, string>
   labels?: string[]
   autoTranslate?: boolean
   description?: string
-  createdOn: Timestamp
-  updatedOn: Timestamp
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 
 export interface TranslationExportImport {
   name: string;
-  locales: { [key: string]: string };
+  locales: Record<string, string>;
   labels?: string[]
   description?: string;
 }
@@ -51,7 +49,7 @@ export interface TranslationsImportFlatData {
   kind: 'FLAT'
   spaceId: string
   locale: string
-  translations: TranslationLocale
+  translations: Record<string, string>
   onlyNewKeys?: boolean
 }
 
@@ -62,7 +60,7 @@ export interface TranslationsImportFullData {
   onlyNewKeys?: boolean
 }
 
-export type  TranslationsImportData = TranslationsImportFlatData | TranslationsImportFullData
+export type TranslationsImportData = TranslationsImportFlatData | TranslationsImportFullData
 
 export interface PublishTranslationsData {
   spaceId: string

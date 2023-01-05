@@ -2,7 +2,7 @@ import {Injectable, Optional} from '@angular/core';
 import {CanActivate, Router, UrlTree} from '@angular/router';
 import {Observable} from 'rxjs';
 import {Auth, authState} from '@angular/fire/auth';
-import {map, tap} from 'rxjs/operators';
+import {map} from 'rxjs/operators';
 import {Store} from '@ngrx/store';
 import {AppState} from '../core.state';
 
@@ -14,7 +14,7 @@ export class AuthGuardService implements CanActivate {
 
   canActivate(): Observable<boolean | UrlTree> {
     return authState(this.auth).pipe(
-      tap((it) => console.log(it)),
+      // tap((it) => console.log(it)),
       map((u) => !!u),
       map((it) => {
         if (it) {

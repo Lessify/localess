@@ -2,9 +2,7 @@
   <mat-toolbar-row>
     Translations
     <span class="spacer"></span>
-    <ng-container id="translation-add-import-export"
-                  *ngIf="['write', 'admin'] | hasAnyUserRole | async">
-      <button
+      <button *ngIf="'TRANSLATION_CREATE' | canUserPerform | async"
         mat-raised-button
         color="primary"
         (click)="openAddDialog()">
@@ -12,7 +10,7 @@
         Add Translation
       </button>
 
-      <button
+      <button *ngIf="'TRANSLATION_PUBLISH' | canUserPerform | async"
         mat-raised-button
         color="accent"
         matTooltip="Publish Translations to be available via API call"
@@ -31,11 +29,13 @@
       </button>
 
       <mat-menu #importMenu="matMenu">
-        <button mat-menu-item (click)="openImportDialog()">
+        <button *ngIf="'TRANSLATION_IMPORT' | canUserPerform | async"
+          mat-menu-item (click)="openImportDialog()">
           <mat-icon>cloud_upload</mat-icon>
           <span>Import</span>
         </button>
-        <button mat-menu-item (click)="openExportDialog()">
+        <button *ngIf="'TRANSLATION_EXPORT' | canUserPerform | async"
+                mat-menu-item (click)="openExportDialog()">
           <mat-icon>cloud_download</mat-icon>
           <span>Export</span>
         </button>
@@ -46,11 +46,10 @@
           <span>Published {{locale.name}} JSON</span>
         </button>
       </mat-menu>
-    </ng-container>
 
   </mat-toolbar-row>
 </mat-toolbar>
-<div *ngIf="isLoading" class="row justify-content-md-center step-content">
+<div *ngIf="isLoading" class="loader">
   <mat-spinner></mat-spinner>
 </div>
 <div *ngIf="!isLoading" class="container-fluid">
@@ -74,15 +73,15 @@
     </div>
     <div class="p-2" style="width: 50%">
       <mat-form-field appearance="outline">
-        <mat-chip-list #chipList>
-          <mat-chip
+        <mat-chip-grid #chipList>
+          <mat-chip-row
             *ngFor="let selectedLabel of selectedLabels"
             selectable
             removable
             (removed)="removeLabel(selectedLabel)">
             {{selectedLabel}}
             <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip>
+          </mat-chip-row>
           <input
             matInput
             #labelsInput
@@ -91,7 +90,7 @@
             [matAutocomplete]="auto"
             [matChipInputFor]="chipList"
           />
-        </mat-chip-list>
+        </mat-chip-grid>
         <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectLabel($event)">
           <mat-option *ngFor="let label of filteredLabels | async" [value]="label">
             {{label}}
@@ -102,22 +101,20 @@
 
   </div>
   <div *ngIf="translations.length > 0" class="display-columns-section">
-    <cdk-virtual-scroll-viewport [itemSize]="40" class="col-3 overlay container">
+    <cdk-virtual-scroll-viewport [itemSize]="55" class="col-3 overlay container">
       <mat-nav-list dense class="container1">
-        <mat-list-item class="container2 "
+        <mat-list-item class="container2"
                        *cdkVirtualFor="let translation of translations | translationFilter:searchValue:selectedSearchLocale:selectedLabels"
                        (click)="selectTranslation(translation)"
                        [class.selected]="translation.id === selectedTranslation?.id">
-          <mat-icon mat-list-icon
+          <mat-icon matListItemIcon
                     [class]="identifyStatusColor(translation)"
                     matTooltipClass="allow-cr"
                     matTooltip="Green - translated. &#10; Amber - partially-translated. &#10; Red - untranslated.">
             adjust
           </mat-icon>
-          <div mat-line>
-            <strong>{{translation.name}}</strong>
-          </div>
-          <div mat-line>
+          <span matListItemTitle>{{translation.name}}</span>
+          <span matListItemLine>
             <span [ngSwitch]="translation.type">
               <ll-translation-string-view *ngSwitchCase="'STRING'"
                                           [value]="translation.locales[selectedSearchLocale]">
@@ -129,7 +126,8 @@
                                          [value]="translation.locales[selectedSearchLocale]">
               </ll-translation-array-view>
             </span>
-          </div>
+          </span>
+
           <mat-divider></mat-divider>
         </mat-list-item>
       </mat-nav-list>
@@ -146,23 +144,22 @@
             </mat-select>
           </mat-form-field>
         </div>
+        <mat-divider></mat-divider>
+        <div class="p-2 align-items-start mb-auto">
+          <span [ngSwitch]="selectedTranslation.type">
+            <ll-translation-string-view *ngSwitchCase="'STRING'"
+                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-string-view>
+            <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
+                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-plural-view>
+            <ll-translation-array-view *ngSwitchCase="'ARRAY'"
+                                       [value]="selectedTranslation.locales[selectedSourceLocale]">
+            </ll-translation-array-view>
+          </span>
+        </div>
 
-        <ng-container id="translation-locale-edit"
-                      *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
-          <mat-divider></mat-divider>
-          <div class="p-2 align-items-start mb-auto">
-            <span [ngSwitch]="selectedTranslation.type">
-              <ll-translation-string-view *ngSwitchCase="'STRING'"
-                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
-              </ll-translation-string-view>
-              <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
-                                          [value]="selectedTranslation.locales[selectedSourceLocale]">
-              </ll-translation-plural-view>
-              <ll-translation-array-view *ngSwitchCase="'ARRAY'"
-                                         [value]="selectedTranslation.locales[selectedSourceLocale]">
-              </ll-translation-array-view>
-            </span>
-          </div>
+        <ng-container id="translation-locale-edit" *ngIf="'TRANSLATION_UPDATE' | canUserPerform | async">
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
             <mat-form-field appearance="outline" class="with-button">
@@ -178,7 +175,6 @@
                     [disabled]="!isLocaleTranslatable(selectedSourceLocale, selectedTargetLocale)">
               <ll-icon [animate]="isTranslateLoading" start="g_translate" end="sync"></ll-icon>
             </button>
-
           </div>
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
@@ -216,29 +212,25 @@
     </div>
     <div class="col-3 overlay text-break">
       <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
-        <ng-container id="translation-edit"
-                      *ngIf="['edit', 'write', 'admin'] | hasAnyUserRole | async">
-          <div class="p-2 align-items-start">
-            <button
-              mat-stroked-button matTooltip="Edit"
-              (click)="openEditDialog(selectedTranslation)">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button
-              *ngIf="['write', 'admin'] | hasAnyUserRole | async"
-              mat-stroked-button matTooltip="Delete"
-              (click)="openDeleteDialog(selectedTranslation)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </div>
-          <mat-divider></mat-divider>
-        </ng-container>
+        <div class="p-2 align-items-start">
+          <button *ngIf="'TRANSLATION_UPDATE' | canUserPerform | async"
+            mat-stroked-button matTooltip="Edit"
+            (click)="openEditDialog(selectedTranslation)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button *ngIf="'TRANSLATION_DELETE' | canUserPerform | async"
+            mat-stroked-button matTooltip="Delete"
+            (click)="openDeleteDialog(selectedTranslation)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+        <mat-divider></mat-divider>
 
         <div class="p-2 align-items-start">
           <p><small><strong>ID</strong></small></p>
           <p>
             <small>{{selectedTranslation.id}}</small>
-            <button mat-icon-button (click)="copy(selectedTranslation.id)" matTooltip="Copy Id">
+            <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.id" matTooltip="Copy Id">
               <mat-icon>content_copy</mat-icon>
             </button>
           </p>
@@ -248,7 +240,7 @@
           <p><small><strong>Name</strong></small></p>
           <p>
             <small>{{selectedTranslation.name}}</small>
-            <button mat-icon-button (click)="copy(selectedTranslation.name)" matTooltip="Copy Name">
+            <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.name" matTooltip="Copy Name">
               <mat-icon>content_copy</mat-icon>
             </button>
           </p>
@@ -279,9 +271,9 @@
         <div class="p-2 align-items-start">
           <p><small><strong>Labels</strong></small></p>
           <ng-container *ngIf="selectedTranslation?.labels?.length > 0 ; else elseLabelsContainer">
-            <mat-chip-list>
-              <mat-chip *ngFor="let item of selectedTranslation?.labels">{{item}}</mat-chip>
-            </mat-chip-list>
+            <mat-chip-listbox>
+              <mat-chip-option *ngFor="let item of selectedTranslation?.labels">{{item}}</mat-chip-option>
+            </mat-chip-listbox>
           </ng-container>
           <ng-template #elseLabelsContainer>
             <p><small><em>No label available.</em></small></p>
@@ -289,13 +281,13 @@
         </div>
         <mat-divider></mat-divider>
         <div class="p-2 align-items-start">
-          <p><small><strong>Created On</strong></small></p>
-          <p><small>{{selectedTranslation?.createdOn?.toMillis() | date:'medium'}}</small></p>
+          <p><small><strong>Created At</strong></small></p>
+          <p><small>{{selectedTranslation?.createdAt?.toMillis() | date:'medium'}}</small></p>
         </div>
         <mat-divider></mat-divider>
         <div class="p-2 align-items-start">
-          <p><small><strong>Updated On</strong></small></p>
-          <p><small>{{selectedTranslation?.updatedOn?.toMillis() | date:'medium'}}</small></p>
+          <p><small><strong>Updated At</strong></small></p>
+          <p><small>{{selectedTranslation?.updatedAt?.toMillis() | date:'medium'}}</small></p>
         </div>
         <mat-divider></mat-divider>
       </div>

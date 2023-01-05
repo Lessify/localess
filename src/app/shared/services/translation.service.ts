@@ -55,14 +55,14 @@ export class TranslationService {
       );
   }
 
-  add(spaceId: string, entity: TranslationCreate): Observable<DocumentReference> {
+  create(spaceId: string, entity: TranslationCreate): Observable<DocumentReference> {
     let addEntity: TranslationCreateFS = {
       name: entity.name,
       type: entity.type,
       locales: {},
       autoTranslate: entity.autoTranslate,
-      createdOn: serverTimestamp(),
-      updatedOn: serverTimestamp()
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     }
 
     if (entity.labels && entity.labels.length > 0) {
@@ -93,13 +93,13 @@ export class TranslationService {
       )
     )
       .pipe(
-        traceUntilFirst('Firestore:Translations:add'),
+        traceUntilFirst('Firestore:Translations:create'),
       );
   }
 
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
     const update: UpdateData<TranslationUpdateFS> = {
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
 
     if (entity.labels && entity.labels.length > 0) {
@@ -121,7 +121,7 @@ export class TranslationService {
 
   updateLocale(spaceId: string, id: string, locale: string, value: string): Observable<void> {
     let update: any = {
-      updatedOn: serverTimestamp()
+      updatedAt: serverTimestamp()
     }
     update[`locales.${locale}`] = value
     return from(

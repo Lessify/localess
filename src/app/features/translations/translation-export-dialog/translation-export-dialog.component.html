@@ -1,53 +1,34 @@
 <h1 mat-dialog-title>Translations Export</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="fill">
-            <mat-label>Type</mat-label>
-            <mat-select formControlName="kind" required>
-              <mat-option *ngFor="let kind of exportKinds" [value]="kind.key">
-                {{kind.value}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
+    <mat-form-field appearance="outline">
+      <mat-label>Type</mat-label>
+      <mat-select formControlName="kind" required>
+        <mat-option *ngFor="let kind of exportKinds" [value]="kind.key">
+          {{kind.value}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
 
-    <div class="row" *ngIf="form.value.kind === 'FLAT'">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="fill">
-            <mat-label>Type</mat-label>
-            <mat-select formControlName="locale" required>
-              <mat-option *ngFor="let locale of data.locales" [value]="locale.id">
-                {{locale.name}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
+    <mat-form-field *ngIf="form.value.kind === 'FLAT'" appearance="outline">
+      <mat-label>Type</mat-label>
+      <mat-select formControlName="locale" required>
+        <mat-option *ngFor="let locale of data.locales" [value]="locale.id">
+          {{locale.name}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
 
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="fill">
-            <mat-label>From Date</mat-label>
-            <input matInput [matDatepicker]="picker" readonly [max]="today"
-                   (click)="picker.open()" (dateChange)="dateChange($event)">
-            <mat-datepicker-toggle matSuffix (click)="picker.select(null)">
-              <mat-icon matDatepickerToggleIcon>clear</mat-icon>
-            </mat-datepicker-toggle>
-            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-            <mat-datepicker #picker></mat-datepicker>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-
+    <mat-form-field appearance="outline">
+      <mat-label>From Date</mat-label>
+      <input matInput [matDatepicker]="picker" readonly [max]="today"
+             (click)="picker.open()" (dateChange)="dateChange($event)">
+      <mat-datepicker-toggle matSuffix (click)="picker.select(null)">
+        <mat-icon matDatepickerToggleIcon>clear</mat-icon>
+      </mat-datepicker-toggle>
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

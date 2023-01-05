@@ -1,0 +1,25 @@
+@use '@angular/material' as mat;
+
+mat-toolbar-row {
+  .mat-mdc-button-base {
+    margin: 8px 8px 8px 8px;
+  }
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.mat-icon {
+  &.published {
+    color: mat.get-color-from-palette(mat.$green-palette, 500);
+  }
+  &.not-published {
+    color:  mat.get-color-from-palette(mat.$gray-palette, 500);
+  }
+  &.draft {
+    color: mat.get-color-from-palette(mat.$amber-palette, 500);
+  }
+}
+
+

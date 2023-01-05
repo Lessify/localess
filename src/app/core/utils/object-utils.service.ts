@@ -22,4 +22,23 @@ export class ObjectUtils {
     }
     return null as unknown as T;
   }
+
+  public static clean(source: any) {
+    if (source instanceof Array) {
+      source.forEach(value => {
+        if (value instanceof Object) {
+          this.clean(value);
+        }
+      });
+    } else if (source instanceof Object) {
+      Object.getOwnPropertyNames(source).forEach(value => {
+        if (source[value] instanceof Object) {
+          this.clean(source[value]);
+        }
+        if (source[value] === null || source[value] === undefined) {
+          delete source[value];
+        }
+      });
+    }
+  }
 }

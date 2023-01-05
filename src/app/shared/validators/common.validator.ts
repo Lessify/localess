@@ -1,7 +1,20 @@
 import {AbstractControl, ValidationErrors} from '@angular/forms';
 
+function isEmptyInputValue(value: any): boolean {
+  /**
+   * Check if the object is a string or array before evaluating the length attribute.
+   * This avoids falsely rejecting objects that contain a custom length attribute.
+   * For example, the object {id: 1, length: 0, width: 0} should not be returned as empty.
+   */
+  return value == null ||
+    ((typeof value === 'string' || Array.isArray(value)) && value.length === 0);
+}
+
 export class CommonValidator {
   static noSpace(control: AbstractControl): ValidationErrors | null {
+    if (isEmptyInputValue(control.value)) {
+      return null;  // don't validate empty values to allow optional controls
+    }
     if ((control.value as string).indexOf(' ') >= 0) {
       return { noSpace: true };
     }
@@ -9,6 +22,9 @@ export class CommonValidator {
   }
 
   static noSpaceAtStart(control: AbstractControl): ValidationErrors | null {
+    if (isEmptyInputValue(control.value)) {
+      return null;  // don't validate empty values to allow optional controls
+    }
     if ((control.value as string).startsWith(' ')) {
       return { noSpaceAtStart: true };
     }
@@ -16,20 +32,26 @@ export class CommonValidator {
   }
 
   static noSpaceAtEnd(control: AbstractControl): ValidationErrors | null {
+    if (isEmptyInputValue(control.value)) {
+      return null;  // don't validate empty values to allow optional controls
+    }
     if ((control.value as string).endsWith(' ')) {
       return { noSpaceAtEnd: true };
     }
     return null;
   }
 
-  static noSpaceAtStartAndEnd(
+  static noSpaceAround(
     control: AbstractControl
   ): ValidationErrors | null {
+    if (isEmptyInputValue(control.value)) {
+      return null;  // don't validate empty values to allow optional controls
+    }
     if (
       (control.value as string).startsWith(' ') ||
       (control.value as string).endsWith(' ')
     ) {
-      return { noSpaceAtStartAndEnd: true };
+      return { noSpaceAround: true };
     }
     return null;
   }
@@ -40,4 +62,9 @@ export class CommonValidator {
     }
     return null;
   }
+}
+
+export enum CommonPattern {
+  JSON_NAME= '[a-z]+[a-zA-Z0-9_]+',
+  URL_SLUG= '[a-zA-Z0-9-_]+'
 }

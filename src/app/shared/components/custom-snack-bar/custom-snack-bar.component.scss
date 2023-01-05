@@ -7,7 +7,7 @@ $line-height: 20px !default;
 // space falls below 36px.
 $button-vertical-margin: -(math.div($button-height - $line-height, 2));
 
-.mat-simple-snackbar {
+.mat-mdc-simple-snack-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;

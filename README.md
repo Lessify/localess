@@ -22,9 +22,6 @@ The application is design to be deployed in **Firebase**.
 - It is **Free** forever, you or your company doesn't need to pay.
 - It is **Open Source** Software, you also can contribute with code and feedback.
 - You pay only for infrastructure where you deploy the **Localess**.
-- **Localess** is a translation management tool, and not a **Content Management System (CMS)**.
-
-
 
 ![Localess Video](https://github.com/Lessify/localess/wiki/img/app_animation.gif)
 
@@ -34,15 +31,20 @@ If you would like to become a sponsor, please consider:
 
 ## Key Features
 
-- Edit your localisation content in real time
-- Translate with Google Translate
-- No application build required anymore
-- Publish your changes (instant update)
-- Google CDN Integration (very fast response time, about 300ms for 125kb of 5000 translations)
-- Import / Export content between environments and applications
-- User Management. with different roles : VIEW, EDIT, WRITE, ADMIN
-- Integration with any programming language
-- Few lines of integration with your project
+- Translation Management Tool :
+  - Edit your localisation content in real time.
+  - Translate with Google Translate.
+  - No application build required anymore.
+- Content Management System **(BETA)** :
+  - Define content data structure with Schematic (type, requirements, validation).
+  - Create hierarchical content.
+  - Content validation.
+- Publish your changes (instant update).
+- Google CDN Integration (very fast response time, about 300ms for 125kb of 5000 translations).
+- Import / Export content between environments and applications.
+- User Management with granular permissions.
+- Integration via API with any programming language.
+- Few lines of integration with your project.
 
 ## Documentation
 1. [Overview](https://github.com/Lessify/localess/wiki)
@@ -56,3 +58,6 @@ If you would like to become a sponsor, please consider:
 
 Lessify UI is design to manage data in firestore, authentication and storage via Firebase SDK.
 Generated data used by exposed API's is store in Storage to make it even faster to access and GCP CDN will cache it for even faster response.
+
+[//]: # (netstat -aon | findstr 4000)
+[//]: # (taskkill /PID <PID> /F)

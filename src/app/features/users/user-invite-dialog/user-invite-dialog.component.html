@@ -1,54 +1,126 @@
 <h1 mat-dialog-title>User Invite</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="fill">
-            <mat-label>Email</mat-label>
-            <input matInput type="email" formControlName="email" required autocomplete="off"/>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="fill">
-            <mat-label>Password</mat-label>
-            <input matInput type="password" formControlName="password" required autocomplete="off"/>
-            <mat-hint>Minimum 6 character</mat-hint>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="fill">
-            <mat-label>Display Name</mat-label>
-            <input matInput type="text" formControlName="displayName" autocomplete="off"/>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="fill">
-            <mat-label>Role</mat-label>
-            <mat-select formControlName="role" required>
-              <mat-option *ngFor="let role of roles" [value]="role">
-                {{role | uppercase}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" required autocomplete="off"/>
+      <mat-error *ngIf="form.controls['email'].errors">{{fe.controlError(form.controls['email'])}}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Password</mat-label>
+      <input matInput type="password" formControlName="password" required autocomplete="off"/>
+      <mat-error *ngIf="form.controls['password'].errors">{{fe.controlError(form.controls['password'])}}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Display Name</mat-label>
+      <input matInput type="text" formControlName="displayName" autocomplete="off"/>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Role</mat-label>
+      <mat-select formControlName="role">
+        <mat-option [value]="undefined">None</mat-option>
+        <mat-option value="custom">Custom</mat-option>
+        <mat-option value="admin">Admin</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <ng-container *ngIf="form.value.role === 'custom'">
+      <b>Permissions</b>
+      <mat-selection-list formControlName="permissions">
+
+        <div mat-subheader>Administration</div>
+        <mat-list-option value="USER_MANAGEMENT">
+          <span matListItemTitle>User Management</span>
+          <span matListItemLine>Invite, Delete users and change roles.</span>
+        </mat-list-option>
+        <mat-list-option value="SPACE_MANAGEMENT">
+          <span matListItemTitle>Space Management</span>
+          <span matListItemLine>Create, Update and Delete. </span>
+        </mat-list-option>
+
+        <mat-divider></mat-divider>
+        <div mat-subheader>Translation</div>
+        <mat-list-option value="TRANSLATION_READ">
+          <span matListItemTitle>Read</span>
+          <span matListItemLine>Read Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_CREATE">
+          <span matListItemTitle>Create</span>
+          <span matListItemLine>Create Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_UPDATE">
+          <span matListItemTitle>Updated</span>
+          <span matListItemLine>Updated Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_DELETE">
+          <span matListItemTitle>Delete</span>
+          <span matListItemLine>Delete Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_PUBLISH">
+          <span matListItemTitle>Publish</span>
+          <span matListItemLine>Publish Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_EXPORT">
+          <span matListItemTitle>Export</span>
+          <span matListItemLine>Export Translation.</span>
+        </mat-list-option>
+        <mat-list-option value="TRANSLATION_IMPORT">
+          <span matListItemTitle>Import</span>
+          <span matListItemLine>Import Translation.</span>
+        </mat-list-option>
+
+        <mat-divider></mat-divider>
+        <div mat-subheader>Schematic <b>(Beta)</b></div>
+        <mat-list-option value="SCHEMATIC_READ">
+          <span matListItemTitle>Read</span>
+          <span matListItemLine>Read Schematic.</span>
+        </mat-list-option>
+        <mat-list-option value="SCHEMATIC_CREATE">
+          <span matListItemTitle>Create</span>
+          <span matListItemLine>Create Schematic.</span>
+        </mat-list-option>
+        <mat-list-option value="SCHEMATIC_UPDATE">
+          <span matListItemTitle>Updated</span>
+          <span matListItemLine>Updated Schematic.</span>
+        </mat-list-option>
+        <mat-list-option value="SCHEMATIC_DELETE">
+          <span matListItemTitle>Delete</span>
+          <span matListItemLine>Delete Schematic.</span>
+        </mat-list-option>
+
+        <mat-divider></mat-divider>
+        <div mat-subheader>Content <b>(Beta)</b></div>
+        <mat-list-option value="CONTENT_READ">
+          <span matListItemTitle>Read</span>
+          <span matListItemLine>Read Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_CREATE">
+          <span matListItemTitle>Create</span>
+          <span matListItemLine>Create Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_UPDATE">
+          <span matListItemTitle>Updated</span>
+          <span matListItemLine>Updated Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_DELETE">
+          <span matListItemTitle>Delete</span>
+          <span matListItemLine>Delete Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_PUBLISH">
+          <span matListItemTitle>Publish</span>
+          <span matListItemLine>Publish Content.</span>
+        </mat-list-option>
+
+      </mat-selection-list>
+    </ng-container>
+
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Invite</button>
 </mat-dialog-actions>
+
+<ng-container *ngIf="isTest">
+  <pre>{{form.value | json}}</pre>
+</ng-container>

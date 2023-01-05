@@ -16,10 +16,8 @@ export const DAY = 24 * HOUR;
 export const CACHE_MAX_AGE = DAY;
 export const CACHE_SHARE_MAX_AGE = DAY;
 // AUTH ROLE
-export const ROLE_READ = 'read';
-export const ROLE_EDIT = 'edit';
-export const ROLE_WRITE = 'write';
 export const ROLE_ADMIN = 'admin';
+export const ROLE_CUSTOM = 'custom';
 
 // Init
 export const app: App = initializeApp();
@@ -27,18 +25,18 @@ export const firestoreService: Firestore = getFirestore(app);
 export const authService: Auth = getAuth(app);
 export const storageService: Storage = getStorage(app);
 export const bucket = storageService.bucket();
-export const translationService = new TranslationServiceClient()
+export const translationService = new TranslationServiceClient();
 
 // Translation
 export const SUPPORT_LOCALES = new Set([
-    "af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "ceb", "ckb", "co", "cs", "cy", "da", "de",
-    "el", "en", "eo", "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gd", "gl", "gu", "ha", "haw",
-    "he", "hi", "hmn", "hr", "ht", "hu", "hy", "id", "ig", "is", "it", "iw", "ja", "jw", "ka", "kk",
-    "km", "kn", "ko", "ku", "ky", "la", "lb", "lo", "lt", "lv", "mai", "mg", "mi", "mk", "ml", "mn",
-    "mr", "ms", "mt", "my", "ne", "nl", "no", "ny", "or", "pa", "pl", "ps", "pt", "ro", "ru", "rw",
-    "sd", "si", "sk", "sl", "sm", "sn", "so", "sq", "sr", "st", "su", "sv", "sw", "ta", "te", "tg",
-    "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "xh", "yi", "yo", "zh", "zh-TW", "zu"
+    'af', 'am', 'ar', 'az', 'be', 'bg', 'bn', 'bs', 'ca', 'ceb', 'ckb', 'co', 'cs', 'cy', 'da', 'de',
+    'el', 'en', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fr', 'fy', 'ga', 'gd', 'gl', 'gu', 'ha', 'haw',
+    'he', 'hi', 'hmn', 'hr', 'ht', 'hu', 'hy', 'id', 'ig', 'is', 'it', 'iw', 'ja', 'jw', 'ka', 'kk',
+    'km', 'kn', 'ko', 'ku', 'ky', 'la', 'lb', 'lo', 'lt', 'lv', 'mai', 'mg', 'mi', 'mk', 'ml', 'mn',
+    'mr', 'ms', 'mt', 'my', 'ne', 'nl', 'no', 'ny', 'or', 'pa', 'pl', 'ps', 'pt', 'ro', 'ru', 'rw',
+    'sd', 'si', 'sk', 'sl', 'sm', 'sn', 'so', 'sq', 'sr', 'st', 'su', 'sv', 'sw', 'ta', 'te', 'tg',
+    'th', 'tk', 'tl', 'tr', 'tt', 'ug', 'uk', 'ur', 'uz', 'vi', 'xh', 'yi', 'yo', 'zh', 'zh-TW', 'zu',
   ]
-)
+);
 
-export const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '')
+export const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '');

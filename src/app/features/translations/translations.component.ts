@@ -3,12 +3,13 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  OnDestroy,
   OnInit,
   ViewChild
 } from '@angular/core';
-import {combineLatest, debounceTime, EMPTY, Observable, startWith} from 'rxjs';
+import {combineLatest, debounceTime, EMPTY, Observable, startWith, Subject} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
-import {filter, map, switchMap} from 'rxjs/operators';
+import {filter, map, switchMap, takeUntil} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
 import {FormBuilder, FormControl} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
@@ -25,7 +26,6 @@ import {
 } from '@shared/models/translation.model';
 import {selectSpace} from '../../core/state/space/space.selector';
 import {Space} from '@shared/models/space.model';
-import {CopierService} from '@shared/services/copier.service';
 import {
   TranslationAddDialogComponent
 } from './translation-add-dialog/translation-add-dialog.component';
@@ -67,7 +67,7 @@ import {NotificationService} from '@shared/services/notification.service';
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TranslationsComponent implements OnInit {
+export class TranslationsComponent implements OnInit, OnDestroy {
 
   @ViewChild('labelsInput') labelsInput!: ElementRef<HTMLInputElement>;
   @ViewChild('auto') matAutocomplete!: MatAutocomplete;
@@ -98,11 +98,14 @@ export class TranslationsComponent implements OnInit {
   locales: Locale[] = [];
 
   //Loadings
-  isLoading: boolean = false;
+  isLoading: boolean = true;
   isPublishLoading: boolean = false;
   isImportExportLoading: boolean = false;
   isLocaleUpdateLoading: boolean = false;
   isTranslateLoading: boolean = false;
+
+  // Subscriptions
+  private destroy$ = new Subject();
 
   constructor(
     private readonly translationService: TranslationService,
@@ -114,7 +117,6 @@ export class TranslationsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly store: Store<AppState>,
     private readonly cd: ChangeDetectorRef,
-    private readonly copierService: CopierService,
     private readonly translateService: TranslateService,
   ) {
     this.filteredLabels = this.labelCtrl.valueChanges.pipe(
@@ -129,6 +131,7 @@ export class TranslationsComponent implements OnInit {
     this.loadData()
     this.searchCtrl.valueChanges
       .pipe(
+        takeUntil(this.destroy$),
         debounceTime(300)
       )
       .subscribe({
@@ -148,7 +151,8 @@ export class TranslationsComponent implements OnInit {
             this.spaceService.findById(it.id),
             this.translationService.findAll(it.id)
           ])
-        )
+        ),
+        takeUntil(this.destroy$),
       )
       .subscribe({
         next: ([space, translations]) => {
@@ -223,20 +227,18 @@ export class TranslationsComponent implements OnInit {
               description: it?.description,
               autoTranslate: it?.autoTranslate
             }
-            return this.translationService.add(this.selectedSpace!.id, tc)
+            return this.translationService.create(this.selectedSpace!.id, tc)
           }
         )
       )
-      .subscribe(
-        {
-          next: () => {
-            this.notificationService.success('Translation has been added.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be added.');
-          }
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Translation has been added.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be added.');
         }
-      );
+      });
   }
 
   openEditDialog(translation: Translation): void {
@@ -260,14 +262,13 @@ export class TranslationsComponent implements OnInit {
         })
       )
       .subscribe({
-          next: () => {
-            this.notificationService.success('Translation has been updated.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be updated.');
-          }
+        next: () => {
+          this.notificationService.success('Translation has been updated.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be updated.');
         }
-      );
+      });
   }
 
   openDeleteDialog(element: Translation): void {
@@ -289,14 +290,13 @@ export class TranslationsComponent implements OnInit {
         )
       )
       .subscribe({
-          next: () => {
-            this.notificationService.success('Translation has been deleted.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be deleted.')
-          }
+        next: () => {
+          this.notificationService.success('Translation has been deleted.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be deleted.')
         }
-      );
+      });
   }
 
   openImportDialog(): void {
@@ -339,20 +339,19 @@ export class TranslationsComponent implements OnInit {
         })
       )
       .subscribe({
-          next: (result) => {
-            this.notificationService.success('Translations has been imported.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be imported.');
-          },
-          complete: () => {
-            setTimeout(() => {
-              this.isImportExportLoading = false
-              this.cd.markForCheck()
-            }, 1000)
-          }
+        next: (result) => {
+          this.notificationService.success('Translations has been imported.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be imported.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isImportExportLoading = false
+            this.cd.markForCheck()
+          }, 1000)
         }
-      );
+      });
   }
 
   openExportDialog(): void {
@@ -395,21 +394,20 @@ export class TranslationsComponent implements OnInit {
         })
       )
       .subscribe({
-          next: (result) => {
-            this.notificationService.success('Translations has been exported.');
-            saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}.json`)
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be exported.');
-          },
-          complete: () => {
-            setTimeout(() => {
-              this.isImportExportLoading = false
-              this.cd.markForCheck()
-            }, 1000)
-          }
+        next: (result) => {
+          this.notificationService.success('Translations has been exported.');
+          saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}.json`)
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be exported.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isImportExportLoading = false
+            this.cd.markForCheck()
+          }, 1000)
         }
-      );
+      });
   }
 
   selectTranslation(translation: Translation): void {
@@ -421,24 +419,19 @@ export class TranslationsComponent implements OnInit {
     this.isLocaleUpdateLoading = true
     this.translationService.updateLocale(this.selectedSpace!.id, transaction.id, locale, value)
       .subscribe({
-          next: () => {
-            this.notificationService.success('Translation has been updated.');
-          },
-          error: () => {
-            this.notificationService.error('Translation can not be updated.')
-          },
-          complete: () => {
-            setTimeout(() => {
-              this.isLocaleUpdateLoading = false
-              this.cd.markForCheck()
-            }, 1000)
-          }
+        next: () => {
+          this.notificationService.success('Translation has been updated.');
+        },
+        error: () => {
+          this.notificationService.error('Translation can not be updated.')
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isLocaleUpdateLoading = false
+            this.cd.markForCheck()
+          }, 1000)
         }
-      );
-  }
-
-  copy(value: string): void {
-    this.copierService.copyText(value);
+      });
   }
 
   // Labels
@@ -548,9 +541,17 @@ export class TranslationsComponent implements OnInit {
 
   identifyStatusColor(translate: Translation): string {
     switch (this.identifyStatus(translate)) {
-      case TranslationStatus.TRANSLATED: return 'translated';
-      case TranslationStatus.PARTIALLY_TRANSLATED: return 'partially-translated';
-      case TranslationStatus.UNTRANSLATED: return 'untranslated';
+      case TranslationStatus.TRANSLATED:
+        return 'translated';
+      case TranslationStatus.PARTIALLY_TRANSLATED:
+        return 'partially-translated';
+      case TranslationStatus.UNTRANSLATED:
+        return 'untranslated';
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(undefined)
+    this.destroy$.complete()
   }
 }

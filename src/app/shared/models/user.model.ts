@@ -22,10 +22,12 @@ export interface User {
    */
   readonly disabled: boolean;
 
-  readonly role?: 'admin' | 'write' | 'edit' | 'read' | 'none',
+  readonly role?: UserRole;
 
-  readonly createdOn: Timestamp;
-  readonly updatedOn: Timestamp;
+  readonly permissions?: string[];
+
+  readonly createdAt: Timestamp;
+  readonly updatedAt: Timestamp;
 }
 
 export interface UserInvite {
@@ -36,6 +38,30 @@ export interface UserInvite {
 }
 
 export interface UserUpdateFS {
-  role: string,
-  updatedOn: FieldValue;
+  role?: string,
+  permissions?: string[];
+  updatedAt: FieldValue;
+}
+
+export type UserRole = 'admin' | 'custom';
+
+export enum UserPermission {
+  USER_MANAGEMENT = 'USER_MANAGEMENT',
+  SPACE_MANAGEMENT = 'SPACE_MANAGEMENT',
+  TRANSLATION_READ = 'TRANSLATION_READ',
+  TRANSLATION_CREATE = 'TRANSLATION_CREATE',
+  TRANSLATION_UPDATE = 'TRANSLATION_UPDATE',
+  TRANSLATION_DELETE = 'TRANSLATION_DELETE',
+  TRANSLATION_PUBLISH = 'TRANSLATION_PUBLISH',
+  TRANSLATION_EXPORT = 'TRANSLATION_EXPORT',
+  TRANSLATION_IMPORT = 'TRANSLATION_IMPORT',
+  SCHEMATIC_READ = 'SCHEMATIC_READ',
+  SCHEMATIC_CREATE = 'SCHEMATIC_CREATE',
+  SCHEMATIC_UPDATE = 'SCHEMATIC_UPDATE',
+  SCHEMATIC_DELETE = 'SCHEMATIC_DELETE',
+  CONTENT_READ = 'CONTENT_READ',
+  CONTENT_CREATE = 'CONTENT_CREATE',
+  CONTENT_UPDATE = 'CONTENT_UPDATE',
+  CONTENT_DELETE = 'CONTENT_DELETE',
+  CONTENT_PUBLISH = 'CONTENT_PUBLISH'
 }

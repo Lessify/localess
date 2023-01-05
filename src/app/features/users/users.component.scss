@@ -1,5 +1,7 @@
-mat-toolbar-row .mat-button-base {
-  margin: 8px 0 8px 8px;
+mat-toolbar-row {
+  .mat-mdc-button-base {
+    margin: 8px 8px 8px 8px;
+  }
 }
 
 table {
@@ -7,21 +9,17 @@ table {
 }
 
 mat-cell.mat-column-actions {
-  max-width: 100px;
-  padding-right: 8px;
+  max-width: 140px;
 }
 
 mat-header-cell.mat-column-actions {
-  max-width: 100px;
-  padding-right: 8px;
+  max-width: 140px;
 }
 
 mat-cell.mat-column-avatar {
   max-width: 100px;
-  padding-right: 8px;
 }
 
 mat-header-cell.mat-column-avatar {
   max-width: 100px;
-  padding-right: 8px;
 }

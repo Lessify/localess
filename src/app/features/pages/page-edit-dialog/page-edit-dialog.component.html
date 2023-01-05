@@ -1,0 +1,25 @@
+<h1 mat-dialog-title>Edit Page</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput type="text" formControlName="name" maxlength="50" autocomplete="off"/>
+      <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
+      <mat-error *ngIf="form.controls['name'].errors">{{fe.controlError(form.controls['name'])}}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Slug</mat-label>
+      <input matInput type="text" formControlName="slug" maxlength="50" autocomplete="off"/>
+      <mat-hint align="end">{{form.controls['slug'].value?.length || 0}}/50</mat-hint>
+      <mat-error *ngIf="form.controls['slug'].errors">{{fe.controlError(form.controls['slug'])}}</mat-error>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value"
+          [disabled]="!form.valid">
+    Save
+  </button>
+</mat-dialog-actions>

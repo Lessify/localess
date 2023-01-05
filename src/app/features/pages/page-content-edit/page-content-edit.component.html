@@ -1,0 +1,116 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    <button mat-icon-button (click)="back()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>{{page?.name}}</span>
+    <span class="spacer"></span>
+
+    <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
+      {{selectedLocale.name}}
+      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+    </button>
+
+    <mat-menu #localesMenu="matMenu">
+      <button mat-menu-item *ngFor="let locale of availableLocales" (click)="onLocaleChanged(locale)">
+        <span [class.fw-semibold]="locale.id === selectedLocale.id">
+          {{locale.name}}
+          <span *ngIf="locale.id === selectedSpace?.localeFallback.id"> (Fallback)</span>
+        </span>
+      </button>
+    </mat-menu>
+
+    <button mat-icon-button *ngIf="contentErrors" [matMenuTriggerFor]="contentErrorsMenu">
+      <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline
+      </mat-icon>
+    </button>
+
+    <mat-menu class="mat-menu-error-messages" #contentErrorsMenu="matMenu" xPosition="before">
+      <mat-list>
+        <mat-list-item *ngFor="let error of contentErrors">
+          <mat-icon color="warn" matListItemIcon>warning</mat-icon>
+          In <b>{{error.schematic}}</b> the <b>{{error.fieldDisplayName || error.fieldName}}</b> {{fe.errors(error.errors)}}
+        </mat-list-item>
+      </mat-list>
+    </mat-menu>
+
+    <button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
+            mat-raised-button color="primary" matTooltip="Save the page"
+            [disabled]="isSaveLoading"
+            (click)="save()">
+      <ll-icon [animate]="isSaveLoading" start="save" end="sync"></ll-icon>
+      Save
+    </button>
+
+    <button *ngIf="'CONTENT_PUBLISH' | canUserPerform | async"
+            mat-raised-button color="accent" matTooltip="Publish to be available via API call"
+            [disabled]="isPublishLoading"
+            (click)="publish()">
+      <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
+      Publish
+    </button>
+
+    <ng-container *ngIf="page?.publishedAt === undefined">
+      <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
+    </ng-container>
+    <ng-container *ngIf="page?.publishedAt?.seconds > page?.updatedAt?.seconds">
+      <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
+    </ng-container>
+    <ng-container *ngIf="page?.publishedAt && page?.publishedAt?.seconds < page?.updatedAt?.seconds">
+      <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
+    </ng-container>
+
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="importMenu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+
+    <mat-menu #importMenu="matMenu">
+      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales"
+              (click)="openPublishedInNewTab(locale.id)">
+        <mat-icon>public</mat-icon>
+        <span>Published {{locale.name}} JSON</span>
+      </button>
+    </mat-menu>
+
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div *ngIf="isLoading" class="loader">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid mt-3">
+
+  <ng-container *ngIf="rootSchematic">
+
+    <ll-breadcrumb>
+      <ll-breadcrumb-item *ngFor="let schematicPathItem of schematicPath" (click)="navigateToSchematic(schematicPathItem)">
+        <ng-container *ngIf="schematicMapByName.get(schematicPathItem.schematicName) as sch">
+          {{sch.displayName || sch.name}}
+        </ng-container>
+      </ll-breadcrumb-item>
+    </ll-breadcrumb>
+
+    <ng-container *ngIf="isTest">
+      Schematic Path :
+      <pre>{{schematicPath | json}}</pre>
+    </ng-container>
+
+    <ll-page-content-schematic-edit
+      [content]="selectedContent"
+      [schematics]="schematics"
+      [locale]="selectedLocale.id"
+      [localeFallback]="selectedSpace.localeFallback.id"
+      (schematicChange)="onSchematicChange($event)"
+    ></ll-page-content-schematic-edit>
+
+  </ng-container>
+
+  <ng-container *ngIf="isTest">
+    <mat-divider></mat-divider>
+    Content :
+    <pre>{{content | json}}</pre>
+  </ng-container>
+
+</div>

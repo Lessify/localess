@@ -26,17 +26,18 @@
       <mat-nav-list>
 
         <mat-list-item *ngIf="!selectedSpace" matRipple routerLink="/features/spaces">
-          <mat-icon mat-list-icon>space_dashboard</mat-icon>
-          No Spaces. Click here to create one.
+          <mat-icon matListItemIcon>space_dashboard</mat-icon>
+          <div matListItemTitle>No Spaces. Click here to create one.</div>
         </mat-list-item>
 
-        <ng-container *ngIf="!isRoleNone && selectedSpace">
+        <ng-container *ngIf="selectedSpace">
           <mat-list-item matRipple [matMenuTriggerFor]="menuSpaces">
-            <mat-icon mat-list-icon>space_dashboard</mat-icon>
-            {{selectedSpace.name}}
-            <span class="spacer"></span>
-            <mat-icon>arrow_drop_down</mat-icon>
-            <mat-menu #menuSpaces="matMenu">
+            <mat-icon matListItemIcon>space_dashboard</mat-icon>
+            <div matListItemTitle>{{selectedSpace.name}}</div>
+            <span matListItemMeta>
+              <mat-icon>arrow_drop_down</mat-icon>
+            </span>
+            <mat-menu #menuSpaces="matMenu" yPosition="below" xPosition="after">
               <button mat-menu-item *ngFor="let space of spaces" (click)="onSpaceSelection(space)">
                 {{space.name}}
               </button>
@@ -45,26 +46,28 @@
           <mat-divider></mat-divider>
           <div mat-subheader>Spaces</div>
 
-          <mat-list-item *ngFor="let item of filterMenuByRole(userSideMenu,role)" [routerLink]="[item.link]" routerLinkActive="active">
-            <mat-icon mat-list-icon>{{item.icon}}</mat-icon>
-            {{item.label}}
-          </mat-list-item>
+          <ng-container *ngFor="let item of userSideMenu">
+            <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
+              <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
+              <div matListItemTitle>{{item.label}}</div>
+            </mat-list-item>
+          </ng-container>
         </ng-container>
 
-        <ng-container *ngIf="isRoleAdmin">
-          <mat-divider></mat-divider>
-          <div mat-subheader>Admin</div>
-          <mat-list-item *ngFor="let item of adminSideMenu" [routerLink]="[item.link]" routerLinkActive="active">
-            <mat-icon mat-list-icon>{{item.icon}}</mat-icon>
-            {{item.label}}
+        <mat-divider></mat-divider>
+        <div mat-subheader>Admin</div>
+        <ng-container *ngFor="let item of adminSideMenu">
+          <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
+            <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
+            <div matListItemTitle>{{item.label}}</div>
           </mat-list-item>
         </ng-container>
 
         <mat-divider></mat-divider>
         <div mat-subheader>Community and Support <mat-icon>open_in_new</mat-icon></div>
         <mat-list-item *ngFor="let item of communitySideMenu" (click)="openNewTab(item.link)">
-          <mat-icon mat-list-icon>{{item.icon}}</mat-icon>
-          {{item.label}}
+          <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
+          <div matListItemTitle>{{item.label}}</div>
         </mat-list-item>
 
         <mat-divider></mat-divider>

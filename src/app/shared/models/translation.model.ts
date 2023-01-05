@@ -16,12 +16,12 @@ export interface Translation {
   id: string
   name: string
   type: TranslationType
-  locales: { [key: string]: string }
+  locales: Record<string, string>
   labels?: string[]
   description?: string
   autoTranslate?: boolean
-  createdOn: Timestamp
-  updatedOn: Timestamp
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 
 export interface TranslationCreate {
@@ -37,12 +37,12 @@ export interface TranslationCreate {
 export interface TranslationCreateFS {
   name: string
   type: TranslationType
-  locales: { [key: string]: string }
+  locales: Record<string, string>
   labels?: string[]
   description?: string
   autoTranslate?: boolean
-  createdOn: FieldValue
-  updatedOn: FieldValue
+  createdAt: FieldValue
+  updatedAt: FieldValue
 }
 
 export interface TranslationUpdate {
@@ -53,14 +53,12 @@ export interface TranslationUpdate {
 export interface TranslationUpdateFS {
   labels: string[]
   description: string
-  updatedOn: FieldValue
+  updatedAt: FieldValue
 }
-
-export type TranslationLocale = { [key: string]: string }
 
 export interface TranslationExportImport {
   name: string
-  locales: { [key: string]: string }
+  locales: Record<string, string>
   labels?: string[]
   description?: string
 }
@@ -85,6 +83,8 @@ export interface TranslationsExportFullData {
 }
 
 export type TranslationsExportData = TranslationsExportFlatData | TranslationsExportFullData
+
+export type TranslationLocale = { [key: string]: string }
 
 export interface TranslationsImportFlatData {
   kind: 'FLAT'

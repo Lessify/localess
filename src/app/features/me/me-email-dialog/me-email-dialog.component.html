@@ -1,17 +1,11 @@
 <h1 mat-dialog-title>Update Email</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="form-group">
-          <mat-form-field appearance="fill">
-            <mat-label>New Password</mat-label>
-            <input matInput type="email" formControlName="newEmail" required/>
-            <mat-hint>Minimum 6 character</mat-hint>
-          </mat-form-field>
-        </div>
-      </div>
-    </div>
+    <mat-form-field appearance="outline">
+      <mat-label>New Password</mat-label>
+      <input matInput type="email" formControlName="newEmail" required/>
+      <mat-hint>Minimum 6 character</mat-hint>
+    </mat-form-field>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

@@ -9,11 +9,11 @@
           <h1>Login</h1>
         </div>
         <form [formGroup]="form">
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="outline">
             <mat-label>Email</mat-label>
             <input matInput type="text" formControlName="email" required/>
           </mat-form-field>
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="outline">
             <mat-label>Password</mat-label>
             <input matInput type="password" formControlName="password" required/>
           </mat-form-field>
@@ -58,7 +58,7 @@
   </div>
   <div class="row">
     <div class="col">
-      <p *ngIf="isTesting" class="text-break">
+      <p *ngIf="isTest" class="text-break">
         <b>showLogoutButton</b> = {{showLogoutButton}} <br/>
         <b>showLoginButton</b> = {{showLoginButton}} <br/>
         <b>isGoogleAuthEnabled</b> = {{isGoogleAuthEnabled}} <br/>

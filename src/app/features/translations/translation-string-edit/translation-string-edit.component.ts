@@ -9,8 +9,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
-import {debounce} from 'rxjs/operators';
-import {interval} from 'rxjs';
+import {debounceTime} from 'rxjs';
 
 @Component({
   selector: 'll-translation-string-edit',
@@ -29,7 +28,9 @@ export class TranslationStringEditComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.form.valueChanges
-      .pipe(debounce(() => interval(200)))
+      .pipe(
+        debounceTime(200)
+      )
       .subscribe(val => {
         this.valueChange.emit(val.value);
       });
