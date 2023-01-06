@@ -1,7 +1,7 @@
 import {ValidatorFn, Validators} from '@angular/forms';
 import {CommonPattern, CommonValidator} from './common.validator';
 
-export class PageValidator {
+export class ContentValidator {
   public static NAME: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpaceAround,

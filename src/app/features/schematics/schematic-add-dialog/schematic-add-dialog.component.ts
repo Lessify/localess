@@ -5,6 +5,7 @@ import {SchematicAddDialogModel} from './schematic-add-dialog.model';
 import {SchematicValidator} from '@shared/validators/schematic.validator';
 import {SchematicType} from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {CommonValidator} from '@shared/validators/common.validator';
 
 @Component({
   selector: 'll-schematic-add-dialog',
@@ -12,12 +13,12 @@ import {FormErrorHandlerService} from '../../../core/error-handler/form-error-ha
   styleUrls: ['./schematic-add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SchematicAddDialogComponent implements OnInit {
+export class SchematicAddDialogComponent {
 
   types: string[] = Object.keys(SchematicType);
 
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', SchematicValidator.NAME),
+    name: this.fb.control('', [...SchematicValidator.NAME, CommonValidator.reservedName(this.data.reservedNames)]),
     type: this.fb.control(SchematicType.ROOT, SchematicValidator.TYPE)
   });
 
@@ -26,11 +27,5 @@ export class SchematicAddDialogComponent implements OnInit {
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: SchematicAddDialogModel
   ) {
-  }
-
-  ngOnInit(): void {
-    if (this.data != null) {
-      this.form.patchValue(this.data);
-    }
   }
 }

@@ -1,4 +1,4 @@
-export {pagePublish} from './pages';
+export {contentPublish} from './contents';
 
 export {setup} from './setup';
 

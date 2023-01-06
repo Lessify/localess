@@ -50,6 +50,12 @@ export class FormErrorHandlerService {
       if (errors['noSpaceAround']) {
         return `No spaces at start and end.`
       }
+      if (errors['requireObject']) {
+        return `Choose value from the drop-down.`
+      }
+      if (errors['reservedName']) {
+        return `The value is already reserved.`
+      }
       console.log(errors);
     }
 

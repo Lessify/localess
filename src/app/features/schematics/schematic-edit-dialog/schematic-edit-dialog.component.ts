@@ -7,6 +7,7 @@ import {SchematicComponent, SchematicComponentKind} from '@shared/models/schemat
 import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';
+import {CommonValidator} from '@shared/validators/common.validator';
 
 interface ComponentKindDescription {
   name: string
@@ -41,10 +42,12 @@ export class SchematicEditDialogComponent implements OnInit {
 
   selectedComponentIdx ?: number;
 
-  newComponentName = this.fb.control('', SchematicValidator.COMPONENT_NAME);
+  componentReservedNames: string[] = [];
+  newComponentName = this.fb.control('', [...SchematicValidator.COMPONENT_NAME, CommonValidator.reservedName(this.componentReservedNames)]);
+
 
   form: FormRecord = this.fb.record({
-    name: this.fb.control('', SchematicValidator.NAME),
+    name: this.fb.control('', [...SchematicValidator.NAME, CommonValidator.reservedName(this.data.reservedNames)]),
     displayName: this.fb.control<string | undefined>(undefined, SchematicValidator.DISPLAY_NAME),
     components: this.fb.array<SchematicComponent>([])
   });
@@ -78,10 +81,13 @@ export class SchematicEditDialogComponent implements OnInit {
   }
 
   addComponent(element?: SchematicComponent) {
+    const componentName = element?.name || this.newComponentName.value || '';
+    this.componentReservedNames.push(componentName)
+
     const defaultKind = SchematicComponentKind.TEXT;
     const componentForm = this.fb.record<any>({
       // Base
-      name: this.fb.control(element?.name || this.newComponentName.value, SchematicValidator.COMPONENT_NAME),
+      name: this.fb.control(componentName, [...SchematicValidator.COMPONENT_NAME, CommonValidator.reservedName(this.componentReservedNames, componentName)]),
       kind: this.fb.control(element?.kind || defaultKind, SchematicValidator.COMPONENT_KIND),
       displayName: this.fb.control<string | undefined>(element?.displayName, SchematicValidator.COMPONENT_DISPLAY_NAME),
       required: this.fb.control<boolean | undefined>(element?.required, SchematicValidator.COMPONENT_REQUIRED),
@@ -129,12 +135,22 @@ export class SchematicEditDialogComponent implements OnInit {
     this.selectedComponentKind = this.componentKindDescriptions[defaultKind];
     this.components.push(componentForm);
     this.newComponentName.reset();
-    this.selectComponent(this.components.length - 1)
+    this.selectComponent(this.components.length - 1);
   }
 
   removeComponent(event: Event, index: number): void {
+    // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
+    // Remove name from reserved names
+    const cValue = this.componentControlAt(index, 'name')?.value
+    if(cValue) {
+      const idx = this.componentReservedNames.indexOf(cValue);
+      if (idx !== -1) {
+        this.componentReservedNames.splice(index, 1);
+      }
+    }
+    // Remove
     this.components.removeAt(index);
     if (this.components.length === 0) {
       this.selectedComponentIdx = undefined;

@@ -1,4 +1,4 @@
-import {AbstractControl, ValidationErrors} from '@angular/forms';
+import {AbstractControl, ValidationErrors, ValidatorFn} from '@angular/forms';
 
 function isEmptyInputValue(value: any): boolean {
   /**
@@ -16,7 +16,7 @@ export class CommonValidator {
       return null;  // don't validate empty values to allow optional controls
     }
     if ((control.value as string).indexOf(' ') >= 0) {
-      return { noSpace: true };
+      return {noSpace: true};
     }
     return null;
   }
@@ -26,7 +26,7 @@ export class CommonValidator {
       return null;  // don't validate empty values to allow optional controls
     }
     if ((control.value as string).startsWith(' ')) {
-      return { noSpaceAtStart: true };
+      return {noSpaceAtStart: true};
     }
     return null;
   }
@@ -36,7 +36,7 @@ export class CommonValidator {
       return null;  // don't validate empty values to allow optional controls
     }
     if ((control.value as string).endsWith(' ')) {
-      return { noSpaceAtEnd: true };
+      return {noSpaceAtEnd: true};
     }
     return null;
   }
@@ -51,20 +51,38 @@ export class CommonValidator {
       (control.value as string).startsWith(' ') ||
       (control.value as string).endsWith(' ')
     ) {
-      return { noSpaceAround: true };
+      return {noSpaceAround: true};
     }
     return null;
   }
 
-  static requireMatch(control: AbstractControl): ValidationErrors | null {
+  static requireObject(control: AbstractControl): ValidationErrors | null {
     if (typeof control.value === 'string') {
-      return { incorrect: true };
+      return {requireObject: true};
     }
     return null;
+  }
+
+  static reservedName(names: string[], ownSkip?: string): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (isEmptyInputValue(control.value)) {
+        return null;  // don't validate empty values to allow optional controls
+      }
+      if (ownSkip && ownSkip === control.value) {
+        return null;
+      }
+      if (['_id', 'schematic'].some(it => it === control.value)) {
+        return {reservedName: true}
+      }
+      if (names.some(it => it === control.value)) {
+        return {reservedName: true}
+      }
+      return null;
+    }
   }
 }
 
 export enum CommonPattern {
-  JSON_NAME= '[a-z]+[a-zA-Z0-9_]+',
-  URL_SLUG= '[a-zA-Z0-9-_]+'
+  JSON_NAME = '[a-z]+[a-zA-Z0-9_]+',
+  URL_SLUG = '[a-zA-Z0-9-_]+'
 }

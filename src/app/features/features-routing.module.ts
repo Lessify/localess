@@ -107,9 +107,9 @@ const routes: Routes = [
         }
       },
       {
-        path: 'pages',
-        title: 'Pages',
-        loadChildren: () => import('./pages/pages.module').then(m => m.PagesModule),
+        path: 'contents',
+        title: 'Contents',
+        loadChildren: () => import('./contents/contents.module').then(m => m.ContentsModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionContentRead

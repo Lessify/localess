@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core'
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {PageEditDialogModel} from './page-edit-dialog.model';
-import {PageValidator} from '@shared/validators/page.validator';
+import {ContentValidator} from '@shared/validators/contentValidator';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
 
 @Component({
@@ -14,8 +14,8 @@ import {FormErrorHandlerService} from '../../../core/error-handler/form-error-ha
 export class PageEditDialogComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', PageValidator.NAME),
-    slug: this.fb.control('', PageValidator.SLUG)
+    name: this.fb.control('', ContentValidator.NAME),
+    slug: this.fb.control('', ContentValidator.SLUG)
   });
 
   constructor(

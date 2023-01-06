@@ -27,8 +27,13 @@ import {
 import {
   ConfirmationDialogModel
 } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {Page, PageCreate, PageUpdate} from '@shared/models/page.model';
-import {PageService} from '@shared/services/page.service';
+import {
+  ContentPageCreate,
+  ContentPageUpdate,
+  Content,
+  ContentPage
+} from '@shared/models/content.model';
+import {ContentService} from '@shared/services/content.service';
 import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';
 import {PageAddDialogModel} from './page-add-dialog/page-add-dialog.model';
 import {PageEditDialogComponent} from './page-edit-dialog/page-edit-dialog.component';
@@ -36,22 +41,22 @@ import {PageEditDialogModel} from './page-edit-dialog/page-edit-dialog.model';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
 
 @Component({
-  selector: 'll-pages',
-  templateUrl: './pages.component.html',
-  styleUrls: ['./pages.component.scss'],
+  selector: 'll-contents',
+  templateUrl: './contents.component.html',
+  styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PagesComponent implements OnInit, OnDestroy {
+export class ContentsComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
   isLoading: boolean = true;
   selectedSpace?: Space;
-  dataSource: MatTableDataSource<Page> = new MatTableDataSource<Page>([]);
+  dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
   displayedColumns: string[] = ['id', 'status', 'name', 'schematic', 'createdAt', 'updatedAt', 'actions'];
   schematics: Schematic[] = [];
   schematicsMap: Map<string, Schematic> = new Map<string, Schematic>();
-  articles: Page[] = [];
+  contents: Content[] = [];
 
   // Subscriptions
   private destroy$ = new Subject();
@@ -60,7 +65,7 @@ export class PagesComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly schematicService: SchematicService,
-    private readonly articleService: PageService,
+    private readonly contentService: ContentService,
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
@@ -81,18 +86,18 @@ export class PagesComponent implements OnInit, OnDestroy {
           combineLatest([
             this.spaceService.findById(it.id),
             this.schematicService.findAll(it.id, SchematicType.ROOT),
-            this.articleService.findAll(it.id)
+            this.contentService.findAll(it.id)
           ])
         ),
         takeUntil(this.destroy$),
       )
       .subscribe({
-        next: ([space, schematics, articles]) => {
+        next: ([space, schematics, contents]) => {
           this.selectedSpace = space
           this.schematics = schematics;
           this.schematicsMap = schematics.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schematic>())
-          this.articles = articles;
-          this.dataSource = new MatTableDataSource<Page>(articles);
+          this.contents = contents;
+          this.dataSource = new MatTableDataSource<Content>(contents);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;
@@ -101,8 +106,8 @@ export class PagesComponent implements OnInit, OnDestroy {
       })
   }
 
-  openAddDialog(): void {
-    this.dialog.open<PageAddDialogComponent, PageAddDialogModel, PageCreate>(
+  openAddPageDialog(): void {
+    this.dialog.open<PageAddDialogComponent, PageAddDialogModel, ContentPageCreate>(
       PageAddDialogComponent, {
         width: '500px',
         data: {
@@ -113,7 +118,7 @@ export class PagesComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.articleService.create(this.selectedSpace!.id, it!)
+          this.contentService.createPage(this.selectedSpace!.id, it!)
         )
       )
       .subscribe({
@@ -126,8 +131,8 @@ export class PagesComponent implements OnInit, OnDestroy {
       });
   }
 
-  openEditDialog(element: Page): void {
-    this.dialog.open<PageEditDialogComponent, PageEditDialogModel, PageUpdate>(
+  openPageEditDialog(element: ContentPage): void {
+    this.dialog.open<PageEditDialogComponent, PageEditDialogModel, ContentPageUpdate>(
       PageEditDialogComponent, {
         width: '500px',
         data: {
@@ -138,7 +143,7 @@ export class PagesComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.articleService.update(this.selectedSpace!.id, element.id, it!)
+          this.contentService.update(this.selectedSpace!.id, element.id, it!)
         )
       )
       .subscribe({
@@ -151,11 +156,11 @@ export class PagesComponent implements OnInit, OnDestroy {
       });
   }
 
-  openContentEditDialog(element: Page): void {
-    this.router.navigate(['features','pages',element.id]);
+  openContentEditDialog(element: Content): void {
+    this.router.navigate(['features','contents',element.id]);
   }
 
-  openDeleteDialog(element: Page): void {
+  openDeletePageDialog(element: Content): void {
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {
@@ -167,7 +172,7 @@ export class PagesComponent implements OnInit, OnDestroy {
       .pipe(
         filter((it) => it || false),
         switchMap(_ =>
-          this.articleService.delete(this.selectedSpace!.id, element.id)
+          this.contentService.delete(this.selectedSpace!.id, element.id)
         )
       )
       .subscribe({

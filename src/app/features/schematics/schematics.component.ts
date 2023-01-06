@@ -38,6 +38,7 @@ import {
 } from './schematic-edit-dialog/schematic-edit-dialog.component';
 import {SchematicEditDialogModel} from './schematic-edit-dialog/schematic-edit-dialog.model';
 import {ObjectUtils} from '../../core/utils/object-utils.service';
+import {SchematicAddDialogModel} from './schematic-add-dialog/schematic-add-dialog.model';
 
 @Component({
   selector: 'll-schematics',
@@ -105,9 +106,12 @@ export class SchematicsComponent implements OnInit, OnDestroy {
   }
 
   openAddDialog(): void {
-    this.dialog.open<SchematicAddDialogComponent, void, SchematicCreate>(
+    this.dialog.open<SchematicAddDialogComponent, SchematicAddDialogModel, SchematicCreate>(
       SchematicAddDialogComponent, {
         width: '500px',
+        data: {
+          reservedNames: this.schematics.map( it => it.name)
+        }
       })
       .afterClosed()
       .pipe(
@@ -131,6 +135,7 @@ export class SchematicsComponent implements OnInit, OnDestroy {
       SchematicEditDialogComponent, {
         width: '1000px',
         data: {
+          reservedNames: this.schematics.filter(it => it.name !== element.name).map( it => it.name),
           schematic: ObjectUtils.clone(element),
           schematics: this.schematics.filter(it => it.type === SchematicType.NODE)
         }

@@ -97,20 +97,20 @@
       <pre>{{schematicPath | json}}</pre>
     </ng-container>
 
-    <ll-page-content-schematic-edit
-      [content]="selectedContent"
+    <ll-page-data-schematic-edit
+      [data]="selectedPageData"
       [schematics]="schematics"
       [locale]="selectedLocale.id"
       [localeFallback]="selectedSpace.localeFallback.id"
       (schematicChange)="onSchematicChange($event)"
-    ></ll-page-content-schematic-edit>
+    ></ll-page-data-schematic-edit>
 
   </ng-container>
 
   <ng-container *ngIf="isTest">
     <mat-divider></mat-divider>
     Content :
-    <pre>{{content | json}}</pre>
+    <pre>{{pageData | json}}</pre>
   </ng-container>
 
 </div>

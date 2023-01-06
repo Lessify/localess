@@ -1,147 +1,127 @@
 import {Injectable} from '@angular/core';
 import {
-  Schematic,
-  SchematicComponent,
-  SchematicComponentKind
-} from '@shared/models/schematic.model';
-import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {ContentError, PageContentComponent} from '@shared/models/page.model';
+  addDoc,
+  collection,
+  collectionData,
+  deleteDoc,
+  doc,
+  docData,
+  DocumentReference,
+  Firestore,
+  serverTimestamp,
+  UpdateData,
+  updateDoc
+} from '@angular/fire/firestore';
+import {from, Observable} from 'rxjs';
+import {traceUntilFirst} from '@angular/fire/performance';
+import {map} from 'rxjs/operators';
+import {ObjectUtils} from '../../core/utils/object-utils.service';
+import {
+  Content,
+  ContentKind,
+  ContentPageContentUpdateFS,
+  ContentPageCreate,
+  ContentPageCreateFS,
+  ContentPageData,
+  ContentPageUpdate,
+  ContentPageUpdateFS
+} from '@shared/models/content.model';
+import {Functions, httpsCallableData} from '@angular/fire/functions';
 
 @Injectable()
 export class ContentService {
   constructor(
-    private readonly fb: FormBuilder,
+    private readonly firestore: Firestore,
+    private readonly functions: Functions,
   ) {
   }
 
-  validateContent(content: PageContentComponent, schematics: Schematic[], locale: string): ContentError[] | null {
-    const errors: ContentError[] = [];
-    const schematicsByName = new Map<string, Schematic>(schematics.map(it => [it.name, it]));
-    const contentIteration = [content]
+  findAll(spaceId: string): Observable<Content[]> {
+    return collectionData(collection(this.firestore, `spaces/${spaceId}/contents`), {idField: 'id'})
+      .pipe(
+        traceUntilFirst('Firestore:Contents:findAll'),
+        map((it) => it as Content[])
+      );
+  }
 
-    // Iterative traversing content and validating fields.
-    let selectedContent = contentIteration.pop()
-    while (selectedContent) {
-      const schematic = schematicsByName.get(selectedContent.schematic)
-      if (schematic) {
-        const schematicComponentsMap = new Map<string, SchematicComponent>(schematic.components?.map(it => [it.name, it]));
-        const form = this.generateSchematicForm(schematic, true)
-        form.patchValue(this.extractSchematicContent(selectedContent, schematic, locale))
-        if (!form.valid) {
-          for (const controlName in form.controls) {
-            const component = schematicComponentsMap.get(controlName);
-            const control = form.controls[controlName];
-            if (control && !control.valid) {
-              errors.push({
-                contentId: selectedContent._id,
-                schematic: schematic.displayName || schematic.name,
-                fieldName: controlName,
-                fieldDisplayName: component?.displayName,
-                errors: control.errors
-              })
-            }
-          }
-        }
-        schematic.components
-          ?.filter((it) => it.kind === SchematicComponentKind.SCHEMATIC)
-          .forEach((component) => {
-            const sch: PageContentComponent[] | undefined = selectedContent![component.name];
-            sch?.forEach((it) => contentIteration.push(it));
-          })
-      }
-      selectedContent = contentIteration.pop()
+  findById(spaceId: string, id: string): Observable<Content> {
+    return docData(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), {idField: 'id'})
+      .pipe(
+        traceUntilFirst('Firestore:Contents:findById'),
+        map((it) => it as Content)
+      );
+  }
+
+  createPage(spaceId: string, entity: ContentPageCreate): Observable<DocumentReference> {
+    let addEntity: ContentPageCreateFS = {
+      kind: ContentKind.PAGE,
+      name: entity.name,
+      slug: entity.slug,
+      schematic: entity.schematic,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     }
-    return errors.length > 0 ? errors : null;
+
+    return from(
+      addDoc(collection(this.firestore, `spaces/${spaceId}/contents`),
+        addEntity
+      )
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:create'),
+      );
   }
 
-  extractSchematicContent(content: PageContentComponent, schematic: Schematic, locale: string): Record<string, any> {
-    const result: Record<string, any> = {}
-    schematic.components?.forEach((comp) => {
-      let value;
-      if (comp.translatable) {
-        // Extract Locale specific values
-        value = content[`${comp.name}_i18n_${locale}`]
-      } else {
-        // Extract not translatable values in fallback locale
-        value = content[comp.name]
-      }
-      if (value) {
-        result[comp.name] = value;
-      }
-    })
-    return result
-  }
-
-  generateSchematicForm(schematic: Schematic, isFallbackLocale: boolean): FormRecord {
-    const form: FormRecord = this.fb.record({});
-    for (const component of schematic.components || []) {
-      const validators: ValidatorFn[] = []
-      if (component.required) {
-        validators.push(Validators.required)
-      }
-      // translatable + fallBackLocale => disabled = false
-      // translatable + !fallBackLocale => disabled = false
-      // !translatable + fallBackLocale => disabled = false
-      // !translatable + !fallBackLocale => disabled = true
-      const disabled = !((component.translatable === true) || (isFallbackLocale))
-      switch (component.kind) {
-        case SchematicComponentKind.TEXT:
-        case SchematicComponentKind.TEXTAREA: {
-          if (component.minLength) {
-            validators.push(Validators.minLength(component.minLength))
-          }
-          if (component.maxLength) {
-            validators.push(Validators.maxLength(component.maxLength))
-          }
-          form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.NUMBER: {
-          if (component.minValue) {
-            validators.push(Validators.min(component.minValue))
-          }
-          if (component.maxValue) {
-            validators.push(Validators.max(component.maxValue))
-          }
-          form.setControl(component.name, this.fb.control<number | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.COLOR: {
-          form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.BOOLEAN: {
-          form.setControl(component.name, this.fb.control<boolean | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.DATE: {
-          form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.DATETIME: {
-          form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-      }
+  update(spaceId: string, id: string, entity: ContentPageUpdate): Observable<void> {
+    ObjectUtils.clean(entity);
+    const update: UpdateData<ContentPageUpdateFS> = {
+      name: entity.name,
+      slug: entity.slug,
+      updatedAt: serverTimestamp()
     }
-    return form;
+
+    return from(
+      updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`),
+        update
+      )
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:update'),
+      );
   }
+
+  updatePageData(spaceId: string, id: string, content: ContentPageData): Observable<void> {
+    ObjectUtils.clean(content);
+    const update: UpdateData<ContentPageContentUpdateFS> = {
+      content: content,
+      updatedAt: serverTimestamp()
+    }
+
+    return from(
+      updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`),
+        update
+      )
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:update'),
+      );
+  }
+
+  delete(spaceId: string, id: string): Observable<void> {
+    return from(
+      deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`))
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:delete'),
+      );
+  }
+
+  publish(spaceId: string, id: string): Observable<void> {
+    const contentPublish = httpsCallableData<{ spaceId: string, contentId: string }, void>(this.functions, 'contentPublish');
+    return contentPublish({spaceId, contentId: id})
+      .pipe(
+        traceUntilFirst('Functions:Contents:publish'),
+      );
+  }
+
 }

@@ -37,10 +37,10 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
     });
 });
 
-expressV1.get('/api/v1/spaces/:spaceId/pages/:pageId/:locale.json', async (req, res) => {
+expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId/:locale', async (req, res) => {
   logger.info('v1 spaces pages: ' + JSON.stringify(req.params));
   const spaceId = req.params.spaceId;
-  const pageId = req.params.pageId;
+  const contentId = req.params.contentId;
   let locale = req.params.locale;
   const spaceRef = await firestoreService.doc(`spaces/${spaceId}`).get();
   if (!spaceRef.exists) {
@@ -54,7 +54,7 @@ expressV1.get('/api/v1/spaces/:spaceId/pages/:pageId/:locale.json', async (req, 
   if (!space.locales.some((it) => it.id === locale)) {
     locale = space.localeFallback.id;
   }
-  bucket.file(`spaces/${spaceId}/pages/${pageId}/${locale}.json`).download()
+  bucket.file(`spaces/${spaceId}/contents/${contentId}/${locale}.json`).download()
     .then((content) => {
       res
         .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)

@@ -13,40 +13,56 @@ export function isPageContentComponent(obj: any): boolean {
   return '_id' in obj && 'schematic' in obj;
 }
 
-export interface PageContentComponent extends Record<string, any> {
+export interface ContentPageData extends Record<string, any> {
   _id: string;
   schematic: string;
 }
 
-export interface Page {
-  id: string;
-  name: string;
-  slug: string;
-  schematic: string;
+export type Content = ContentPage | ContentFolder;
 
-  content?: PageContentComponent;
+export interface ContentBase {
+  id: string,
+  kind: ContentKind,
+  name: string,
+  slug: string
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface ContentPage extends ContentBase {
+  kind: ContentKind.PAGE
+  schematic: string;
+  data?: ContentPageData;
   publishedAt?: Timestamp;
+}
+
+export interface ContentFolder extends ContentBase {
+  kind: ContentKind.FOLDER
+}
+
+export enum ContentKind {
+  FOLDER = 'FOLDER',
+  PAGE = 'PAGE'
 }
 
 // Service
 
-export interface PageCreate {
+export interface ContentPageCreate {
   name: string;
   slug: string;
   schematic: string;
 }
 
-export interface PageUpdate {
+export interface ContentPageUpdate {
   name: string;
   slug: string;
 }
 
 // Firestore
 
-export interface PageCreateFS {
+export interface ContentPageCreateFS {
+  kind: ContentKind.PAGE
   name: string;
   slug: string;
   schematic: string;
@@ -54,13 +70,13 @@ export interface PageCreateFS {
   updatedAt: FieldValue;
 }
 
-export interface PageUpdateFS {
+export interface ContentPageUpdateFS {
   name: string;
   slug: string;
   updatedAt: FieldValue;
 }
 
-export interface PageContentUpdateFS {
-  content: PageContentComponent;
+export interface ContentPageContentUpdateFS {
+  content: ContentPageData;
   updatedAt: FieldValue;
 }

@@ -17,28 +17,28 @@ import {
   SchematicComponentKind
 } from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
-import {PageContentComponent} from '@shared/models/page.model';
+import {ContentPageData} from '@shared/models/content.model';
 import {takeUntil} from 'rxjs/operators';
 import {debounceTime, Subject} from 'rxjs';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
-import {SchematicSelectChange} from './page-content-schematic-edit.model';
-import {ContentService} from '@shared/services/content.service';
+import {SchematicSelectChange} from './page-data-schematic-edit.model';
+import {ContentHelperService} from '@shared/services/content-helper.service';
 
 @Component({
-  selector: 'll-page-content-schematic-edit',
-  templateUrl: './page-content-schematic-edit.component.html',
-  styleUrls: ['./page-content-schematic-edit.component.scss'],
+  selector: 'll-page-data-schematic-edit',
+  templateUrl: './page-data-schematic-edit.component.html',
+  styleUrls: ['./page-data-schematic-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnDestroy {
+export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDestroy {
 
   // Form
   form: FormRecord = this.fb.record({});
   // Subscriptions
   private destroy$ = new Subject();
 
-  @Input() content: PageContentComponent = {_id: '', schematic: ''};
+  @Input() data: ContentPageData = {_id: '', schematic: ''};
   @Input() schematics: Schematic[] = [];
   @Input() locale: string = 'en';
   @Input() localeFallback: string = 'en';
@@ -55,7 +55,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
   constructor(
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
-    private readonly contentService: ContentService,
+    private readonly contentService: ContentHelperService,
     readonly fe: FormErrorHandlerService,
   ) {
   }
@@ -70,16 +70,16 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
       this.schematicMapByName = new Map<string, Schematic>(this.schematics.map(it => [it.name, it]));
     }
 
-    const contentChange = changes['content'];
-    if (contentChange) {
-      if (contentChange.isFirstChange()) {
-        this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
+    const dataChange = changes['data'];
+    if (dataChange) {
+      if (dataChange.isFirstChange()) {
+        this.rootSchematic = this.schematics.find(it => it.name == this.data.schematic);
         this.schematicComponentsMap = new Map<string, SchematicComponent>(this.rootSchematic?.components?.map(it => [it.name, it]));
       } else {
         // Update only when content is different
-        if (contentChange.currentValue._id != contentChange.previousValue._id) {
+        if (dataChange.currentValue._id != dataChange.previousValue._id) {
           // Find new root schematic and regenerate the form
-          this.rootSchematic = this.schematics.find(it => it.name == this.content.schematic);
+          this.rootSchematic = this.schematics.find(it => it.name == this.data.schematic);
           this.schematicComponentsMap = new Map<string, SchematicComponent>(this.rootSchematic?.components?.map(it => [it.name, it]));
           this.clearForm();
           this.onChanged();
@@ -104,9 +104,9 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     // console.groupEnd()
 
     this.generateForm();
-    if (this.content) {
+    if (this.data) {
       this.form.reset()
-      this.form.patchValue(this.contentService.extractSchematicContent(this.content, this.rootSchematic!, this.locale));
+      this.form.patchValue(this.contentService.extractSchematicContent(this.data, this.rootSchematic!, this.locale));
     }
 
     this.form.valueChanges
@@ -127,9 +127,9 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
             const schematic = this.schematicComponentsMap.get(key)
             if (value !== null) {
               if (schematic?.translatable) {
-                this.content[`${key}_i18n_${this.locale}`] = value
+                this.data[`${key}_i18n_${this.locale}`] = value
               } else {
-                this.content[key] = value
+                this.data[key] = value
               }
             }
           }
@@ -232,7 +232,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
     this.cd.detectChanges();
     this.generateForm();
     this.form.reset();
-    this.form.patchValue(this.contentService.extractSchematicContent(this.content, this.rootSchematic!, this.locale));
+    this.form.patchValue(this.contentService.extractSchematicContent(this.data, this.rootSchematic!, this.locale));
     this.isFormLoading = false;
     this.cd.markForCheck();
   }
@@ -257,7 +257,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
   }
 
   addSchematic(component: SchematicComponent, schematic: Schematic): void {
-    let sch: PageContentComponent[] | undefined = this.content[component.name];
+    let sch: ContentPageData[] | undefined = this.data[component.name];
     if (sch) {
       sch.push(
         {
@@ -266,7 +266,7 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
         }
       )
     } else {
-      this.content[component.name] = [
+      this.data[component.name] = [
         {
           _id: v4(),
           schematic: schematic.name
@@ -276,14 +276,14 @@ export class PageContentSchematicEditComponent implements OnInit, OnChanges, OnD
   }
 
   removeSchematic(component: SchematicComponent, schematicId: string): void {
-    let sch: PageContentComponent[] | undefined = this.content[component.name];
+    let sch: ContentPageData[] | undefined = this.data[component.name];
     if (sch) {
       let idx = sch.findIndex(it => it._id == schematicId);
       if (idx >= 0) {
         sch.splice(idx)
       }
       if (sch.length == 0) {
-        delete this.content[component.name];
+        delete this.data[component.name];
       }
     }
   }

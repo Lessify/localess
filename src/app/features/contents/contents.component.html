@@ -1,14 +1,26 @@
 <mat-toolbar>
   <mat-toolbar-row>
-    Pages (Beta)
+    Content (Beta)
     <span class="spacer"></span>
-    <button *ngIf="'CONTENT_CREATE' | canUserPerform | async"
-            mat-raised-button
-            color="primary"
-            (click)="openAddDialog()">
-      <mat-icon>add</mat-icon>
-      Add Page
-    </button>
+
+    <ng-container *ngIf="'CONTENT_CREATE' | canUserPerform | async">
+      <button mat-raised-button color="primary"
+        [matMenuTriggerFor]="contentCreateMenu">
+        <mat-icon>add</mat-icon>
+        Add
+      </button>
+      <mat-menu #contentCreateMenu="matMenu">
+        <button mat-menu-item (click)="openAddPageDialog()">
+          <mat-icon>web_stories</mat-icon>
+          <span>Page</span>
+        </button>
+        <button mat-menu-item>
+          <mat-icon>folder</mat-icon>
+          <span>Folder</span>
+        </button>
+      </mat-menu>
+    </ng-container>
+
   </mat-toolbar-row>
 </mat-toolbar>
 
@@ -62,7 +74,7 @@
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
-                mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
+                mat-icon-button (click)="openPageEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
         <button *ngIf="'CONTENT_READ' | canUserPerform | async"
@@ -70,7 +82,7 @@
           <mat-icon>design_services</mat-icon>
         </button>
         <button *ngIf="'CONTENT_DELETE' | canUserPerform | async"
-                mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
+                mat-icon-button (click)="openDeletePageDialog(element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>
