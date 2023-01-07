@@ -14,7 +14,7 @@
           <mat-icon>web_stories</mat-icon>
           <span>Page</span>
         </button>
-        <button mat-menu-item>
+        <button mat-menu-item (click)="openAddFolderDialog()">
           <mat-icon>folder</mat-icon>
           <span>Folder</span>
         </button>
@@ -36,15 +36,23 @@
     <ng-container matColumnDef="status">
       <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <ng-container *ngIf="element?.publishedAt === undefined">
-          <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
+        <ng-container [ngSwitch]="element.kind">
+          <ng-container *ngSwitchCase="'PAGE'">
+            <ng-container *ngIf="element?.publishedAt === undefined">
+              <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
+            </ng-container>
+            <ng-container *ngIf="element?.publishedAt?.seconds > element?.updatedAt?.seconds">
+              <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
+            </ng-container>
+            <ng-container *ngIf="element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds">
+              <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
+            </ng-container>
+          </ng-container>
+          <ng-container *ngSwitchCase="'FOLDER'">
+            <mat-icon>folder</mat-icon>
+          </ng-container>
         </ng-container>
-        <ng-container *ngIf="element?.publishedAt?.seconds > element?.updatedAt?.seconds">
-          <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
-        </ng-container>
-        <ng-container *ngIf="element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds">
-          <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
-        </ng-container>
+
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
@@ -59,7 +67,9 @@
     <ng-container matColumnDef="schematic">
       <mat-header-cell *matHeaderCellDef mat-sort-header="schematic"> Schematic </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{schematicsMap.get(element.schematic).displayName || schematicsMap.get(element.schematic).name || 'unknown...'}}
+        <ng-container *ngIf="element.kind === 'PAGE'">
+          {{schematicsMap.get(element.schematic).displayName || schematicsMap.get(element.schematic).name || 'unknown...'}}
+        </ng-container>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
@@ -74,15 +84,15 @@
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
-                mat-icon-button (click)="openPageEditDialog(element)" matTooltip="Edit">
+                mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
         <button *ngIf="'CONTENT_READ' | canUserPerform | async"
-                mat-icon-button (click)="openContentEditDialog(element)" [disabled]="schematicsMap.get(element.schematic) === undefined" matTooltip="Edit Content">
+                mat-icon-button (click)="openPageDataEditDialog(element)" [disabled]="element.schematic === undefined || schematicsMap.get(element.schematic) === undefined" matTooltip="Edit Content">
           <mat-icon>design_services</mat-icon>
         </button>
         <button *ngIf="'CONTENT_DELETE' | canUserPerform | async"
-                mat-icon-button (click)="openDeletePageDialog(element)" matTooltip="Delete">
+                mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

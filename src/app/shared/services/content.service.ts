@@ -19,12 +19,10 @@ import {ObjectUtils} from '../../core/utils/object-utils.service';
 import {
   Content,
   ContentKind,
-  ContentPageContentUpdateFS,
+  ContentPageDataUpdateFS,
   ContentPageCreate,
   ContentPageCreateFS,
-  ContentPageData,
-  ContentPageUpdate,
-  ContentPageUpdateFS
+  ContentPageData, ContentFolderCreate, ContentFolderCreateFS, ContentUpdate, ContentUpdateFS
 } from '@shared/models/content.model';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 
@@ -72,9 +70,27 @@ export class ContentService {
       );
   }
 
-  update(spaceId: string, id: string, entity: ContentPageUpdate): Observable<void> {
-    ObjectUtils.clean(entity);
-    const update: UpdateData<ContentPageUpdateFS> = {
+  createFolder(spaceId: string, entity: ContentFolderCreate): Observable<DocumentReference> {
+    let addEntity: ContentFolderCreateFS = {
+      kind: ContentKind.FOLDER,
+      name: entity.name,
+      slug: entity.slug,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }
+
+    return from(
+      addDoc(collection(this.firestore, `spaces/${spaceId}/contents`),
+        addEntity
+      )
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:create'),
+      );
+  }
+
+  update(spaceId: string, id: string, entity: ContentUpdate): Observable<void> {
+    const update: UpdateData<ContentUpdateFS> = {
       name: entity.name,
       slug: entity.slug,
       updatedAt: serverTimestamp()
@@ -90,10 +106,10 @@ export class ContentService {
       );
   }
 
-  updatePageData(spaceId: string, id: string, content: ContentPageData): Observable<void> {
-    ObjectUtils.clean(content);
-    const update: UpdateData<ContentPageContentUpdateFS> = {
-      content: content,
+  updatePageData(spaceId: string, id: string, data: ContentPageData): Observable<void> {
+    ObjectUtils.clean(data);
+    const update: UpdateData<ContentPageDataUpdateFS> = {
+      data: data,
       updatedAt: serverTimestamp()
     }
 

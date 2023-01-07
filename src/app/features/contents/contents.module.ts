@@ -8,7 +8,7 @@ import {SpaceService} from '@shared/services/space.service';
 import {SchematicService} from '@shared/services/schematic.service';
 import {ContentService} from '@shared/services/content.service';
 import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';
-import {PageEditDialogComponent} from './page-edit-dialog/page-edit-dialog.component';
+import {ContentEditDialogComponent} from './content-edit-dialog/content-edit-dialog.component';
 import {PageDataEditComponent} from './page-data-edit/page-data-edit.component';
 import {
   PageDataSchematicEditComponent
@@ -21,7 +21,7 @@ import {FolderAddDialogComponent} from './folder-add-dialog/folder-add-dialog.co
     FolderAddDialogComponent,
     ContentsComponent,
     PageAddDialogComponent,
-    PageEditDialogComponent,
+    ContentEditDialogComponent,
     PageDataEditComponent,
     PageDataSchematicEditComponent
   ],

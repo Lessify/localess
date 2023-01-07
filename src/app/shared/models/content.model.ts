@@ -54,7 +54,12 @@ export interface ContentPageCreate {
   schematic: string;
 }
 
-export interface ContentPageUpdate {
+export interface ContentUpdate {
+  name: string;
+  slug: string;
+}
+
+export interface ContentFolderCreate {
   name: string;
   slug: string;
 }
@@ -70,13 +75,21 @@ export interface ContentPageCreateFS {
   updatedAt: FieldValue;
 }
 
-export interface ContentPageUpdateFS {
+export interface ContentUpdateFS {
   name: string;
   slug: string;
   updatedAt: FieldValue;
 }
 
-export interface ContentPageContentUpdateFS {
-  content: ContentPageData;
+export interface ContentPageDataUpdateFS {
+  data: ContentPageData;
+  updatedAt: FieldValue;
+}
+
+export interface ContentFolderCreateFS {
+  kind: ContentKind.FOLDER
+  name: string;
+  slug: string;
+  createdAt: FieldValue;
   updatedAt: FieldValue;
 }

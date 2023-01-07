@@ -2,8 +2,8 @@ import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core'
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {PageAddDialogModel} from './page-add-dialog.model';
-import {ContentValidator} from '@shared/validators/contentValidator';
-import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {ContentValidator} from '@shared/validators/content.validator';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-page-add-dialog',

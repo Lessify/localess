@@ -13,10 +13,10 @@ import {filter, switchMap, takeUntil} from 'rxjs/operators';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
-import {AppState} from '../../core/state/core.state';
+import {AppState} from '@core/state/core.state';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
-import {selectSpace} from '../../core/state/space/space.selector';
+import {selectSpace} from '@core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
 import {Schematic, SchematicType} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
@@ -29,16 +29,17 @@ import {
 } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {
   ContentPageCreate,
-  ContentPageUpdate,
   Content,
-  ContentPage
+  ContentPage, ContentUpdate, ContentFolderCreate
 } from '@shared/models/content.model';
 import {ContentService} from '@shared/services/content.service';
 import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';
 import {PageAddDialogModel} from './page-add-dialog/page-add-dialog.model';
-import {PageEditDialogComponent} from './page-edit-dialog/page-edit-dialog.component';
-import {PageEditDialogModel} from './page-edit-dialog/page-edit-dialog.model';
-import {ObjectUtils} from '../../core/utils/object-utils.service';
+import {ContentEditDialogComponent} from './content-edit-dialog/content-edit-dialog.component';
+import {ContentEditDialogModel} from './content-edit-dialog/content-edit-dialog.model';
+import {ObjectUtils} from '@core/utils/object-utils.service';
+import {FolderAddDialogComponent} from './folder-add-dialog/folder-add-dialog.component';
+import {FolderAddDialogModel} from './folder-add-dialog/folder-add-dialog.model';
 
 @Component({
   selector: 'll-contents',
@@ -131,9 +132,31 @@ export class ContentsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openPageEditDialog(element: ContentPage): void {
-    this.dialog.open<PageEditDialogComponent, PageEditDialogModel, ContentPageUpdate>(
-      PageEditDialogComponent, {
+  openAddFolderDialog(): void {
+    this.dialog.open<FolderAddDialogComponent, FolderAddDialogModel, ContentFolderCreate>(
+      FolderAddDialogComponent, {
+        width: '500px'
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.contentService.createFolder(this.selectedSpace!.id, it!)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Folder has been created.');
+        },
+        error: () => {
+          this.notificationService.error('Folder can not be created.');
+        }
+      });
+  }
+
+  openEditDialog(element: Content): void {
+    this.dialog.open<ContentEditDialogComponent, ContentEditDialogModel, ContentUpdate>(
+      ContentEditDialogComponent, {
         width: '500px',
         data: {
           page: ObjectUtils.clone(element)
@@ -148,24 +171,24 @@ export class ContentsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Page has been updated.');
+          this.notificationService.success('Content has been updated.');
         },
         error: () => {
-          this.notificationService.error('Page can not be updated.');
+          this.notificationService.error('Content can not be updated.');
         }
       });
   }
 
-  openContentEditDialog(element: Content): void {
+  openPageDataEditDialog(element: Content): void {
     this.router.navigate(['features','contents',element.id]);
   }
 
-  openDeletePageDialog(element: Content): void {
+  openDeleteDialog(element: Content): void {
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {
-          title: 'Delete Page',
-          content: `Are you sure about deleting Page with name '${element.name}'.`
+          title: 'Delete Content',
+          content: `Are you sure about deleting Content with name '${element.name}'.`
         }
       })
       .afterClosed()
@@ -177,10 +200,10 @@ export class ContentsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success(`Page '${element.name}' has been deleted.`);
+          this.notificationService.success(`Content '${element.name}' has been deleted.`);
         },
         error: (err) => {
-          this.notificationService.error(`Page '${element.name}' can not be deleted.`);
+          this.notificationService.error(`Content '${element.name}' can not be deleted.`);
         }
       });
   }
