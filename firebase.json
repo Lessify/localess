@@ -63,8 +63,8 @@
         "function": "usersSync"
       },
       {
-        "source": "/api/pagePublish",
-        "function": "pagePublish"
+        "source": "/api/contentPublish",
+        "function": "contentPublish"
       },
       {
         "source": "**",

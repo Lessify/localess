@@ -1,5 +1,4 @@
 import {Timestamp} from 'firebase-admin/firestore';
-import {ContentPageData} from '../../../src/app/shared/models/content.model';
 
 export type Content = ContentPage | ContentFolder;
 
@@ -35,7 +34,7 @@ export interface PublishContentData {
 }
 
 // Storage
-export interface ContentPageStorage/* extends Record<string, any>*/{
+export interface ContentPageStorage{
   id: string;
   name: string;
   slug: string;
@@ -44,4 +43,9 @@ export interface ContentPageStorage/* extends Record<string, any>*/{
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
+}
+
+export interface ContentPageData extends Record<string, any> {
+  _id: string;
+  schematic: string;
 }

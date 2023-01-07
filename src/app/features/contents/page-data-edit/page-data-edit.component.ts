@@ -181,7 +181,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
   }
 
   back(): void {
-    this.router.navigate(['features', 'pages']);
+    this.router.navigate(['features', 'contents']);
   }
 
   openPublishedInNewTab(locale: string): void {
