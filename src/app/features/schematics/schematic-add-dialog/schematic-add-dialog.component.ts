@@ -4,7 +4,7 @@ import {FormBuilder, FormGroup} from '@angular/forms';
 import {SchematicAddDialogModel} from './schematic-add-dialog.model';
 import {SchematicValidator} from '@shared/validators/schematic.validator';
 import {SchematicType} from '@shared/models/schematic.model';
-import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {CommonValidator} from '@shared/validators/common.validator';
 
 @Component({

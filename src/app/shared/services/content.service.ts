@@ -15,7 +15,7 @@ import {
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {ObjectUtils} from '../../core/utils/object-utils.service';
+import {ObjectUtils} from '@core/utils/object-utils.service';
 import {
   Content,
   ContentKind,
@@ -55,6 +55,7 @@ export class ContentService {
       kind: ContentKind.PAGE,
       name: entity.name,
       slug: entity.slug,
+      fullSlug: entity.slug,
       schematic: entity.schematic,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -75,6 +76,7 @@ export class ContentService {
       kind: ContentKind.FOLDER,
       name: entity.name,
       slug: entity.slug,
+      fullSlug: entity.slug,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }

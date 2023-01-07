@@ -12,7 +12,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
-import {AppState} from '../../core/state/core.state';
+import {AppState} from '@core/state/core.state';
 import {UserService} from '@shared/services/user.service';
 import {User} from '@shared/models/user.model';
 import {filter, switchMap, takeUntil} from 'rxjs/operators';

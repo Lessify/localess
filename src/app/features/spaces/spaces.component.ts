@@ -15,7 +15,7 @@ import {SpaceDialogModel} from './space-dialog/space-dialog.model';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
-import {AppState} from '../../core/state/core.state';
+import {AppState} from '@core/state/core.state';
 import {
   ConfirmationDialogComponent
 } from '@shared/components/confirmation-dialog/confirmation-dialog.component';

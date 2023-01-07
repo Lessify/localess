@@ -25,6 +25,7 @@ export interface ContentBase {
   kind: ContentKind,
   name: string,
   slug: string
+  fullSlug: string
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -66,30 +67,33 @@ export interface ContentFolderCreate {
 
 // Firestore
 
-export interface ContentPageCreateFS {
-  kind: ContentKind.PAGE
+export interface ContentCreateFS {
+  kind: ContentKind
   name: string;
   slug: string;
-  schematic: string;
+  fullSlug: string
+
   createdAt: FieldValue;
   updatedAt: FieldValue;
+}
+
+export interface ContentPageCreateFS extends ContentCreateFS {
+  kind: ContentKind.PAGE
+  schematic: string;
+}
+
+export interface ContentFolderCreateFS extends ContentCreateFS {
+  kind: ContentKind.FOLDER
 }
 
 export interface ContentUpdateFS {
   name: string;
   slug: string;
+  fullSlug: string
   updatedAt: FieldValue;
 }
 
 export interface ContentPageDataUpdateFS {
   data: ContentPageData;
-  updatedAt: FieldValue;
-}
-
-export interface ContentFolderCreateFS {
-  kind: ContentKind.FOLDER
-  name: string;
-  slug: string;
-  createdAt: FieldValue;
   updatedAt: FieldValue;
 }

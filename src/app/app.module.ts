@@ -21,7 +21,7 @@ import {
   provideFirestore
 } from '@angular/fire/firestore';
 import {connectStorageEmulator, getStorage, provideStorage} from '@angular/fire/storage';
-import {CoreModule} from './core/core.module';
+import {CoreModule} from '@core/core.module';
 import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
 import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';

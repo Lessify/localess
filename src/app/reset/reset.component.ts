@@ -3,7 +3,7 @@ import {Auth, sendPasswordResetEmail, User} from '@angular/fire/auth';
 import {Router} from '@angular/router';
 import {EMPTY, Observable} from 'rxjs';
 import {Store} from '@ngrx/store';
-import {AppState} from '../core/state/core.state';
+import {AppState} from '@core/state/core.state';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 
 @Component({

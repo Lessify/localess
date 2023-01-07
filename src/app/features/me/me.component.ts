@@ -4,9 +4,9 @@ import {MatDialog} from '@angular/material/dialog';
 import {Store} from '@ngrx/store';
 import {Auth, user, User} from '@angular/fire/auth';
 
-import {AppState} from '../../core/state/core.state';
-import {selectUser} from '../../core/state/user/user.selector';
-import {UserState} from '../../core/state/user/user.model';
+import {AppState} from '@core/state/core.state';
+import {selectUser} from '@core/state/user/user.selector';
+import {UserState} from '@core/state/user/user.model';
 import {filter, switchMap} from 'rxjs/operators';
 import {MeDialogComponent} from './me-dialog/me-dialog.component';
 import {MeDialogModel} from './me-dialog/me-dialog.model';

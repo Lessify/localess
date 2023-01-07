@@ -26,6 +26,7 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
         id: content.id,
         name: content.name,
         slug: content.slug,
+        fullSlug: content.fullSlug,
         schematic: content.schematic,
         createdAt: content.createdAt.toDate().toISOString(),
         updatedAt: content.updatedAt.toDate().toISOString(),
@@ -78,6 +79,6 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
     return;
   } else {
     logger.info(`[contentPublish] Content ${data.contentId} does not exist.`);
-    throw new https.HttpsError('not-found', 'Page not found');
+    throw new https.HttpsError('not-found', 'Content not found');
   }
 });

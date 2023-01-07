@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core'
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {UserDialogModel} from './user-dialog.model';
-import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';
 
 @Component({

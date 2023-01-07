@@ -16,8 +16,8 @@ import {EMPTY, Observable, Subscription} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map, tap} from 'rxjs/operators';
 import {Store} from '@ngrx/store';
-import {AppState} from '../core/state/core.state';
-import {authLogin, authLogout} from '../core/core.module';
+import {AppState} from '@core/state/core.state';
+import {authLogin, authLogout} from '@core/core.module';
 import {environment} from '../../environments/environment';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 

@@ -3,7 +3,7 @@ import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {SpaceDialogModel} from './space-dialog.model';
 import {SpaceValidator} from '@shared/validators/space.validator';
-import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-space-dialog',

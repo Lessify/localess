@@ -11,7 +11,7 @@ import {
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {debounceTime} from 'rxjs';
 import {TranslationValidator} from '@shared/validators/translation.validator';
-import {ObjectUtils} from '../../../core/utils/object-utils.service';
+import {ObjectUtils} from '@core/utils/object-utils.service';
 
 @Component({
   selector: 'll-translation-plural-edit',

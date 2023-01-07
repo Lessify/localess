@@ -16,7 +16,7 @@ import {
   SchematicComponent,
   SchematicComponentKind
 } from '@shared/models/schematic.model';
-import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {ContentPageData} from '@shared/models/content.model';
 import {takeUntil} from 'rxjs/operators';
 import {debounceTime, Subject} from 'rxjs';

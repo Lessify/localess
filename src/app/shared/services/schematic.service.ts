@@ -24,7 +24,7 @@ import {
   SchematicUpdate,
   SchematicUpdateFS
 } from '@shared/models/schematic.model';
-import {ObjectUtils} from '../../core/utils/object-utils.service';
+import {ObjectUtils} from '@core/utils/object-utils.service';
 import {deleteField, QueryConstraint, where} from '@firebase/firestore';
 
 @Injectable()

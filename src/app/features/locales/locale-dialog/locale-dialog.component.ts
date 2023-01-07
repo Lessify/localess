@@ -6,7 +6,7 @@ import {LocaleService} from '@shared/services/locale.service';
 import {map} from 'rxjs/operators';
 import {Locale} from '@shared/models/locale.model';
 import {LocaleValidator} from '@shared/validators/locale.validator';
-import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-locale-dialog',

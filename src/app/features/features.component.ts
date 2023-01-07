@@ -19,18 +19,18 @@ import {
   selectIsAuthenticated,
   selectSettingsLanguage,
   selectSettingsStickyHeader
-} from '../core/core.module';
+} from '@core/core.module';
 import {
   actionSettingsChangeAnimationsPageDisabled,
   actionSettingsChangeLanguage
-} from '../core/state/settings/settings.actions';
+} from '@core/state/settings/settings.actions';
 import {Auth, signOut, user} from '@angular/fire/auth';
-import {actionUserChange, actionUserRoleChange} from '../core/state/user/user.actions';
-import {actionSpaceChange} from '../core/state/space/space.actions';
+import {actionUserChange, actionUserRoleChange} from '@core/state/user/user.actions';
+import {actionSpaceChange} from '@core/state/space/space.actions';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
-import {selectSpace} from '../core/state/space/space.selector';
+import {selectSpace} from '@core/state/space/space.selector';
 import {environment} from '../../environments/environment';
 import {UserPermission} from '@shared/models/user.model';
 

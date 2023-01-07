@@ -5,7 +5,7 @@ import {SchematicEditDialogModel} from './schematic-edit-dialog.model';
 import {SchematicValidator} from '@shared/validators/schematic.validator';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
 import {MatSelectChange} from '@angular/material/select';
-import {FormErrorHandlerService} from '../../../core/error-handler/form-error-handler.service';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';
 import {CommonValidator} from '@shared/validators/common.validator';
 

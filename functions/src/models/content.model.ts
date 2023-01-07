@@ -7,6 +7,7 @@ export interface ContentBase {
   kind: ContentKind,
   name: string,
   slug: string
+  fullSlug: string
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -34,10 +35,11 @@ export interface PublishContentData {
 }
 
 // Storage
-export interface ContentPageStorage{
+export interface ContentPageStorage {
   id: string;
   name: string;
   slug: string;
+  fullSlug: string
   schematic: string;
   data?: ContentPageData;
   createdAt: string;

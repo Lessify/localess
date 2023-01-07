@@ -16,7 +16,7 @@ import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/a
 import {Store} from '@ngrx/store';
 import {TranslationService} from '@shared/services/translation.service';
 import {SpaceService} from '@shared/services/space.service';
-import {AppState} from '../../core/state/core.state';
+import {AppState} from '@core/state/core.state';
 import {Locale} from '@shared/models/locale.model';
 import {
   Translation,
@@ -24,7 +24,7 @@ import {
   TranslationStatus,
   TranslationUpdate
 } from '@shared/models/translation.model';
-import {selectSpace} from '../../core/state/space/space.selector';
+import {selectSpace} from '@core/state/space/space.selector';
 import {Space} from '@shared/models/space.model';
 import {
   TranslationAddDialogComponent
@@ -34,7 +34,7 @@ import {TranslationEditDialogModel} from './translation-edit-dialog/translation-
 import {
   TranslationEditDialogComponent
 } from './translation-edit-dialog/translation-edit-dialog.component';
-import {ObjectUtils} from '../../core/utils/object-utils.service';
+import {ObjectUtils} from '@core/utils/object-utils.service';
 import {
   ConfirmationDialogComponent
 } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
@@ -49,7 +49,7 @@ import {
   TranslationExportDialogModel,
   TranslationExportDialogReturn
 } from './translation-export-dialog/translation-export-dialog.model';
-import {NameUtils} from '../../core/utils/name-utils.service';
+import {NameUtils} from '@core/utils/name-utils.service';
 import {
   TranslationImportDialogComponent
 } from './translation-import-dialog/translation-import-dialog.component';
