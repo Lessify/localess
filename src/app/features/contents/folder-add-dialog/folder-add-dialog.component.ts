@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {FolderAddDialogModel} from './folder-add-dialog.model';
@@ -11,7 +11,7 @@ import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.se
   styleUrls: ['./folder-add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class FolderAddDialogComponent implements OnInit {
+export class FolderAddDialogComponent {
 
   form: FormGroup = this.fb.group({
     name: this.fb.control('', ContentValidator.NAME),
@@ -23,8 +23,5 @@ export class FolderAddDialogComponent implements OnInit {
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: FolderAddDialogModel
   ) {
-  }
-
-  ngOnInit(): void {
   }
 }
