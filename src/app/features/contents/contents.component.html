@@ -28,10 +28,31 @@
   <mat-spinner></mat-spinner>
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
+
+  <ll-breadcrumb>
+    <ll-breadcrumb-item *ngFor="let contentPathItem of contentPath" (click)="navigateToSlug(contentPathItem)">
+      <ng-container *ngIf="contentPathItem.fullSlug === ''">
+        <mat-icon>home</mat-icon>
+      </ng-container>
+      {{contentPathItem.name}}
+    </ll-breadcrumb-item>
+  </ll-breadcrumb>
+
   <mat-table [dataSource]="dataSource" matSort>
-    <ng-container matColumnDef="id">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef>
+        <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                      [checked]="selection.hasValue() && isAllSelected()"
+                      [indeterminate]="selection.hasValue() && !isAllSelected()">
+        </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <mat-checkbox (click)="$event.stopPropagation()"
+                      (change)="$event ? selection.toggle(row) : null"
+                      [checked]="selection.isSelected(row)">
+        </mat-checkbox>
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="status">
       <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
@@ -80,25 +101,29 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
       <mat-cell *matCellDef="let element"> {{element.updatedAt?.toDate() | date:'medium'}} </mat-cell>
     </ng-container>
+
     <ng-container matColumnDef="actions">
-      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
-                mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
+      <mat-header-cell mat-header-cell *matHeaderCellDef>
+        <button mat-stroked-button
+                *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
+                [disabled]="selection.selected.length !== 1"
+                (click)="openEditDialog(selection.selected[0])">
           <mat-icon>edit</mat-icon>
+          Edit
         </button>
-        <button *ngIf="'CONTENT_READ' | canUserPerform | async"
-                mat-icon-button (click)="openPageDataEditDialog(element)" [disabled]="element.schematic === undefined || schematicsMap.get(element.schematic) === undefined" matTooltip="Edit Content">
-          <mat-icon>design_services</mat-icon>
-        </button>
-        <button *ngIf="'CONTENT_DELETE' | canUserPerform | async"
-                mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
+        <button mat-stroked-button
+                *ngIf="'CONTENT_DELETE' | canUserPerform | async"
+                [disabled]="selection.selected.length !== 1"
+                (click)="openDeleteDialog(selection.selected[0])">
           <mat-icon>delete</mat-icon>
+          Delete
         </button>
-      </mat-cell>
+      </mat-header-cell>
     </ng-container>
+
+    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onContentRowSelect(row)"></mat-row>
   </mat-table>
   <mat-paginator></mat-paginator>
 </div>

@@ -28,9 +28,11 @@ import {
   ConfirmationDialogModel
 } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {
-  ContentPageCreate,
   Content,
-  ContentPage, ContentUpdate, ContentFolderCreate
+  ContentFolderCreate,
+  ContentKind,
+  ContentPageCreate,
+  ContentUpdate
 } from '@shared/models/content.model';
 import {ContentService} from '@shared/services/content.service';
 import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';
@@ -40,6 +42,12 @@ import {ContentEditDialogModel} from './content-edit-dialog/content-edit-dialog.
 import {ObjectUtils} from '@core/utils/object-utils.service';
 import {FolderAddDialogComponent} from './folder-add-dialog/folder-add-dialog.component';
 import {FolderAddDialogModel} from './folder-add-dialog/folder-add-dialog.model';
+import {SelectionModel} from '@angular/cdk/collections';
+
+interface ContentPathItem {
+  fullSlug: string
+  name: string
+}
 
 @Component({
   selector: 'll-contents',
@@ -54,10 +62,13 @@ export class ContentsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = ['id', 'status', 'name', 'schematic', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['select', 'status', 'name', 'schematic', 'createdAt', 'updatedAt'];
+  selection = new SelectionModel<Content>(true, []);
+
   schematics: Schematic[] = [];
   schematicsMap: Map<string, Schematic> = new Map<string, Schematic>();
   contents: Content[] = [];
+  contentPath: ContentPathItem[] = [];
 
   // Subscriptions
   private destroy$ = new Subject();
@@ -98,6 +109,13 @@ export class ContentsComponent implements OnInit, OnDestroy {
           this.schematics = schematics;
           this.schematicsMap = schematics.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schematic>())
           this.contents = contents;
+          if (this.contentPath.length == 0) {
+            this.contentPath.push({
+              name: 'Root',
+              fullSlug: ''
+            })
+          }
+
           this.dataSource = new MatTableDataSource<Content>(contents);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
@@ -119,7 +137,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.contentService.createPage(this.selectedSpace!.id, it!)
+          this.contentService.createPage(this.selectedSpace!.id, this.parentPath(), it!)
         )
       )
       .subscribe({
@@ -141,7 +159,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.contentService.createFolder(this.selectedSpace!.id, it!)
+          this.contentService.createFolder(this.selectedSpace!.id, this.parentPath(), it!)
         )
       )
       .subscribe({
@@ -171,16 +189,14 @@ export class ContentsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: () => {
+          this.selection.clear()
+          this.cd.markForCheck()
           this.notificationService.success('Content has been updated.');
         },
         error: () => {
           this.notificationService.error('Content can not be updated.');
         }
       });
-  }
-
-  openPageDataEditDialog(element: Content): void {
-    this.router.navigate(['features','contents',element.id]);
   }
 
   openDeleteDialog(element: Content): void {
@@ -200,6 +216,8 @@ export class ContentsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: () => {
+          this.selection.clear()
+          this.cd.markForCheck()
           this.notificationService.success(`Content '${element.name}' has been deleted.`);
         },
         error: (err) => {
@@ -208,8 +226,54 @@ export class ContentsComponent implements OnInit, OnDestroy {
       });
   }
 
+  parentPath(): string {
+    return this.contentPath[this.contentPath.length - 1].fullSlug || '';
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
     this.destroy$.complete()
+  }
+
+  // TABLE
+  /** Whether the number of selected elements matches the total number of rows. */
+  isAllSelected() {
+    const numSelected = this.selection.selected.length;
+    const numRows = this.dataSource.data.length;
+    return numSelected === numRows;
+  }
+
+  /** Selects all rows if they are not all selected; otherwise clear selection. */
+  toggleAllRows() {
+    if (this.isAllSelected()) {
+      this.selection.clear();
+      return;
+    }
+
+    this.selection.select(...this.dataSource.data);
+  }
+
+  onContentRowSelect(element: Content): void {
+    console.log(element)
+    if (element.kind === ContentKind.PAGE) {
+      if (this.schematicsMap.has(element.schematic)) {
+        this.router.navigate(['features', 'contents', element.id]);
+      } else {
+        this.notificationService.warn(`Content Schematic can not be found.`);
+      }
+      return;
+    }
+
+    if (element.kind === ContentKind.FOLDER) {
+      this.contentPath.push({
+        name: element.name,
+        fullSlug: element.fullSlug
+      })
+    }
+
+  }
+
+  navigateToSlug(pathItem: ContentPathItem) {
+    console.log(pathItem)
   }
 }

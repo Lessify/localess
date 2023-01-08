@@ -27,6 +27,7 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
         name: content.name,
         slug: content.slug,
         fullSlug: content.fullSlug,
+        parentSlug: content.parentSlug,
         schematic: content.schematic,
         createdAt: content.createdAt.toDate().toISOString(),
         updatedAt: content.updatedAt.toDate().toISOString(),

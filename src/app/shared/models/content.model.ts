@@ -25,6 +25,7 @@ export interface ContentBase {
   kind: ContentKind,
   name: string,
   slug: string
+  parentSlug: string
   fullSlug: string
 
   createdAt: Timestamp;
@@ -71,6 +72,7 @@ export interface ContentCreateFS {
   kind: ContentKind
   name: string;
   slug: string;
+  parentSlug: string
   fullSlug: string
 
   createdAt: FieldValue;
@@ -89,6 +91,7 @@ export interface ContentFolderCreateFS extends ContentCreateFS {
 export interface ContentUpdateFS {
   name: string;
   slug: string;
+  parentSlug: string
   fullSlug: string
   updatedAt: FieldValue;
 }

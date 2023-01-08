@@ -18,11 +18,15 @@ import {map} from 'rxjs/operators';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 import {
   Content,
+  ContentFolderCreate,
+  ContentFolderCreateFS,
   ContentKind,
-  ContentPageDataUpdateFS,
   ContentPageCreate,
   ContentPageCreateFS,
-  ContentPageData, ContentFolderCreate, ContentFolderCreateFS, ContentUpdate, ContentUpdateFS
+  ContentPageData,
+  ContentPageDataUpdateFS,
+  ContentUpdate,
+  ContentUpdateFS
 } from '@shared/models/content.model';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 
@@ -50,12 +54,13 @@ export class ContentService {
       );
   }
 
-  createPage(spaceId: string, entity: ContentPageCreate): Observable<DocumentReference> {
+  createPage(spaceId: string, parentSlug: string, entity: ContentPageCreate): Observable<DocumentReference> {
     let addEntity: ContentPageCreateFS = {
       kind: ContentKind.PAGE,
       name: entity.name,
       slug: entity.slug,
-      fullSlug: entity.slug,
+      parentSlug: parentSlug,
+      fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
       schematic: entity.schematic,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -71,12 +76,13 @@ export class ContentService {
       );
   }
 
-  createFolder(spaceId: string, entity: ContentFolderCreate): Observable<DocumentReference> {
+  createFolder(spaceId: string, parentSlug: string, entity: ContentFolderCreate): Observable<DocumentReference> {
     let addEntity: ContentFolderCreateFS = {
       kind: ContentKind.FOLDER,
       name: entity.name,
       slug: entity.slug,
-      fullSlug: entity.slug,
+      parentSlug: parentSlug,
+      fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }

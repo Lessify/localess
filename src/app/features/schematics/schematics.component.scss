@@ -1,17 +1,31 @@
-mat-toolbar-row {
-  .mat-mdc-button-base {
-    margin: 8px 8px 8px 8px;
-  }
-}
-
 table {
   width: 100%;
 }
 
-mat-cell.mat-column-actions {
-  max-width: 140px;
+mat-header-cell {
+  &.mat-column-createdAt {
+    max-width: 220px;
+  }
+
+  &.mat-column-updatedAt {
+    max-width: 220px;
+  }
+
+  &.mat-column-actions {
+    max-width: 140px;
+  }
 }
 
-mat-header-cell.mat-column-actions {
-  max-width: 140px;
+mat-cell {
+  &.mat-column-createdAt {
+    max-width: 220px;
+  }
+
+  &.mat-column-updatedAt {
+    max-width: 220px;
+  }
+
+  &.mat-column-actions {
+    max-width: 140px;
+  }
 }
