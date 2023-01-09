@@ -95,7 +95,7 @@ export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{co
   .onDelete((snapshot: QueryDocumentSnapshot, context: EventContext) => {
     logger.info(`[Content::onDelete] id='${snapshot.id}' exists=${snapshot.exists} eventId='${context.eventId}'`);
     const content = snapshot.data() as Content;
-    if(content.kind === ContentKind.PAGE) {
+    if (content.kind === ContentKind.PAGE) {
       return bucket.deleteFiles({
         prefix: `spaces/${context.params['spaceId']}/contents/${context.params['contentId']}`,
       });
