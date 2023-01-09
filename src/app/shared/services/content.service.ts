@@ -30,7 +30,7 @@ import {
   ContentUpdateFS
 } from '@shared/models/content.model';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {QueryConstraint, where} from '@firebase/firestore';
+import {QueryConstraint, where, writeBatch} from '@firebase/firestore';
 
 @Injectable()
 export class ContentService {
@@ -149,9 +149,19 @@ export class ContentService {
       );
   }
 
-  delete(spaceId: string, id: string): Observable<void> {
+  delete(spaceId: string, ...ids: string[]): Observable<void> {
+    if (ids.length === 1) {
+      return from(
+        deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${ids[0]}`))
+      )
+        .pipe(
+          traceUntilFirst('Firestore:Contents:delete'),
+        );
+    }
+    const batch = writeBatch(this.firestore)
+    ids.forEach(id => batch.delete(doc(this.firestore, `spaces/${spaceId}/contents/${id}`)))
     return from(
-      deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`))
+      batch.commit()
     )
       .pipe(
         traceUntilFirst('Firestore:Contents:delete'),

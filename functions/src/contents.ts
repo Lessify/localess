@@ -3,7 +3,13 @@ import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
 import axios from 'axios';
-import {ContentPage, ContentPageStorage, PublishContentData} from './models/content.model';
+import {
+  Content,
+  ContentKind,
+  ContentPage,
+  ContentPageStorage,
+  PublishContentData
+} from './models/content.model';
 import {Schematic} from './models/schematic.model';
 import {FieldValue, QueryDocumentSnapshot} from 'firebase-admin/firestore';
 import {UserPermission} from './models/user.model';
@@ -88,7 +94,14 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
 export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{contentId}')
   .onDelete((snapshot: QueryDocumentSnapshot, context: EventContext) => {
     logger.info(`[Content::onDelete] id='${snapshot.id}' exists=${snapshot.exists} eventId='${context.eventId}'`);
-    return bucket.deleteFiles({
-      prefix: `spaces/${context.params['spaceId']}/contents/${context.params['contentId']}`,
-    });
+    const content = snapshot.data() as Content;
+    if(content.kind === ContentKind.PAGE) {
+      return bucket.deleteFiles({
+        prefix: `spaces/${context.params['spaceId']}/contents/${context.params['contentId']}`,
+      });
+    }
+    if (content.kind === ContentKind.FOLDER) {
+
+    }
+    return;
   });

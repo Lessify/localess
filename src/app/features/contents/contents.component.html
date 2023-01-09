@@ -113,8 +113,8 @@
         </button>
         <button mat-stroked-button
                 *ngIf="'CONTENT_DELETE' | canUserPerform | async"
-                [disabled]="selection.selected.length !== 1"
-                (click)="openDeleteDialog(selection.selected[0])">
+                [disabled]="selection.selected.length === 0"
+                (click)="openDeleteDialog(selection.selected)">
           <mat-icon>delete</mat-icon>
           Delete
         </button>

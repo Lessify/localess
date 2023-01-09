@@ -134,6 +134,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;
+          this.selection.clear()
           this.cd.markForCheck();
         }
       })
@@ -213,29 +214,31 @@ export class ContentsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openDeleteDialog(element: Content): void {
+  openDeleteDialog(elements: Content[]): void {
+    const ids = elements.map(it => it.id)
+    const names = elements.map(it => it.name)
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {
           title: 'Delete Content',
-          content: `Are you sure about deleting Content with name '${element.name}'.`
+          content: `Are you sure about deleting Content with names: ${names.join(', ')}.`
         }
       })
       .afterClosed()
       .pipe(
         filter((it) => it || false),
         switchMap(_ =>
-          this.contentService.delete(this.selectedSpace!.id, element.id)
+          this.contentService.delete(this.selectedSpace!.id, ...ids)
         )
       )
       .subscribe({
         next: () => {
           this.selection.clear()
           this.cd.markForCheck()
-          this.notificationService.success(`Content '${element.name}' has been deleted.`);
+          this.notificationService.success(`Content has been deleted.`);
         },
         error: (err) => {
-          this.notificationService.error(`Content '${element.name}' can not be deleted.`);
+          this.notificationService.error(`Content can not be deleted.`);
         }
       });
   }
