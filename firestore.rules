@@ -44,7 +44,7 @@ service cloud.firestore {
       }
 
       // Pages
-      match /pages/{pageId} {
+      match /contents/{contentId} {
         allow read: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_READ'));
         allow create: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_CREATE'));
         allow update: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_UPDATE'));
