@@ -1,15 +1,8 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit,
-  ViewChild
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
-import {filter, switchMap, takeUntil} from 'rxjs/operators';
+import {filter, switchMap, takeUntil, tap} from 'rxjs/operators';
 import {MatSort} from '@angular/material/sort';
 import {MatPaginator} from '@angular/material/paginator';
 import {Store} from '@ngrx/store';
@@ -21,12 +14,8 @@ import {NotificationService} from '@shared/services/notification.service';
 import {Schematic, SchematicType} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
 import {combineLatest, Subject} from 'rxjs';
-import {
-  ConfirmationDialogComponent
-} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {
-  ConfirmationDialogModel
-} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {
   Content,
   ContentFolderCreate,
@@ -43,11 +32,8 @@ import {ObjectUtils} from '@core/utils/object-utils.service';
 import {FolderAddDialogComponent} from './folder-add-dialog/folder-add-dialog.component';
 import {FolderAddDialogModel} from './folder-add-dialog/folder-add-dialog.model';
 import {SelectionModel} from '@angular/cdk/collections';
-
-interface ContentPathItem {
-  fullSlug: string
-  name: string
-}
+import {ContentPathItem} from '@core/state/space/space.model';
+import {actionSpaceContentPathChange} from '@core/state/space/space.actions';
 
 @Component({
   selector: 'll-contents',
@@ -70,6 +56,13 @@ export class ContentsComponent implements OnInit, OnDestroy {
   contents: Content[] = [];
   contentPath: ContentPathItem[] = [];
 
+  get parentPath(): string {
+    if (this.contentPath && this.contentPath.length > 0) {
+      return this.contentPath[this.contentPath.length - 1].fullSlug;
+    }
+    return '';
+  }
+
   // Subscriptions
   private destroy$ = new Subject();
 
@@ -82,7 +75,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>
+    private readonly store: Store<AppState>,
   ) {
   }
 
@@ -94,11 +87,21 @@ export class ContentsComponent implements OnInit, OnDestroy {
     this.store.select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
+        tap(it => {
+          if (it.contentPath && it.contentPath.length > 0) {
+            this.contentPath = it.contentPath;
+          } else {
+            this.contentPath = [{
+              name: 'Root',
+              fullSlug: ''
+            }];
+          }
+        }),
         switchMap(it =>
           combineLatest([
             this.spaceService.findById(it.id),
             this.schematicService.findAll(it.id, SchematicType.ROOT),
-            this.contentService.findAll(it.id)
+            this.contentService.findAll(it.id, this.parentPath)
           ])
         ),
         takeUntil(this.destroy$),
@@ -109,12 +112,12 @@ export class ContentsComponent implements OnInit, OnDestroy {
           this.schematics = schematics;
           this.schematicsMap = schematics.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schematic>())
           this.contents = contents;
-          if (this.contentPath.length == 0) {
-            this.contentPath.push({
-              name: 'Root',
-              fullSlug: ''
-            })
-          }
+          // if (this.contentPath.length == 0) {
+          //   this.contentPath.push({
+          //     name: 'Root',
+          //     fullSlug: ''
+          //   })
+          // }
 
           this.dataSource = new MatTableDataSource<Content>(contents);
           this.dataSource.sort = this.sort || null;
@@ -137,7 +140,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.contentService.createPage(this.selectedSpace!.id, this.parentPath(), it!)
+          this.contentService.createPage(this.selectedSpace!.id, this.parentPath, it!)
         )
       )
       .subscribe({
@@ -159,7 +162,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.contentService.createFolder(this.selectedSpace!.id, this.parentPath(), it!)
+          this.contentService.createFolder(this.selectedSpace!.id, this.parentPath, it!)
         )
       )
       .subscribe({
@@ -226,9 +229,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       });
   }
 
-  parentPath(): string {
-    return this.contentPath[this.contentPath.length - 1].fullSlug || '';
-  }
+
 
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
@@ -254,7 +255,6 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   onContentRowSelect(element: Content): void {
-    console.log(element)
     if (element.kind === ContentKind.PAGE) {
       if (this.schematicsMap.has(element.schematic)) {
         this.router.navigate(['features', 'contents', element.id]);
@@ -265,15 +265,19 @@ export class ContentsComponent implements OnInit, OnDestroy {
     }
 
     if (element.kind === ContentKind.FOLDER) {
-      this.contentPath.push({
+      const contentPath = ObjectUtils.clone(this.contentPath)
+      contentPath.push({
         name: element.name,
         fullSlug: element.fullSlug
       })
+      this.store.dispatch(actionSpaceContentPathChange({contentPath}))
     }
-
   }
 
   navigateToSlug(pathItem: ContentPathItem) {
-    console.log(pathItem)
+    const contentPath = ObjectUtils.clone(this.contentPath)
+    const idx = contentPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);
+    contentPath.splice(idx + 1);
+    this.store.dispatch(actionSpaceContentPathChange({contentPath}))
   }
 }

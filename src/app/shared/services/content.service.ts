@@ -8,6 +8,7 @@ import {
   docData,
   DocumentReference,
   Firestore,
+  query,
   serverTimestamp,
   UpdateData,
   updateDoc
@@ -29,6 +30,7 @@ import {
   ContentUpdateFS
 } from '@shared/models/content.model';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
+import {QueryConstraint, where} from '@firebase/firestore';
 
 @Injectable()
 export class ContentService {
@@ -38,8 +40,24 @@ export class ContentService {
   ) {
   }
 
-  findAll(spaceId: string): Observable<Content[]> {
-    return collectionData(collection(this.firestore, `spaces/${spaceId}/contents`), {idField: 'id'})
+  findAll(spaceId: string, parentSlug?: string): Observable<Content[]> {
+    const queryConstrains: QueryConstraint[] = []
+    if (parentSlug) {
+      queryConstrains.push(
+        where('parentSlug', '==', parentSlug)
+      )
+    } else {
+      queryConstrains.push(
+        where('parentSlug', '==', '')
+      )
+    }
+
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces/${spaceId}/contents`),
+        ...queryConstrains),
+      {idField: 'id'}
+    )
       .pipe(
         traceUntilFirst('Firestore:Contents:findAll'),
         map((it) => it as Content[])
