@@ -1,4 +1,11 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -14,8 +21,12 @@ import {NotificationService} from '@shared/services/notification.service';
 import {Schematic, SchematicType} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
 import {combineLatest, Subject} from 'rxjs';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  ConfirmationDialogComponent
+} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {
   Content,
   ContentFolderCreate,
@@ -265,16 +276,19 @@ export class ContentsComponent implements OnInit, OnDestroy {
     }
 
     if (element.kind === ContentKind.FOLDER) {
+      this.selection.clear()
       const contentPath = ObjectUtils.clone(this.contentPath)
       contentPath.push({
         name: element.name,
         fullSlug: element.fullSlug
       })
       this.store.dispatch(actionSpaceContentPathChange({contentPath}))
+
     }
   }
 
   navigateToSlug(pathItem: ContentPathItem) {
+    this.selection.clear()
     const contentPath = ObjectUtils.clone(this.contentPath)
     const idx = contentPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);
     contentPath.splice(idx + 1);

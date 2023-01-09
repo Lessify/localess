@@ -1,11 +1,11 @@
-import {https, logger} from 'firebase-functions';
+import {EventContext, firestore, https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
 import axios from 'axios';
 import {ContentPage, ContentPageStorage, PublishContentData} from './models/content.model';
 import {Schematic} from './models/schematic.model';
-import {FieldValue} from 'firebase-admin/firestore';
+import {FieldValue, QueryDocumentSnapshot} from 'firebase-admin/firestore';
 import {UserPermission} from './models/user.model';
 
 // Publish
@@ -83,3 +83,12 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
     throw new https.HttpsError('not-found', 'Content not found');
   }
 });
+
+// Firestore events
+export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{contentId}')
+  .onDelete((snapshot: QueryDocumentSnapshot, context: EventContext) => {
+    logger.info(`[Content::onDelete] id='${snapshot.id}' exists=${snapshot.exists} eventId='${context.eventId}'`);
+    return bucket.deleteFiles({
+      prefix: `spaces/${context.params['spaceId']}/contents/${context.params['contentId']}`,
+    });
+  });

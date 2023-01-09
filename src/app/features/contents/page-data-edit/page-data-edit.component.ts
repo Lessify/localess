@@ -13,9 +13,9 @@ import {SchematicService} from '@shared/services/schematic.service';
 import {ContentService} from '@shared/services/content.service';
 import {
   ContentError,
-  ContentPageData,
+  ContentKind,
   ContentPage,
-  ContentKind
+  ContentPageData
 } from '@shared/models/content.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
@@ -28,9 +28,7 @@ import {NotificationService} from '@shared/services/notification.service';
 import {DEFAULT_LOCALE, Locale} from '@shared/models/locale.model';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
-import {
-  SchematicSelectChange
-} from '../page-data-schematic-edit/page-data-schematic-edit.model';
+import {SchematicSelectChange} from '../page-data-schematic-edit/page-data-schematic-edit.model';
 import {ContentHelperService} from '@shared/services/content-helper.service';
 import {SchematicPathItem} from './page-data-edit.model';
 

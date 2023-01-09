@@ -1,4 +1,4 @@
-export {contentPublish} from './contents';
+export {contentPublish, onContentDelete} from './contents';
 
 export {setup} from './setup';
 
