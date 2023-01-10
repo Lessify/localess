@@ -25,4 +25,4 @@ steps:
   # deploy to firebase
   - name: gcr.io/$PROJECT_ID/firebase
     id: 'deploy'
-    args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore' ]
+    args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force' ]
