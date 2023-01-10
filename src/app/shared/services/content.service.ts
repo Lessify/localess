@@ -13,7 +13,7 @@ import {
   UpdateData,
   updateDoc
 } from '@angular/fire/firestore';
-import {from, Observable} from 'rxjs';
+import {from, Observable, switchMap} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {ObjectUtils} from '@core/utils/object-utils.service';
@@ -30,7 +30,7 @@ import {
   ContentUpdateFS
 } from '@shared/models/content.model';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {QueryConstraint, where, writeBatch} from '@firebase/firestore';
+import {getDocs, QueryConstraint, where, writeBatch} from '@firebase/firestore';
 
 @Injectable()
 export class ContentService {
@@ -149,23 +149,28 @@ export class ContentService {
       );
   }
 
-  delete(spaceId: string, ...ids: string[]): Observable<void> {
-    if (ids.length === 1) {
-      return from(
-        deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${ids[0]}`))
-      )
-        .pipe(
-          traceUntilFirst('Firestore:Contents:delete'),
-        );
-    }
+  delete(spaceId: string, element: Content): Observable<void> {
     const batch = writeBatch(this.firestore)
-    ids.forEach(id => batch.delete(doc(this.firestore, `spaces/${spaceId}/contents/${id}`)))
+    batch.delete(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`))
+
     return from(
-      batch.commit()
+      // Query only id's
+      getDocs(
+        query(
+          collection(this.firestore, `spaces/${spaceId}/contents`),
+          where('parentSlug', '>=', element.fullSlug)
+        )
+      )
     )
-      .pipe(
-        traceUntilFirst('Firestore:Contents:delete'),
-      );
+    .pipe(
+      switchMap( it => {
+        it.docs.forEach( d => batch.delete(doc(this.firestore, `spaces/${spaceId}/contents/${d.id}`)))
+        return from(
+          batch.commit()
+        )
+      }),
+      traceUntilFirst('Firestore:Contents:delete'),
+    )
   }
 
   publish(spaceId: string, id: string): Observable<void> {

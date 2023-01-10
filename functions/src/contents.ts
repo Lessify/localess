@@ -100,16 +100,5 @@ export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{co
         prefix: `spaces/${context.params['spaceId']}/contents/${context.params['contentId']}`,
       });
     }
-    // if (content.kind === ContentKind.FOLDER) {
-    //   const contentsSnapshot = await firestoreService.collection(`spaces/${context.params['spaceId']}/contents`)
-    //     .where('parentSlug', '>=', content.fullSlug).get();
-    //   if (!contentsSnapshot.empty) {
-    //     const batch = firestoreService.batch()
-    //     for (const cont of contentsSnapshot.docs.filter((it) => it.exists)) {
-    //       batch.delete(cont.ref)
-    //     }
-    //     return batch.commit()
-    //   }
-    // }
     return;
   });

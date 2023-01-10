@@ -214,31 +214,29 @@ export class ContentsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openDeleteDialog(elements: Content[]): void {
-    const ids = elements.map(it => it.id)
-    const names = elements.map(it => it.name)
+  openDeleteDialog(element: Content): void {
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {
           title: 'Delete Content',
-          content: `Are you sure about deleting Content with names: ${names.join(', ')}.`
+          content: `Are you sure about deleting Content with name: ${element.name}.`
         }
       })
       .afterClosed()
       .pipe(
         filter((it) => it || false),
         switchMap(_ =>
-          this.contentService.delete(this.selectedSpace!.id, ...ids)
+          this.contentService.delete(this.selectedSpace!.id, element)
         )
       )
       .subscribe({
         next: () => {
           this.selection.clear()
           this.cd.markForCheck()
-          this.notificationService.success(`Content has been deleted.`);
+          this.notificationService.success(`Content '${element.name}' has been deleted.`);
         },
         error: (err) => {
-          this.notificationService.error(`Content can not be deleted.`);
+          this.notificationService.error(`Content '${element.name}' can not be deleted.`);
         }
       });
   }
