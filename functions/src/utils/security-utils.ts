@@ -25,6 +25,11 @@ export class SecurityUtils {
     return false;
   }
 
+  /**
+   * Check if AuthData contains required permission
+   * @param permission - a user permission
+   * @param auth - a user auth
+   */
   static canPerform(permission: UserPermission, auth?: AuthData): boolean {
     if (this.hasRole(ROLE_ADMIN, auth)) {
       return true;

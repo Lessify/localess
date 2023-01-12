@@ -47,7 +47,7 @@ export class SchematicEditDialogComponent implements OnInit {
 
 
   form: FormRecord = this.fb.record({
-    name: this.fb.control('', [...SchematicValidator.NAME, CommonValidator.reservedName(this.data.reservedNames)]),
+    name: this.fb.control('', [...SchematicValidator.NAME, CommonValidator.reservedName(this.data.reservedNames, this.data.schematic.name)]),
     displayName: this.fb.control<string | undefined>(undefined, SchematicValidator.DISPLAY_NAME),
     components: this.fb.array<SchematicComponent>([])
   });

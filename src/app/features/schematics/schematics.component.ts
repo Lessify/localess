@@ -135,7 +135,7 @@ export class SchematicsComponent implements OnInit, OnDestroy {
       SchematicEditDialogComponent, {
         width: '1000px',
         data: {
-          reservedNames: this.schematics.filter(it => it.name !== element.name).map( it => it.name),
+          reservedNames: this.schematics.map( it => it.name),
           schematic: ObjectUtils.clone(element),
           schematics: this.schematics.filter(it => it.type === SchematicType.NODE)
         }

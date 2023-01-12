@@ -8,7 +8,7 @@ import {
   ContentKind,
   ContentPage,
   ContentPageStorage,
-  PublishContentData
+  PublishContentData,
 } from './models/content.model';
 import {Schematic} from './models/schematic.model';
 import {FieldValue, QueryDocumentSnapshot} from 'firebase-admin/firestore';
@@ -26,15 +26,14 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
     const space: Space = spaceSnapshot.data() as Space;
     const content: ContentPage = contentSnapshot.data() as ContentPage;
     const schematics = schematicsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schematic);
-
+    logger.info('[contentPublish] content: ' + JSON.stringify(content));
     for (const locale of space.locales) {
       const pageStorage: ContentPageStorage = {
-        id: content.id,
+        id: contentSnapshot.id,
         name: content.name,
         slug: content.slug,
         fullSlug: content.fullSlug,
         parentSlug: content.parentSlug,
-        schematic: content.schematic,
         createdAt: content.createdAt.toDate().toISOString(),
         updatedAt: content.updatedAt.toDate().toISOString(),
         publishedAt: new Date().toISOString(),
@@ -58,6 +57,7 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
           }
         }
       }
+      logger.info('[contentPublish] pageStorage: ' + JSON.stringify(pageStorage));
 
       // Save generated JSON
       logger.info(`[contentPublish] Save file to spaces/${data.spaceId}/contents/${data.contentId}/${locale.id}.json`);

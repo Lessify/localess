@@ -145,7 +145,9 @@ export class ContentsComponent implements OnInit, OnDestroy {
       PageAddDialogComponent, {
         width: '500px',
         data: {
-          schematics: this.schematics
+          schematics: this.schematics,
+          reservedNames: this.contents.map( it => it.name),
+          reservedSlugs: this.contents.map( it => it.slug),
         }
       })
       .afterClosed()
@@ -168,7 +170,11 @@ export class ContentsComponent implements OnInit, OnDestroy {
   openAddFolderDialog(): void {
     this.dialog.open<FolderAddDialogComponent, FolderAddDialogModel, ContentFolderCreate>(
       FolderAddDialogComponent, {
-        width: '500px'
+        width: '500px',
+        data: {
+          reservedNames: this.contents.map( it => it.name),
+          reservedSlugs: this.contents.map( it => it.slug),
+        }
       })
       .afterClosed()
       .pipe(
@@ -192,7 +198,9 @@ export class ContentsComponent implements OnInit, OnDestroy {
       ContentEditDialogComponent, {
         width: '500px',
         data: {
-          page: ObjectUtils.clone(element)
+          content: ObjectUtils.clone(element),
+          reservedNames: this.contents.map( it => it.name),
+          reservedSlugs: this.contents.map( it => it.slug),
         }
       })
       .afterClosed()
@@ -268,6 +276,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
 
   onContentRowSelect(element: Content): void {
     if (element.kind === ContentKind.PAGE) {
+      element.publishedAt
       if (this.schematicsMap.has(element.schematic)) {
         this.router.navigate(['features', 'contents', element.id]);
       } else {
@@ -294,5 +303,10 @@ export class ContentsComponent implements OnInit, OnDestroy {
     const idx = contentPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);
     contentPath.splice(idx + 1);
     this.store.dispatch(actionSpaceContentPathChange({contentPath}))
+  }
+
+  openLinksInNewTab() {
+    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/links`
+    window.open(url, '_blank')
   }
 }

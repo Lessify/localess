@@ -4,6 +4,7 @@ import {FormBuilder, FormGroup} from '@angular/forms';
 import {PageAddDialogModel} from './page-add-dialog.model';
 import {ContentValidator} from '@shared/validators/content.validator';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
+import {CommonValidator} from '@shared/validators/common.validator';
 
 @Component({
   selector: 'll-page-add-dialog',
@@ -11,11 +12,11 @@ import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.se
   styleUrls: ['./page-add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PageAddDialogComponent implements OnInit {
+export class PageAddDialogComponent {
 
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', ContentValidator.NAME),
-    slug: this.fb.control('', ContentValidator.SLUG),
+    name: this.fb.control('', [...ContentValidator.NAME, CommonValidator.reservedName(this.data.reservedNames)]),
+    slug: this.fb.control('', [...ContentValidator.SLUG, CommonValidator.reservedName(this.data.reservedSlugs)]),
     schematic: this.fb.control(undefined, ContentValidator.SCHEMA)
   });
 
@@ -24,11 +25,5 @@ export class PageAddDialogComponent implements OnInit {
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: PageAddDialogModel
   ) {
-  }
-
-  ngOnInit(): void {
-    if (this.data != null) {
-      this.form.patchValue(this.data);
-    }
   }
 }

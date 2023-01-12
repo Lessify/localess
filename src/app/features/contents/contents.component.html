@@ -21,6 +21,19 @@
       </mat-menu>
     </ng-container>
 
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="extraMenu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+
+    <mat-menu #extraMenu="matMenu">
+      <button mat-menu-item (click)="openLinksInNewTab()">
+        <mat-icon>link</mat-icon>
+        <span>Links</span>
+      </button>
+    </mat-menu>
+
   </mat-toolbar-row>
 </mat-toolbar>
 
@@ -28,7 +41,6 @@
   <mat-spinner></mat-spinner>
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
-
   <ll-breadcrumb>
     <ll-breadcrumb-item *ngFor="let contentPathItem of contentPath" (click)="navigateToSlug(contentPathItem)">
       <ng-container *ngIf="contentPathItem.fullSlug === ''">

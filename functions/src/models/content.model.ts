@@ -42,7 +42,6 @@ export interface ContentPageStorage {
   slug: string;
   parentSlug: string
   fullSlug: string
-  schematic: string;
   data?: ContentPageData;
   createdAt: string;
   updatedAt: string;
@@ -52,4 +51,16 @@ export interface ContentPageStorage {
 export interface ContentPageData extends Record<string, any> {
   _id: string;
   schematic: string;
+}
+
+export interface ContentLink {
+  id: string,
+  kind: ContentKind,
+  name: string,
+  slug: string
+  parentSlug: string
+  fullSlug: string
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
 }
