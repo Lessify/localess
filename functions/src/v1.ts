@@ -55,7 +55,7 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
     .map((contentSnapshot) => {
       const content = contentSnapshot.data() as Content;
       const link: ContentLink = {
-        id: content.id,
+        id: contentSnapshot.id,
         kind: content.kind,
         name: content.name,
         slug: content.slug,
