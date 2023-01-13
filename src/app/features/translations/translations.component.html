@@ -116,15 +116,9 @@
           <span matListItemTitle>{{translation.name}}</span>
           <span matListItemLine>
             <span [ngSwitch]="translation.type">
-              <ll-translation-string-view *ngSwitchCase="'STRING'"
-                                          [value]="translation.locales[selectedSearchLocale]">
-              </ll-translation-string-view>
-              <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
-                                          [value]="translation.locales[selectedSearchLocale]">
-              </ll-translation-plural-view>
-              <ll-translation-array-view *ngSwitchCase="'ARRAY'"
-                                         [value]="translation.locales[selectedSearchLocale]">
-              </ll-translation-array-view>
+              <ll-translation-string-view *ngSwitchCase="'STRING'" [value]="translation.locales[selectedSearchLocale]"/>
+              <ll-translation-plural-view *ngSwitchCase="'PLURAL'" [value]="translation.locales[selectedSearchLocale]"/>
+              <ll-translation-array-view *ngSwitchCase="'ARRAY'" [value]="translation.locales[selectedSearchLocale]"/>
             </span>
           </span>
 
@@ -147,15 +141,9 @@
         <mat-divider></mat-divider>
         <div class="p-2 align-items-start mb-auto">
           <span [ngSwitch]="selectedTranslation.type">
-            <ll-translation-string-view *ngSwitchCase="'STRING'"
-                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-string-view>
-            <ll-translation-plural-view *ngSwitchCase="'PLURAL'"
-                                        [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-plural-view>
-            <ll-translation-array-view *ngSwitchCase="'ARRAY'"
-                                       [value]="selectedTranslation.locales[selectedSourceLocale]">
-            </ll-translation-array-view>
+            <ll-translation-string-view *ngSwitchCase="'STRING'" [value]="selectedTranslation.locales[selectedSourceLocale]"/>
+            <ll-translation-plural-view *ngSwitchCase="'PLURAL'" [value]="selectedTranslation.locales[selectedSourceLocale]"/>
+            <ll-translation-array-view *ngSwitchCase="'ARRAY'" [value]="selectedTranslation.locales[selectedSourceLocale]"/>
           </span>
         </div>
 
@@ -181,16 +169,13 @@
             <span [ngSwitch]="selectedTranslation.type">
               <ll-translation-string-edit *ngSwitchCase="'STRING'"
                                           [value]="translateValue || selectedTranslation.locales[selectedTargetLocale]"
-                                          (valueChange)="selectedTranslationLocaleValue = $event">
-              </ll-translation-string-edit>
+                                          (valueChange)="selectedTranslationLocaleValue = $event"/>
               <ll-translation-plural-edit *ngSwitchCase="'PLURAL'"
                                           [value]="selectedTranslation.locales[selectedTargetLocale]"
-                                          (valueChange)="selectedTranslationLocaleValue = $event">
-              </ll-translation-plural-edit>
+                                          (valueChange)="selectedTranslationLocaleValue = $event"/>
               <ll-translation-array-edit *ngSwitchCase="'ARRAY'"
                                          [value]="selectedTranslation.locales[selectedTargetLocale]"
-                                         (valueChange)="selectedTranslationLocaleValue = $event">
-              </ll-translation-array-edit>
+                                         (valueChange)="selectedTranslationLocaleValue = $event"/>
             </span>
           </div>
           <mat-divider></mat-divider>
