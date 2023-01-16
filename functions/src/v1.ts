@@ -4,6 +4,7 @@ import {https, logger} from 'firebase-functions';
 import {bucket, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
 import {Space} from './models/space.model';
 import {Content, ContentKind, ContentLink} from './models/content.model';
+import {Query} from 'firebase-admin/firestore';
 
 // API V1
 const expressV1 = express();
@@ -39,8 +40,10 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
 });
 
 expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
-  logger.info('v1 spaces links: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
   const {spaceId} = req.params;
+  const {kind, startSlug} = req.query;
   const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
   if (!spaceSnapshot.exists) {
     res
@@ -49,7 +52,17 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
       .send(new https.HttpsError('not-found', 'Space not found'));
     return;
   }
-  const contentsSnapshot = await firestoreService.collection(`spaces/${spaceId}/contents`).get();
+  let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
+  if(kind) {
+    contentsQuery = contentsQuery.where('kind','==', kind)
+  }
+  if (startSlug) {
+    contentsQuery = contentsQuery
+      .where('fullSlug', '>=', startSlug)
+      .where('fullSlug', '<', `${startSlug}~`)
+  }
+  logger.info('v1 spaces links contentsQuery: ' + JSON.stringify(contentsQuery));
+  const contentsSnapshot = await contentsQuery.get();
 
   const response: ContentLink[] = contentsSnapshot.docs
     .map((contentSnapshot) => {
