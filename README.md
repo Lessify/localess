@@ -7,7 +7,6 @@
 </h1>
 
 ![GitHub](https://img.shields.io/github/license/Lessify/localess?style=for-the-badge)
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Lessify/localess/CI%20Tests/main?style=for-the-badge)
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/Lessify?style=for-the-badge)
 ![GitHub Repo stars](https://img.shields.io/github/stars/Lessify/Localess?style=for-the-badge)
 
