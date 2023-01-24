@@ -36,7 +36,7 @@
     "bootstrap": "^5.2.3",
     "browser-detect": "^0.2.28",
     "file-saver-es": "^2.0.5",
-    "firebase": "~9.15.0",
+    "firebase": "~9.16.0",
     "rxfire": "^6.0.3",
     "rxjs": "~7.5.0",
     "tslib": "^2.3.0",
