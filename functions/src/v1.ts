@@ -61,7 +61,6 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
       .where('fullSlug', '>=', startSlug)
       .where('fullSlug', '<', `${startSlug}~`)
   }
-  logger.info('v1 spaces links contentsQuery: ' + JSON.stringify(contentsQuery));
   const contentsSnapshot = await contentsQuery.get();
 
   const response: ContentLink[] = contentsSnapshot.docs
