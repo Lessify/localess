@@ -87,7 +87,7 @@
 
             <mat-checkbox formControlName="required">Required</mat-checkbox>
 
-            <ng-container *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN'].includes(components.at(selectedComponentIdx).value.kind)">
+            <ng-container *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(components.at(selectedComponentIdx).value.kind)">
               <mat-checkbox formControlName="translatable">Translatable</mat-checkbox>
             </ng-container>
 
@@ -129,6 +129,24 @@
                 <mat-label>Max Length</mat-label>
                 <input matInput type="number" formControlName="maxLength" autocomplete="off"/>
                 <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxLength')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxLength'))}}</mat-error>
+              </mat-form-field>
+            </ng-container>
+
+            <!--Option and Options-->
+            <ng-container *ngIf="['OPTION', 'OPTIONS'].includes(components.at(selectedComponentIdx).value.kind)">
+
+            </ng-container>
+
+            <ng-container *ngIf="['OPTIONS'].includes(components.at(selectedComponentIdx).value.kind)">
+              <mat-form-field appearance="outline">
+                <mat-label>Min Values</mat-label>
+                <input matInput type="number" formControlName="minValues" autocomplete="off"/>
+                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'minValues')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'minValues'))}}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Max Values</mat-label>
+                <input matInput type="number" formControlName="maxValues" autocomplete="off"/>
+                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxValues')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxValues'))}}</mat-error>
               </mat-form-field>
             </ng-container>
 
