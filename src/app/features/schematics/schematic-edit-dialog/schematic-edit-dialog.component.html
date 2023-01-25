@@ -11,13 +11,13 @@
           </button>
           <mat-hint>Will be used in JSON structure.</mat-hint>
           <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
-          <mat-error *ngIf="form.controls['name'].errors">{{fe.controlError(form.controls['name'])}}</mat-error>
+          <mat-error *ngIf="form.controls['name'].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Display Name</mat-label>
           <input matInput type="text" formControlName="displayName" minLength="3" maxlength="50" autocomplete="off"/>
           <mat-hint align="end">{{form.controls['displayName'].value?.length || 0}}/50</mat-hint>
-          <mat-error *ngIf="form.controls['displayName'].errors">{{fe.controlError(form.controls['displayName'])}}</mat-error>
+          <mat-error *ngIf="form.controls['displayName'].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
 
         <mat-nav-list class="ll-mat-nav-list-gap">
@@ -32,7 +32,7 @@
                     [disabled]="!newComponentName.valid">
               Add
             </button>
-            <mat-error *ngIf="newComponentName.errors">{{fe.controlError(newComponentName)}}</mat-error>
+            <mat-error *ngIf="newComponentName.errors as errors">{{fe.errors(errors)}}</mat-error>
           </mat-form-field>
           <mat-list-item *ngFor="let component of components.controls; let index = index"
                          (click)="selectComponent(index)"
@@ -51,7 +51,7 @@
         </mat-nav-list>
 
       </div>
-      <div class="col-6" formArrayName="components" *ngIf="selectedComponentIdx !== undefined">
+      <div class="col-6" formArrayName="components" *ngIf="components.at(selectedComponentIdx === undefined ? -100 : selectedComponentIdx) as selectedComponent">
         <mat-card appearance="outlined">
           <ng-container [formGroupName]="selectedComponentIdx">
             <mat-form-field appearance="outline">
@@ -61,8 +61,8 @@
                 <mat-icon>{{componentNameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
               </button>
               <mat-hint>Will be used in JSON structure.</mat-hint>
-              <mat-hint align="end">{{components.at(selectedComponentIdx).value.name.length || 0}}/50</mat-hint>
-              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'name')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'name'))}}</mat-error>
+              <mat-hint align="end">{{selectedComponent.value.name.length || 0}}/50</mat-hint>
+              <mat-error *ngIf="selectedComponent.controls['name']?.errors as errors">{{fe.errors(errors)}}</mat-error>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Kind</mat-label>
@@ -75,33 +75,33 @@
                   {{componentKindDescriptions[kind].name}}
                 </mat-option>
               </mat-select>
-              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'kind')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'kind'))}}</mat-error>
+              <mat-error *ngIf="selectedComponent.controls['kind']?.errors as errors">{{fe.errors(errors)}}</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Display Name</mat-label>
               <input matInput type="text" formControlName="displayName" autocomplete="off"/>
-              <mat-hint align="end">{{components.at(selectedComponentIdx).value.displayName?.length || 0}}/50</mat-hint>
-              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'displayName')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'displayName'))}}</mat-error>
+              <mat-hint align="end">{{selectedComponent.value.displayName?.length || 0}}/50</mat-hint>
+              <mat-error *ngIf="selectedComponent.controls['displayName']?.errors as errors">{{fe.errors(errors)}}</mat-error>
             </mat-form-field>
 
             <mat-checkbox formControlName="required">Required</mat-checkbox>
 
-            <ng-container *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(components.at(selectedComponentIdx).value.kind)">
+            <ng-container *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(selectedComponent.value.kind)">
               <mat-checkbox formControlName="translatable">Translatable</mat-checkbox>
             </ng-container>
 
             <mat-form-field appearance="outline">
               <mat-label>Description</mat-label>
               <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>
-              <mat-hint align="end">{{components.at(selectedComponentIdx).value.description?.length || 0}}/250</mat-hint>
-              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'description')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'description'))}}</mat-error>
+              <mat-hint align="end">{{selectedComponent.value.description?.length || 0}}/250</mat-hint>
+              <mat-error *ngIf="selectedComponent.controls['description']?.errors as errors">{{fe.errors(errors)}}</mat-error>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Default Value</mat-label>
               <textarea matInput formControlName="defaultValue" class="cdk-textarea-autosize"></textarea>
-              <mat-hint align="end">{{components.at(selectedComponentIdx).value.defaultValue?.length || 0}}/250</mat-hint>
-              <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'defaultValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'defaultValue'))}}</mat-error>
+              <mat-hint align="end">{{selectedComponent.value.defaultValue?.length || 0}}/250</mat-hint>
+              <mat-error *ngIf="selectedComponent.controls['defaultValue']?.errors as errors">{{fe.errors(errors)}}</mat-error>
             </mat-form-field>
 
             <!--Number-->
@@ -109,12 +109,12 @@
               <mat-form-field appearance="outline">
                 <mat-label>Min Value</mat-label>
                 <input matInput type="number" formControlName="minValue" autocomplete="off"/>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'minValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'minValue'))}}</mat-error>
+                <mat-error *ngIf="selectedComponent.controls['minValue']?.errors as errors">{{fe.errors(errors)}}</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Max Value</mat-label>
                 <input matInput type="number" formControlName="maxValue" autocomplete="off"/>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxValue')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxValue'))}}</mat-error>
+                <mat-error *ngIf="selectedComponent.controls['maxValue']?.errors as errors">{{fe.errors(errors)}}</mat-error>
               </mat-form-field>
             </ng-container>
 
@@ -123,30 +123,30 @@
               <mat-form-field appearance="outline">
                 <mat-label>Min Length</mat-label>
                 <input matInput type="number" formControlName="minLength" autocomplete="off"/>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'minLength')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'minLength'))}}</mat-error>
+                <mat-error *ngIf="selectedComponent.controls['minLength']?.errors as errors">{{fe.errors(errors)}}</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Max Length</mat-label>
                 <input matInput type="number" formControlName="maxLength" autocomplete="off"/>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxLength')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxLength'))}}</mat-error>
+                <mat-error *ngIf="selectedComponent.controls['maxLength']?.errors as errors">{{fe.errors(errors)}}</mat-error>
               </mat-form-field>
             </ng-container>
 
             <!--Option and Options-->
-            <ng-container *ngIf="['OPTION', 'OPTIONS'].includes(components.at(selectedComponentIdx).value.kind)">
+            <ng-container *ngIf="['OPTION', 'OPTIONS'].includes(selectedComponent.value.kind)">
 
             </ng-container>
 
-            <ng-container *ngIf="['OPTIONS'].includes(components.at(selectedComponentIdx).value.kind)">
+            <ng-container *ngIf="['OPTIONS'].includes(selectedComponent.value.kind)">
               <mat-form-field appearance="outline">
                 <mat-label>Min Values</mat-label>
                 <input matInput type="number" formControlName="minValues" autocomplete="off"/>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'minValues')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'minValues'))}}</mat-error>
+                <mat-error *ngIf="selectedComponent.controls['minValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Max Values</mat-label>
                 <input matInput type="number" formControlName="maxValues" autocomplete="off"/>
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'maxValues')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'maxValues'))}}</mat-error>
+                <mat-error *ngIf="selectedComponent.controls['maxValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
               </mat-form-field>
             </ng-container>
 
@@ -160,8 +160,7 @@
                     <span *ngIf="schematic.displayName"> ({{schematic.displayName}})</span>
                   </mat-option>
                 </mat-select>
-
-                <mat-error *ngIf="componentControlAt(selectedComponentIdx, 'schematic')?.errors">{{fe.controlError(componentControlAt(selectedComponentIdx,'schematic'))}}</mat-error>
+                <mat-error *ngIf="selectedComponent.controls['schematic']?.errors as errors">{{fe.errors(errors)}}</mat-error>
               </mat-form-field>
             </ng-container>
 

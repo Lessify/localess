@@ -57,6 +57,13 @@ export class SchematicValidator {
   public static COMPONENT_MAX_VALUE: ValidatorFn[] = [
   ];
 
+  public static COMPONENT_MIN_VALUES: ValidatorFn[] = [
+    Validators.min(0)
+  ];
+
+  public static COMPONENT_MAX_VALUES: ValidatorFn[] = [
+  ];
+
   public static COMPONENT_MIN_LENGTH: ValidatorFn[] = [
     Validators.min(0)
   ];

@@ -26,9 +26,9 @@ export enum SchematicComponentKind {
   DATE = 'DATE',
   DATETIME = 'DATETIME',
   BOOLEAN = 'BOOLEAN',
-  SCHEMATIC = 'SCHEMATIC',
   OPTION = 'OPTION',
-  OPTIONS = 'OPTIONS'
+  OPTIONS = 'OPTIONS',
+  SCHEMATIC = 'SCHEMATIC',
 }
 
 export interface SchematicComponentBase {

@@ -14,7 +14,7 @@
           <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+          <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'TEXTAREA'">
@@ -29,7 +29,7 @@
           <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+          <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'NUMBER'">
@@ -43,7 +43,7 @@
                  autocomplete="off"/>
           <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+          <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'COLOR'">
@@ -57,7 +57,7 @@
                  autocomplete="off"/>
           <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+          <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'DATE'">
@@ -69,7 +69,7 @@
                  autocomplete="off"/>
           <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+          <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'DATETIME'">
@@ -81,7 +81,7 @@
                  autocomplete="off"/>
           <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+          <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'BOOLEAN'">
@@ -92,7 +92,7 @@
         <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
         <br/>
         <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
-        <mat-error *ngIf="form.controls[component.name].errors">{{fe.controlError(form.controls[component.name])}}</mat-error>
+        <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
       </ng-container>
 
       <ng-container *ngSwitchCase="'SCHEMATIC'">

@@ -33,7 +33,9 @@ export class SchematicEditDialogComponent implements OnInit {
     'DATE': {name: 'Date', icon: 'event'},
     'DATETIME': {name: 'Date and Time', icon: 'schedule'},
     'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
-    'SCHEMATIC': {name: 'Schematic (Beta)', icon: 'polyline'}
+    'OPTION': {name: 'Single Option', icon: 'list'},
+    'OPTIONS': {name: 'Multiple Options', icon: 'list'},
+    'SCHEMATIC': {name: 'Schematic (Beta)', icon: 'polyline'},
   }
 
   selectedComponentKind ?: ComponentKindDescription;
@@ -121,6 +123,16 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchematicValidator.COMPONENT_TRANSLATABLE))
         break;
       }
+      case SchematicComponentKind.OPTION: {
+        componentForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchematicValidator.COMPONENT_TRANSLATABLE))
+        break;
+      }
+      case SchematicComponentKind.OPTIONS: {
+        componentForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchematicValidator.COMPONENT_TRANSLATABLE))
+        componentForm.addControl('minValue', this.fb.control<number | undefined>(element.minValues, SchematicValidator.COMPONENT_MIN_VALUES));
+        componentForm.addControl('maxValue', this.fb.control<number | undefined>(element.maxValues, SchematicValidator.COMPONENT_MAX_VALUES));
+        break;
+      }
       case SchematicComponentKind.SCHEMATIC: {
         componentForm.addControl('schematics', this.fb.control<string[] | undefined>(element.schematics));
         break;
@@ -188,6 +200,8 @@ export class SchematicEditDialogComponent implements OnInit {
         // REMOVE
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('minValues')
+        componentForm?.removeControl('maxValues')
         componentForm?.removeControl('schematics')
         break;
       }
@@ -199,6 +213,8 @@ export class SchematicEditDialogComponent implements OnInit {
         // REMOVE
         componentForm?.removeControl('minLength')
         componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('minValues')
+        componentForm?.removeControl('maxValues')
         componentForm?.removeControl('schematics')
         break;
       }
@@ -210,6 +226,8 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm?.removeControl('maxLength')
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('minValues')
+        componentForm?.removeControl('maxValues')
         componentForm?.removeControl('schematics')
         break;
       }
@@ -222,6 +240,8 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm?.removeControl('maxLength')
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('minValues')
+        componentForm?.removeControl('maxValues')
         componentForm?.removeControl('schematics')
         break;
       }
@@ -233,12 +253,42 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm?.removeControl('maxLength')
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('minValues')
+        componentForm?.removeControl('maxValues')
         componentForm?.removeControl('schematics')
         break;
       }
       case SchematicComponentKind.BOOLEAN: {
         // ADD
         componentForm?.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchematicValidator.COMPONENT_TRANSLATABLE))
+        // REMOVE
+        componentForm?.removeControl('minLength')
+        componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('minValue')
+        componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('minValues')
+        componentForm?.removeControl('maxValues')
+        componentForm?.removeControl('schematics')
+        break;
+      }
+      case SchematicComponentKind.OPTION: {
+        // ADD
+        componentForm?.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchematicValidator.COMPONENT_TRANSLATABLE))
+        // REMOVE
+        componentForm?.removeControl('minLength')
+        componentForm?.removeControl('maxLength')
+        componentForm?.removeControl('minValue')
+        componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('minValues')
+        componentForm?.removeControl('maxValues')
+        componentForm?.removeControl('schematics')
+        break;
+      }
+      case SchematicComponentKind.OPTIONS: {
+        // ADD
+        componentForm?.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchematicValidator.COMPONENT_TRANSLATABLE))
+        componentForm?.addControl('minValues', this.fb.control<number | undefined>(undefined, SchematicValidator.COMPONENT_MIN_VALUES));
+        componentForm?.addControl('maxValues', this.fb.control<number | undefined>(undefined, SchematicValidator.COMPONENT_MAX_VALUES));
         // REMOVE
         componentForm?.removeControl('minLength')
         componentForm?.removeControl('maxLength')
@@ -256,6 +306,8 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm?.removeControl('maxLength')
         componentForm?.removeControl('minValue')
         componentForm?.removeControl('maxValue')
+        componentForm?.removeControl('minValues')
+        componentForm?.removeControl('maxValues')
         break;
       }
     }
