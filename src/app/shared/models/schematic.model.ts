@@ -16,7 +16,7 @@ export interface Schematic {
   updatedAt: Timestamp;
 }
 
-export type SchematicComponent = SchematicComponentText | SchematicComponentTextarea | SchematicComponentNumber | SchematicComponentColor | SchematicComponentDate | SchematicComponentDateTime | SchematicComponentBoolean | SchematicComponentSchematic;
+export type SchematicComponent = SchematicComponentText | SchematicComponentTextarea | SchematicComponentNumber | SchematicComponentColor | SchematicComponentDate | SchematicComponentDateTime | SchematicComponentBoolean | SchematicComponentSchematic | SchematicComponentOption | SchematicComponentOptions;
 
 export enum SchematicComponentKind {
   TEXT = 'TEXT',
@@ -26,7 +26,9 @@ export enum SchematicComponentKind {
   DATE = 'DATE',
   DATETIME = 'DATETIME',
   BOOLEAN = 'BOOLEAN',
-  SCHEMATIC = 'SCHEMATIC'
+  SCHEMATIC = 'SCHEMATIC',
+  OPTION = 'OPTION',
+  OPTIONS = 'OPTIONS'
 }
 
 export interface SchematicComponentBase {
@@ -76,6 +78,23 @@ export interface SchematicComponentBoolean extends SchematicComponentBase {
 export interface SchematicComponentSchematic extends SchematicComponentBase {
   kind: SchematicComponentKind.SCHEMATIC;
   schematics?: string[];
+}
+
+export interface SchematicComponentOptionSelectable {
+  name: string;
+  value: string;
+}
+
+export interface SchematicComponentOption extends SchematicComponentBase {
+  kind: SchematicComponentKind.OPTION;
+  options: SchematicComponentOptionSelectable[];
+}
+
+export interface SchematicComponentOptions extends SchematicComponentBase {
+  kind: SchematicComponentKind.OPTIONS;
+  options: SchematicComponentOptionSelectable[];
+  minValues?: number;
+  maxValues?: number;
 }
 
 // Service
