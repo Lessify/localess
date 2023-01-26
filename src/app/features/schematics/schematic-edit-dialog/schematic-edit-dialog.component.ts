@@ -129,8 +129,8 @@ export class SchematicEditDialogComponent implements OnInit {
       }
       case SchematicComponentKind.OPTIONS: {
         componentForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchematicValidator.COMPONENT_TRANSLATABLE))
-        componentForm.addControl('minValue', this.fb.control<number | undefined>(element.minValues, SchematicValidator.COMPONENT_MIN_VALUES));
-        componentForm.addControl('maxValue', this.fb.control<number | undefined>(element.maxValues, SchematicValidator.COMPONENT_MAX_VALUES));
+        componentForm.addControl('minValues', this.fb.control<number | undefined>(element.minValues, SchematicValidator.COMPONENT_MIN_VALUES));
+        componentForm.addControl('maxValues', this.fb.control<number | undefined>(element.maxValues, SchematicValidator.COMPONENT_MAX_VALUES));
         break;
       }
       case SchematicComponentKind.SCHEMATIC: {
