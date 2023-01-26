@@ -13,8 +13,11 @@
 [![Twitter URL](https://img.shields.io/twitter/url?label=Share%20on%20Twitter&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2FLessify%2Flocaless)](https://twitter.com/intent/tweet?text=Easy%20way%20to%20manage%20your%20app%20localisation&url=https://github.com/Lessify/localess&hashtags=i18n,internationalization,localization)
 ![Twitter Follow](https://img.shields.io/twitter/follow/Lessifyio?style=for-the-badge)
 
-The **Localess** it is a translation management tool with Artificial Intelligence integration.
-The application is design to be deployed in **Firebase**. 
+**Localess** is a powerful translation management tool and content management system built using **Angular** and **Firebase**. 
+With **Localess**, you can easily manage and translate your website or app content into multiple languages, and it uses Artificial Intelligence to translate faster. 
+The user-friendly interface makes it easy to navigate and the Firebase integration ensures that your translations are stored securely and can be easily accessed from anywhere. 
+Whether you're a developer looking to expand your app's reach or a business owner looking to expand your online presence in new markets, 
+**Localess** is the perfect solution for your localization needs.
 
 **Facts**
 
