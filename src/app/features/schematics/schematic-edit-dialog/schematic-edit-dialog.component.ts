@@ -136,7 +136,7 @@ export class SchematicEditDialogComponent implements OnInit {
       }
       case SchematicComponentKind.OPTION: {
         componentForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchematicValidator.COMPONENT_TRANSLATABLE))
-        const options: FormArray = this.fb.array<SchematicComponentOptionSelectable>([]);
+        const options: FormArray = this.fb.array<SchematicComponentOptionSelectable>([], SchematicValidator.COMPONENT_OPTIONS);
         element.options.forEach(it => options.push(this.generateOptionForm(it)))
         componentForm.addControl('options', options)
 
@@ -144,7 +144,7 @@ export class SchematicEditDialogComponent implements OnInit {
       }
       case SchematicComponentKind.OPTIONS: {
         componentForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchematicValidator.COMPONENT_TRANSLATABLE))
-        const options: FormArray = this.fb.array<SchematicComponentOptionSelectable>([]);
+        const options: FormArray = this.fb.array<SchematicComponentOptionSelectable>([], SchematicValidator.COMPONENT_OPTIONS);
         element.options.forEach(it => options.push(this.generateOptionForm(it)))
         componentForm.addControl('options', options)
         componentForm.addControl('minValues', this.fb.control<number | undefined>(element.minValues, SchematicValidator.COMPONENT_MIN_VALUES));

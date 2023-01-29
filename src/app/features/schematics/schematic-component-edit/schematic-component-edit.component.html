@@ -81,25 +81,65 @@
 
     <!--Option and Options-->
     <ng-container *ngIf="['OPTION', 'OPTIONS'].includes(form.value.kind)">
-      Options
-      <div formArrayName="options">
-        <ng-container *ngFor="let option of form.controls['options']?.controls; index as i">
-          {{i}}
-        </ng-container>
-      </div>
-    </ng-container>
 
-    <ng-container *ngIf="['OPTIONS'].includes(form.value.kind)">
-      <mat-form-field appearance="outline">
-        <mat-label>Min Values</mat-label>
-        <input matInput type="number" formControlName="minValues" autocomplete="off"/>
-        <mat-error *ngIf="form.controls['minValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Max Values</mat-label>
-        <input matInput type="number" formControlName="maxValues" autocomplete="off"/>
-        <mat-error *ngIf="form.controls['maxValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
-      </mat-form-field>
+      <mat-card class="ll-not-shadow">
+        <mat-card-header>
+          <mat-card-title-group>
+            <mat-card-title>
+              Options
+            </mat-card-title>
+            <button mat-icon-button>
+              <mat-icon>add</mat-icon>
+            </button>
+          </mat-card-title-group>
+        </mat-card-header>
+        <mat-card-content formArrayName="options">
+          <ng-container *ngFor="let option of options?.controls; index as idx">
+            <ng-container [formGroupName]="idx">
+              <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+                <input matInput type="text" formControlName="name" autocomplete="off"/>
+                <mat-hint align="end">{{option.value.name?.length || 0}}/30</mat-hint>
+                <mat-error *ngIf="option.controls['name']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Value</mat-label>
+                <input matInput type="text" formControlName="value" autocomplete="off"/>
+                <mat-hint align="end">{{option.value.value?.length || 0}}/30</mat-hint>
+                <mat-error *ngIf="option.controls['value']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+              </mat-form-field>
+            </ng-container>
+          </ng-container>
+          <mat-nav-list class="ll-mat-nav-list-gap">
+            <!--<mat-list-item *ngFor="let item of data[component.name]" (click)="navigationTo(item._id, component.name, item.schematic)">
+              <mat-icon matListItemIcon matTooltip="Drag and drop feature will come later">drag_handle</mat-icon>
+              <span matListItemTitle *ngIf="schematicMapByName.get(item.schematic) as sch">{{sch.displayName || sch.name}}</span>
+              <span matListItemLine>{{item._id}}</span>
+              <span matListItemMeta>
+                  <button mat-icon-button (click)="removeSchematic(component, item._id)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                  <mat-icon>navigate_next</mat-icon>
+                </span>
+            </mat-list-item>-->
+
+          </mat-nav-list>
+        </mat-card-content>
+      </mat-card>
+
+      <ng-container *ngIf="['OPTIONS'].includes(form.value.kind)">
+        <mat-form-field appearance="outline">
+          <mat-label>Min Values</mat-label>
+          <input matInput type="number" formControlName="minValues" autocomplete="off"/>
+          <mat-error *ngIf="form.controls['minValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Max Values</mat-label>
+          <input matInput type="number" formControlName="maxValues" autocomplete="off"/>
+          <mat-error *ngIf="form.controls['maxValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+
     </ng-container>
 
     <!--SCHEMATIC-->

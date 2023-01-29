@@ -61,6 +61,17 @@ export class SchematicComponentEditComponent implements OnInit {
     return this.form.controls['options'] as FormArray<FormGroup>;
   }
 
+  optionControlAt(index: number, controlName: string): AbstractControl | undefined {
+    return this.options?.at(index)?.controls[controlName]
+  }
+
+  generateOptionForm(): FormGroup {
+    return this.fb.group({
+      name: this.fb.control('', SchematicValidator.COMPONENT_OPTION_NAME),
+      value: this.fb.control('', SchematicValidator.COMPONENT_OPTION_VALUE),
+    })
+  }
+
   selectComponentKind(event: MatSelectChange): void {
     const value: string = event.value;
     this.selectedComponentKind = this.componentKindDescriptions[value];
@@ -176,7 +187,9 @@ export class SchematicComponentEditComponent implements OnInit {
       case SchematicComponentKind.OPTION: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchematicValidator.COMPONENT_TRANSLATABLE))
-        this.form.addControl('options', this.fb.array<SchematicComponentOptionSelectable>([]))
+        const options: FormArray = this.fb.array<SchematicComponentOptionSelectable>([], SchematicValidator.COMPONENT_OPTIONS)
+        options.push(this.generateOptionForm())
+        this.form.addControl('options', options)
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -194,7 +207,9 @@ export class SchematicComponentEditComponent implements OnInit {
       case SchematicComponentKind.OPTIONS: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchematicValidator.COMPONENT_TRANSLATABLE))
-        this.form.addControl('options', this.fb.array<SchematicComponentOptionSelectable>([]))
+        const options: FormArray = this.fb.array<SchematicComponentOptionSelectable>([], SchematicValidator.COMPONENT_OPTIONS)
+        options.push(this.generateOptionForm())
+        this.form.addControl('options', options)
         this.form.addControl('minValues', this.fb.control<number | undefined>(undefined, SchematicValidator.COMPONENT_MIN_VALUES));
         this.form.addControl('maxValues', this.fb.control<number | undefined>(undefined, SchematicValidator.COMPONENT_MAX_VALUES));
         // REMOVE

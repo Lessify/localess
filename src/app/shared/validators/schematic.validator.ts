@@ -71,17 +71,21 @@ export class SchematicValidator {
   public static COMPONENT_MAX_LENGTH: ValidatorFn[] = [
   ];
 
+  public static COMPONENT_OPTIONS: ValidatorFn[] = [
+    Validators.required,
+  ];
+
   public static COMPONENT_OPTION_NAME: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpaceAround,
-    Validators.minLength(3),
+    Validators.minLength(1),
     Validators.maxLength(30)
   ];
 
   public static COMPONENT_OPTION_VALUE: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpaceAround,
-    Validators.minLength(3),
+    Validators.minLength(1),
     Validators.maxLength(30)
   ];
 
