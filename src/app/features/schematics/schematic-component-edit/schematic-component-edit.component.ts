@@ -61,8 +61,8 @@ export class SchematicComponentEditComponent implements OnInit {
     return this.form.controls['options'] as FormArray<FormGroup>;
   }
 
-  optionControlAt(index: number, controlName: string): AbstractControl | undefined {
-    return this.options?.at(index)?.controls[controlName]
+  addOptionForm(): void{
+    this.options?.push(this.generateOptionForm())
   }
 
   generateOptionForm(): FormGroup {
