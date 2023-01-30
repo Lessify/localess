@@ -1,11 +1,7 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input, OnInit} from '@angular/core';
-import {AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord} from '@angular/forms';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {SchematicValidator} from '@shared/validators/schematic.validator';
-import {
-  Schematic,
-  SchematicComponentKind,
-  SchematicComponentOptionSelectable
-} from '@shared/models/schematic.model';
+import {Schematic, SchematicComponentKind, SchematicComponentOptionSelectable} from '@shared/models/schematic.model';
 import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';
@@ -61,8 +57,12 @@ export class SchematicComponentEditComponent implements OnInit {
     return this.form.controls['options'] as FormArray<FormGroup>;
   }
 
-  addOptionForm(): void{
+  addOptionForm(): void {
     this.options?.push(this.generateOptionForm())
+  }
+
+  removeOptionForm(idx: number): void {
+    this.options?.removeAt(idx)
   }
 
   generateOptionForm(): FormGroup {

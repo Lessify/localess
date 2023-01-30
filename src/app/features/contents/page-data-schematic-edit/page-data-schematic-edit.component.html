@@ -13,7 +13,8 @@
                  autocomplete="off"/>
           <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
+          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}
+            /{{component.maxLength}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
@@ -28,7 +29,8 @@
                     autocomplete="off"></textarea>
           <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}/{{component.maxLength}}</mat-hint>
+          <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}
+            /{{component.maxLength}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
@@ -91,8 +93,41 @@
         &nbsp;
         <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
         <br/>
-        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
+        <mat-hint *ngIf="component.description"
+                  style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
         <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'OPTION'">
+        <mat-form-field appearance="outline">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <mat-select [formControlName]="component.name"
+                      [required]="component.required">
+            <mat-option *ngIf="!component.required">-- None --</mat-option>
+            <mat-option *ngFor="let option of component.options" [value]="option.value">
+              {{option.name}}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'OPTIONS'">
+        <mat-form-field appearance="outline">
+          <mat-label>{{component.displayName || component.name}}</mat-label>
+          <mat-select [formControlName]="component.name"
+                      [required]="component.required"
+                      multiple>
+            <mat-option *ngFor="let option of component.options" [value]="option.value">
+              {{option.name}}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+          <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
       </ng-container>
 
       <ng-container *ngSwitchCase="'SCHEMATIC'">
@@ -106,7 +141,8 @@
                 <mat-icon>add_circle</mat-icon>
               </button>
               <mat-menu #schematicsMenu="matMenu">
-                <button mat-menu-item *ngFor="let sch of filterSchematic(component.schematics)" (click)="addSchematic(component, sch)">
+                <button mat-menu-item *ngFor="let sch of filterSchematic(component.schematics)"
+                        (click)="addSchematic(component, sch)">
                   {{sch.displayName || sch.name}}
                 </button>
               </mat-menu>
@@ -116,9 +152,11 @@
           <mat-divider></mat-divider>
           <mat-card-content>
             <mat-nav-list class="ll-mat-nav-list-gap">
-              <mat-list-item *ngFor="let item of data[component.name]" (click)="navigationTo(item._id, component.name, item.schematic)">
+              <mat-list-item *ngFor="let item of data[component.name]"
+                             (click)="navigationTo(item._id, component.name, item.schematic)">
                 <mat-icon matListItemIcon matTooltip="Drag and drop feature will come later">drag_handle</mat-icon>
-                <span matListItemTitle *ngIf="schematicMapByName.get(item.schematic) as sch">{{sch.displayName || sch.name}}</span>
+                <span matListItemTitle
+                      *ngIf="schematicMapByName.get(item.schematic) as sch">{{sch.displayName || sch.name}}</span>
                 <span matListItemLine>{{item._id}}</span>
                 <span matListItemMeta>
                   <button mat-icon-button (click)="removeSchematic(component, item._id)">
@@ -132,7 +170,8 @@
           </mat-card-content>
         </mat-card>
 
-        <mat-hint *ngIf="component.description" style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
+        <mat-hint *ngIf="component.description"
+                  style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
       </ng-container>
 
     </ng-container>
