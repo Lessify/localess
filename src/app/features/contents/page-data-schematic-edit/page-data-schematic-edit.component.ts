@@ -215,6 +215,26 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
           }, validators))
           break;
         }
+        case SchematicComponentKind.OPTION: {
+          this.form.setControl(component.name, this.fb.control<string | undefined>({
+            value: undefined,
+            disabled: disabled
+          }, validators))
+          break;
+        }
+        case SchematicComponentKind.OPTIONS: {
+          if (component.minValues) {
+            validators.push(Validators.minLength(component.minValues))
+          }
+          if (component.maxValues) {
+            validators.push(Validators.maxLength(component.maxValues))
+          }
+          this.form.setControl(component.name, this.fb.control<string | undefined>({
+            value: undefined,
+            disabled: disabled
+          }, validators))
+          break;
+        }
       }
     }
   }

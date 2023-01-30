@@ -4,12 +4,12 @@
     <mat-form-field appearance="outline">
       <mat-label>Email</mat-label>
       <input matInput type="email" formControlName="email" required autocomplete="off"/>
-      <mat-error *ngIf="form.controls['email'].errors">{{fe.controlError(form.controls['email'])}}</mat-error>
+      <mat-error *ngIf="form.controls['email'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>Password</mat-label>
       <input matInput type="password" formControlName="password" required autocomplete="off"/>
-      <mat-error *ngIf="form.controls['password'].errors">{{fe.controlError(form.controls['password'])}}</mat-error>
+      <mat-error *ngIf="form.controls['password'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>Display Name</mat-label>

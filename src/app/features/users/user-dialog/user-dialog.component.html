@@ -8,7 +8,7 @@
         <mat-option value="custom">Custom</mat-option>
         <mat-option value="admin">Admin</mat-option>
       </mat-select>
-      <mat-error *ngIf="form.controls['role'].errors">{{fe.controlError(form.controls['role'])}}</mat-error>
+      <mat-error *ngIf="form.controls['role'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
 
     <ng-container *ngIf="form.value.role === 'custom'">

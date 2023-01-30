@@ -57,6 +57,13 @@ export class SchematicValidator {
   public static COMPONENT_MAX_VALUE: ValidatorFn[] = [
   ];
 
+  public static COMPONENT_MIN_VALUES: ValidatorFn[] = [
+    Validators.min(0)
+  ];
+
+  public static COMPONENT_MAX_VALUES: ValidatorFn[] = [
+  ];
+
   public static COMPONENT_MIN_LENGTH: ValidatorFn[] = [
     Validators.min(0)
   ];
@@ -64,7 +71,26 @@ export class SchematicValidator {
   public static COMPONENT_MAX_LENGTH: ValidatorFn[] = [
   ];
 
+  public static COMPONENT_OPTIONS: ValidatorFn[] = [
+    Validators.required,
+  ];
+
+  public static COMPONENT_OPTION_NAME: ValidatorFn[] = [
+    Validators.required,
+    CommonValidator.noSpaceAround,
+    Validators.minLength(1),
+    Validators.maxLength(30)
+  ];
+
+  public static COMPONENT_OPTION_VALUE: ValidatorFn[] = [
+    Validators.required,
+    CommonValidator.noSpaceAround,
+    Validators.minLength(1),
+    Validators.maxLength(30)
+  ];
+
   public static COMPONENT_SCHEMATIC: ValidatorFn[] = [
+    Validators.required,
   ];
 
 }

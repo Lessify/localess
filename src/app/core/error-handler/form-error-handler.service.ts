@@ -7,10 +7,6 @@ import {CommonPattern} from '@shared/validators/common.validator';
 })
 export class FormErrorHandlerService {
 
-  controlError(control?: AbstractControl): string | undefined | null {
-    return this.errors(control?.errors)
-  }
-
   errors(errors: ValidationErrors | null | undefined): string | undefined | null {
     if (errors) {
       if (errors['required']) {

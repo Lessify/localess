@@ -9,7 +9,7 @@
           {{locale.name}} ({{locale.id}})
         </mat-option>
       </mat-autocomplete>
-      <mat-error *ngIf="form.controls['locale'].errors">{{fe.controlError(form.controls['locale'])}}</mat-error>
+      <mat-error *ngIf="form.controls['locale'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
   </form>
 </mat-dialog-content>
