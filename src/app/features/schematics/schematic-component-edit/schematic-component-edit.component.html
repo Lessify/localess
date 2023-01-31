@@ -18,8 +18,8 @@
           {{selectedComponentKind.name}}
         </mat-select-trigger>
         <mat-option *ngFor="let kind of componentKinds" [value]="kind">
-          <mat-icon>{{componentKindDescriptions[kind].icon}}</mat-icon>
-          {{componentKindDescriptions[kind].name}}
+          <mat-icon>{{schematicComponentKindDescriptions[kind].icon}}</mat-icon>
+          {{schematicComponentKindDescriptions[kind].name}}
         </mat-option>
       </mat-select>
       <mat-error *ngIf="form.controls['kind']?.errors as errors">{{fe.errors(errors)}}</mat-error>

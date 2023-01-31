@@ -1,15 +1,10 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {SchematicValidator} from '@shared/validators/schematic.validator';
-import {Schematic, SchematicComponentKind, SchematicComponentOptionSelectable} from '@shared/models/schematic.model';
+import {Schematic, SchematicComponentKind, schematicComponentKindDescriptions, SchematicComponentOptionSelectable} from '@shared/models/schematic.model';
 import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';
-
-interface ComponentKindDescription {
-  name: string
-  icon: string
-}
 
 @Component({
   selector: 'll-schematic-component-edit',
@@ -26,20 +21,8 @@ export class SchematicComponentEditComponent implements OnInit {
   componentKinds = Object.keys(SchematicComponentKind)
   isTest = environment.test
 
-  componentKindDescriptions: Record<string, ComponentKindDescription> = {
-    'TEXT': {name: 'Text', icon: 'title'},
-    'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
-    'NUMBER': {name: 'Number', icon: 'pin'},
-    'COLOR': {name: 'Color', icon: 'colorize'},
-    'DATE': {name: 'Date', icon: 'event'},
-    'DATETIME': {name: 'Date and Time', icon: 'schedule'},
-    'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
-    'OPTION': {name: 'Single Option', icon: 'list'},
-    'OPTIONS': {name: 'Multiple Options', icon: 'list'},
-    'SCHEMATIC': {name: 'Schematic (Beta)', icon: 'polyline'},
-  }
-
-  selectedComponentKind: ComponentKindDescription = this.componentKindDescriptions[SchematicComponentKind.TEXT];
+  schematicComponentKindDescriptions = schematicComponentKindDescriptions;
+  selectedComponentKind = this.schematicComponentKindDescriptions[SchematicComponentKind.TEXT];
   nameReadonly = true;
 
   constructor(
@@ -50,7 +33,7 @@ export class SchematicComponentEditComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.selectedComponentKind = this.componentKindDescriptions[this.form.value.kind]
+    this.selectedComponentKind = this.schematicComponentKindDescriptions[this.form.value.kind]
   }
 
   get options(): FormArray<FormGroup> | undefined {
@@ -74,7 +57,7 @@ export class SchematicComponentEditComponent implements OnInit {
 
   selectComponentKind(event: MatSelectChange): void {
     const value: string = event.value;
-    this.selectedComponentKind = this.componentKindDescriptions[value];
+    this.selectedComponentKind = this.schematicComponentKindDescriptions[value];
     switch (value) {
       case SchematicComponentKind.TEXT:
       case SchematicComponentKind.TEXTAREA: {

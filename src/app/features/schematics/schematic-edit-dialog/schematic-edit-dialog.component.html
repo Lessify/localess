@@ -38,7 +38,7 @@
                          (click)="selectComponent(index)"
                          [class.active]="index === selectedComponentIdx"
                          [class.invalid]="component.invalid">
-            <mat-icon matListItemIcon>{{componentKindDescriptions[component.value.kind].icon}}</mat-icon>
+            <mat-icon matListItemIcon>{{schematicComponentKindDescriptions[component.value.kind].icon}}</mat-icon>
             <span matListItemTitle>{{component.value.name}}</span>
             <span matListItemLine>{{component.value.displayName}}</span>
             <span matListItemMeta>
