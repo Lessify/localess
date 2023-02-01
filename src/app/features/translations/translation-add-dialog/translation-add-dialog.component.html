@@ -1,13 +1,13 @@
 <h1 mat-dialog-title>Add Translation</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Name</mat-label>
       <input matInput type="text" #name formControlName="name" required autocomplete="off"/>
       <mat-hint align="end">{{name.value?.length || 0}}/150</mat-hint>
       <mat-error *ngIf="form.controls['name'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
-    <mat-form-field *ngIf="false" appearance="outline">
+    <mat-form-field *ngIf="false">
       <mat-label>Type</mat-label>
       <mat-select formControlName="type" required>
         <mat-option *ngFor="let type of translationTypes" [value]="type">
@@ -16,7 +16,7 @@
       </mat-select>
       <mat-error *ngIf="form.controls['type'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Description</mat-label>
       <textarea matInput #description
                 class="cdk-textarea-autosize"
@@ -24,7 +24,7 @@
       <mat-hint align="end">{{description.value?.length || 0}}/250</mat-hint>
       <mat-error *ngIf="form.controls['description'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Value</mat-label>
       <textarea matInput #defaultValue
                 class="cdk-textarea-autosize"
@@ -33,7 +33,7 @@
       <mat-error *ngIf="form.controls['value'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" >
+    <mat-form-field >
       <mat-chip-grid #chipList aria-label="Label Selection">
         <mat-chip-row
           *ngFor="let label of form.controls['labels'].value"

@@ -6,6 +6,7 @@ import {
 } from '@shared/models/schematic.model';
 import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {ContentError, ContentPageData} from '@shared/models/content.model';
+import {SchematicValidator} from '@shared/validators/schematic.validator';
 
 @Injectable()
 export class ContentHelperService {
@@ -154,6 +155,13 @@ export class ContentHelperService {
           if (component.maxValues) {
             validators.push(Validators.maxLength(component.maxValues))
           }
+          form.setControl(component.name, this.fb.control<string | undefined>({
+            value: undefined,
+            disabled: disabled
+          }, validators))
+          break;
+        }
+        case SchematicComponentKind.LINK: {
           form.setControl(component.name, this.fb.control<string | undefined>({
             value: undefined,
             disabled: disabled

@@ -1,7 +1,7 @@
 <h1 mat-dialog-title>Locale Form</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label> Locale </mat-label>
       <input matInput type="text" formControlName="locale" required [matAutocomplete]="auto"/>
       <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayLocale">

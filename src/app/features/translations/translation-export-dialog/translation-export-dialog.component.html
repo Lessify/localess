@@ -1,7 +1,7 @@
 <h1 mat-dialog-title>Translations Export</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Type</mat-label>
       <mat-select formControlName="kind" required>
         <mat-option *ngFor="let kind of exportKinds" [value]="kind.key">
@@ -10,7 +10,7 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field *ngIf="form.value.kind === 'FLAT'" appearance="outline">
+    <mat-form-field *ngIf="form.value.kind === 'FLAT'">
       <mat-label>Type</mat-label>
       <mat-select formControlName="locale" required>
         <mat-option *ngFor="let locale of data.locales" [value]="locale.id">
@@ -19,14 +19,14 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>From Date</mat-label>
       <input matInput [matDatepicker]="picker" readonly [max]="today"
              (click)="picker.open()" (dateChange)="dateChange($event)">
-      <mat-datepicker-toggle matSuffix (click)="picker.select(null)">
+      <mat-datepicker-toggle matIconSuffix (click)="picker.select(null)">
         <mat-icon matDatepickerToggleIcon>clear</mat-icon>
       </mat-datepicker-toggle>
-      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
       <mat-datepicker #picker></mat-datepicker>
     </mat-form-field>
   </form>

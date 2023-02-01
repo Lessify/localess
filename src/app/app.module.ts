@@ -27,6 +27,7 @@ import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {getFunctions, provideFunctions} from '@angular/fire/functions';
 import {getPerformance, providePerformance} from '@angular/fire/performance';
+import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
 
 let resolvePersistenceEnabled: (enabled: boolean) => void;
 
@@ -93,6 +94,7 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
     })
   ],
   providers: [
+    {provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: {appearance: 'outline'}},
     {
       provide: MAT_PAGINATOR_DEFAULT_OPTIONS,
       useValue: {

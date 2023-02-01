@@ -1,16 +1,16 @@
 <mat-card appearance="outlined">
   <form [formGroup]="form">
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Name</mat-label>
       <input matInput type="text" formControlName="name" [readonly]="nameReadonly" autocomplete="off"/>
-      <button mat-icon-button matSuffix (click)="nameReadonly = !nameReadonly">
+      <button mat-icon-button matIconSuffix (click)="nameReadonly = !nameReadonly">
         <mat-icon>{{nameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
       </button>
       <mat-hint>Will be used in JSON structure.</mat-hint>
       <mat-hint align="end">{{form.value.name.length || 0}}/50</mat-hint>
       <mat-error *ngIf="form.controls['name']?.errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Kind</mat-label>
       <mat-select formControlName="kind" (selectionChange)="selectComponentKind($event)">
         <mat-select-trigger>
@@ -25,7 +25,7 @@
       <mat-error *ngIf="form.controls['kind']?.errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Display Name</mat-label>
       <input matInput type="text" formControlName="displayName" autocomplete="off"/>
       <mat-hint align="end">{{form.value.displayName?.length || 0}}/50</mat-hint>
@@ -36,17 +36,17 @@
     <br/>
 
     <ng-container
-      *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(form.value.kind)">
+      *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS', 'LINK'].includes(form.value.kind)">
       <mat-checkbox formControlName="translatable">Translatable</mat-checkbox>
     </ng-container>
 
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Description</mat-label>
       <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>
       <mat-hint align="end">{{form.value.description?.length || 0}}/250</mat-hint>
       <mat-error *ngIf="form.controls['description']?.errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Default Value</mat-label>
       <textarea matInput formControlName="defaultValue" class="cdk-textarea-autosize"></textarea>
       <mat-hint align="end">{{form.value.defaultValue?.length || 0}}/250</mat-hint>
@@ -55,12 +55,12 @@
 
     <!--Number-->
     <ng-container *ngIf="form.value.kind === 'NUMBER'">
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>Min Value</mat-label>
         <input matInput type="number" formControlName="minValue" autocomplete="off"/>
         <mat-error *ngIf="form.controls['minValue']?.errors as errors">{{fe.errors(errors)}}</mat-error>
       </mat-form-field>
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>Max Value</mat-label>
         <input matInput type="number" formControlName="maxValue" autocomplete="off"/>
         <mat-error *ngIf="form.controls['maxValue']?.errors as errors">{{fe.errors(errors)}}</mat-error>
@@ -69,12 +69,12 @@
 
     <!--Text and Textarea-->
     <ng-container *ngIf="['TEXT','TEXTAREA'].includes(form.value.kind)">
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>Min Length</mat-label>
         <input matInput type="number" formControlName="minLength" autocomplete="off"/>
         <mat-error *ngIf="form.controls['minLength']?.errors as errors">{{fe.errors(errors)}}</mat-error>
       </mat-form-field>
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>Max Length</mat-label>
         <input matInput type="number" formControlName="maxLength" autocomplete="off"/>
         <mat-error *ngIf="form.controls['maxLength']?.errors as errors">{{fe.errors(errors)}}</mat-error>
@@ -109,13 +109,13 @@
                 </mat-card-title-group>
               </mat-card-header>
               <mat-card-content>
-                <mat-form-field appearance="outline">
+                <mat-form-field>
                   <mat-label>Name</mat-label>
                   <input matInput type="text" formControlName="name" autocomplete="off"/>
                   <mat-hint align="end">{{option.value.name?.length || 0}}/30</mat-hint>
                   <mat-error *ngIf="option.controls['name']?.errors as errors">{{fe.errors(errors)}}</mat-error>
                 </mat-form-field>
-                <mat-form-field appearance="outline">
+                <mat-form-field>
                   <mat-label>Value</mat-label>
                   <input matInput type="text" formControlName="value" autocomplete="off"/>
                   <mat-hint align="end">{{option.value.value?.length || 0}}/30</mat-hint>
@@ -128,12 +128,12 @@
       </mat-card>
 
       <ng-container *ngIf="['OPTIONS'].includes(form.value.kind)">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>Min Values</mat-label>
           <input matInput type="number" formControlName="minValues" autocomplete="off"/>
           <mat-error *ngIf="form.controls['minValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>Max Values</mat-label>
           <input matInput type="number" formControlName="maxValues" autocomplete="off"/>
           <mat-error *ngIf="form.controls['maxValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
@@ -144,7 +144,7 @@
 
     <!--SCHEMATIC-->
     <ng-container *ngIf="form.value.kind === 'SCHEMATIC'">
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>Schematic</mat-label>
         <mat-select formControlName="schematics" multiple>
           <mat-option *ngFor="let schematic of schematics" [value]="schematic.id">

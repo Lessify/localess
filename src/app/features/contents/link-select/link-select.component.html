@@ -1,0 +1,25 @@
+<form *ngIf="form" [formGroup]="form">
+  <mat-form-field>
+    <mat-label>{{component.displayName || component.name}}</mat-label>
+    <button mat-icon-button matIconPrefix [matMenuTriggerFor]="linkMenu">
+      <mat-icon>{{form.value.type === 'internal'? 'link' : 'public'}}</mat-icon>
+    </button>
+    <mat-menu #linkMenu="matMenu">
+      <button mat-menu-item (click)="onTypeChange('external')">
+        <mat-icon>public</mat-icon>
+        <span>External URL</span>
+      </button>
+      <button mat-menu-item (click)="onTypeChange('internal')">
+        <mat-icon>link</mat-icon>
+        <span>Internal URL</span>
+      </button>
+    </mat-menu>
+    <input matInput type="url"
+           formControlName="url"
+           [required]="component.required"
+           autocomplete="off"/>
+    <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+    <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+    <mat-error *ngIf="form.controls['url'].errors as errors">{{fe.errors(errors)}}</mat-error>
+  </mat-form-field>
+</form>

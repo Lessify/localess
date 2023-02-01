@@ -235,6 +235,18 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
           }, validators))
           break;
         }
+        case SchematicComponentKind.LINK: {
+          const link = this.fb.group({
+            kind: this.fb.control('LINK'),
+            type: this.fb.control<'external' | 'internal'>('external'),
+            url: this.fb.control<string | undefined>({
+              value: undefined,
+              disabled: disabled
+            }, validators)
+          })
+          this.form.setControl(component.name, link)
+          break;
+        }
       }
     }
   }

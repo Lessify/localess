@@ -16,7 +16,17 @@ export interface Schematic {
   updatedAt: Timestamp;
 }
 
-export type SchematicComponent = SchematicComponentText | SchematicComponentTextarea | SchematicComponentNumber | SchematicComponentColor | SchematicComponentDate | SchematicComponentDateTime | SchematicComponentBoolean | SchematicComponentSchematic | SchematicComponentOption | SchematicComponentOptions;
+export type SchematicComponent = SchematicComponentText
+  | SchematicComponentTextarea
+  | SchematicComponentNumber
+  | SchematicComponentColor
+  | SchematicComponentDate
+  | SchematicComponentDateTime
+  | SchematicComponentBoolean
+  | SchematicComponentSchematic
+  | SchematicComponentOption
+  | SchematicComponentOptions
+  | SchematicComponentLink;
 
 export enum SchematicComponentKind {
   TEXT = 'TEXT',
@@ -117,7 +127,7 @@ export interface SchematicComponentOptions extends SchematicComponentBase {
   maxValues?: number;
 }
 
-export interface Link extends SchematicComponentBase {
+export interface SchematicComponentLink extends SchematicComponentBase {
   kind: SchematicComponentKind.LINK
 }
 

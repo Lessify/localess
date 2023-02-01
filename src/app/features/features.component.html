@@ -14,7 +14,7 @@
               <mat-icon>person</mat-icon>
               <span>Me</span>
             </button>
-            <mat-divider></mat-divider>
+            <mat-divider/>
             <button mat-menu-item (click)="onLogoutClick()">
               <mat-icon>logout</mat-icon>
               <span>Log Out</span>
@@ -22,7 +22,7 @@
           </mat-menu>
         </span>
       </div>
-      <mat-divider></mat-divider>
+      <mat-divider/>
       <mat-nav-list>
 
         <mat-list-item *ngIf="!selectedSpace" matRipple routerLink="/features/spaces">
@@ -43,7 +43,7 @@
               </button>
             </mat-menu>
           </mat-list-item>
-          <mat-divider></mat-divider>
+          <mat-divider/>
           <div mat-subheader>Spaces</div>
 
           <ng-container *ngFor="let item of userSideMenu">
@@ -54,7 +54,7 @@
           </ng-container>
         </ng-container>
 
-        <mat-divider></mat-divider>
+        <mat-divider/>
         <div mat-subheader>Admin</div>
         <ng-container *ngFor="let item of adminSideMenu">
           <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
@@ -63,14 +63,14 @@
           </mat-list-item>
         </ng-container>
 
-        <mat-divider></mat-divider>
+        <mat-divider/>
         <div mat-subheader>Community and Support <mat-icon>open_in_new</mat-icon></div>
         <mat-list-item *ngFor="let item of communitySideMenu" (click)="openNewTab(item.link)">
           <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
           <div matListItemTitle>{{item.label}}</div>
         </mat-list-item>
 
-        <mat-divider></mat-divider>
+        <mat-divider/>
         <div mat-subheader>Version : {{version}}</div>
       </mat-nav-list>
     </mat-sidenav>
