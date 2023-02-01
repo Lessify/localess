@@ -237,9 +237,9 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
         }
         case SchematicComponentKind.LINK: {
           const link = this.fb.group({
-            kind: this.fb.control('LINK'),
-            type: this.fb.control<'external' | 'internal'>('external'),
-            url: this.fb.control<string | undefined>({
+            kind: this.fb.control('LINK', Validators.required),
+            type: this.fb.control<'url' | 'content'>('url', Validators.required),
+            uri: this.fb.control<string | undefined>({
               value: undefined,
               disabled: disabled
             }, validators)

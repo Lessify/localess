@@ -7,7 +7,7 @@ import {
   doc,
   docData,
   DocumentReference,
-  Firestore,
+  Firestore, limit, orderBy,
   query,
   serverTimestamp,
   UpdateData,
@@ -21,7 +21,7 @@ import {
   Content,
   ContentFolderCreate,
   ContentFolderCreateFS,
-  ContentKind,
+  ContentKind, ContentPage,
   ContentPageCreate,
   ContentPageCreateFS,
   ContentPageData,
@@ -61,6 +61,26 @@ export class ContentService {
       .pipe(
         traceUntilFirst('Firestore:Contents:findAll'),
         map((it) => it as Content[])
+      );
+  }
+
+  findAllPagesByName(spaceId: string, name: string): Observable<ContentPage[]> {
+    const queryConstrains: QueryConstraint[] = [
+      where('kind', '==', ContentKind.PAGE),
+      where('name', '>=', name),
+      where('name', '<=', `${name}~`),
+      limit(20)
+    ]
+
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces/${spaceId}/contents`),
+        ...queryConstrains),
+      {idField: 'id'}
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:findAllPagesByName'),
+        map((it) => it as ContentPage[])
       );
   }
 

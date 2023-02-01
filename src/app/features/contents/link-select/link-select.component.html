@@ -2,24 +2,40 @@
   <mat-form-field>
     <mat-label>{{component.displayName || component.name}}</mat-label>
     <button mat-icon-button matIconPrefix [matMenuTriggerFor]="linkMenu">
-      <mat-icon>{{form.value.type === 'internal'? 'link' : 'public'}}</mat-icon>
+      <mat-icon>{{form.value.type === 'content'? 'link' : 'public'}}</mat-icon>
     </button>
     <mat-menu #linkMenu="matMenu">
-      <button mat-menu-item (click)="onTypeChange('external')">
+      <button mat-menu-item (click)="onTypeChange('url')">
         <mat-icon>public</mat-icon>
         <span>External URL</span>
       </button>
-      <button mat-menu-item (click)="onTypeChange('internal')">
+      <button mat-menu-item (click)="onTypeChange('content')">
         <mat-icon>link</mat-icon>
         <span>Internal URL</span>
       </button>
     </mat-menu>
-    <input matInput type="url"
-           formControlName="url"
-           [required]="component.required"
-           autocomplete="off"/>
+    <ng-container *ngIf="form.value.type === null || form.value.type === 'url'">
+      <input matInput type="url"
+             formControlName="uri"
+             [required]="component.required"
+             autocomplete="off"/>
+    </ng-container>
+    <ng-container *ngIf="form.value.type === 'content'">
+      <input matInput [required]="component.required"
+             [matAutocomplete]="auto"
+             [formControl]="searchCtrl">
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
+        <mat-option *ngFor="let link of filteredContent | async" [value]="link">
+          <span>{{link.name}}</span> |
+          <small>{{link.slug}}</small>
+        </mat-option>
+      </mat-autocomplete>
+    </ng-container>
+    <button *ngIf="form.value.type === 'content'" mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value == ''">
+      <mat-icon>clear</mat-icon>
+    </button>
     <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
     <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-    <mat-error *ngIf="form.controls['url'].errors as errors">{{fe.errors(errors)}}</mat-error>
+    <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
   </mat-form-field>
 </form>
