@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchematicComponent} from '@shared/models/schematic.model';
+import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
 import {ContentService} from '@shared/services/content.service';
 import {ContentPage} from '@shared/models/content.model';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
@@ -25,6 +25,7 @@ export class LinkSelectComponent implements OnInit {
   // Search
   searchCtrl: FormControl = new FormControl();
   filteredContent: Observable<ContentPage[]> = of([]);
+
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
@@ -34,6 +35,10 @@ export class LinkSelectComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (this.form?.value.kind === null || this.form?.value.type === null) {
+      this.form.patchValue({kind: SchematicComponentKind.LINK, type: 'url'})
+    }
+
     this.filteredContent = combineLatest([
       this.store.select(selectSpace)
         .pipe(
@@ -45,14 +50,14 @@ export class LinkSelectComponent implements OnInit {
           debounceTime(300)
         )
     ])
-    .pipe(
-      switchMap(([space, search]) => this.contentService.findAllPagesByName(space.id, search))
-    )
-
+      .pipe(
+        switchMap(([space, search]) => this.contentService.findAllPagesByName(space.id, search))
+      )
   }
 
   onTypeChange(type: string): void {
-    this.form?.patchValue({type})
+    this.form?.patchValue({uri: null, type})
+    this.searchCtrl.reset()
   }
 
   displayContent(content?: ContentPage): string {

@@ -4,7 +4,7 @@ import {
   SchematicComponent,
   SchematicComponentKind
 } from '@shared/models/schematic.model';
-import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {ContentError, ContentPageData} from '@shared/models/content.model';
 import {SchematicValidator} from '@shared/validators/schematic.validator';
 
@@ -33,13 +33,31 @@ export class ContentHelperService {
             const component = schematicComponentsMap.get(controlName);
             const control = form.controls[controlName];
             if (control && !control.valid) {
-              errors.push({
-                contentId: selectedContent._id,
-                schematic: schematic.displayName || schematic.name,
-                fieldName: controlName,
-                fieldDisplayName: component?.displayName,
-                errors: control.errors
-              })
+              if(control instanceof FormGroup) {
+                switch (control.value.kind) {
+                  case SchematicComponentKind.LINK: {
+                    errors.push({
+                      contentId: selectedContent._id,
+                      schematic: schematic.displayName || schematic.name,
+                      fieldName: controlName,
+                      fieldDisplayName: component?.displayName,
+                      errors: control.controls['uri'].errors
+                    })
+                    break;
+                  }
+                  default: {
+                    console.log(`Unknown KIND : ${control.value}` )
+                  }
+                }
+              } else {
+                errors.push({
+                  contentId: selectedContent._id,
+                  schematic: schematic.displayName || schematic.name,
+                  fieldName: controlName,
+                  fieldDisplayName: component?.displayName,
+                  errors: control.errors
+                })
+              }
             }
           }
         }
@@ -162,10 +180,15 @@ export class ContentHelperService {
           break;
         }
         case SchematicComponentKind.LINK: {
-          form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          const link = this.fb.group({
+            kind: this.fb.control('LINK', Validators.required),
+            type: this.fb.control<'url' | 'content'>('url', Validators.required),
+            uri: this.fb.control<string | undefined>({
+              value: undefined,
+              disabled: disabled
+            }, validators)
+          })
+          form.setControl(component.name, link)
           break;
         }
       }
