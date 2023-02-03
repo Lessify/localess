@@ -31,12 +31,15 @@ import {
 } from '@shared/models/content.model';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 import {getDocs, QueryConstraint, where, writeBatch} from '@firebase/firestore';
+import {ContentHelperService} from '@shared/services/content-helper.service';
+import {SchematicComponentKind} from '@shared/models/schematic.model';
 
 @Injectable()
 export class ContentService {
   constructor(
     private readonly firestore: Firestore,
     private readonly functions: Functions,
+    private readonly contentHelperService: ContentHelperService,
   ) {
   }
 
@@ -64,12 +67,26 @@ export class ContentService {
       );
   }
 
-  findAllPagesByName(spaceId: string, name: string): Observable<ContentPage[]> {
+  findAllPages(spaceId: string): Observable<ContentPage[]> {
+    const queryConstrains: QueryConstraint[] = [where('kind', '==', ContentKind.PAGE)]
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces/${spaceId}/contents`),
+        ...queryConstrains),
+      {idField: 'id'}
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:findAllPages'),
+        map((it) => it as ContentPage[])
+      );
+  }
+
+  findAllPagesByName(spaceId: string, name: string, max: number = 20): Observable<ContentPage[]> {
     const queryConstrains: QueryConstraint[] = [
       where('kind', '==', ContentKind.PAGE),
       where('name', '>=', name),
       where('name', '<=', `${name}~`),
-      limit(20)
+      limit(max)
     ]
 
     return collectionData(
@@ -153,9 +170,8 @@ export class ContentService {
   }
 
   updatePageData(spaceId: string, id: string, data: ContentPageData): Observable<void> {
-    ObjectUtils.clean(data);
     const update: UpdateData<ContentPageDataUpdateFS> = {
-      data: data,
+      data: this.contentHelperService.clone(data),
       updatedAt: serverTimestamp()
     }
 

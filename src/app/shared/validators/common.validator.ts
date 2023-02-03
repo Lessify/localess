@@ -71,7 +71,7 @@ export class CommonValidator {
       if (ownSkip && ownSkip === control.value) {
         return null;
       }
-      if (['_id', 'id', 'schematic'].some(it => it === control.value)) {
+      if (['_id', 'id', 'schematic', 'kind'].some(it => it === control.value)) {
         return {reservedName: true}
       }
       if (names.some(it => it === control.value)) {
@@ -84,5 +84,6 @@ export class CommonValidator {
 
 export enum CommonPattern {
   JSON_NAME = '[a-z]+[a-zA-Z0-9_]+',
-  URL_SLUG = '[a-zA-Z0-9-_]+'
+  URL_SLUG = '[a-zA-Z0-9-_]+',
+  URL = ''//(https?://)?([\\\\da-z.-]+)\\\\.([a-z.]{2,6})[/\\\\w .-]*/?'
 }

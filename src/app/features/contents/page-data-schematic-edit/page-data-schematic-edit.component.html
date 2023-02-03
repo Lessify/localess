@@ -131,7 +131,10 @@
       </ng-container>
 
       <ng-container *ngSwitchCase="'LINK'">
-        <ll-link-select *ngIf="form.controls[component.name]" [form]="form.controls[component.name]" [component]="component"/>
+        <ll-link-select *ngIf="form.controls[component.name]"
+                        [form]="form.controls[component.name]"
+                        [component]="component"
+                        [pages]="pages"/>
       </ng-container>
 
       <ng-container *ngSwitchCase="'SCHEMATIC'">

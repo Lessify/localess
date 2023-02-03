@@ -17,13 +17,14 @@ import {
   SchematicComponentKind
 } from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {ContentPageData} from '@shared/models/content.model';
+import {ContentPage, ContentPageData} from '@shared/models/content.model';
 import {takeUntil} from 'rxjs/operators';
 import {debounceTime, Subject} from 'rxjs';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
 import {SchematicSelectChange} from './page-data-schematic-edit.model';
 import {ContentHelperService} from '@shared/services/content-helper.service';
+import {CommonPattern} from '@shared/validators/common.validator';
 
 @Component({
   selector: 'll-page-data-schematic-edit',
@@ -40,6 +41,7 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
 
   @Input() data: ContentPageData = {_id: '', schematic: ''};
   @Input() schematics: Schematic[] = [];
+  @Input() pages: ContentPage[] = [];
   @Input() locale: string = 'en';
   @Input() localeFallback: string = 'en';
   @Output() schematicChange = new EventEmitter<SchematicSelectChange>();
@@ -236,6 +238,7 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
           break;
         }
         case SchematicComponentKind.LINK: {
+          validators.push(Validators.pattern(CommonPattern.URL))
           const link = this.fb.group({
             kind: this.fb.control('LINK', Validators.required),
             type: this.fb.control<'url' | 'content'>('url', Validators.required),

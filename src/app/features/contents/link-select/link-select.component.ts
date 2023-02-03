@@ -9,7 +9,8 @@ import {combineLatest, debounceTime, Observable, of, startWith, switchMap} from 
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
-import {filter} from 'rxjs/operators';
+import {filter, map} from 'rxjs/operators';
+import {environment} from '../../../../environments/environment';
 
 @Component({
   selector: 'll-link-select',
@@ -18,9 +19,10 @@ import {filter} from 'rxjs/operators';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LinkSelectComponent implements OnInit {
-
+  isTest = environment.test
   @Input() form?: FormGroup;
   @Input() component?: SchematicComponent;
+  @Input() pages: ContentPage[] = []
 
   // Search
   searchCtrl: FormControl = new FormControl();
@@ -29,30 +31,24 @@ export class LinkSelectComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    private readonly contentService: ContentService,
-    private readonly store: Store<AppState>,
   ) {
   }
 
   ngOnInit(): void {
+    // Data init in case everything is null
     if (this.form?.value.kind === null || this.form?.value.type === null) {
       this.form.patchValue({kind: SchematicComponentKind.LINK, type: 'url'})
     }
+    if (this.form?.value.type === 'content' && this.form?.value.uri !== null) {
+      this.searchCtrl.patchValue(this.pages.find(it => it.id === this.form?.value.uri))
+    }
 
-    this.filteredContent = combineLatest([
-      this.store.select(selectSpace)
-        .pipe(
-          filter(it => it.id !== ''), // Skip initial data
-        ),
-      this.searchCtrl.valueChanges
+    this.filteredContent = this.searchCtrl.valueChanges
         .pipe(
           startWith(''),
-          debounceTime(300)
+          debounceTime(300),
+          map(( search) => this.pages?.filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || [])
         )
-    ])
-      .pipe(
-        switchMap(([space, search]) => this.contentService.findAllPagesByName(space.id, search))
-      )
   }
 
   onTypeChange(type: string): void {
