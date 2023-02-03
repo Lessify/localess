@@ -1,7 +1,7 @@
 <h1 mat-dialog-title>Space Form</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Name</mat-label>
       <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" autocomplete="off"/>
       <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>

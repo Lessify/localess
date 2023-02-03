@@ -3,7 +3,7 @@
   <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">
     <ng-container *ngFor="let component of rootSchematic.components" [ngSwitch]="component.kind">
       <ng-container *ngSwitchCase="'TEXT'">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
           <input matInput type="text"
                  [formControlName]="component.name"
@@ -11,7 +11,7 @@
                  [attr.minlength]="component.minLength"
                  [attr.maxlength]="component.maxLength"
                  autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}
             /{{component.maxLength}}</mat-hint>
@@ -19,7 +19,7 @@
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'TEXTAREA'">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
           <textarea matInput rows="6"
                     [formControlName]="component.name"
@@ -27,7 +27,7 @@
                     [attr.minLength]="component.minLength"
                     [attr.maxlength]="component.maxLength"
                     autocomplete="off"></textarea>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-hint align="end" *ngIf="component.maxLength">{{form.controls[component.name]?.value?.length || 0}}
             /{{component.maxLength}}</mat-hint>
@@ -35,7 +35,7 @@
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'NUMBER'">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
           <input matInput type="number"
                  [formControlName]="component.name"
@@ -43,13 +43,13 @@
                  [attr.min]="component.minValue"
                  [attr.max]="component.maxValue"
                  autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'COLOR'">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
           <input matInput type="color"
                  [formControlName]="component.name"
@@ -57,31 +57,31 @@
                  [attr.min]="component.minValue"
                  [attr.max]="component.maxValue"
                  autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'DATE'">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
           <input matInput type="date"
                  [formControlName]="component.name"
                  [required]="component.required"
                  autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
       <ng-container *ngSwitchCase="'DATETIME'">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
           <input matInput type="datetime-local"
                  [formControlName]="component.name"
                  [required]="component.required"
                  autocomplete="off"/>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
@@ -91,7 +91,7 @@
           {{component.displayName || component.name}}
         </mat-checkbox>
         &nbsp;
-        <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+        <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
         <br/>
         <mat-hint *ngIf="component.description"
                   style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
@@ -99,7 +99,7 @@
       </ng-container>
 
       <ng-container *ngSwitchCase="'OPTION'">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
           <mat-select [formControlName]="component.name"
                       [required]="component.required">
@@ -108,14 +108,14 @@
               {{option.name}}
             </mat-option>
           </mat-select>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
 
       <ng-container *ngSwitchCase="'OPTIONS'">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
           <mat-select [formControlName]="component.name"
                       [required]="component.required"
@@ -124,10 +124,17 @@
               {{option.name}}
             </mat-option>
           </mat-select>
-          <mat-icon matSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'LINK'">
+        <ll-link-select *ngIf="form.controls[component.name]"
+                        [form]="form.controls[component.name]"
+                        [component]="component"
+                        [pages]="pages"/>
       </ng-container>
 
       <ng-container *ngSwitchCase="'SCHEMATIC'">
@@ -172,6 +179,10 @@
 
         <mat-hint *ngIf="component.description"
                   style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
+      </ng-container>
+
+      <ng-container *ngSwitchDefault>
+        {{component.kind}} Not Implemented
       </ng-container>
 
     </ng-container>

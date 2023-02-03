@@ -38,7 +38,7 @@
             mat-raised-button color="primary" matTooltip="Save the page"
             [disabled]="isSaveLoading"
             (click)="save()">
-      <ll-icon [animate]="isSaveLoading" start="save" end="sync"></ll-icon>
+      <ll-icon [animate]="isSaveLoading" start="save" end="sync"/>
       Save
     </button>
 
@@ -46,7 +46,7 @@
             mat-raised-button color="accent" matTooltip="Publish to be available via API call"
             [disabled]="isPublishLoading"
             (click)="publish()">
-      <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
+      <ll-icon [animate]="isPublishLoading" start="publish" end="sync"/>
       Publish
     </button>
 
@@ -97,8 +97,9 @@
       [schematics]="schematics"
       [locale]="selectedLocale.id"
       [localeFallback]="selectedSpace.localeFallback.id"
+      [pages]="pages"
       (schematicChange)="onSchematicChange($event)"
-    ></ll-page-data-schematic-edit>
+    />
 
   </ng-container>
 

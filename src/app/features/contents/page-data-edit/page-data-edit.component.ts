@@ -21,7 +21,7 @@ import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
 import {filter, switchMap, takeUntil} from 'rxjs/operators';
-import {combineLatest, Subject} from 'rxjs';
+import {combineLatest, Observable, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
@@ -53,6 +53,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
   schematicPath: SchematicPathItem[] = [];
   schematics: Schematic[] = [];
   contentErrors: ContentError[] | null = null;
+  pages: ContentPage[] = [];
 
   //Loadings
   isLoading: boolean = true;
@@ -90,16 +91,18 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
           combineLatest([
             this.spaceService.findById(it.id),
             this.contentService.findById(it.id, contentId),
+            this.contentService.findAllPages(it.id),
             this.schematicService.findAll(it.id)
           ])
         ),
         takeUntil(this.destroy$),
       )
       .subscribe({
-        next: ([space, page, schematics]) => {
+        next: ([space, page, pages, schematics]) => {
           this.selectedSpace = space;
           this.selectedLocale = space.localeFallback;
           this.availableLocales = space.locales;
+          this.pages = pages;
 
           if (page.kind === ContentKind.PAGE) {
             this.page = page;

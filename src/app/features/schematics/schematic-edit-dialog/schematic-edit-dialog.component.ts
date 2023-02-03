@@ -5,18 +5,12 @@ import {SchematicEditDialogModel} from './schematic-edit-dialog.model';
 import {SchematicValidator} from '@shared/validators/schematic.validator';
 import {
   SchematicComponent,
-  SchematicComponentKind,
+  SchematicComponentKind, schematicComponentKindDescriptions,
   SchematicComponentOptionSelectable
 } from '@shared/models/schematic.model';
-import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';
 import {CommonValidator} from '@shared/validators/common.validator';
-
-interface ComponentKindDescription {
-  name: string
-  icon: string
-}
 
 @Component({
   selector: 'll-schematic-edit-dialog',
@@ -26,23 +20,9 @@ interface ComponentKindDescription {
 })
 export class SchematicEditDialogComponent implements OnInit {
 
-  componentKinds = Object.keys(SchematicComponentKind)
   isTest = environment.test
 
-  componentKindDescriptions: Record<string, ComponentKindDescription> = {
-    'TEXT': {name: 'Text', icon: 'title'},
-    'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
-    'NUMBER': {name: 'Number', icon: 'pin'},
-    'COLOR': {name: 'Color', icon: 'colorize'},
-    'DATE': {name: 'Date', icon: 'event'},
-    'DATETIME': {name: 'Date and Time', icon: 'schedule'},
-    'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
-    'OPTION': {name: 'Single Option', icon: 'list'},
-    'OPTIONS': {name: 'Multiple Options', icon: 'list'},
-    'SCHEMATIC': {name: 'Schematic (Beta)', icon: 'polyline'},
-  }
-
-  selectedComponentKind ?: ComponentKindDescription;
+  schematicComponentKindDescriptions = schematicComponentKindDescriptions;
   nameReadonly = true;
   componentNameReadonly = true;
 
@@ -151,6 +131,10 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm.addControl('maxValues', this.fb.control<number | undefined>(element.maxValues, SchematicValidator.COMPONENT_MAX_VALUES));
         break;
       }
+      case SchematicComponentKind.LINK: {
+        componentForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchematicValidator.COMPONENT_TRANSLATABLE))
+        break;
+      }
       case SchematicComponentKind.SCHEMATIC: {
         componentForm.addControl('schematics', this.fb.control<string[] | undefined>(element.schematics, SchematicValidator.COMPONENT_SCHEMATIC));
         break;
@@ -162,7 +146,6 @@ export class SchematicEditDialogComponent implements OnInit {
         componentForm.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchematicValidator.COMPONENT_MAX_LENGTH))
       }
     }
-    this.selectedComponentKind = this.componentKindDescriptions[defaultKind];
     this.components.push(componentForm);
     this.newComponentName.reset();
     this.selectComponent(this.components.length - 1);
@@ -200,7 +183,6 @@ export class SchematicEditDialogComponent implements OnInit {
     this.cd.detectChanges();
     this.componentNameReadonly = true;
     this.selectedComponentIdx = index;
-    this.selectedComponentKind = this.componentKindDescriptions[this.components.at(index).value['kind']];
     this.cd.markForCheck();
   }
 }

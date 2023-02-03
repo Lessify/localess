@@ -1,21 +1,21 @@
 <h1 mat-dialog-title>User Invite</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Email</mat-label>
       <input matInput type="email" formControlName="email" required autocomplete="off"/>
       <mat-error *ngIf="form.controls['email'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Password</mat-label>
       <input matInput type="password" formControlName="password" required autocomplete="off"/>
       <mat-error *ngIf="form.controls['password'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Display Name</mat-label>
       <input matInput type="text" formControlName="displayName" autocomplete="off"/>
     </mat-form-field>
-    <mat-form-field appearance="outline">
+    <mat-form-field>
       <mat-label>Role</mat-label>
       <mat-select formControlName="role">
         <mat-option [value]="undefined">None</mat-option>

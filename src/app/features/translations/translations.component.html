@@ -16,7 +16,7 @@
         matTooltip="Publish Translations to be available via API call"
         [disabled]="isPublishLoading"
         (click)="publish()">
-        <ll-icon [animate]="isPublishLoading" start="publish" end="sync"></ll-icon>
+        <ll-icon [animate]="isPublishLoading" start="publish" end="sync"/>
         Publish
       </button>
 
@@ -25,7 +25,7 @@
         [matMenuTriggerFor]="importMenu"
         [disabled]="isImportExportLoading"
         matTooltip="Import and Export">
-        <ll-icon [animate]="isImportExportLoading" start="more_vert" end="sync"></ll-icon>
+        <ll-icon [animate]="isImportExportLoading" start="more_vert" end="sync"/>
       </button>
 
       <mat-menu #importMenu="matMenu">
@@ -55,7 +55,7 @@
 <div *ngIf="!isLoading" class="container-fluid">
   <div class="d-flex flex-row justify-content-between">
     <div class="py-2 pe-2" style="width: 25%">
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>Search Locale</mat-label>
         <mat-select [(value)]="selectedSearchLocale">
           <mat-option *ngFor="let locale of locales" [value]="locale.id">
@@ -65,14 +65,14 @@
       </mat-form-field>
     </div>
     <div class="p-2 " style="width: 25%">
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>Search</mat-label>
         <input matInput [formControl]="searchCtrl" autocomplete="off"/>
-        <mat-icon matSuffix>search</mat-icon>
+        <mat-icon matIconSuffix>search</mat-icon>
       </mat-form-field>
     </div>
     <div class="p-2" style="width: 50%">
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-chip-grid #chipList>
           <mat-chip-row
             *ngFor="let selectedLabel of selectedLabels"
@@ -129,7 +129,7 @@
     <div class="col-6 overlay">
       <div *ngIf="selectedTranslation" class="d-flex flex-column" style="height: 100%;">
         <div class="p-2 align-items-start">
-          <mat-form-field appearance="outline">
+          <mat-form-field>
             <mat-label>Source Locale</mat-label>
             <mat-select [(value)]="selectedSourceLocale">
               <mat-option *ngFor="let locale of locales" [value]="locale.id">
@@ -150,7 +150,7 @@
         <ng-container id="translation-locale-edit" *ngIf="'TRANSLATION_UPDATE' | canUserPerform | async">
           <mat-divider></mat-divider>
           <div class="p-2 align-items-end">
-            <mat-form-field appearance="outline" class="with-button">
+            <mat-form-field class="with-button">
               <mat-label>Target Locale</mat-label>
               <mat-select [(value)]="selectedTargetLocale"
                           (selectionChange)="translateValue = undefined;">
@@ -161,7 +161,7 @@
             </mat-form-field>
             <button mat-icon-button matTooltip="Translate" (click)="translate()"
                     [disabled]="!isLocaleTranslatable(selectedSourceLocale, selectedTargetLocale)">
-              <ll-icon [animate]="isTranslateLoading" start="g_translate" end="sync"></ll-icon>
+              <ll-icon [animate]="isTranslateLoading" start="g_translate" end="sync"/>
             </button>
           </div>
           <mat-divider></mat-divider>
@@ -185,7 +185,7 @@
                 <button mat-raised-button color="primary"
                         [disabled]="isLocaleUpdateLoading || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue"
                         (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue)">
-                  <ll-icon [animate]="isLocaleUpdateLoading" start="save" end="sync"></ll-icon>
+                  <ll-icon [animate]="isLocaleUpdateLoading" start="save" end="sync"/>
                   Save
                 </button>
               </div>

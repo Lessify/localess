@@ -4,8 +4,9 @@ import {
   SchematicComponent,
   SchematicComponentKind
 } from '@shared/models/schematic.model';
-import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {ContentError, ContentPageData} from '@shared/models/content.model';
+import {CommonPattern} from '@shared/validators/common.validator';
 
 @Injectable()
 export class ContentHelperService {
@@ -32,13 +33,31 @@ export class ContentHelperService {
             const component = schematicComponentsMap.get(controlName);
             const control = form.controls[controlName];
             if (control && !control.valid) {
-              errors.push({
-                contentId: selectedContent._id,
-                schematic: schematic.displayName || schematic.name,
-                fieldName: controlName,
-                fieldDisplayName: component?.displayName,
-                errors: control.errors
-              })
+              if (control instanceof FormGroup) {
+                switch (control.value.kind) {
+                  case SchematicComponentKind.LINK: {
+                    errors.push({
+                      contentId: selectedContent._id,
+                      schematic: schematic.displayName || schematic.name,
+                      fieldName: controlName,
+                      fieldDisplayName: component?.displayName,
+                      errors: control.controls['uri'].errors
+                    })
+                    break;
+                  }
+                  default: {
+                    console.log(`Unknown KIND : ${control.value}`)
+                  }
+                }
+              } else {
+                errors.push({
+                  contentId: selectedContent._id,
+                  schematic: schematic.displayName || schematic.name,
+                  fieldName: controlName,
+                  fieldDisplayName: component?.displayName,
+                  errors: control.errors
+                })
+              }
             }
           }
         }
@@ -70,6 +89,41 @@ export class ContentHelperService {
       }
     })
     return result
+  }
+
+  clone<T>(source: T): T {
+    if (source instanceof Array) {
+      const target: any = Object.assign([], source);
+      Object.getOwnPropertyNames(target).forEach(value => {
+        if (target[value] instanceof Object) {
+          target[value] = this.clone(target[value]);
+        }
+      });
+      return target;
+    } else if (source instanceof Object) {
+      const target: any = Object.assign({}, source);
+      Object.getOwnPropertyNames(target).forEach(value => {
+        if (target[value] instanceof Object) {
+          target[value] = this.clone(target[value]);
+          if (Object.getOwnPropertyNames(target[value]).some(it => it === 'kind')) {
+            switch (target[value]['kind']) {
+              case SchematicComponentKind.LINK: {
+                if (target[value]['uri'] === undefined || target[value]['uri'] === '') {
+                  delete target[value];
+                }
+                break;
+              }
+            }
+          }
+        }
+        if (target[value] == null) {
+          delete target[value];
+        }
+
+      });
+      return target;
+    }
+    return null as unknown as T;
   }
 
   generateSchematicForm(schematic: Schematic, isFallbackLocale: boolean): FormRecord {
@@ -158,6 +212,19 @@ export class ContentHelperService {
             value: undefined,
             disabled: disabled
           }, validators))
+          break;
+        }
+        case SchematicComponentKind.LINK: {
+          validators.push(Validators.pattern(CommonPattern.URL))
+          const link = this.fb.group({
+            kind: this.fb.control('LINK', Validators.required),
+            type: this.fb.control<'url' | 'content'>('url', Validators.required),
+            uri: this.fb.control<string | undefined>({
+              value: undefined,
+              disabled: disabled
+            }, validators)
+          })
+          form.setControl(component.name, link)
           break;
         }
       }

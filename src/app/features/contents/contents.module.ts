@@ -15,6 +15,7 @@ import {
 } from './page-data-schematic-edit/page-data-schematic-edit.component';
 import {ContentHelperService} from '@shared/services/content-helper.service';
 import {FolderAddDialogComponent} from './folder-add-dialog/folder-add-dialog.component';
+import {LinkSelectComponent} from './link-select/link-select.component';
 
 @NgModule({
   declarations: [
@@ -23,7 +24,8 @@ import {FolderAddDialogComponent} from './folder-add-dialog/folder-add-dialog.co
     PageAddDialogComponent,
     ContentEditDialogComponent,
     PageDataEditComponent,
-    PageDataSchematicEditComponent
+    PageDataSchematicEditComponent,
+    LinkSelectComponent
   ],
   imports: [CommonModule, SharedModule, ContentsRoutingModule],
   providers: [SpaceService, SchematicService, ContentService, ContentHelperService]

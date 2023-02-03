@@ -16,7 +16,17 @@ export interface Schematic {
   updatedAt: Timestamp;
 }
 
-export type SchematicComponent = SchematicComponentText | SchematicComponentTextarea | SchematicComponentNumber | SchematicComponentColor | SchematicComponentDate | SchematicComponentDateTime | SchematicComponentBoolean | SchematicComponentSchematic | SchematicComponentOption | SchematicComponentOptions;
+export type SchematicComponent = SchematicComponentText
+  | SchematicComponentTextarea
+  | SchematicComponentNumber
+  | SchematicComponentColor
+  | SchematicComponentDate
+  | SchematicComponentDateTime
+  | SchematicComponentBoolean
+  | SchematicComponentSchematic
+  | SchematicComponentOption
+  | SchematicComponentOptions
+  | SchematicComponentLink;
 
 export enum SchematicComponentKind {
   TEXT = 'TEXT',
@@ -28,7 +38,27 @@ export enum SchematicComponentKind {
   BOOLEAN = 'BOOLEAN',
   OPTION = 'OPTION',
   OPTIONS = 'OPTIONS',
+  LINK = 'LINK',
   SCHEMATIC = 'SCHEMATIC',
+}
+
+export interface ComponentKindDescription {
+  name: string
+  icon: string
+}
+
+export const schematicComponentKindDescriptions: Record<string, ComponentKindDescription> = {
+  'TEXT': {name: 'Text', icon: 'title'},
+  'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
+  'NUMBER': {name: 'Number', icon: 'pin'},
+  'COLOR': {name: 'Color', icon: 'colorize'},
+  'DATE': {name: 'Date', icon: 'event'},
+  'DATETIME': {name: 'Date and Time', icon: 'schedule'},
+  'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
+  'OPTION': {name: 'Single Option', icon: 'list'},
+  'OPTIONS': {name: 'Multiple Options', icon: 'list'},
+  'LINK': {name: 'Link', icon: 'link'},
+  'SCHEMATIC': {name: 'Schematic (Beta)', icon: 'polyline'},
 }
 
 export interface SchematicComponentBase {
@@ -95,6 +125,10 @@ export interface SchematicComponentOptions extends SchematicComponentBase {
   options: SchematicComponentOptionSelectable[];
   minValues?: number;
   maxValues?: number;
+}
+
+export interface SchematicComponentLink extends SchematicComponentBase {
+  kind: SchematicComponentKind.LINK
 }
 
 // Service

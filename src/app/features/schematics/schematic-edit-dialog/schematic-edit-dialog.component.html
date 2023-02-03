@@ -3,17 +3,17 @@
   <form [formGroup]="form" class="step-container">
     <div class="row">
       <div class="col-6">
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>Name</mat-label>
           <input matInput type="text" formControlName="name" required minLength="3" maxlength="50" [readonly]="nameReadonly" autocomplete="off"/>
-          <button mat-icon-button matSuffix (click)="nameReadonly = !nameReadonly" [attr.aria-pressed]="true">
+          <button mat-icon-button matIconSuffix (click)="nameReadonly = !nameReadonly" [attr.aria-pressed]="true">
             <mat-icon>{{nameReadonly ? 'edit_off' : 'edit'}}</mat-icon>
           </button>
           <mat-hint>Will be used in JSON structure.</mat-hint>
           <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
           <mat-error *ngIf="form.controls['name'].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field>
           <mat-label>Display Name</mat-label>
           <input matInput type="text" formControlName="displayName" minLength="3" maxlength="50" autocomplete="off"/>
           <mat-hint align="end">{{form.controls['displayName'].value?.length || 0}}/50</mat-hint>
@@ -23,10 +23,10 @@
         <mat-nav-list class="ll-mat-nav-list-gap">
           <mat-divider></mat-divider>
           <div mat-subheader>Components</div>
-          <mat-form-field appearance="outline">
+          <mat-form-field>
             <mat-label>Name</mat-label>
             <input matInput type="text" [formControl]="newComponentName" autocomplete="off"/>
-            <button mat-raised-button matSuffix
+            <button mat-raised-button matTextSuffix
                     color="accent"
                     (click)="addComponent()"
                     [disabled]="!newComponentName.valid">
@@ -38,7 +38,7 @@
                          (click)="selectComponent(index)"
                          [class.active]="index === selectedComponentIdx"
                          [class.invalid]="component.invalid">
-            <mat-icon matListItemIcon>{{componentKindDescriptions[component.value.kind].icon}}</mat-icon>
+            <mat-icon matListItemIcon>{{schematicComponentKindDescriptions[component.value.kind].icon}}</mat-icon>
             <span matListItemTitle>{{component.value.name}}</span>
             <span matListItemLine>{{component.value.displayName}}</span>
             <span matListItemMeta>
