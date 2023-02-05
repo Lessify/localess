@@ -53,8 +53,8 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
     return;
   }
   let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
-  if(kind) {
-    contentsQuery = contentsQuery.where('kind','==', kind)
+  if (kind) {
+    contentsQuery = contentsQuery.where('kind', '==', kind)
   }
   if (startSlug) {
     contentsQuery = contentsQuery
@@ -63,7 +63,7 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   }
   const contentsSnapshot = await contentsQuery.get();
 
-  const response: ContentLink[] = contentsSnapshot.docs
+  const response: Record<string, ContentLink> = contentsSnapshot.docs
     .map((contentSnapshot) => {
       const content = contentSnapshot.data() as Content;
       const link: ContentLink = {
@@ -80,7 +80,11 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
         link.publishedAt = content.publishedAt?.toDate().toISOString();
       }
       return link;
-    });
+    })
+    .reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc
+    }, ({} as Record<string, ContentLink>));
   res
     .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
     .contentType('application/json')
