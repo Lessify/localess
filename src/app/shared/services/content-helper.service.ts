@@ -215,7 +215,6 @@ export class ContentHelperService {
           break;
         }
         case SchematicComponentKind.LINK: {
-          validators.push(Validators.pattern(CommonPattern.URL))
           const link = this.fb.group({
             kind: this.fb.control('LINK', Validators.required),
             type: this.fb.control<'url' | 'content'>('url', Validators.required),
