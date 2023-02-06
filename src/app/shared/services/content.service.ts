@@ -152,13 +152,14 @@ export class ContentService {
       );
   }
 
-  update(spaceId: string, id: string, entity: ContentUpdate): Observable<void> {
+  update(spaceId: string, id: string, parentSlug: string, entity: ContentUpdate): Observable<void> {
     const update: UpdateData<ContentUpdateFS> = {
       name: entity.name,
       slug: entity.slug,
+      parentSlug: parentSlug,
+      fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
       updatedAt: serverTimestamp()
     }
-
     return from(
       updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`),
         update

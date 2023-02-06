@@ -279,7 +279,7 @@ export const translationsImport = https.onCall(async (data: TranslationsImportDa
 
 export const onTranslationCreate = firestore.document('spaces/{spaceId}/translations/{translationId}')
   .onCreate(async (snapshot, context) => {
-    logger.info(`[Translation::onCreate] id='${snapshot.id}' eventId='${context.eventId}'`);
+    logger.info(`[Translation::onCreate] eventId='${context.eventId}' id='${snapshot.id}'`);
     const spaceId: string = context.params['spaceId'];
     // const translationId: string = context.params.translationId
 
@@ -332,7 +332,7 @@ export const onTranslationCreate = firestore.document('spaces/{spaceId}/translat
       }
     }
 
-    logger.info(`[Translation::onCreate] Update : ${JSON.stringify(update)}`);
+    logger.info(`[Translation::onCreate] eventId='${context.eventId}' Update : ${JSON.stringify(update)}`);
     await snapshot.ref.update(update);
 
     return;

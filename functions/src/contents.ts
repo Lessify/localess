@@ -89,9 +89,41 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
 });
 
 // Firestore events
+export const onContentUpdate = firestore.document('spaces/{spaceId}/contents/{contentId}')
+  .onUpdate(async (change, context) => {
+    logger.info(`[Content::onUpdate] eventId='${context.eventId}' id='${change.before.id}'`);
+    const contentBefore = change.before.data() as Content;
+    const contentAfter = change.after.data() as Content;
+    logger.info(`[Content::onUpdate] eventId='${context.eventId}' id='${change.before.id}' slug before='${contentBefore.fullSlug}' after='${contentAfter.fullSlug}'`);
+    // First level check, check if the slug is different
+    if (contentBefore.fullSlug === contentAfter.fullSlug) {
+      logger.info(`[Content::onUpdate] eventId='${context.eventId}' id='${change.before.id}' has no changes in fullSlug`);
+    } else {
+      // In case it is a PAGE, skip recursion as PAGE doesn't have child
+      if (contentAfter.kind === ContentKind.PAGE) return;
+      // cascade changes to all child's in case it is a FOLDER
+      // It will create recursion
+      const batch = firestoreService.batch()
+      const contentsSnapshot = await firestoreService
+        .collection(`spaces/${context.params['spaceId']}/contents`)
+        .where('parentSlug', '==', contentBefore.fullSlug)
+        .get()
+      contentsSnapshot.docs.filter((it) => it.exists)
+        .forEach((it) => {
+          const content = it.data() as Content;
+          const update = {
+            parentSlug: contentAfter.fullSlug,
+            fullSlug: `${contentAfter.fullSlug}/${content.slug}`
+          }
+          batch.update(it.ref, update)
+        })
+      return batch.commit()
+    }
+    return;
+  });
 export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{contentId}')
   .onDelete(async (snapshot: QueryDocumentSnapshot, context: EventContext) => {
-    logger.info(`[Content::onDelete] id='${snapshot.id}' exists=${snapshot.exists} eventId='${context.eventId}'`);
+    logger.info(`[Content::onDelete] eventId='${context.eventId}' id='${snapshot.id}'`);
     const content = snapshot.data() as Content;
     if (content.kind === ContentKind.PAGE) {
       return bucket.deleteFiles({

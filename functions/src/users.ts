@@ -105,7 +105,7 @@ export const usersSync = https.onCall(async (data, context) => {
 
 export const onUserUpdate = firestore.document('users/{userId}')
   .onUpdate(async (change, context) => {
-    logger.info(`[User::onUpdate] id='${change.before.id}' eventId='${context.eventId}'`);
+    logger.info(`[User::onUpdate] eventId='${context.eventId}' id='${change.before.id}'`);
     const before = change.before.data();
     const after = change.after.data();
 
@@ -117,17 +117,17 @@ export const onUserUpdate = firestore.document('users/{userId}')
     const permissionsAfter = after['permissions'];
 
     if (roleBefore !== roleAfter || permissionsBefore !== permissionsAfter) {
-      logger.info(`[User::onUpdate::RoleChange] id='${change.before.id}' eventId='${context.eventId}' from='${roleBefore}' to='${roleAfter}'`);
-      logger.info(`[User::onUpdate::PermissionsChange] id='${change.before.id}' eventId='${context.eventId}' from='${permissionsBefore}' to='${permissionsAfter}'`);
+      logger.info(`[User::onUpdate::RoleChange] eventId='${context.eventId}' id='${change.before.id}' from='${roleBefore}' to='${roleAfter}'`);
+      logger.info(`[User::onUpdate::PermissionsChange] eventId='${context.eventId}' id='${change.before.id}' from='${permissionsBefore}' to='${permissionsAfter}'`);
       const userRecord = await authService.getUser(change.before.id);
       // check if role update already in Auth
       if (userRecord.customClaims?.['role'] !== roleAfter || userRecord.customClaims?.['permissions'] !== permissionsAfter) {
-        logger.debug(`[User::onUpdate::RoleChange] id='${change.before.id}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update required.`);
-        logger.debug(`[User::onUpdate::PermissionsChange] id='${change.before.id}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update required.`);
+        logger.debug(`[User::onUpdate::RoleChange] eventId='${context.eventId}' id='${change.before.id}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update required.`);
+        logger.debug(`[User::onUpdate::PermissionsChange] eventId='${context.eventId}' id='${change.before.id}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update required.`);
         return await authService.setCustomUserClaims(change.before.id, {role: roleAfter, permissions: permissionsAfter});
       } else {
-        logger.debug(`[User::onUpdate::RoleChange] id='${change.before.id}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update not required.`);
-        logger.debug(`[User::onUpdate::PermissionsChange] id='${change.before.id}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update not required.`);
+        logger.debug(`[User::onUpdate::RoleChange] eventId='${context.eventId}' id='${change.before.id}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update not required.`);
+        logger.debug(`[User::onUpdate::PermissionsChange] eventId='${context.eventId}' id='${change.before.id}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update not required.`);
       }
       return true;
     }
@@ -145,6 +145,6 @@ export const onUserUpdate = firestore.document('users/{userId}')
 
 export const onUserDelete = firestore.document('users/{userId}')
   .onDelete((snapshot, context) => {
-    logger.info(`[User::onDelete] id='${snapshot.id}' eventId='${context.eventId}'`);
+    logger.info(`[User::onDelete] eventId='${context.eventId}' id='${snapshot.id}'`);
     return authService.deleteUser(snapshot.id);
   });

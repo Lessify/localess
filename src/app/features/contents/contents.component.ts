@@ -207,7 +207,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.contentService.update(this.selectedSpace!.id, element.id, it!)
+          this.contentService.update(this.selectedSpace!.id, element.id, this.parentPath, it!)
         )
       )
       .subscribe({
