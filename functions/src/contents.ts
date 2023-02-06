@@ -125,10 +125,23 @@ export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{co
   .onDelete(async (snapshot: QueryDocumentSnapshot, context: EventContext) => {
     logger.info(`[Content::onDelete] eventId='${context.eventId}' id='${snapshot.id}'`);
     const content = snapshot.data() as Content;
+    logger.info(`[Content::onDelete] eventId='${context.eventId}' id='${snapshot.id}' fullSlug='${content.fullSlug}'`);
     if (content.kind === ContentKind.PAGE) {
       return bucket.deleteFiles({
         prefix: `spaces/${context.params['spaceId']}/contents/${context.params['contentId']}`,
       });
+    } else if (content.kind === ContentKind.FOLDER) {
+      // cascade changes to all child's in case it is a FOLDER
+      // It will create recursion
+      const batch = firestoreService.batch()
+      const contentsSnapshot = await firestoreService
+        .collection(`spaces/${context.params['spaceId']}/contents`)
+        .where('parentSlug', '==', content.fullSlug)
+        .get()
+      contentsSnapshot.docs
+        .filter((it) => it.exists)
+        .forEach((it) => batch.delete(it.ref))
+      return batch.commit()
     }
     return;
   });

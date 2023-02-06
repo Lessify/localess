@@ -187,7 +187,7 @@ export class ContentService {
   }
 
   delete(spaceId: string, element: Content): Observable<void> {
-    const batch = writeBatch(this.firestore)
+    /*const batch = writeBatch(this.firestore)
     batch.delete(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`))
 
     return from(
@@ -207,7 +207,14 @@ export class ContentService {
         )
       }),
       traceUntilFirst('Firestore:Contents:delete'),
+    )*/
+
+    return from(
+      deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`))
     )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:delete'),
+      );
   }
 
   publish(spaceId: string, id: string): Observable<void> {
