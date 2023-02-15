@@ -18,7 +18,6 @@ import {
   TranslationType,
 } from './models/translation.model';
 import {FieldValue, QuerySnapshot, Timestamp, WriteBatch} from 'firebase-admin/firestore';
-import axios from 'axios';
 import {protos} from '@google-cloud/translate';
 import {UserPermission} from './models/user.model';
 
@@ -57,20 +56,10 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
             }
           }
         );
-      const origin = context.rawRequest.header('origin');
-      if (origin && !origin.includes('//localhost:')) {
-        const url = `/api/v1/spaces/${data.spaceId}/translations/${locale.id}.json`;
-        await axios.request({
-          baseURL: origin,
-          url: url,
-          method: 'PURGE',
-        });
-        logger.info(`[translationsPublish] purge url ${origin}${url}`);
-      }
     }
     // Save Cache
-    logger.info(`[translationsPublish] Save file to spaces/${data.spaceId}/translations/.cache`);
-    await bucket.file(`spaces/${data.spaceId}/translations/.cache`).save('')
+    logger.info(`[translationsPublish] Save file to spaces/${data.spaceId}/translations/cache.json`);
+    await bucket.file(`spaces/${data.spaceId}/translations/cache.json`).save('')
     return;
   } else {
     logger.info(`[translationsPublish] Space ${data.spaceId} does not exist or no translations.`);
