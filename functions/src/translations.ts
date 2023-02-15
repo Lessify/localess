@@ -68,6 +68,9 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
         logger.info(`[translationsPublish] purge url ${origin}${url}`);
       }
     }
+    // Save Cache
+    logger.info(`[translationsPublish] Save file to spaces/${data.spaceId}/translations/.cache`);
+    await bucket.file(`spaces/${data.spaceId}/translations/.cache`).save('')
     return;
   } else {
     logger.info(`[translationsPublish] Space ${data.spaceId} does not exist or no translations.`);

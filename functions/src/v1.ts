@@ -39,6 +39,56 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale.json', async (req, r
     });
 });
 
+expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) => {
+  logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
+  logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
+  const {spaceId, locale} = req.params;
+  const {version} = req.query;
+
+  let cachePath = `spaces/${spaceId}/translations/.cache`;
+  const [exists] = await bucket.file(cachePath).exists()
+  logger.info('v1 spaces translations cache exists : ' + exists);
+  if (exists) {
+    const [metadata] = await bucket.file(cachePath).getMetadata();
+    logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
+    if (version === undefined || version != metadata.generation) {
+      res.redirect(`/api/v1/spaces/${spaceId}/translations/${locale}?version=${metadata.generation}`)
+    } else {
+      const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
+      if (!spaceSnapshot.exists) {
+        res
+          .status(404)
+          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+          .send(new https.HttpsError('not-found', 'Space not found'));
+        return;
+      }
+      const space = spaceSnapshot.data() as Space;
+      let actualLocale = locale;
+      if (!space.locales.some((it) => it.id === locale)) {
+        actualLocale = space.localeFallback.id;
+      }
+      bucket.file(`spaces/${spaceId}/translations/${actualLocale}.json`).download()
+        .then((content) => {
+          res
+            .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+            .contentType('application/json')
+            .send(content.toString());
+        })
+        .catch(() => {
+          res
+            .status(404)
+            .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+        });
+    }
+    return;
+  } else {
+    res
+      .status(404)
+      .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+    return;
+  }
+});
+
 expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
