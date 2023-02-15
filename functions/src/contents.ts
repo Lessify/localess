@@ -103,21 +103,21 @@ export const onContentUpdate = firestore.document('spaces/{spaceId}/contents/{co
       if (contentAfter.kind === ContentKind.PAGE) return;
       // cascade changes to all child's in case it is a FOLDER
       // It will create recursion
-      const batch = firestoreService.batch()
+      const batch = firestoreService.batch();
       const contentsSnapshot = await firestoreService
         .collection(`spaces/${context.params['spaceId']}/contents`)
         .where('parentSlug', '==', contentBefore.fullSlug)
-        .get()
+        .get();
       contentsSnapshot.docs.filter((it) => it.exists)
         .forEach((it) => {
           const content = it.data() as Content;
           const update = {
             parentSlug: contentAfter.fullSlug,
-            fullSlug: `${contentAfter.fullSlug}/${content.slug}`
-          }
-          batch.update(it.ref, update)
-        })
-      return batch.commit()
+            fullSlug: `${contentAfter.fullSlug}/${content.slug}`,
+          };
+          batch.update(it.ref, update);
+        });
+      return batch.commit();
     }
     return;
   });
@@ -133,15 +133,15 @@ export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{co
     } else if (content.kind === ContentKind.FOLDER) {
       // cascade changes to all child's in case it is a FOLDER
       // It will create recursion
-      const batch = firestoreService.batch()
+      const batch = firestoreService.batch();
       const contentsSnapshot = await firestoreService
         .collection(`spaces/${context.params['spaceId']}/contents`)
         .where('parentSlug', '==', content.fullSlug)
-        .get()
+        .get();
       contentsSnapshot.docs
         .filter((it) => it.exists)
-        .forEach((it) => batch.delete(it.ref))
-      return batch.commit()
+        .forEach((it) => batch.delete(it.ref));
+      return batch.commit();
     }
     return;
   });

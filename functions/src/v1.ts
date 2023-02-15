@@ -45,13 +45,13 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) =
   const {spaceId, locale} = req.params;
   const {version} = req.query;
 
-  let cachePath = `spaces/${spaceId}/translations/cache.json`;
-  const [exists] = await bucket.file(cachePath).exists()
+  const cachePath = `spaces/${spaceId}/translations/cache.json`;
+  const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
     if (version === undefined || version != metadata.generation) {
-      res.redirect(`/api/v1/spaces/${spaceId}/translations/${locale}?version=${metadata.generation}`)
+      res.redirect(`/api/v1/spaces/${spaceId}/translations/${locale}?version=${metadata.generation}`);
     } else {
       const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
       if (!spaceSnapshot.exists) {
@@ -103,12 +103,12 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   }
   let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
   if (kind) {
-    contentsQuery = contentsQuery.where('kind', '==', kind)
+    contentsQuery = contentsQuery.where('kind', '==', kind);
   }
   if (startSlug) {
     contentsQuery = contentsQuery
       .where('fullSlug', '>=', startSlug)
-      .where('fullSlug', '<', `${startSlug}~`)
+      .where('fullSlug', '<', `${startSlug}~`);
   }
   const contentsSnapshot = await contentsQuery.get();
 
@@ -132,7 +132,7 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
     })
     .reduce((acc, item) => {
       acc[item.id] = item;
-      return acc
+      return acc;
     }, ({} as Record<string, ContentLink>));
   res
     .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
