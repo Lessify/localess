@@ -2,7 +2,6 @@ import {EventContext, firestore, https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
-import axios from 'axios';
 import {
   Content,
   ContentKind,
@@ -69,17 +68,12 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
             }
           }
         );
-      const origin = context.rawRequest.header('origin');
-      if (origin && !origin.includes('//localhost:')) {
-        const url = `/api/v1/spaces/${data.spaceId}/contents/${data.contentId}/${locale.id}`;
-        await axios.request({
-          baseURL: origin,
-          url: url,
-          method: 'PURGE',
-        });
-        logger.info(`[contentPublish] purge url ${origin}${url}`);
-      }
+
     }
+    // Save Cache
+    logger.info(`[contentPublish] Save file to spaces/${data.spaceId}/contents/${data.contentId}/cache.json`);
+    await bucket.file(`spaces/${data.spaceId}/contents/${data.contentId}/cache.json`).save('')
+    // Update publishedAt
     await contentSnapshot.ref.update({publishedAt: FieldValue.serverTimestamp()});
     return;
   } else {

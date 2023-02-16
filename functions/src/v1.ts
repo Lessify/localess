@@ -142,31 +142,48 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
 
 expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId/:locale', async (req, res) => {
   logger.info('v1 spaces content: ' + JSON.stringify(req.params));
-  const {spaceId, contentId} = req.params;
-  let {locale} = req.params;
-  const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
-  if (!spaceSnapshot.exists) {
+  const {spaceId, contentId, locale} = req.params;
+  const {version} = req.query;
+
+  const cachePath = `spaces/${spaceId}/contents/${contentId}/cache.json`;
+  const [exists] = await bucket.file(cachePath).exists();
+  if (exists) {
+    const [metadata] = await bucket.file(cachePath).getMetadata();
+    logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
+    if (version === undefined || version != metadata.generation) {
+      res.redirect(`/api/v1/spaces/${spaceId}/contents/${contentId}/${locale}?version=${metadata.generation}`);
+    } else {
+      const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
+      if (!spaceSnapshot.exists) {
+        res
+          .status(404)
+          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+          .send(new https.HttpsError('not-found', 'Space not found'));
+        return;
+      }
+      const space = spaceSnapshot.data() as Space;
+      let actualLocale = locale;
+      if (!space.locales.some((it) => it.id === locale)) {
+        actualLocale = space.localeFallback.id;
+      }
+      bucket.file(`spaces/${spaceId}/contents/${contentId}/${actualLocale}.json`).download()
+        .then((content) => {
+          res
+            .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+            .contentType('application/json')
+            .send(content.toString());
+        })
+        .catch(() => {
+          res
+            .status(404)
+            .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+        });
+    }
+  } else {
     res
       .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new https.HttpsError('not-found', 'Space not found'));
+      .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
-  const space = spaceSnapshot.data() as Space;
-  if (!space.locales.some((it) => it.id === locale)) {
-    locale = space.localeFallback.id;
-  }
-  bucket.file(`spaces/${spaceId}/contents/${contentId}/${locale}.json`).download()
-    .then((content) => {
-      res
-        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-        .contentType('application/json')
-        .send(content.toString());
-    })
-    .catch(() => {
-      res
-        .status(404)
-        .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
-    });
 });
 export const v1 = https.onRequest(expressV1);
