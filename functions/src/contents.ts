@@ -2,13 +2,7 @@ import {EventContext, firestore, https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
-import {
-  Content,
-  ContentKind,
-  ContentPage,
-  ContentPageStorage,
-  PublishContentData,
-} from './models/content.model';
+import {Content, ContentKind, ContentPage, ContentPageStorage, PublishContentData,} from './models/content.model';
 import {Schematic} from './models/schematic.model';
 import {FieldValue, QueryDocumentSnapshot} from 'firebase-admin/firestore';
 import {UserPermission} from './models/user.model';
@@ -139,3 +133,12 @@ export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{co
     }
     return;
   });
+
+export const onContentWrite = firestore.document('spaces/{spaceId}/contents/{contentId}')
+  .onWrite(async (change, context) => {
+    logger.info(`[Content::onContentWrite] eventId='${context.eventId}'`);
+    // Save Cache
+    logger.info(`[Content::onContentWrite] Save file to spaces/${context.params['spaceId']}/contents/cache.json`);
+    await bucket.file(`spaces/${context.params['spaceId']}/contents/cache.json`).save('')
+    return;
+  })

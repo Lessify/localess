@@ -52,6 +52,7 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) =
     logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
     if (version === undefined || version != metadata.generation) {
       res.redirect(`/api/v1/spaces/${spaceId}/translations/${locale}?version=${metadata.generation}`);
+      return;
     } else {
       const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
       if (!spaceSnapshot.exists) {
@@ -79,7 +80,6 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) =
             .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
         });
     }
-    return;
   } else {
     res
       .status(404)
@@ -92,52 +92,77 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
   const {spaceId} = req.params;
-  const {kind, startSlug} = req.query;
-  const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
-  if (!spaceSnapshot.exists) {
+  const {kind, startSlug, version} = req.query;
+
+  const cachePath = `spaces/${spaceId}/contents/cache.json`;
+  const [exists] = await bucket.file(cachePath).exists();
+  if (exists) {
+    const [metadata] = await bucket.file(cachePath).getMetadata();
+    logger.info('v1 spaces links cache meta : ' + JSON.stringify(metadata));
+    if (version === undefined || version != metadata.generation) {
+      let redirectLink = `/api/v1/spaces/${spaceId}/links?version=${metadata.generation}`
+      if (kind !== undefined) {
+        redirectLink += `&kind=${kind}`
+      }
+      if (startSlug !== undefined) {
+        redirectLink += `&startSlug=${startSlug}`
+      }
+      res.redirect(redirectLink);
+      return;
+    } else {
+      const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
+      if (!spaceSnapshot.exists) {
+        res
+          .status(404)
+          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+          .send(new https.HttpsError('not-found', 'Space not found'));
+        return;
+      }
+      let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
+      if (kind) {
+        contentsQuery = contentsQuery.where('kind', '==', kind);
+      }
+      if (startSlug) {
+        contentsQuery = contentsQuery
+          .where('fullSlug', '>=', startSlug)
+          .where('fullSlug', '<', `${startSlug}~`);
+      }
+      const contentsSnapshot = await contentsQuery.get();
+
+      const response: Record<string, ContentLink> = contentsSnapshot.docs
+        .map((contentSnapshot) => {
+          const content = contentSnapshot.data() as Content;
+          const link: ContentLink = {
+            id: contentSnapshot.id,
+            kind: content.kind,
+            name: content.name,
+            slug: content.slug,
+            fullSlug: content.fullSlug,
+            parentSlug: content.parentSlug,
+            createdAt: content.createdAt.toDate().toISOString(),
+            updatedAt: content.updatedAt.toDate().toISOString(),
+          };
+          if (content.kind === ContentKind.PAGE) {
+            link.publishedAt = content.publishedAt?.toDate().toISOString();
+          }
+          return link;
+        })
+        .reduce((acc, item) => {
+          acc[item.id] = item;
+          return acc;
+        }, ({} as Record<string, ContentLink>));
+      res
+        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+        .contentType('application/json')
+        .send(response);
+      return;
+    }
+  } else {
     res
       .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new https.HttpsError('not-found', 'Space not found'));
+      .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
-  let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
-  if (kind) {
-    contentsQuery = contentsQuery.where('kind', '==', kind);
-  }
-  if (startSlug) {
-    contentsQuery = contentsQuery
-      .where('fullSlug', '>=', startSlug)
-      .where('fullSlug', '<', `${startSlug}~`);
-  }
-  const contentsSnapshot = await contentsQuery.get();
-
-  const response: Record<string, ContentLink> = contentsSnapshot.docs
-    .map((contentSnapshot) => {
-      const content = contentSnapshot.data() as Content;
-      const link: ContentLink = {
-        id: contentSnapshot.id,
-        kind: content.kind,
-        name: content.name,
-        slug: content.slug,
-        fullSlug: content.fullSlug,
-        parentSlug: content.parentSlug,
-        createdAt: content.createdAt.toDate().toISOString(),
-        updatedAt: content.updatedAt.toDate().toISOString(),
-      };
-      if (content.kind === ContentKind.PAGE) {
-        link.publishedAt = content.publishedAt?.toDate().toISOString();
-      }
-      return link;
-    })
-    .reduce((acc, item) => {
-      acc[item.id] = item;
-      return acc;
-    }, ({} as Record<string, ContentLink>));
-  res
-    .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-    .contentType('application/json')
-    .send(response);
 });
 
 expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId/:locale', async (req, res) => {
@@ -152,6 +177,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId/:locale', async (req,
     logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
     if (version === undefined || version != metadata.generation) {
       res.redirect(`/api/v1/spaces/${spaceId}/contents/${contentId}/${locale}?version=${metadata.generation}`);
+      return;
     } else {
       const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();
       if (!spaceSnapshot.exists) {
