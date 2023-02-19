@@ -21,7 +21,7 @@ import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
 import {filter, switchMap, takeUntil} from 'rxjs/operators';
-import {combineLatest, Observable, Subject} from 'rxjs';
+import {combineLatest, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
@@ -44,7 +44,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
   availableLocales: Locale[] = [];
-  contentId: string;
+  entityId: string;
   page?: ContentPage;
   pageData: ContentPageData = {_id: '', schematic: ''};
   selectedPageData: ContentPageData = {_id: '', schematic: ''};
@@ -76,11 +76,11 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
     private readonly contentHelperService: ContentHelperService,
     readonly fe: FormErrorHandlerService,
   ) {
-    this.contentId = this.activatedRoute.snapshot.paramMap.get('contentId') || "";
+    this.entityId = this.activatedRoute.snapshot.paramMap.get('contentId') || "";
   }
 
   ngOnInit(): void {
-    this.loadData(this.contentId)
+    this.loadData(this.entityId)
   }
 
   loadData(contentId: string): void {
@@ -135,7 +135,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
 
   publish(): void {
     this.isPublishLoading = true;
-    this.contentService.publish(this.selectedSpace!.id, this.contentId)
+    this.contentService.publish(this.selectedSpace!.id, this.entityId)
       .subscribe({
         next: () => {
           this.notificationService.success('Content has been published.');
@@ -159,7 +159,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
     this.contentErrors = this.contentHelperService.validateContent(this.pageData, this.schematics, this.selectedLocale.id)
 
     if (!this.contentErrors) {
-      this.contentService.updatePageData(this.selectedSpace!.id, this.contentId, this.pageData)
+      this.contentService.updatePageData(this.selectedSpace!.id, this.entityId, this.pageData)
         .subscribe({
           next: () => {
             this.notificationService.success('Content has been updated.');
@@ -186,7 +186,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
   }
 
   openPublishedInNewTab(locale: string): void {
-    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.contentId}/${locale}`
+    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}/${locale}`
     window.open(url, '_blank')
   }
 

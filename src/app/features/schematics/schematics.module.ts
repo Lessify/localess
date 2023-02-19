@@ -11,9 +11,10 @@ import {
   SchematicEditDialogComponent
 } from './schematic-edit-dialog/schematic-edit-dialog.component';
 import {SchematicComponentEditComponent} from './schematic-component-edit/schematic-component-edit.component';
+import {SchematicEditComponent} from "./schematic-edit/schematic-edit.component";
 
 @NgModule({
-  declarations: [SchematicsComponent, SchematicAddDialogComponent, SchematicEditDialogComponent, SchematicComponentEditComponent],
+  declarations: [SchematicsComponent, SchematicAddDialogComponent, SchematicEditDialogComponent, SchematicComponentEditComponent, SchematicEditComponent],
   imports: [CommonModule, SharedModule, SchematicsRoutingModule],
   providers: [SpaceService, SchematicService]
 })

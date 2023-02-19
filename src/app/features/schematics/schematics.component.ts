@@ -131,6 +131,8 @@ export class SchematicsComponent implements OnInit, OnDestroy {
   }
 
   openEditDialog(element: Schematic): void {
+    this.router.navigate(['features', 'schematics', element.id]);
+    return;
     this.dialog.open<SchematicEditDialogComponent, SchematicEditDialogModel, SchematicUpdate>(
       SchematicEditDialogComponent, {
         width: '1000px',

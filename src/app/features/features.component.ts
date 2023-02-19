@@ -182,7 +182,8 @@ export class FeaturesComponent implements OnInit {
   }
 
   onSpaceSelection(element: Space): void {
-    this.store.dispatch(actionSpaceChange(element))
+    this.store.dispatch(actionSpaceChange(element));
+    this.router.navigate(['features']);
   }
 
   onLoginClick(): void {
