@@ -3,6 +3,11 @@ table {
 }
 
 mat-header-cell {
+
+  &.mat-column-type {
+    max-width: 120px;
+  }
+
   &.mat-column-createdAt {
     max-width: 220px;
   }
@@ -12,11 +17,17 @@ mat-header-cell {
   }
 
   &.mat-column-actions {
-    max-width: 140px;
+    max-width: 100px;
   }
 }
 
 mat-cell {
+  cursor: pointer;
+
+  &.mat-column-type {
+    max-width: 120px;
+  }
+
   &.mat-column-createdAt {
     max-width: 220px;
   }
@@ -26,6 +37,6 @@ mat-cell {
   }
 
   &.mat-column-actions {
-    max-width: 140px;
+    max-width: 100px;
   }
 }

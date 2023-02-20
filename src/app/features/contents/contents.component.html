@@ -91,10 +91,7 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <div>
-          <div class="fw-semibold">{{element.name}}</div>
-          <div class="fw-normal">{{element.slug}}</div>
-        </div>
+        {{element.name}} &nbsp;<span class="text-muted">#{{element.slug}}</span>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="schematic">
@@ -104,6 +101,10 @@
           {{schematicsMap.get(element.schematic).displayName || schematicsMap.get(element.schematic).name || 'unknown...'}}
         </ng-container>
       </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="publishedAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="publishedAt"> Published At </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.publishedAt?.toDate() | date:'medium'}} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>

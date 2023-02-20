@@ -3,7 +3,8 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{entity?.name}}</span>
+    <span>{{entity?.displayName}}</span>&nbsp;
+    <span class="text-muted">#{{entity?.name}}</span>
     <span class="spacer"></span>
 
     <button *ngIf="'SCHEMATIC_UPDATE' | canUserPerform | async"
@@ -62,7 +63,16 @@
                          [class.invalid]="component.invalid">
             <mat-icon matListItemIcon>{{schematicComponentKindDescriptions[component.value.kind].icon}}</mat-icon>
             <span matListItemTitle>{{component.value.displayName}} <span class="text-muted">#{{component.value.name}}</span></span>
-            <span matListItemLine>{{component.value.displayName}}</span>
+            <span matListItemLine>
+              <span class="badge text-bg-secondary">{{component.value.kind}}</span>
+              <ng-container *ngIf="component.value.translatable">
+                &nbsp;<span class="badge text-bg-secondary">Translatable</span>
+              </ng-container>
+              <ng-container *ngIf="component.value.required">
+                &nbsp;<span class="badge text-bg-secondary">Required</span>
+              </ng-container>
+
+            </span>
             <span matListItemMeta>
               <button mat-icon-button (click)="removeComponent($event, index)">
                 <mat-icon>delete</mat-icon>

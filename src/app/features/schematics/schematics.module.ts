@@ -7,14 +7,11 @@ import {SchematicsRoutingModule} from './schematics-routing.module';
 import {SpaceService} from '@shared/services/space.service';
 import {SchematicService} from '@shared/services/schematic.service';
 import {SchematicAddDialogComponent} from './schematic-add-dialog/schematic-add-dialog.component';
-import {
-  SchematicEditDialogComponent
-} from './schematic-edit-dialog/schematic-edit-dialog.component';
 import {SchematicComponentEditComponent} from './schematic-component-edit/schematic-component-edit.component';
 import {SchematicEditComponent} from "./schematic-edit/schematic-edit.component";
 
 @NgModule({
-  declarations: [SchematicsComponent, SchematicAddDialogComponent, SchematicEditDialogComponent, SchematicComponentEditComponent, SchematicEditComponent],
+  declarations: [SchematicsComponent, SchematicAddDialogComponent, SchematicComponentEditComponent, SchematicEditComponent],
   imports: [CommonModule, SharedModule, SchematicsRoutingModule],
   providers: [SpaceService, SchematicService]
 })

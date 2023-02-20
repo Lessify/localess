@@ -3,7 +3,8 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{page?.name}}</span>
+    <span>{{page?.name}}</span>&nbsp;
+    <span class="text-muted">#{{page?.slug}}</span>
     <span class="spacer"></span>
 
     <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">

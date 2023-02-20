@@ -59,7 +59,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = ['select', 'status', 'name', 'schematic', 'createdAt', 'updatedAt'];
+  displayedColumns: string[] = ['select', 'status', 'name', 'schematic', 'publishedAt', 'createdAt', 'updatedAt'];
   selection = new SelectionModel<Content>(true, []);
 
   schematics: Schematic[] = [];

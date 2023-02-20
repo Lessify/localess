@@ -6,7 +6,8 @@ import {
   SchematicComponent,
   SchematicComponentKind,
   schematicComponentKindDescriptions,
-  SchematicComponentOptionSelectable
+  SchematicComponentOptionSelectable,
+  SchematicUpdate
 } from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';
@@ -20,6 +21,7 @@ import {Store} from "@ngrx/store";
 import {AppState} from "@core/state/core.state";
 import {SpaceService} from "@shared/services/space.service";
 import {Space} from "@shared/models/space.model";
+import {NotificationService} from "@shared/services/notification.service";
 
 @Component({
   selector: 'll-schematic-edit',
@@ -65,6 +67,7 @@ export class SchematicEditComponent implements OnInit, OnDestroy {
     private readonly spaceService: SpaceService,
     private readonly schematicService: SchematicService,
     private readonly store: Store<AppState>,
+    private readonly notificationService: NotificationService,
   ) {
     this.entityId = this.activatedRoute.snapshot.paramMap.get('schematicId') || "";
   }
@@ -102,6 +105,8 @@ export class SchematicEditComponent implements OnInit, OnDestroy {
           // Form
           this.form.controls['name'].setValidators([...SchematicValidator.NAME, CommonValidator.reservedName(this.reservedNames, this.entity?.name)])
           this.form.patchValue(schematic);
+
+          this.components.clear()
           schematic.components?.forEach(it => this.addComponent(it))
 
           this.isLoading = false;
@@ -245,7 +250,26 @@ export class SchematicEditComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
+    console.group('save')
+    this.isSaveLoading = true;
 
+    this.schematicService.update(this.selectedSpace!.id, this.entityId, this.form.value as SchematicUpdate)
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Schematic has been updated.');
+        },
+        error: () => {
+          this.notificationService.error('Schematic can not be updated.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isSaveLoading = false
+            this.cd.markForCheck()
+          }, 1000)
+        }
+      });
+
+    console.groupEnd()
   }
 
   back(): void {

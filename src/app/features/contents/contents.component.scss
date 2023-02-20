@@ -22,6 +22,10 @@ mat-header-cell {
     max-width: 80px;
   }
 
+  &.mat-column-publishedAt {
+    max-width: 220px;
+  }
+
   &.mat-column-createdAt {
     max-width: 220px;
   }
@@ -40,6 +44,10 @@ mat-cell {
 
   &.mat-column-status {
     max-width: 80px;
+  }
+
+  &.mat-column-publishedAt {
+    max-width: 220px;
   }
 
   &.mat-column-createdAt {

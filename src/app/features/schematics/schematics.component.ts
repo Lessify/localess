@@ -33,11 +33,6 @@ import {
 import {
   ConfirmationDialogModel
 } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {
-  SchematicEditDialogComponent
-} from './schematic-edit-dialog/schematic-edit-dialog.component';
-import {SchematicEditDialogModel} from './schematic-edit-dialog/schematic-edit-dialog.model';
-import {ObjectUtils} from '@core/utils/object-utils.service';
 import {SchematicAddDialogModel} from './schematic-add-dialog/schematic-add-dialog.model';
 
 @Component({
@@ -58,7 +53,7 @@ export class SchematicsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Schematic> = new MatTableDataSource<Schematic>([]);
-  displayedColumns: string[] = ['id', 'name', 'type', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['type', 'name', 'createdAt', 'updatedAt', 'actions'];
   schematics: Schematic[] = [];
 
   // Subscriptions
@@ -130,33 +125,8 @@ export class SchematicsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openEditDialog(element: Schematic): void {
+  onSchematicRowSelect(element: Schematic): void {
     this.router.navigate(['features', 'schematics', element.id]);
-    return;
-    this.dialog.open<SchematicEditDialogComponent, SchematicEditDialogModel, SchematicUpdate>(
-      SchematicEditDialogComponent, {
-        width: '1000px',
-        data: {
-          reservedNames: this.schematics.map( it => it.name),
-          schematic: ObjectUtils.clone(element),
-          schematics: this.schematics.filter(it => it.type === SchematicType.NODE)
-        }
-      })
-      .afterClosed()
-      .pipe(
-        filter(it => it !== undefined),
-        switchMap(it =>
-          this.schematicService.update(this.selectedSpace!.id, element.id, it!)
-        )
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Schematic has been updated.');
-        },
-        error: () => {
-          this.notificationService.error('Schematic can not be updated.');
-        }
-      });
   }
 
   openDeleteDialog(element: Schematic): void {
