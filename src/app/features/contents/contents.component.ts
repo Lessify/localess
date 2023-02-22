@@ -59,7 +59,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = ['select', 'status', 'name', 'schematic', 'publishedAt', 'createdAt', 'updatedAt'];
+  displayedColumns: string[] = ['select', 'status', 'name', 'slug', 'schematic', 'publishedAt', 'createdAt', 'updatedAt'];
   selection = new SelectionModel<Content>(true, []);
 
   schematics: Schematic[] = [];
@@ -146,8 +146,8 @@ export class ContentsComponent implements OnInit, OnDestroy {
         width: '500px',
         data: {
           schematics: this.schematics,
-          reservedNames: this.contents.map( it => it.name),
-          reservedSlugs: this.contents.map( it => it.slug),
+          reservedNames: this.contents.map(it => it.name),
+          reservedSlugs: this.contents.map(it => it.slug),
         }
       })
       .afterClosed()
@@ -172,8 +172,8 @@ export class ContentsComponent implements OnInit, OnDestroy {
       FolderAddDialogComponent, {
         width: '500px',
         data: {
-          reservedNames: this.contents.map( it => it.name),
-          reservedSlugs: this.contents.map( it => it.slug),
+          reservedNames: this.contents.map(it => it.name),
+          reservedSlugs: this.contents.map(it => it.slug),
         }
       })
       .afterClosed()
@@ -199,8 +199,8 @@ export class ContentsComponent implements OnInit, OnDestroy {
         width: '500px',
         data: {
           content: ObjectUtils.clone(element),
-          reservedNames: this.contents.map( it => it.name),
-          reservedSlugs: this.contents.map( it => it.slug),
+          reservedNames: this.contents.map(it => it.name),
+          reservedSlugs: this.contents.map(it => it.slug),
         }
       })
       .afterClosed()
@@ -248,7 +248,6 @@ export class ContentsComponent implements OnInit, OnDestroy {
         }
       });
   }
-
 
 
   ngOnDestroy(): void {

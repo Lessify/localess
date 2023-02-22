@@ -91,7 +91,13 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{element.name}} &nbsp;<span class="text-muted">#{{element.slug}}</span>
+        {{element.name}}
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="slug">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        {{element.slug}}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="schematic">
