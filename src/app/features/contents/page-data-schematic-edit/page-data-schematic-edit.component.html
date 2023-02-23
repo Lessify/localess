@@ -2,6 +2,7 @@
 
   <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">
     <ng-container *ngFor="let component of rootSchematic.components" [ngSwitch]="component.kind">
+      <!--TEXT-->
       <ng-container *ngSwitchCase="'TEXT'">
         <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
@@ -18,6 +19,7 @@
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
+      <!--TEXTAREA-->
       <ng-container *ngSwitchCase="'TEXTAREA'">
         <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
@@ -34,6 +36,7 @@
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
+      <!--NUMBER-->
       <ng-container *ngSwitchCase="'NUMBER'">
         <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
@@ -48,6 +51,7 @@
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
+      <!--COLOR-->
       <ng-container *ngSwitchCase="'COLOR'">
         <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
@@ -62,6 +66,7 @@
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
+      <!--DATE-->
       <ng-container *ngSwitchCase="'DATE'">
         <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
@@ -74,6 +79,7 @@
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
+      <!--DATE TIME-->
       <ng-container *ngSwitchCase="'DATETIME'">
         <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
@@ -86,6 +92,7 @@
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
+      <!--BOOLEAN-->
       <ng-container *ngSwitchCase="'BOOLEAN'">
         <mat-checkbox [formControlName]="component.name">
           {{component.displayName || component.name}}
@@ -97,7 +104,7 @@
                   style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
         <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
       </ng-container>
-
+      <!--OPTION-->
       <ng-container *ngSwitchCase="'OPTION'">
         <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
@@ -113,7 +120,7 @@
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
-
+      <!--OPTIONS-->
       <ng-container *ngSwitchCase="'OPTIONS'">
         <mat-form-field>
           <mat-label>{{component.displayName || component.name}}</mat-label>
@@ -129,14 +136,14 @@
           <mat-error *ngIf="form.controls[component.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
-
+      <!--LINK-->
       <ng-container *ngSwitchCase="'LINK'">
         <ll-link-select *ngIf="form.controls[component.name]"
                         [form]="form.controls[component.name]"
                         [component]="component"
                         [pages]="pages"/>
       </ng-container>
-
+      <!--SCHEMATIC-->
       <ng-container *ngSwitchCase="'SCHEMATIC'">
         <mat-card class="ll-not-shadow">
           <mat-card-header>
@@ -180,9 +187,9 @@
         <mat-hint *ngIf="component.description"
                   style="font-size: 75%;padding: 0 1em;">{{component.description}}</mat-hint>
       </ng-container>
-
+      <!--DEFAULT-->
       <ng-container *ngSwitchDefault>
-        {{component.kind}} Not Implemented
+        {{component.kind}} is not implemented
       </ng-container>
 
     </ng-container>

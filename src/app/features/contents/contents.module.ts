@@ -7,21 +7,25 @@ import {ContentsRoutingModule} from './contents-routing.module';
 import {SpaceService} from '@shared/services/space.service';
 import {SchematicService} from '@shared/services/schematic.service';
 import {ContentService} from '@shared/services/content.service';
-import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';
 import {ContentEditDialogComponent} from './content-edit-dialog/content-edit-dialog.component';
 import {PageDataEditComponent} from './page-data-edit/page-data-edit.component';
 import {
   PageDataSchematicEditComponent
 } from './page-data-schematic-edit/page-data-schematic-edit.component';
 import {ContentHelperService} from '@shared/services/content-helper.service';
-import {FolderAddDialogComponent} from './folder-add-dialog/folder-add-dialog.component';
 import {LinkSelectComponent} from './link-select/link-select.component';
+import {
+  ContentPageAddDialogComponent
+} from './content-page-add-dialog/content-page-add-dialog.component';
+import {
+  ContentFolderAddDialogComponent
+} from './content-folder-add-dialog/content-folder-add-dialog.component';
 
 @NgModule({
   declarations: [
-    FolderAddDialogComponent,
     ContentsComponent,
-    PageAddDialogComponent,
+    ContentFolderAddDialogComponent,
+    ContentPageAddDialogComponent,
     ContentEditDialogComponent,
     PageDataEditComponent,
     PageDataSchematicEditComponent,

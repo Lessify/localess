@@ -51,6 +51,13 @@ const hasPermissionContentRead = () => {
   )
 };
 
+const hasPermissionAssetRead = () => {
+  return pipe(
+    customClaims,
+    map((claims) => claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.ASSET_READ) || false))
+  )
+};
+
 const routes: Routes = [
   {
     path: '',
@@ -113,6 +120,15 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionContentRead
+        }
+      },
+      {
+        path: 'assets',
+        title: 'Assets',
+        loadChildren: () => import('./assets/assets.module').then(m => m.AssetsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionAssetRead
         }
       },
     ]

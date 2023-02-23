@@ -1,10 +1,11 @@
 export interface SpaceState {
   id: string
   name: string
-  contentPath?: ContentPathItem[]
+  contentPath?: PathItem[]
+  assetPath?: PathItem[]
 }
 
-export interface ContentPathItem {
+export interface PathItem {
   fullSlug: string
   name: string
 }

@@ -6,7 +6,6 @@ import {
 } from '@shared/models/schematic.model';
 import {FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {ContentError, ContentPageData} from '@shared/models/content.model';
-import {CommonPattern} from '@shared/validators/common.validator';
 
 @Injectable()
 export class ContentHelperService {

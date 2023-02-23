@@ -28,25 +28,34 @@ Whether you're a developer looking to expand your app's reach or a business owne
 ![Localess Video](https://github.com/Lessify/localess/wiki/img/app_animation.gif)
 
 ## Supporting Localess & Lessify Project
+
+**Lessify** is an innovative software company focused on open-source technology and simplifying software for users.
+With a commitment to transparency and collaboration, Lessify is dedicated to creating user-friendly software accessible to everyone.
+
 **Localess** is part of the **Lessify Project**, is an open source project with its ongoing development made possible entirely by the support of Sponsors.
-If you would like to become a sponsor, please consider:
+
+Our mission is to create software that's accessible, reliable, and easy to use. 
+By being sponsored on GitHub, we can focus on improving our projects and building a stronger community. 
+With your support, we can cover expenses such as hosting, development costs, and more while providing exclusive updates, features, and benefits.
+
+Thank you for considering sponsoring us on GitHub!
 
 ## Key Features
 
 - Translation Management Tool :
   - Edit your localisation content in real time.
-  - Translate with Google Translate.
+  - Translate with help of Artificial Intelligence (Google Translate).
   - No application build required anymore.
-- Content Management System **(BETA)** :
-  - Define content data structure with Schematic (type, requirements, validation).
+- Content Management System :
+  - Define shape of your content data with Schematics.
+  - Define Validation for quality data.
   - Create hierarchical content.
-  - Content validation.
-- Publish your changes (instant update).
-- Google CDN Integration (very fast response time, about 300ms for 125kb of 5000 translations).
-- Import / Export content between environments and applications.
+- Low code platform.
+- Publish your changes with instant application.
+- Google CDN Integration (very fast response time, about 20ms for 5000 translations).
+- Easy way to migrate or back data with Import / Export feature.
 - User Management with granular permissions.
-- Integration via API with any programming language.
-- Few lines of integration with your project.
+- Integration via API with any kind of application and language.
 
 ## Documentation
 1. [Overview](https://github.com/Lessify/localess/wiki)

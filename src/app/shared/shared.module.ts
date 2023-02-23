@@ -44,6 +44,7 @@ import {BreadcrumbItemComponent} from '@shared/components/breadcrumb/breadcrumb-
 import {ClipboardModule} from '@angular/cdk/clipboard';
 import {MatBadgeModule} from '@angular/material/badge';
 import {CanUserPerformPipe} from '@shared/pipes/can-user-perform.pipe';
+import {DigitalStorePipe} from '@shared/pipes/digital-store.pipe';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -81,8 +82,9 @@ const MATERIAL_MODULES: any[] = [
 ];
 
 const SHARED_PIPES: any[] = [
-  TranslationFilterPipe,
-  CanUserPerformPipe
+  CanUserPerformPipe,
+  DigitalStorePipe,
+  TranslationFilterPipe
 ]
 
 const SHARED_COMPONENTS: any[] = [

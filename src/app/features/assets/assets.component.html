@@ -1,38 +1,21 @@
 <mat-toolbar>
   <mat-toolbar-row>
-    Content
+    Assets
     <span class="spacer"></span>
 
-    <ng-container *ngIf="'CONTENT_CREATE' | canUserPerform | async">
-      <button mat-raised-button color="primary"
-        [matMenuTriggerFor]="contentCreateMenu">
+    <ng-container *ngIf="'ASSET_CREATE' | canUserPerform | async">
+      <button mat-raised-button color="primary" (click)="fileInput.click()">
+        <mat-icon>upload_file</mat-icon>
+        Upload Assets
+      </button>
+      <input hidden type="file" multiple #fileInput (change)="onFileChange($event)"/>
+
+      <button mat-raised-button color="primary" (click)="openAddFolderDialog()">
         <mat-icon>add</mat-icon>
-        Add Content
+        Create Folder
       </button>
-      <mat-menu #contentCreateMenu="matMenu">
-        <button mat-menu-item (click)="openAddPageDialog()">
-          <mat-icon>web_stories</mat-icon>
-          <span>Page</span>
-        </button>
-        <button mat-menu-item (click)="openAddFolderDialog()">
-          <mat-icon>folder</mat-icon>
-          <span>Folder</span>
-        </button>
-      </mat-menu>
+
     </ng-container>
-
-    <button
-      mat-icon-button
-      [matMenuTriggerFor]="extraMenu">
-      <mat-icon>more_vert</mat-icon>
-    </button>
-
-    <mat-menu #extraMenu="matMenu">
-      <button mat-menu-item (click)="openLinksInNewTab()">
-        <mat-icon>link</mat-icon>
-        <span>Links</span>
-      </button>
-    </mat-menu>
 
   </mat-toolbar-row>
 </mat-toolbar>
@@ -42,7 +25,7 @@
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
   <ll-breadcrumb>
-    <ll-breadcrumb-item *ngFor="let pathItem of contentPath" (click)="navigateToSlug(pathItem)">
+    <ll-breadcrumb-item *ngFor="let pathItem of assetPath" (click)="navigateToSlug(pathItem)">
       <ng-container *ngIf="pathItem.fullSlug === ''">
         <mat-icon>home</mat-icon>
       </ng-container>
@@ -66,51 +49,52 @@
         </mat-checkbox>
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="status">
-      <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
+    <ng-container matColumnDef="icon">
+      <mat-header-cell *matHeaderCellDef> Icon </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container [ngSwitch]="element.kind">
-          <ng-container *ngSwitchCase="'PAGE'">
-            <ng-container *ngIf="element?.publishedAt === undefined">
-              <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
-            </ng-container>
-            <ng-container *ngIf="element?.publishedAt?.seconds > element?.updatedAt?.seconds">
-              <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
-            </ng-container>
-            <ng-container *ngIf="element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds">
-              <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
+          <ng-container *ngSwitchCase="'FILE'">
+            <ng-container [ngSwitch]="true">
+              <ng-container *ngSwitchCase="element.type.startsWith('audio/')">
+                <mat-icon>audio_file</mat-icon>
+              </ng-container>
+              <ng-container *ngSwitchCase="element.type.startsWith('image/')">
+                <mat-icon>image</mat-icon>
+              </ng-container>
+              <ng-container *ngSwitchCase="element.type.startsWith('font/')">
+                <mat-icon>font_download</mat-icon>
+              </ng-container>
+              <ng-container *ngSwitchCase="element.type.startsWith('video/')">
+                <mat-icon>video_file</mat-icon>
+              </ng-container>
+              <ng-container *ngSwitchDefault>
+                <mat-icon>file_present</mat-icon>
+              </ng-container>
             </ng-container>
           </ng-container>
           <ng-container *ngSwitchCase="'FOLDER'">
             <mat-icon>folder</mat-icon>
           </ng-container>
         </ng-container>
-
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{element.name}}
+        {{element.name}}{{element.extension}}
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="slug">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug </mat-header-cell>
+    <ng-container matColumnDef="size">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{element.slug}}
+        {{element.size | digitalStore}}
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="schematic">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="schematic"> Schematic </mat-header-cell>
+    <ng-container matColumnDef="type">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <ng-container *ngIf="element.kind === 'PAGE'">
-          {{schematicsMap.get(element.schematic).displayName || schematicsMap.get(element.schematic).name || 'unknown...'}}
-        </ng-container>
+        {{element.type}}
       </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="publishedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="publishedAt"> Published At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.publishedAt?.toDate() | date:'medium'}} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
@@ -124,14 +108,14 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef>
         <button mat-stroked-button
-                *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
+                *ngIf="'ASSET_UPDATE' | canUserPerform | async"
                 [disabled]="selection.selected.length !== 1"
                 (click)="openEditDialog(selection.selected[0])">
           <mat-icon>edit</mat-icon>
           Edit
         </button>
         <button mat-stroked-button
-                *ngIf="'CONTENT_DELETE' | canUserPerform | async"
+                *ngIf="'ASSET_DELETE' | canUserPerform | async"
                 [disabled]="selection.selected.length !== 1"
                 (click)="openDeleteDialog(selection.selected[0])">
           <mat-icon>delete</mat-icon>

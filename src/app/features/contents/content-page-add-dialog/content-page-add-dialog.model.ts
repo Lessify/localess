@@ -1,6 +1,6 @@
 import {Schematic} from '@shared/models/schematic.model';
 
-export interface PageAddDialogModel {
+export interface ContentPageAddDialogModel {
   schematics: Schematic[]
   reservedNames: string[];
   reservedSlugs: string[];

@@ -1,3 +1,5 @@
+export {onAssetDelete} from './assets';
+
 export {contentPublish, onContentUpdate, onContentDelete, onContentWrite} from './contents';
 
 export {setup} from './setup';
