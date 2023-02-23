@@ -1,26 +1,32 @@
 import {Timestamp} from '@angular/fire/firestore';
 
-export type Asset = AssetImage;
+export type Asset = AssetImage | AssetFolder;
+
+export enum AssetKind {
+  FOLDER = 'FOLDER',
+  ASSET = 'ASSET'
+}
+
+export  interface AssetFolder extends AssetBase{
+  kind: AssetKind.FOLDER
+}
 
 export interface AssetBase {
   id: string,
   kind: AssetKind,
   name: string,
-  extension: string,
-  size: number,
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-export enum AssetKind {
-  IMAGE = 'IMAGE',
-  OTHER = 'OTHER'
+export interface AssetFile extends AssetBase{
+  extension: string,
+  size: number,
 }
 
-export interface AssetImage extends AssetBase {
+export interface AssetImage extends AssetFile {
 
-  kind: AssetKind.IMAGE
   alt?: string,
   height?: string,
   width?: string,
