@@ -4,14 +4,18 @@ import {
   collection,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   DocumentReference,
   Firestore,
+  orderBy,
   query,
+  QueryConstraint,
   serverTimestamp,
   UpdateData,
-  updateDoc
+  updateDoc,
+  where
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
@@ -25,7 +29,6 @@ import {
   SchematicUpdateFS
 } from '@shared/models/schematic.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
-import {deleteField, QueryConstraint, where} from '@firebase/firestore';
 
 @Injectable()
 export class SchematicService {
@@ -35,7 +38,7 @@ export class SchematicService {
   }
 
   findAll(spaceId: string, type?: SchematicType): Observable<Schematic[]> {
-    const queryConstrains: QueryConstraint[] = []
+    const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')]
 
     if (type) {
       queryConstrains.push(

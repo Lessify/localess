@@ -43,12 +43,20 @@ service cloud.firestore {
         allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMATIC_DELETE'));
       }
 
-      // Pages
+      // Content
       match /contents/{contentId} {
         allow read: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_READ'));
         allow create: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_CREATE'));
         allow update: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_UPDATE'));
         allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('CONTENT_DELETE'));
+      }
+
+      // Assets
+      match /assets/{assetId} {
+        allow read: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_READ','CONTENT_READ']));
+        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('ASSET_CREATE'));
+        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('ASSET_UPDATE'));
+        allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('ASSET_DELETE'));
       }
     }
 

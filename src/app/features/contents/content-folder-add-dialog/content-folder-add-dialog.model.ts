@@ -1,4 +1,4 @@
-export interface FolderAddDialogModel {
+export interface ContentFolderAddDialogModel {
   reservedNames: string[];
   reservedSlugs: string[];
 }

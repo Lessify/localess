@@ -5,6 +5,8 @@ import {bucket, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './co
 import {Space} from './models/space.model';
 import {Content, ContentKind, ContentLink} from './models/content.model';
 import {Query} from 'firebase-admin/firestore';
+import {AssetFile} from './models/asset.model';
+import * as os from 'os';
 
 // API V1
 const expressV1 = express();
@@ -100,12 +102,12 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces links cache meta : ' + JSON.stringify(metadata));
     if (version === undefined || version != metadata.generation) {
-      let redirectLink = `/api/v1/spaces/${spaceId}/links?version=${metadata.generation}`
+      let redirectLink = `/api/v1/spaces/${spaceId}/links?version=${metadata.generation}`;
       if (kind !== undefined) {
-        redirectLink += `&kind=${kind}`
+        redirectLink += `&kind=${kind}`;
       }
       if (startSlug !== undefined) {
-        redirectLink += `&startSlug=${startSlug}`
+        redirectLink += `&startSlug=${startSlug}`;
       }
       res.redirect(redirectLink);
       return;
@@ -212,4 +214,31 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId/:locale', async (req,
     return;
   }
 });
+
+expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
+  logger.info('v1 spaces asset: ' + JSON.stringify(req.params));
+  const {spaceId, assetId} = req.params;
+
+  const assetPath = `spaces/${spaceId}/assets/${assetId}/original`;
+  const [exists] = await bucket.file(assetPath).exists();
+  const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
+  if (exists && assetSnapshot.exists) {
+    const asset = assetSnapshot.data() as AssetFile;
+    const tempFilePath = `${os.tmpdir()}/${asset.name}`;
+    await bucket.file(assetPath).download({destination: tempFilePath});
+    res
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .header('Content-Disposition', `inline; filename="${asset.name}${asset.extension}"`)
+      .contentType(asset.type)
+      .sendFile(tempFilePath)
+    return;
+  } else {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new https.HttpsError('not-found', 'Asset not found.'));
+    return;
+  }
+});
+
 export const v1 = https.onRequest(expressV1);

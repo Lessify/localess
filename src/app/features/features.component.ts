@@ -60,8 +60,9 @@ export class FeaturesComponent implements OnInit {
 
   userSideMenu: SideMenuItem[] = [
     {link: 'translations', label: 'Translations', icon: 'translate', permission: UserPermission.TRANSLATION_READ},
-    {link: 'contents', label: 'Content (Beta)', icon: 'web_stories', permission: UserPermission.CONTENT_READ},
-    {link: 'schematics', label: 'Schematics (Beta)', icon: 'schema', permission: UserPermission.SCHEMATIC_READ},
+    {link: 'contents', label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ},
+    {link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ},
+    {link: 'schematics', label: 'Schematics', icon: 'schema', permission: UserPermission.SCHEMATIC_READ},
     {link: 'locales', label: 'Locales', icon: 'language', permission: UserPermission.SPACE_MANAGEMENT}
   ];
 

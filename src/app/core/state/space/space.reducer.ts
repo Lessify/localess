@@ -1,6 +1,10 @@
 import {Action, ActionReducer, createReducer, on} from '@ngrx/store';
 import {SpaceState} from './space.model';
-import {actionSpaceChange, actionSpaceContentPathChange} from './space.actions';
+import {
+  actionSpaceAssetPathChange,
+  actionSpaceChange,
+  actionSpaceContentPathChange
+} from './space.actions';
 
 
 export const initialState: SpaceState = {
@@ -18,6 +22,11 @@ const reducer: ActionReducer<SpaceState, Action> = createReducer(
   on(actionSpaceContentPathChange, (state, {contentPath}) => ({
     ...state,
     contentPath
+    })
+  ),
+  on(actionSpaceAssetPathChange, (state, {assetPath}) => ({
+      ...state,
+    assetPath
     })
   )
 );

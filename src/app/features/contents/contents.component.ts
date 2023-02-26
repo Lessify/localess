@@ -35,16 +35,22 @@ import {
   ContentUpdate
 } from '@shared/models/content.model';
 import {ContentService} from '@shared/services/content.service';
-import {PageAddDialogComponent} from './page-add-dialog/page-add-dialog.component';
-import {PageAddDialogModel} from './page-add-dialog/page-add-dialog.model';
 import {ContentEditDialogComponent} from './content-edit-dialog/content-edit-dialog.component';
 import {ContentEditDialogModel} from './content-edit-dialog/content-edit-dialog.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
-import {FolderAddDialogComponent} from './folder-add-dialog/folder-add-dialog.component';
-import {FolderAddDialogModel} from './folder-add-dialog/folder-add-dialog.model';
 import {SelectionModel} from '@angular/cdk/collections';
-import {ContentPathItem} from '@core/state/space/space.model';
+import {PathItem} from '@core/state/space/space.model';
 import {actionSpaceContentPathChange} from '@core/state/space/space.actions';
+import {
+  ContentFolderAddDialogComponent
+} from './content-folder-add-dialog/content-folder-add-dialog.component';
+import {
+  ContentFolderAddDialogModel
+} from './content-folder-add-dialog/content-folder-add-dialog.model';
+import {
+  ContentPageAddDialogComponent
+} from './content-page-add-dialog/content-page-add-dialog.component';
+import {ContentPageAddDialogModel} from './content-page-add-dialog/content-page-add-dialog.model';
 
 @Component({
   selector: 'll-contents',
@@ -65,7 +71,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   schematics: Schematic[] = [];
   schematicsMap: Map<string, Schematic> = new Map<string, Schematic>();
   contents: Content[] = [];
-  contentPath: ContentPathItem[] = [];
+  contentPath: PathItem[] = [];
 
   get parentPath(): string {
     if (this.contentPath && this.contentPath.length > 0) {
@@ -141,8 +147,8 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   openAddPageDialog(): void {
-    this.dialog.open<PageAddDialogComponent, PageAddDialogModel, ContentPageCreate>(
-      PageAddDialogComponent, {
+    this.dialog.open<ContentPageAddDialogComponent, ContentPageAddDialogModel, ContentPageCreate>(
+      ContentPageAddDialogComponent, {
         width: '500px',
         data: {
           schematics: this.schematics,
@@ -168,8 +174,8 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   openAddFolderDialog(): void {
-    this.dialog.open<FolderAddDialogComponent, FolderAddDialogModel, ContentFolderCreate>(
-      FolderAddDialogComponent, {
+    this.dialog.open<ContentFolderAddDialogComponent, ContentFolderAddDialogModel, ContentFolderCreate>(
+      ContentFolderAddDialogComponent, {
         width: '500px',
         data: {
           reservedNames: this.contents.map(it => it.name),
@@ -273,7 +279,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
     this.selection.select(...this.dataSource.data);
   }
 
-  onContentRowSelect(element: Content): void {
+  onRowSelect(element: Content): void {
     if (element.kind === ContentKind.PAGE) {
       element.publishedAt
       if (this.schematicsMap.has(element.schematic)) {
@@ -296,7 +302,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
     }
   }
 
-  navigateToSlug(pathItem: ContentPathItem) {
+  navigateToSlug(pathItem: PathItem) {
     this.selection.clear()
     const contentPath = ObjectUtils.clone(this.contentPath)
     const idx = contentPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);

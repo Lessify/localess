@@ -58,7 +58,7 @@ export const schematicComponentKindDescriptions: Record<string, ComponentKindDes
   'OPTION': {name: 'Single Option', icon: 'list'},
   'OPTIONS': {name: 'Multiple Options', icon: 'list'},
   'LINK': {name: 'Link', icon: 'link'},
-  'SCHEMATIC': {name: 'Schematic (Beta)', icon: 'polyline'},
+  'SCHEMATIC': {name: 'Schematic', icon: 'polyline'},
 }
 
 export interface SchematicComponentBase {

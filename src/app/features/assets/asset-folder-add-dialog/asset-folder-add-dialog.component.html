@@ -1,0 +1,20 @@
+<h1 mat-dialog-title>Create new Folder</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+    <mat-form-field>
+      <mat-label>Name</mat-label>
+      <input matInput type="text" formControlName="name" maxlength="50" autocomplete="off"/>
+      <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/50</mat-hint>
+      <mat-error *ngIf="form.controls['name'].errors as errors">{{fe.errors(errors)}}</mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary"
+          [mat-dialog-close]="form.value"
+          [disabled]="!form.valid">
+    Save
+  </button>
+</mat-dialog-actions>
+<!--{{form.value | json}}-->

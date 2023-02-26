@@ -7,21 +7,25 @@ import {
   doc,
   docData,
   DocumentReference,
-  Firestore, limit, orderBy,
+  Firestore,
+  limit,
+  orderBy,
   query,
+  QueryConstraint,
   serverTimestamp,
   UpdateData,
-  updateDoc
+  updateDoc,
+  where
 } from '@angular/fire/firestore';
-import {from, Observable, switchMap} from 'rxjs';
+import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {ObjectUtils} from '@core/utils/object-utils.service';
 import {
   Content,
   ContentFolderCreate,
   ContentFolderCreateFS,
-  ContentKind, ContentPage,
+  ContentKind,
+  ContentPage,
   ContentPageCreate,
   ContentPageCreateFS,
   ContentPageData,
@@ -30,9 +34,7 @@ import {
   ContentUpdateFS
 } from '@shared/models/content.model';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {getDocs, QueryConstraint, where, writeBatch} from '@firebase/firestore';
 import {ContentHelperService} from '@shared/services/content-helper.service';
-import {SchematicComponentKind} from '@shared/models/schematic.model';
 
 @Injectable()
 export class ContentService {
@@ -44,7 +46,7 @@ export class ContentService {
   }
 
   findAll(spaceId: string, parentSlug?: string): Observable<Content[]> {
-    const queryConstrains: QueryConstraint[] = []
+    const queryConstrains: QueryConstraint[] = [orderBy('kind', 'asc'), orderBy('name', 'asc')]
     if (parentSlug) {
       queryConstrains.push(
         where('parentSlug', '==', parentSlug)

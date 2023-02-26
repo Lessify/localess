@@ -6,6 +6,7 @@ import {
   collection,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   Firestore,
@@ -16,7 +17,6 @@ import {
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {userInvite, usersSync} from '../../../../functions/src';
-import {deleteField} from '@firebase/firestore';
 
 @Injectable()
 export class UserService {

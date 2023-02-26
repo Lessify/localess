@@ -1,35 +1,32 @@
-import {Timestamp} from '@angular/fire/firestore';
+import {FieldValue, Timestamp} from '@angular/fire/firestore';
 
-export type Asset = AssetImage | AssetFolder;
+export type Asset = AssetFile | AssetFolder;
 
 export enum AssetKind {
   FOLDER = 'FOLDER',
-  ASSET = 'ASSET'
-}
-
-export  interface AssetFolder extends AssetBase{
-  kind: AssetKind.FOLDER
+  FILE = 'FILE'
 }
 
 export interface AssetBase {
   id: string,
   kind: AssetKind,
   name: string,
+  parentPath: string,
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-export interface AssetFile extends AssetBase{
-  extension: string,
-  size: number,
+export interface AssetFolder extends AssetBase {
+  kind: AssetKind.FOLDER
 }
 
-export interface AssetImage extends AssetFile {
-
+export interface AssetFile extends AssetBase {
+  kind: AssetKind.FILE
+  extension: string,
+  type: string,
+  size: number,
   alt?: string,
-  height?: string,
-  width?: string,
 }
 
 // Common image file types
@@ -52,4 +49,36 @@ export const webImages: Record<string, string> = {
   '.cur': 'Chrome, Edge, Firefox, IE, Opera, Safari',
   '.tif': 'Safari',
   '.tiff': 'Safari',
+}
+
+
+export interface AssetFolderCreate {
+  name: string;
+}
+
+export interface AssetFileCreate {
+  name: string;
+}
+
+
+// Firestore
+
+export interface AssetCreateFS {
+  kind: AssetKind
+  name: string;
+  parentPath: string
+  createdAt: FieldValue;
+  updatedAt: FieldValue;
+}
+
+export interface AssetFileCreateFS extends AssetCreateFS {
+  kind: AssetKind.FILE,
+  extension: string,
+  type: string,
+  size: number,
+  alt?: string,
+}
+
+export interface AssetFolderCreateFS extends AssetCreateFS {
+  kind: AssetKind.FOLDER,
 }
