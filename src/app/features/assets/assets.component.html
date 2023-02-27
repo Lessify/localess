@@ -54,23 +54,7 @@
       <mat-cell *matCellDef="let element">
         <ng-container [ngSwitch]="element.kind">
           <ng-container *ngSwitchCase="'FILE'">
-            <ng-container [ngSwitch]="true">
-              <ng-container *ngSwitchCase="element.type.startsWith('audio/')">
-                <mat-icon>audio_file</mat-icon>
-              </ng-container>
-              <ng-container *ngSwitchCase="element.type.startsWith('image/')">
-                <mat-icon>image</mat-icon>
-              </ng-container>
-              <ng-container *ngSwitchCase="element.type.startsWith('font/')">
-                <mat-icon>font_download</mat-icon>
-              </ng-container>
-              <ng-container *ngSwitchCase="element.type.startsWith('video/')">
-                <mat-icon>video_file</mat-icon>
-              </ng-container>
-              <ng-container *ngSwitchDefault>
-                <mat-icon>file_present</mat-icon>
-              </ng-container>
-            </ng-container>
+            <mat-icon>{{fileIcon(element.type)}}</mat-icon>
           </ng-container>
           <ng-container *ngSwitchCase="'FOLDER'">
             <mat-icon>folder</mat-icon>

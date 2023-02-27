@@ -143,6 +143,10 @@
                         [component]="component"
                         [pages]="pages"/>
       </ng-container>
+      <!--ASSET-->
+      <ng-container *ngSwitchCase="'ASSET'">
+        <ll-asset-select/>
+      </ng-container>
       <!--SCHEMATIC-->
       <ng-container *ngSwitchCase="'SCHEMATIC'">
         <mat-card class="ll-not-shadow">

@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {ContentPageAddDialogModel} from './content-page-add-dialog.model';

@@ -9,12 +9,12 @@ import {map} from 'rxjs/operators';
 import {environment} from '../../../../environments/environment';
 
 @Component({
-  selector: 'll-link-select',
-  templateUrl: './link-select.component.html',
-  styleUrls: ['./link-select.component.scss'],
+  selector: 'll-asset-select',
+  templateUrl: './asset-select.component.html',
+  styleUrls: ['./asset-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LinkSelectComponent implements OnInit {
+export class AssetSelectComponent implements OnInit {
   isTest = environment.test
   @Input() form?: FormGroup;
   @Input() component?: SchematicComponent;

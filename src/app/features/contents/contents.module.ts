@@ -20,6 +20,7 @@ import {
 import {
   ContentFolderAddDialogComponent
 } from './content-folder-add-dialog/content-folder-add-dialog.component';
+import {AssetSelectComponent} from "./asset-select/asset-select.component";
 
 @NgModule({
   declarations: [
@@ -29,7 +30,8 @@ import {
     ContentEditDialogComponent,
     PageDataEditComponent,
     PageDataSchematicEditComponent,
-    LinkSelectComponent
+    LinkSelectComponent,
+    AssetSelectComponent
   ],
   imports: [CommonModule, SharedModule, ContentsRoutingModule],
   providers: [SpaceService, SchematicService, ContentService, ContentHelperService]

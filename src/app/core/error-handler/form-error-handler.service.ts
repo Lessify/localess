@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {AbstractControl, ValidationErrors} from '@angular/forms';
+import {ValidationErrors} from '@angular/forms';
 import {CommonPattern} from '@shared/validators/common.validator';
 
 @Injectable({
