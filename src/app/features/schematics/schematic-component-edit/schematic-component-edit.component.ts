@@ -1,7 +1,12 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {SchematicValidator} from '@shared/validators/schematic.validator';
-import {Schematic, SchematicComponentKind, schematicComponentKindDescriptions, SchematicComponentOptionSelectable} from '@shared/models/schematic.model';
+import {
+  Schematic,
+  SchematicComponentKind,
+  schematicComponentKindDescriptions,
+  SchematicComponentOptionSelectable
+} from '@shared/models/schematic.model';
 import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';

@@ -2,14 +2,10 @@ import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
-import {ContentService} from '@shared/services/content.service';
 import {ContentPage} from '@shared/models/content.model';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
-import {combineLatest, debounceTime, Observable, of, startWith, switchMap} from 'rxjs';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {selectSpace} from '@core/state/space/space.selector';
-import {filter, map} from 'rxjs/operators';
+import {debounceTime, Observable, of, startWith} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {environment} from '../../../../environments/environment';
 
 @Component({

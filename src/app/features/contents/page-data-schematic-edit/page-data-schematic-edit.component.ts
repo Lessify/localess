@@ -24,7 +24,6 @@ import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
 import {SchematicSelectChange} from './page-data-schematic-edit.model';
 import {ContentHelperService} from '@shared/services/content-helper.service';
-import {CommonPattern} from '@shared/validators/common.validator';
 
 @Component({
   selector: 'll-page-data-schematic-edit',

@@ -18,12 +18,7 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
-import {
-  Schematic,
-  SchematicCreate,
-  SchematicType,
-  SchematicUpdate
-} from '@shared/models/schematic.model';
+import {Schematic, SchematicCreate} from '@shared/models/schematic.model';
 import {SchematicService} from '@shared/services/schematic.service';
 import {combineLatest, Subject} from 'rxjs';
 import {SchematicAddDialogComponent} from './schematic-add-dialog/schematic-add-dialog.component';

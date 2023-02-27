@@ -1,5 +1,5 @@
 import {ValidatorFn, Validators} from '@angular/forms';
-import {CommonPattern, CommonValidator} from './common.validator';
+import {CommonValidator} from './common.validator';
 
 export class AssetValidator {
   public static NAME: ValidatorFn[] = [
