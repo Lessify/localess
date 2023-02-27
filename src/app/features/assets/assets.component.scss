@@ -18,12 +18,16 @@ mat-header-cell {
     max-width: 80px;
   }
 
-  &.mat-column-type {
+  &.mat-column-icon {
     max-width: 70px;
   }
 
   &.mat-column-size {
     max-width: 110px;
+  }
+
+  &.mat-column-type {
+    max-width: 120px;
   }
 
   &.mat-column-createdAt {
@@ -42,12 +46,16 @@ mat-cell {
     max-width: 80px;
   }
 
-  &.mat-column-type {
+  &.mat-column-icon {
     max-width: 70px;
   }
 
   &.mat-column-size {
     max-width: 110px;
+  }
+
+  &.mat-column-type {
+    max-width: 120px;
   }
 
   &.mat-column-createdAt {

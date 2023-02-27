@@ -224,6 +224,42 @@ export class SchematicComponentEditComponent implements OnInit {
         this.form.removeControl('schematics')
         break;
       }
+      case SchematicComponentKind.ASSET: {
+        // ADD
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchematicValidator.COMPONENT_TRANSLATABLE))
+        // REMOVE
+        // Text & TextArea
+        this.form.removeControl('minLength')
+        this.form.removeControl('maxLength')
+        // Number
+        this.form.removeControl('minValue')
+        this.form.removeControl('maxValue')
+        // Option & Options
+        this.form.removeControl('options')
+        this.form.removeControl('minValues')
+        this.form.removeControl('maxValues')
+        // Schematic
+        this.form.removeControl('schematics')
+        break;
+      }
+      case SchematicComponentKind.ASSETS: {
+        // ADD
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchematicValidator.COMPONENT_TRANSLATABLE))
+        // REMOVE
+        // Text & TextArea
+        this.form.removeControl('minLength')
+        this.form.removeControl('maxLength')
+        // Number
+        this.form.removeControl('minValue')
+        this.form.removeControl('maxValue')
+        // Option & Options
+        this.form.removeControl('options')
+        this.form.removeControl('minValues')
+        this.form.removeControl('maxValues')
+        // Schematic
+        this.form.removeControl('schematics')
+        break;
+      }
       case SchematicComponentKind.SCHEMATIC: {
         // ADD
         this.form.addControl('schematics', this.fb.control<string[] | undefined>(undefined));

@@ -26,7 +26,9 @@ export type SchematicComponent = SchematicComponentText
   | SchematicComponentSchematic
   | SchematicComponentOption
   | SchematicComponentOptions
-  | SchematicComponentLink;
+  | SchematicComponentLink
+  | SchematicComponentAsset
+  | SchematicComponentAssets;
 
 export enum SchematicComponentKind {
   TEXT = 'TEXT',
@@ -39,6 +41,8 @@ export enum SchematicComponentKind {
   OPTION = 'OPTION',
   OPTIONS = 'OPTIONS',
   LINK = 'LINK',
+  ASSET = 'ASSET',
+  ASSETS = 'ASSETS',
   SCHEMATIC = 'SCHEMATIC',
 }
 
@@ -58,6 +62,8 @@ export const schematicComponentKindDescriptions: Record<string, ComponentKindDes
   'OPTION': {name: 'Single Option', icon: 'list'},
   'OPTIONS': {name: 'Multiple Options', icon: 'list'},
   'LINK': {name: 'Link', icon: 'link'},
+  'ASSET': {name: 'Asset', icon: 'attachment'},
+  'ASSETS': {name: 'Assets', icon: 'attachment'},
   'SCHEMATIC': {name: 'Schematic', icon: 'polyline'},
 }
 
@@ -129,6 +135,14 @@ export interface SchematicComponentOptions extends SchematicComponentBase {
 
 export interface SchematicComponentLink extends SchematicComponentBase {
   kind: SchematicComponentKind.LINK
+}
+
+export interface SchematicComponentAsset extends SchematicComponentBase {
+  kind: SchematicComponentKind.ASSET
+}
+
+export interface SchematicComponentAssets extends SchematicComponentBase {
+  kind: SchematicComponentKind.ASSETS
 }
 
 // Service

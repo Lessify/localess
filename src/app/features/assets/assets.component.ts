@@ -49,7 +49,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
-  displayedColumns: string[] = ['select', 'type', 'name', 'size', 'createdAt', 'updatedAt'];
+  displayedColumns: string[] = ['select', 'icon', 'name', 'size', 'type', 'createdAt', 'updatedAt'];
   selection = new SelectionModel<Asset>(true, []);
   assets: Asset[] = [];
   assetPath: PathItem[] = [];
@@ -81,6 +81,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   loadData(): void {
+    "".startsWith("")
     this.store.select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data

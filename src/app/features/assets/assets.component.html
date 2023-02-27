@@ -49,12 +49,28 @@
         </mat-checkbox>
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="type">
-      <mat-header-cell *matHeaderCellDef> Type </mat-header-cell>
+    <ng-container matColumnDef="icon">
+      <mat-header-cell *matHeaderCellDef> Icon </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container [ngSwitch]="element.kind">
           <ng-container *ngSwitchCase="'FILE'">
-            <mat-icon>attachment</mat-icon>
+            <ng-container [ngSwitch]="true">
+              <ng-container *ngSwitchCase="element.type.startsWith('audio/')">
+                <mat-icon>audio_file</mat-icon>
+              </ng-container>
+              <ng-container *ngSwitchCase="element.type.startsWith('image/')">
+                <mat-icon>image</mat-icon>
+              </ng-container>
+              <ng-container *ngSwitchCase="element.type.startsWith('font/')">
+                <mat-icon>font_download</mat-icon>
+              </ng-container>
+              <ng-container *ngSwitchCase="element.type.startsWith('video/')">
+                <mat-icon>video_file</mat-icon>
+              </ng-container>
+              <ng-container *ngSwitchDefault>
+                <mat-icon>file_present</mat-icon>
+              </ng-container>
+            </ng-container>
           </ng-container>
           <ng-container *ngSwitchCase="'FOLDER'">
             <mat-icon>folder</mat-icon>
@@ -72,6 +88,12 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size </mat-header-cell>
       <mat-cell *matCellDef="let element">
         {{element.size | digitalStore}}
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="type">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        {{element.type}}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">

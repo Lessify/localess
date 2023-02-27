@@ -75,7 +75,6 @@ export class FeaturesComponent implements OnInit {
     {link: 'https://github.com/Lessify/localess', label: 'Code', icon: 'code'},
     {link: 'https://github.com/Lessify/localess/issues', label: 'Feedback', icon: 'forum'},
     {link: 'https://github.com/Lessify/localess/wiki', label: 'Help', icon: 'help'},
-    {link: 'https://github.com/Lessify/localess/releases', label: 'Releases', icon: 'new_releases'},
   ];
 
   isAuthenticated$: Observable<boolean> | undefined;
