@@ -62,8 +62,8 @@ export const schematicComponentKindDescriptions: Record<string, ComponentKindDes
   'OPTION': {name: 'Single Option', icon: 'list'},
   'OPTIONS': {name: 'Multiple Options', icon: 'list'},
   'LINK': {name: 'Link', icon: 'link'},
-  'ASSET': {name: 'Asset', icon: 'attachment'},
-  'ASSETS': {name: 'Assets', icon: 'attachment'},
+  'ASSET': {name: 'Asset ( BETA )', icon: 'attachment'},
+  'ASSETS': {name: 'Assets ( BETA )', icon: 'attachment'},
   'SCHEMATIC': {name: 'Schematic', icon: 'polyline'},
 }
 

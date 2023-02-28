@@ -1,5 +1,20 @@
-<mat-card appearance="outlined">
-  <mat-card-content>
-    Asset
-  </mat-card-content>
-</mat-card>
+<mat-form-field floatLabel="always">
+  <mat-label>{{component?.displayName || component?.name}}</mat-label>
+  <input matInput placeholder="Placeholder" hidden>
+  <button mat-raised-button matTextSuffix color="accent">Add Asset</button>
+  <br>
+  <mat-grid-list cols="12" rowHeight="2:1">
+    <mat-grid-tile>1</mat-grid-tile>
+    <mat-grid-tile>2</mat-grid-tile>
+    <mat-grid-tile>3</mat-grid-tile>
+    <mat-grid-tile>4</mat-grid-tile>
+  </mat-grid-list>
+  <mat-icon matIconSuffix *ngIf="component?.translatable" matTooltip="The field is translatable">language</mat-icon>
+  <mat-hint *ngIf="component?.description">{{component.description}}</mat-hint>
+</mat-form-field>
+
+<!--<mat-card appearance="outlined">-->
+<!--  <mat-card-content>-->
+<!--    Asset-->
+<!--  </mat-card-content>-->
+<!--</mat-card>-->

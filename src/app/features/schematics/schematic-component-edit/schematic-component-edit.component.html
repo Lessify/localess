@@ -37,7 +37,7 @@
       <br/>
 
       <ng-container
-        *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS', 'LINK'].includes(form.value.kind)">
+        *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS', 'LINK', 'ASSET', 'ASSETS'].includes(form.value.kind)">
         <mat-checkbox formControlName="translatable">Translatable</mat-checkbox>
       </ng-container>
 
