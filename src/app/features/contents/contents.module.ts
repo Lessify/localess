@@ -21,6 +21,8 @@ import {
   ContentFolderAddDialogComponent
 } from './content-folder-add-dialog/content-folder-add-dialog.component';
 import {AssetSelectComponent} from "./asset-select/asset-select.component";
+import {AssetSelectDialogComponent} from './asset-select-dialog/asset-select-dialog.component';
+import {AssetService} from '@shared/services/asset.service';
 
 @NgModule({
   declarations: [
@@ -31,10 +33,11 @@ import {AssetSelectComponent} from "./asset-select/asset-select.component";
     PageDataEditComponent,
     PageDataSchematicEditComponent,
     LinkSelectComponent,
-    AssetSelectComponent
+    AssetSelectComponent,
+    AssetSelectDialogComponent
   ],
   imports: [CommonModule, SharedModule, ContentsRoutingModule],
-  providers: [SpaceService, SchematicService, ContentService, ContentHelperService]
+  providers: [SpaceService, SchematicService, ContentService, ContentHelperService, AssetService]
 })
 export class ContentsModule {
 }

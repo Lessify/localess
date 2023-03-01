@@ -68,7 +68,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   loadData(): void {
-    "".startsWith("")
     this.store.select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
@@ -92,7 +91,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: ([space, assets]) => {
-          console.log(assets)
           this.selectedSpace = space
           this.assets = assets;
 
@@ -106,7 +104,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       })
   }
 
-  onFileChange(event: Event): void {
+  onFileUpload(event: Event): void {
     if (event.target && event.target instanceof HTMLInputElement) {
       const target = event.target as HTMLInputElement
       if (target.files && target.files.length > 0) {

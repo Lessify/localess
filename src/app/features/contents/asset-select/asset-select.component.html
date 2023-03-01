@@ -1,7 +1,9 @@
 <mat-form-field floatLabel="always">
   <mat-label>{{component?.displayName || component?.name}}</mat-label>
   <input matInput placeholder="Placeholder" hidden>
-  <button mat-raised-button matTextSuffix color="accent">Add Asset</button>
+  <button mat-raised-button matTextSuffix color="accent" (click)="openAssetSelectDialog()">
+    Add Asset
+  </button>
   <br>
   <mat-grid-list cols="12" rowHeight="2:1">
     <mat-grid-tile>1</mat-grid-tile>
