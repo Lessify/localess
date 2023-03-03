@@ -8,14 +8,14 @@ import {
   ViewChild
 } from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {AssetSelectDialogModel} from './asset-select-dialog.model';
+import {AssetsSelectDialogModel} from './assets-select-dialog.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {PathItem} from '@core/state/space/space.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 import {SelectionModel} from '@angular/cdk/collections';
 import {Asset, AssetKind} from '@shared/models/asset.model';
-import {filter, switchMap, takeUntil} from 'rxjs/operators';
-import {Subject} from 'rxjs';
+import {switchMap, takeUntil} from 'rxjs/operators';
+import {BehaviorSubject, combineLatest, Subject} from 'rxjs';
 import {MatTableDataSource} from '@angular/material/table';
 import {AssetService} from '@shared/services/asset.service';
 import {MatSort} from '@angular/material/sort';
@@ -26,12 +26,12 @@ import {selectSpace} from '@core/state/space/space.selector';
 import {SpaceService} from '@shared/services/space.service';
 
 @Component({
-  selector: 'll-asset-select-dialog',
-  templateUrl: './asset-select-dialog.component.html',
-  styleUrls: ['./asset-select-dialog.component.scss'],
+  selector: 'll-assets-select-dialog',
+  templateUrl: './assets-select-dialog.component.html',
+  styleUrls: ['./assets-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AssetSelectDialogComponent implements OnInit, OnDestroy {
+export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
 
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
@@ -40,22 +40,29 @@ export class AssetSelectDialogComponent implements OnInit, OnDestroy {
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
   displayedColumns: string[] = ['select', 'icon', 'name', 'size', 'type', 'updatedAt'];
   selection = new SelectionModel<Asset>(this.data.multiple, []);
-  assetPath: PathItem[] = [{
-    name: 'Root',
-    fullSlug: ''
-  }];
+  assetPath: PathItem[] = [];
+
+  get parentPath(): string {
+    if (this.assetPath && this.assetPath.length > 0) {
+      return this.assetPath[this.assetPath.length - 1].fullSlug;
+    }
+    return '';
+  }
 
   // Subscriptions
   private destroy$ = new Subject();
+  path$ = new BehaviorSubject<PathItem[]>([{
+    name: 'Root',
+    fullSlug: ''
+  }]);
 
   constructor(
     private readonly assetService: AssetService,
     private readonly spaceService: SpaceService,
     readonly fe: FormErrorHandlerService,
     private readonly cd: ChangeDetectorRef,
-    private readonly store: Store<AppState>,
     @Inject(MAT_DIALOG_DATA)
-    public data: AssetSelectDialogModel
+    public data: AssetsSelectDialogModel
   ) {
   }
 
@@ -64,12 +71,12 @@ export class AssetSelectDialogComponent implements OnInit, OnDestroy {
   }
 
   loadData(): void {
-    this.store.select(selectSpace)
+      this.path$.asObservable()
       .pipe(
-        filter(it => it.id !== ''), // Skip initial data
-        switchMap(it =>
-          this.assetService.findAll(it.id, this.parentPath)
-        ),
+        switchMap(( path) => {
+          this.assetPath = path;
+          return this.assetService.findAll(this.data.spaceId, this.parentPath)
+        }),
         takeUntil(this.destroy$),
       )
       .subscribe({
@@ -79,24 +86,16 @@ export class AssetSelectDialogComponent implements OnInit, OnDestroy {
           this.dataSource = new MatTableDataSource<Asset>(assets);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
-          this.selection.clear()
           this.cd.markForCheck();
         }
       });
   }
 
-  get parentPath(): string {
-    if (this.assetPath && this.assetPath.length > 0) {
-      return this.assetPath[this.assetPath.length - 1].fullSlug;
-    }
-    return '';
-  }
-
   navigateToSlug(pathItem: PathItem) {
-    this.selection.clear()
     const assetPath = ObjectUtils.clone(this.assetPath)
     const idx = assetPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);
     assetPath.splice(idx + 1);
+    this.path$.next(assetPath)
   }
 
   onRowSelect(element: Asset): void {
@@ -106,12 +105,12 @@ export class AssetSelectDialogComponent implements OnInit, OnDestroy {
     }
 
     if (element.kind === AssetKind.FOLDER) {
-      this.selection.clear()
       const assetPath = ObjectUtils.clone(this.assetPath)
       assetPath.push({
         name: element.name,
         fullSlug: element.parentPath ? `${element.parentPath}/${element.id}` : element.id
       })
+      this.path$.next(assetPath)
     }
   }
 
@@ -126,6 +125,7 @@ export class AssetSelectDialogComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
     this.destroy$.complete()
+    this.path$.complete()
   }
 
 }

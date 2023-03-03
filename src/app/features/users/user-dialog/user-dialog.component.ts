@@ -13,7 +13,7 @@ import {environment} from '../../../../environments/environment';
 })
 export class UserDialogComponent implements OnInit {
 
-  isTest = environment.test;
+  isDebug = environment.debug;
 
   form: FormGroup = this.fb.group({
     role: this.fb.control<string | undefined>(undefined),

@@ -1,9 +1,9 @@
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component,
+  Component, OnChanges,
   OnDestroy,
-  OnInit
+  OnInit, SimpleChanges
 } from '@angular/core';
 import {FormBuilder} from '@angular/forms';
 import {Schematic,} from '@shared/models/schematic.model';
@@ -20,7 +20,7 @@ import {
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
-import {filter, switchMap, takeUntil} from 'rxjs/operators';
+import {distinctUntilKeyChanged, filter, switchMap, takeUntil, tap} from 'rxjs/operators';
 import {combineLatest, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
@@ -38,9 +38,9 @@ import {SchematicPathItem} from './page-data-edit.model';
   styleUrls: ['./page-data-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PageDataEditComponent implements OnInit, OnDestroy {
+export class PageDataEditComponent implements OnInit, OnDestroy, OnChanges {
 
-  isTest = environment.test
+  isDebug = environment.debug
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
   availableLocales: Locale[] = [];
@@ -156,7 +156,11 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
     console.group('save')
     this.isSaveLoading = true;
 
+    console.log(this.pageData)
+
     this.contentErrors = this.contentHelperService.validateContent(this.pageData, this.schematics, this.selectedLocale.id)
+
+    console.log(this.contentErrors)
 
     if (!this.contentErrors) {
       this.contentService.updatePageData(this.selectedSpace!.id, this.entityId, this.pageData)
@@ -222,5 +226,10 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
       }
       this.selectedPageData = localSelectedContent;
     }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    //console.log("PageDataEditComponent:ngOnChanges")
+    //console.log(changes)
   }
 }

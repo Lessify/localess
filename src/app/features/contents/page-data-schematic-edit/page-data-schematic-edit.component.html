@@ -145,7 +145,16 @@
       </ng-container>
       <!--ASSET-->
       <ng-container *ngSwitchCase="'ASSET'">
-        <ll-asset-select [component]="component"/>
+        <ll-asset-select [component]="component"
+                         [form]="form.controls[component.name]"
+                         [space]="space"/>
+      </ng-container>
+      <!--ASSETS-->
+      <ng-container *ngSwitchCase="'ASSETS'">
+        <ll-assets-select [component]="component"
+                          [form]="form.controls[component.name]"
+                          [space]="space"
+                          (assetsChange)="onAssetsChange()"/>
       </ng-container>
       <!--SCHEMATIC-->
       <ng-container *ngSwitchCase="'SCHEMATIC'">
@@ -200,8 +209,17 @@
   </form>
 </ng-container>
 
-<ng-container *ngIf="isTest">
-  <mat-divider></mat-divider>
-  Form :
-  <pre>{{form.value | json}}</pre>
+
+<ng-container *ngIf="isDebug">
+  <mat-divider/>
+  <br/>
+  <mat-accordion>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>PageDataSchematicEditComponent Form => {{form?.valid}}</mat-panel-title>
+      </mat-expansion-panel-header>
+      <pre>{{form.value | json}}</pre>
+    </mat-expansion-panel>
+  </mat-accordion>
+  <br/>
 </ng-container>

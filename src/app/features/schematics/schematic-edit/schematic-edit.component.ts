@@ -37,7 +37,7 @@ import {NotificationService} from "@shared/services/notification.service";
 })
 export class SchematicEditComponent implements OnInit, OnDestroy {
 
-  isTest = environment.test
+  isDebug = environment.debug
   selectedSpace?: Space;
   entityId: string;
   entity?: Schematic;
@@ -264,7 +264,7 @@ export class SchematicEditComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
-    console.group('save')
+    //console.group('save')
     this.isSaveLoading = true;
 
     this.schematicService.update(this.selectedSpace!.id, this.entityId, this.form.value as SchematicUpdate)

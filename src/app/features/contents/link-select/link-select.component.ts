@@ -1,4 +1,11 @@
-import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnChanges,
+  OnInit,
+  SimpleChanges
+} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
@@ -14,8 +21,8 @@ import {environment} from '../../../../environments/environment';
   styleUrls: ['./link-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LinkSelectComponent implements OnInit {
-  isTest = environment.test
+export class LinkSelectComponent implements OnInit, OnChanges {
+  isDebug = environment.debug
   @Input() form?: FormGroup;
   @Input() component?: SchematicComponent;
   @Input() pages: ContentPage[] = []
@@ -64,5 +71,9 @@ export class LinkSelectComponent implements OnInit {
   contentReset(): void {
     this.searchCtrl.setValue('');
     this.form?.controls['uri'].setValue(null);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    //console.log(changes)
   }
 }

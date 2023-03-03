@@ -2,10 +2,12 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  EventEmitter,
   Input,
   OnChanges,
   OnDestroy,
   OnInit,
+  Output,
   SimpleChanges
 } from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
@@ -23,17 +25,22 @@ import {AssetsSelectDialogComponent} from '../assets-select-dialog/assets-select
 import {AssetsSelectDialogModel} from '../assets-select-dialog/assets-select-dialog.model';
 
 @Component({
-  selector: 'll-asset-select',
-  templateUrl: './asset-select.component.html',
-  styleUrls: ['./asset-select.component.scss'],
+  selector: 'll-assets-select',
+  templateUrl: './assets-select.component.html',
+  styleUrls: ['./assets-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AssetSelectComponent implements OnInit, OnDestroy, OnChanges {
+export class AssetsSelectComponent implements OnInit, OnDestroy, OnChanges {
   isDebug = environment.debug
-  @Input() form?: FormGroup;
+  @Input() form?: FormArray;
+  // @Input() ids?: string[];
   @Input() component?: SchematicComponent;
   @Input() space?: Space;
-  asset?: Asset;
+
+
+  @Output() assetsChange = new EventEmitter<string[]>();
+
+  assets: Asset[] = []
 
   constructor(
     private readonly fb: FormBuilder,
@@ -47,22 +54,16 @@ export class AssetSelectComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnInit(): void {
-    console.log("AssetSelectComponent:ngOnInit")
-
-    if (this.form?.value.kind === null ) {
-      this.form.patchValue({kind: SchematicComponentKind.ASSET})
-    }
-
     this.loadData()
   }
 
   loadData(): void {
-    const id: string | undefined = this.form?.value.uri
-    if (id) {
-      this.assetService.findById(this.space?.id!!, id)
+    const ids: string[] | undefined = this.form?.controls.map(it => it.value.uri as string)
+    if (ids && ids.length > 0) {
+      this.assetService.findByIds(this.space?.id!!, ids)
         .subscribe({
-          next: (asset) => {
-            this.asset = asset
+          next: (assets) => {
+            this.assets = assets
             this.cd.markForCheck()
           }
         })
@@ -78,20 +79,19 @@ export class AssetSelectComponent implements OnInit, OnDestroy, OnChanges {
         maxHeight: "calc(100vh - 80px)",
         data: {
           spaceId: this.space?.id!!,
-          multiple: false
+          multiple: true
         }
       })
       .afterClosed()
       .subscribe({
         next: (selectedAssets) => {
-          if (selectedAssets && selectedAssets.length > 0) {
-            this.asset = selectedAssets[0]
-            this.form?.patchValue({
-              uri: this.asset.id,
-              kind: SchematicComponentKind.ASSET
-            })
-            // this.assets.forEach(it => this.form?.push(this.assetToForm(it)))
-            this.cd.markForCheck();
+          if (selectedAssets) {
+            this.assets.push(...selectedAssets)
+            this.form?.clear()
+            this.assets.forEach(it => this.form?.push(this.assetToForm(it)))
+            this.assetsChange.next(this.assets.map(it => it.id))
+            //this.form?.root.updateValueAndValidity()
+            //this.cd.markForCheck();
           }
         }
       });
@@ -105,17 +105,19 @@ export class AssetSelectComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnDestroy(): void {
+    this.assetsChange.complete()
     //console.log("AssetsSelectComponent:ngOnDestroy")
   }
 
-  deleteAsset() {
-    this.asset = undefined;
-    this.form?.controls['uri'].setValue(null);
-    //this.form?.reset();
+  deleteAsset(idx: number) {
+    this.assets.splice(idx, 1)
+    this.form?.removeAt(idx)
+    this.assetsChange.next(this.assets.map(it => it.id))
+    //this.form?.root.updateValueAndValidity()
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    //console.log("AssetsSelectComponent:ngOnChanges")
-    //console.log(changes)
+    console.log("AssetsSelectComponent:ngOnChanges")
+    console.log(changes)
   }
 }

@@ -17,6 +17,7 @@ export const environment = {
   },
   production: true,
   test: false,
+  debug: false,
   useEmulators: false,
   version: packageInfo.version,
 };

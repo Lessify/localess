@@ -24,7 +24,7 @@ export class SchematicComponentEditComponent implements OnInit {
   @Input() schematics: Schematic[] = [];
 
   componentKinds = Object.keys(SchematicComponentKind)
-  isTest = environment.test
+  isDebug = environment.debug
 
   schematicComponentKindDescriptions = schematicComponentKindDescriptions;
   selectedComponentKind = this.schematicComponentKindDescriptions[SchematicComponentKind.TEXT];

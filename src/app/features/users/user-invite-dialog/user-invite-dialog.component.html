@@ -140,6 +140,6 @@
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Invite</button>
 </mat-dialog-actions>
 
-<ng-container *ngIf="isTest">
+<ng-container *ngIf="isDebug">
   <pre>{{form.value | json}}</pre>
 </ng-container>

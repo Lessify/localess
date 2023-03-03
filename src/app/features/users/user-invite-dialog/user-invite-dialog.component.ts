@@ -13,7 +13,7 @@ import {environment} from '../../../../environments/environment';
 })
 export class UserInviteDialogComponent {
 
-  isTest = environment.test
+  isDebug = environment.debug
 
   form: FormGroup = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.minLength(2), Validators.email]),

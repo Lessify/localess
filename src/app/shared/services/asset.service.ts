@@ -6,6 +6,7 @@ import {
   deleteDoc,
   doc,
   docData,
+  documentId,
   DocumentReference,
   Firestore,
   orderBy,
@@ -71,6 +72,20 @@ export class AssetService {
       .pipe(
         traceUntilFirst('Firestore:Assets:findById'),
         map((it) => it as Asset)
+      );
+  }
+
+  findByIds(spaceId: string, ids: string[]): Observable<Asset[]> {
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces/${spaceId}/assets`),
+        where(documentId(), 'in', ids)
+      ),
+      {idField: 'id'}
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Assets:findByIds'),
+        map((it) => it as Asset[])
       );
   }
 

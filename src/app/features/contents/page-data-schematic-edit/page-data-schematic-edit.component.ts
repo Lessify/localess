@@ -10,12 +10,8 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {
-  Schematic,
-  SchematicComponent,
-  SchematicComponentKind
-} from '@shared/models/schematic.model';
+import {FormBuilder, FormRecord} from '@angular/forms';
+import {Schematic, SchematicComponent} from '@shared/models/schematic.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {ContentPage, ContentPageData} from '@shared/models/content.model';
 import {takeUntil} from 'rxjs/operators';
@@ -24,6 +20,8 @@ import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
 import {SchematicSelectChange} from './page-data-schematic-edit.model';
 import {ContentHelperService} from '@shared/services/content-helper.service';
+import {Space} from '@shared/models/space.model';
+import {ObjectUtils} from '@core/utils/object-utils.service';
 
 @Component({
   selector: 'll-page-data-schematic-edit',
@@ -43,9 +41,10 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
   @Input() pages: ContentPage[] = [];
   @Input() locale: string = 'en';
   @Input() localeFallback: string = 'en';
+  @Input() space?: Space;
   @Output() schematicChange = new EventEmitter<SchematicSelectChange>();
 
-  isTest = environment.test
+  isDebug = environment.debug
   rootSchematic?: Schematic;
   schematicMapById: Map<string, Schematic> = new Map<string, Schematic>();
   schematicMapByName: Map<string, Schematic> = new Map<string, Schematic>();
@@ -62,8 +61,8 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // console.group('ngOnChanges')
-    // console.log(changes)
+    //console.log('PageDataSchematicEditComponent:ngOnChanges')
+    //console.log(changes)
 
     const schematicsChange = changes['schematics'];
     if (schematicsChange) {
@@ -93,7 +92,6 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
       this.onChanged();
     }
 
-    // console.groupEnd()
   }
 
   ngOnInit(): void {
@@ -106,8 +104,9 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
 
     this.generateForm();
     if (this.data) {
-      this.form.reset()
-      this.form.patchValue(this.contentService.extractSchematicContent(this.data, this.rootSchematic!, this.locale));
+      this.formPatch()
+      // this.form.reset()
+      // this.form.patchValue(this.contentService.extractSchematicContent(this.data, this.rootSchematic!, this.locale));
     }
 
     this.form.valueChanges
@@ -117,11 +116,11 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
       )
       .subscribe({
         next: (formValue) => {
-          // console.group('form')
-          // console.log(Object.getOwnPropertyNames(formValue))
-          //console.log(formValue)
-          // console.log('Before')
-          // console.log(this.content)
+          console.group('form')
+          console.log(Object.getOwnPropertyNames(formValue))
+          console.log(formValue)
+          console.log('Before')
+          console.log(ObjectUtils.clone(this.data))
 
           for (const key of Object.getOwnPropertyNames(formValue)) {
             const value = formValue[key]
@@ -134,9 +133,9 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
               }
             }
           }
-          // console.log('After')
-          //console.log(this.content)
-          // console.groupEnd()
+          console.log('After')
+          console.log(ObjectUtils.clone(this.data))
+          console.groupEnd()
         },
         error: (err) => console.log(err),
         complete: () => console.log('completed')
@@ -144,111 +143,9 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
   }
 
   generateForm(): void {
-    for (const component of this.rootSchematic?.components || []) {
-      const validators: ValidatorFn[] = []
-      if (component.required) {
-        validators.push(Validators.required)
-      }
-      // translatable + fallBackLocale => disabled = false
-      // translatable + !fallBackLocale => disabled = false
-      // !translatable + fallBackLocale => disabled = false
-      // !translatable + !fallBackLocale => disabled = true
-      const disabled = !((component.translatable === true) || (this.locale === this.localeFallback))
-      switch (component.kind) {
-        case SchematicComponentKind.TEXT:
-        case SchematicComponentKind.TEXTAREA: {
-          if (component.minLength) {
-            validators.push(Validators.minLength(component.minLength))
-          }
-          if (component.maxLength) {
-            validators.push(Validators.maxLength(component.maxLength))
-          }
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
-          break;
-        }
-        case SchematicComponentKind.NUMBER: {
-          if (component.minValue) {
-            validators.push(Validators.min(component.minValue))
-          }
-          if (component.maxValue) {
-            validators.push(Validators.max(component.maxValue))
-          }
-          //this.form.setControl(component.name, this.fb.control<number | undefined>({ value: component.defaultValue ? Number.parseInt(component.defaultValue) : undefined, disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<number | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.COLOR: {
-          //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.BOOLEAN: {
-          //this.form.setControl(component.name, this.fb.control<boolean | undefined>({ value: component.defaultValue === 'true', disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<boolean | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.DATE: {
-          //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.DATETIME: {
-          //this.form.setControl(component.name, this.fb.control<string | undefined>({ value: component.defaultValue, disabled: disabled}, validators))
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.OPTION: {
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.OPTIONS: {
-          if (component.minValues) {
-            validators.push(Validators.minLength(component.minValues))
-          }
-          if (component.maxValues) {
-            validators.push(Validators.maxLength(component.maxValues))
-          }
-          this.form.setControl(component.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
-          break;
-        }
-        case SchematicComponentKind.LINK: {
-          const link = this.fb.group({
-            kind: this.fb.control('LINK', Validators.required),
-            type: this.fb.control<'url' | 'content'>('url', Validators.required),
-            uri: this.fb.control<string | undefined>({
-              value: undefined,
-              disabled: disabled
-            }, validators)
-          })
-          this.form.setControl(component.name, link)
-          break;
-        }
-      }
+    if (this.rootSchematic) {
+      const isFallbackLocale = this.locale === this.localeFallback
+      this.form = this.contentService.generateSchematicForm(this.rootSchematic, isFallbackLocale)
     }
   }
 
@@ -264,10 +161,24 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
     this.isFormLoading = true;
     this.cd.detectChanges();
     this.generateForm();
-    this.form.reset();
-    this.form.patchValue(this.contentService.extractSchematicContent(this.data, this.rootSchematic!, this.locale));
+    this.formPatch()
+    //this.form.reset();
+    //this.form.patchValue(this.contentService.extractSchematicContent(this.data, this.rootSchematic!, this.locale));
     this.isFormLoading = false;
     this.cd.markForCheck();
+  }
+
+  formPatch(): void {
+    this.form.reset();
+    let extractSchematicContent = this.contentService.extractSchematicContent(this.data, this.rootSchematic!, this.locale, false);
+    this.form.patchValue(extractSchematicContent);
+    Object.getOwnPropertyNames(extractSchematicContent)
+      .filter(it => extractSchematicContent[it] instanceof Array)
+      .forEach(fieldName => {
+        //console.log(fieldName)
+        // Assets
+        this.form.controls[fieldName] = this.contentService.assetsToFormArray(extractSchematicContent[fieldName])
+      })
   }
 
   filterSchematic(ids?: string[]): Schematic[] {
@@ -323,5 +234,10 @@ export class PageDataSchematicEditComponent implements OnInit, OnChanges, OnDest
 
   navigationTo(contentId: string, fieldName: string, schematicName: string): void {
     this.schematicChange.emit({contentId, fieldName, schematicName})
+  }
+
+  onAssetsChange() {
+    this.form.updateValueAndValidity()
+    this.cd.markForCheck()
   }
 }

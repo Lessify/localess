@@ -4,7 +4,14 @@ import {
   SchematicComponent,
   SchematicComponentKind
 } from '@shared/models/schematic.model';
-import {FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
+import {
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  FormRecord,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
 import {ContentError, ContentPageData} from '@shared/models/content.model';
 
 @Injectable()
@@ -18,7 +25,6 @@ export class ContentHelperService {
     const errors: ContentError[] = [];
     const schematicsByName = new Map<string, Schematic>(schematics.map(it => [it.name, it]));
     const contentIteration = [data]
-
     // Iterative traversing content and validating fields.
     let selectedContent = contentIteration.pop()
     while (selectedContent) {
@@ -26,15 +32,36 @@ export class ContentHelperService {
       if (schematic) {
         const schematicComponentsMap = new Map<string, SchematicComponent>(schematic.components?.map(it => [it.name, it]));
         const form = this.generateSchematicForm(schematic, true)
-        form.patchValue(this.extractSchematicContent(selectedContent, schematic, locale))
-        if (!form.valid) {
+        const extractSchematicContent = this.extractSchematicContent(selectedContent, schematic, locale, true)
+        form.patchValue(extractSchematicContent)
+
+        Object.getOwnPropertyNames(extractSchematicContent)
+          .filter(it => extractSchematicContent[it] instanceof Array)
+          .forEach(fieldName => {
+            // Assets
+            form.controls[fieldName] = this.assetsToFormArray(extractSchematicContent[fieldName])
+          })
+
+        form.updateValueAndValidity()
+
+        if (form.invalid) {
           for (const controlName in form.controls) {
             const component = schematicComponentsMap.get(controlName);
             const control = form.controls[controlName];
-            if (control && !control.valid) {
+            if (control && control.invalid) {
               if (control instanceof FormGroup) {
                 switch (control.value.kind) {
                   case SchematicComponentKind.LINK: {
+                    errors.push({
+                      contentId: selectedContent._id,
+                      schematic: schematic.displayName || schematic.name,
+                      fieldName: controlName,
+                      fieldDisplayName: component?.displayName,
+                      errors: control.controls['uri'].errors
+                    })
+                    break;
+                  }
+                  case SchematicComponentKind.ASSET: {
                     errors.push({
                       contentId: selectedContent._id,
                       schematic: schematic.displayName || schematic.name,
@@ -57,6 +84,21 @@ export class ContentHelperService {
                   errors: control.errors
                 })
               }
+            } else {
+              // Work around for Form Array required
+              // if (control instanceof FormArray) {
+              //   if(component?.required) {
+              //     if(control.length === 0 ) {
+              //       errors.push({
+              //         contentId: selectedContent._id,
+              //         schematic: schematic.displayName || schematic.name,
+              //         fieldName: controlName,
+              //         fieldDisplayName: component?.displayName,
+              //         errors: {required: true}
+              //       })
+              //     }
+              //   }
+              // }
             }
           }
         }
@@ -72,21 +114,25 @@ export class ContentHelperService {
     return errors.length > 0 ? errors : null;
   }
 
-  extractSchematicContent(data: ContentPageData, schematic: Schematic, locale: string): Record<string, any> {
+  extractSchematicContent(data: ContentPageData, schematic: Schematic, locale: string, full: boolean): Record<string, any> {
     const result: Record<string, any> = {}
-    schematic.components?.forEach((comp) => {
-      let value;
-      if (comp.translatable) {
-        // Extract Locale specific values
-        value = data[`${comp.name}_i18n_${locale}`]
-      } else {
-        // Extract not translatable values in fallback locale
-        value = data[comp.name]
-      }
-      if (value) {
-        result[comp.name] = value;
-      }
-    })
+    schematic.components
+      ?.filter(it => full || it.kind !== SchematicComponentKind.SCHEMATIC)
+      ?.forEach((comp) => {
+        let value;
+        if (comp.translatable) {
+          // Extract Locale specific values
+          value = data[`${comp.name}_i18n_${locale}`]
+        } else {
+          // Extract not translatable values in fallback locale
+          value = data[comp.name]
+        }
+        if (value) {
+          result[comp.name] = value;
+        }
+      })
+    console.log("ContentHelperService:extractSchematicContent")
+    console.log(result)
     return result
   }
 
@@ -112,10 +158,19 @@ export class ContentHelperService {
                 }
                 break;
               }
+              case SchematicComponentKind.ASSET: {
+                if (target[value]['uri'] === undefined || target[value]['uri'] === '') {
+                  delete target[value];
+                }
+                break;
+              }
             }
           }
         }
-        if (target[value] == null) {
+        const v = target[value]
+        if (v == null) {
+          delete target[value];
+        } else if (v instanceof Array && v.length === 0) {
           delete target[value];
         }
 
@@ -215,7 +270,7 @@ export class ContentHelperService {
         }
         case SchematicComponentKind.LINK: {
           const link = this.fb.group({
-            kind: this.fb.control('LINK', Validators.required),
+            kind: this.fb.control(SchematicComponentKind.LINK, Validators.required),
             type: this.fb.control<'url' | 'content'>('url', Validators.required),
             uri: this.fb.control<string | undefined>({
               value: undefined,
@@ -225,8 +280,46 @@ export class ContentHelperService {
           form.setControl(component.name, link)
           break;
         }
+        case SchematicComponentKind.ASSET: {
+          form.setControl(component.name, this.fb.group({
+            uri: this.fb.control<string | undefined>({
+              value: undefined,
+              disabled: disabled
+            }, validators),
+            kind: this.fb.control(SchematicComponentKind.ASSET, Validators.required),
+          }))
+          break;
+        }
+        case SchematicComponentKind.ASSETS: {
+          if (component.required) {
+            validators.push(Validators.minLength(1))
+          }
+          form.setControl(component.name, this.fb.array([], validators));
+          break;
+        }
       }
     }
     return form;
+  }
+
+  assetsToFormArray(uris: { uri: string }[]): FormArray {
+    return this.fb.array(uris.map(it => this.fb.group({
+      uri: this.fb.control(it.uri, Validators.required),
+      kind: this.fb.control(SchematicComponentKind.ASSET, Validators.required),
+    })))
+  }
+
+  assetsFormArray(uris: string[]): FormArray {
+    return this.fb.array(uris.map(it => this.fb.group({
+      uri: this.fb.control(it, Validators.required),
+      kind: this.fb.control(SchematicComponentKind.ASSET, Validators.required),
+    })))
+  }
+
+  assetFormGroup(uri: string): FormGroup {
+    return this.fb.group({
+      uri: this.fb.control(uri, Validators.required),
+      kind: this.fb.control(SchematicComponentKind.ASSET, Validators.required),
+    })
   }
 }

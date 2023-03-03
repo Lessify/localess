@@ -99,15 +99,26 @@
       [locale]="selectedLocale.id"
       [localeFallback]="selectedSpace.localeFallback.id"
       [pages]="pages"
+      [space]="selectedSpace"
       (schematicChange)="onSchematicChange($event)"
     />
 
   </ng-container>
 
-  <ng-container *ngIf="isTest">
-    <mat-divider></mat-divider>
-    Content :
-    <pre>{{pageData | json}}</pre>
+  <ng-container *ngIf="isDebug">
+    <mat-divider/>
+    <br/>
+    <mat-accordion>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>PageDataEditComponent Content</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>{{pageData | json}}</pre>
+      </mat-expansion-panel>
+    </mat-accordion>
+    <br/>
   </ng-container>
+
+
 
 </div>

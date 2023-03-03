@@ -13,8 +13,7 @@
   <mat-table [dataSource]="dataSource" matSort>
     <!-- Checkbox Column -->
     <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef>
-      </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> # </mat-header-cell>
       <mat-cell *matCellDef="let row">
         <mat-checkbox *ngIf="row.kind === 'FILE'" (click)="$event.stopPropagation()"
                       (change)="$event ? selection.toggle(row) : null"
@@ -66,7 +65,7 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Close</button>
-  <button mat-raised-button color="primary" [mat-dialog-close]="undefined" [disabled]="selection.isEmpty()">
+  <button mat-raised-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     <ng-container *ngIf="selection.selected.length > 1; else elseAsset">
       Add Selected Assets ({{selection.selected.length}})
     </ng-container>
