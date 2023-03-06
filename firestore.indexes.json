@@ -6,8 +6,7 @@
       "fields": [
         { "fieldPath": "parentPath", "order": "ASCENDING" },
         { "fieldPath": "kind", "order": "DESCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        { "fieldPath": "name", "order": "ASCENDING" }
       ]
     },
     {
@@ -16,8 +15,7 @@
       "fields": [
         { "fieldPath": "parentPath", "order": "ASCENDING" },
         { "fieldPath": "kind", "order": "DESCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        { "fieldPath": "name", "order": "ASCENDING" }
       ]
     },
     {
@@ -25,8 +23,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        { "fieldPath": "name", "order": "ASCENDING" }
       ]
     }
   ],
