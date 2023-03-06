@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnChanges,
-  OnInit,
-  SimpleChanges
-} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
@@ -21,7 +14,7 @@ import {environment} from '../../../../environments/environment';
   styleUrls: ['./link-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LinkSelectComponent implements OnInit, OnChanges {
+export class LinkSelectComponent implements OnInit {
   isDebug = environment.debug
   @Input() form?: FormGroup;
   @Input() component?: SchematicComponent;
@@ -47,11 +40,11 @@ export class LinkSelectComponent implements OnInit, OnChanges {
     }
 
     this.filteredContent = this.searchCtrl.valueChanges
-        .pipe(
-          startWith(''),
-          debounceTime(300),
-          map(( search) => this.pages?.filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || [])
-        )
+      .pipe(
+        startWith(''),
+        debounceTime(300),
+        map((search) => this.pages?.filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || [])
+      )
   }
 
   onTypeChange(type: string): void {
@@ -73,7 +66,4 @@ export class LinkSelectComponent implements OnInit, OnChanges {
     this.form?.controls['uri'].setValue(null);
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    //console.log(changes)
-  }
 }

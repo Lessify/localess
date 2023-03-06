@@ -1,9 +1,9 @@
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component, OnChanges,
+  Component,
   OnDestroy,
-  OnInit, SimpleChanges
+  OnInit
 } from '@angular/core';
 import {FormBuilder} from '@angular/forms';
 import {Schematic,} from '@shared/models/schematic.model';
@@ -20,7 +20,7 @@ import {
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
-import {distinctUntilKeyChanged, filter, switchMap, takeUntil, tap} from 'rxjs/operators';
+import {filter, switchMap, takeUntil} from 'rxjs/operators';
 import {combineLatest, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
@@ -38,7 +38,7 @@ import {SchematicPathItem} from './page-data-edit.model';
   styleUrls: ['./page-data-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PageDataEditComponent implements OnInit, OnDestroy, OnChanges {
+export class PageDataEditComponent implements OnInit, OnDestroy {
 
   isDebug = environment.debug
   selectedSpace?: Space;
@@ -226,10 +226,5 @@ export class PageDataEditComponent implements OnInit, OnDestroy, OnChanges {
       }
       this.selectedPageData = localSelectedContent;
     }
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    //console.log("PageDataEditComponent:ngOnChanges")
-    //console.log(changes)
   }
 }

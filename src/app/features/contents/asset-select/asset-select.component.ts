@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  Input,
-  OnChanges,
-  OnDestroy,
-  OnInit,
-  SimpleChanges
-} from '@angular/core';
-import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
 import {environment} from '../../../../environments/environment';
@@ -28,7 +19,7 @@ import {AssetsSelectDialogModel} from '../assets-select-dialog/assets-select-dia
   styleUrls: ['./asset-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AssetSelectComponent implements OnInit, OnDestroy, OnChanges {
+export class AssetSelectComponent implements OnInit {
   isDebug = environment.debug
   @Input() form?: FormGroup;
   @Input() component?: SchematicComponent;
@@ -49,7 +40,7 @@ export class AssetSelectComponent implements OnInit, OnDestroy, OnChanges {
   ngOnInit(): void {
     console.log("AssetSelectComponent:ngOnInit")
 
-    if (this.form?.value.kind === null ) {
+    if (this.form?.value.kind === null) {
       this.form.patchValue({kind: SchematicComponentKind.ASSET})
     }
 
@@ -104,18 +95,9 @@ export class AssetSelectComponent implements OnInit, OnDestroy, OnChanges {
     })
   }
 
-  ngOnDestroy(): void {
-    //console.log("AssetsSelectComponent:ngOnDestroy")
-  }
-
   deleteAsset() {
     this.asset = undefined;
     this.form?.controls['uri'].setValue(null);
     //this.form?.reset();
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    //console.log("AssetsSelectComponent:ngOnChanges")
-    //console.log(changes)
   }
 }
