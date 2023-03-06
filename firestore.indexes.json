@@ -13,7 +13,7 @@
       "collectionGroup": "contents",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "parentPath", "order": "ASCENDING" },
+        { "fieldPath": "parentSlug", "order": "ASCENDING" },
         { "fieldPath": "kind", "order": "ASCENDING" },
         { "fieldPath": "name", "order": "ASCENDING" }
       ]
