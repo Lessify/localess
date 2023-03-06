@@ -38,12 +38,9 @@ export class AssetSelectComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log("AssetSelectComponent:ngOnInit")
-
     if (this.form?.value.kind === null) {
       this.form.patchValue({kind: SchematicComponentKind.ASSET})
     }
-
     this.loadData()
   }
 

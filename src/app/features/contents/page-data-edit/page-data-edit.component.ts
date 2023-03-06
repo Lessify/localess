@@ -156,11 +156,11 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
     console.group('save')
     this.isSaveLoading = true;
 
-    console.log(this.pageData)
+    //console.log(this.pageData)
 
     this.contentErrors = this.contentHelperService.validateContent(this.pageData, this.schematics, this.selectedLocale.id)
 
-    console.log(this.contentErrors)
+    //console.log(this.contentErrors)
 
     if (!this.contentErrors) {
       this.contentService.updatePageData(this.selectedSpace!.id, this.entityId, this.pageData)

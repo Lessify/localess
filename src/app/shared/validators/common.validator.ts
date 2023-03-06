@@ -1,4 +1,4 @@
-import {AbstractControl, ValidationErrors, ValidatorFn} from '@angular/forms';
+import {AbstractControl, FormArray, ValidationErrors, ValidatorFn} from '@angular/forms';
 
 function isEmptyInputValue(value: any): boolean {
   /**
@@ -80,6 +80,15 @@ export class CommonValidator {
       return null;
     }
   }
+
+
+  static minLength(min: number): ValidatorFn | any {
+    return (control: AbstractControl[]) => {
+      if (!(control instanceof FormArray)) return;
+      return control.length < min ? {'minlength': {'requiredLength': min, 'actualLength': control.length}} : null;
+    };
+  }
+
 }
 
 export enum CommonPattern {

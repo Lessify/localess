@@ -1,4 +1,4 @@
-<form>
+<form *ngIf="form">
   <mat-form-field floatLabel="always">
     <mat-label>{{component?.displayName || component?.name}}</mat-label>
     <input matInput [required]="component?.required" hidden>
@@ -27,8 +27,10 @@
 
     <mat-icon matIconSuffix *ngIf="component?.translatable" matTooltip="The field is translatable">language</mat-icon>
     <mat-hint *ngIf="component?.description">{{component.description}}</mat-hint>
-<!--    <mat-error *ngIf="form.errors as errors">{{fe.errors(errors)}}</mat-error>-->
+    <mat-error *ngIf="form.errors as errors">{{fe.errors(errors)}}</mat-error>
+
   </mat-form-field>
+  <mat-error *ngIf="form.errors as errors">{{fe.errors(errors)}}</mat-error>
 </form>
 
 <ng-container *ngIf="isDebug">
@@ -38,6 +40,7 @@
         <mat-panel-title>Form : {{form?.valid}} : {{form?.length}} {{form.updateValueAndValidity()}}</mat-panel-title>
       </mat-expansion-panel-header>
       <pre>{{form.value | json}}</pre>
+      <pre>{{form.errors | json}}</pre>
     </mat-expansion-panel>
     <mat-expansion-panel>
       <mat-expansion-panel-header>

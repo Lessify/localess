@@ -13,6 +13,7 @@ import {
   Validators
 } from '@angular/forms';
 import {ContentError, ContentPageData} from '@shared/models/content.model';
+import {CommonValidator} from '@shared/validators/common.validator';
 
 @Injectable()
 export class ContentHelperService {
@@ -41,8 +42,6 @@ export class ContentHelperService {
             // Assets
             form.controls[fieldName] = this.assetsToFormArray(extractSchematicContent[fieldName])
           })
-
-        form.updateValueAndValidity()
 
         if (form.invalid) {
           for (const controlName in form.controls) {
@@ -86,19 +85,19 @@ export class ContentHelperService {
               }
             } else {
               // Work around for Form Array required
-              // if (control instanceof FormArray) {
-              //   if(component?.required) {
-              //     if(control.length === 0 ) {
-              //       errors.push({
-              //         contentId: selectedContent._id,
-              //         schematic: schematic.displayName || schematic.name,
-              //         fieldName: controlName,
-              //         fieldDisplayName: component?.displayName,
-              //         errors: {required: true}
-              //       })
-              //     }
-              //   }
-              // }
+              if (control instanceof FormArray) {
+                if(component?.required) {
+                  if(control.length === 0 ) {
+                    errors.push({
+                      contentId: selectedContent._id,
+                      schematic: schematic.displayName || schematic.name,
+                      fieldName: controlName,
+                      fieldDisplayName: component?.displayName,
+                      errors: {required: true}
+                    })
+                  }
+                }
+              }
             }
           }
         }
@@ -131,7 +130,6 @@ export class ContentHelperService {
           result[comp.name] = value;
         }
       })
-    console.log("ContentHelperService:extractSchematicContent")
     console.log(result)
     return result
   }
@@ -292,7 +290,7 @@ export class ContentHelperService {
         }
         case SchematicComponentKind.ASSETS: {
           if (component.required) {
-            validators.push(Validators.minLength(1))
+            validators.push(CommonValidator.minLength(1))
           }
           form.setControl(component.name, this.fb.array([], validators));
           break;

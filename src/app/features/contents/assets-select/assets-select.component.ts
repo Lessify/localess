@@ -4,11 +4,9 @@ import {
   Component,
   EventEmitter,
   Input,
-  OnChanges,
   OnDestroy,
   OnInit,
-  Output,
-  SimpleChanges
+  Output
 } from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
@@ -30,7 +28,7 @@ import {AssetsSelectDialogModel} from '../assets-select-dialog/assets-select-dia
   styleUrls: ['./assets-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AssetsSelectComponent implements OnInit, OnDestroy, OnChanges {
+export class AssetsSelectComponent implements OnInit, OnDestroy {
   isDebug = environment.debug
   @Input() form?: FormArray;
   // @Input() ids?: string[];
@@ -114,10 +112,5 @@ export class AssetsSelectComponent implements OnInit, OnDestroy, OnChanges {
     this.form?.removeAt(idx)
     this.assetsChange.next(this.assets.map(it => it.id))
     //this.form?.root.updateValueAndValidity()
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    console.log("AssetsSelectComponent:ngOnChanges")
-    console.log(changes)
   }
 }

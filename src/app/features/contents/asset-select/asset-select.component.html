@@ -27,8 +27,11 @@
 
     <mat-icon matIconSuffix *ngIf="component?.translatable" matTooltip="The field is translatable">language</mat-icon>
     <mat-hint *ngIf="component?.description">{{component.description}}</mat-hint>
-    <mat-error *ngIf="form.errors as errors">{{fe.errors(errors)}}</mat-error>
+    <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
+
   </mat-form-field>
+
+  <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
 </form>
 <ng-container *ngIf="isDebug">
   <mat-accordion>

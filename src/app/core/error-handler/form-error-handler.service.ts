@@ -8,6 +8,7 @@ import {CommonPattern} from '@shared/validators/common.validator';
 export class FormErrorHandlerService {
 
   errors(errors: ValidationErrors | null | undefined): string | undefined | null {
+    debugger
     if (errors) {
       if (errors['required']) {
         return `Field is required.`

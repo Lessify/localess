@@ -1,4 +1,11 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -12,15 +19,21 @@ import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
 import {combineLatest, Subject} from 'rxjs';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  ConfirmationDialogComponent
+} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  ConfirmationDialogModel
+} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 import {SelectionModel} from '@angular/cdk/collections';
 import {PathItem} from '@core/state/space/space.model';
 import {actionSpaceAssetPathChange,} from '@core/state/space/space.actions';
 import {AssetService} from '@shared/services/asset.service';
 import {Asset, AssetFolderCreate, AssetKind} from '@shared/models/asset.model';
-import {AssetFolderAddDialogComponent} from './asset-folder-add-dialog/asset-folder-add-dialog.component';
+import {
+  AssetFolderAddDialogComponent
+} from './asset-folder-add-dialog/asset-folder-add-dialog.component';
 import {AssetFolderAddDialogModel} from './asset-folder-add-dialog/asset-folder-add-dialog.model';
 
 @Component({
