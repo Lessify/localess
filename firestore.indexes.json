@@ -11,6 +11,16 @@
       ]
     },
     {
+      "collectionGroup": "contents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "parentPath", "order": "ASCENDING" },
+        { "fieldPath": "kind", "order": "DESCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "schematics",
       "queryScope": "COLLECTION",
       "fields": [
