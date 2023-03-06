@@ -7,7 +7,7 @@ import {
   doc,
   docData,
   DocumentReference,
-  Firestore,
+  Firestore, orderBy, query, QueryConstraint,
   serverTimestamp,
   setDoc
 } from '@angular/fire/firestore';
@@ -23,7 +23,13 @@ export class SpaceService {
   }
 
   findAll(): Observable<Space[]> {
-    return collectionData(collection(this.firestore, 'spaces'), {idField: 'id'})
+    const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')]
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces`),
+        ...queryConstrains),
+      {idField: 'id'}
+    )
       .pipe(
         traceUntilFirst('Firestore:Spaces:findAll'),
         map((it) => it as Space[])
