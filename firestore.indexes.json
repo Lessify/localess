@@ -5,7 +5,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "parentPath", "order": "ASCENDING" },
-        { "fieldPath": "kind", "order": "DESCENDING" },
+        { "fieldPath": "kind", "order": "ASCENDING" },
         { "fieldPath": "name", "order": "ASCENDING" }
       ]
     },
@@ -14,7 +14,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "parentPath", "order": "ASCENDING" },
-        { "fieldPath": "kind", "order": "DESCENDING" },
+        { "fieldPath": "kind", "order": "ASCENDING" },
         { "fieldPath": "name", "order": "ASCENDING" }
       ]
     },
