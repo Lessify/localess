@@ -2,7 +2,7 @@ import {EventContext, firestore, https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
-import {Content, ContentKind, ContentDocument, ContentPageStorage, PublishContentData} from './models/content.model';
+import {Content, ContentKind, ContentDocument, ContentDocumentStorage, PublishContentData} from './models/content.model';
 import {Schema} from './models/schema.model';
 import {FieldValue, QueryDocumentSnapshot} from 'firebase-admin/firestore';
 import {UserPermission} from './models/user.model';
@@ -20,7 +20,7 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
     const content: ContentDocument = contentSnapshot.data() as ContentDocument;
     const schemas = schemasSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schema);
     for (const locale of space.locales) {
-      const pageStorage: ContentPageStorage = {
+      const documentStorage: ContentDocumentStorage = {
         id: contentSnapshot.id,
         name: content.name,
         slug: content.slug,
@@ -32,7 +32,7 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
       };
 
       if (content.data) {
-        pageStorage.data = {
+        documentStorage.data = {
           _id: content.data._id,
           schema: content.data.schema,
         };
@@ -43,9 +43,9 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
             if (!value) {
               value = content.data[`${field.name}_i18n_${space.localeFallback.id}`];
             }
-            pageStorage.data[field.name] = value;
+            documentStorage.data[field.name] = value;
           } else {
-            pageStorage.data[field.name] = content.data[field.name];
+            documentStorage.data[field.name] = content.data[field.name];
           }
         }
       }
@@ -54,7 +54,7 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
       logger.info(`[contentPublish] Save file to spaces/${data.spaceId}/contents/${data.contentId}/${locale.id}.json`);
       bucket.file(`spaces/${data.spaceId}/contents/${data.contentId}/${locale.id}.json`)
         .save(
-          JSON.stringify(pageStorage),
+          JSON.stringify(documentStorage),
           (err?: Error | null) => {
             if (err) {
               logger.error(`[contentPublish] Can not save file for Space(${data.spaceId}), Content(${data.contentId}) and Locale(${locale})`);

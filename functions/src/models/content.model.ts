@@ -36,7 +36,7 @@ export interface PublishContentData {
 }
 
 // Storage
-export interface ContentPageStorage {
+export interface ContentDocumentStorage {
   id: string;
   name: string;
   slug: string;
