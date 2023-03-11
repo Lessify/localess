@@ -19,7 +19,7 @@
       ]
     },
     {
-      "collectionGroup": "schematics",
+      "collectionGroup": "schemas",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "type", "order": "ASCENDING" },
