@@ -191,7 +191,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   openPublishedInNewTab(locale: string): void {
-    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}/${locale}`
+    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}?locale=${locale}`
     window.open(url, '_blank')
   }
 

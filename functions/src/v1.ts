@@ -167,10 +167,10 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   }
 });
 
-expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId/:locale', async (req, res) => {
+expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
   logger.info('v1 spaces content: ' + JSON.stringify(req.params));
-  const {spaceId, contentId, locale} = req.params;
-  const {version} = req.query;
+  const {spaceId, contentId} = req.params;
+  const {version, locale} = req.query;
 
   const cachePath = `spaces/${spaceId}/contents/${contentId}/cache.json`;
   const [exists] = await bucket.file(cachePath).exists();
@@ -178,7 +178,12 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId/:locale', async (req,
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
     if (version === undefined || version != metadata.generation) {
-      res.redirect(`/api/v1/spaces/${spaceId}/contents/${contentId}/${locale}?version=${metadata.generation}`);
+      let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?version=${metadata.generation}`
+      if (locale) {
+        url = `${url}&locale=${locale}`
+      }
+      logger.info(`v1 spaces content redirect to => ${url}`);
+      res.redirect(url);
       return;
     } else {
       const spaceSnapshot = await firestoreService.doc(`spaces/${spaceId}`).get();

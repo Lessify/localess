@@ -40,6 +40,7 @@ export interface ContentDocumentStorage {
   id: string;
   name: string;
   slug: string;
+  locale: string
   parentSlug: string
   fullSlug: string
   data?: ContentData;

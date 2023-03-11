@@ -23,6 +23,7 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
       const documentStorage: ContentDocumentStorage = {
         id: contentSnapshot.id,
         name: content.name,
+        locale: locale.id,
         slug: content.slug,
         fullSlug: content.fullSlug,
         parentSlug: content.parentSlug,
