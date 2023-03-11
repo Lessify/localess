@@ -18,18 +18,18 @@ import {takeUntil} from 'rxjs/operators';
 import {debounceTime, Subject} from 'rxjs';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
-import {SchemaSelectChange} from './page-data-schema-edit.model';
 import {ContentHelperService} from '@shared/services/content-helper.service';
 import {Space} from '@shared/models/space.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
+import {SchemaSelectChange} from './edit-document-schema.model';
 
 @Component({
-  selector: 'll-page-data-schema-edit',
-  templateUrl: './page-data-schema-edit.component.html',
-  styleUrls: ['./page-data-schema-edit.component.scss'],
+  selector: 'll-content-document-schema-edit',
+  templateUrl: './edit-document-schema.component.html',
+  styleUrls: ['./edit-document-schema.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PageDataSchemaEditComponent implements OnInit, OnChanges, OnDestroy {
+export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy {
 
   // Form
   form: FormRecord = this.fb.record({});
@@ -38,7 +38,7 @@ export class PageDataSchemaEditComponent implements OnInit, OnChanges, OnDestroy
 
   @Input() data: ContentData = {_id: '', schema: ''};
   @Input() schemas: Schema[] = [];
-  @Input() pages: ContentDocument[] = [];
+  @Input() documents: ContentDocument[] = [];
   @Input() locale: string = 'en';
   @Input() localeFallback: string = 'en';
   @Input() space?: Space;
@@ -61,8 +61,8 @@ export class PageDataSchemaEditComponent implements OnInit, OnChanges, OnDestroy
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    //console.log('PageDataSchemaEditComponent:ngOnChanges')
-    //console.log(changes)
+    console.log('ngOnChanges')
+    console.log(changes)
 
     const schemasChange = changes['schemas'];
     if (schemasChange) {
@@ -108,44 +108,44 @@ export class PageDataSchemaEditComponent implements OnInit, OnChanges, OnDestroy
       // this.form.reset()
       // this.form.patchValue(this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale));
     }
-
-    this.form.valueChanges
-      .pipe(
-        takeUntil(this.destroy$),
-        debounceTime(500),
-      )
-      .subscribe({
-        next: (formValue) => {
-          console.group('form')
-          console.log(Object.getOwnPropertyNames(formValue))
-          console.log(formValue)
-          console.log('Before')
-          console.log(ObjectUtils.clone(this.data))
-
-          for (const key of Object.getOwnPropertyNames(formValue)) {
-            const value = formValue[key]
-            const schema = this.schemaFieldsMap.get(key)
-            if (value !== null) {
-              if (schema?.translatable) {
-                this.data[`${key}_i18n_${this.locale}`] = value
-              } else {
-                this.data[key] = value
-              }
-            }
-          }
-          console.log('After')
-          console.log(ObjectUtils.clone(this.data))
-          console.groupEnd()
-        },
-        error: (err) => console.log(err),
-        complete: () => console.log('completed')
-      })
   }
 
   generateForm(): void {
     if (this.rootSchema) {
       const isFallbackLocale = this.locale === this.localeFallback
       this.form = this.contentService.generateSchemaForm(this.rootSchema, isFallbackLocale)
+
+      this.form.valueChanges
+        .pipe(
+          takeUntil(this.destroy$),
+          debounceTime(500),
+        )
+        .subscribe({
+          next: (formValue) => {
+            console.group('form')
+            console.log(Object.getOwnPropertyNames(formValue))
+            console.log(formValue)
+            console.log('Before')
+            console.log(ObjectUtils.clone(this.data))
+
+            for (const key of Object.getOwnPropertyNames(formValue)) {
+              const value = formValue[key]
+              const schema = this.schemaFieldsMap.get(key)
+              if (value !== null) {
+                if (schema?.translatable) {
+                  this.data[`${key}_i18n_${this.locale}`] = value
+                } else {
+                  this.data[key] = value
+                }
+              }
+            }
+            console.log('After')
+            console.log(ObjectUtils.clone(this.data))
+            console.groupEnd()
+          },
+          error: (err) => console.log(err),
+          complete: () => console.log('completed')
+        })
     }
   }
 

@@ -7,19 +7,19 @@ import {ContentsRoutingModule} from './contents-routing.module';
 import {SpaceService} from '@shared/services/space.service';
 import {SchemaService} from '@shared/services/schema.service';
 import {ContentService} from '@shared/services/content.service';
-import {PageDataEditComponent} from './page-data-edit/page-data-edit.component';
-import {
-  PageDataSchemaEditComponent
-} from './page-data-schema-edit/page-data-schema-edit.component';
 import {ContentHelperService} from '@shared/services/content-helper.service';
-import {LinkSelectComponent} from './link-select/link-select.component';
-import {AssetsSelectDialogComponent} from './assets-select-dialog/assets-select-dialog.component';
-import {AssetsSelectComponent} from './assets-select/assets-select.component';
 import {AssetService} from '@shared/services/asset.service';
-import {AssetSelectComponent} from './asset-select/asset-select.component';
 import {AddDocumentDialogComponent} from './add-document-dialog/add-document-dialog.component';
 import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.component';
 import {EditDialogComponent} from './edit-dialog/edit-dialog.component';
+import {EditDocumentComponent} from './edit-document/edit-document.component';
+import {LinkSelectComponent} from './shared/link-select/link-select.component';
+import {EditDocumentSchemaComponent} from './edit-document-schema/edit-document-schema.component';
+import {AssetSelectComponent} from './shared/asset-select/asset-select.component';
+import {AssetsSelectComponent} from './shared/assets-select/assets-select.component';
+import {
+  AssetsSelectDialogComponent
+} from './shared/assets-select-dialog/assets-select-dialog.component';
 
 @NgModule({
   declarations: [
@@ -27,8 +27,8 @@ import {EditDialogComponent} from './edit-dialog/edit-dialog.component';
     AddFolderDialogComponent,
     AddDocumentDialogComponent,
     EditDialogComponent,
-    PageDataEditComponent,
-    PageDataSchemaEditComponent,
+    EditDocumentComponent,
+    EditDocumentSchemaComponent,
     LinkSelectComponent,
     AssetSelectComponent,
     AssetsSelectComponent,

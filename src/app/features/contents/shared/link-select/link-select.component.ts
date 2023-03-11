@@ -6,7 +6,7 @@ import {ContentDocument} from '@shared/models/content.model';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {debounceTime, Observable, of, startWith} from 'rxjs';
 import {map} from 'rxjs/operators';
-import {environment} from '../../../../environments/environment';
+import {environment} from '../../../../../environments/environment';
 
 @Component({
   selector: 'll-link-select',

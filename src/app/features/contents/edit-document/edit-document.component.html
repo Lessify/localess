@@ -3,8 +3,8 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{page?.name}}</span>&nbsp;
-    <span class="text-muted">#{{page?.slug}}</span>
+    <span>{{document?.name}}</span>&nbsp;
+    <span class="text-muted">#{{document?.slug}}</span>
     <span class="spacer"></span>
 
     <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
@@ -51,13 +51,13 @@
       Publish
     </button>
 
-    <ng-container *ngIf="page?.publishedAt === undefined">
+    <ng-container *ngIf="document?.publishedAt === undefined">
       <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
     </ng-container>
-    <ng-container *ngIf="page?.publishedAt?.seconds > page?.updatedAt?.seconds">
+    <ng-container *ngIf="document?.publishedAt?.seconds > document?.updatedAt?.seconds">
       <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
     </ng-container>
-    <ng-container *ngIf="page?.publishedAt && page?.publishedAt?.seconds < page?.updatedAt?.seconds">
+    <ng-container *ngIf="document?.publishedAt && document?.publishedAt?.seconds < document?.updatedAt?.seconds">
       <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
     </ng-container>
 
@@ -93,12 +93,12 @@
       </ll-breadcrumb-item>
     </ll-breadcrumb>
 
-    <ll-page-data-schema-edit
-      [data]="selectedPageData"
+    <ll-content-document-schema-edit
+      [data]="selectedDocumentData"
       [schemas]="schemas"
       [locale]="selectedLocale.id"
       [localeFallback]="selectedSpace.localeFallback.id"
-      [pages]="pages"
+      [documents]="documents"
       [space]="selectedSpace"
       (schemaChange)="onSchemaChange($event)"
     />
@@ -111,9 +111,9 @@
     <mat-accordion>
       <mat-expansion-panel>
         <mat-expansion-panel-header>
-          <mat-panel-title>PageDataEditComponent Content</mat-panel-title>
+          <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
         </mat-expansion-panel-header>
-        <pre>{{pageData | json}}</pre>
+        <pre>{{documentData | json}}</pre>
       </mat-expansion-panel>
     </mat-accordion>
     <br/>

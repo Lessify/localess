@@ -20,7 +20,7 @@ import {
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
-import {filter, switchMap, takeUntil} from 'rxjs/operators';
+import {distinctUntilChanged, filter, switchMap, takeUntil} from 'rxjs/operators';
 import {combineLatest, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
@@ -28,32 +28,32 @@ import {NotificationService} from '@shared/services/notification.service';
 import {DEFAULT_LOCALE, Locale} from '@shared/models/locale.model';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
-import {SchemaSelectChange} from '../page-data-schema-edit/page-data-schema-edit.model';
 import {ContentHelperService} from '@shared/services/content-helper.service';
-import {SchemaPathItem} from './page-data-edit.model';
+import {SchemaPathItem} from './edit-document.model';
+import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.model';
 
 @Component({
-  selector: 'll-page-data-edit',
-  templateUrl: './page-data-edit.component.html',
-  styleUrls: ['./page-data-edit.component.scss'],
+  selector: 'll-content-document-edit',
+  templateUrl: './edit-document.component.html',
+  styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PageDataEditComponent implements OnInit, OnDestroy {
+export class EditDocumentComponent implements OnInit, OnDestroy {
 
   isDebug = environment.debug
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
   availableLocales: Locale[] = [];
   entityId: string;
-  page?: ContentDocument;
-  pageData: ContentData = {_id: '', schema: ''};
-  selectedPageData: ContentData = {_id: '', schema: ''};
+  document?: ContentDocument;
+  documentData: ContentData = {_id: '', schema: ''};
+  selectedDocumentData: ContentData = {_id: '', schema: ''};
   rootSchema?: Schema;
   schemaMapByName?: Map<string, Schema>;
   schemaPath: SchemaPathItem[] = [];
   schemas: Schema[] = [];
   contentErrors: ContentError[] | null = null;
-  pages: ContentDocument[] = [];
+  documents: ContentDocument[] = [];
 
   //Loadings
   isLoading: boolean = true;
@@ -86,6 +86,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
   loadData(contentId: string): void {
     this.store.select(selectSpace)
       .pipe(
+        distinctUntilChanged(),
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it =>
           combineLatest([
@@ -98,16 +99,16 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       )
       .subscribe({
-        next: ([space, page, pages, schemas]) => {
+        next: ([space, document, documents, schemas]) => {
           this.selectedSpace = space;
           this.selectedLocale = space.localeFallback;
           this.availableLocales = space.locales;
-          this.pages = pages;
+          this.documents = documents;
 
-          if (page.kind === ContentKind.DOCUMENT) {
-            this.page = page;
-            this.rootSchema = schemas.find(it => it.id === page.schema);
-            this.pageData = page.data || {
+          if (document.kind === ContentKind.DOCUMENT) {
+            this.document = document;
+            this.rootSchema = schemas.find(it => it.id === document.schema);
+            this.documentData = document.data || {
               _id: v4(),
               schema: this.rootSchema?.name || ''
             };
@@ -116,8 +117,8 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
           // Generate initial path only once
           if (this.rootSchema && this.schemaPath.length == 0) {
             this.schemaPath = [{
-              contentId: this.pageData._id,
-              schemaName: this.pageData.schema,
+              contentId: this.documentData._id,
+              schemaName: this.documentData.schema,
               fieldName: ''
             }];
           }
@@ -158,12 +159,12 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
 
     //console.log(this.pageData)
 
-    this.contentErrors = this.contentHelperService.validateContent(this.pageData, this.schemas, this.selectedLocale.id)
+    this.contentErrors = this.contentHelperService.validateContent(this.documentData, this.schemas, this.selectedLocale.id)
 
     //console.log(this.contentErrors)
 
     if (!this.contentErrors) {
-      this.contentService.updateDocumentData(this.selectedSpace!.id, this.entityId, this.pageData)
+      this.contentService.updateDocumentData(this.selectedSpace!.id, this.entityId, this.documentData)
         .subscribe({
           next: () => {
             this.notificationService.success('Content has been updated.');
@@ -209,7 +210,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
       schemaName: event.schemaName,
       fieldName: event.fieldName
     });
-    this.selectedPageData = this.selectedPageData[event.fieldName].find((it: ContentData) => it._id == event.contentId);
+    this.selectedDocumentData = this.selectedDocumentData[event.fieldName].find((it: ContentData) => it._id == event.contentId);
   }
 
   navigateToSchema(pathItem: SchemaPathItem): void {
@@ -217,14 +218,14 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
     this.schemaPath.splice(idx + 1);
     // Select Root
     if (idx == 0) {
-      this.selectedPageData = this.pageData;
+      this.selectedDocumentData = this.documentData;
     } else {
-      let localSelectedContent = this.pageData;
+      let localSelectedContent = this.documentData;
       for (const path of this.schemaPath) {
         if (path.fieldName === '') continue;
         localSelectedContent = localSelectedContent[path.fieldName].find((it: ContentData) => it._id == path.contentId);
       }
-      this.selectedPageData = localSelectedContent;
+      this.selectedDocumentData = localSelectedContent;
     }
   }
 }

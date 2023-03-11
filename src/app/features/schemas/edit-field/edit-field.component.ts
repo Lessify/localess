@@ -13,11 +13,11 @@ import {environment} from '../../../../environments/environment';
 
 @Component({
   selector: 'll-schema-field-edit',
-  templateUrl: './field-edit.component.html',
-  styleUrls: ['./field-edit.component.scss'],
+  templateUrl: './edit-field.component.html',
+  styleUrls: ['./edit-field.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class FieldEditComponent implements OnInit {
+export class EditFieldComponent implements OnInit {
 
   @Input() form: FormGroup = this.fb.group({});
   @Input() reservedNames: string[] = [];

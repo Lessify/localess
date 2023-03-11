@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {ContentsComponent} from './contents.component';
-import {PageDataEditComponent} from './page-data-edit/page-data-edit.component';
+import {EditDocumentComponent} from './edit-document/edit-document.component';
 
 const routes: Routes = [
   {
@@ -10,7 +10,7 @@ const routes: Routes = [
   },
   {
     path: ':contentId',
-    component: PageDataEditComponent
+    component: EditDocumentComponent
   }
 ];
 
