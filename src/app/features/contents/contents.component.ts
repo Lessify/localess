@@ -18,8 +18,8 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
-import {Schematic, SchematicType} from '@shared/models/schematic.model';
-import {SchematicService} from '@shared/services/schematic.service';
+import {Schema, SchemaType} from '@shared/models/schema.model';
+import {SchemaService} from '@shared/services/schema.service';
 import {combineLatest, Subject} from 'rxjs';
 import {
   ConfirmationDialogComponent
@@ -31,26 +31,20 @@ import {
   Content,
   ContentFolderCreate,
   ContentKind,
-  ContentPageCreate,
+  ContentDocumentCreate,
   ContentUpdate
 } from '@shared/models/content.model';
 import {ContentService} from '@shared/services/content.service';
-import {ContentEditDialogComponent} from './content-edit-dialog/content-edit-dialog.component';
-import {ContentEditDialogModel} from './content-edit-dialog/content-edit-dialog.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 import {SelectionModel} from '@angular/cdk/collections';
 import {PathItem} from '@core/state/space/space.model';
 import {actionSpaceContentPathChange} from '@core/state/space/space.actions';
-import {
-  ContentFolderAddDialogComponent
-} from './content-folder-add-dialog/content-folder-add-dialog.component';
-import {
-  ContentFolderAddDialogModel
-} from './content-folder-add-dialog/content-folder-add-dialog.model';
-import {
-  ContentPageAddDialogComponent
-} from './content-page-add-dialog/content-page-add-dialog.component';
-import {ContentPageAddDialogModel} from './content-page-add-dialog/content-page-add-dialog.model';
+import {AddDocumentDialogComponent} from './add-document-dialog/add-document-dialog.component';
+import {AddDocumentDialogModel} from './add-document-dialog/add-document-dialog.model';
+import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.component';
+import {AddFolderDialogModel} from './add-folder-dialog/add-folder-dialog.model';
+import {EditDialogComponent} from './edit-dialog/edit-dialog.component';
+import {EditDialogModel} from './edit-dialog/edit-dialog.model';
 
 @Component({
   selector: 'll-contents',
@@ -65,11 +59,11 @@ export class ContentsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = ['select', 'status', 'name', 'slug', 'schematic', 'publishedAt', 'createdAt', 'updatedAt'];
+  displayedColumns: string[] = ['select', 'status', 'name', 'slug', 'schema', 'publishedAt', 'createdAt', 'updatedAt'];
   selection = new SelectionModel<Content>(true, []);
 
-  schematics: Schematic[] = [];
-  schematicsMap: Map<string, Schematic> = new Map<string, Schematic>();
+  schemas: Schema[] = [];
+  schemasMap: Map<string, Schema> = new Map<string, Schema>();
   contents: Content[] = [];
   contentPath: PathItem[] = [];
 
@@ -86,7 +80,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-    private readonly schematicService: SchematicService,
+    private readonly schemasService: SchemaService,
     private readonly contentService: ContentService,
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
@@ -117,17 +111,17 @@ export class ContentsComponent implements OnInit, OnDestroy {
         switchMap(it =>
           combineLatest([
             this.spaceService.findById(it.id),
-            this.schematicService.findAll(it.id, SchematicType.ROOT),
+            this.schemasService.findAll(it.id, SchemaType.ROOT),
             this.contentService.findAll(it.id, this.parentPath)
           ])
         ),
         takeUntil(this.destroy$),
       )
       .subscribe({
-        next: ([space, schematics, contents]) => {
+        next: ([space, schemas, contents]) => {
           this.selectedSpace = space
-          this.schematics = schematics;
-          this.schematicsMap = schematics.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schematic>())
+          this.schemas = schemas;
+          this.schemasMap = schemas.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schema>())
           this.contents = contents;
           // if (this.contentPath.length == 0) {
           //   this.contentPath.push({
@@ -146,12 +140,12 @@ export class ContentsComponent implements OnInit, OnDestroy {
       })
   }
 
-  openAddPageDialog(): void {
-    this.dialog.open<ContentPageAddDialogComponent, ContentPageAddDialogModel, ContentPageCreate>(
-      ContentPageAddDialogComponent, {
+  openAddDocumentDialog(): void {
+    this.dialog.open<AddDocumentDialogComponent, AddDocumentDialogModel, ContentDocumentCreate>(
+      AddDocumentDialogComponent, {
         width: '500px',
         data: {
-          schematics: this.schematics,
+          schemas: this.schemas,
           reservedNames: this.contents.map(it => it.name),
           reservedSlugs: this.contents.map(it => it.slug),
         }
@@ -160,22 +154,22 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.contentService.createPage(this.selectedSpace!.id, this.parentPath, it!)
+          this.contentService.createDocument(this.selectedSpace!.id, this.parentPath, it!)
         )
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Page has been created.');
+          this.notificationService.success('Document has been created.');
         },
         error: () => {
-          this.notificationService.error('Page can not be created.');
+          this.notificationService.error('Document can not be created.');
         }
       });
   }
 
   openAddFolderDialog(): void {
-    this.dialog.open<ContentFolderAddDialogComponent, ContentFolderAddDialogModel, ContentFolderCreate>(
-      ContentFolderAddDialogComponent, {
+    this.dialog.open<AddFolderDialogComponent, AddFolderDialogModel, ContentFolderCreate>(
+      AddFolderDialogComponent, {
         width: '500px',
         data: {
           reservedNames: this.contents.map(it => it.name),
@@ -200,8 +194,8 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   openEditDialog(element: Content): void {
-    this.dialog.open<ContentEditDialogComponent, ContentEditDialogModel, ContentUpdate>(
-      ContentEditDialogComponent, {
+    this.dialog.open<EditDialogComponent, EditDialogModel, ContentUpdate>(
+      EditDialogComponent, {
         width: '500px',
         data: {
           content: ObjectUtils.clone(element),
@@ -280,12 +274,12 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   onRowSelect(element: Content): void {
-    if (element.kind === ContentKind.PAGE) {
+    if (element.kind === ContentKind.DOCUMENT) {
       element.publishedAt
-      if (this.schematicsMap.has(element.schematic)) {
+      if (this.schemasMap.has(element.schema)) {
         this.router.navigate(['features', 'contents', element.id]);
       } else {
-        this.notificationService.warn(`Content Schematic can not be found.`);
+        this.notificationService.warn(`Content Schema can not be found.`);
       }
       return;
     }

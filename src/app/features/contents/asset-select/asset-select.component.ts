@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
+import {SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
 import {environment} from '../../../../environments/environment';
 import {MatDialog} from '@angular/material/dialog';
 import {NotificationService} from '@shared/services/notification.service';
@@ -22,7 +22,7 @@ import {AssetsSelectDialogModel} from '../assets-select-dialog/assets-select-dia
 export class AssetSelectComponent implements OnInit {
   isDebug = environment.debug
   @Input() form?: FormGroup;
-  @Input() component?: SchematicComponent;
+  @Input() component?: SchemaField;
   @Input() space?: Space;
   asset?: Asset;
 
@@ -39,7 +39,7 @@ export class AssetSelectComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.form?.value.kind === null) {
-      this.form.patchValue({kind: SchematicComponentKind.ASSET})
+      this.form.patchValue({kind: SchemaFieldKind.ASSET})
     }
     this.loadData()
   }
@@ -76,7 +76,7 @@ export class AssetSelectComponent implements OnInit {
             this.asset = selectedAssets[0]
             this.form?.patchValue({
               uri: this.asset.id,
-              kind: SchematicComponentKind.ASSET
+              kind: SchemaFieldKind.ASSET
             })
             // this.assets.forEach(it => this.form?.push(this.assetToForm(it)))
             this.cd.markForCheck();
@@ -88,7 +88,7 @@ export class AssetSelectComponent implements OnInit {
   assetToForm(asset: Asset): FormGroup {
     return this.fb.group({
       uri: this.fb.control(asset.id),
-      kind: this.fb.control(SchematicComponentKind.ASSET),
+      kind: this.fb.control(SchemaFieldKind.ASSET),
     })
   }
 

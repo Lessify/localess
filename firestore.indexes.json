@@ -14,7 +14,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "parentSlug", "order": "ASCENDING" },
-        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "kind", "order": "DESCENDING" },
         { "fieldPath": "name", "order": "ASCENDING" }
       ]
     },

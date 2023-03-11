@@ -1,0 +1,29 @@
+import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
+import {FormBuilder, FormGroup} from '@angular/forms';
+import {AddDocumentDialogModel} from './add-document-dialog.model';
+import {ContentValidator} from '@shared/validators/content.validator';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
+import {CommonValidator} from '@shared/validators/common.validator';
+
+@Component({
+  selector: 'll-content-add-document-dialog',
+  templateUrl: './add-document-dialog.component.html',
+  styleUrls: ['./add-document-dialog.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class AddDocumentDialogComponent {
+
+  form: FormGroup = this.fb.group({
+    name: this.fb.control('', [...ContentValidator.NAME, CommonValidator.reservedName(this.data.reservedNames)]),
+    slug: this.fb.control('', [...ContentValidator.SLUG, CommonValidator.reservedName(this.data.reservedSlugs)]),
+    schema: this.fb.control(undefined, ContentValidator.SCHEMA)
+  });
+
+  constructor(
+    private readonly fb: FormBuilder,
+    readonly fe: FormErrorHandlerService,
+    @Inject(MAT_DIALOG_DATA) public data: AddDocumentDialogModel
+  ) {
+  }
+}

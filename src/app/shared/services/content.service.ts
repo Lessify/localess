@@ -25,11 +25,11 @@ import {
   ContentFolderCreate,
   ContentFolderCreateFS,
   ContentKind,
-  ContentPage,
-  ContentPageCreate,
-  ContentPageCreateFS,
-  ContentPageData,
-  ContentPageDataUpdateFS,
+  ContentDocument,
+  ContentDocumentCreate,
+  ContentDocumentCreateFS,
+  ContentData,
+  ContentDocumentDataUpdateFS,
   ContentUpdate,
   ContentUpdateFS
 } from '@shared/models/content.model';
@@ -46,7 +46,7 @@ export class ContentService {
   }
 
   findAll(spaceId: string, parentSlug?: string): Observable<Content[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('kind', 'asc'), orderBy('name', 'asc')]
+    const queryConstrains: QueryConstraint[] = [orderBy('kind', 'desc'), orderBy('name', 'asc')]
     if (parentSlug) {
       queryConstrains.push(
         where('parentSlug', '==', parentSlug)
@@ -69,8 +69,8 @@ export class ContentService {
       );
   }
 
-  findAllPages(spaceId: string): Observable<ContentPage[]> {
-    const queryConstrains: QueryConstraint[] = [where('kind', '==', ContentKind.PAGE)]
+  findAllDocuments(spaceId: string): Observable<ContentDocument[]> {
+    const queryConstrains: QueryConstraint[] = [where('kind', '==', ContentKind.DOCUMENT)]
     return collectionData(
       query(
         collection(this.firestore, `spaces/${spaceId}/contents`),
@@ -78,14 +78,14 @@ export class ContentService {
       {idField: 'id'}
     )
       .pipe(
-        traceUntilFirst('Firestore:Contents:findAllPages'),
-        map((it) => it as ContentPage[])
+        traceUntilFirst('Firestore:Contents:findAllDocuments'),
+        map((it) => it as ContentDocument[])
       );
   }
 
-  findAllPagesByName(spaceId: string, name: string, max: number = 20): Observable<ContentPage[]> {
+  findAllDocumentsByName(spaceId: string, name: string, max: number = 20): Observable<ContentDocument[]> {
     const queryConstrains: QueryConstraint[] = [
-      where('kind', '==', ContentKind.PAGE),
+      where('kind', '==', ContentKind.DOCUMENT),
       where('name', '>=', name),
       where('name', '<=', `${name}~`),
       limit(max)
@@ -98,8 +98,8 @@ export class ContentService {
       {idField: 'id'}
     )
       .pipe(
-        traceUntilFirst('Firestore:Contents:findAllPagesByName'),
-        map((it) => it as ContentPage[])
+        traceUntilFirst('Firestore:Contents:findAllDocumentsByName'),
+        map((it) => it as ContentDocument[])
       );
   }
 
@@ -111,14 +111,14 @@ export class ContentService {
       );
   }
 
-  createPage(spaceId: string, parentSlug: string, entity: ContentPageCreate): Observable<DocumentReference> {
-    let addEntity: ContentPageCreateFS = {
-      kind: ContentKind.PAGE,
+  createDocument(spaceId: string, parentSlug: string, entity: ContentDocumentCreate): Observable<DocumentReference> {
+    let addEntity: ContentDocumentCreateFS = {
+      kind: ContentKind.DOCUMENT,
       name: entity.name,
       slug: entity.slug,
       parentSlug: parentSlug,
       fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
-      schematic: entity.schematic,
+      schema: entity.schema,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }
@@ -172,8 +172,8 @@ export class ContentService {
       );
   }
 
-  updatePageData(spaceId: string, id: string, data: ContentPageData): Observable<void> {
-    const update: UpdateData<ContentPageDataUpdateFS> = {
+  updateDocumentData(spaceId: string, id: string, data: ContentData): Observable<void> {
+    const update: UpdateData<ContentDocumentDataUpdateFS> = {
       data: this.contentHelperService.clone(data),
       updatedAt: serverTimestamp()
     }

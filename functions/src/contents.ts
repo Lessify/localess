@@ -2,8 +2,8 @@ import {EventContext, firestore, https, logger} from 'firebase-functions';
 import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
-import {Content, ContentKind, ContentPage, ContentPageStorage, PublishContentData} from './models/content.model';
-import {Schematic} from './models/schematic.model';
+import {Content, ContentKind, ContentDocument, ContentPageStorage, PublishContentData} from './models/content.model';
+import {Schema} from './models/schema.model';
 import {FieldValue, QueryDocumentSnapshot} from 'firebase-admin/firestore';
 import {UserPermission} from './models/user.model';
 
@@ -14,11 +14,11 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
   if (!SecurityUtils.canPerform(UserPermission.CONTENT_PUBLISH, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await firestoreService.doc(`spaces/${data.spaceId}`).get();
   const contentSnapshot = await firestoreService.doc(`spaces/${data.spaceId}/contents/${data.contentId}`).get();
-  const schematicsSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/schematics`).get();
+  const schemasSnapshot = await firestoreService.collection(`spaces/${data.spaceId}/schemas`).get();
   if (spaceSnapshot.exists && contentSnapshot.exists) {
     const space: Space = spaceSnapshot.data() as Space;
-    const content: ContentPage = contentSnapshot.data() as ContentPage;
-    const schematics = schematicsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schematic);
+    const content: ContentDocument = contentSnapshot.data() as ContentDocument;
+    const schemas = schemasSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schema);
     for (const locale of space.locales) {
       const pageStorage: ContentPageStorage = {
         id: contentSnapshot.id,
@@ -34,18 +34,18 @@ export const contentPublish = https.onCall(async (data: PublishContentData, cont
       if (content.data) {
         pageStorage.data = {
           _id: content.data._id,
-          schematic: content.data.schematic,
+          schema: content.data.schema,
         };
-        const schematic = schematics.find((it) => it.name == content.data?.schematic);
-        for (const component of schematic?.components || []) {
-          if (component.translatable) {
-            let value = content.data[`${component.name}_i18n_${locale.id}`];
+        const schema = schemas.find((it) => it.name == content.data?.schema);
+        for (const field of schema?.fields || []) {
+          if (field.translatable) {
+            let value = content.data[`${field.name}_i18n_${locale.id}`];
             if (!value) {
-              value = content.data[`${component.name}_i18n_${space.localeFallback.id}`];
+              value = content.data[`${field.name}_i18n_${space.localeFallback.id}`];
             }
-            pageStorage.data[component.name] = value;
+            pageStorage.data[field.name] = value;
           } else {
-            pageStorage.data[component.name] = content.data[component.name];
+            pageStorage.data[field.name] = content.data[field.name];
           }
         }
       }
@@ -87,7 +87,7 @@ export const onContentUpdate = firestore.document('spaces/{spaceId}/contents/{co
       logger.info(`[Content::onUpdate] eventId='${context.eventId}' id='${change.before.id}' has no changes in fullSlug`);
     } else {
       // In case it is a PAGE, skip recursion as PAGE doesn't have child
-      if (contentAfter.kind === ContentKind.PAGE) return;
+      if (contentAfter.kind === ContentKind.DOCUMENT) return;
       // cascade changes to all child's in case it is a FOLDER
       // It will create recursion
       const batch = firestoreService.batch();
@@ -113,7 +113,7 @@ export const onContentDelete = firestore.document('spaces/{spaceId}/contents/{co
     logger.info(`[Content::onDelete] eventId='${context.eventId}' id='${snapshot.id}'`);
     const content = snapshot.data() as Content;
     logger.info(`[Content::onDelete] eventId='${context.eventId}' id='${snapshot.id}' fullSlug='${content.fullSlug}'`);
-    if (content.kind === ContentKind.PAGE) {
+    if (content.kind === ContentKind.DOCUMENT) {
       return bucket.deleteFiles({
         prefix: `spaces/${context.params['spaceId']}/contents/${context.params['contentId']}`,
       });

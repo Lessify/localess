@@ -1,8 +1,8 @@
 import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
-import {ContentPage} from '@shared/models/content.model';
+import {SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
+import {ContentDocument} from '@shared/models/content.model';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {debounceTime, Observable, of, startWith} from 'rxjs';
 import {map} from 'rxjs/operators';
@@ -17,12 +17,12 @@ import {environment} from '../../../../environments/environment';
 export class LinkSelectComponent implements OnInit {
   isDebug = environment.debug
   @Input() form?: FormGroup;
-  @Input() component?: SchematicComponent;
-  @Input() pages: ContentPage[] = []
+  @Input() component?: SchemaField;
+  @Input() pages: ContentDocument[] = []
 
   // Search
   searchCtrl: FormControl = new FormControl();
-  filteredContent: Observable<ContentPage[]> = of([]);
+  filteredContent: Observable<ContentDocument[]> = of([]);
 
   constructor(
     private readonly fb: FormBuilder,
@@ -33,7 +33,7 @@ export class LinkSelectComponent implements OnInit {
   ngOnInit(): void {
     // Data init in case everything is null
     if (this.form?.value.kind === null || this.form?.value.type === null) {
-      this.form.patchValue({kind: SchematicComponentKind.LINK, type: 'url'})
+      this.form.patchValue({kind: SchemaFieldKind.LINK, type: 'url'})
     }
     if (this.form?.value.type === 'content' && this.form?.value.uri !== null) {
       this.searchCtrl.patchValue(this.pages.find(it => it.id === this.form?.value.uri))
@@ -52,12 +52,12 @@ export class LinkSelectComponent implements OnInit {
     this.searchCtrl.reset()
   }
 
-  displayContent(content?: ContentPage): string {
+  displayContent(content?: ContentDocument): string {
     return content ? `${content.name} | ${content.fullSlug}` : '';
   }
 
   contentSelected(event: MatAutocompleteSelectedEvent): void {
-    const content = event.option.value as ContentPage;
+    const content = event.option.value as ContentDocument;
     this.form?.controls['uri'].setValue(content.id);
   }
 

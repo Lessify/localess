@@ -35,12 +35,12 @@ service cloud.firestore {
         allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('TRANSLATION_DELETE'));
       }
 
-      // Schematics
-      match /schematics/{schematicId} {
-        allow read: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['SCHEMATIC_READ','CONTENT_READ']));
-        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMATIC_CREATE'));
-        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMATIC_UPDATE'));
-        allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMATIC_DELETE'));
+      // Schemas
+      match /schemas/{schemaId} {
+        allow read: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['SCHEMA_READ','CONTENT_READ']));
+        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMA_CREATE'));
+        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMA_UPDATE'));
+        allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('SCHEMA_DELETE'));
       }
 
       // Content

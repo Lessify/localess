@@ -1,9 +1,9 @@
 import {Injectable} from '@angular/core';
 import {
-  Schematic,
-  SchematicComponent,
-  SchematicComponentKind
-} from '@shared/models/schematic.model';
+  Schema,
+  SchemaField,
+  SchemaFieldKind
+} from '@shared/models/schema.model';
 import {
   FormArray,
   FormBuilder,
@@ -12,7 +12,7 @@ import {
   ValidatorFn,
   Validators
 } from '@angular/forms';
-import {ContentError, ContentPageData} from '@shared/models/content.model';
+import {ContentError, ContentData} from '@shared/models/content.model';
 import {CommonValidator} from '@shared/validators/common.validator';
 
 @Injectable()
@@ -22,48 +22,48 @@ export class ContentHelperService {
   ) {
   }
 
-  validateContent(data: ContentPageData, schematics: Schematic[], locale: string): ContentError[] | null {
+  validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] | null {
     const errors: ContentError[] = [];
-    const schematicsByName = new Map<string, Schematic>(schematics.map(it => [it.name, it]));
+    const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
     const contentIteration = [data]
     // Iterative traversing content and validating fields.
     let selectedContent = contentIteration.pop()
     while (selectedContent) {
-      const schematic = schematicsByName.get(selectedContent.schematic)
-      if (schematic) {
-        const schematicComponentsMap = new Map<string, SchematicComponent>(schematic.components?.map(it => [it.name, it]));
-        const form = this.generateSchematicForm(schematic, true)
-        const extractSchematicContent = this.extractSchematicContent(selectedContent, schematic, locale, true)
-        form.patchValue(extractSchematicContent)
+      const schema = schemasByName.get(selectedContent.schema)
+      if (schema) {
+        const schemaFieldsMap = new Map<string, SchemaField>(schema.fields?.map(it => [it.name, it]));
+        const form = this.generateSchemaForm(schema, true)
+        const extractSchemaContent = this.extractSchemaContent(selectedContent, schema, locale, true)
+        form.patchValue(extractSchemaContent)
 
-        Object.getOwnPropertyNames(extractSchematicContent)
-          .filter(it => extractSchematicContent[it] instanceof Array)
+        Object.getOwnPropertyNames(extractSchemaContent)
+          .filter(it => extractSchemaContent[it] instanceof Array)
           .forEach(fieldName => {
             // Assets
-            form.controls[fieldName] = this.assetsToFormArray(extractSchematicContent[fieldName])
+            form.controls[fieldName] = this.assetsToFormArray(extractSchemaContent[fieldName])
           })
 
         if (form.invalid) {
           for (const controlName in form.controls) {
-            const component = schematicComponentsMap.get(controlName);
+            const component = schemaFieldsMap.get(controlName);
             const control = form.controls[controlName];
             if (control && control.invalid) {
               if (control instanceof FormGroup) {
                 switch (control.value.kind) {
-                  case SchematicComponentKind.LINK: {
+                  case SchemaFieldKind.LINK: {
                     errors.push({
                       contentId: selectedContent._id,
-                      schematic: schematic.displayName || schematic.name,
+                      schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
                       errors: control.controls['uri'].errors
                     })
                     break;
                   }
-                  case SchematicComponentKind.ASSET: {
+                  case SchemaFieldKind.ASSET: {
                     errors.push({
                       contentId: selectedContent._id,
-                      schematic: schematic.displayName || schematic.name,
+                      schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
                       errors: control.controls['uri'].errors
@@ -77,7 +77,7 @@ export class ContentHelperService {
               } else {
                 errors.push({
                   contentId: selectedContent._id,
-                  schematic: schematic.displayName || schematic.name,
+                  schema: schema.displayName || schema.name,
                   fieldName: controlName,
                   fieldDisplayName: component?.displayName,
                   errors: control.errors
@@ -90,7 +90,7 @@ export class ContentHelperService {
                   if(control.length === 0 ) {
                     errors.push({
                       contentId: selectedContent._id,
-                      schematic: schematic.displayName || schematic.name,
+                      schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
                       errors: {required: true}
@@ -101,10 +101,10 @@ export class ContentHelperService {
             }
           }
         }
-        schematic.components
-          ?.filter((it) => it.kind === SchematicComponentKind.SCHEMATIC)
-          .forEach((component) => {
-            const sch: ContentPageData[] | undefined = selectedContent![component.name];
+        schema.fields
+          ?.filter((it) => it.kind === SchemaFieldKind.SCHEMA)
+          .forEach((field) => {
+            const sch: ContentData[] | undefined = selectedContent![field.name];
             sch?.forEach((it) => contentIteration.push(it));
           })
       }
@@ -113,21 +113,21 @@ export class ContentHelperService {
     return errors.length > 0 ? errors : null;
   }
 
-  extractSchematicContent(data: ContentPageData, schematic: Schematic, locale: string, full: boolean): Record<string, any> {
+  extractSchemaContent(data: ContentData, schema: Schema, locale: string, full: boolean): Record<string, any> {
     const result: Record<string, any> = {}
-    schematic.components
-      ?.filter(it => full || it.kind !== SchematicComponentKind.SCHEMATIC)
-      ?.forEach((comp) => {
+    schema.fields
+      ?.filter(it => full || it.kind !== SchemaFieldKind.SCHEMA)
+      ?.forEach((field) => {
         let value;
-        if (comp.translatable) {
+        if (field.translatable) {
           // Extract Locale specific values
-          value = data[`${comp.name}_i18n_${locale}`]
+          value = data[`${field.name}_i18n_${locale}`]
         } else {
           // Extract not translatable values in fallback locale
-          value = data[comp.name]
+          value = data[field.name]
         }
         if (value) {
-          result[comp.name] = value;
+          result[field.name] = value;
         }
       })
     console.log(result)
@@ -150,13 +150,13 @@ export class ContentHelperService {
           target[value] = this.clone(target[value]);
           if (Object.getOwnPropertyNames(target[value]).some(it => it === 'kind')) {
             switch (target[value]['kind']) {
-              case SchematicComponentKind.LINK: {
+              case SchemaFieldKind.LINK: {
                 if (target[value]['uri'] === undefined || target[value]['uri'] === '') {
                   delete target[value];
                 }
                 break;
               }
-              case SchematicComponentKind.ASSET: {
+              case SchemaFieldKind.ASSET: {
                 if (target[value]['uri'] === undefined || target[value]['uri'] === '') {
                   delete target[value];
                 }
@@ -178,121 +178,121 @@ export class ContentHelperService {
     return null as unknown as T;
   }
 
-  generateSchematicForm(schematic: Schematic, isFallbackLocale: boolean): FormRecord {
+  generateSchemaForm(schema: Schema, isFallbackLocale: boolean): FormRecord {
     const form: FormRecord = this.fb.record({});
-    for (const component of schematic.components || []) {
+    for (const field of schema.fields || []) {
       const validators: ValidatorFn[] = []
-      if (component.required) {
+      if (field.required) {
         validators.push(Validators.required)
       }
       // translatable + fallBackLocale => disabled = false
       // translatable + !fallBackLocale => disabled = false
       // !translatable + fallBackLocale => disabled = false
       // !translatable + !fallBackLocale => disabled = true
-      const disabled = !((component.translatable === true) || (isFallbackLocale))
-      switch (component.kind) {
-        case SchematicComponentKind.TEXT:
-        case SchematicComponentKind.TEXTAREA: {
-          if (component.minLength) {
-            validators.push(Validators.minLength(component.minLength))
+      const disabled = !((field.translatable === true) || (isFallbackLocale))
+      switch (field.kind) {
+        case SchemaFieldKind.TEXT:
+        case SchemaFieldKind.TEXTAREA: {
+          if (field.minLength) {
+            validators.push(Validators.minLength(field.minLength))
           }
-          if (component.maxLength) {
-            validators.push(Validators.maxLength(component.maxLength))
+          if (field.maxLength) {
+            validators.push(Validators.maxLength(field.maxLength))
           }
-          form.setControl(component.name, this.fb.control<string | undefined>({
+          form.setControl(field.name, this.fb.control<string | undefined>({
             value: undefined,
             disabled: disabled
           }, validators))
           break;
         }
-        case SchematicComponentKind.NUMBER: {
-          if (component.minValue) {
-            validators.push(Validators.min(component.minValue))
+        case SchemaFieldKind.NUMBER: {
+          if (field.minValue) {
+            validators.push(Validators.min(field.minValue))
           }
-          if (component.maxValue) {
-            validators.push(Validators.max(component.maxValue))
+          if (field.maxValue) {
+            validators.push(Validators.max(field.maxValue))
           }
-          form.setControl(component.name, this.fb.control<number | undefined>({
+          form.setControl(field.name, this.fb.control<number | undefined>({
             value: undefined,
             disabled: disabled
           }, validators))
           break;
         }
-        case SchematicComponentKind.COLOR: {
-          form.setControl(component.name, this.fb.control<string | undefined>({
+        case SchemaFieldKind.COLOR: {
+          form.setControl(field.name, this.fb.control<string | undefined>({
             value: undefined,
             disabled: disabled
           }, validators))
           break;
         }
-        case SchematicComponentKind.BOOLEAN: {
-          form.setControl(component.name, this.fb.control<boolean | undefined>({
+        case SchemaFieldKind.BOOLEAN: {
+          form.setControl(field.name, this.fb.control<boolean | undefined>({
             value: undefined,
             disabled: disabled
           }, validators))
           break;
         }
-        case SchematicComponentKind.DATE: {
-          form.setControl(component.name, this.fb.control<string | undefined>({
+        case SchemaFieldKind.DATE: {
+          form.setControl(field.name, this.fb.control<string | undefined>({
             value: undefined,
             disabled: disabled
           }, validators))
           break;
         }
-        case SchematicComponentKind.DATETIME: {
-          form.setControl(component.name, this.fb.control<string | undefined>({
+        case SchemaFieldKind.DATETIME: {
+          form.setControl(field.name, this.fb.control<string | undefined>({
             value: undefined,
             disabled: disabled
           }, validators))
           break;
         }
-        case SchematicComponentKind.OPTION: {
-          form.setControl(component.name, this.fb.control<string | undefined>({
+        case SchemaFieldKind.OPTION: {
+          form.setControl(field.name, this.fb.control<string | undefined>({
             value: undefined,
             disabled: disabled
           }, validators))
           break;
         }
-        case SchematicComponentKind.OPTIONS: {
-          if (component.minValues) {
-            validators.push(Validators.minLength(component.minValues))
+        case SchemaFieldKind.OPTIONS: {
+          if (field.minValues) {
+            validators.push(Validators.minLength(field.minValues))
           }
-          if (component.maxValues) {
-            validators.push(Validators.maxLength(component.maxValues))
+          if (field.maxValues) {
+            validators.push(Validators.maxLength(field.maxValues))
           }
-          form.setControl(component.name, this.fb.control<string | undefined>({
+          form.setControl(field.name, this.fb.control<string | undefined>({
             value: undefined,
             disabled: disabled
           }, validators))
           break;
         }
-        case SchematicComponentKind.LINK: {
+        case SchemaFieldKind.LINK: {
           const link = this.fb.group({
-            kind: this.fb.control(SchematicComponentKind.LINK, Validators.required),
+            kind: this.fb.control(SchemaFieldKind.LINK, Validators.required),
             type: this.fb.control<'url' | 'content'>('url', Validators.required),
             uri: this.fb.control<string | undefined>({
               value: undefined,
               disabled: disabled
             }, validators)
           })
-          form.setControl(component.name, link)
+          form.setControl(field.name, link)
           break;
         }
-        case SchematicComponentKind.ASSET: {
-          form.setControl(component.name, this.fb.group({
+        case SchemaFieldKind.ASSET: {
+          form.setControl(field.name, this.fb.group({
             uri: this.fb.control<string | undefined>({
               value: undefined,
               disabled: disabled
             }, validators),
-            kind: this.fb.control(SchematicComponentKind.ASSET, Validators.required),
+            kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
           }))
           break;
         }
-        case SchematicComponentKind.ASSETS: {
-          if (component.required) {
+        case SchemaFieldKind.ASSETS: {
+          if (field.required) {
             validators.push(CommonValidator.minLength(1))
           }
-          form.setControl(component.name, this.fb.array([], validators));
+          form.setControl(field.name, this.fb.array([], validators));
           break;
         }
       }
@@ -303,21 +303,21 @@ export class ContentHelperService {
   assetsToFormArray(uris: { uri: string }[]): FormArray {
     return this.fb.array(uris.map(it => this.fb.group({
       uri: this.fb.control(it.uri, Validators.required),
-      kind: this.fb.control(SchematicComponentKind.ASSET, Validators.required),
+      kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
     })))
   }
 
   assetsFormArray(uris: string[]): FormArray {
     return this.fb.array(uris.map(it => this.fb.group({
       uri: this.fb.control(it, Validators.required),
-      kind: this.fb.control(SchematicComponentKind.ASSET, Validators.required),
+      kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
     })))
   }
 
   assetFormGroup(uri: string): FormGroup {
     return this.fb.group({
       uri: this.fb.control(uri, Validators.required),
-      kind: this.fb.control(SchematicComponentKind.ASSET, Validators.required),
+      kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
     })
   }
 }

@@ -3,22 +3,18 @@ import {ValidationErrors} from '@angular/forms';
 
 export interface ContentError {
   contentId: string;
-  schematic: string;
+  schema: string;
   fieldName: string;
   fieldDisplayName?: string;
   errors: ValidationErrors | null;
 }
 
-export function isPageContentComponent(obj: any): boolean {
-  return '_id' in obj && 'schematic' in obj;
-}
-
-export interface ContentPageData extends Record<string, any> {
+export interface ContentData extends Record<string, any> {
   _id: string;
-  schematic: string;
+  schema: string;
 }
 
-export type Content = ContentPage | ContentFolder;
+export type Content = ContentDocument | ContentFolder;
 
 export interface ContentBase {
   id: string,
@@ -32,10 +28,10 @@ export interface ContentBase {
   updatedAt: Timestamp;
 }
 
-export interface ContentPage extends ContentBase {
-  kind: ContentKind.PAGE
-  schematic: string;
-  data?: ContentPageData;
+export interface ContentDocument extends ContentBase {
+  kind: ContentKind.DOCUMENT
+  schema: string;
+  data?: ContentData;
   publishedAt?: Timestamp;
 }
 
@@ -45,15 +41,15 @@ export interface ContentFolder extends ContentBase {
 
 export enum ContentKind {
   FOLDER = 'FOLDER',
-  PAGE = 'PAGE'
+  DOCUMENT = 'DOCUMENT'
 }
 
 // Service
 
-export interface ContentPageCreate {
+export interface ContentDocumentCreate {
   name: string;
   slug: string;
-  schematic: string;
+  schema: string;
 }
 
 export interface ContentUpdate {
@@ -79,9 +75,9 @@ export interface ContentCreateFS {
   updatedAt: FieldValue;
 }
 
-export interface ContentPageCreateFS extends ContentCreateFS {
-  kind: ContentKind.PAGE
-  schematic: string;
+export interface ContentDocumentCreateFS extends ContentCreateFS {
+  kind: ContentKind.DOCUMENT
+  schema: string;
 }
 
 export interface ContentFolderCreateFS extends ContentCreateFS {
@@ -96,7 +92,7 @@ export interface ContentUpdateFS {
   updatedAt: FieldValue;
 }
 
-export interface ContentPageDataUpdateFS {
-  data: ContentPageData;
+export interface ContentDocumentDataUpdateFS {
+  data: ContentData;
   updatedAt: FieldValue;
 }

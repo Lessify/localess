@@ -6,16 +6,16 @@ import {
   OnInit
 } from '@angular/core';
 import {FormBuilder} from '@angular/forms';
-import {Schematic,} from '@shared/models/schematic.model';
+import {Schema,} from '@shared/models/schema.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {ActivatedRoute, Router} from '@angular/router';
-import {SchematicService} from '@shared/services/schematic.service';
+import {SchemaService} from '@shared/services/schema.service';
 import {ContentService} from '@shared/services/content.service';
 import {
   ContentError,
   ContentKind,
-  ContentPage,
-  ContentPageData
+  ContentDocument,
+  ContentData
 } from '@shared/models/content.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
@@ -28,9 +28,9 @@ import {NotificationService} from '@shared/services/notification.service';
 import {DEFAULT_LOCALE, Locale} from '@shared/models/locale.model';
 import {v4} from 'uuid';
 import {environment} from '../../../../environments/environment';
-import {SchematicSelectChange} from '../page-data-schematic-edit/page-data-schematic-edit.model';
+import {SchemaSelectChange} from '../page-data-schema-edit/page-data-schema-edit.model';
 import {ContentHelperService} from '@shared/services/content-helper.service';
-import {SchematicPathItem} from './page-data-edit.model';
+import {SchemaPathItem} from './page-data-edit.model';
 
 @Component({
   selector: 'll-page-data-edit',
@@ -45,15 +45,15 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
   selectedLocale: Locale = DEFAULT_LOCALE;
   availableLocales: Locale[] = [];
   entityId: string;
-  page?: ContentPage;
-  pageData: ContentPageData = {_id: '', schematic: ''};
-  selectedPageData: ContentPageData = {_id: '', schematic: ''};
-  rootSchematic?: Schematic;
-  schematicMapByName?: Map<string, Schematic>;
-  schematicPath: SchematicPathItem[] = [];
-  schematics: Schematic[] = [];
+  page?: ContentDocument;
+  pageData: ContentData = {_id: '', schema: ''};
+  selectedPageData: ContentData = {_id: '', schema: ''};
+  rootSchema?: Schema;
+  schemaMapByName?: Map<string, Schema>;
+  schemaPath: SchemaPathItem[] = [];
+  schemas: Schema[] = [];
   contentErrors: ContentError[] | null = null;
-  pages: ContentPage[] = [];
+  pages: ContentDocument[] = [];
 
   //Loadings
   isLoading: boolean = true;
@@ -69,7 +69,7 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
     private readonly activatedRoute: ActivatedRoute,
     private readonly cd: ChangeDetectorRef,
     private readonly spaceService: SpaceService,
-    private readonly schematicService: SchematicService,
+    private readonly schemaService: SchemaService,
     private readonly contentService: ContentService,
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
@@ -91,42 +91,42 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
           combineLatest([
             this.spaceService.findById(it.id),
             this.contentService.findById(it.id, contentId),
-            this.contentService.findAllPages(it.id),
-            this.schematicService.findAll(it.id)
+            this.contentService.findAllDocuments(it.id),
+            this.schemaService.findAll(it.id)
           ])
         ),
         takeUntil(this.destroy$),
       )
       .subscribe({
-        next: ([space, page, pages, schematics]) => {
+        next: ([space, page, pages, schemas]) => {
           this.selectedSpace = space;
           this.selectedLocale = space.localeFallback;
           this.availableLocales = space.locales;
           this.pages = pages;
 
-          if (page.kind === ContentKind.PAGE) {
+          if (page.kind === ContentKind.DOCUMENT) {
             this.page = page;
-            this.rootSchematic = schematics.find(it => it.id === page.schematic);
+            this.rootSchema = schemas.find(it => it.id === page.schema);
             this.pageData = page.data || {
               _id: v4(),
-              schematic: this.rootSchematic?.name || ''
+              schema: this.rootSchema?.name || ''
             };
           }
 
           // Generate initial path only once
-          if (this.rootSchematic && this.schematicPath.length == 0) {
-            this.schematicPath = [{
+          if (this.rootSchema && this.schemaPath.length == 0) {
+            this.schemaPath = [{
               contentId: this.pageData._id,
-              schematicName: this.pageData.schematic,
+              schemaName: this.pageData.schema,
               fieldName: ''
             }];
           }
 
           // Select content base on path
-          this.navigateToSchematic(this.schematicPath[this.schematicPath.length - 1])
+          this.navigateToSchema(this.schemaPath[this.schemaPath.length - 1])
 
-          this.schematics = schematics;
-          this.schematicMapByName = new Map<string, Schematic>(this.schematics?.map(it => [it.name, it]));
+          this.schemas = schemas;
+          this.schemaMapByName = new Map<string, Schema>(this.schemas?.map(it => [it.name, it]));
           this.isLoading = false;
           this.cd.markForCheck();
         }
@@ -158,12 +158,12 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
 
     //console.log(this.pageData)
 
-    this.contentErrors = this.contentHelperService.validateContent(this.pageData, this.schematics, this.selectedLocale.id)
+    this.contentErrors = this.contentHelperService.validateContent(this.pageData, this.schemas, this.selectedLocale.id)
 
     //console.log(this.contentErrors)
 
     if (!this.contentErrors) {
-      this.contentService.updatePageData(this.selectedSpace!.id, this.entityId, this.pageData)
+      this.contentService.updateDocumentData(this.selectedSpace!.id, this.entityId, this.pageData)
         .subscribe({
           next: () => {
             this.notificationService.success('Content has been updated.');
@@ -203,26 +203,26 @@ export class PageDataEditComponent implements OnInit, OnDestroy {
     this.selectedLocale = locale;
   }
 
-  onSchematicChange(event: SchematicSelectChange): void {
-    this.schematicPath.push({
+  onSchemaChange(event: SchemaSelectChange): void {
+    this.schemaPath.push({
       contentId: event.contentId,
-      schematicName: event.schematicName,
+      schemaName: event.schemaName,
       fieldName: event.fieldName
     });
-    this.selectedPageData = this.selectedPageData[event.fieldName].find((it: ContentPageData) => it._id == event.contentId);
+    this.selectedPageData = this.selectedPageData[event.fieldName].find((it: ContentData) => it._id == event.contentId);
   }
 
-  navigateToSchematic(pathItem: SchematicPathItem): void {
-    const idx = this.schematicPath.findIndex((it) => it.contentId == pathItem.contentId);
-    this.schematicPath.splice(idx + 1);
+  navigateToSchema(pathItem: SchemaPathItem): void {
+    const idx = this.schemaPath.findIndex((it) => it.contentId == pathItem.contentId);
+    this.schemaPath.splice(idx + 1);
     // Select Root
     if (idx == 0) {
       this.selectedPageData = this.pageData;
     } else {
       let localSelectedContent = this.pageData;
-      for (const path of this.schematicPath) {
+      for (const path of this.schemaPath) {
         if (path.fieldName === '') continue;
-        localSelectedContent = localSelectedContent[path.fieldName].find((it: ContentPageData) => it._id == path.contentId);
+        localSelectedContent = localSelectedContent[path.fieldName].find((it: ContentData) => it._id == path.contentId);
       }
       this.selectedPageData = localSelectedContent;
     }

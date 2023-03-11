@@ -245,10 +245,10 @@ export class AssetsComponent implements OnInit, OnDestroy {
   onRowSelect(element: Asset): void {
     // if (element.kind === AssetKind.FILE) {
     //   element.publishedAt
-    //   if (this.schematicsMap.has(element.schematic)) {
+    //   if (this.schemasMap.has(element.schema)) {
     //     this.router.navigate(['features', 'contents', element.id]);
     //   } else {
-    //     this.notificationService.warn(`Content Schematic can not be found.`);
+    //     this.notificationService.warn(`Content Schema can not be found.`);
     //   }
     //   return;
     // }

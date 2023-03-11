@@ -30,7 +30,7 @@
       <mat-list>
         <mat-list-item *ngFor="let error of contentErrors">
           <mat-icon color="warn" matListItemIcon>warning</mat-icon>
-          In <b>{{error.schematic}}</b> the <b>{{error.fieldDisplayName || error.fieldName}}</b> {{fe.errors(error.errors)}}
+          In <b>{{error.schema}}</b> the <b>{{error.fieldDisplayName || error.fieldName}}</b> {{fe.errors(error.errors)}}
         </mat-list-item>
       </mat-list>
     </mat-menu>
@@ -83,24 +83,24 @@
 </div>
 <div *ngIf="!isLoading" class="container-fluid mt-3">
 
-  <ng-container *ngIf="rootSchematic">
+  <ng-container *ngIf="rootSchema">
 
     <ll-breadcrumb>
-      <ll-breadcrumb-item *ngFor="let schematicPathItem of schematicPath" (click)="navigateToSchematic(schematicPathItem)">
-        <ng-container *ngIf="schematicMapByName.get(schematicPathItem.schematicName) as sch">
+      <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchema(schemaPathItem)">
+        <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch">
           {{sch.displayName || sch.name}}
         </ng-container>
       </ll-breadcrumb-item>
     </ll-breadcrumb>
 
-    <ll-page-data-schematic-edit
+    <ll-page-data-schema-edit
       [data]="selectedPageData"
-      [schematics]="schematics"
+      [schemas]="schemas"
       [locale]="selectedLocale.id"
       [localeFallback]="selectedSpace.localeFallback.id"
       [pages]="pages"
       [space]="selectedSpace"
-      (schematicChange)="onSchematicChange($event)"
+      (schemaChange)="onSchemaChange($event)"
     />
 
   </ng-container>

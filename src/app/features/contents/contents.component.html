@@ -10,9 +10,9 @@
         Add Content
       </button>
       <mat-menu #contentCreateMenu="matMenu">
-        <button mat-menu-item (click)="openAddPageDialog()">
-          <mat-icon>web_stories</mat-icon>
-          <span>Page</span>
+        <button mat-menu-item (click)="openAddDocumentDialog()">
+          <mat-icon>article</mat-icon>
+          <span>Document</span>
         </button>
         <button mat-menu-item (click)="openAddFolderDialog()">
           <mat-icon>folder</mat-icon>
@@ -70,7 +70,7 @@
       <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container [ngSwitch]="element.kind">
-          <ng-container *ngSwitchCase="'PAGE'">
+          <ng-container *ngSwitchCase="'DOCUMENT'">
             <ng-container *ngIf="element?.publishedAt === undefined">
               <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
             </ng-container>
@@ -100,11 +100,11 @@
         {{element.slug}}
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="schematic">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="schematic"> Schematic </mat-header-cell>
+    <ng-container matColumnDef="schema">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <ng-container *ngIf="element.kind === 'PAGE'">
-          {{schematicsMap.get(element.schematic).displayName || schematicsMap.get(element.schematic).name || 'unknown...'}}
+        <ng-container *ngIf="element.kind === 'DOCUMENT'">
+          {{schemasMap.get(element.schema).displayName || schemasMap.get(element.schema).name || 'unknown...'}}
         </ng-container>
       </mat-cell>
     </ng-container>

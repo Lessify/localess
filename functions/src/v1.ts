@@ -144,7 +144,7 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
             createdAt: content.createdAt.toDate().toISOString(),
             updatedAt: content.updatedAt.toDate().toISOString(),
           };
-          if (content.kind === ContentKind.PAGE) {
+          if (content.kind === ContentKind.DOCUMENT) {
             link.publishedAt = content.publishedAt?.toDate().toISOString();
           }
           return link;

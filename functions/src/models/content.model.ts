@@ -1,6 +1,6 @@
 import {Timestamp} from 'firebase-admin/firestore';
 
-export type Content = ContentPage | ContentFolder;
+export type Content = ContentDocument | ContentFolder;
 
 export interface ContentBase {
   id: string,
@@ -14,10 +14,10 @@ export interface ContentBase {
   updatedAt: Timestamp;
 }
 
-export interface ContentPage extends ContentBase {
-  kind: ContentKind.PAGE
-  schematic: string;
-  data?: ContentPageData;
+export interface ContentDocument extends ContentBase {
+  kind: ContentKind.DOCUMENT
+  schema: string;
+  data?: ContentData;
   publishedAt?: Timestamp;
 }
 
@@ -27,7 +27,7 @@ export interface ContentFolder extends ContentBase {
 
 export enum ContentKind {
   FOLDER = 'FOLDER',
-  PAGE = 'PAGE'
+  DOCUMENT = 'DOCUMENT'
 }
 
 export interface PublishContentData {
@@ -42,15 +42,15 @@ export interface ContentPageStorage {
   slug: string;
   parentSlug: string
   fullSlug: string
-  data?: ContentPageData;
+  data?: ContentData;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
 }
 
-export interface ContentPageData extends Record<string, any> {
+export interface ContentData extends Record<string, any> {
   _id: string;
-  schematic: string;
+  schema: string;
 }
 
 export interface ContentLink {

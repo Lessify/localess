@@ -40,7 +40,7 @@ const hasPermissionTranslationRead = () => {
 const hasPermissionSchemaRead = () => {
   return pipe(
     customClaims,
-    map((claims) => claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.SCHEMATIC_READ) || false))
+    map((claims) => claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.SCHEMA_READ) || false))
   )
 };
 
@@ -105,9 +105,9 @@ const routes: Routes = [
         }
       },
       {
-        path: 'schematics',
-        title: 'Schematics',
-        loadChildren: () => import('./schematics/schematics.module').then(m => m.SchematicsModule),
+        path: 'schemas',
+        title: 'Schemas',
+        loadChildren: () => import('./schemas/schemas.module').then(m => m.SchemasModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSchemaRead

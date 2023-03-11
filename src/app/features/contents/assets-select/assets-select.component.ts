@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchematicComponent, SchematicComponentKind} from '@shared/models/schematic.model';
+import {SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
 import {environment} from '../../../../environments/environment';
 import {MatDialog} from '@angular/material/dialog';
 import {NotificationService} from '@shared/services/notification.service';
@@ -32,7 +32,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
   isDebug = environment.debug
   @Input() form?: FormArray;
   // @Input() ids?: string[];
-  @Input() component?: SchematicComponent;
+  @Input() component?: SchemaField;
   @Input() space?: Space;
 
 
@@ -98,7 +98,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
   assetToForm(asset: Asset): FormGroup {
     return this.fb.group({
       uri: this.fb.control(asset.id),
-      kind: this.fb.control(SchematicComponentKind.ASSET),
+      kind: this.fb.control(SchemaFieldKind.ASSET),
     })
   }
 

@@ -22,8 +22,8 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
 import {
-  ContentPageData,
-  ContentPageDataUpdateFS,
+  ContentData,
+  ContentDocumentDataUpdateFS,
   ContentUpdate,
   ContentUpdateFS
 } from '@shared/models/content.model';
@@ -158,8 +158,8 @@ export class AssetService {
       );
   }
 
-  updatePageData(spaceId: string, id: string, data: ContentPageData): Observable<void> {
-    const update: UpdateData<ContentPageDataUpdateFS> = {}
+  updatePageData(spaceId: string, id: string, data: ContentData): Observable<void> {
+    const update: UpdateData<ContentDocumentDataUpdateFS> = {}
 
     return from(
       updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`),
