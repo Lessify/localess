@@ -65,7 +65,7 @@ export const schemaFieldKindDescriptions: Record<string, FieldKindDescription> =
   'ASSET': {name: 'Asset ( BETA )', icon: 'attachment'},
   'ASSETS': {name: 'Assets ( BETA )', icon: 'attachment'},
   'SCHEMA': {name: 'Schema', icon: 'polyline'},
-}
+};
 
 export interface SchemaFieldBase {
   name: string;

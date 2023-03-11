@@ -59,7 +59,7 @@ export const translationsPublish = https.onCall(async (data: PublishTranslations
     }
     // Save Cache
     logger.info(`[translationsPublish] Save file to spaces/${data.spaceId}/translations/cache.json`);
-    await bucket.file(`spaces/${data.spaceId}/translations/cache.json`).save('')
+    await bucket.file(`spaces/${data.spaceId}/translations/cache.json`).save('');
     return;
   } else {
     logger.info(`[translationsPublish] Space ${data.spaceId} does not exist or no translations.`);

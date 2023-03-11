@@ -178,9 +178,9 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =>
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
     if (version === undefined || version != metadata.generation) {
-      let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?version=${metadata.generation}`
+      let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?version=${metadata.generation}`;
       if (locale) {
-        url = `${url}&locale=${locale}`
+        url = `${url}&locale=${locale}`;
       }
       logger.info(`v1 spaces content redirect to => ${url}`);
       res.redirect(url);
@@ -235,7 +235,7 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
       .header('Content-Disposition', `inline; filename="${asset.name}${asset.extension}"`)
       .contentType(asset.type)
-      .sendFile(tempFilePath)
+      .sendFile(tempFilePath);
     return;
   } else {
     res
