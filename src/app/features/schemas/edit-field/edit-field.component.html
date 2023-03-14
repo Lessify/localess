@@ -33,12 +33,15 @@
         <mat-error *ngIf="form.controls['displayName']?.errors as errors">{{fe.errors(errors)}}</mat-error>
       </mat-form-field>
 
-      <mat-checkbox formControlName="required">Required</mat-checkbox>
+      &nbsp;&nbsp;<mat-slide-toggle formControlName="required">Required</mat-slide-toggle>
+      <br/>
       <br/>
 
       <ng-container
         *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS', 'LINK', 'ASSET', 'ASSETS'].includes(form.value.kind)">
-        <mat-checkbox formControlName="translatable">Translatable</mat-checkbox>
+        &nbsp;&nbsp;<mat-slide-toggle formControlName="translatable">Translatable</mat-slide-toggle>
+        <br/>
+        <br/>
       </ng-container>
 
       <mat-form-field>

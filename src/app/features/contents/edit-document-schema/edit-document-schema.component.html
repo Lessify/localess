@@ -94,14 +94,11 @@
       </ng-container>
       <!--BOOLEAN-->
       <ng-container *ngSwitchCase="'BOOLEAN'">
-        <mat-checkbox [formControlName]="field.name">
-          {{field.displayName || field.name}}
-        </mat-checkbox>
+        &nbsp;&nbsp;<mat-slide-toggle [formControlName]="field.name">{{field.displayName || field.name}}</mat-slide-toggle>
         &nbsp;
         <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
         <br/>
-        <mat-hint *ngIf="field.description"
-                  style="font-size: 75%;padding: 0 1em;">{{field.description}}</mat-hint>
+        <mat-hint *ngIf="field.description" style="font-size: 12px;padding: 0 16px;">{{field.description}}</mat-hint>
         <mat-error *ngIf="form.controls[field.name].errors as errors">{{fe.errors(errors)}}</mat-error>
       </ng-container>
       <!--OPTION-->
