@@ -10,6 +10,7 @@ export interface Schema {
   name: string;
   type: SchemaType;
   displayName?: string;
+  previewField?: string;
   fields?: SchemaField[];
 
   createdAt: Timestamp;
@@ -156,6 +157,7 @@ export interface SchemaCreate {
 export interface SchemaUpdate {
   name: string;
   displayName?: string;
+  previewField?: string;
   fields?: SchemaField[];
 }
 
@@ -172,6 +174,7 @@ export interface SchemaCreateFS {
 export interface SchemaUpdateFS {
   name: string;
   displayName?: string;
+  previewField?: string | FieldValue;
   fields?: SchemaField[];
   updatedAt: FieldValue;
 }

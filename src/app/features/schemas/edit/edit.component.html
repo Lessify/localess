@@ -42,6 +42,12 @@
           <mat-hint align="end">{{form.controls['displayName'].value?.length || 0}}/50</mat-hint>
           <mat-error *ngIf="form.controls['displayName'].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
+        <mat-form-field>
+          <mat-label>Preview Field</mat-label>
+          <input matInput type="text" formControlName="previewField" minLength="3" maxlength="50" autocomplete="off"/>
+          <mat-hint align="end">{{form.controls['previewField'].value?.length || 0}}/50</mat-hint>
+          <mat-error *ngIf="form.controls['previewField'].errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
 
         <mat-nav-list class="ll-mat-nav-list-gap">
           <mat-divider></mat-divider>

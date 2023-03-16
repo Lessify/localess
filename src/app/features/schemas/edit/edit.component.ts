@@ -61,6 +61,7 @@ export class EditComponent implements OnInit, OnDestroy {
   form: FormRecord = this.fb.record({
     name: this.fb.control('', SchemasValidator.NAME),
     displayName: this.fb.control<string | undefined>(undefined, SchemasValidator.DISPLAY_NAME),
+    previewField: this.fb.control<string | undefined>(undefined, SchemasValidator.PREVIEW_FIELD),
     fields: this.fb.array<SchemaField>([])
   });
 

@@ -19,6 +19,11 @@ export class SchemasValidator {
     Validators.maxLength(30)
   ];
 
+  public static PREVIEW_FIELD: ValidatorFn[] = [
+    CommonValidator.noSpaceAround,
+    Validators.maxLength(30)
+  ];
+
   // Component
   public static FIELD_NAME: ValidatorFn[] = [
     Validators.required,

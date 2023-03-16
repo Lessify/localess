@@ -86,14 +86,17 @@ export class SchemaService {
   }
 
   update(spaceId: string, id: string, entity: SchemaUpdate): Observable<void> {
+    console.log(entity)
     ObjectUtils.clean(entity);
+
     const update: UpdateData<SchemaUpdateFS> = {
       name: entity.name,
       displayName: entity.displayName || deleteField(),
+      previewField: entity.previewField || deleteField(),
       fields: entity.fields || deleteField(),
       updatedAt: serverTimestamp()
     }
-
+    console.log(update)
     return from(
       updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`),
         update
