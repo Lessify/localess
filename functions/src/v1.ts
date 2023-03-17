@@ -161,7 +161,9 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   }
 
   const cachePath = `spaces/${spaceId}/contents/${contentId}/cache.json`;
+  logger.info('v1 spaces content cachePath: ' + cachePath);
   const [exists] = await bucket.file(cachePath).exists();
+
 
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
