@@ -150,6 +150,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   let contentId = '';
 
   const contentsSnapshot = await findContentByFullSlug(spaceId, fullSlug).get();
+  logger.info('v1 spaces contents', contentsSnapshot.size);
   if (contentsSnapshot.empty) {
     // No records in database
     res
