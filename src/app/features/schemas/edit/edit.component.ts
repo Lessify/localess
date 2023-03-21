@@ -115,6 +115,9 @@ export class EditComponent implements OnInit, OnDestroy {
 
           this.fields.clear()
           schema.fields?.forEach(it => this.addField(it))
+          if(this.selectedFieldIdx === undefined) {
+            this.selectComponent(this.fields.length - 1);
+          }
 
           this.isLoading = false;
           this.cd.markForCheck();
@@ -226,7 +229,9 @@ export class EditComponent implements OnInit, OnDestroy {
     }
     this.fields.push(fieldForm);
     this.newFieldName.reset();
-    this.selectComponent(this.fields.length - 1);
+    if (!element) {
+      this.selectComponent(this.fields.length - 1);
+    }
   }
 
   removeComponent(event: Event, index: number): void {
