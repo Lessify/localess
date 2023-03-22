@@ -49,7 +49,7 @@
           <mat-error *ngIf="form.controls['previewField'].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
 
-        <mat-nav-list class="ll-mat-nav-list-gap">
+        <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="fieldDropDrop($event)">
           <mat-divider></mat-divider>
           <div mat-subheader>Fields</div>
           <mat-form-field>
@@ -63,10 +63,11 @@
             </button>
             <mat-error *ngIf="newFieldName.errors as errors">{{fe.errors(errors)}}</mat-error>
           </mat-form-field>
-          <mat-list-item *ngFor="let field of fields.controls; let index = index"
+          <mat-list-item cdkDrag *ngFor="let field of fields.controls; let index = index"
                          (click)="selectComponent(index)"
                          [class.active]="index === selectedFieldIdx"
                          [class.invalid]="field.invalid">
+            <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
             <mat-icon matListItemIcon>{{schemaFieldKindDescriptions[field.value.kind].icon}}</mat-icon>
             <span matListItemTitle>{{field.value.displayName}} <span class="text-muted">#{{field.value.name}}</span></span>
             <span matListItemLine>

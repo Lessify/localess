@@ -28,6 +28,7 @@ import {AppState} from "@core/state/core.state";
 import {SpaceService} from "@shared/services/space.service";
 import {Space} from "@shared/models/space.model";
 import {NotificationService} from "@shared/services/notification.service";
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'll-schema-edit',
@@ -115,7 +116,7 @@ export class EditComponent implements OnInit, OnDestroy {
 
           this.fields.clear()
           schema.fields?.forEach(it => this.addField(it))
-          if(this.selectedFieldIdx === undefined) {
+          if (this.selectedFieldIdx === undefined) {
             this.selectComponent(this.fields.length - 1);
           }
 
@@ -296,4 +297,12 @@ export class EditComponent implements OnInit, OnDestroy {
     this.router.navigate(['features', 'schemas']);
   }
 
+  fieldDropDrop(event: CdkDragDrop<string[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    const previous = this.fields.at(event.previousIndex)
+    const current = this.fields.at(event.currentIndex)
+
+    this.fields.setControl(event.previousIndex, current)
+    this.fields.setControl(event.currentIndex, previous)
+  }
 }

@@ -46,6 +46,7 @@ import {MatBadgeModule} from '@angular/material/badge';
 import {CanUserPerformPipe} from '@shared/pipes/can-user-perform.pipe';
 import {DigitalStorePipe} from '@shared/pipes/digital-store.pipe';
 import {MatExpansionModule} from '@angular/material/expansion';
+import {DragDropModule} from '@angular/cdk/drag-drop';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -80,7 +81,8 @@ const MATERIAL_MODULES: any[] = [
   MatSnackBarModule,
   ClipboardModule,
   MatBadgeModule,
-  MatExpansionModule
+  MatExpansionModule,
+  DragDropModule
 ];
 
 const SHARED_PIPES: any[] = [
