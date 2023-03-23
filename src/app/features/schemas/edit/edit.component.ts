@@ -298,11 +298,10 @@ export class EditComponent implements OnInit, OnDestroy {
   }
 
   fieldDropDrop(event: CdkDragDrop<string[]>): void {
+    console.log(event)
     if (event.previousIndex === event.currentIndex) return;
-    const previous = this.fields.at(event.previousIndex)
-    const current = this.fields.at(event.currentIndex)
-
-    this.fields.setControl(event.previousIndex, current)
-    this.fields.setControl(event.currentIndex, previous)
+    const tmp = this.fields.at(event.previousIndex)
+    this.fields.removeAt(event.previousIndex)
+    this.fields.insert(event.currentIndex, tmp)
   }
 }
