@@ -1,13 +1,13 @@
 steps:
-  - name: 'node:16'
+  - name: 'node:18'
     id: 'install-deps'
     entrypoint: npm
     args: [ 'install' ]
-  - name: 'node:16'
+  - name: 'node:18'
     id: 'install-functions-deps'
     entrypoint: npm
     args: [ '--prefix','functions','install' ]
-  - name: 'node:16'
+  - name: 'node:18'
     id: 'build-prod'
     entrypoint: npm
     args:

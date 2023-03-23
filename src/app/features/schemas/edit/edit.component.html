@@ -68,7 +68,7 @@
                          [class.active]="index === selectedFieldIdx"
                          [class.invalid]="field.invalid">
             <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
-            <mat-icon matListItemIcon>{{schemaFieldKindDescriptions[field.value.kind].icon}}</mat-icon>
+            <mat-icon matListItemIcon class="type">{{schemaFieldKindDescriptions[field.value.kind].icon}}</mat-icon>
             <span matListItemTitle>{{field.value.displayName}} <span class="text-muted">#{{field.value.name}}</span></span>
             <span matListItemLine>
               <span class="badge text-bg-secondary">{{field.value.kind}}</span>

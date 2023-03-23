@@ -1,6 +1,9 @@
 {
   "name": "localess",
   "version": "1.3.0",
+  "engines": {
+    "node": "18"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.js",

@@ -13,7 +13,7 @@ import {
 import {FormBuilder, FormRecord} from '@angular/forms';
 import {Schema, SchemaField} from '@shared/models/schema.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {ContentDocument, ContentData} from '@shared/models/content.model';
+import {ContentData, ContentDocument} from '@shared/models/content.model';
 import {takeUntil} from 'rxjs/operators';
 import {debounceTime, Subject} from 'rxjs';
 import {v4} from 'uuid';
@@ -22,6 +22,7 @@ import {ContentHelperService} from '@shared/services/content-helper.service';
 import {Space} from '@shared/models/space.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 import {SchemaSelectChange} from './edit-document-schema.model';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -239,5 +240,10 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   onAssetsChange() {
     this.form.updateValueAndValidity()
     this.cd.markForCheck()
+  }
+
+  schemaDropDrop(event: CdkDragDrop<string[], any>, data: any[]): void {
+    if (event.previousIndex === event.currentIndex) return;
+    moveItemInArray(data, event.previousIndex, event.currentIndex);
   }
 }

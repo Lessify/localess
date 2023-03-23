@@ -175,10 +175,10 @@
           </mat-card-header>
           <mat-divider></mat-divider>
           <mat-card-content>
-            <mat-nav-list class="ll-mat-nav-list-gap">
-              <mat-list-item *ngFor="let item of data[field.name]"
+            <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
+              <mat-list-item cdkDrag *ngFor="let item of data[field.name]"
                              (click)="navigationTo(item._id, field.name, item.schema)">
-                <mat-icon matListItemIcon matTooltip="Drag and drop feature will come later">drag_handle</mat-icon>
+                <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
                 <span matListItemTitle *ngIf="schemaMapByName.get(item.schema) as sch">
                   {{sch.displayName}} <span class="text-muted">#{{sch.name}}</span>
                 </span>

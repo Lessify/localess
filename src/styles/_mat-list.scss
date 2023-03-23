@@ -3,6 +3,23 @@
 @import 'styles-variables';
 
 mat-nav-list.ll-mat-nav-list-gap {
+
+  .cdk-drag-preview {
+    box-sizing: border-box;
+    border-radius: 4px;
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+    0 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  }
+
+  .cdk-drag-placeholder {
+    opacity: 0;
+  }
+
+  .cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+
   mat-list-item {
     border-width: 1px;
     border-color: $border-grey-color;
@@ -24,31 +41,32 @@ mat-nav-list.ll-mat-nav-list-gap {
     }
 
     .mat-mdc-list-item-icon {
-      margin-top: auto !important;
-      margin-bottom: auto;
-      margin-left: 0px;
-      margin-right: 16px;
-      background-color: mat.get-color-from-palette($success-colors, 50);
-      color: mat.get-color-from-palette($success-colors, 900);
-      width: 48px;
-      height: 48px;
-      padding-top: 12px;
-      padding-left: 12px;
-      //margin-top: 8px !important;
-      //margin-bottom: 8px;
-      //margin-left: 16px;
-      //margin-right: 16px;
-      //width: 56px;
-      //height: 56px;
-      //font-size: 50px;
+      &.type {
+        margin-top: auto !important;
+        margin-bottom: auto;
+        margin-left: 0px;
+        margin-right: 16px;
+        background-color: mat.get-color-from-palette($success-colors, 50);
+        color: mat.get-color-from-palette($success-colors, 900);
+        width: 48px;
+        height: 48px;
+        padding-top: 12px;
+        padding-left: 12px;
+        //margin-top: 8px !important;
+        //margin-bottom: 8px;
+        //margin-left: 16px;
+        //margin-right: 16px;
+        //width: 56px;
+        //height: 56px;
+        //font-size: 50px;
+      }
+
       &.cdk-drag-handle {
-        background-color: unset;
-        color: unset;
-        cursor: grab;
+        margin-top: auto !important;
+        margin-bottom: auto;
         margin-right: 6px;
         margin-left: 6px;
-        width: unset;
-        padding-left: unset;
+        cursor: grab;
       }
     }
     .mat-mdc-list-item-meta {
