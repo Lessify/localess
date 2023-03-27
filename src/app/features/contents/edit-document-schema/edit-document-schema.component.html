@@ -187,12 +187,16 @@
                     {{item[sch.previewField]}}
                   </ng-container>
                  </span>
-                <span matListItemMeta>
+                <mat-action-list matListItemMeta>
+                  <button mat-icon-button (click)="duplicateSchema($event, data[field.name], item)">
+                    <mat-icon>content_copy</mat-icon>
+                  </button>
                   <button mat-icon-button (click)="removeSchema(field, item._id)">
                     <mat-icon>delete</mat-icon>
                   </button>
                   <mat-icon>navigate_next</mat-icon>
-                </span>
+                </mat-action-list>
+
               </mat-list-item>
 
             </mat-nav-list>

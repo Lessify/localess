@@ -56,7 +56,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   constructor(
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
-    private readonly contentService: ContentHelperService,
+    private readonly contentHelperService: ContentHelperService,
     readonly fe: FormErrorHandlerService,
   ) {
   }
@@ -114,7 +114,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   generateForm(): void {
     if (this.rootSchema) {
       const isFallbackLocale = this.locale === this.localeFallback
-      this.form = this.contentService.generateSchemaForm(this.rootSchema, isFallbackLocale)
+      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, isFallbackLocale)
 
       this.form.valueChanges
         .pipe(
@@ -171,14 +171,14 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
 
   formPatch(): void {
     this.form.reset();
-    let extractSchemaContent = this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale, false);
+    let extractSchemaContent = this.contentHelperService.extractSchemaContent(this.data, this.rootSchema!, this.locale, false);
     this.form.patchValue(extractSchemaContent);
     Object.getOwnPropertyNames(extractSchemaContent)
       .filter(it => extractSchemaContent[it] instanceof Array)
       .forEach(fieldName => {
         //console.log(fieldName)
         // Assets
-        this.form.controls[fieldName] = this.contentService.assetsToFormArray(extractSchemaContent[fieldName])
+        this.form.controls[fieldName] = this.contentHelperService.assetsToFormArray(extractSchemaContent[fieldName])
       })
   }
 
@@ -220,6 +220,14 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     }
   }
 
+  duplicateSchema(event: MouseEvent, data: any[], item: ContentData) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const clone = this.contentHelperService.clone(item, true)
+    data.push(clone)
+    console.log(data)
+  }
+
   removeSchema(field: SchemaField, schemaId: string): void {
     let sch: ContentData[] | undefined = this.data[field.name];
     if (sch) {
@@ -246,4 +254,5 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     if (event.previousIndex === event.currentIndex) return;
     moveItemInArray(data, event.previousIndex, event.currentIndex);
   }
+
 }

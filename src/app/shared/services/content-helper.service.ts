@@ -1,9 +1,5 @@
 import {Injectable} from '@angular/core';
-import {
-  Schema,
-  SchemaField,
-  SchemaFieldKind
-} from '@shared/models/schema.model';
+import {Schema, SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
 import {
   FormArray,
   FormBuilder,
@@ -12,8 +8,9 @@ import {
   ValidatorFn,
   Validators
 } from '@angular/forms';
-import {ContentError, ContentData} from '@shared/models/content.model';
+import {ContentData, ContentError} from '@shared/models/content.model';
 import {CommonValidator} from '@shared/validators/common.validator';
+import {v4} from 'uuid';
 
 @Injectable()
 export class ContentHelperService {
@@ -86,8 +83,8 @@ export class ContentHelperService {
             } else {
               // Work around for Form Array required
               if (control instanceof FormArray) {
-                if(component?.required) {
-                  if(control.length === 0 ) {
+                if (component?.required) {
+                  if (control.length === 0) {
                     errors.push({
                       contentId: selectedContent._id,
                       schema: schema.displayName || schema.name,
@@ -134,44 +131,46 @@ export class ContentHelperService {
     return result
   }
 
-  clone<T>(source: T): T {
+  clone<T>(source: T, generateNewID: boolean = false): T {
     if (source instanceof Array) {
       const target: any = Object.assign([], source);
       Object.getOwnPropertyNames(target).forEach(value => {
         if (target[value] instanceof Object) {
-          target[value] = this.clone(target[value]);
+          target[value] = this.clone(target[value], generateNewID);
         }
       });
       return target;
     } else if (source instanceof Object) {
       const target: any = Object.assign({}, source);
-      Object.getOwnPropertyNames(target).forEach(value => {
-        if (target[value] instanceof Object) {
-          target[value] = this.clone(target[value]);
-          if (Object.getOwnPropertyNames(target[value]).some(it => it === 'kind')) {
-            switch (target[value]['kind']) {
+      Object.getOwnPropertyNames(target).forEach(fieldName => {
+        if (target[fieldName] instanceof Object) {
+          target[fieldName] = this.clone(target[fieldName], generateNewID);
+          if (Object.getOwnPropertyNames(target[fieldName]).some(it => it === 'kind')) {
+            switch (target[fieldName]['kind']) {
               case SchemaFieldKind.LINK: {
-                if (target[value]['uri'] === undefined || target[value]['uri'] === '') {
-                  delete target[value];
+                if (target[fieldName]['uri'] === undefined || target[fieldName]['uri'] === '') {
+                  delete target[fieldName];
                 }
                 break;
               }
               case SchemaFieldKind.ASSET: {
-                if (target[value]['uri'] === undefined || target[value]['uri'] === '') {
-                  delete target[value];
+                if (target[fieldName]['uri'] === undefined || target[fieldName]['uri'] === '') {
+                  delete target[fieldName];
                 }
                 break;
               }
             }
           }
         }
-        const v = target[value]
-        if (v == null) {
-          delete target[value];
-        } else if (v instanceof Array && v.length === 0) {
-          delete target[value];
+        const value = target[fieldName]
+        if (generateNewID && fieldName === '_id') {
+          target[fieldName] = v4()
         }
-
+        if (value == null) {
+          delete target[fieldName];
+        } else if (value instanceof Array && value.length === 0) {
+          delete target[fieldName];
+        }
       });
       return target;
     }
