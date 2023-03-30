@@ -233,7 +233,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     if (sch) {
       let idx = sch.findIndex(it => it._id == schemaId);
       if (idx >= 0) {
-        sch.splice(idx)
+        sch.splice(idx, 1)
       }
       if (sch.length == 0) {
         delete this.data[field.name];
