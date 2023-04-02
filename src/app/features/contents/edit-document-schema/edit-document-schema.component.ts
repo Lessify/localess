@@ -220,12 +220,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     }
   }
 
-  duplicateSchema(event: MouseEvent, data: any[], item: ContentData) {
+  duplicateSchema(event: MouseEvent, data: any[], item: ContentData, idx: number) {
     event.preventDefault();
     event.stopImmediatePropagation();
     const clone = this.contentHelperService.clone(item, true)
-    data.push(clone)
-    console.log(data)
+    data.splice(idx + 1, 0, clone);
+    //console.log(data)
   }
 
   removeSchema(field: SchemaField, schemaId: string): void {

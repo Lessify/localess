@@ -176,7 +176,7 @@
           <mat-divider></mat-divider>
           <mat-card-content>
             <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
-              <mat-list-item cdkDrag *ngFor="let item of data[field.name]"
+              <mat-list-item cdkDrag *ngFor="let item of data[field.name]; let idx = index"
                              (click)="navigationTo(item._id, field.name, item.schema)">
                 <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
                 <span matListItemTitle *ngIf="schemaMapByName.get(item.schema) as sch">
@@ -188,7 +188,7 @@
                   </ng-container>
                  </span>
                 <mat-action-list matListItemMeta>
-                  <button mat-icon-button (click)="duplicateSchema($event, data[field.name], item)">
+                  <button mat-icon-button (click)="duplicateSchema($event, data[field.name], item, idx)">
                     <mat-icon>content_copy</mat-icon>
                   </button>
                   <button mat-icon-button (click)="removeSchema(field, item._id)">
