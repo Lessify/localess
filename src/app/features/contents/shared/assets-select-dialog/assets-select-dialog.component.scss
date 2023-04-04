@@ -16,6 +16,10 @@ mat-header-cell {
     max-width: 70px;
   }
 
+  &.mat-column-preview {
+    max-width: 150px;
+  }
+
   &.mat-column-size {
     max-width: 110px;
   }
@@ -42,6 +46,14 @@ mat-cell {
 
   &.mat-column-icon {
     max-width: 70px;
+  }
+
+  &.mat-column-preview {
+    max-width: 150px;
+    img {
+      max-width: 115px;
+      max-height: 115px;
+    }
   }
 
   &.mat-column-size {

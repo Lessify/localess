@@ -18,7 +18,7 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
-import {combineLatest, Subject} from 'rxjs';
+import {combineLatest, delay, Subject} from 'rxjs';
 import {
   ConfirmationDialogComponent
 } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
@@ -30,11 +30,11 @@ import {SelectionModel} from '@angular/cdk/collections';
 import {PathItem} from '@core/state/space/space.model';
 import {actionSpaceAssetPathChange,} from '@core/state/space/space.actions';
 import {AssetService} from '@shared/services/asset.service';
-import {Asset, AssetFolderCreate, AssetKind} from '@shared/models/asset.model';
-import {
-  AssetFolderAddDialogComponent
-} from './asset-folder-add-dialog/asset-folder-add-dialog.component';
-import {AssetFolderAddDialogModel} from './asset-folder-add-dialog/asset-folder-add-dialog.model';
+import {Asset, AssetFolderCreate, AssetFolderUpdate, AssetKind} from '@shared/models/asset.model';
+import {AddFolderDialogModel} from './add-folder-dialog/add-folder-dialog.model';
+import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.component';
+import {EditFolderDialogComponent} from './edit-folder-dialog/edit-folder-dialog.component';
+import {EditFolderDialogModel} from './edit-folder-dialog/edit-folder-dialog.model';
 
 @Component({
   selector: 'll-assets',
@@ -49,7 +49,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
-  displayedColumns: string[] = ['select', 'icon', 'name', 'size', 'type', 'createdAt', 'updatedAt'];
+  displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt'];
   selection = new SelectionModel<Asset>(true, []);
   assets: Asset[] = [];
   assetPath: PathItem[] = [];
@@ -124,6 +124,9 @@ export class AssetsComponent implements OnInit, OnDestroy {
         for (let idx = 0; idx < target.files.length; idx++) {
           const file = target.files[idx];
           this.assetService.createFile(this.selectedSpace?.id!, this.parentPath, file)
+            .pipe(
+              delay(3000)
+            )
             .subscribe({
               next: () => {
                 this.notificationService.success(`Asset '${file.name}' has been uploaded.`);
@@ -138,8 +141,8 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   openAddFolderDialog(): void {
-    this.dialog.open<AssetFolderAddDialogComponent, AssetFolderAddDialogModel, AssetFolderCreate>(
-      AssetFolderAddDialogComponent, {
+    this.dialog.open<AddFolderDialogComponent, AddFolderDialogModel, AssetFolderCreate>(
+      AddFolderDialogComponent, {
         width: '500px',
         data: {
           reservedNames: this.assets.map(it => it.name),
@@ -162,33 +165,33 @@ export class AssetsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openEditDialog(element: Asset): void {
-    // this.dialog.open<ContentEditDialogComponent, ContentEditDialogModel, ContentUpdate>(
-    //   ContentEditDialogComponent, {
-    //     width: '500px',
-    //     data: {
-    //       content: ObjectUtils.clone(element),
-    //       reservedNames: this.contents.map(it => it.name),
-    //       reservedSlugs: this.contents.map(it => it.slug),
-    //     }
-    //   })
-    //   .afterClosed()
-    //   .pipe(
-    //     filter(it => it !== undefined),
-    //     switchMap(it =>
-    //       this.contentService.update(this.selectedSpace!.id, element.id, this.parentPath, it!)
-    //     )
-    //   )
-    //   .subscribe({
-    //     next: () => {
-    //       this.selection.clear()
-    //       this.cd.markForCheck()
-    //       this.notificationService.success('Content has been updated.');
-    //     },
-    //     error: () => {
-    //       this.notificationService.error('Content can not be updated.');
-    //     }
-    //   });
+  openEditFolderDialog(element: Asset): void {
+    this.dialog.open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdate>(
+      EditFolderDialogComponent, {
+        width: '500px',
+        data: {
+          reservedNames: this.assets.map(it => it.name),
+          asset: ObjectUtils.clone(element),
+        }
+      }
+    )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.assetService.update(this.selectedSpace!.id, element.id, it!)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.selection.clear()
+          this.cd.markForCheck()
+          this.notificationService.success('Folder has been updated.');
+        },
+        error: () => {
+          this.notificationService.error('Folder can not be updated.');
+        }
+      });
   }
 
   openDeleteDialog(element: Asset): void {
@@ -279,5 +282,9 @@ export class AssetsComponent implements OnInit, OnDestroy {
     if (type.startsWith('font/')) return 'font_download'
     if (type.startsWith('video/')) return 'video_file'
     return 'file_present'
+  }
+
+  filePreview(type: string): boolean {
+    return type.startsWith('image/');
   }
 }

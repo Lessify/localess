@@ -284,9 +284,9 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     return;
   } else {
     res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new https.HttpsError('not-found', 'Asset not found.'));
+      .status(404).send();
+    // .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+    // .send(new https.HttpsError('not-found', 'Asset not found.'));
     return;
   }
 });

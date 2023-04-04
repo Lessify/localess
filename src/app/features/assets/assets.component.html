@@ -62,6 +62,16 @@
         </ng-container>
       </mat-cell>
     </ng-container>
+    <ng-container matColumnDef="preview">
+      <mat-header-cell *matHeaderCellDef> Preview </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
+          <img *ngIf="selectedSpace"
+               class="img-thumbnail" [width]="115" [height]="115" alt="thumbnail"
+               ngSrc="/api/v1/spaces/{{selectedSpace.id}}/assets/{{element.id}}" loading="lazy"/>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
@@ -93,8 +103,8 @@
       <mat-header-cell mat-header-cell *matHeaderCellDef>
         <button mat-stroked-button
                 *ngIf="'ASSET_UPDATE' | canUserPerform | async"
-                [disabled]="selection.selected.length !== 1"
-                (click)="openEditDialog(selection.selected[0])">
+                [disabled]="selection.selected.length !== 1 || selection.selected[0].kind !== 'FOLDER'"
+                (click)="openEditFolderDialog(selection.selected[0])">
           <mat-icon>edit</mat-icon>
           Edit
         </button>

@@ -1,5 +1,5 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {CommonModule, NgOptimizedImage} from '@angular/common';
 
 import {SharedModule} from '@shared/shared.module';
 import {ContentsComponent} from './contents.component';
@@ -34,7 +34,7 @@ import {
     AssetsSelectComponent,
     AssetsSelectDialogComponent
   ],
-  imports: [CommonModule, SharedModule, ContentsRoutingModule],
+  imports: [CommonModule, SharedModule, ContentsRoutingModule, NgOptimizedImage],
   providers: [SpaceService, SchemaService, ContentService, ContentHelperService, AssetService]
 })
 export class ContentsModule {

@@ -28,6 +28,7 @@ import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {getFunctions, provideFunctions} from '@angular/fire/functions';
 import {getPerformance, providePerformance} from '@angular/fire/performance';
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
+import {NgOptimizedImage} from '@angular/common';
 
 let resolvePersistenceEnabled: (enabled: boolean) => void;
 
@@ -43,6 +44,9 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
+
+    // OptimizedImage
+    NgOptimizedImage,
 
     //Core
     CoreModule,

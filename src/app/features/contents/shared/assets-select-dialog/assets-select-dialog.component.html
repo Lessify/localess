@@ -34,6 +34,15 @@
         </ng-container>
       </mat-cell>
     </ng-container>
+    <ng-container matColumnDef="preview">
+      <mat-header-cell *matHeaderCellDef> Preview </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
+          <img class="img-thumbnail" [width]="115" [height]="115" alt="thumbnail"
+               ngSrc="/api/v1/spaces/{{data.spaceId}}/assets/{{element.id}}" loading="lazy"/>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">

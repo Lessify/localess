@@ -56,6 +56,10 @@ export interface AssetFolderCreate {
   name: string;
 }
 
+export interface AssetFolderUpdate {
+  name: string;
+}
+
 export interface AssetFileCreate {
   name: string;
 }
@@ -81,4 +85,10 @@ export interface AssetFileCreateFS extends AssetCreateFS {
 
 export interface AssetFolderCreateFS extends AssetCreateFS {
   kind: AssetKind.FOLDER,
+}
+
+export interface AssetFolderUpdateFS {
+  name: string;
+  parentPath: string
+  updatedAt: FieldValue;
 }

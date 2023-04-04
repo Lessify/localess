@@ -220,7 +220,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     }
   }
 
-  duplicateSchema(event: MouseEvent, data: any[], item: ContentData, idx: number) {
+  duplicateSchema(event: MouseEvent, data: any[], item: ContentData, idx: number): void {
     event.preventDefault();
     event.stopImmediatePropagation();
     const clone = this.contentHelperService.clone(item, true)

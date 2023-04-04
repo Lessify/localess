@@ -35,7 +35,7 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
 
   assets: Asset[] = [];
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
-  displayedColumns: string[] = ['select', 'icon', 'name', 'size', 'type', 'updatedAt'];
+  displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'updatedAt'];
   selection = new SelectionModel<Asset>(this.data.multiple, []);
   assetPath: PathItem[] = [];
 
@@ -117,6 +117,10 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
     if (type.startsWith('font/')) return 'font_download'
     if (type.startsWith('video/')) return 'video_file'
     return 'file_present'
+  }
+
+  filePreview(type: string): boolean {
+    return type.startsWith('image/');
   }
 
   ngOnDestroy(): void {

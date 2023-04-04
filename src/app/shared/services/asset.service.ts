@@ -17,21 +17,16 @@ import {
   updateDoc,
   where
 } from '@angular/fire/firestore';
-import {from, Observable} from 'rxjs';
+import {delay, from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
-import {
-  ContentData,
-  ContentDocumentDataUpdateFS,
-  ContentUpdate,
-  ContentUpdateFS
-} from '@shared/models/content.model';
+import {ContentUpdate, ContentUpdateFS} from '@shared/models/content.model';
 import {
   Asset,
   AssetFileCreateFS,
   AssetFolderCreate,
-  AssetFolderCreateFS,
+  AssetFolderCreateFS, AssetFolderUpdate, AssetFolderUpdateFS,
   AssetKind
 } from '@shared/models/asset.model';
 
@@ -114,6 +109,17 @@ export class AssetService {
           )
             .pipe(
               //tap(console.log),
+              map(() => it),
+            )
+        ),
+        switchMap(it =>
+          from(
+            updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${it.id}`),
+              {updatedAt: serverTimestamp()}
+            )
+          )
+            .pipe(
+              //tap(console.log),
               map(() => it)
             )
         ),
@@ -140,34 +146,18 @@ export class AssetService {
       );
   }
 
-  update(spaceId: string, id: string, parentSlug: string, entity: ContentUpdate): Observable<void> {
-    const update: UpdateData<ContentUpdateFS> = {
+  update(spaceId: string, id: string, entity: AssetFolderUpdate): Observable<void> {
+    const update: UpdateData<AssetFolderUpdateFS> = {
       name: entity.name,
-      slug: entity.slug,
-      parentSlug: parentSlug,
-      fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
       updatedAt: serverTimestamp()
     }
     return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`),
+      updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`),
         update
       )
     )
       .pipe(
-        traceUntilFirst('Firestore:Contents:update'),
-      );
-  }
-
-  updatePageData(spaceId: string, id: string, data: ContentData): Observable<void> {
-    const update: UpdateData<ContentDocumentDataUpdateFS> = {}
-
-    return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`),
-        update
-      )
-    )
-      .pipe(
-        traceUntilFirst('Firestore:Contents:update'),
+        traceUntilFirst('Firestore:Assets:update'),
       );
   }
 
