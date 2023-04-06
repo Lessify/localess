@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
 
 import {SharedModule} from '@shared/shared.module';
 import {TranslationsRoutingModule} from './translations-routing.module';
@@ -53,7 +52,7 @@ import {LocaleService} from '@shared/services/locale.service';
     TranslationExportDialogComponent,
     TranslationImportDialogComponent
   ],
-  imports: [CommonModule, SharedModule, TranslationsRoutingModule],
+  imports: [SharedModule, TranslationsRoutingModule],
   providers: [TranslationService, TranslateService, LocaleService]
 })
 export class TranslationsModule {

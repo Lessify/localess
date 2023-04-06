@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
 
 import {SharedModule} from '@shared/shared.module';
 import {SchemasComponent} from './schemas.component';
@@ -12,7 +11,7 @@ import {EditFieldComponent} from './edit-field/edit-field.component';
 
 @NgModule({
   declarations: [SchemasComponent, AddDialogComponent, EditFieldComponent, EditComponent],
-  imports: [CommonModule, SharedModule, SchemasRoutingModule],
+  imports: [SharedModule, SchemasRoutingModule],
   providers: [SpaceService, SchemaService]
 })
 export class SchemasModule {

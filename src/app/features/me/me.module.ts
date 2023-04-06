@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
 
 import {SharedModule} from '@shared/shared.module';
 import {MeComponent} from './me.component';
@@ -11,7 +10,7 @@ import {MeEmailDialogComponent} from './me-email-dialog/me-email-dialog.componen
 
 @NgModule({
     declarations: [MeComponent, MeDialogComponent, MePasswordDialogComponent, MeEmailDialogComponent],
-    imports: [CommonModule, SharedModule, MeRoutingModule],
+    imports: [SharedModule, MeRoutingModule],
     providers: [MeService]
 })
 export class MeModule {

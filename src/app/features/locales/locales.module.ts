@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
 
 import {SharedModule} from '@shared/shared.module';
 import {LocalesComponent} from './locales.component';
@@ -10,7 +9,7 @@ import {SpaceService} from '@shared/services/space.service';
 
 @NgModule({
     declarations: [LocalesComponent, LocaleDialogComponent],
-    imports: [CommonModule, SharedModule, LocalesRoutingModule],
+    imports: [SharedModule, LocalesRoutingModule],
     providers: [LocaleService, SpaceService]
 })
 export class LocalesModule {

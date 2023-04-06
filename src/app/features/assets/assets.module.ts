@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {CommonModule, NgOptimizedImage} from '@angular/common';
 
 import {SharedModule} from '@shared/shared.module';
 import {AssetsComponent} from './assets.component';
@@ -16,7 +15,7 @@ import {EditFolderDialogComponent} from './edit-folder-dialog/edit-folder-dialog
     AddFolderDialogComponent,
     EditFolderDialogComponent
   ],
-  imports: [CommonModule, SharedModule, AssetsRoutingModule, NgOptimizedImage],
+  imports: [SharedModule, AssetsRoutingModule],
   providers: [SpaceService, AssetService]
 })
 export class AssetsModule {

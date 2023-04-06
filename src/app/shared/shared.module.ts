@@ -1,5 +1,5 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {CommonModule, NgOptimizedImage} from '@angular/common';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 
 import {MatButtonModule} from '@angular/material/button';
@@ -103,6 +103,7 @@ const SHARED_COMPONENTS: any[] = [
   imports: [
     CommonModule,
     FormsModule,
+    NgOptimizedImage,
     MATERIAL_MODULES,
     RouterLink,
   ],
@@ -114,6 +115,7 @@ const SHARED_COMPONENTS: any[] = [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    NgOptimizedImage,
     MATERIAL_MODULES,
     SHARED_COMPONENTS,
     SHARED_PIPES

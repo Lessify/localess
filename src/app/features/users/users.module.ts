@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
 
 import {SharedModule} from '@shared/shared.module';
 import {UsersComponent} from './users.component';
@@ -10,7 +9,7 @@ import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog
 
 @NgModule({
     declarations: [UsersComponent, UserDialogComponent, UserInviteDialogComponent],
-    imports: [CommonModule, SharedModule, UsersRoutingModule],
+  imports: [SharedModule, UsersRoutingModule],
     providers: [UserService]
 })
 export class UsersModule {

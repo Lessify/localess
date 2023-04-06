@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
 
 import {SharedModule} from '@shared/shared.module';
 import {SpacesComponent} from './spaces.component';
@@ -9,7 +8,7 @@ import {SpaceService} from '@shared/services/space.service';
 
 @NgModule({
     declarations: [SpacesComponent, SpaceDialogComponent],
-    imports: [CommonModule, SharedModule, SpacesRoutingModule],
+    imports: [SharedModule, SpacesRoutingModule],
     providers: [SpaceService]
 })
 export class SpacesModule {

@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
 
 import {FeaturesRoutingModule} from './features-routing.module';
 import {FeaturesComponent} from './features.component';
@@ -8,7 +7,7 @@ import {SpaceService} from '@shared/services/space.service';
 
 @NgModule({
   declarations: [FeaturesComponent],
-  imports: [CommonModule, SharedModule, FeaturesRoutingModule],
+  imports: [SharedModule, FeaturesRoutingModule],
   providers: [SpaceService]
 })
 export class FeaturesModule {}
