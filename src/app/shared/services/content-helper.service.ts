@@ -269,6 +269,7 @@ export class ContentHelperService {
           const link = this.fb.group({
             kind: this.fb.control(SchemaFieldKind.LINK, Validators.required),
             type: this.fb.control<'url' | 'content'>('url', Validators.required),
+            target: this.fb.control<'_blank' | '_self'>('_self', Validators.required),
             uri: this.fb.control<string | undefined>({
               value: undefined,
               disabled: disabled

@@ -7,6 +7,7 @@ import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {debounceTime, Observable, of, startWith} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {environment} from '../../../../../environments/environment';
+import {MatSlideToggleChange} from '@angular/material/slide-toggle';
 
 @Component({
   selector: 'll-link-select',
@@ -33,7 +34,7 @@ export class LinkSelectComponent implements OnInit {
   ngOnInit(): void {
     // Data init in case everything is null
     if (this.form?.value.kind === null || this.form?.value.type === null) {
-      this.form.patchValue({kind: SchemaFieldKind.LINK, type: 'url'})
+      this.form.patchValue({kind: SchemaFieldKind.LINK, type: 'url', target: '_self'})
     }
     if (this.form?.value.type === 'content' && this.form?.value.uri !== null) {
       this.searchCtrl.patchValue(this.pages.find(it => it.id === this.form?.value.uri))
@@ -66,4 +67,12 @@ export class LinkSelectComponent implements OnInit {
     this.form?.controls['uri'].setValue(null);
   }
 
+  targetChange(event: MatSlideToggleChange): void {
+    console.log(event)
+    if (event.checked) {
+      this.form?.controls['target'].setValue('_blank')
+    } else {
+      this.form?.controls['target'].setValue('_self')
+    }
+  }
 }

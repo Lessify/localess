@@ -42,6 +42,10 @@
     <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
     <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
   </mat-form-field>
+
+  &nbsp;&nbsp;<mat-slide-toggle [checked]="form.value.target === '_blank'" (change)="targetChange($event)">Open in a new window</mat-slide-toggle>
+  <br/>
+  <br/>
 </form>
 <ng-container *ngIf="isDebug">
   <mat-accordion>

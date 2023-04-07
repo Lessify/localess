@@ -21,7 +21,6 @@ import {delay, from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
-import {ContentUpdate, ContentUpdateFS} from '@shared/models/content.model';
 import {
   Asset,
   AssetFileCreateFS,
