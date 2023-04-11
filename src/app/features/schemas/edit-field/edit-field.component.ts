@@ -10,6 +10,7 @@ import {
 import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../environments/environment';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'll-schema-field-edit',
@@ -265,7 +266,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         break;
       }
-      case SchemaFieldKind.SCHEMA: {
+      case SchemaFieldKind.SCHEMAS: {
         // ADD
         this.form.addControl('schemas', this.fb.control<string[] | undefined>(undefined));
         // REMOVE
@@ -285,5 +286,11 @@ export class EditFieldComponent implements OnInit {
     }
   }
 
-
+  optionDropDrop(event: CdkDragDrop<string[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    const options = this.form.controls['options'] as FormArray
+    const tmp = options.at(event.previousIndex)
+    options.removeAt(event.previousIndex)
+    options.insert(event.currentIndex, tmp)
+  }
 }

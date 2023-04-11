@@ -217,7 +217,7 @@ export class EditComponent implements OnInit, OnDestroy {
         fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
         break;
       }
-      case SchemaFieldKind.SCHEMA: {
+      case SchemaFieldKind.SCHEMAS: {
         fieldForm.addControl('schemas', this.fb.control<string[] | undefined>(element.schemas, SchemasValidator.FIELD_SCHEMA));
         break;
       }
@@ -298,7 +298,6 @@ export class EditComponent implements OnInit, OnDestroy {
   }
 
   fieldDropDrop(event: CdkDragDrop<string[]>): void {
-    console.log(event)
     if (event.previousIndex === event.currentIndex) return;
     const tmp = this.fields.at(event.previousIndex)
     this.fields.removeAt(event.previousIndex)

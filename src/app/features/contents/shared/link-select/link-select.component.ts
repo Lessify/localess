@@ -68,7 +68,6 @@ export class LinkSelectComponent implements OnInit {
   }
 
   targetChange(event: MatSlideToggleChange): void {
-    console.log(event)
     if (event.checked) {
       this.form?.controls['target'].setValue('_blank')
     } else {

@@ -99,7 +99,7 @@ export class ContentHelperService {
           }
         }
         schema.fields
-          ?.filter((it) => it.kind === SchemaFieldKind.SCHEMA)
+          ?.filter((it) => it.kind === SchemaFieldKind.SCHEMAS)
           .forEach((field) => {
             const sch: ContentData[] | undefined = selectedContent![field.name];
             sch?.forEach((it) => contentIteration.push(it));
@@ -113,7 +113,7 @@ export class ContentHelperService {
   extractSchemaContent(data: ContentData, schema: Schema, locale: string, full: boolean): Record<string, any> {
     const result: Record<string, any> = {}
     schema.fields
-      ?.filter(it => full || it.kind !== SchemaFieldKind.SCHEMA)
+      ?.filter(it => full || it.kind !== SchemaFieldKind.SCHEMAS)
       ?.forEach((field) => {
         let value;
         if (field.translatable) {

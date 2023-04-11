@@ -24,7 +24,7 @@ export type SchemaField = SchemaFieldText
   | SchemaFieldDate
   | SchemaFieldDateTime
   | SchemaFieldBoolean
-  | SchemaFieldSchema
+  | SchemasFieldSchema
   | SchemaFieldOption
   | SchemaFieldOptions
   | SchemaFieldLink
@@ -44,7 +44,7 @@ export enum SchemaFieldKind {
   LINK = 'LINK',
   ASSET = 'ASSET',
   ASSETS = 'ASSETS',
-  SCHEMA = 'SCHEMA',
+  SCHEMAS = 'SCHEMAS',
 }
 
 export interface FieldKindDescription {
@@ -65,7 +65,7 @@ export const schemaFieldKindDescriptions: Record<string, FieldKindDescription> =
   'LINK': {name: 'Link', icon: 'link'},
   'ASSET': {name: 'Asset ( BETA )', icon: 'attachment'},
   'ASSETS': {name: 'Assets ( BETA )', icon: 'attachment'},
-  'SCHEMA': {name: 'Schema', icon: 'polyline'},
+  'SCHEMAS': {name: 'Schemas', icon: 'polyline'},
 }
 
 export interface SchemaFieldBase {
@@ -112,8 +112,8 @@ export interface SchemaFieldBoolean extends SchemaFieldBase {
   kind: SchemaFieldKind.BOOLEAN;
 }
 
-export interface SchemaFieldSchema extends SchemaFieldBase {
-  kind: SchemaFieldKind.SCHEMA;
+export interface SchemasFieldSchema extends SchemaFieldBase {
+  kind: SchemaFieldKind.SCHEMAS;
   schemas?: string[];
 }
 

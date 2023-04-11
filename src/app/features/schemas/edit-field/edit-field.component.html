@@ -87,49 +87,43 @@
 
       <!--Option and Options-->
       <ng-container *ngIf="['OPTION', 'OPTIONS'].includes(form.value.kind)">
+        <h3>Options</h3>
+        <mat-divider></mat-divider>
+        <br/>
+        <mat-accordion cdkDropList multi formArrayName="options" (cdkDropListDropped)="optionDropDrop($event)">
+          <mat-expansion-panel cdkDrag *ngFor="let option of options?.controls; index as idx"
+                               [formGroupName]="idx" expanded
+                               [class.invalid]="option.invalid">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                Option {{idx+1}}
+                <button mat-icon-button (click)="removeOptionForm(idx)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
 
-        <mat-card class="ll-not-shadow">
-          <mat-card-header>
-            <mat-card-title-group>
-              <mat-card-title>
-                Options
-              </mat-card-title>
-              <button mat-icon-button (click)="addOptionForm()">
-                <mat-icon>add</mat-icon>
-              </button>
-            </mat-card-title-group>
-          </mat-card-header>
-          <mat-divider></mat-divider>
-          <mat-card-content formArrayName="options">
-            <ng-container *ngFor="let option of options?.controls; index as idx" [formGroupName]="idx">
-              <br/>
-              <mat-card [class.invalid]="option.invalid">
-                <mat-card-header>
-                  <mat-card-title-group>
-                    <mat-card-title>Option {{idx+1}}</mat-card-title>
-                    <button mat-icon-button (click)="removeOptionForm(idx)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </mat-card-title-group>
-                </mat-card-header>
-                <mat-card-content>
-                  <mat-form-field>
-                    <mat-label>Name</mat-label>
-                    <input matInput type="text" formControlName="name" autocomplete="off"/>
-                    <mat-hint align="end">{{option.value.name?.length || 0}}/30</mat-hint>
-                    <mat-error *ngIf="option.controls['name']?.errors as errors">{{fe.errors(errors)}}</mat-error>
-                  </mat-form-field>
-                  <mat-form-field>
-                    <mat-label>Value</mat-label>
-                    <input matInput type="text" formControlName="value" autocomplete="off"/>
-                    <mat-hint align="end">{{option.value.value?.length || 0}}/30</mat-hint>
-                    <mat-error *ngIf="option.controls['value']?.errors as errors">{{fe.errors(errors)}}</mat-error>
-                  </mat-form-field>
-                </mat-card-content>
-              </mat-card>
-            </ng-container>
-          </mat-card-content>
-        </mat-card>
+            <mat-form-field style="width: 50%; padding-right: 10px">
+              <mat-label>Name</mat-label>
+              <input matInput type="text" formControlName="name" autocomplete="off"/>
+              <mat-hint align="end">{{option.value.name?.length || 0}}/30</mat-hint>
+              <mat-error *ngIf="option.controls['name']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+            </mat-form-field>
+            <mat-form-field style="width: 50%">
+              <mat-label>Value</mat-label>
+              <input matInput type="text" formControlName="value" autocomplete="off"/>
+              <mat-hint align="end">{{option.value.value?.length || 0}}/30</mat-hint>
+              <mat-error *ngIf="option.controls['value']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+            </mat-form-field>
+
+          </mat-expansion-panel>
+          <mat-action-row>
+            <button mat-icon-button (click)="addOptionForm()">
+              <mat-icon>add</mat-icon>
+            </button>
+          </mat-action-row>
+        </mat-accordion>
 
         <ng-container *ngIf="['OPTIONS'].includes(form.value.kind)">
           <mat-form-field>
@@ -146,8 +140,8 @@
 
       </ng-container>
 
-      <!--SCHEMA-->
-      <ng-container *ngIf="form.value.kind === 'SCHEMA'">
+      <!--SCHEMAS-->
+      <ng-container *ngIf="form.value.kind === 'SCHEMAS'">
         <mat-form-field>
           <mat-label>Schema</mat-label>
           <mat-select formControlName="schemas" multiple>
