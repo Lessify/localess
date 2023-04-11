@@ -272,6 +272,7 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   const assetPath = `spaces/${spaceId}/assets/${assetId}/original`;
   const [exists] = await bucket.file(assetPath).exists();
   const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
+  logger.info(`v1 spaces asset: ${exists} & ${assetSnapshot.exists}`);
   if (exists && assetSnapshot.exists) {
     const asset = assetSnapshot.data() as AssetFile;
     const tempFilePath = `${os.tmpdir()}/${asset.name}${asset.extension}`;
@@ -284,9 +285,9 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     return;
   } else {
     res
-      .status(404).send();
-    // .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-    // .send(new https.HttpsError('not-found', 'Asset not found.'));
+      .status(404)
+      // .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new https.HttpsError('not-found', 'Asset not found.'));
     return;
   }
 });
