@@ -266,7 +266,8 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =>
 });
 
 expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
-  logger.info('v1 spaces asset: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces asset params: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces asset query: ' + JSON.stringify(req.query));
   const {spaceId, assetId} = req.params;
 
   const assetPath = `spaces/${spaceId}/assets/${assetId}/original`;
