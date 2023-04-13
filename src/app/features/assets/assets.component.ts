@@ -124,9 +124,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
         for (let idx = 0; idx < target.files.length; idx++) {
           const file = target.files[idx];
           this.assetService.createFile(this.selectedSpace?.id!, this.parentPath, file)
-            .pipe(
-              delay(3000)
-            )
             .subscribe({
               next: () => {
                 this.notificationService.success(`Asset '${file.name}' has been uploaded.`);

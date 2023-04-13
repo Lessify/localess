@@ -38,8 +38,8 @@
       <mat-header-cell *matHeaderCellDef> Preview </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
-          <img class="img-thumbnail" [width]="115" [height]="115" alt="thumbnail"
-               ngSrc="/api/v1/spaces/{{data.spaceId}}/assets/{{element.id}}" loading="lazy"/>
+          <img class="img-thumbnail" width="115" height="115" alt="thumbnail" loading="lazy"
+               ngSrc="/api/v1/spaces/{{data.spaceId}}/assets/{{element.id}}"/>
         </ng-container>
       </mat-cell>
     </ng-container>

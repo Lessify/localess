@@ -15,8 +15,8 @@
           </button>
         </mat-grid-tile-header>
           <ng-container *ngIf="asset.type.startsWith('image/'); else noImage">
-            <img class="img-fluid" [width]="290" [height]="200" alt="thumbnail"
-                 ngSrc="/api/v1/spaces/{{space.id}}/assets/{{asset.id}}" loading="lazy"/>
+            <img class="img-fluid" width="290" height="200" alt="thumbnail" loading="lazy"
+                 ngSrc="/api/v1/spaces/{{space.id}}/assets/{{asset.id}}"/>
           </ng-container>
         <ng-template #noImage>
           <mat-icon>file_present</mat-icon>
