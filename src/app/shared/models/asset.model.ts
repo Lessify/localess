@@ -23,6 +23,7 @@ export interface AssetFolder extends AssetBase {
 
 export interface AssetFile extends AssetBase {
   kind: AssetKind.FILE
+  uploaded: boolean,
   extension: string,
   type: string,
   size: number,
@@ -77,6 +78,7 @@ export interface AssetCreateFS {
 
 export interface AssetFileCreateFS extends AssetCreateFS {
   kind: AssetKind.FILE,
+  uploaded: false,
   extension: string,
   type: string,
   size: number,

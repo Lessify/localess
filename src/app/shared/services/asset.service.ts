@@ -17,7 +17,7 @@ import {
   updateDoc,
   where
 } from '@angular/fire/firestore';
-import {delay, from, Observable} from 'rxjs';
+import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
@@ -25,7 +25,9 @@ import {
   Asset,
   AssetFileCreateFS,
   AssetFolderCreate,
-  AssetFolderCreateFS, AssetFolderUpdate, AssetFolderUpdateFS,
+  AssetFolderCreateFS,
+  AssetFolderUpdate,
+  AssetFolderUpdateFS,
   AssetKind
 } from '@shared/models/asset.model';
 
@@ -87,6 +89,7 @@ export class AssetService {
     const extIdx = entity.name.lastIndexOf('.')
     let addEntity: AssetFileCreateFS = {
       kind: AssetKind.FILE,
+      uploaded: false,
       name: entity.name.substring(0, extIdx),
       extension: entity.name.substring(extIdx),
       type: entity.type,
@@ -114,7 +117,7 @@ export class AssetService {
         switchMap(it =>
           from(
             updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${it.id}`),
-              {updatedAt: serverTimestamp()}
+              {uploaded: true, updatedAt: serverTimestamp()}
             )
           )
             .pipe(

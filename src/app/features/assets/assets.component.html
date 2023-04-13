@@ -66,9 +66,14 @@
       <mat-header-cell *matHeaderCellDef> Preview </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
-          <img *ngIf="selectedSpace"
-               class="img-thumbnail" [width]="115" [height]="115" alt="thumbnail"
-               ngSrc="/api/v1/spaces/{{selectedSpace.id}}/assets/{{element.id}}" loading="lazy"/>
+          <ng-container *ngIf="element.uploaded; else elseUploaded">
+            <img *ngIf="selectedSpace"
+                 class="img-thumbnail" [width]="115" [height]="115" alt="thumbnail"
+                 ngSrc="/api/v1/spaces/{{selectedSpace.id}}/assets/{{element.id}}" loading="lazy"/>
+          </ng-container>
+          <ng-template #elseUploaded>
+            <mat-progress-spinner mode="indeterminate"/>
+          </ng-template>
         </ng-container>
       </mat-cell>
     </ng-container>
