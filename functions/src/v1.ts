@@ -1,7 +1,13 @@
 import * as express from 'express';
 import * as cors from 'cors';
 import {https, logger} from 'firebase-functions';
-import {bucket, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
+import {
+  bucket,
+  CACHE_ASSET_MAX_AGE,
+  CACHE_MAX_AGE,
+  CACHE_SHARE_MAX_AGE,
+  firestoreService
+} from './config';
 import {Space} from './models/space.model';
 import {Content, ContentKind, ContentLink} from './models/content.model';
 import {Query} from 'firebase-admin/firestore';
@@ -279,7 +285,7 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const tempFilePath = `${os.tmpdir()}/${asset.name}${asset.extension}`;
     await bucket.file(assetPath).download({destination: tempFilePath});
     res
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
       .header('Content-Disposition', `inline; filename="${asset.name}${asset.extension}"`)
       .contentType(asset.type)
       .sendFile(tempFilePath);

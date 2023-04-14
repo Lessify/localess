@@ -14,6 +14,7 @@ export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 // HTTP
 export const CACHE_MAX_AGE = DAY;
+export const CACHE_ASSET_MAX_AGE = DAY * 365;
 export const CACHE_SHARE_MAX_AGE = DAY * 7;
 // AUTH ROLE
 export const ROLE_ADMIN = 'admin';
