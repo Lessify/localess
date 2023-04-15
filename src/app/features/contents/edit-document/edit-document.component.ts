@@ -210,7 +210,14 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       schemaName: event.schemaName,
       fieldName: event.fieldName
     });
-    this.selectedDocumentData = this.selectedDocumentData[event.fieldName].find((it: ContentData) => it._id == event.contentId);
+    const field = this.selectedDocumentData[event.fieldName]
+    console.log(Array.isArray(field))
+
+    if (Array.isArray(field)) {
+      this.selectedDocumentData = field.find((it: ContentData) => it._id == event.contentId);
+    } else {
+      this.selectedDocumentData = field
+    }
   }
 
   navigateToSchema(pathItem: SchemaPathItem): void {
@@ -223,7 +230,12 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       let localSelectedContent = this.documentData;
       for (const path of this.schemaPath) {
         if (path.fieldName === '') continue;
-        localSelectedContent = localSelectedContent[path.fieldName].find((it: ContentData) => it._id == path.contentId);
+        const field = localSelectedContent[path.fieldName]
+        if (Array.isArray(field)) {
+          localSelectedContent = localSelectedContent[path.fieldName].find((it: ContentData) => it._id == path.contentId);
+        } else {
+          localSelectedContent = field
+        }
       }
       this.selectedDocumentData = localSelectedContent;
     }

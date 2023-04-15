@@ -217,8 +217,12 @@ export class EditComponent implements OnInit, OnDestroy {
         fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
         break;
       }
-      case SchemaFieldKind.SCHEMAS: {
+      case SchemaFieldKind.SCHEMA: {
         fieldForm.addControl('schemas', this.fb.control<string[] | undefined>(element.schemas, SchemasValidator.FIELD_SCHEMA));
+        break;
+      }
+      case SchemaFieldKind.SCHEMAS: {
+        fieldForm.addControl('schemas', this.fb.control<string[] | undefined>(element.schemas, SchemasValidator.FIELD_SCHEMAS));
         break;
       }
       // By default, it is a new TEXT

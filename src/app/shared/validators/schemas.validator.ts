@@ -98,4 +98,8 @@ export class SchemasValidator {
     Validators.required,
   ];
 
+  public static FIELD_SCHEMAS: ValidatorFn[] = [
+    Validators.required,
+  ];
+
 }

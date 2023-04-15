@@ -140,8 +140,8 @@
 
       </ng-container>
 
-      <!--SCHEMAS-->
-      <ng-container *ngIf="form.value.kind === 'SCHEMAS'">
+      <!--SCHEMA and SCHEMAS-->
+      <ng-container *ngIf="['SCHEMA','SCHEMAS'].includes(form.value.kind)">
         <mat-form-field>
           <mat-label>Schema</mat-label>
           <mat-select formControlName="schemas" multiple>

@@ -24,6 +24,7 @@ export type SchemaField = SchemaFieldText
   | SchemaFieldDate
   | SchemaFieldDateTime
   | SchemaFieldBoolean
+  | SchemaFieldSchema
   | SchemasFieldSchema
   | SchemaFieldOption
   | SchemaFieldOptions
@@ -44,6 +45,7 @@ export enum SchemaFieldKind {
   LINK = 'LINK',
   ASSET = 'ASSET',
   ASSETS = 'ASSETS',
+  SCHEMA = 'SCHEMA',
   SCHEMAS = 'SCHEMAS',
 }
 
@@ -63,9 +65,10 @@ export const schemaFieldKindDescriptions: Record<string, FieldKindDescription> =
   'OPTION': {name: 'Single Option', icon: 'list'},
   'OPTIONS': {name: 'Multiple Options', icon: 'list'},
   'LINK': {name: 'Link', icon: 'link'},
-  'ASSET': {name: 'Asset ( BETA )', icon: 'attachment'},
-  'ASSETS': {name: 'Assets ( BETA )', icon: 'attachment'},
-  'SCHEMAS': {name: 'Schemas', icon: 'polyline'},
+  'ASSET': {name: 'Asset ( One )', icon: 'attachment'},
+  'ASSETS': {name: 'Assets ( Many )', icon: 'attachment'},
+  'SCHEMA': {name: 'Schema ( One )', icon: 'polyline'},
+  'SCHEMAS': {name: 'Schemas ( Many )', icon: 'polyline'},
 }
 
 export interface SchemaFieldBase {
@@ -114,6 +117,11 @@ export interface SchemaFieldBoolean extends SchemaFieldBase {
 
 export interface SchemasFieldSchema extends SchemaFieldBase {
   kind: SchemaFieldKind.SCHEMAS;
+  schemas?: string[];
+}
+
+export interface SchemaFieldSchema extends SchemaFieldBase {
+  kind: SchemaFieldKind.SCHEMA;
   schemas?: string[];
 }
 

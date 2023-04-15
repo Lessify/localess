@@ -201,7 +201,27 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     this.destroy$.complete()
   }
 
-  addSchema(field: SchemaField, schema: Schema): void {
+  addSchemaOne(field: SchemaField, schema: Schema): void {
+    let sch: ContentData | undefined = this.data[field.name];
+    if (sch) {
+      this.data[field.name] = {
+        _id: v4(),
+        schema: schema.name
+      }
+    } else {
+      this.data[field.name] = {
+        _id: v4(),
+        schema: schema.name
+      }
+    }
+  }
+
+  removeSchemaOne(field: SchemaField): void {
+    delete this.data[field.name];
+  }
+
+
+  addSchemaMany(field: SchemaField, schema: Schema): void {
     let sch: ContentData[] | undefined = this.data[field.name];
     if (sch) {
       sch.push(
@@ -220,7 +240,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     }
   }
 
-  duplicateSchema(event: MouseEvent, data: any[], item: ContentData, idx: number): void {
+  duplicateSchemaMany(event: MouseEvent, data: any[], item: ContentData, idx: number): void {
     event.preventDefault();
     event.stopImmediatePropagation();
     const clone = this.contentHelperService.clone(item, true)
@@ -228,7 +248,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     //console.log(data)
   }
 
-  removeSchema(field: SchemaField, schemaId: string): void {
+  removeSchemaMany(field: SchemaField, schemaId: string): void {
     let sch: ContentData[] | undefined = this.data[field.name];
     if (sch) {
       let idx = sch.findIndex(it => it._id == schemaId);

@@ -1,13 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Schema, SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
-import {
-  FormArray,
-  FormBuilder,
-  FormGroup,
-  FormRecord,
-  ValidatorFn,
-  Validators
-} from '@angular/forms';
+import {FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {ContentData, ContentError} from '@shared/models/content.model';
 import {CommonValidator} from '@shared/validators/common.validator';
 import {v4} from 'uuid';
@@ -33,11 +26,16 @@ export class ContentHelperService {
         const extractSchemaContent = this.extractSchemaContent(selectedContent, schema, locale, true)
         form.patchValue(extractSchemaContent)
 
+        // handle array like Asset Array
         Object.getOwnPropertyNames(extractSchemaContent)
-          .filter(it => extractSchemaContent[it] instanceof Array)
           .forEach(fieldName => {
-            // Assets
-            form.controls[fieldName] = this.assetsToFormArray(extractSchemaContent[fieldName])
+            const content = extractSchemaContent[fieldName]
+            if (content instanceof Array) {
+              // Assets
+              if (content.some((it) => it.kind === SchemaFieldKind.ASSET)) {
+                form.controls[fieldName] = this.assetsToFormArray(content)
+              }
+            }
           })
 
         if (form.invalid) {
@@ -99,6 +97,14 @@ export class ContentHelperService {
           }
         }
         schema.fields
+          ?.filter((it) => it.kind === SchemaFieldKind.SCHEMA)
+          .forEach((field) => {
+            const sch: ContentData | undefined = selectedContent![field.name];
+            if (sch) {
+              contentIteration.push(sch)
+            }
+          })
+        schema.fields
           ?.filter((it) => it.kind === SchemaFieldKind.SCHEMAS)
           .forEach((field) => {
             const sch: ContentData[] | undefined = selectedContent![field.name];
@@ -113,7 +119,7 @@ export class ContentHelperService {
   extractSchemaContent(data: ContentData, schema: Schema, locale: string, full: boolean): Record<string, any> {
     const result: Record<string, any> = {}
     schema.fields
-      ?.filter(it => full || it.kind !== SchemaFieldKind.SCHEMAS)
+      ?.filter(it => full || ![SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS].includes(it.kind))
       ?.forEach((field) => {
         let value;
         if (field.translatable) {
@@ -293,6 +299,13 @@ export class ContentHelperService {
             validators.push(CommonValidator.minLength(1))
           }
           form.setControl(field.name, this.fb.array([], validators));
+          break;
+        }
+        case SchemaFieldKind.SCHEMA: {
+          form.setControl(field.name, this.fb.control<any | undefined>({
+            value: undefined,
+            disabled: disabled
+          }, validators))
           break;
         }
       }

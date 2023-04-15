@@ -266,6 +266,23 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         break;
       }
+      case SchemaFieldKind.SCHEMA: {
+        // ADD
+        this.form.addControl('schemas', this.fb.control<string[] | undefined>(undefined));
+        // REMOVE
+        this.form.removeControl('translatable')
+        // Text & TextArea
+        this.form.removeControl('minLength')
+        this.form.removeControl('maxLength')
+        // Number
+        this.form.removeControl('minValue')
+        this.form.removeControl('maxValue')
+        // Option & Options
+        this.form.removeControl('options')
+        this.form.removeControl('minValues')
+        this.form.removeControl('maxValues')
+        break;
+      }
       case SchemaFieldKind.SCHEMAS: {
         // ADD
         this.form.addControl('schemas', this.fb.control<string[] | undefined>(undefined));
