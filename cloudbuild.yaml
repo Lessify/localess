@@ -6,7 +6,7 @@ steps:
   - name: 'node:18'
     id: 'install-functions-deps'
     entrypoint: npm
-    args: [ '--prefix','functions','install', '--ignore-scripts=false', ' --foreground-scripts', ' --verbose', 'sharp' ]
+    args: [ '--prefix','functions','install', '--ignore-scripts=false', '--foreground-scripts', '--verbose', 'sharp' ]
   - name: 'node:18'
     id: 'build-prod'
     entrypoint: npm
