@@ -6,7 +6,7 @@ steps:
   - name: 'node:18'
     id: 'install-functions-deps'
     entrypoint: npm
-    args: [ '--prefix','functions','install' ]
+    args: [ '--prefix','functions','install', '--platform=linuxmusl' ]
   - name: 'node:18'
     id: 'build-prod'
     entrypoint: npm
