@@ -14,12 +14,7 @@ import {
   provideAuth
 } from '@angular/fire/auth';
 import {AuthGuardModule} from '@angular/fire/auth-guard';
-import {
-  connectFirestoreEmulator,
-  enableMultiTabIndexedDbPersistence,
-  getFirestore,
-  provideFirestore
-} from '@angular/fire/firestore';
+import {connectFirestoreEmulator, enableMultiTabIndexedDbPersistence, getFirestore, provideFirestore} from '@angular/fire/firestore';
 import {connectStorageEmulator, getStorage, provideStorage} from '@angular/fire/storage';
 import {CoreModule} from '@core/core.module';
 import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
@@ -28,6 +23,7 @@ import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {getFunctions, provideFunctions} from '@angular/fire/functions';
 import {getPerformance, providePerformance} from '@angular/fire/performance';
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
+import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
 
 let resolvePersistenceEnabled: (enabled: boolean) => void;
 
@@ -94,6 +90,17 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
     })
   ],
   providers: [
+    {
+      provide: IMAGE_LOADER,
+      useValue: (config: ImageLoaderConfig) => {
+        // optimize image for API assets
+        if (config.src.startsWith('/api/')) {
+          return `${config.src}?w=${config.width}`;
+        } else {
+          return config.src;
+        }
+      }
+    },
     {provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: {appearance: 'outline'}},
     {
       provide: MAT_PAGINATOR_DEFAULT_OPTIONS,

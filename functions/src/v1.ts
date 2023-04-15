@@ -1,18 +1,13 @@
 import * as express from 'express';
 import * as cors from 'cors';
 import {https, logger} from 'firebase-functions';
-import {
-  bucket,
-  CACHE_ASSET_MAX_AGE,
-  CACHE_MAX_AGE,
-  CACHE_SHARE_MAX_AGE,
-  firestoreService
-} from './config';
+import {bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
 import {Space} from './models/space.model';
 import {Content, ContentKind, ContentLink} from './models/content.model';
 import {Query} from 'firebase-admin/firestore';
 import {AssetFile} from './models/asset.model';
 import * as os from 'os';
+import * as sharp from 'sharp';
 import {findSpaceById} from './services/space.service';
 import {findContentByFullSlug} from './services/content.service';
 
@@ -152,7 +147,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   const {spaceId} = req.params;
   const {version, locale} = req.query;
   const params: Record<string, string> = req.params;
-  const fullSlug = params['0']
+  const fullSlug = params['0'];
   let contentId = '';
 
   const contentsSnapshot = await findContentByFullSlug(spaceId, fullSlug).get();
@@ -275,6 +270,7 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info('v1 spaces asset params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces asset query: ' + JSON.stringify(req.query));
   const {spaceId, assetId} = req.params;
+  const {w: width} = req.query;
 
   const assetPath = `spaces/${spaceId}/assets/${assetId}/original`;
   const [exists] = await bucket.file(assetPath).exists();
@@ -283,10 +279,17 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   if (exists && assetSnapshot.exists) {
     const asset = assetSnapshot.data() as AssetFile;
     const tempFilePath = `${os.tmpdir()}/${asset.name}${asset.extension}`;
-    await bucket.file(assetPath).download({destination: tempFilePath});
+    let filename = `${asset.name}${asset.extension}`;
+    if (width && !Number.isNaN(width)) {
+      filename = `${asset.name}-w${width}${asset.extension}`;
+      const [file] = await bucket.file(assetPath).download();
+      await sharp(file).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
+    } else {
+      await bucket.file(assetPath).download({destination: tempFilePath});
+    }
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-      .header('Content-Disposition', `inline; filename="${asset.name}${asset.extension}"`)
+      .header('Content-Disposition', `inline; filename="${filename}"`)
       .contentType(asset.type)
       .sendFile(tempFilePath);
     return;
