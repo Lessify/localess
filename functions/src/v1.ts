@@ -280,6 +280,7 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const asset = assetSnapshot.data() as AssetFile;
     const tempFilePath = `${os.tmpdir()}/${asset.name}${asset.extension}`;
     let filename = `${asset.name}${asset.extension}`;
+    // apply resize for valid 'w' parameter and images
     if (width && !Number.isNaN(width) && asset.type.startsWith('image/') && asset.type !== 'image/svg+xml') {
       filename = `${asset.name}-w${width}${asset.extension}`;
       const [file] = await bucket.file(assetPath).download();
