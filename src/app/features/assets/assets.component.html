@@ -79,7 +79,14 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{element.name}}{{element.extension}}
+        <div>
+          <div>{{element.name}}{{element.extension}}</div>
+          <div *ngIf="element.metadata as metadata" class="fw-light">
+            <ng-container *ngIf="metadata.width && metadata.height">
+              W{{metadata.width}} x H{{metadata.height}}
+            </ng-container>
+          </div>
+        </div>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="size">

@@ -114,17 +114,6 @@ export class AssetService {
               map(() => it),
             )
         ),
-        switchMap(it =>
-          from(
-            updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${it.id}`),
-              {uploaded: true, updatedAt: serverTimestamp()}
-            )
-          )
-            .pipe(
-              //tap(console.log),
-              map(() => it)
-            )
-        ),
         traceUntilFirst('Firestore:Assets:create'),
       );
   }

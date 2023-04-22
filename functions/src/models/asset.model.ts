@@ -1,4 +1,4 @@
-import {Timestamp} from 'firebase-admin/firestore';
+import {FieldValue, Timestamp} from 'firebase-admin/firestore';
 
 export type Asset = AssetFile | AssetFolder;
 
@@ -27,4 +27,18 @@ export interface AssetFile extends AssetBase {
   type: string,
   size: number,
   alt?: string,
+  metadata?: AssetMetadata
+}
+
+export interface AssetMetadata {
+  format?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface UpdateAssetUpload {
+  uploaded: true,
+  size?: number,
+  metadata?: AssetMetadata
+  updatedAt: FieldValue,
 }

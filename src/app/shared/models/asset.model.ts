@@ -28,6 +28,13 @@ export interface AssetFile extends AssetBase {
   type: string,
   size: number,
   alt?: string,
+  metadata?: AssetMetadata
+}
+
+export interface AssetMetadata {
+  format?: string;
+  width?: number;
+  height?: number;
 }
 
 // Common image file types
