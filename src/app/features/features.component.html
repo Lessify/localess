@@ -1,77 +1,73 @@
-  <mat-sidenav-container>
+<div class="wrapper">
+  <mat-toolbar color="primary">
+    <button mat-icon-button (click)="isExpanded = !isExpanded" matTooltip="Menu">
+      <mat-icon>{{isExpanded ? 'menu_open' : 'menu'}}</mat-icon>
+    </button>
+    <span class="name">Localess</span>
+    <span class="spacer"></span>
 
-    <mat-sidenav #sidenav mode="side" opened="true">
-      <div class="branding">
-        <img [ngSrc]="logo" [alt]="logo" height="48" width="48"/>
-        <span>Localess</span>
-        <span class="spacer"></span>
-        <span>
-          <button mat-icon-button [matMenuTriggerFor]="accountMenu">
-            <mat-icon>account_circle</mat-icon>
-          </button>
-          <mat-menu #accountMenu="matMenu">
-            <button mat-menu-item routerLink="/features/me">
-              <mat-icon>person</mat-icon>
-              <span>Me</span>
-            </button>
-            <mat-divider/>
-            <button mat-menu-item (click)="onLogoutClick()">
-              <mat-icon>logout</mat-icon>
-              <span>Log Out</span>
-            </button>
-          </mat-menu>
-        </span>
-      </div>
-      <mat-divider/>
+    <ng-container *ngIf="selectedSpace; else elseNoSpace">
+      <button mat-stroked-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
+        {{selectedSpace.name}}
+        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
+        <button mat-menu-item *ngFor="let space of spaces" (click)="onSpaceSelection(space)">
+         <span [class.fw-semibold]="space.id === selectedSpace.id">
+           {{space.name}}
+         </span>
+        </button>
+      </mat-menu>
+    </ng-container>
+
+    <ng-template #elseNoSpace>
+      <button mat-raised-button color="warn" routerLink="/features/spaces">
+        No Spaces. Click here to create one.
+      </button>
+    </ng-template>
+
+
+    <span class="spacer"></span>
+    <button mat-icon-button  routerLink="/features/me" matTooltip="My Profile">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+    <button mat-icon-button (click)="onLogoutClick()" matTooltip="LogOut">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <mat-sidenav-container autosize="true">
+
+    <mat-sidenav mode="side" opened="true" [class.collapsed]="!isExpanded">
       <mat-nav-list>
 
-        <mat-list-item *ngIf="!selectedSpace" matRipple routerLink="/features/spaces">
-          <mat-icon matListItemIcon>space_dashboard</mat-icon>
-          <div matListItemTitle>No Spaces. Click here to create one.</div>
-        </mat-list-item>
-
         <ng-container *ngIf="selectedSpace">
-          <mat-list-item matRipple [matMenuTriggerFor]="menuSpaces">
-            <mat-icon matListItemIcon>space_dashboard</mat-icon>
-            <div matListItemTitle>{{selectedSpace.name}}</div>
-            <span matListItemMeta>
-              <mat-icon>arrow_drop_down</mat-icon>
-            </span>
-            <mat-menu #menuSpaces="matMenu" yPosition="below" xPosition="after">
-              <button mat-menu-item *ngFor="let space of spaces" (click)="onSpaceSelection(space)">
-                {{space.name}}
-              </button>
-            </mat-menu>
-          </mat-list-item>
-          <mat-divider/>
-          <div mat-subheader>Spaces</div>
-
           <ng-container *ngFor="let item of userSideMenu">
             <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
-              <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
-              <div matListItemTitle>{{item.label}}</div>
+              <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
+              <div matListItemTitle *ngIf="isExpanded">{{item.label}}</div>
             </mat-list-item>
           </ng-container>
         </ng-container>
 
         <mat-divider/>
-        <div mat-subheader>Admin</div>
+        <div mat-subheader *ngIf="isExpanded">Admin</div>
         <ng-container *ngFor="let item of adminSideMenu">
           <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
-            <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
-            <div matListItemTitle>{{item.label}}</div>
+            <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
+            <div matListItemTitle *ngIf="isExpanded">{{item.label}}</div>
           </mat-list-item>
         </ng-container>
 
         <mat-divider/>
-        <div mat-subheader>Community and Support</div>
+        <div mat-subheader *ngIf="isExpanded">Community and Support</div>
         <mat-list-item *ngFor="let item of communitySideMenu" (click)="openNewTab(item.link)">
-          <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
-          <div matListItemTitle>{{item.label}}</div>
+          <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
+          <div matListItemTitle *ngIf="isExpanded">{{item.label}}</div>
         </mat-list-item>
 
         <mat-divider/>
-        <div mat-subheader>Version : {{version}}</div>
+        <div mat-subheader *ngIf="isExpanded">Version : {{version}}</div>
       </mat-nav-list>
     </mat-sidenav>
 
@@ -83,3 +79,4 @@
     </mat-sidenav-content>
 
   </mat-sidenav-container>
+</div>

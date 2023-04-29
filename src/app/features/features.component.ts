@@ -33,6 +33,7 @@ import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {environment} from '../../environments/environment';
 import {UserPermission} from '@shared/models/user.model';
+import {DEFAULT_LOCALE} from "../shared/models/locale.model";
 
 const ROLE_ADMIN = 'admin';
 
@@ -51,6 +52,7 @@ interface SideMenuItem {
   animations: [routeAnimations]
 })
 export class FeaturesComponent implements OnInit {
+  isExpanded = true;
   isRoleNone = false;
   isRoleAdmin = false;
   spaces: Space[] = [];
@@ -202,4 +204,6 @@ export class FeaturesComponent implements OnInit {
   openNewTab(link: string): void {
     window.open(link)
   }
+
+  protected readonly DEFAULT_LOCALE = DEFAULT_LOCALE;
 }

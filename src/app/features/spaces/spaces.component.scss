@@ -3,6 +3,10 @@ table {
 }
 
 mat-header-cell {
+  &.mat-column-id {
+    max-width: 250px;
+  }
+
   &.mat-column-createdAt {
     max-width: 220px;
   }
@@ -17,6 +21,10 @@ mat-header-cell {
 }
 
 mat-cell {
+  &.mat-column-id {
+    max-width: 250px;
+  }
+
   &.mat-column-createdAt {
     max-width: 220px;
   }

@@ -22,7 +22,7 @@
     <ng-container matColumnDef="avatar">
       <mat-header-cell *matHeaderCellDef> Avatar </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <img [ngSrc]="element.photoURL || '/assets/account_circle.svg'" mat-card-avatar/>
+        <img [ngSrc]="element.photoURL || '/assets/account_circle.svg'" width="40" height="40" mat-card-avatar/>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="email">

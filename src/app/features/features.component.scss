@@ -1,5 +1,41 @@
 @import '../../styles/styles-variables';
 
+
+.wrapper {
+  height: calc(100% - 64px);
+  //display: flex;
+  //flex-direction: column;
+  //position: absolute;
+
+  mat-toolbar {
+    padding-left: 0;
+    span.name {
+      margin-left: 8px;
+      margin-right: 8px;
+      //margin: 8px 8px 8px 8px;
+    }
+  }
+
+  mat-sidenav-container {
+
+    // when side-nav is collapsed
+    mat-sidenav.collapsed {
+      mat-list-item {
+        padding-right: 0;
+        mat-icon {
+          margin-right: 16px;
+        }
+      }
+    }
+
+    mat-sidenav-content {
+
+    }
+  }
+
+
+}
+
 mat-form-field {
   width: 100%;
 }
@@ -9,8 +45,9 @@ mat-form-field {
 }
 
 mat-sidenav-container {
+  //flex: 1;
   height: 100%;
-  width: 100%;
+  //width: 100%;
 
   .toolbar {
     position: fixed;
@@ -87,7 +124,7 @@ mat-sidenav-container {
 }
 
 mat-sidenav {
-  width: 250px;
+ // width: 250px;
 
   .branding {
     height: 64px;
