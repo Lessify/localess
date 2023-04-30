@@ -7,7 +7,7 @@
     <span class="spacer"></span>
 
     <ng-container *ngIf="selectedSpace; else elseNoSpace">
-      <button mat-stroked-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
+      <button mat-flat-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
         {{selectedSpace.name}}
         <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
       </button>
