@@ -16,7 +16,7 @@ import {
   actionSettingsChangeAnimationsPageDisabled,
   actionSettingsChangeAutoNightMode,
   actionSettingsChangeHour,
-  actionSettingsChangeLanguage,
+  actionSettingsChangeLanguage, actionSettingsChangeMainMenuExpended,
   actionSettingsChangeStickyHeader,
   actionSettingsChangeTheme
 } from './settings.actions';
@@ -56,7 +56,8 @@ export class SettingsEffects {
           actionSettingsChangeAutoNightMode,
           actionSettingsChangeLanguage,
           actionSettingsChangeStickyHeader,
-          actionSettingsChangeTheme
+          actionSettingsChangeTheme,
+          actionSettingsChangeMainMenuExpended
         ),
         withLatestFrom(this.store.pipe(select(selectSettingsState))),
         tap(([action, settings]) => this.localStorageService.setItem(SETTINGS_KEY, settings))

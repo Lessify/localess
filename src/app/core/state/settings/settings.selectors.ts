@@ -2,6 +2,7 @@ import {createSelector} from '@ngrx/store';
 
 import {SettingsState} from './settings.model';
 import {selectSettingsState} from '../core.state';
+import {actionSettingsChangeMainMenuExpended} from '@core/state/settings/settings.actions';
 
 export const selectSettings = createSelector(selectSettingsState, (state: SettingsState) => state);
 
@@ -20,6 +21,7 @@ export const selectAutoNightMode = createSelector(selectSettings, (settings) => 
 export const selectNightTheme = createSelector(selectSettings, (settings) => settings.nightTheme);
 
 export const selectHour = createSelector(selectSettings, (settings) => settings.hour);
+export const selectSettingsMainMenuExpended = createSelector(selectSettings, (settings) => settings.mainMenuExpended);
 
 export const selectIsNightHour = createSelector(
   selectAutoNightMode,

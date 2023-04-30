@@ -6,6 +6,7 @@ import {
   actionSettingsChangeAutoNightMode,
   actionSettingsChangeHour,
   actionSettingsChangeLanguage,
+  actionSettingsChangeMainMenuExpended,
   actionSettingsChangeStickyHeader,
   actionSettingsChangeTheme
 } from './settings.actions';
@@ -20,7 +21,8 @@ export const initialState: SettingsState = {
   pageAnimations: true,
   pageAnimationsDisabled: false,
   elementsAnimations: true,
-  hour: 0
+  hour: 0,
+  mainMenuExpended: true
 };
 
 const reducer = createReducer(
@@ -33,9 +35,10 @@ const reducer = createReducer(
     actionSettingsChangeAnimationsPage,
     actionSettingsChangeAnimationsElements,
     actionSettingsChangeHour,
-    (state, action) => ({ ...state, ...action })
+    (state, action) => ({...state, ...action})
   ),
-  on(actionSettingsChangeAnimationsPageDisabled, (state, { pageAnimationsDisabled }) => ({
+  on(actionSettingsChangeMainMenuExpended, (state) => ({...state, mainMenuExpended: !state.mainMenuExpended})),
+  on(actionSettingsChangeAnimationsPageDisabled, (state, {pageAnimationsDisabled}) => ({
     ...state,
     pageAnimationsDisabled,
     pageAnimations: false

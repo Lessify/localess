@@ -22,7 +22,7 @@ import {
 } from '@core/core.module';
 import {
   actionSettingsChangeAnimationsPageDisabled,
-  actionSettingsChangeLanguage
+  actionSettingsChangeLanguage, actionSettingsChangeMainMenuExpended
 } from '@core/state/settings/settings.actions';
 import {Auth, signOut, user} from '@angular/fire/auth';
 import {actionUserChange, actionUserRoleChange} from '@core/state/user/user.actions';
@@ -33,7 +33,9 @@ import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {environment} from '../../environments/environment';
 import {UserPermission} from '@shared/models/user.model';
-import {DEFAULT_LOCALE} from "../shared/models/locale.model";
+import {DEFAULT_LOCALE} from "@shared/models/locale.model";
+import {selectSettings} from '@core/state/settings/settings.selectors';
+import {SettingsState} from '@core/state/settings/settings.model';
 
 const ROLE_ADMIN = 'admin';
 
@@ -52,7 +54,6 @@ interface SideMenuItem {
   animations: [routeAnimations]
 })
 export class FeaturesComponent implements OnInit {
-  isExpanded = true;
   isRoleNone = false;
   isRoleAdmin = false;
   spaces: Space[] = [];
@@ -82,6 +83,7 @@ export class FeaturesComponent implements OnInit {
   isAuthenticated$: Observable<boolean> | undefined;
   stickyHeader$: Observable<boolean> | undefined;
   language$: Observable<string> | undefined;
+  settings$: Observable<SettingsState> | undefined;
 
   constructor(
     private readonly spaceService: SpaceService,
@@ -146,6 +148,7 @@ export class FeaturesComponent implements OnInit {
     this.isAuthenticated$ = this.store.pipe(select(selectIsAuthenticated));
     this.stickyHeader$ = this.store.pipe(select(selectSettingsStickyHeader));
     this.language$ = this.store.pipe(select(selectSettingsLanguage));
+    this.settings$ = this.store.select(selectSettings);
 
     this.loadData()
   }
@@ -199,6 +202,10 @@ export class FeaturesComponent implements OnInit {
 
   onLanguageSelect(event: MatSelectChange): void {
     this.store.dispatch(actionSettingsChangeLanguage({language: event.value}));
+  }
+
+  onMainMenuExpendedChangeState(): void {
+    this.store.dispatch(actionSettingsChangeMainMenuExpended());
   }
 
   openNewTab(link: string): void {

@@ -1,4 +1,5 @@
 import {AppState} from '../core.state';
+import {actionSettingsChangeMainMenuExpended} from '@core/state/settings/settings.actions';
 
 export const NIGHT_MODE_THEME = 'BLACK-THEME';
 
@@ -14,6 +15,7 @@ export interface SettingsState {
   pageAnimationsDisabled: boolean;
   elementsAnimations: boolean;
   hour: number;
+  mainMenuExpended: boolean
 }
 
 export interface State extends AppState {

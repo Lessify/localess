@@ -1,7 +1,7 @@
-<div class="wrapper">
+<div class="wrapper" *ngIf="settings$ | async as settings">
   <mat-toolbar color="primary">
-    <button mat-icon-button (click)="isExpanded = !isExpanded" matTooltip="Menu">
-      <mat-icon>{{isExpanded ? 'menu_open' : 'menu'}}</mat-icon>
+    <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
+      <mat-icon>{{settings.mainMenuExpended ? 'menu_open' : 'menu'}}</mat-icon>
     </button>
     <span class="name">Localess</span>
     <span class="spacer"></span>
@@ -38,36 +38,36 @@
 
   <mat-sidenav-container autosize="true">
 
-    <mat-sidenav mode="side" opened="true" [class.collapsed]="!isExpanded">
+    <mat-sidenav mode="side" opened="true" [class.collapsed]="!settings.mainMenuExpended">
       <mat-nav-list>
 
         <ng-container *ngIf="selectedSpace">
           <ng-container *ngFor="let item of userSideMenu">
             <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
               <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
-              <div matListItemTitle *ngIf="isExpanded">{{item.label}}</div>
+              <div matListItemTitle *ngIf="settings.mainMenuExpended">{{item.label}}</div>
             </mat-list-item>
           </ng-container>
         </ng-container>
 
         <mat-divider/>
-        <div mat-subheader *ngIf="isExpanded">Admin</div>
+        <div mat-subheader *ngIf="settings.mainMenuExpended">Admin</div>
         <ng-container *ngFor="let item of adminSideMenu">
           <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
             <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
-            <div matListItemTitle *ngIf="isExpanded">{{item.label}}</div>
+            <div matListItemTitle *ngIf="settings.mainMenuExpended">{{item.label}}</div>
           </mat-list-item>
         </ng-container>
 
         <mat-divider/>
-        <div mat-subheader *ngIf="isExpanded">Community and Support</div>
+        <div mat-subheader *ngIf="settings.mainMenuExpended">Community and Support</div>
         <mat-list-item *ngFor="let item of communitySideMenu" (click)="openNewTab(item.link)">
           <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
-          <div matListItemTitle *ngIf="isExpanded">{{item.label}}</div>
+          <div matListItemTitle *ngIf="settings.mainMenuExpended">{{item.label}}</div>
         </mat-list-item>
 
         <mat-divider/>
-        <div mat-subheader *ngIf="isExpanded">Version : {{version}}</div>
+        <div mat-subheader *ngIf="settings.mainMenuExpended">Version : {{version}}</div>
       </mat-nav-list>
     </mat-sidenav>
 

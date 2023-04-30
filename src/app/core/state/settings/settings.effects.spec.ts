@@ -52,7 +52,8 @@ describe('SettingsEffects', () => {
         autoNightMode: false,
         stickyHeader: false,
         pageAnimationsDisabled: true,
-        hour: 12
+        hour: 12,
+        mainMenuExpended: true
       };
       store.pipe.and.returnValue(of(settings));
       const persistAction = actionSettingsChangeTheme({ theme: 'DEFAULT' });
