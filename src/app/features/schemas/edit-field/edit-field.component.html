@@ -38,7 +38,7 @@
       <br/>
 
       <ng-container
-        *ngIf="['TEXT','TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS', 'LINK', 'ASSET', 'ASSETS'].includes(form.value.kind)">
+        *ngIf="['TEXT','TEXTAREA', 'MARKDOWN', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS', 'LINK', 'ASSET', 'ASSETS'].includes(form.value.kind)">
         &nbsp;&nbsp;<mat-slide-toggle formControlName="translatable">Translatable</mat-slide-toggle>
         <br/>
         <br/>
@@ -72,7 +72,7 @@
       </ng-container>
 
       <!--Text and Textarea-->
-      <ng-container *ngIf="['TEXT','TEXTAREA'].includes(form.value.kind)">
+      <ng-container *ngIf="['TEXT','TEXTAREA', 'MARKDOWN'].includes(form.value.kind)">
         <mat-form-field>
           <mat-label>Min Length</mat-label>
           <input matInput type="number" formControlName="minLength" autocomplete="off"/>

@@ -197,7 +197,8 @@ export class ContentHelperService {
       const disabled = !((field.translatable === true) || (isFallbackLocale))
       switch (field.kind) {
         case SchemaFieldKind.TEXT:
-        case SchemaFieldKind.TEXTAREA: {
+        case SchemaFieldKind.TEXTAREA:
+        case SchemaFieldKind.MARKDOWN: {
           if (field.minLength) {
             validators.push(Validators.minLength(field.minLength))
           }

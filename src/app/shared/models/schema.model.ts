@@ -19,6 +19,7 @@ export interface Schema {
 
 export type SchemaField = SchemaFieldText
   | SchemaFieldTextarea
+  | SchemaFieldMarkdown
   | SchemaFieldNumber
   | SchemaFieldColor
   | SchemaFieldDate
@@ -35,6 +36,7 @@ export type SchemaField = SchemaFieldText
 export enum SchemaFieldKind {
   TEXT = 'TEXT',
   TEXTAREA = 'TEXTAREA',
+  MARKDOWN = 'MARKDOWN',
   NUMBER = 'NUMBER',
   COLOR = 'COLOR',
   DATE = 'DATE',
@@ -57,6 +59,7 @@ export interface FieldKindDescription {
 export const schemaFieldKindDescriptions: Record<string, FieldKindDescription> = {
   'TEXT': {name: 'Text', icon: 'title'},
   'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
+  'MARKDOWN': {name: 'Markdown', icon: 'functions'},
   'NUMBER': {name: 'Number', icon: 'pin'},
   'COLOR': {name: 'Color', icon: 'colorize'},
   'DATE': {name: 'Date', icon: 'event'},
@@ -89,6 +92,12 @@ export interface SchemaFieldText extends SchemaFieldBase {
 
 export interface SchemaFieldTextarea extends SchemaFieldBase {
   kind: SchemaFieldKind.TEXTAREA;
+  minLength?: number;
+  maxLength?: number;
+}
+
+export interface SchemaFieldMarkdown extends SchemaFieldBase {
+  kind: SchemaFieldKind.MARKDOWN;
   minLength?: number;
   maxLength?: number;
 }

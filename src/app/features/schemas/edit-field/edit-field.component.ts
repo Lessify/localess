@@ -66,7 +66,8 @@ export class EditFieldComponent implements OnInit {
     this.selectedFieldKind = this.schemaFieldKindDescriptions[value];
     switch (value) {
       case SchemaFieldKind.TEXT:
-      case SchemaFieldKind.TEXTAREA: {
+      case SchemaFieldKind.TEXTAREA:
+      case SchemaFieldKind.MARKDOWN: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
         this.form.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MIN_LENGTH))

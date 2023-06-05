@@ -164,7 +164,8 @@ export class EditComponent implements OnInit, OnDestroy {
 
     switch (element?.kind) {
       case SchemaFieldKind.TEXT:
-      case SchemaFieldKind.TEXTAREA: {
+      case SchemaFieldKind.TEXTAREA:
+      case SchemaFieldKind.MARKDOWN:{
         fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
         fieldForm.addControl('minLength', this.fb.control<number | undefined>(element.minLength, SchemasValidator.FIELD_MIN_LENGTH))
         fieldForm.addControl('maxLength', this.fb.control<number | undefined>(element.maxLength, SchemasValidator.FIELD_MAX_LENGTH))

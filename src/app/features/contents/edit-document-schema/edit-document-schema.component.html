@@ -28,6 +28,19 @@
           <mat-error *ngIf="form.controls[field.name].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
+      <!--MARKDOWN-->
+      <ng-container *ngSwitchCase="'MARKDOWN'">
+        <mat-form-field>
+          <mat-label>{{field.displayName || field.name}}</mat-label>
+          <textarea matInput rows="6" [formControlName]="field.name" [required]="field.required" [attr.minLength]="field.minLength"
+                    [attr.maxlength]="field.maxLength" autocomplete="off"></textarea>
+          <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <mat-hint *ngIf="field.description">{{field.description}}</mat-hint>
+          <mat-hint align="end" *ngIf="field.maxLength">{{form.controls[field.name]?.value?.length || 0}}
+            /{{field.maxLength}}</mat-hint>
+          <mat-error *ngIf="form.controls[field.name].errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
+      </ng-container>
       <!--NUMBER-->
       <ng-container *ngSwitchCase="'NUMBER'">
         <mat-form-field>
