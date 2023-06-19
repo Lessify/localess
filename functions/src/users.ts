@@ -45,7 +45,7 @@ export const userInvite = https.onCall(async (data: UserInvite, context) => {
     password: data.password,
     disabled: false,
   });
-  await authService.setCustomUserClaims(adminUser.uid, {role: data.role});
+  await authService.setCustomUserClaims(adminUser.uid, {role: data.role, permissions: data.permissions});
   return true;
 });
 
