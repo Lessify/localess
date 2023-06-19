@@ -50,13 +50,15 @@
           </ng-container>
         </ng-container>
 
-        <mat-divider/>
-        <div mat-subheader *ngIf="settings.mainMenuExpended">Admin</div>
-        <ng-container *ngFor="let item of adminSideMenu">
-          <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
-            <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
-            <div matListItemTitle *ngIf="settings.mainMenuExpended">{{item.label}}</div>
-          </mat-list-item>
+        <ng-container *ngIf="(userPermission.USER_MANAGEMENT | canUserPerform | async ) || (userPermission.SPACE_MANAGEMENT | canUserPerform | async )">
+          <mat-divider/>
+          <div mat-subheader *ngIf="settings.mainMenuExpended">Admin</div>
+          <ng-container *ngFor="let item of adminSideMenu">
+            <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
+              <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
+              <div matListItemTitle *ngIf="settings.mainMenuExpended">{{item.label}}</div>
+            </mat-list-item>
+          </ng-container>
         </ng-container>
 
         <mat-divider/>

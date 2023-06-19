@@ -54,6 +54,9 @@ interface SideMenuItem {
   animations: [routeAnimations]
 })
 export class FeaturesComponent implements OnInit {
+
+  userPermission = UserPermission
+
   isRoleNone = false;
   isRoleAdmin = false;
   spaces: Space[] = [];
