@@ -129,3 +129,25 @@ export interface SchemaFieldAssets extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSETS
 }
 
+
+// Export and Import
+export interface SchemasExportData {
+  spaceId: string
+  /**
+   * number of milliseconds.
+   */
+  fromDate?: number
+}
+
+export interface SchemasImportData {
+  spaceId: string
+  schemas: SchemaExportImport[]
+}
+
+export interface SchemaExportImport {
+  id: string;
+  name: string;
+  type: SchemaType;
+  displayName?: string;
+  fields?: SchemaField[];
+}

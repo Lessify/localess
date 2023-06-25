@@ -104,7 +104,12 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'DOCUMENT'">
-          {{schemasMap.get(element.schema).displayName || schemasMap.get(element.schema).name || 'unknown...'}}
+          <ng-container *ngIf="schemasMap.get(element.schema) as schema else unknownSchema">
+            {{schema.displayName || schema.name}}
+          </ng-container>
+          <ng-template #unknownSchema>
+            unknown...
+          </ng-template>
         </ng-container>
       </mat-cell>
     </ng-container>

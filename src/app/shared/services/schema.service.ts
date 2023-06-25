@@ -23,17 +23,20 @@ import {map} from 'rxjs/operators';
 import {
   Schema,
   SchemaCreate,
-  SchemaCreateFS,
+  SchemaCreateFS, SchemaExportImport,
+  SchemasExportData, SchemasImportData,
   SchemaType,
   SchemaUpdate,
   SchemaUpdateFS
 } from '@shared/models/schema.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
+import {Functions, httpsCallableData} from "@angular/fire/functions";
 
 @Injectable()
 export class SchemaService {
   constructor(
-    private readonly firestore: Firestore
+    private readonly firestore: Firestore,
+    private readonly functions: Functions,
   ) {
   }
 
@@ -113,6 +116,22 @@ export class SchemaService {
     )
       .pipe(
         traceUntilFirst('Firestore:Schemas:delete'),
+      );
+  }
+
+  export(data: SchemasExportData): Observable<SchemaExportImport[]> {
+    const schemasExport = httpsCallableData<SchemasExportData, any>(this.functions, 'schemasExport');
+    return schemasExport(data)
+      .pipe(
+        traceUntilFirst(`Functions:Schemas:export`),
+      );
+  }
+
+  import(data: SchemasImportData): Observable<void> {
+    const schemasImport = httpsCallableData<SchemasImportData, void>(this.functions, 'schemasImport');
+    return schemasImport(data)
+      .pipe(
+        traceUntilFirst(`Functions:Schemas:import`),
       );
   }
 

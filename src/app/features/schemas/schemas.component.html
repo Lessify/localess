@@ -7,6 +7,27 @@
       <mat-icon>add</mat-icon>
       Add Schema
     </button>
+
+
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="extraMenu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+
+    <mat-menu #extraMenu="matMenu">
+      <button *ngIf="'SCHEMA_IMPORT' | canUserPerform | async"
+              mat-menu-item (click)="openImportDialog()">
+        <mat-icon>cloud_upload</mat-icon>
+        <span>Import</span>
+      </button>
+      <button *ngIf="'SCHEMA_EXPORT' | canUserPerform | async"
+              mat-menu-item (click)="openExportDialog()">
+        <mat-icon>cloud_download</mat-icon>
+        <span>Export</span>
+      </button>
+    </mat-menu>
+
   </mat-toolbar-row>
 </mat-toolbar>
 
@@ -44,7 +65,7 @@
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <button *ngIf="'SCHEMA_DELETE' | canUserPerform | async"
-                mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
+                mat-icon-button (click)="openDeleteDialog($event, element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

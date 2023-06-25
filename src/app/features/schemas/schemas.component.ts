@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit,
-  ViewChild
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -20,15 +13,17 @@ import {selectSpace} from '@core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
 import {SchemaService} from '@shared/services/schema.service';
 import {combineLatest, Subject} from 'rxjs';
-import {
-  ConfirmationDialogComponent
-} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {
-  ConfirmationDialogModel
-} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {Schema, SchemaCreate} from '@shared/models/schema.model';
 import {AddDialogComponent} from './add-dialog/add-dialog.component';
 import {AddDialogModel} from './add-dialog/add-dialog.model';
+import {saveAs} from "file-saver-es";
+import {NameUtils} from "@core/utils/name-utils.service";
+import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
+import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
+import {ExportDialogModel, ExportDialogReturn} from "./export-dialog/export-dialog.model";
+import {ImportDialogModel, ImportDialogReturn} from "./import-dialog/import-dialog.model";
 
 @Component({
   selector: 'll-schemas',
@@ -45,7 +40,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     'NODE': 'polyline'
   }
 
-  isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
   displayedColumns: string[] = ['type', 'name', 'createdAt', 'updatedAt', 'actions'];
@@ -53,6 +47,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   // Subscriptions
   private destroy$ = new Subject();
+
+  // Loading
+  isLoading: boolean = true;
+  isImportExportLoading: boolean = false;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -124,7 +122,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.router.navigate(['features', 'schemas', element.id]);
   }
 
-  openDeleteDialog(element: Schema): void {
+  openDeleteDialog(event: MouseEvent, element: Schema): void {
+    event.preventDefault();
+    event.stopImmediatePropagation();
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {
@@ -152,5 +152,77 @@ export class SchemasComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
     this.destroy$.complete()
+  }
+
+  openImportDialog() {
+    this.isImportExportLoading = true;
+    this.dialog
+      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
+        ImportDialogComponent,
+        {
+          width: '500px',
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.schemaService.import({
+            spaceId: this.selectedSpace!.id,
+            schemas: it!.schemas
+          })
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Schemas has been imported.');
+        },
+        error: () => {
+          this.notificationService.error('Schemas can not be imported.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isImportExportLoading = false
+            this.cd.markForCheck()
+          }, 1000)
+        }
+      });
+  }
+
+  openExportDialog() {
+    this.isImportExportLoading = true;
+    let fileName = this.selectedSpace?.name || 'unknown'
+    this.dialog
+      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
+        ExportDialogComponent,
+        {
+          width: '500px',
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.schemaService.export({
+            spaceId: this.selectedSpace!.id,
+            fromDate: it?.fromDate
+          })
+        )
+      )
+      .subscribe({
+        next: (result) => {
+          this.notificationService.success('Schemas has been exported.');
+          saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}-${Date.now()}.schema.localess.json`)
+        },
+        error: () => {
+          this.notificationService.error('Schemas can not be exported.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isImportExportLoading = false
+            this.cd.markForCheck()
+          }, 1000)
+        }
+      });
   }
 }

@@ -8,9 +8,11 @@ import {SchemaService} from '@shared/services/schema.service';
 import {EditComponent} from './edit/edit.component';
 import {AddDialogComponent} from './add-dialog/add-dialog.component';
 import {EditFieldComponent} from './edit-field/edit-field.component';
+import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
+import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
 
 @NgModule({
-  declarations: [SchemasComponent, AddDialogComponent, EditFieldComponent, EditComponent],
+  declarations: [SchemasComponent, AddDialogComponent, EditFieldComponent, EditComponent, ExportDialogComponent, ImportDialogComponent],
   imports: [SharedModule, SchemasRoutingModule],
   providers: [SpaceService, SchemaService]
 })
