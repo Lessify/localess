@@ -14,8 +14,8 @@ import {
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {Storage} from '@angular/fire/storage';
-import {map} from 'rxjs/operators';
+import {ref, Storage, uploadBytes} from '@angular/fire/storage';
+import {map, switchMap} from 'rxjs/operators';
 import {AssetKind} from '@shared/models/asset.model';
 import {Task, TaskCreateFS, TaskKind, TaskStatus} from "@shared/models/task.model";
 
@@ -74,15 +74,25 @@ export class TaskService {
   }
 
   createAssetImportTask(spaceId: string, file: File): Observable<DocumentReference> {
+    const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`
     let addEntity: TaskCreateFS = {
       kind: TaskKind.ASSET_IMPORT,
       status: TaskStatus.INITIATED,
-      size: file.size,
+      file: {
+        path: tmpPath,
+        type: file.type,
+        name: file.name,
+        size: file.size,
+      },
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))
+
+    return from(uploadBytes(ref(this.storage, tmpPath), file))
       .pipe(
+        switchMap((it) =>
+          from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))
+        ),
         traceUntilFirst('Firestore:Tasks:create'),
       );
   }

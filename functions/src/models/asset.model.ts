@@ -55,3 +55,5 @@ export interface AssetsExportData {
 export interface AssetsImportData {
   spaceId: string
 }
+
+export type AssetExportImport = Omit<Asset, 'createdAt' | 'updatedAt'>

@@ -13,12 +13,24 @@ export enum TaskStatus {
   FINISHED = 'FINISHED',
 }
 
+export interface TaskFile {
+  path: string,
+  type: string,
+  name: string,
+  size: number,
+}
+
 export interface Task {
   id: string,
   kind: TaskKind,
   status: TaskStatus,
 
-  size?: number,
+  file?: {
+    path: string,
+    type: string,
+    name: string,
+    size: number,
+  }
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -26,6 +38,6 @@ export interface Task {
 
 
 // FireStore
-export interface TaskUpdate extends Omit<Partial<Task>, "createdAt" | "updatedAt"> {
+export interface TaskUpdate extends Omit<Partial<Task>, 'createdAt' | 'updatedAt'> {
   updatedAt: FieldValue;
 }

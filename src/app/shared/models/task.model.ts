@@ -13,12 +13,19 @@ export enum TaskStatus {
   FINISHED = 'FINISHED',
 }
 
+export interface TaskFile {
+  path: string,
+  type: string,
+  name: string,
+  size: number,
+}
+
 export interface Task {
   id: string,
   kind: TaskKind,
   status: TaskStatus,
 
-  size?: number,
+  file?: TaskFile
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -27,7 +34,9 @@ export interface Task {
 export interface TaskCreateFS {
   kind: TaskKind,
   status: TaskStatus,
-  size?: number,
+
+  file?: TaskFile
+
   createdAt: FieldValue;
   updatedAt: FieldValue;
 }
