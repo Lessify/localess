@@ -66,21 +66,14 @@ export class UserService {
       }
     }
 
-    return from(
-      setDoc(doc(this.firestore, `users/${id}`),
-        update,
-        {merge: true}
-      )
-    )
+    return from(setDoc(doc(this.firestore, `users/${id}`), update, {merge: true}))
       .pipe(
         traceUntilFirst('Firestore:Users:update'),
       );
   }
 
   delete(id: string): Observable<void> {
-    return from(
-      deleteDoc(doc(this.firestore, `users/${id}`))
-    )
+    return from(deleteDoc(doc(this.firestore, `users/${id}`)))
       .pipe(
         traceUntilFirst('Firestore:Users:delete'),
       );

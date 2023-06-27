@@ -53,11 +53,7 @@ export class SpaceService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
-    return from(
-      addDoc(collection(this.firestore, 'spaces'),
-        add
-      )
-    )
+    return from(addDoc(collection(this.firestore, 'spaces'), add))
       .pipe(
         traceUntilFirst('Firestore:Spaces:create'),
       );
@@ -68,21 +64,14 @@ export class SpaceService {
       name: entity.name,
       updatedAt: serverTimestamp()
     }
-    return from(
-      setDoc(doc(this.firestore, `spaces/${id}`),
-        update,
-        {merge: true}
-      )
-    )
+    return from(setDoc(doc(this.firestore, `spaces/${id}`), update, {merge: true}))
       .pipe(
         traceUntilFirst('Firestore:Spaces:update'),
       );
   }
 
   delete(id: string): Observable<void> {
-    return from(
-      deleteDoc(doc(this.firestore, `spaces/${id}`))
-    )
+    return from(deleteDoc(doc(this.firestore, `spaces/${id}`)))
       .pipe(
         traceUntilFirst('Firestore:Spaces:delete'),
       );

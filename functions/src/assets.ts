@@ -1,7 +1,19 @@
-import {EventContext, firestore, logger} from 'firebase-functions';
+import {EventContext, firestore, https, logger} from 'firebase-functions';
 import {bucket, firestoreService} from './config';
 import {QueryDocumentSnapshot} from 'firebase-admin/firestore';
-import {Asset, AssetKind} from './models/asset.model';
+import {Asset, AssetKind, AssetsExportData, AssetsImportData} from './models/asset.model';
+
+// Export
+export const assetsExport = https.onCall(async (data: AssetsExportData, context) => {
+  logger.info('[assetsExport] data: ' + JSON.stringify(data));
+  logger.info('[assetsExport] context.auth: ' + JSON.stringify(context.auth));
+});
+
+// Import
+export const assetsImport = https.onCall(async (data: AssetsImportData, context) => {
+  logger.info('[assetsExport] data: ' + JSON.stringify(data));
+  logger.info('[assetsExport] context.auth: ' + JSON.stringify(context.auth));
+});
 
 // Firestore events
 export const onAssetDelete = firestore.document('spaces/{spaceId}/assets/{assetId}')

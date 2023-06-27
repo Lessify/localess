@@ -10,27 +10,21 @@ export class MeService {
   }
 
   updateProfile(user: User, model: MeUpdate): Observable<void> {
-    return from(
-      updateProfile(user, model)
-    )
+    return from(updateProfile(user, model))
       .pipe(
         traceUntilFirst('Firestore:Me:updateProfile'),
       );
   }
 
   updateEmail(user: User, newEmail: string): Observable<void> {
-    return from(
-      updateEmail(user, newEmail)
-    )
+    return from(updateEmail(user, newEmail))
       .pipe(
         traceUntilFirst('Firestore:Me:updateEmail'),
       );
   }
 
   updatePassword(user: User, newPassword: string): Observable<void> {
-    return from(
-      updatePassword(user, newPassword)
-    )
+    return from(updatePassword(user, newPassword))
       .pipe(
         traceUntilFirst('Firestore:Me:updatePassword'),
       );

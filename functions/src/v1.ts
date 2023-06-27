@@ -272,8 +272,8 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   const {spaceId, assetId} = req.params;
   const {w: width} = req.query;
 
-  const assetPath = `spaces/${spaceId}/assets/${assetId}/original`;
-  const [exists] = await bucket.file(assetPath).exists();
+  const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
+  const [exists] = await assetFile.exists();
   const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
   logger.info(`v1 spaces asset: ${exists} & ${assetSnapshot.exists}`);
   if (exists && assetSnapshot.exists) {
@@ -283,10 +283,10 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     // apply resize for valid 'w' parameter and images
     if (width && !Number.isNaN(width) && asset.type.startsWith('image/') && asset.type !== 'image/svg+xml') {
       filename = `${asset.name}-w${width}${asset.extension}`;
-      const [file] = await bucket.file(assetPath).download();
+      const [file] = await assetFile.download();
       await sharp(file).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
     } else {
-      await bucket.file(assetPath).download({destination: tempFilePath});
+      await assetFile.download({destination: tempFilePath});
     }
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)

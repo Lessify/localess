@@ -1,4 +1,4 @@
-export {onAssetDelete} from './assets';
+export {assetsExport, assetsImport, onAssetDelete} from './assets';
 
 export {contentPublish, onContentUpdate, onContentDelete, onContentWrite} from './contents';
 
@@ -9,6 +9,8 @@ export {schemasExport, schemasImport} from './schemas';
 export {onSpaceDelete} from './spaces';
 
 export {onFileUpload} from './storage';
+
+export {onTaskCreate} from './tasks';
 
 export {translate} from './translate';
 

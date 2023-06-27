@@ -35,6 +35,14 @@
         "function": "v1"
       },
       {
+        "source": "/api/assetsExport",
+        "function": "assetsExport"
+      },
+      {
+        "source": "/api/assetsImport",
+        "function": "assetsImport"
+      },
+      {
         "source": "/api/translate",
         "function": "translate"
       },

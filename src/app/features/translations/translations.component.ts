@@ -356,7 +356,7 @@ export class TranslationsComponent implements OnInit, OnDestroy {
 
   openExportDialog(): void {
     this.isImportExportLoading = true;
-    let fileName = this.selectedSpace?.name || ''
+    let fileName = this.selectedSpace?.name || 'unknown'
     this.dialog
       .open<TranslationExportDialogComponent, TranslationExportDialogModel, TranslationExportDialogReturn>(
         TranslationExportDialogComponent,
@@ -396,7 +396,7 @@ export class TranslationsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           this.notificationService.success('Translations has been exported.');
-          saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}.json`)
+          saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}-${Date.now()}.translation.localess.json`)
         },
         error: () => {
           this.notificationService.error('Translation can not be exported.');

@@ -21,12 +21,7 @@ export class LocaleService {
     const update: SpaceFallbackLocaleUpdateFS = {
       localeFallback: entity, updatedAt: serverTimestamp()
     }
-    return from(
-      setDoc(doc(this.firestore, `spaces/${spaceId}`),
-        update,
-        {merge: true}
-      )
-    )
+    return from(setDoc(doc(this.firestore, `spaces/${spaceId}`), update, {merge: true}))
       .pipe(
         traceUntilFirst('Firestore:Locales:markAsFallback'),
       );
@@ -37,12 +32,7 @@ export class LocaleService {
       locales: arrayUnion(entity),
       updatedAt: serverTimestamp()
     }
-    return from(
-      setDoc(doc(this.firestore, `spaces/${spaceId}`),
-        update,
-        {merge: true}
-      )
-    )
+    return from(setDoc(doc(this.firestore, `spaces/${spaceId}`), update, {merge: true}))
       .pipe(
         traceUntilFirst('Firestore:Locales:create'),
       );
@@ -53,12 +43,7 @@ export class LocaleService {
       locales: arrayRemove(entity),
       updatedAt: serverTimestamp()
     }
-    return from(
-      setDoc(doc(this.firestore, `spaces/${spaceId}`),
-        update,
-        {merge: true}
-      )
-    )
+    return from(setDoc(doc(this.firestore, `spaces/${spaceId}`), update, {merge: true}))
       .pipe(
         traceUntilFirst('Firestore:Locales:delete'),
       );

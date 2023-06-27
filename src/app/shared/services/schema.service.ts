@@ -78,11 +78,7 @@ export class SchemaService {
       updatedAt: serverTimestamp()
     }
 
-    return from(
-      addDoc(collection(this.firestore, `spaces/${spaceId}/schemas`),
-        addEntity
-      )
-    )
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/schemas`), addEntity))
       .pipe(
         traceUntilFirst('Firestore:Schemas:create'),
       );
@@ -100,20 +96,14 @@ export class SchemaService {
       updatedAt: serverTimestamp()
     }
     console.log(update)
-    return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`),
-        update
-      )
-    )
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Schemas:update'),
       );
   }
 
   delete(spaceId: string, id: string): Observable<void> {
-    return from(
-      deleteDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`))
-    )
+    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`)))
       .pipe(
         traceUntilFirst('Firestore:Schemas:delete'),
       );

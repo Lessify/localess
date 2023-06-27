@@ -99,16 +99,10 @@ export class AssetService {
       updatedAt: serverTimestamp()
     }
 
-    return from(
-      addDoc(collection(this.firestore, `spaces/${spaceId}/assets`),
-        addEntity
-      )
-    )
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/assets`), addEntity))
       .pipe(
-        switchMap(it =>
-          from(
-            uploadBytes(ref(this.storage, `spaces/${spaceId}/assets/${it.id}/original`), entity)
-          )
+        switchMap((it) =>
+          from(uploadBytes(ref(this.storage, `spaces/${spaceId}/assets/${it.id}/original`), entity))
             .pipe(
               //tap(console.log),
               map(() => it),
@@ -127,11 +121,7 @@ export class AssetService {
       updatedAt: serverTimestamp()
     }
 
-    return from(
-      addDoc(collection(this.firestore, `spaces/${spaceId}/assets`),
-        addEntity
-      )
-    )
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/assets`), addEntity))
       .pipe(
         traceUntilFirst('Firestore:Assets:create'),
       );
@@ -142,20 +132,14 @@ export class AssetService {
       name: entity.name,
       updatedAt: serverTimestamp()
     }
-    return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`),
-        update
-      )
-    )
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Assets:update'),
       );
   }
 
   delete(spaceId: string, element: Asset): Observable<void> {
-    return from(
-      deleteDoc(doc(this.firestore, `spaces/${spaceId}/assets/${element.id}`))
-    )
+    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/assets/${element.id}`)))
       .pipe(
         traceUntilFirst('Firestore:Assets:delete'),
       );

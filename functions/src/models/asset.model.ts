@@ -42,3 +42,16 @@ export interface UpdateAssetUpload {
   metadata?: AssetMetadata
   updatedAt: FieldValue,
 }
+
+// Export and Import
+export interface AssetsExportData {
+  spaceId: string
+  /**
+   * number of milliseconds.
+   */
+  fromDate?: number
+}
+
+export interface AssetsImportData {
+  spaceId: string
+}

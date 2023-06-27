@@ -87,11 +87,7 @@ export class TranslationService {
       }
     }
 
-    return from(
-      addDoc(collection(this.firestore, `spaces/${spaceId}/translations`),
-        addEntity
-      )
-    )
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/translations`), addEntity))
       .pipe(
         traceUntilFirst('Firestore:Translations:create'),
       );
@@ -109,11 +105,7 @@ export class TranslationService {
       update.description = entity.description
     }
 
-    return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
-        update
-      )
-    )
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Translations:update'),
       );
@@ -124,20 +116,14 @@ export class TranslationService {
       updatedAt: serverTimestamp()
     }
     update[`locales.${locale}`] = value
-    return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`),
-        update
-      )
-    )
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Translations:updateLocale'),
       );
   }
 
   delete(spaceId: string, id: string): Observable<void> {
-    return from(
-      deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`))
-    )
+    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`)))
       .pipe(
         traceUntilFirst('Firestore:Translations:delete'),
       );
