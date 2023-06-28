@@ -36,7 +36,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
   await event.data.ref.update(updateToInProgress);
   // Run Task
   if (task.kind === TaskKind.ASSET_EXPORT) {
-    await assetExport(spaceId);
+    await assetExport(spaceId, task);
   } else if (task.kind === TaskKind.ASSET_IMPORT) {
     assetImport(task);
   } else if (task.kind === TaskKind.CONTENT_EXPORT) {
@@ -50,7 +50,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
  * assetExport Job
  * @param spaceId original task
  */
-async function assetExport(spaceId: string) {
+async function assetExport(spaceId: string, task: Task) {
   const exportAssets: AssetExportImport[] = [];
   const tasksSnapshot = await firestoreService.collection(`spaces/${spaceId}/assets`).get();
   tasksSnapshot.docs.filter((it) => it.exists)
@@ -84,6 +84,7 @@ async function assetExport(spaceId: string) {
 
   // Create assets folder
   const assetsTmpFolder = `${TMP_EXPORT_FOLDER}/assets`;
+  const assetsZipFile = `${os.tmpdir()}/assets.zip`;
   fs.mkdirSync(assetsTmpFolder);
 
   await Promise.all(
@@ -93,18 +94,21 @@ async function assetExport(spaceId: string) {
           .download({destination: `${assetsTmpFolder}/${asset.id}`})
       )
   );
+  const outputZip = fs.createWriteStream(assetsZipFile);
+  const archive = archiver('zip', {zlib: {level: 9}});
+  archive.pipe(outputZip)
+  archive.directory(TMP_EXPORT_FOLDER, false)
+  await archive.finalize()
 
-  archiver('zip', {zlib: {level: 9}});
-
-  // bucket.file(`${TMP_EXPORT_FOLDER}/assets.json`)
-  //   .save(
-  //     JSON.stringify(exportAssets),
-  //     (err) => {
-  //       if (err) {
-  //         logger.error(err);
-  //       }
-  //     }
-  //   );
+  bucket.file(`spaces/${spaceId}/tasks/${task.id}/original`)
+    .save(
+      JSON.stringify(exportAssets),
+      (err) => {
+        if (err) {
+          logger.error(err);
+        }
+      }
+    );
 }
 
 function assetImport(task: Task) {
