@@ -35,6 +35,13 @@ import {AddFolderDialogModel} from './add-folder-dialog/add-folder-dialog.model'
 import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.component';
 import {EditFolderDialogComponent} from './edit-folder-dialog/edit-folder-dialog.component';
 import {EditFolderDialogModel} from './edit-folder-dialog/edit-folder-dialog.model';
+import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
+import {ImportDialogModel, ImportDialogReturn} from "./import-dialog/import-dialog.model";
+import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
+import {ExportDialogModel, ExportDialogReturn} from "./export-dialog/export-dialog.model";
+import {saveAs} from "file-saver-es";
+import {NameUtils} from "@core/utils/name-utils.service";
+import {TaskService} from "@shared/services/task.service";
 
 @Component({
   selector: 'll-assets',
@@ -46,7 +53,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
-  isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt'];
@@ -64,11 +70,16 @@ export class AssetsComponent implements OnInit, OnDestroy {
   // Subscriptions
   private destroy$ = new Subject();
 
+  // Loading
+  isLoading: boolean = true;
+  isImportExportLoading: boolean = false;
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly assetService: AssetService,
     private readonly spaceService: SpaceService,
+    private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
@@ -284,4 +295,72 @@ export class AssetsComponent implements OnInit, OnDestroy {
   filePreview(type: string): boolean {
     return type.startsWith('image/');
   }
+
+  openImportDialog() {
+    this.isImportExportLoading = true;
+    // this.dialog
+    //   .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
+    //     ImportDialogComponent,
+    //     {
+    //       width: '500px',
+    //     }
+    //   )
+    //   .afterClosed()
+    //   .pipe(
+    //     filter(it => it !== undefined),
+    //     switchMap(it =>
+    //       this.schemaService.import({
+    //         spaceId: this.selectedSpace!.id,
+    //         schemas: it!.schemas
+    //       })
+    //     )
+    //   )
+    //   .subscribe({
+    //     next: () => {
+    //       this.notificationService.success('Schemas has been imported.');
+    //     },
+    //     error: () => {
+    //       this.notificationService.error('Schemas can not be imported.');
+    //     },
+    //     complete: () => {
+    //       setTimeout(() => {
+    //         this.isImportExportLoading = false
+    //         this.cd.markForCheck()
+    //       }, 1000)
+    //     }
+    //   });
+  }
+
+  openExportDialog() {
+    this.isImportExportLoading = true;
+    this.dialog
+      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
+        ExportDialogComponent,
+        {
+          width: '500px',
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.taskService.createAssetExportTask(this.selectedSpace!.id)
+        )
+      )
+      .subscribe({
+        next: (result) => {
+          this.notificationService.success('Assets Export Task has been created.');
+        },
+        error: () => {
+          this.notificationService.error('Assets Export Task can not be created.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isImportExportLoading = false
+            this.cd.markForCheck()
+          }, 1000)
+        }
+      });
+  }
+
 }

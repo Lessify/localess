@@ -4,7 +4,7 @@ import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {ImportDialogModel} from './import-dialog.model';
 
 @Component({
-  selector: 'll-schema-import-dialog',
+  selector: 'll-asset-import-dialog',
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

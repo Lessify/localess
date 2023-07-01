@@ -5,7 +5,7 @@ import {ExportDialogModel} from './export-dialog.model';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 
 @Component({
-  selector: 'll-schema-export-dialog',
+  selector: 'll-asset-export-dialog',
   templateUrl: './export-dialog.component.html',
   styleUrls: ['./export-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
