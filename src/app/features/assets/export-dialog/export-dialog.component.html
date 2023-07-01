@@ -1,0 +1,23 @@
+<h1 mat-dialog-title>Schemas Export</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+
+    <mat-form-field>
+      <mat-label>From Date</mat-label>
+      <input matInput [matDatepicker]="picker" readonly [max]="today"
+             (click)="picker.open()" (dateChange)="dateChange($event)">
+      <mat-datepicker-toggle matIconSuffix (click)="picker.select(null)">
+        <mat-icon matDatepickerToggleIcon>clear</mat-icon>
+      </mat-datepicker-toggle>
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    <mat-icon>cloud_download</mat-icon>
+    Export
+  </button>
+</mat-dialog-actions>

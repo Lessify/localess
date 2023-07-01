@@ -7,6 +7,7 @@ import {Asset, AssetExportImport, AssetFile, AssetFolder, AssetKind} from './mod
 import * as os from 'os';
 import * as fs from 'fs';
 import * as archiver from 'archiver';
+import {zip} from 'compressing';
 
 const TMP_EXPORT_FOLDER = `${os.tmpdir()}/export`;
 
@@ -48,7 +49,8 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
 
 /**
  * assetExport Job
- * @param spaceId original task
+ * @param {string} spaceId original task
+ * @param {Task} task original task
  */
 async function assetExport(spaceId: string, task: Task) {
   const exportAssets: AssetExportImport[] = [];
@@ -94,11 +96,14 @@ async function assetExport(spaceId: string, task: Task) {
           .download({destination: `${assetsTmpFolder}/${asset.id}`})
       )
   );
+
+  await zip.compressDir(assetsTmpFolder, assetsZipFile)
+
   const outputZip = fs.createWriteStream(assetsZipFile);
   const archive = archiver('zip', {zlib: {level: 9}});
-  archive.pipe(outputZip)
-  archive.directory(TMP_EXPORT_FOLDER, false)
-  await archive.finalize()
+  archive.pipe(outputZip);
+  archive.directory(TMP_EXPORT_FOLDER, false);
+  await archive.finalize();
 
   bucket.file(`spaces/${spaceId}/tasks/${task.id}/original`)
     .save(

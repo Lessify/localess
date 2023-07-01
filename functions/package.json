@@ -23,7 +23,8 @@
     "firebase-functions": "^4.4.1",
     "@google-cloud/translate": "^7.2.1",
     "sharp": "^0.32.1",
-    "archiver": "^5.3.1"
+    "archiver": "^5.3.1",
+    "compressing": "^1.9.0"
   },
   "devDependencies": {
     "@types/archiver": "^5.3.2",
