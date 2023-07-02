@@ -14,7 +14,6 @@ export enum TaskStatus {
 }
 
 export interface TaskFile {
-  path: string,
   type: string,
   name: string,
   size: number,
@@ -33,10 +32,18 @@ export interface Task {
 
 export interface TaskCreateFS {
   kind: TaskKind,
-  status: TaskStatus,
-
-  file?: TaskFile
+  status: TaskStatus
 
   createdAt: FieldValue;
   updatedAt: FieldValue;
+}
+
+export interface TaskAssetExportCreateFS extends TaskCreateFS {
+  kind: TaskKind.ASSET_EXPORT,
+}
+
+export interface TaskAssetImportCreateFS extends TaskCreateFS {
+  kind: TaskKind.ASSET_IMPORT,
+  tmpPath: string
+  file: TaskFile
 }

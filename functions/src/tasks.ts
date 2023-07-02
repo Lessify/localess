@@ -7,7 +7,6 @@ import {Asset, AssetExportImport, AssetFile, AssetFolder, AssetKind} from './mod
 import * as os from 'os';
 import * as fs from 'fs';
 import {zip} from 'compressing';
-import {fstatSync, Stats, StatsFs} from "fs";
 
 const TMP_EXPORT_FOLDER = `${os.tmpdir()}/export`;
 
@@ -43,13 +42,14 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     updatedAt: FieldValue.serverTimestamp(),
   };
   if (task.kind === TaskKind.ASSET_EXPORT) {
-    const stats = await assetExport(spaceId, taskId);
+    const metadata = await assetExport(spaceId, taskId);
+    logger.info(`[Task::onTaskCreate] metadata='${JSON.stringify(metadata)}'`);
     updateToFinished['file'] = {
       name: 'some name',
-      size: stats.size,
+      size: metadata.size,
       type: 'zip',
-      path: 'some path'
-    }
+      path: 'some path',
+    };
   } else if (task.kind === TaskKind.ASSET_IMPORT) {
     assetImport(task);
   } else if (task.kind === TaskKind.CONTENT_EXPORT) {
@@ -67,7 +67,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
  * @param {string} spaceId original task
  * @param {Task} taskId original task
  */
-async function assetExport(spaceId: string, taskId: string): Promise<Stats> {
+async function assetExport(spaceId: string, taskId: string): Promise<any> {
   const exportAssets: AssetExportImport[] = [];
   const tasksSnapshot = await firestoreService.collection(`spaces/${spaceId}/assets`).get();
   tasksSnapshot.docs.filter((it) => it.exists)
@@ -94,7 +94,7 @@ async function assetExport(spaceId: string, taskId: string): Promise<Stats> {
         } as AssetFile);
       }
     });
-const tmpExportFolder = TMP_EXPORT_FOLDER + taskId
+  const tmpExportFolder = TMP_EXPORT_FOLDER + taskId;
   // Create TMP Folder
   fs.mkdirSync(tmpExportFolder);
   // Create assets.json
@@ -113,37 +113,18 @@ const tmpExportFolder = TMP_EXPORT_FOLDER + taskId
       )
   );
 
-  await zip.compressDir(assetsTmpFolder, assetsExportZipFile)
+  await zip.compressDir(assetsTmpFolder, assetsExportZipFile);
 
-  // fs.readFileSync()
-
-  fs.createReadStream(assetsExportZipFile)
-    .pipe(
-      bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
-        .createWriteStream()
-    )
-    .on('finish', () => {
-      logger.info(`[Task::onTaskCreate] AssetExport Upload finished.`);
-    })
-
-
-  return fs.fstatSync(assetsExportZipFile);
-
-  // const outputZip = fs.createWriteStream(assetsZipFile);
-  // const archive = archiver('zip', {zlib: {level: 9}});
-  // archive.pipe(outputZip);
-  // archive.directory(TMP_EXPORT_FOLDER, false);
-  // await archive.finalize();
-
-  // bucket.file(`spaces/${spaceId}/tasks/${task.id}/original`)
-  //   .save(
-  //     JSON.stringify(exportAssets),
-  //     (err) => {
-  //       if (err) {
-  //         logger.error(err);
-  //       }
-  //     }
-  //   );
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
+    .save(
+      fs.readFileSync(assetsExportZipFile),
+      (err) => {
+        if (err) {
+          logger.error(err);
+        }
+      });
+  const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
+  return metadata;
 }
 
 function assetImport(task: Task) {

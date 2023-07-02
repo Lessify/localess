@@ -17,7 +17,7 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
 import {AssetKind} from '@shared/models/asset.model';
-import {Task, TaskCreateFS, TaskKind, TaskStatus} from "@shared/models/task.model";
+import {Task, TaskAssetExportCreateFS, TaskAssetImportCreateFS, TaskCreateFS, TaskKind, TaskStatus} from "@shared/models/task.model";
 
 @Injectable()
 export class TaskService {
@@ -61,7 +61,7 @@ export class TaskService {
   }
 
   createAssetExportTask(spaceId: string): Observable<DocumentReference> {
-    let addEntity: TaskCreateFS = {
+    let addEntity: TaskAssetExportCreateFS = {
       kind: TaskKind.ASSET_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -75,11 +75,11 @@ export class TaskService {
 
   createAssetImportTask(spaceId: string, file: File): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`
-    let addEntity: TaskCreateFS = {
+    let addEntity: TaskAssetImportCreateFS = {
       kind: TaskKind.ASSET_IMPORT,
       status: TaskStatus.INITIATED,
+      tmpPath: tmpPath,
       file: {
-        path: tmpPath,
         type: file.type,
         name: file.name,
         size: file.size,
