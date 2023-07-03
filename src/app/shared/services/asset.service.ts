@@ -138,8 +138,8 @@ export class AssetService {
       );
   }
 
-  delete(spaceId: string, element: Asset): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/assets/${element.id}`)))
+  delete(spaceId: string, id: string): Observable<void> {
+    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`)))
       .pipe(
         traceUntilFirst('Firestore:Assets:delete'),
       );

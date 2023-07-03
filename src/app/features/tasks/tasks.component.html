@@ -1,0 +1,57 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    Spaces
+    <span class="spacer"></span>
+  </mat-toolbar-row>
+</mat-toolbar>
+<div *ngIf="isLoading" class="loader">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid mt-3">
+  <mat-table [dataSource]="dataSource" matSort>
+    <ng-container matColumnDef="id">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="id"> ID </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        {{element.id}}
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="kind">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="kind"> Kind </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.kind}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="status">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="status"> Status </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.status}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="file">
+      <mat-header-cell *matHeaderCellDef> File </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <ng-container *ngIf="element.file as file">
+          {{file.name}} | {{file.size | digitalStore}}
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="createdAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.createdAt?.toDate() | date:'medium'}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="updatedAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.updatedAt?.toDate() | date:'medium'}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="actions">
+      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <button mat-icon-button (click)="onDownload(element)" matTooltip="Download">
+          <mat-icon>download</mat-icon>
+        </button>
+        <button mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+  </mat-table>
+  <mat-paginator></mat-paginator>
+</div>

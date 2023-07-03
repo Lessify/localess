@@ -69,7 +69,8 @@ export class FeaturesComponent implements OnInit {
     {link: 'contents', label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ},
     {link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ},
     {link: 'schemas', label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ},
-    {link: 'locales', label: 'Locales', icon: 'language', permission: UserPermission.SPACE_MANAGEMENT}
+    {link: 'locales', label: 'Locales', icon: 'language', permission: UserPermission.SPACE_MANAGEMENT},
+    {link: 'tasks', label: 'Tasks', icon: 'task'},
   ];
 
   adminSideMenu: SideMenuItem[] = [

@@ -3,6 +3,7 @@ import {
   addDoc,
   collection,
   collectionData,
+  deleteDoc,
   doc,
   docData,
   DocumentReference,
@@ -14,10 +15,10 @@ import {
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {ref, Storage, uploadBytes} from '@angular/fire/storage';
+import {getBlob, ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
 import {AssetKind} from '@shared/models/asset.model';
-import {Task, TaskAssetExportCreateFS, TaskAssetImportCreateFS, TaskCreateFS, TaskKind, TaskStatus} from "@shared/models/task.model";
+import {Task, TaskAssetExportCreateFS, TaskAssetImportCreateFS, TaskKind, TaskStatus} from "@shared/models/task.model";
 
 @Injectable()
 export class TaskService {
@@ -47,6 +48,13 @@ export class TaskService {
       .pipe(
         traceUntilFirst('Firestore:Tasks:findById'),
         map((it) => it as Task)
+      );
+  }
+
+  downloadBlob(spaceId: string, id: string): Observable<Blob> {
+    return from(getBlob(ref(this.storage, `spaces/${spaceId}/tasks/${id}/original`)))
+      .pipe(
+        traceUntilFirst('Firestore:Tasks:downloadBlob'),
       );
   }
 
@@ -80,7 +88,6 @@ export class TaskService {
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
       file: {
-        type: file.type,
         name: file.name,
         size: file.size,
       },
@@ -94,6 +101,13 @@ export class TaskService {
           from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))
         ),
         traceUntilFirst('Firestore:Tasks:create'),
+      );
+  }
+
+  delete(spaceId: string, id: string): Observable<void> {
+    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/tasks/${id}`)))
+      .pipe(
+        traceUntilFirst('Firestore:Tasks:delete'),
       );
   }
 

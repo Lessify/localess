@@ -96,6 +96,15 @@ const routes: Routes = [
         }
       },
       {
+        path: 'tasks',
+        title: 'Tasks',
+        loadChildren: () => import('./tasks/tasks.module').then(m => m.TasksModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionTranslationRead
+        }
+      },
+      {
         path: 'locales',
         title: 'Locales',
         loadChildren: () => import('./locales/locales.module').then(m => m.LocalesModule),

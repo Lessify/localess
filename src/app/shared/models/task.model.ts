@@ -14,7 +14,6 @@ export enum TaskStatus {
 }
 
 export interface TaskFile {
-  type: string,
   name: string,
   size: number,
 }

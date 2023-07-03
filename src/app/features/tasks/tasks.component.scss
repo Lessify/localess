@@ -4,7 +4,15 @@ table {
 
 mat-header-cell, mat-cell {
   &.mat-column-id {
-    max-width: 250px;
+    max-width: 220px;
+  }
+
+  &.mat-column-kind {
+    max-width: 150px;
+  }
+
+  &.mat-column-status {
+    max-width: 120px;
   }
 
   &.mat-column-createdAt {

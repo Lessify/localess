@@ -1,9 +1,9 @@
 import {logger} from 'firebase-functions/v2';
-import {onDocumentCreated} from 'firebase-functions/v2/firestore';
-import {Task, TaskKind, TaskStatus} from './models/task.model';
+import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firestore';
+import {AssetExportImport, Task, TaskKind, TaskStatus} from './models/task.model';
 import {FieldValue, UpdateData} from 'firebase-admin/firestore';
 import {bucket, firestoreService} from './config';
-import {Asset, AssetExportImport, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
+import {Asset, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
 import * as os from 'os';
 import * as fs from 'fs';
 import {zip} from 'compressing';
@@ -27,10 +27,10 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     updatedAt: FieldValue.serverTimestamp(),
   };
   if (task.kind === TaskKind.CONTENT_IMPORT || task.kind === TaskKind.ASSET_IMPORT) {
-    if (task.file) {
+    if (task.tmpPath) {
       const newPath = `spaces/${spaceId}/tasks/${taskId}/original`;
-      await bucket.file(task.file.path).move(newPath);
-      updateToInProgress['file.path'] = newPath;
+      await bucket.file(task.tmpPath).move(newPath);
+      updateToInProgress.tmpPath = FieldValue.delete();
     }
   }
   // Update to IN_PROGRESS
@@ -45,10 +45,8 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     const metadata = await assetExport(spaceId, taskId);
     logger.info(`[Task::onTaskCreate] metadata='${JSON.stringify(metadata)}'`);
     updateToFinished['file'] = {
-      name: 'some name',
-      size: metadata.size,
-      type: 'zip',
-      path: 'some path',
+      name: `asset-export-${taskId}.zip`,
+      size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
     };
   } else if (task.kind === TaskKind.ASSET_IMPORT) {
     assetImport(task);
@@ -113,7 +111,7 @@ async function assetExport(spaceId: string, taskId: string): Promise<any> {
       )
   );
 
-  await zip.compressDir(assetsTmpFolder, assetsExportZipFile);
+  await zip.compressDir(tmpExportFolder, assetsExportZipFile, {ignoreBase: true});
 
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
     .save(
@@ -138,3 +136,15 @@ function contentExport() {
 function contentImport() {
 
 }
+
+
+export const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async (event) => {
+  logger.info(`[Task::onTaskDeleted] eventId='${event.id}'`);
+  logger.info(`[Task::onTaskDeleted] params='${JSON.stringify(event.params)}'`);
+  const {spaceId, taskId} = event.params;
+  // No Data
+  if (!event.data) return;
+  return bucket.deleteFiles({
+    prefix: `spaces/${spaceId}/tasks/${taskId}`,
+  });
+});

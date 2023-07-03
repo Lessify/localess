@@ -214,7 +214,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       .pipe(
         filter((it) => it || false),
         switchMap(_ =>
-          this.assetService.delete(this.selectedSpace!.id, element)
+          this.assetService.delete(this.selectedSpace!.id, element.id)
         )
       )
       .subscribe({

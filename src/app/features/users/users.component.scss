@@ -2,25 +2,7 @@ table {
   width: 100%;
 }
 
-mat-header-cell {
-  &.mat-column-avatar {
-    max-width: 100px;
-  }
-
-  &.mat-column-createdAt {
-    max-width: 220px;
-  }
-
-  &.mat-column-updatedAt {
-    max-width: 220px;
-  }
-
-  &.mat-column-actions {
-    max-width: 140px;
-  }
-}
-
-mat-cell {
+mat-header-cell, mat-cell {
   &.mat-column-avatar {
     max-width: 100px;
   }
