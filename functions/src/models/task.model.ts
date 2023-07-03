@@ -11,6 +11,7 @@ export enum TaskKind {
 export enum TaskStatus {
   INITIATED = 'INITIATED',
   IN_PROGRESS = 'IN_PROGRESS',
+  ERROR = 'ERROR',
   FINISHED = 'FINISHED',
 }
 

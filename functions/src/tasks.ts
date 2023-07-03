@@ -9,11 +9,14 @@ import * as fs from 'fs';
 import {zip} from 'compressing';
 
 const TMP_EXPORT_FOLDER = `${os.tmpdir()}/export`;
+const TMP_IMPORT_FOLDER = `${os.tmpdir()}/import`;
 
 // Firestore events
 export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async (event) => {
   logger.info(`[Task::onTaskCreate] eventId='${event.id}'`);
   logger.info(`[Task::onTaskCreate] params='${JSON.stringify(event.params)}'`);
+  logger.info(`[Task::onTaskCreate] tmp-export-folder='${TMP_EXPORT_FOLDER}'`);
+  logger.info(`[Task::onTaskCreate] tmp-import-folder='${TMP_IMPORT_FOLDER}'`);
   const {spaceId, taskId} = event.params;
   // No Data
   if (!event.data) return;
@@ -45,11 +48,11 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     const metadata = await assetExport(spaceId, taskId);
     logger.info(`[Task::onTaskCreate] metadata='${JSON.stringify(metadata)}'`);
     updateToFinished['file'] = {
-      name: `asset-export-${taskId}.zip`,
+      name: `asset-export-${taskId}.lla.zip`,
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
     };
   } else if (task.kind === TaskKind.ASSET_IMPORT) {
-    assetImport(task);
+    assetImport(spaceId, taskId);
   } else if (task.kind === TaskKind.CONTENT_EXPORT) {
     contentExport();
   } else if (task.kind === TaskKind.CONTENT_IMPORT) {
@@ -125,8 +128,13 @@ async function assetExport(spaceId: string, taskId: string): Promise<any> {
   return metadata;
 }
 
-function assetImport(task: Task) {
-
+/**
+ * assetImport Job
+ * @param {string} spaceId original task
+ * @param {Task} taskId original task
+ */
+function assetImport(spaceId: string, taskId: string) {
+  const importAssets: AssetExportImport[] = [];
 }
 
 function contentExport() {
@@ -142,8 +150,6 @@ export const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}'
   logger.info(`[Task::onTaskDeleted] eventId='${event.id}'`);
   logger.info(`[Task::onTaskDeleted] params='${JSON.stringify(event.params)}'`);
   const {spaceId, taskId} = event.params;
-  // No Data
-  if (!event.data) return;
   return bucket.deleteFiles({
     prefix: `spaces/${spaceId}/tasks/${taskId}`,
   });

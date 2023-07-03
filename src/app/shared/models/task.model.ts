@@ -10,6 +10,7 @@ export enum TaskKind {
 export enum TaskStatus {
   INITIATED = 'INITIATED',
   IN_PROGRESS = 'IN_PROGRESS',
+  ERROR = 'ERROR',
   FINISHED = 'FINISHED',
 }
 
@@ -39,10 +40,12 @@ export interface TaskCreateFS {
 
 export interface TaskAssetExportCreateFS extends TaskCreateFS {
   kind: TaskKind.ASSET_EXPORT,
+  status: TaskStatus.INITIATED,
 }
 
 export interface TaskAssetImportCreateFS extends TaskCreateFS {
   kind: TaskKind.ASSET_IMPORT,
+  status: TaskStatus.INITIATED,
   tmpPath: string
   file: TaskFile
 }

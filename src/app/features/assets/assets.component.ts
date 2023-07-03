@@ -39,8 +39,6 @@ import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
 import {ImportDialogModel, ImportDialogReturn} from "./import-dialog/import-dialog.model";
 import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
 import {ExportDialogModel, ExportDialogReturn} from "./export-dialog/export-dialog.model";
-import {saveAs} from "file-saver-es";
-import {NameUtils} from "@core/utils/name-utils.service";
 import {TaskService} from "@shared/services/task.service";
 
 @Component({
@@ -298,37 +296,40 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   openImportDialog() {
     this.isImportExportLoading = true;
-    // this.dialog
-    //   .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
-    //     ImportDialogComponent,
-    //     {
-    //       width: '500px',
-    //     }
-    //   )
-    //   .afterClosed()
-    //   .pipe(
-    //     filter(it => it !== undefined),
-    //     switchMap(it =>
-    //       this.schemaService.import({
-    //         spaceId: this.selectedSpace!.id,
-    //         schemas: it!.schemas
-    //       })
-    //     )
-    //   )
-    //   .subscribe({
-    //     next: () => {
-    //       this.notificationService.success('Schemas has been imported.');
-    //     },
-    //     error: () => {
-    //       this.notificationService.error('Schemas can not be imported.');
-    //     },
-    //     complete: () => {
-    //       setTimeout(() => {
-    //         this.isImportExportLoading = false
-    //         this.cd.markForCheck()
-    //       }, 1000)
-    //     }
-    //   });
+    this.dialog
+      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
+        ImportDialogComponent,
+        {
+          width: '500px',
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        tap(console.log),
+        switchMap(it =>
+          this.taskService.createAssetImportTask(this.selectedSpace!.id, it!.file)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(
+            'Assets Import Task has been created.',
+            [
+              {label: 'To Tasks', link: '/features/tasks'}
+            ]
+          );
+        },
+        error: () => {
+          this.notificationService.error('Assets Import Task can not be created.');
+        },
+        complete: () => {
+          setTimeout(() => {
+            this.isImportExportLoading = false
+            this.cd.markForCheck()
+          }, 1000)
+        }
+      });
   }
 
   openExportDialog() {
@@ -349,7 +350,12 @@ export class AssetsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (result) => {
-          this.notificationService.success('Assets Export Task has been created.');
+          this.notificationService.success(
+            'Assets Export Task has been created.',
+            [
+              {label: 'To Tasks', link: '/features/tasks'}
+            ]
+          );
         },
         error: () => {
           this.notificationService.error('Assets Export Task can not be created.');

@@ -15,13 +15,10 @@ import {Router} from '@angular/router';
   styleUrls: ['custom-snack-bar.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // host: {
-  //   'class': 'mat-simple-snackbar',
-  // },
 })
 export class CustomSnackBarComponent {
 
-  @HostBinding('class') class = 'mat-simple-snackbar';
+  @HostBinding('class') class = 'mat-mdc-simple-snack-bar';
 
   constructor(
     private readonly router: Router,
