@@ -1,5 +1,4 @@
 import {FieldValue, Timestamp} from 'firebase-admin/firestore';
-import {Asset} from "./asset.model";
 
 export enum TaskKind {
   ASSET_EXPORT = 'ASSET_EXPORT',
@@ -13,13 +12,6 @@ export enum TaskStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   ERROR = 'ERROR',
   FINISHED = 'FINISHED',
-}
-
-export interface TaskFile {
-  path: string,
-  type: string,
-  name: string,
-  size: number,
 }
 
 export interface Task {
@@ -41,5 +33,3 @@ export interface Task {
 export interface TaskUpdate extends Omit<Partial<Task>, 'createdAt' | 'updatedAt'> {
   updatedAt: FieldValue;
 }
-
-export type AssetExportImport = Omit<Asset, 'createdAt' | 'updatedAt'>

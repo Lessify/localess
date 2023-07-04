@@ -1,22 +1,23 @@
 import {logger} from 'firebase-functions/v2';
 import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firestore';
-import {AssetExportImport, Task, TaskKind, TaskStatus} from './models/task.model';
+import {Task, TaskKind, TaskStatus} from './models/task.model';
 import {FieldValue, UpdateData} from 'firebase-admin/firestore';
-import {bucket, firestoreService} from './config';
-import {Asset, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
+import {bucket} from './config';
+import {Asset, AssetExportImport, assetExportImportArraySchema, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
 import * as os from 'os';
 import * as fs from 'fs';
+import {readFileSync} from 'fs';
 import {zip} from 'compressing';
+import Ajv from 'ajv';
+import {findAssets} from './services/asset.service';
 
-const TMP_EXPORT_FOLDER = `${os.tmpdir()}/export`;
-const TMP_IMPORT_FOLDER = `${os.tmpdir()}/import`;
+const TMP_TASK_FOLDER = `${os.tmpdir()}/task`;
 
 // Firestore events
 export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async (event) => {
   logger.info(`[Task::onTaskCreate] eventId='${event.id}'`);
   logger.info(`[Task::onTaskCreate] params='${JSON.stringify(event.params)}'`);
-  logger.info(`[Task::onTaskCreate] tmp-export-folder='${TMP_EXPORT_FOLDER}'`);
-  logger.info(`[Task::onTaskCreate] tmp-import-folder='${TMP_IMPORT_FOLDER}'`);
+  logger.info(`[Task::onTaskCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
   const {spaceId, taskId} = event.params;
   // No Data
   if (!event.data) return;
@@ -52,7 +53,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
     };
   } else if (task.kind === TaskKind.ASSET_IMPORT) {
-    assetImport(spaceId, taskId);
+    await assetImport(spaceId, taskId, task);
   } else if (task.kind === TaskKind.CONTENT_EXPORT) {
     contentExport();
   } else if (task.kind === TaskKind.CONTENT_IMPORT) {
@@ -70,7 +71,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
  */
 async function assetExport(spaceId: string, taskId: string): Promise<any> {
   const exportAssets: AssetExportImport[] = [];
-  const tasksSnapshot = await firestoreService.collection(`spaces/${spaceId}/assets`).get();
+  const tasksSnapshot = await findAssets(spaceId).get();
   tasksSnapshot.docs.filter((it) => it.exists)
     .forEach((doc) => {
       const asset = doc.data() as Asset;
@@ -95,14 +96,14 @@ async function assetExport(spaceId: string, taskId: string): Promise<any> {
         } as AssetFile);
       }
     });
-  const tmpExportFolder = TMP_EXPORT_FOLDER + taskId;
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   // Create TMP Folder
-  fs.mkdirSync(tmpExportFolder);
+  fs.mkdirSync(tmpTaskFolder);
   // Create assets.json
-  fs.writeFileSync(`${tmpExportFolder}/assets.json`, JSON.stringify(exportAssets));
+  fs.writeFileSync(`${tmpTaskFolder}/assets.json`, JSON.stringify(exportAssets));
 
   // Create assets folder
-  const assetsTmpFolder = `${tmpExportFolder}/assets`;
+  const assetsTmpFolder = `${tmpTaskFolder}/assets`;
   const assetsExportZipFile = `${os.tmpdir()}/assets-${taskId}.zip`;
   fs.mkdirSync(assetsTmpFolder);
 
@@ -114,7 +115,7 @@ async function assetExport(spaceId: string, taskId: string): Promise<any> {
       )
   );
 
-  await zip.compressDir(tmpExportFolder, assetsExportZipFile, {ignoreBase: true});
+  await zip.compressDir(tmpTaskFolder, assetsExportZipFile, {ignoreBase: true});
 
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
     .save(
@@ -131,10 +132,39 @@ async function assetExport(spaceId: string, taskId: string): Promise<any> {
 /**
  * assetImport Job
  * @param {string} spaceId original task
- * @param {Task} taskId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
  */
-function assetImport(spaceId: string, taskId: string) {
-  const importAssets: AssetExportImport[] = [];
+async function assetImport(spaceId: string, taskId: string, task: Task): Promise<any> {
+  // let importAssets: AssetExportImport[] = [];
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  fs.mkdirSync(tmpTaskFolder);
+  const zipPath = `${tmpTaskFolder}/task.zip`;
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: zipPath});
+  await zip.uncompress(zipPath, tmpTaskFolder);
+  const assets = JSON.parse(readFileSync(`${tmpTaskFolder}/assets.json`).toString());
+  const ajv = new Ajv({discriminator: true});
+  const validate = ajv.compile(assetExportImportArraySchema);
+
+  if (Array.isArray(assets) && validate(assets)) {
+    logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(assets)}`);
+    // for (const asset of assets) {
+    //   const assetRef = findAssetById(spaceId, asset.id);
+    //   const assetSnapshot = await assetRef.get();
+    //   if (!assetSnapshot.exists && existsSync(`${tmpTaskFolder}/assets/${asset.id}`)) {
+    //     await assetRef.set({
+    //       ...asset,
+    //       createdAt: FieldValue.serverTimestamp(),
+    //       updatedAt: FieldValue.serverTimestamp(),
+    //     });
+    //     await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(`${tmpTaskFolder}/assets/${asset.id}`));
+    //   }
+    // }
+    // importAssets = assets;
+  } else {
+    logger.info(`[Task::onTaskCreate] invalid=${JSON.stringify(validate.errors)}`);
+    return undefined;
+  }
 }
 
 function contentExport() {
