@@ -345,7 +345,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.taskService.createAssetExportTask(this.selectedSpace!.id)
+          this.taskService.createAssetExportTask(this.selectedSpace!.id, it?.fromDate)
         )
       )
       .subscribe({
@@ -357,7 +357,8 @@ export class AssetsComponent implements OnInit, OnDestroy {
             ]
           );
         },
-        error: () => {
+        error: (err) => {
+          console.error(err)
           this.notificationService.error('Assets Export Task can not be created.');
         },
         complete: () => {

@@ -25,6 +25,7 @@ export interface Task {
   status: TaskStatus,
 
   file?: TaskFile
+  fromDate?: number
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -41,6 +42,7 @@ export interface TaskCreateFS {
 export interface TaskAssetExportCreateFS extends TaskCreateFS {
   kind: TaskKind.ASSET_EXPORT,
   status: TaskStatus.INITIATED,
+  fromDate?: number
 }
 
 export interface TaskAssetImportCreateFS extends TaskCreateFS {

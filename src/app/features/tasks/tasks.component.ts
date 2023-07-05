@@ -17,7 +17,6 @@ import {ConfirmationDialogComponent} from "@shared/components/confirmation-dialo
 import {ConfirmationDialogModel} from "@shared/components/confirmation-dialog/confirmation-dialog.model";
 import {SpaceService} from "@shared/services/space.service";
 import {saveAs} from "file-saver-es";
-import {NameUtils} from "@core/utils/name-utils.service";
 
 @Component({
   selector: 'll-tasks',
@@ -31,7 +30,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   isLoading: boolean = true;
   dataSource: MatTableDataSource<Task> = new MatTableDataSource<Task>([]);
-  displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'kind', 'status', 'file','description', 'createdAt', 'updatedAt', 'actions'];
 
   selectedSpace?: Space;
 

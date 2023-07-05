@@ -18,7 +18,9 @@ export interface Task {
   id: string,
   kind: TaskKind,
   status: TaskStatus,
-
+  // Export Only
+  fromDate?: number
+  // Import Only
   tmpPath?: string
   file?: {
     name: string,

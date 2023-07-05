@@ -71,10 +71,11 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
  * assetExport Job
  * @param {string} spaceId original task
  * @param {Task} taskId original task
+ * @param {number} fromDate original task
  */
-async function assetExport(spaceId: string, taskId: string): Promise<any> {
+async function assetExport(spaceId: string, taskId: string, fromDate?: number): Promise<any> {
   const exportAssets: AssetExportImport[] = [];
-  const tasksSnapshot = await findAssets(spaceId).get();
+  const tasksSnapshot = await findAssets(spaceId, fromDate).get();
   tasksSnapshot.docs.filter((it) => it.exists)
     .forEach((doc) => {
       const asset = doc.data() as Asset;

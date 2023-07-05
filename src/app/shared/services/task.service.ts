@@ -68,12 +68,15 @@ export class TaskService {
       );
   }
 
-  createAssetExportTask(spaceId: string): Observable<DocumentReference> {
+  createAssetExportTask(spaceId: string, fromDate?: number): Observable<DocumentReference> {
     let addEntity: TaskAssetExportCreateFS = {
       kind: TaskKind.ASSET_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
+    }
+    if (fromDate) {
+      addEntity.fromDate = fromDate
     }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))
       .pipe(

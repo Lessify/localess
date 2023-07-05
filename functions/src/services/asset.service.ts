@@ -1,15 +1,20 @@
 import {firestoreService} from '../config';
-import {CollectionReference, DocumentReference} from 'firebase-admin/firestore';
+import {Timestamp, DocumentReference, Query} from 'firebase-admin/firestore';
 import Ajv, {ErrorObject} from 'ajv';
 import {assetExportImportArraySchema} from '../models/asset.model';
 
 /**
  * find Assets
  * @param {string} spaceId Space identifier
- * @return {DocumentReference} document reference to the space
+ * @param {number} fromDate Space identifier
+ * @return {Query} document reference to the space
  */
-export function findAssets(spaceId: string): CollectionReference {
-  return firestoreService.collection(`spaces/${spaceId}/assets`);
+export function findAssets(spaceId: string, fromDate?: number): Query {
+  let assetsRef: Query = firestoreService.collection(`spaces/${spaceId}/assets`);
+  if (fromDate) {
+    assetsRef = assetsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
+  }
+  return assetsRef;
 }
 
 /**
