@@ -1,5 +1,7 @@
 import {firestoreService} from '../config';
-import {DocumentReference, CollectionReference} from 'firebase-admin/firestore';
+import {CollectionReference, DocumentReference} from 'firebase-admin/firestore';
+import Ajv, {ErrorObject} from 'ajv';
+import {assetExportImportArraySchema} from '../models/asset.model';
 
 /**
  * find Assets
@@ -20,4 +22,17 @@ export function findAssetById(spaceId: string, id: string): DocumentReference {
   return firestoreService.doc(`spaces/${spaceId}/assets/${id}`);
 }
 
-
+/**
+ * validate imported JSON
+ * @param {unknown} data Imported JSON
+ * @return {ErrorObject[]} errors in case they exist
+ */
+export function validateImport(data: unknown): ErrorObject[] | undefined | null {
+  const ajv = new Ajv({discriminator: true});
+  const validate = ajv.compile(assetExportImportArraySchema);
+  if (validate(data)) {
+    return undefined;
+  } else {
+    return validate.errors;
+  }
+}

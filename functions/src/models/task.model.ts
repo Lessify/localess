@@ -1,4 +1,4 @@
-import {FieldValue, Timestamp} from 'firebase-admin/firestore';
+import {Timestamp} from 'firebase-admin/firestore';
 
 export enum TaskKind {
   ASSET_EXPORT = 'ASSET_EXPORT',
@@ -30,6 +30,3 @@ export interface Task {
 }
 
 // FireStore
-export interface TaskUpdate extends Omit<Partial<Task>, 'createdAt' | 'updatedAt'> {
-  updatedAt: FieldValue;
-}

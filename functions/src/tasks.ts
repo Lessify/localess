@@ -3,13 +3,13 @@ import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firest
 import {Task, TaskKind, TaskStatus} from './models/task.model';
 import {FieldValue, UpdateData} from 'firebase-admin/firestore';
 import {bucket} from './config';
-import {Asset, AssetExportImport, assetExportImportArraySchema, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
+import {Asset, AssetExportImport, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
 import * as os from 'os';
 import * as fs from 'fs';
-import {readFileSync} from 'fs';
+import {existsSync, readFileSync} from 'fs';
 import {zip} from 'compressing';
-import Ajv from 'ajv';
-import {findAssets} from './services/asset.service';
+import {ErrorObject} from 'ajv';
+import {findAssetById, findAssets, validateImport} from './services/asset.service';
 
 const TMP_TASK_FOLDER = `${os.tmpdir()}/task`;
 
@@ -30,7 +30,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     status: TaskStatus.IN_PROGRESS,
     updatedAt: FieldValue.serverTimestamp(),
   };
-  if (task.kind === TaskKind.CONTENT_IMPORT || task.kind === TaskKind.ASSET_IMPORT) {
+  if (task.kind.endsWith('_IMPORT')) {
     if (task.tmpPath) {
       const newPath = `spaces/${spaceId}/tasks/${taskId}/original`;
       await bucket.file(task.tmpPath).move(newPath);
@@ -53,7 +53,10 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
     };
   } else if (task.kind === TaskKind.ASSET_IMPORT) {
-    await assetImport(spaceId, taskId, task);
+    const errors = await assetImport(spaceId, taskId);
+    if (errors) {
+      updateToFinished.status = TaskStatus.ERROR;
+    }
   } else if (task.kind === TaskKind.CONTENT_EXPORT) {
     contentExport();
   } else if (task.kind === TaskKind.CONTENT_IMPORT) {
@@ -133,36 +136,33 @@ async function assetExport(spaceId: string, taskId: string): Promise<any> {
  * assetImport Job
  * @param {string} spaceId original task
  * @param {string} taskId original task
- * @param {Task} task original task
  */
-async function assetImport(spaceId: string, taskId: string, task: Task): Promise<any> {
-  // let importAssets: AssetExportImport[] = [];
+async function assetImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   fs.mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: zipPath});
   await zip.uncompress(zipPath, tmpTaskFolder);
   const assets = JSON.parse(readFileSync(`${tmpTaskFolder}/assets.json`).toString());
-  const ajv = new Ajv({discriminator: true});
-  const validate = ajv.compile(assetExportImportArraySchema);
-
-  if (Array.isArray(assets) && validate(assets)) {
-    logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(assets)}`);
-    // for (const asset of assets) {
-    //   const assetRef = findAssetById(spaceId, asset.id);
-    //   const assetSnapshot = await assetRef.get();
-    //   if (!assetSnapshot.exists && existsSync(`${tmpTaskFolder}/assets/${asset.id}`)) {
-    //     await assetRef.set({
-    //       ...asset,
-    //       createdAt: FieldValue.serverTimestamp(),
-    //       updatedAt: FieldValue.serverTimestamp(),
-    //     });
-    //     await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(`${tmpTaskFolder}/assets/${asset.id}`));
-    //   }
-    // }
-    // importAssets = assets;
+  const errors = validateImport(assets);
+  if (errors) {
+    logger.info(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    return errors;
   } else {
-    logger.info(`[Task::onTaskCreate] invalid=${JSON.stringify(validate.errors)}`);
+    logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(assets)}`);
+    for (const asset of assets as AssetExportImport[]) {
+      const assetRef = findAssetById(spaceId, asset.id);
+      const assetSnapshot = await assetRef.get();
+      if (!assetSnapshot.exists && existsSync(`${tmpTaskFolder}/assets/${asset.id}`)) {
+        await assetRef.set({
+          uploaded: false,
+          ...asset,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(`${tmpTaskFolder}/assets/${asset.id}`));
+      }
+    }
     return undefined;
   }
 }
