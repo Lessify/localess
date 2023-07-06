@@ -45,6 +45,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     status: TaskStatus.FINISHED,
     updatedAt: FieldValue.serverTimestamp(),
   };
+
   if (task.kind === TaskKind.ASSET_EXPORT) {
     const metadata = await assetExport(spaceId, taskId);
     logger.info(`[Task::onTaskCreate] metadata='${JSON.stringify(metadata)}'`);
@@ -61,6 +62,14 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     contentExport();
   } else if (task.kind === TaskKind.CONTENT_IMPORT) {
     contentImport();
+  } else if (task.kind === TaskKind.SCHEMA_EXPORT) {
+    console.log('SCHEMA_EXPORT');
+  } else if (task.kind === TaskKind.SCHEMA_IMPORT) {
+    console.log('SCHEMA_IMPORT');
+  } else if (task.kind === TaskKind.TRANSLATION_EXPORT) {
+    console.log('TRANSLATION_EXPORT');
+  } else if (task.kind === TaskKind.TRANSLATION_IMPORT) {
+    console.log('TRANSLATION_IMPORT');
   }
   // Export Finished
   logger.info(`[Task::onTaskCreate] update='${JSON.stringify(updateToFinished)}'`);

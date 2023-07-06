@@ -27,16 +27,24 @@
       <mat-header-cell *matHeaderCellDef> File</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.file as file">
-          Size : {{file.size | digitalStore}}
+          <div>
+            <div>{{file.name}}</div>
+            <div>Size : {{file.size | digitalStore}}</div>
+          </div>
         </ng-container>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="description">
       <mat-header-cell *matHeaderCellDef> Description</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <ng-container *ngIf="element.fromDate as fromDate">
-          From Date : {{fromDate | date}}
-        </ng-container>
+        <div>
+          <div *ngIf="element.fromDate as fromDate">
+            From Date : {{fromDate | date}}
+          </div>
+          <div *ngIf="element.locale as locale">
+            Locale : {{locale}}
+          </div>
+        </div>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
