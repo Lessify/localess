@@ -59,17 +59,38 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
       updateToFinished.status = TaskStatus.ERROR;
     }
   } else if (task.kind === TaskKind.CONTENT_EXPORT) {
-    contentExport();
+    const metadata = await contentExport(spaceId, taskId);
+    updateToFinished['file'] = {
+      name: `content-export-${taskId}.llc.zip`,
+      size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+    };
   } else if (task.kind === TaskKind.CONTENT_IMPORT) {
-    contentImport();
+    const errors = await contentImport(spaceId, taskId);
+    if (errors) {
+      updateToFinished.status = TaskStatus.ERROR;
+    }
   } else if (task.kind === TaskKind.SCHEMA_EXPORT) {
-    console.log('SCHEMA_EXPORT');
+    const metadata = await schemaExport(spaceId, taskId)
+    updateToFinished['file'] = {
+      name: `schema-export-${taskId}.lls.zip`,
+      size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+    };
   } else if (task.kind === TaskKind.SCHEMA_IMPORT) {
-    console.log('SCHEMA_IMPORT');
+    const errors = await schemaImport(spaceId, taskId)
+    if (errors) {
+      updateToFinished.status = TaskStatus.ERROR;
+    }
   } else if (task.kind === TaskKind.TRANSLATION_EXPORT) {
-    console.log('TRANSLATION_EXPORT');
+    const metadata = await translationExport(spaceId, taskId)
+    updateToFinished['file'] = {
+      name: `translation-export-${taskId}.llt.zip`,
+      size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+    };
   } else if (task.kind === TaskKind.TRANSLATION_IMPORT) {
-    console.log('TRANSLATION_IMPORT');
+    const errors = await translationImport(spaceId, taskId)
+    if (errors) {
+      updateToFinished.status = TaskStatus.ERROR;
+    }
   }
   // Export Finished
   logger.info(`[Task::onTaskCreate] update='${JSON.stringify(updateToFinished)}'`);
@@ -177,14 +198,29 @@ async function assetImport(spaceId: string, taskId: string): Promise<ErrorObject
   }
 }
 
-function contentExport() {
+async function contentExport(spaceId: string, taskId: string): Promise<any> {
 
 }
 
-function contentImport() {
+async function contentImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined> {
+  return undefined
+}
+
+async function schemaExport(spaceId: string, taskId: string): Promise<any> {
 
 }
 
+async function schemaImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined> {
+  return undefined
+}
+
+async function translationExport(spaceId: string, taskId: string): Promise<any> {
+
+}
+
+async function translationImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined> {
+  return undefined
+}
 
 export const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async (event) => {
   logger.info(`[Task::onTaskDeleted] eventId='${event.id}'`);
