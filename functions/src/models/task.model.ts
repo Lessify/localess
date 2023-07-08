@@ -24,15 +24,23 @@ export interface Task {
   status: TaskStatus,
   // Export Only
   fromDate?: number
+  locale?: string
   // Import Only
   tmpPath?: string
   file?: {
     name: string,
     size: number,
   }
-
+  // Error Message
+  message?: string
+  // Dates
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
 // FireStore
+export interface TaskExportMetadata {
+  kind: 'ASSET' | 'CONTENT' | 'SCHEMA' | 'TRANSLATION',
+  fromDate?: number
+  locale?: string
+}

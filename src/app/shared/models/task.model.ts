@@ -32,6 +32,8 @@ export interface Task {
   fromDate?: number
   locale?: string
 
+  message?: string
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
