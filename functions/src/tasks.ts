@@ -11,6 +11,8 @@ import {findAssetById, findAssets, validateAssetImport} from './services/asset.s
 import {Content, ContentDocument, ContentExport, ContentFolder, ContentKind} from './models/content.model';
 import {findContentById, findContents, validateContentImport} from './services/content.service';
 import {tmpdir} from 'os';
+import {Schema, SchemaExport} from './models/schema.model';
+import {findSchemaById, findSchemas, validateSchemaImport} from './services/schema.service';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
@@ -81,7 +83,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
       }
     }
   } else if (task.kind === TaskKind.SCHEMA_EXPORT) {
-    const metadata = await schemaExport(spaceId, taskId);
+    const metadata = await schemaExport(spaceId, taskId, task);
     updateToFinished['file'] = {
       name: `schema-export-${taskId}.lls.zip`,
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
@@ -334,12 +336,92 @@ async function contentImport(spaceId: string, taskId: string): Promise<ErrorObje
   }
 }
 
-async function schemaExport(spaceId: string, taskId: string): Promise<any> {
+/**
+ * contentExport Job
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
+ */
+async function schemaExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+  const exportSchemas: SchemaExport[] = [];
+  const schemasSnapshot = await findSchemas(spaceId, task.fromDate).get();
+  schemasSnapshot.docs.filter((it) => it.exists)
+    .forEach((doc) => {
+      const schema = doc.data() as Schema;
+      exportSchemas.push({
+        id: doc.id,
+        name: schema.name,
+        type: schema.type,
+        displayName: schema.displayName,
+        fields: schema.fields,
+      });
+    });
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  const fileMetadata: TaskExportMetadata = {
+    kind: 'SCHEMA',
+    fromDate: task.fromDate,
+  };
+  // Create TMP Folder
+  mkdirSync(tmpTaskFolder);
+  // Create assets.json
+  writeFileSync(`${tmpTaskFolder}/schemas.json`, JSON.stringify(exportSchemas));
+  writeFileSync(`${tmpTaskFolder}/metadata.json`, JSON.stringify(fileMetadata));
 
+  // Create assets folder
+  const schemasExportZipFile = `${tmpdir()}/schemas-${taskId}.zip`;
+
+  await zip.compressDir(tmpTaskFolder, schemasExportZipFile, {ignoreBase: true});
+
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
+    .save(
+      readFileSync(schemasExportZipFile),
+      (err) => {
+        if (err) {
+          logger.error(err);
+        }
+      });
+  const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
+  return metadata;
 }
 
+/**
+ * content Import Job
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ */
 async function schemaImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
-  return undefined;
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  mkdirSync(tmpTaskFolder);
+  const zipPath = `${tmpTaskFolder}/task.zip`;
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: zipPath});
+  await zip.uncompress(zipPath, tmpTaskFolder);
+  const schemas = JSON.parse(readFileSync(`${tmpTaskFolder}/schemas.json`).toString());
+  const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
+  if (fileMetadata.kind !== 'SCHEMA') return 'WRONG_METADATA';
+  const errors = validateSchemaImport(schemas);
+  if (errors) {
+    logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    return errors;
+  } else {
+    logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(schemas)}`);
+    for (const schema of schemas as SchemaExport[]) {
+      const schemaRef = findSchemaById(spaceId, schema.id);
+      const schemaSnapshot = await schemaRef.get();
+      if (schemaSnapshot.exists) {
+        await schemaRef.set({
+          ...schema,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, {merge: true});
+      } else {
+        await schemaRef.set({
+          ...schema,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+    }
+    return undefined;
+  }
 }
 
 async function translationExport(spaceId: string, taskId: string): Promise<any> {

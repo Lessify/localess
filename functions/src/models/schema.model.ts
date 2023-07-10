@@ -1,4 +1,5 @@
 import {Timestamp} from 'firebase-admin/firestore';
+import {JSONSchemaType} from 'ajv';
 
 export enum SchemaType {
   ROOT = 'ROOT',
@@ -44,11 +45,6 @@ export enum SchemaFieldKind {
   ASSET = 'ASSET',
   ASSETS = 'ASSETS',
   SCHEMAS = 'SCHEMAS',
-}
-
-export interface FieldKindDescription {
-  name: string
-  icon: string
 }
 
 export interface SchemaFieldBase {
@@ -151,3 +147,38 @@ export interface SchemaExportImport {
   displayName?: string;
   fields?: SchemaField[];
 }
+
+export type SchemaExport = Omit<Schema, 'createdAt' | 'updatedAt'>
+
+export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      id: {type: 'string', nullable: false},
+      name: {type: 'string', nullable: false},
+      type: {type: 'string', enum: Object.values(SchemaType), nullable: false},
+      displayName: {type: 'string', nullable: true},
+      fields: {
+        type: 'array',
+        nullable: true,
+        items: {
+          type: 'object',
+          properties: {
+            name: {type: 'string', nullable: false},
+            kind: {type: 'string', enu: Object.values(SchemaFieldKind), nullable: false},
+            displayName: {type: 'string', nullable: true},
+            required: {type: 'boolean', nullable: true},
+            description: {type: 'string', nullable: true},
+            defaultValue: {type: 'string', nullable: true},
+            translatable: {type: 'boolean', nullable: true},
+          },
+          required: ['name', 'kind'],
+          additionalProperties: true,
+        },
+      },
+    },
+    required: ['id', 'name', 'type'],
+    additionalProperties: false,
+  },
+};

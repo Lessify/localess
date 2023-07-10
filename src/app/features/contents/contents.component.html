@@ -27,6 +27,12 @@
 
     <mat-menu #extraMenu="matMenu">
 
+      <button mat-menu-item (click)="openLinksInNewTab()">
+        <mat-icon>link</mat-icon>
+        <span>Links</span>
+      </button>
+
+      <mat-divider></mat-divider>
       <button *ngIf="'CONTENT_IMPORT' | canUserPerform | async" mat-menu-item (click)="openImportDialog()">
         <mat-icon>cloud_upload</mat-icon>
         <span>Import</span>
@@ -36,11 +42,6 @@
         <span>Export</span>
       </button>
 
-      <mat-divider></mat-divider>
-      <button mat-menu-item (click)="openLinksInNewTab()">
-        <mat-icon>link</mat-icon>
-        <span>Links</span>
-      </button>
     </mat-menu>
 
   </mat-toolbar-row>

@@ -1,4 +1,4 @@
-<h1 mat-dialog-title>Schemas Import</h1>
+<h1 mat-dialog-title>Schema Import</h1>
 <mat-dialog-content>
   <form [formGroup]="form" class="step-container">
 
@@ -10,14 +10,13 @@
     {{fileName}}
 
   </form>
-  <mat-error *ngIf="fileWrong">The selected file does not comply with import type.</mat-error>
+  <mat-error *ngIf="fileWrong">The selected file does not comply with import extension (<b>*.lls.zip</b>).</mat-error>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
     <mat-icon>cloud_upload</mat-icon>
     Import
-    <ng-container *ngIf="contentFieldsCount > 0">({{contentFieldsCount}})</ng-container>
   </button>
 </mat-dialog-actions>
-<input hidden type="file" accept=".schema.localess.json" #fileInput (change)="onFileChange($event)"/>
+<input hidden type="file" accept=".lls.zip" #fileInput (change)="onFileChange($event)"/>

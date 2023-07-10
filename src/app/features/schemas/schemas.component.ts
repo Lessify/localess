@@ -24,6 +24,7 @@ import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
 import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
 import {ExportDialogModel, ExportDialogReturn} from "./export-dialog/export-dialog.model";
 import {ImportDialogModel, ImportDialogReturn} from "./import-dialog/import-dialog.model";
+import {TaskService} from "@shared/services/task.service";
 
 @Component({
   selector: 'll-schemas',
@@ -50,12 +51,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   // Loading
   isLoading: boolean = true;
-  isImportExportLoading: boolean = false;
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly schemaService: SchemaService,
+    private readonly taskService: TaskService,
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
@@ -155,7 +156,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   openImportDialog() {
-    this.isImportExportLoading = true;
     this.dialog
       .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
         ImportDialogComponent,
@@ -167,30 +167,25 @@ export class SchemasComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.schemaService.import({
-            spaceId: this.selectedSpace!.id,
-            schemas: it!.schemas
-          })
+          this.taskService.createSchemaImportTask(this.selectedSpace!.id, it!.file)
         )
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Schemas has been imported.');
+          this.notificationService.success(
+            'Schema Import Task has been created.',
+            [
+              {label: 'Navigate to Tasks', link: '/features/tasks'}
+            ]
+          );
         },
         error: () => {
-          this.notificationService.error('Schemas can not be imported.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isImportExportLoading = false
-            this.cd.markForCheck()
-          }, 1000)
+          this.notificationService.error('Schema Import Task can not be created.');
         }
       });
   }
 
   openExportDialog() {
-    this.isImportExportLoading = true;
     let fileName = this.selectedSpace?.name || 'unknown'
     this.dialog
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
@@ -203,25 +198,21 @@ export class SchemasComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.schemaService.export({
-            spaceId: this.selectedSpace!.id,
-            fromDate: it?.fromDate
-          })
+          this.taskService.createSchemaExportTask(this.selectedSpace!.id, it?.fromDate)
         )
       )
       .subscribe({
         next: (result) => {
-          this.notificationService.success('Schemas has been exported.');
-          saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}-${Date.now()}.schema.localess.json`)
+          this.notificationService.success(
+            'Schema Export Task has been created.',
+            [
+              {label: 'Navigate to Tasks', link: '/features/tasks'}
+            ]
+          );
         },
-        error: () => {
-          this.notificationService.error('Schemas can not be exported.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isImportExportLoading = false
-            this.cd.markForCheck()
-          }, 1000)
+        error: (err) => {
+          console.error(err)
+          this.notificationService.error('Schema Export Task can not be created.');
         }
       });
   }
