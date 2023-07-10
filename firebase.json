@@ -51,14 +51,6 @@
         "function": "translationsImport"
       },
       {
-        "source": "/api/schemasExport",
-        "function": "schemasExport"
-      },
-      {
-        "source": "/api/schemasImport",
-        "function": "schemasImport"
-      },
-      {
         "source": "/api/setup",
         "function": "setup"
       },

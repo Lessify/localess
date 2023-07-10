@@ -50,14 +50,14 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
   };
 
   if (task.kind === TaskKind.ASSET_EXPORT) {
-    const metadata = await assetExport(spaceId, taskId, task);
+    const metadata = await assetsExport(spaceId, taskId, task);
     logger.info(`[Task::onTaskCreate] metadata='${JSON.stringify(metadata)}'`);
     updateToFinished['file'] = {
       name: `asset-export-${taskId}.lla.zip`,
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
     };
   } else if (task.kind === TaskKind.ASSET_IMPORT) {
-    const errors = await assetImport(spaceId, taskId);
+    const errors = await assetsImport(spaceId, taskId);
     if (errors) {
       updateToFinished.status = TaskStatus.ERROR;
       if (errors === 'WRONG_METADATA') {
@@ -67,13 +67,13 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
       }
     }
   } else if (task.kind === TaskKind.CONTENT_EXPORT) {
-    const metadata = await contentExport(spaceId, taskId, task);
+    const metadata = await contentsExport(spaceId, taskId, task);
     updateToFinished['file'] = {
       name: `content-export-${taskId}.llc.zip`,
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
     };
   } else if (task.kind === TaskKind.CONTENT_IMPORT) {
-    const errors = await contentImport(spaceId, taskId);
+    const errors = await contentsImport(spaceId, taskId);
     if (errors) {
       updateToFinished.status = TaskStatus.ERROR;
       if (errors === 'WRONG_METADATA') {
@@ -83,13 +83,13 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
       }
     }
   } else if (task.kind === TaskKind.SCHEMA_EXPORT) {
-    const metadata = await schemaExport(spaceId, taskId, task);
+    const metadata = await schemasExport(spaceId, taskId, task);
     updateToFinished['file'] = {
       name: `schema-export-${taskId}.lls.zip`,
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
     };
   } else if (task.kind === TaskKind.SCHEMA_IMPORT) {
-    const errors = await schemaImport(spaceId, taskId);
+    const errors = await schemasImport(spaceId, taskId);
     if (errors) {
       updateToFinished.status = TaskStatus.ERROR;
       if (errors === 'WRONG_METADATA') {
@@ -99,13 +99,13 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
       }
     }
   } else if (task.kind === TaskKind.TRANSLATION_EXPORT) {
-    const metadata = await translationExport(spaceId, taskId);
+    const metadata = await translationsExport(spaceId, taskId, task);
     updateToFinished['file'] = {
       name: `translation-export-${taskId}.llt.zip`,
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
     };
   } else if (task.kind === TaskKind.TRANSLATION_IMPORT) {
-    const errors = await translationImport(spaceId, taskId);
+    const errors = await translationsImport(spaceId, taskId);
     if (errors) {
       updateToFinished.status = TaskStatus.ERROR;
       if (errors === 'WRONG_METADATA') {
@@ -126,7 +126,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function assetExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+async function assetsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
   const exportAssets: AssetExport[] = [];
   const assetsSnapshot = await findAssets(spaceId, task.fromDate).get();
   assetsSnapshot.docs.filter((it) => it.exists)
@@ -196,7 +196,7 @@ async function assetExport(spaceId: string, taskId: string, task: Task): Promise
  * @param {string} spaceId original task
  * @param {string} taskId original task
  */
-async function assetImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
@@ -240,7 +240,7 @@ async function assetImport(spaceId: string, taskId: string): Promise<ErrorObject
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function contentExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+async function contentsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
   const exportContents: ContentExport[] = [];
   const contentsSnapshot = await findContents(spaceId, task.fromDate).get();
   contentsSnapshot.docs.filter((it) => it.exists)
@@ -301,7 +301,7 @@ async function contentExport(spaceId: string, taskId: string, task: Task): Promi
  * @param {string} spaceId original task
  * @param {string} taskId original task
  */
-async function contentImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
@@ -342,7 +342,7 @@ async function contentImport(spaceId: string, taskId: string): Promise<ErrorObje
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function schemaExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+async function schemasExport(spaceId: string, taskId: string, task: Task): Promise<any> {
   const exportSchemas: SchemaExport[] = [];
   const schemasSnapshot = await findSchemas(spaceId, task.fromDate).get();
   schemasSnapshot.docs.filter((it) => it.exists)
@@ -389,7 +389,7 @@ async function schemaExport(spaceId: string, taskId: string, task: Task): Promis
  * @param {string} spaceId original task
  * @param {string} taskId original task
  */
-async function schemaImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
@@ -424,11 +424,22 @@ async function schemaImport(spaceId: string, taskId: string): Promise<ErrorObjec
   }
 }
 
-async function translationExport(spaceId: string, taskId: string): Promise<any> {
+/**
+ * contentExport Job
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
+ */
+async function translationsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
 
 }
 
-async function translationImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+/**
+ * content Import Job
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ */
+async function translationsImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
   return undefined;
 }
 

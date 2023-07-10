@@ -4,8 +4,6 @@ export {contentPublish, onContentUpdate, onContentDelete, onContentWrite} from '
 
 export {setup} from './setup';
 
-export {schemasExport, schemasImport} from './schemas';
-
 export {onSpaceDelete} from './spaces';
 
 export {onFileUpload} from './storage';
