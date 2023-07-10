@@ -1,5 +1,7 @@
 import {firestoreService} from '../config';
-import {CollectionReference, DocumentReference, Query} from 'firebase-admin/firestore';
+import {DocumentReference, Query, Timestamp} from 'firebase-admin/firestore';
+import Ajv, {ErrorObject} from 'ajv';
+import {assetExportArraySchema} from '../models/content.model';
 
 /**
  * find Content by Full Slug
@@ -25,8 +27,28 @@ export function findContentById(spaceId: string, id: string): DocumentReference 
 /**
  * find Contents
  * @param {string} spaceId Space identifier
- * @return {CollectionReference} collection
+ * @param {number} fromDate Space identifier
+ * @return {Query} collection
  */
-export function findContents(spaceId: string): CollectionReference {
-  return firestoreService.collection(`spaces/${spaceId}/assets`);
+export function findContents(spaceId: string, fromDate?: number): Query {
+  let assetsRef: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
+  if (fromDate) {
+    assetsRef = assetsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
+  }
+  return assetsRef;
+}
+
+/**
+ * validate imported JSON
+ * @param {unknown} data Imported JSON
+ * @return {ErrorObject[]} errors in case they exist
+ */
+export function validateContentImport(data: unknown): ErrorObject[] | undefined | null {
+  const ajv = new Ajv({discriminator: true});
+  const validate = ajv.compile(assetExportArraySchema);
+  if (validate(data)) {
+    return undefined;
+  } else {
+    return validate.errors;
+  }
 }

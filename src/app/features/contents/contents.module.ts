@@ -19,6 +19,9 @@ import {AssetsSelectComponent} from './shared/assets-select/assets-select.compon
 import {
   AssetsSelectDialogComponent
 } from './shared/assets-select-dialog/assets-select-dialog.component';
+import {ExportDialogComponent} from './export-dialog/export-dialog.component';
+import {ImportDialogComponent} from './import-dialog/import-dialog.component';
+import {TaskService} from '@shared/services/task.service';
 
 @NgModule({
   declarations: [
@@ -31,10 +34,12 @@ import {
     LinkSelectComponent,
     AssetSelectComponent,
     AssetsSelectComponent,
-    AssetsSelectDialogComponent
+    AssetsSelectDialogComponent,
+    ExportDialogComponent,
+    ImportDialogComponent
   ],
   imports: [SharedModule, ContentsRoutingModule],
-  providers: [SpaceService, SchemaService, ContentService, ContentHelperService, AssetService]
+  providers: [SpaceService, SchemaService, ContentService, ContentHelperService, AssetService, TaskService]
 })
 export class ContentsModule {
 }

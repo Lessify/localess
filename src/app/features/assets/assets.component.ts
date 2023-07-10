@@ -70,7 +70,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   // Loading
   isLoading: boolean = true;
-  isImportExportLoading: boolean = false;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -295,7 +294,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   openImportDialog() {
-    this.isImportExportLoading = true;
     this.dialog
       .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
         ImportDialogComponent,
@@ -322,18 +320,11 @@ export class AssetsComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.notificationService.error('Assets Import Task can not be created.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isImportExportLoading = false
-            this.cd.markForCheck()
-          }, 1000)
         }
       });
   }
 
   openExportDialog() {
-    this.isImportExportLoading = true;
     this.dialog
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
         ExportDialogComponent,
@@ -360,12 +351,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
         error: (err) => {
           console.error(err)
           this.notificationService.error('Assets Export Task can not be created.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isImportExportLoading = false
-            this.cd.markForCheck()
-          }, 1000)
         }
       });
   }

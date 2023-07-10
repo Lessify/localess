@@ -45,9 +45,9 @@ export interface UpdateAssetUpload {
 }
 
 // Import and Export
-export type AssetExportImport = Omit<Asset, 'createdAt' | 'updatedAt'>
+export type AssetExport = Omit<Asset, 'createdAt' | 'updatedAt'>
 
-export const assetExportImportArraySchema: JSONSchemaType<AssetExportImport[]> = {
+export const assetExportArraySchema: JSONSchemaType<AssetExport[]> = {
   type: 'array',
   items: {
     type: 'object',

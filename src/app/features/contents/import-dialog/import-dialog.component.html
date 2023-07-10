@@ -1,0 +1,22 @@
+<h1 mat-dialog-title>Assets Import</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="step-container">
+
+    <button mat-stroked-button (click)="fileInput.click()">
+      <mat-icon>upload_file</mat-icon>
+      Upload File
+    </button>
+    <br/>
+    {{fileName}}
+
+  </form>
+  <mat-error *ngIf="fileWrong">The selected file does not comply with import extension (<b>*.llc.zip</b>).</mat-error>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    <mat-icon>cloud_upload</mat-icon>
+    Import
+  </button>
+</mat-dialog-actions>
+<input hidden type="file" accept=".llc.zip" #fileInput (change)="onFileChange($event)"/>

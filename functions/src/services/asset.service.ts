@@ -1,7 +1,7 @@
 import {firestoreService} from '../config';
 import {Timestamp, DocumentReference, Query} from 'firebase-admin/firestore';
 import Ajv, {ErrorObject} from 'ajv';
-import {assetExportImportArraySchema} from '../models/asset.model';
+import {assetExportArraySchema} from '../models/asset.model';
 
 /**
  * find Assets
@@ -32,9 +32,9 @@ export function findAssetById(spaceId: string, id: string): DocumentReference {
  * @param {unknown} data Imported JSON
  * @return {ErrorObject[]} errors in case they exist
  */
-export function validateImport(data: unknown): ErrorObject[] | undefined | null {
+export function validateAssetImport(data: unknown): ErrorObject[] | undefined | null {
   const ajv = new Ajv({discriminator: true});
-  const validate = ajv.compile(assetExportImportArraySchema);
+  const validate = ajv.compile(assetExportArraySchema);
   if (validate(data)) {
     return undefined;
   } else {
