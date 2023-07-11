@@ -13,6 +13,8 @@ import {findContentById, findContents, validateContentImport} from './services/c
 import {tmpdir} from 'os';
 import {Schema, SchemaExport} from './models/schema.model';
 import {findSchemaById, findSchemas, validateSchemaImport} from './services/schema.service';
+import {Translation, TranslationExport} from './models/translation.model';
+import {findTranslations, validateTranslationImport} from './services/translation.service';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
@@ -209,29 +211,29 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
   if (errors) {
     logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
     return errors;
-  } else {
-    logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(assets)}`);
-    for (const asset of assets as AssetExport[]) {
-      const assetRef = findAssetById(spaceId, asset.id);
-      const assetSnapshot = await assetRef.get();
-      if (asset.kind === AssetKind.FILE && existsSync(`${tmpTaskFolder}/assets/${asset.id}`) && !assetSnapshot.exists) {
-        await assetRef.set({
-          uploaded: false,
-          ...asset,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-        await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(`${tmpTaskFolder}/assets/${asset.id}`));
-      } else if (asset.kind === AssetKind.FOLDER && !assetSnapshot.exists) {
-        await assetRef.set({
-          ...asset,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-      }
-    }
-    return undefined;
   }
+  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(assets)}`);
+  for (const asset of assets as AssetExport[]) {
+    const assetRef = findAssetById(spaceId, asset.id);
+    const assetSnapshot = await assetRef.get();
+    const {id, ...assetNoId} = asset;
+    if (asset.kind === AssetKind.FILE && existsSync(`${tmpTaskFolder}/assets/${asset.id}`) && !assetSnapshot.exists) {
+      await assetRef.set({
+        uploaded: false,
+        ...assetNoId,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(`${tmpTaskFolder}/assets/${asset.id}`));
+    } else if (asset.kind === AssetKind.FOLDER && !assetSnapshot.exists) {
+      await assetRef.set({
+        ...assetNoId,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -314,26 +316,26 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
   if (errors) {
     logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
     return errors;
-  } else {
-    logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(contents)}`);
-    for (const content of contents as ContentExport[]) {
-      const contentRef = findContentById(spaceId, content.id);
-      const contentSnapshot = await contentRef.get();
-      if (contentSnapshot.exists) {
-        await contentRef.set({
-          ...content,
-          updatedAt: FieldValue.serverTimestamp(),
-        }, {merge: true});
-      } else {
-        await contentRef.set({
-          ...content,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-      }
-    }
-    return undefined;
   }
+  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(contents)}`);
+  for (const content of contents as ContentExport[]) {
+    const contentRef = findContentById(spaceId, content.id);
+    const contentSnapshot = await contentRef.get();
+    const {id, ...contentNoId} = content;
+    if (contentSnapshot.exists) {
+      await contentRef.set({
+        ...contentNoId,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+    } else {
+      await contentRef.set({
+        ...contentNoId,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -402,26 +404,26 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
   if (errors) {
     logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
     return errors;
-  } else {
-    logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(schemas)}`);
-    for (const schema of schemas as SchemaExport[]) {
-      const schemaRef = findSchemaById(spaceId, schema.id);
-      const schemaSnapshot = await schemaRef.get();
-      if (schemaSnapshot.exists) {
-        await schemaRef.set({
-          ...schema,
-          updatedAt: FieldValue.serverTimestamp(),
-        }, {merge: true});
-      } else {
-        await schemaRef.set({
-          ...schema,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-      }
-    }
-    return undefined;
   }
+  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(schemas)}`);
+  for (const schema of schemas as SchemaExport[]) {
+    const schemaRef = findSchemaById(spaceId, schema.id);
+    const schemaSnapshot = await schemaRef.get();
+    const {id, ...schemaNoId} = schema;
+    if (schemaSnapshot.exists) {
+      await schemaRef.set({
+        ...schemaNoId,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+    } else {
+      await schemaRef.set({
+        ...schemaNoId,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -431,7 +433,51 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
  * @param {Task} task original task
  */
 async function translationsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+  const exportTranslations: TranslationExport[] = [];
+  const translationsSnapshot = await findTranslations(spaceId, task.fromDate).get();
+  translationsSnapshot.docs.filter((it) => it.exists)
+    .forEach((doc) => {
+      const translation = doc.data() as Translation;
+      const exportedTr: TranslationExport = {
+        id: doc.id,
+        name: translation.name,
+        type: translation.type,
+        locales: translation.locales,
+      };
+      if (translation.labels && translation.labels.length > 0) {
+        exportedTr.labels = translation.labels;
+      }
+      if (translation.description && translation.description.length > 0) {
+        exportedTr.description = translation.description;
+      }
+      exportTranslations.push(exportedTr);
+    });
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  const fileMetadata: TaskExportMetadata = {
+    kind: 'TRANSLATION',
+    fromDate: task.fromDate,
+  };
+  // Create TMP Folder
+  mkdirSync(tmpTaskFolder);
+  // Create assets.json
+  writeFileSync(`${tmpTaskFolder}/translations.json`, JSON.stringify(exportTranslations));
+  writeFileSync(`${tmpTaskFolder}/metadata.json`, JSON.stringify(fileMetadata));
 
+  // Create assets folder
+  const translationsExportZipFile = `${tmpdir()}/translations-${taskId}.zip`;
+
+  await zip.compressDir(tmpTaskFolder, translationsExportZipFile, {ignoreBase: true});
+
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
+    .save(
+      readFileSync(translationsExportZipFile),
+      (err) => {
+        if (err) {
+          logger.error(err);
+        }
+      });
+  const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
+  return metadata;
 }
 
 /**
@@ -440,6 +486,37 @@ async function translationsExport(spaceId: string, taskId: string, task: Task): 
  * @param {string} taskId original task
  */
 async function translationsImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  mkdirSync(tmpTaskFolder);
+  const zipPath = `${tmpTaskFolder}/task.zip`;
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: zipPath});
+  await zip.uncompress(zipPath, tmpTaskFolder);
+  const translations = JSON.parse(readFileSync(`${tmpTaskFolder}/translations.json`).toString());
+  const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
+  if (fileMetadata.kind !== 'TRANSLATION') return 'WRONG_METADATA';
+  const errors = validateTranslationImport(translations);
+  if (errors) {
+    logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    return errors;
+  }
+  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(translations)}`);
+  for (const translation of translations as TranslationExport[]) {
+    const translationRef = findSchemaById(spaceId, translation.id);
+    const translationSnapshot = await translationRef.get();
+    const {id, ...translationNoId} = translation;
+    if (translationSnapshot.exists) {
+      await translationRef.set({
+        ...translationNoId,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+    } else {
+      await translationRef.set({
+        ...translationNoId,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+  }
   return undefined;
 }
 

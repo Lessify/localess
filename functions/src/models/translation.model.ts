@@ -1,4 +1,5 @@
 import {Timestamp} from 'firebase-admin/firestore';
+import {JSONSchemaType} from 'ajv';
 
 export enum TranslationType {
   STRING = 'STRING',
@@ -7,6 +8,7 @@ export enum TranslationType {
 }
 
 export interface Translation {
+  id: string
   name: string
   type: TranslationType
   locales: Record<string, string>
@@ -65,3 +67,33 @@ export type TranslationsImportData = TranslationsImportFlatData | TranslationsIm
 export interface PublishTranslationsData {
   spaceId: string
 }
+
+// Import and Export
+export type TranslationExport = Omit<Translation, 'autoTranslate' | 'createdAt' | 'updatedAt'>
+
+export const translationExportArraySchema: JSONSchemaType<TranslationExport[]> = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      id: {type: 'string', nullable: false},
+      name: {type: 'string', nullable: false},
+      type: {type: 'string', enum: Object.values(TranslationType), nullable: false},
+      locales: {
+        type: 'object',
+        nullable: false,
+        minProperties: 1,
+        additionalProperties: true,
+        required: [],
+      },
+      labels: {
+        type: 'array',
+        nullable: true,
+        items: {type: 'string', nullable: true},
+      },
+      description: {type: 'string', nullable: true},
+    },
+    required: ['name', 'type', 'locales'],
+    additionalProperties: false,
+  },
+};
