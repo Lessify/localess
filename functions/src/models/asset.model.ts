@@ -9,7 +9,6 @@ export enum AssetKind {
 }
 
 export interface AssetBase {
-  id: string,
   kind: AssetKind,
   name: string,
   parentPath: string,
@@ -24,6 +23,7 @@ export interface AssetFolder extends AssetBase {
 
 export interface AssetFile extends AssetBase {
   kind: AssetKind.FILE
+  uploaded: boolean,
   extension: string,
   type: string,
   size: number,
@@ -45,7 +45,16 @@ export interface UpdateAssetUpload {
 }
 
 // Import and Export
-export type AssetExport = Omit<Asset, 'createdAt' | 'updatedAt'>
+
+export interface AssetFolderExport extends Omit<AssetFolder, 'createdAt' | 'updatedAt'> {
+  id: string,
+}
+
+export interface AssetFileExport extends Omit<AssetFile, 'createdAt' | 'updatedAt'> {
+  id: string,
+}
+
+export type AssetExport = AssetFileExport | AssetFolderExport;
 
 export const assetExportArraySchema: JSONSchemaType<AssetExport[]> = {
   type: 'array',

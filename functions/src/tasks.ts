@@ -1,20 +1,28 @@
 import {logger} from 'firebase-functions/v2';
 import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firestore';
 import {Task, TaskExportMetadata, TaskKind, TaskStatus} from './models/task.model';
-import {FieldValue, UpdateData} from 'firebase-admin/firestore';
-import {bucket} from './config';
+import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
+import {bucket, firestoreService} from './config';
 import {Asset, AssetExport, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'fs';
 import {zip} from 'compressing';
 import {ErrorObject} from 'ajv';
 import {findAssetById, findAssets, validateAssetImport} from './services/asset.service';
-import {Content, ContentDocument, ContentExport, ContentFolder, ContentKind} from './models/content.model';
+import {
+  Content,
+  ContentDocument,
+  ContentDocumentExport,
+  ContentExport,
+  ContentFolder,
+  ContentFolderExport,
+  ContentKind,
+} from './models/content.model';
 import {findContentById, findContents, validateContentImport} from './services/content.service';
 import {tmpdir} from 'os';
 import {Schema, SchemaExport} from './models/schema.model';
 import {findSchemaById, findSchemas, validateSchemaImport} from './services/schema.service';
 import {Translation, TranslationExport} from './models/translation.model';
-import {findTranslations, validateTranslationImport} from './services/translation.service';
+import {findTranslationById, findTranslations, validateTranslationImport} from './services/translation.service';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
@@ -140,7 +148,7 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
           kind: AssetKind.FOLDER,
           name: asset.name,
           parentPath: asset.parentPath,
-        } as AssetFolder);
+        } as AssetExport);
       } else if (asset.kind === AssetKind.FILE) {
         exportAssets.push({
           id: doc.id,
@@ -152,7 +160,7 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
           size: asset.size,
           alt: asset.alt,
           metadata: asset.metadata,
-        } as AssetFile);
+        } as AssetExport);
       }
     });
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
@@ -213,26 +221,50 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
     return errors;
   }
   logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(assets)}`);
+  let totalChanges = 0;
+  const bulk = firestoreService.bulkWriter();
   for (const asset of assets as AssetExport[]) {
     const assetRef = findAssetById(spaceId, asset.id);
     const assetSnapshot = await assetRef.get();
-    const {id, ...assetNoId} = asset;
-    if (asset.kind === AssetKind.FILE && existsSync(`${tmpTaskFolder}/assets/${asset.id}`) && !assetSnapshot.exists) {
-      await assetRef.set({
+    // Skip Existing Files
+    if (assetSnapshot.exists) continue;
+    if (asset.kind === AssetKind.FILE) {
+      // Skip if file is not present
+      const assetTmpPath = `${tmpTaskFolder}/assets/${asset.id}`;
+      if (!existsSync(assetTmpPath)) continue;
+      const add: WithFieldValue<AssetFile> = {
+        kind: AssetKind.FILE,
+        name: asset.name,
+        parentPath: asset.parentPath,
         uploaded: false,
-        ...assetNoId,
+        extension: asset.extension,
+        type: asset.type,
+        size: asset.size,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-      });
-      await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(`${tmpTaskFolder}/assets/${asset.id}`));
-    } else if (asset.kind === AssetKind.FOLDER && !assetSnapshot.exists) {
-      await assetRef.set({
-        ...assetNoId,
+      };
+      // Optional Fields
+      if (asset.alt) add.alt = asset.alt;
+      if (asset.metadata) add.metadata = asset.metadata;
+      bulk.set(assetRef, add)
+        .then(() => {
+          logger.info(`[Task::onTaskCreate] Save File ${asset.id}`);
+          bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(assetTmpPath));
+        });
+    } else if (asset.kind === AssetKind.FOLDER) {
+      const add: WithFieldValue<AssetFolder> = {
+        kind: AssetKind.FOLDER,
+        name: asset.name,
+        parentPath: asset.parentPath,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-      });
+      };
+      bulk.set(assetRef, add);
     }
+    totalChanges++;
   }
+  await bulk.close();
+  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -256,7 +288,7 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
           slug: content.slug,
           parentSlug: content.parentSlug,
           fullSlug: content.fullSlug,
-        } as ContentFolder);
+        } as ContentFolderExport);
       } else if (content.kind === ContentKind.DOCUMENT) {
         exportContents.push({
           id: doc.id,
@@ -267,7 +299,7 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
           fullSlug: content.fullSlug,
           schema: content.schema,
           data: content.data,
-        } as ContentDocument);
+        } as ContentDocumentExport);
       }
     });
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
@@ -318,23 +350,68 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
     return errors;
   }
   logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(contents)}`);
+  let totalChanges = 0;
+  const bulk = firestoreService.bulkWriter();
   for (const content of contents as ContentExport[]) {
     const contentRef = findContentById(spaceId, content.id);
     const contentSnapshot = await contentRef.get();
-    const {id, ...contentNoId} = content;
     if (contentSnapshot.exists) {
-      await contentRef.set({
-        ...contentNoId,
-        updatedAt: FieldValue.serverTimestamp(),
-      }, {merge: true});
+      // Update Content
+      if (content.kind === ContentKind.DOCUMENT) {
+        const update: UpdateData<ContentDocument> = {
+          kind: ContentKind.DOCUMENT,
+          name: content.name,
+          slug: content.slug,
+          parentSlug: content.parentSlug,
+          fullSlug: content.fullSlug,
+          schema: content.schema,
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        if (content.data) update.data = content.data;
+        bulk.update(contentRef, update);
+      } else if (content.kind === ContentKind.FOLDER) {
+        const update: UpdateData<ContentFolder> = {
+          kind: ContentKind.FOLDER,
+          name: content.name,
+          slug: content.slug,
+          parentSlug: content.parentSlug,
+          fullSlug: content.fullSlug,
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        bulk.update(contentRef, update);
+      }
     } else {
-      await contentRef.set({
-        ...contentNoId,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
+      // Add Content
+      if (content.kind === ContentKind.DOCUMENT) {
+        const add: WithFieldValue<ContentDocument> = {
+          kind: ContentKind.DOCUMENT,
+          name: content.name,
+          slug: content.slug,
+          parentSlug: content.parentSlug,
+          fullSlug: content.fullSlug,
+          schema: content.schema,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        if (content.data) add.data = content.data;
+        bulk.set(contentRef, add);
+      } else if (content.kind === ContentKind.FOLDER) {
+        const add: WithFieldValue<ContentFolder> = {
+          kind: ContentKind.FOLDER,
+          name: content.name,
+          slug: content.slug,
+          parentSlug: content.parentSlug,
+          fullSlug: content.fullSlug,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        bulk.set(contentRef, add);
+      }
     }
+    totalChanges++;
   }
+  await bulk.close();
+  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -406,23 +483,35 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
     return errors;
   }
   logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(schemas)}`);
+  let totalChanges = 0;
+  const bulk = firestoreService.bulkWriter();
   for (const schema of schemas as SchemaExport[]) {
     const schemaRef = findSchemaById(spaceId, schema.id);
     const schemaSnapshot = await schemaRef.get();
-    const {id, ...schemaNoId} = schema;
     if (schemaSnapshot.exists) {
-      await schemaRef.set({
-        ...schemaNoId,
+      const update: UpdateData<Schema> = {
+        name: schema.name,
+        type: schema.type,
+        displayName: schema.displayName || FieldValue.delete(),
+        fields: schema.fields || FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
-      }, {merge: true});
+      };
+      bulk.update(schemaRef, update);
     } else {
-      await schemaRef.set({
-        ...schemaNoId,
+      const add: WithFieldValue<Schema> = {
+        name: schema.name,
+        type: schema.type,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-      });
+      };
+      if (schema.displayName) add.displayName = schema.displayName;
+      if (schema.fields) add.fields = schema.fields;
+      bulk.set(schemaRef, add);
     }
+    totalChanges++;
   }
+  await bulk.close();
+  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -500,23 +589,37 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
     return errors;
   }
   logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(translations)}`);
+  let totalChanges = 0;
+  const bulk = firestoreService.bulkWriter();
   for (const translation of translations as TranslationExport[]) {
-    const translationRef = findSchemaById(spaceId, translation.id);
+    const translationRef = findTranslationById(spaceId, translation.id);
     const translationSnapshot = await translationRef.get();
-    const {id, ...translationNoId} = translation;
     if (translationSnapshot.exists) {
-      await translationRef.set({
-        ...translationNoId,
+      const update: UpdateData<Translation> = {
+        name: translation.name,
+        type: translation.type,
+        locales: translation.locales,
+        description: translation.description || FieldValue.delete(),
+        labels: translation.labels || FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
-      }, {merge: true});
+      };
+      bulk.update(translationRef, update);
     } else {
-      await translationRef.set({
-        ...translationNoId,
+      const add: WithFieldValue<Translation> = {
+        name: translation.name,
+        type: translation.type,
+        locales: translation.locales,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-      });
+      };
+      if (translation.description) add.description = translation.description;
+      if (translation.labels) add.labels = translation.labels;
+      bulk.set(translationRef, add);
     }
+    totalChanges++;
   }
+  await bulk.close();
+  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
 

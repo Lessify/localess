@@ -8,7 +8,6 @@ export enum TranslationType {
 }
 
 export interface Translation {
-  id: string
   name: string
   type: TranslationType
   locales: Record<string, string>
@@ -69,7 +68,11 @@ export interface PublishTranslationsData {
 }
 
 // Import and Export
-export type TranslationExport = Omit<Translation, 'autoTranslate' | 'createdAt' | 'updatedAt'>
+// export type TranslationExport =
+
+export interface TranslationExport extends Omit<Translation, 'autoTranslate' | 'createdAt' | 'updatedAt'>{
+  id: string
+}
 
 export const translationExportArraySchema: JSONSchemaType<TranslationExport[]> = {
   type: 'array',

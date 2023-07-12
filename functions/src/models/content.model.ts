@@ -4,7 +4,6 @@ import {JSONSchemaType} from 'ajv';
 export type Content = ContentDocument | ContentFolder;
 
 export interface ContentBase {
-  id: string,
   kind: ContentKind,
   name: string,
   slug: string
@@ -67,7 +66,15 @@ export interface ContentLink {
   publishedAt?: string;
 }
 
-export type ContentExport = Omit<Content, 'createdAt' | 'updatedAt'>
+export interface ContentFolderExport extends Omit<ContentFolder, 'createdAt' | 'updatedAt'> {
+  id: string,
+}
+
+export interface ContentDocumentExport extends Omit<ContentDocument, 'createdAt' | 'updatedAt'> {
+  id: string,
+}
+
+export type ContentExport = ContentDocumentExport | ContentFolderExport;
 
 export const assetExportArraySchema: JSONSchemaType<ContentExport[]> = {
   type: 'array',

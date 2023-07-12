@@ -67,7 +67,7 @@
         <button mat-icon-button (click)="onDownload(element)" [disabled]="element.file === undefined" matTooltip="Download">
           <mat-icon>download</mat-icon>
         </button>
-        <button mat-icon-button (click)="openDeleteDialog(element)" matTooltip="Delete">
+        <button mat-icon-button (click)="openDeleteDialog(element)" [disabled]="element.status !== 'FINISHED'" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

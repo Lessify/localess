@@ -7,7 +7,6 @@ export enum SchemaType {
 }
 
 export interface Schema {
-  id: string;
   name: string;
   type: SchemaType;
   displayName?: string;
@@ -148,7 +147,9 @@ export interface SchemaExportImport {
   fields?: SchemaField[];
 }
 
-export type SchemaExport = Omit<Schema, 'createdAt' | 'updatedAt'>
+export interface SchemaExport extends Omit<Schema, 'createdAt' | 'updatedAt'> {
+  id: string;
+}
 
 export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
   type: 'array',
