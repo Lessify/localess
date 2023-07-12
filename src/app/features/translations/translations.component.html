@@ -20,30 +20,23 @@
         Publish
       </button>
 
-      <button
-        mat-icon-button
-        [matMenuTriggerFor]="importMenu"
-        [disabled]="isImportExportLoading"
-        matTooltip="Import and Export">
-        <ll-icon [animate]="isImportExportLoading" start="more_vert" end="sync"/>
+      <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
+        <mat-icon>more_vert</mat-icon>
       </button>
 
       <mat-menu #importMenu="matMenu">
-        <button *ngIf="'TRANSLATION_IMPORT' | canUserPerform | async"
-          mat-menu-item (click)="openImportDialog()">
+        <button mat-menu-item *ngFor="let locale of locales" (click)="openPublishedInNewTab(locale.id)">
+          <mat-icon>public</mat-icon>
+          <span>Published {{locale.name}} JSON</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button *ngIf="'TRANSLATION_IMPORT' | canUserPerform | async" mat-menu-item (click)="openImportDialog()">
           <mat-icon>cloud_upload</mat-icon>
           <span>Import</span>
         </button>
-        <button *ngIf="'TRANSLATION_EXPORT' | canUserPerform | async"
-                mat-menu-item (click)="openExportDialog()">
+        <button *ngIf="'TRANSLATION_EXPORT' | canUserPerform | async" mat-menu-item (click)="openExportDialog()">
           <mat-icon>cloud_download</mat-icon>
           <span>Export</span>
-        </button>
-        <mat-divider></mat-divider>
-        <button mat-menu-item *ngFor="let locale of locales"
-                (click)="openPublishedInNewTab(locale.id)">
-          <mat-icon>public</mat-icon>
-          <span>Published {{locale.name}} JSON</span>
         </button>
       </mat-menu>
 

@@ -5,8 +5,8 @@
       <mat-label>Role</mat-label>
       <mat-select formControlName="role">
         <mat-option [value]="undefined">None</mat-option>
-        <mat-option value="custom">Custom</mat-option>
-        <mat-option value="admin">Admin</mat-option>
+        <mat-option [value]="'custom'">Custom</mat-option>
+        <mat-option [value]="'admin'">Admin</mat-option>
       </mat-select>
       <mat-error *ngIf="form.controls['role'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>

@@ -18,58 +18,11 @@ export interface Translation {
   updatedAt: Timestamp
 }
 
-export interface TranslationExportImport {
-  name: string;
-  locales: Record<string, string>;
-  labels?: string[]
-  description?: string;
-}
-
-export interface TranslationsExportFlatData {
-  kind: 'FLAT'
-  spaceId: string
-  locale: string
-  /**
-   * number of milliseconds.
-   */
-  fromDate?: number
-}
-
-export interface TranslationsExportFullData {
-  kind: 'FULL'
-  spaceId: string
-  /**
-   * number of milliseconds.
-   */
-  fromDate?: number
-}
-
-export type TranslationsExportData = TranslationsExportFlatData | TranslationsExportFullData
-
-export interface TranslationsImportFlatData {
-  kind: 'FLAT'
-  spaceId: string
-  locale: string
-  translations: Record<string, string>
-  onlyNewKeys?: boolean
-}
-
-export interface TranslationsImportFullData {
-  kind: 'FULL'
-  spaceId: string
-  translations: TranslationExportImport[]
-  onlyNewKeys?: boolean
-}
-
-export type TranslationsImportData = TranslationsImportFlatData | TranslationsImportFullData
-
 export interface PublishTranslationsData {
   spaceId: string
 }
 
 // Import and Export
-// export type TranslationExport =
-
 export interface TranslationExport extends Omit<Translation, 'autoTranslate' | 'createdAt' | 'updatedAt'>{
   id: string
 }
@@ -99,4 +52,10 @@ export const translationExportArraySchema: JSONSchemaType<TranslationExport[]> =
     required: ['name', 'type', 'locales'],
     additionalProperties: false,
   },
+};
+
+export const translationFlatExportSchema: JSONSchemaType<Record<string, string>> = {
+  type: 'object',
+  minProperties: 1,
+  required: [],
 };

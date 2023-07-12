@@ -336,7 +336,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
           this.notificationService.success(
             'Content Import Task has been created.',
             [
-              {label: 'Navigate to Tasks', link: '/features/tasks'}
+              {label: 'To Tasks', link: '/features/tasks'}
             ]
           );
         },
@@ -366,7 +366,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
           this.notificationService.success(
             'Content Export Task has been created.',
             [
-              {label: 'Navigate to Tasks', link: '/features/tasks'}
+              {label: 'To Tasks', link: '/features/tasks'}
             ]
           );
         },

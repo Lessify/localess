@@ -192,7 +192,7 @@ export class TaskService {
       );
   }
 
-  createTranslationExportTask(spaceId: string, locale?: string, fromDate?: number): Observable<DocumentReference> {
+  createTranslationExportTask(spaceId: string, fromDate?: number, locale?: string): Observable<DocumentReference> {
     let addEntity: TaskTranslationExportCreateFS = {
       kind: TaskKind.TRANSLATION_EXPORT,
       status: TaskStatus.INITIATED,

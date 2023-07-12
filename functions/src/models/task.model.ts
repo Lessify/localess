@@ -23,10 +23,10 @@ export interface Task {
   kind: TaskKind,
   status: TaskStatus,
   // Export Only
-  fromDate?: number
-  locale?: string
+  fromDate?: number,
+  locale?: string,
   // Import Only
-  tmpPath?: string
+  tmpPath?: string,
   file?: {
     name: string,
     size: number,
@@ -41,6 +41,5 @@ export interface Task {
 // FireStore
 export interface TaskExportMetadata {
   kind: 'ASSET' | 'CONTENT' | 'SCHEMA' | 'TRANSLATION',
-  fromDate?: number
-  locale?: string
+  fromDate?: number,
 }

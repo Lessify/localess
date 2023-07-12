@@ -88,14 +88,14 @@ export interface TaskSchemaImportCreateFS extends TaskCreateFS {
 export interface TaskTranslationExportCreateFS extends TaskCreateFS {
   kind: TaskKind.TRANSLATION_EXPORT,
   status: TaskStatus.INITIATED,
-  locale?: string,
   fromDate?: number
+  locale?: string,
 }
 
 export interface TaskTranslationImportCreateFS extends TaskCreateFS {
   kind: TaskKind.TRANSLATION_IMPORT,
   status: TaskStatus.INITIATED,
   locale?: string,
-  tmpPath: string
+  tmpPath: string,
   file: TaskFile
 }

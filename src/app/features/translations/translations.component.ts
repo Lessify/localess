@@ -41,25 +41,14 @@ import {
 import {
   ConfirmationDialogModel
 } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {saveAs} from 'file-saver-es';
-import {
-  TranslationExportDialogComponent
-} from './translation-export-dialog/translation-export-dialog.component';
-import {
-  TranslationExportDialogModel,
-  TranslationExportDialogReturn
-} from './translation-export-dialog/translation-export-dialog.model';
-import {NameUtils} from '@core/utils/name-utils.service';
-import {
-  TranslationImportDialogComponent
-} from './translation-import-dialog/translation-import-dialog.component';
-import {
-  TranslationImportDialogModel,
-  TranslationImportDialogReturn
-} from './translation-import-dialog/translation-import-dialog.model';
 import {TranslateService} from '@shared/services/translate.service';
 import {LocaleService} from '@shared/services/locale.service';
 import {NotificationService} from '@shared/services/notification.service';
+import {TaskService} from '@shared/services/task.service';
+import {ExportDialogComponent} from './export-dialog/export-dialog.component';
+import {ExportDialogModel, ExportDialogReturn} from './export-dialog/export-dialog.model';
+import {ImportDialogComponent} from './import-dialog/import-dialog.component';
+import {ImportDialogModel, ImportDialogReturn} from './import-dialog/import-dialog.model';
 
 @Component({
   selector: 'll-translations',
@@ -100,7 +89,6 @@ export class TranslationsComponent implements OnInit, OnDestroy {
   //Loadings
   isLoading: boolean = true;
   isPublishLoading: boolean = false;
-  isImportExportLoading: boolean = false;
   isLocaleUpdateLoading: boolean = false;
   isTranslateLoading: boolean = false;
 
@@ -111,6 +99,7 @@ export class TranslationsComponent implements OnInit, OnDestroy {
     private readonly translationService: TranslationService,
     readonly localeService: LocaleService,
     private readonly spaceService: SpaceService,
+    private readonly taskService: TaskService,
     private readonly notificationService: NotificationService,
     private readonly route: ActivatedRoute,
     private readonly fb: FormBuilder,
@@ -300,10 +289,9 @@ export class TranslationsComponent implements OnInit, OnDestroy {
   }
 
   openImportDialog(): void {
-    this.isImportExportLoading = true;
     this.dialog
-      .open<TranslationImportDialogComponent, TranslationImportDialogModel, TranslationImportDialogReturn>(
-        TranslationImportDialogComponent,
+      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
+        ImportDialogComponent,
         {
           width: '500px',
           data: {
@@ -316,50 +304,33 @@ export class TranslationsComponent implements OnInit, OnDestroy {
         filter(it => it !== undefined),
         switchMap(it => {
           if (it?.kind === 'FLAT') {
-            return this.translationService.import(
-              {
-                spaceId: this.selectedSpace!.id,
-                kind: it.kind,
-                locale: it.locale,
-                translations: it.translations,
-                onlyNewKeys: it.onlyNewKeys
-              }
-            )
+            return this.taskService.createTranslationImportTask(this.selectedSpace!.id, it.file, it.locale)
           } else if (it?.kind === 'FULL') {
-            return this.translationService.import(
-              {
-                spaceId: this.selectedSpace!.id,
-                kind: it.kind,
-                translations: it.translations,
-                onlyNewKeys: it.onlyNewKeys
-              }
-            )
+            return this.taskService.createTranslationImportTask(this.selectedSpace!.id, it.file)
           }
           return EMPTY
         })
       )
       .subscribe({
-        next: (result) => {
-          this.notificationService.success('Translations has been imported.');
+        next: () => {
+          this.notificationService.success(
+            'Translation Import Task has been created.',
+            [
+              {label: 'To Tasks', link: '/features/tasks'}
+            ]
+          );
         },
         error: () => {
-          this.notificationService.error('Translation can not be imported.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isImportExportLoading = false
-            this.cd.markForCheck()
-          }, 1000)
+          this.notificationService.error('Translation Import Task can not be created.');
         }
       });
   }
 
   openExportDialog(): void {
-    this.isImportExportLoading = true;
     let fileName = this.selectedSpace?.name || 'unknown'
     this.dialog
-      .open<TranslationExportDialogComponent, TranslationExportDialogModel, TranslationExportDialogReturn>(
-        TranslationExportDialogComponent,
+      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
+        ExportDialogComponent,
         {
           width: '500px',
           data: {
@@ -371,41 +342,27 @@ export class TranslationsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it => {
+          console.log(it)
           if (it?.kind === 'FLAT') {
-            fileName = `${fileName}-${it.locale}`
-            return this.translationService.export(
-              {
-                spaceId: this.selectedSpace!.id,
-                kind: it.kind,
-                locale: it.locale,
-                fromDate: it.fromDate
-              }
-            )
+            return this.taskService.createTranslationExportTask(this.selectedSpace!.id, it.fromDate, it.locale)
           } else if (it?.kind === 'FULL') {
-            return this.translationService.export(
-              {
-                spaceId: this.selectedSpace!.id,
-                kind: it.kind,
-                fromDate: it.fromDate
-              }
-            )
+            return this.taskService.createTranslationExportTask(this.selectedSpace!.id, it.fromDate)
           }
           return EMPTY
         })
       )
       .subscribe({
         next: (result) => {
-          this.notificationService.success('Translations has been exported.');
-          saveAs(new Blob([JSON.stringify(result)], {type: "application/json"}), `${NameUtils.sanitize(fileName)}-${Date.now()}.translation.localess.json`)
+          this.notificationService.success(
+            'Translation Export Task has been created.',
+            [
+              {label: 'To Tasks', link: '/features/tasks'}
+            ]
+          );
         },
-        error: () => {
-          this.notificationService.error('Translation can not be exported.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isImportExportLoading = false
-            this.cd.markForCheck()
-          }, 1000)
+        error: (err) => {
+          console.error(err)
+          this.notificationService.error('Translation Export Task can not be created.');
         }
       });
   }

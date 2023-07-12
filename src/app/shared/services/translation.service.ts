@@ -17,10 +17,6 @@ import {
   Translation,
   TranslationCreate,
   TranslationCreateFS,
-  TranslationExportImport,
-  TranslationLocale,
-  TranslationsExportData,
-  TranslationsImportData,
   TranslationType,
   TranslationUpdate,
   TranslationUpdateFS
@@ -134,22 +130,6 @@ export class TranslationService {
     return translationsPublish({spaceId})
       .pipe(
         traceUntilFirst('Functions:Translations:publish'),
-      );
-  }
-
-  export(data: TranslationsExportData): Observable<TranslationLocale | TranslationExportImport[]> {
-    const translationsExport = httpsCallableData<TranslationsExportData, TranslationLocale | TranslationExportImport[]>(this.functions, 'translationsExport');
-    return translationsExport(data)
-      .pipe(
-        traceUntilFirst(`Functions:Translations:export:${data.kind}`),
-      );
-  }
-
-  import(data: TranslationsImportData): Observable<void> {
-    const translationsImport = httpsCallableData<TranslationsImportData, void>(this.functions, 'translationsImport');
-    return translationsImport(data)
-      .pipe(
-        traceUntilFirst(`Functions:Translations:import:${data.kind}`),
       );
   }
 

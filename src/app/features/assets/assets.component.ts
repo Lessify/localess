@@ -314,7 +314,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
           this.notificationService.success(
             'Assets Import Task has been created.',
             [
-              {label: 'Navigate to Tasks', link: '/features/tasks'}
+              {label: 'To Tasks', link: '/features/tasks'}
             ]
           );
         },
@@ -344,7 +344,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
           this.notificationService.success(
             'Assets Export Task has been created.',
             [
-              {label: 'Navigate to Tasks', link: '/features/tasks'}
+              {label: 'To Tasks', link: '/features/tasks'}
             ]
           );
         },

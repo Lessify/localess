@@ -3,7 +3,7 @@ import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firest
 import {Task, TaskExportMetadata, TaskKind, TaskStatus} from './models/task.model';
 import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
 import {bucket, firestoreService} from './config';
-import {Asset, AssetExport, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
+import {Asset, AssetExport, AssetFile, AssetFileExport, AssetFolder, AssetFolderExport, AssetKind} from './models/asset.model';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'fs';
 import {zip} from 'compressing';
 import {ErrorObject} from 'ajv';
@@ -21,8 +21,13 @@ import {findContentById, findContents, validateContentImport} from './services/c
 import {tmpdir} from 'os';
 import {Schema, SchemaExport} from './models/schema.model';
 import {findSchemaById, findSchemas, validateSchemaImport} from './services/schema.service';
-import {Translation, TranslationExport} from './models/translation.model';
-import {findTranslationById, findTranslations, validateTranslationImport} from './services/translation.service';
+import {Translation, TranslationExport, TranslationType} from './models/translation.model';
+import {
+  findTranslationById,
+  findTranslations,
+  validateTranslationFlatImport,
+  validateTranslationImport,
+} from './services/translation.service';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
@@ -109,13 +114,26 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
       }
     }
   } else if (task.kind === TaskKind.TRANSLATION_EXPORT) {
-    const metadata = await translationsExport(spaceId, taskId, task);
-    updateToFinished['file'] = {
-      name: `translation-export-${taskId}.llt.zip`,
-      size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
-    };
+    if (task.locale) {
+      const metadata = await translationsExportJsonFlat(spaceId, taskId, task);
+      updateToFinished['file'] = {
+        name: `translation-${task.locale}-export-${taskId}.json`,
+        size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+      };
+    } else {
+      const metadata = await translationsExport(spaceId, taskId, task);
+      updateToFinished['file'] = {
+        name: `translation-export-${taskId}.llt.zip`,
+        size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+      };
+    }
   } else if (task.kind === TaskKind.TRANSLATION_IMPORT) {
-    const errors = await translationsImport(spaceId, taskId);
+    let errors: any;
+    if (task.locale) {
+      errors = await translationsImportJsonFlat(spaceId, taskId, task);
+    } else {
+      errors = await translationsImport(spaceId, taskId);
+    }
     if (errors) {
       updateToFinished.status = TaskStatus.ERROR;
       if (errors === 'WRONG_METADATA') {
@@ -148,7 +166,7 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
           kind: AssetKind.FOLDER,
           name: asset.name,
           parentPath: asset.parentPath,
-        } as AssetExport);
+        } as AssetFolderExport);
       } else if (asset.kind === AssetKind.FILE) {
         exportAssets.push({
           id: doc.id,
@@ -160,7 +178,7 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
           size: asset.size,
           alt: asset.alt,
           metadata: asset.metadata,
-        } as AssetExport);
+        } as AssetFileExport);
       }
     });
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
@@ -516,7 +534,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
 }
 
 /**
- * contentExport Job
+ * translationsExport Job
  * @param {string} spaceId original task
  * @param {string} taskId original task
  * @param {Task} task original task
@@ -570,7 +588,38 @@ async function translationsExport(spaceId: string, taskId: string, task: Task): 
 }
 
 /**
- * content Import Job
+ * translationsExportJsonFlat Job
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
+ */
+async function translationsExportJsonFlat(spaceId: string, taskId: string, task: Task): Promise<any> {
+  const exportTranslations: Record<string, string> = {};
+  const translationsSnapshot = await findTranslations(spaceId, task.fromDate).get();
+  translationsSnapshot.docs.filter((it) => it.exists)
+    .forEach((doc) => {
+      const translation = doc.data() as Translation;
+      if (task.locale) {
+        const locale = translation.locales[task.locale];
+        if (locale) {
+          exportTranslations[translation.name] = locale;
+        }
+      }
+    });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
+    .save(
+      JSON.stringify(exportTranslations),
+      (err) => {
+        if (err) {
+          logger.error(err);
+        }
+      });
+  const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
+  return metadata;
+}
+
+/**
+ * translations Import Job
  * @param {string} spaceId original task
  * @param {string} taskId original task
  */
@@ -617,6 +666,67 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
       bulk.set(translationRef, add);
     }
     totalChanges++;
+  }
+  await bulk.close();
+  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
+  return undefined;
+}
+
+/**
+ * translations Import Job
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
+ */
+async function translationsImportJsonFlat(spaceId: string, taskId: string, task: Task): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  mkdirSync(tmpTaskFolder);
+  const jsonPath = `${tmpTaskFolder}/task.json`;
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: jsonPath});
+  const translations: Record<string, string> = JSON.parse(readFileSync(jsonPath).toString());
+  if (task.locale === undefined) return 'WRONG_METADATA';
+  const errors = validateTranslationFlatImport(translations);
+  if (errors) {
+    logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    return errors;
+  }
+  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(translations)}`);
+  const origTransMap = new Map<string, Translation>();
+  const origTransIdMap = new Map<string, string>();
+  const translationsSnapshot = await findTranslations(spaceId).get();
+  translationsSnapshot.docs.filter((it) => it.exists)
+    .forEach((it) => {
+      const tr = it.data() as Translation;
+      origTransMap.set(tr.name, tr);
+      origTransIdMap.set(tr.name, it.id);
+    });
+  let totalChanges = 0;
+  const bulk = firestoreService.bulkWriter();
+  for (const name of Object.getOwnPropertyNames(translations)) {
+    const ot = origTransMap.get(name);
+    const oid = origTransIdMap.get(name);
+    if (ot && oid) {
+      // update
+      if (ot.locales[task.locale] !== translations[name]) {
+        const update: UpdateData<Translation> = {
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        update[`locales.${task.locale}`] = translations[name];
+        bulk.update(findTranslationById(spaceId, oid), update);
+        totalChanges++;
+      }
+    } else {
+      const add: any = {
+        name: name,
+        type: TranslationType.STRING,
+        locales: {},
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      add.locales[task.locale] = translations[name];
+      bulk.set(firestoreService.collection(`spaces/${spaceId}/translations`).doc(), add);
+      totalChanges++;
+    }
   }
   await bulk.close();
   logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
