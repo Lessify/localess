@@ -47,6 +47,7 @@ import {CanUserPerformPipe} from '@shared/pipes/can-user-perform.pipe';
 import {DigitalStorePipe} from '@shared/pipes/digital-store.pipe';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {DragDropModule} from '@angular/cdk/drag-drop';
+import {TimeDurationPipe} from '@shared/pipes/time-duration.pipe';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -88,6 +89,7 @@ const MATERIAL_MODULES: any[] = [
 const SHARED_PIPES: any[] = [
   CanUserPerformPipe,
   DigitalStorePipe,
+  TimeDurationPipe,
   TranslationFilterPipe
 ]
 

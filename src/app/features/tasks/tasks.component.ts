@@ -28,6 +28,7 @@ export class TasksComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
+  now = Date.now();
   isLoading: boolean = true;
   dataSource: MatTableDataSource<Task> = new MatTableDataSource<Task>([]);
   displayedColumns: string[] = ['id', 'kind', 'status', 'file','description', 'createdAt', 'updatedAt', 'actions'];
@@ -115,11 +116,8 @@ export class TasksComponent implements OnInit, OnDestroy {
       });
   }
 
-
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
     this.destroy$.complete()
   }
-
-
 }

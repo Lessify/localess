@@ -47,6 +47,9 @@
           <div *ngIf="element.locale as locale">
             Locale : {{locale}}
           </div>
+          <div *ngIf="element.status === 'FINISHED'">
+            Duration : {{ (element.updatedAt.seconds - element.createdAt.seconds) | timeDuration}}
+          </div>
           <div *ngIf="element.message as message">
             Message : {{message}}
           </div>
@@ -67,7 +70,7 @@
         <button mat-icon-button (click)="onDownload(element)" [disabled]="element.file === undefined" matTooltip="Download">
           <mat-icon>download</mat-icon>
         </button>
-        <button mat-icon-button (click)="openDeleteDialog(element)" [disabled]="element.status !== 'FINISHED'" matTooltip="Delete">
+        <button mat-icon-button (click)="openDeleteDialog(element)" [disabled]="element.status !== 'FINISHED' && (now - element.createdAt.toMillis()) < 600000" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

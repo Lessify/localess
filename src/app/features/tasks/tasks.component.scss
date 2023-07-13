@@ -15,6 +15,10 @@ mat-header-cell, mat-cell {
     max-width: 120px;
   }
 
+  &.mat-column-description {
+    max-width: 150px;
+  }
+
   &.mat-column-createdAt {
     max-width: 220px;
   }

@@ -2,7 +2,7 @@ import {logger} from 'firebase-functions/v2';
 import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firestore';
 import {Task, TaskExportMetadata, TaskKind, TaskStatus} from './models/task.model';
 import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
-import {bucket, firestoreService} from './config';
+import {BATCH_MAX, bucket, firestoreService} from './config';
 import {Asset, AssetExport, AssetFile, AssetFileExport, AssetFolder, AssetFolderExport, AssetKind} from './models/asset.model';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'fs';
 import {zip} from 'compressing';
@@ -33,14 +33,14 @@ const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
 // Firestore events
 export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async (event) => {
-  logger.info(`[Task::onTaskCreate] eventId='${event.id}'`);
-  logger.info(`[Task::onTaskCreate] params='${JSON.stringify(event.params)}'`);
-  logger.info(`[Task::onTaskCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
+  logger.info(`[Task:onCreate] eventId='${event.id}'`);
+  logger.info(`[Task:onCreate] params='${JSON.stringify(event.params)}'`);
+  logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
   const {spaceId, taskId} = event.params;
   // No Data
   if (!event.data) return;
   const task = event.data.data() as Task;
-  logger.info(`[Task::onTaskCreate] task='${JSON.stringify(task)}'`);
+  logger.info(`[Task:onCreate] task='${JSON.stringify(task)}'`);
   // Proceed only with INITIATED Tasks
   if (task.status !== TaskStatus.INITIATED) return;
 
@@ -56,7 +56,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     }
   }
   // Update to IN_PROGRESS
-  logger.info(`[Task::onTaskCreate] update='${JSON.stringify(updateToInProgress)}'`);
+  logger.info(`[Task:onCreate] update='${JSON.stringify(updateToInProgress)}'`);
   await event.data.ref.update(updateToInProgress);
   // Run Task
   const updateToFinished: UpdateData<Task> = {
@@ -66,7 +66,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
 
   if (task.kind === TaskKind.ASSET_EXPORT) {
     const metadata = await assetsExport(spaceId, taskId, task);
-    logger.info(`[Task::onTaskCreate] metadata='${JSON.stringify(metadata)}'`);
+    logger.info(`[Task:onCreate] metadata='${JSON.stringify(metadata)}'`);
     updateToFinished['file'] = {
       name: `asset-export-${taskId}.lla.zip`,
       size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
@@ -144,7 +144,7 @@ export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}',
     }
   }
   // Export Finished
-  logger.info(`[Task::onTaskCreate] update='${JSON.stringify(updateToFinished)}'`);
+  logger.info(`[Task:onCreate] update='${JSON.stringify(updateToFinished)}'`);
   await event.data.ref.update(updateToFinished);
 });
 
@@ -235,12 +235,13 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
   if (fileMetadata.kind !== 'ASSET') return 'WRONG_METADATA';
   const errors = validateAssetImport(assets);
   if (errors) {
-    logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
     return errors;
   }
-  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(assets)}`);
+  logger.info(`[Task:onCreate] valid=${assets.length}`);
   let totalChanges = 0;
-  const bulk = firestoreService.bulkWriter();
+  let count = 0;
+  let batch = firestoreService.batch();
   for (const asset of assets as AssetExport[]) {
     const assetRef = findAssetById(spaceId, asset.id);
     const assetSnapshot = await assetRef.get();
@@ -264,11 +265,9 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
       // Optional Fields
       if (asset.alt) add.alt = asset.alt;
       if (asset.metadata) add.metadata = asset.metadata;
-      bulk.set(assetRef, add)
-        .then(() => {
-          logger.info(`[Task::onTaskCreate] Save File ${asset.id}`);
-          bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(assetTmpPath));
-        });
+      batch.set(assetRef, add);
+      logger.info(`[Task:onCreate] Save File ${asset.id}`);
+      bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(assetTmpPath));
     } else if (asset.kind === AssetKind.FOLDER) {
       const add: WithFieldValue<AssetFolder> = {
         kind: AssetKind.FOLDER,
@@ -277,12 +276,23 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       };
-      bulk.set(assetRef, add);
+      batch.set(assetRef, add);
     }
     totalChanges++;
+    count++;
+    if (count === BATCH_MAX ) {
+      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
   }
-  await bulk.close();
-  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate] end remaining: ' + count);
+  if (count > 0) {
+    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+    await batch.commit();
+  }
+  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -364,12 +374,13 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
   if (fileMetadata.kind !== 'CONTENT') return 'WRONG_METADATA';
   const errors = validateContentImport(contents);
   if (errors) {
-    logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
     return errors;
   }
-  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(contents)}`);
+  logger.info(`[Task:onCreate] valid=${contents.length}`);
   let totalChanges = 0;
-  const bulk = firestoreService.bulkWriter();
+  let count = 0;
+  let batch = firestoreService.batch();
   for (const content of contents as ContentExport[]) {
     const contentRef = findContentById(spaceId, content.id);
     const contentSnapshot = await contentRef.get();
@@ -386,7 +397,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
           updatedAt: FieldValue.serverTimestamp(),
         };
         if (content.data) update.data = content.data;
-        bulk.update(contentRef, update);
+        batch.update(contentRef, update);
       } else if (content.kind === ContentKind.FOLDER) {
         const update: UpdateData<ContentFolder> = {
           kind: ContentKind.FOLDER,
@@ -396,7 +407,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
           fullSlug: content.fullSlug,
           updatedAt: FieldValue.serverTimestamp(),
         };
-        bulk.update(contentRef, update);
+        batch.update(contentRef, update);
       }
     } else {
       // Add Content
@@ -412,7 +423,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
           updatedAt: FieldValue.serverTimestamp(),
         };
         if (content.data) add.data = content.data;
-        bulk.set(contentRef, add);
+        batch.set(contentRef, add);
       } else if (content.kind === ContentKind.FOLDER) {
         const add: WithFieldValue<ContentFolder> = {
           kind: ContentKind.FOLDER,
@@ -423,13 +434,24 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };
-        bulk.set(contentRef, add);
+        batch.set(contentRef, add);
       }
     }
     totalChanges++;
+    count++;
+    if (count === BATCH_MAX ) {
+      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
   }
-  await bulk.close();
-  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate] end remaining: ' + count);
+  if (count > 0) {
+    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+    await batch.commit();
+  }
+  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -497,12 +519,13 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
   if (fileMetadata.kind !== 'SCHEMA') return 'WRONG_METADATA';
   const errors = validateSchemaImport(schemas);
   if (errors) {
-    logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
     return errors;
   }
-  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(schemas)}`);
+  logger.info(`[Task:onCreate] valid=${schemas.length}`);
   let totalChanges = 0;
-  const bulk = firestoreService.bulkWriter();
+  let count = 0;
+  let batch = firestoreService.batch();
   for (const schema of schemas as SchemaExport[]) {
     const schemaRef = findSchemaById(spaceId, schema.id);
     const schemaSnapshot = await schemaRef.get();
@@ -514,7 +537,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
         fields: schema.fields || FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       };
-      bulk.update(schemaRef, update);
+      batch.update(schemaRef, update);
     } else {
       const add: WithFieldValue<Schema> = {
         name: schema.name,
@@ -524,12 +547,23 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
       };
       if (schema.displayName) add.displayName = schema.displayName;
       if (schema.fields) add.fields = schema.fields;
-      bulk.set(schemaRef, add);
+      batch.set(schemaRef, add);
     }
     totalChanges++;
+    count++;
+    if (count === BATCH_MAX ) {
+      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
   }
-  await bulk.close();
-  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate] end remaining: ' + count);
+  if (count > 0) {
+    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+    await batch.commit();
+  }
+  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -634,12 +668,13 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
   if (fileMetadata.kind !== 'TRANSLATION') return 'WRONG_METADATA';
   const errors = validateTranslationImport(translations);
   if (errors) {
-    logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
     return errors;
   }
-  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(translations)}`);
+  logger.info(`[Task:onCreate] valid=${translations.length}`);
   let totalChanges = 0;
-  const bulk = firestoreService.bulkWriter();
+  let count = 0;
+  let batch = firestoreService.batch();
   for (const translation of translations as TranslationExport[]) {
     const translationRef = findTranslationById(spaceId, translation.id);
     const translationSnapshot = await translationRef.get();
@@ -652,7 +687,7 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
         labels: translation.labels || FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       };
-      bulk.update(translationRef, update);
+      batch.update(translationRef, update);
     } else {
       const add: WithFieldValue<Translation> = {
         name: translation.name,
@@ -663,12 +698,23 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
       };
       if (translation.description) add.description = translation.description;
       if (translation.labels) add.labels = translation.labels;
-      bulk.set(translationRef, add);
+      batch.set(translationRef, add);
     }
     totalChanges++;
+    count++;
+    if (count === BATCH_MAX ) {
+      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
   }
-  await bulk.close();
-  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate] end remaining: ' + count);
+  if (count > 0) {
+    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+    await batch.commit();
+  }
+  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -687,10 +733,10 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
   if (task.locale === undefined) return 'WRONG_METADATA';
   const errors = validateTranslationFlatImport(translations);
   if (errors) {
-    logger.warn(`[Task::onTaskCreate] invalid=${JSON.stringify(errors)}`);
+    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
     return errors;
   }
-  logger.info(`[Task::onTaskCreate] valid=${JSON.stringify(translations)}`);
+  logger.info(`[Task:onCreate] valid=${Object.getOwnPropertyNames(translations).length}`);
   const origTransMap = new Map<string, Translation>();
   const origTransIdMap = new Map<string, string>();
   const translationsSnapshot = await findTranslations(spaceId).get();
@@ -701,7 +747,8 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
       origTransIdMap.set(tr.name, it.id);
     });
   let totalChanges = 0;
-  const bulk = firestoreService.bulkWriter();
+  let count = 0;
+  let batch = firestoreService.batch();
   for (const name of Object.getOwnPropertyNames(translations)) {
     const ot = origTransMap.get(name);
     const oid = origTransIdMap.get(name);
@@ -712,7 +759,7 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
           updatedAt: FieldValue.serverTimestamp(),
         };
         update[`locales.${task.locale}`] = translations[name];
-        bulk.update(findTranslationById(spaceId, oid), update);
+        batch.update(findTranslationById(spaceId, oid), update);
         totalChanges++;
       }
     } else {
@@ -724,18 +771,29 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
         updatedAt: FieldValue.serverTimestamp(),
       };
       add.locales[task.locale] = translations[name];
-      bulk.set(firestoreService.collection(`spaces/${spaceId}/translations`).doc(), add);
+      batch.set(firestoreService.collection(`spaces/${spaceId}/translations`).doc(), add);
       totalChanges++;
     }
+    count++;
+    if (count === BATCH_MAX ) {
+      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
   }
-  await bulk.close();
-  logger.info('[Task::onTaskCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate] end remaining: ' + count);
+  if (count > 0) {
+    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+    await batch.commit();
+  }
+  logger.info('[Task:onCreate] batch total changes : ' + totalChanges);
   return undefined;
 }
 
 export const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async (event) => {
-  logger.info(`[Task::onTaskDeleted] eventId='${event.id}'`);
-  logger.info(`[Task::onTaskDeleted] params='${JSON.stringify(event.params)}'`);
+  logger.info(`[Task:onTaskDeleted] eventId='${event.id}'`);
+  logger.info(`[Task:onTaskDeleted] params='${JSON.stringify(event.params)}'`);
   const {spaceId, taskId} = event.params;
   return bucket.deleteFiles({
     prefix: `spaces/${spaceId}/tasks/${taskId}`,
