@@ -242,6 +242,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
   let totalChanges = 0;
   let count = 0;
   let batch = firestoreService.batch();
+  const ids = new Map<string, string>();
   for (const asset of assets as AssetExport[]) {
     const assetRef = findAssetById(spaceId, asset.id);
     const assetSnapshot = await assetRef.get();
@@ -266,8 +267,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
       if (asset.alt) add.alt = asset.alt;
       if (asset.metadata) add.metadata = asset.metadata;
       batch.set(assetRef, add);
-      logger.info(`[Task:onCreate] Save File ${asset.id}`);
-      bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).save(readFileSync(assetTmpPath));
+      ids.set(asset.id, assetTmpPath);
     } else if (asset.kind === AssetKind.FOLDER) {
       const add: WithFieldValue<AssetFolder> = {
         kind: AssetKind.FOLDER,
@@ -285,12 +285,22 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
+      ids.forEach((value, key) => {
+        logger.info(`[Task:onCreate] Save File ${key}`);
+        bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
+      });
+      ids.clear();
     }
   }
   logger.info('[Task:onCreate] end remaining: ' + count);
   if (count > 0) {
     logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
     await batch.commit();
+    ids.forEach((value, key) => {
+      logger.info(`[Task:onCreate] Save File ${key}`);
+      bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
+    });
+    ids.clear();
   }
   logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
   return undefined;
