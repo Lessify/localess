@@ -255,7 +255,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
         kind: AssetKind.FILE,
         name: asset.name,
         parentPath: asset.parentPath,
-        uploaded: false,
+        inProgress: true,
         extension: asset.extension,
         type: asset.type,
         size: asset.size,

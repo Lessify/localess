@@ -89,7 +89,7 @@ export class AssetService {
     const extIdx = entity.name.lastIndexOf('.')
     let addEntity: AssetFileCreateFS = {
       kind: AssetKind.FILE,
-      uploaded: false,
+      inProgress: true,
       name: entity.name.substring(0, extIdx),
       extension: entity.name.substring(extIdx),
       type: entity.type,

@@ -23,7 +23,7 @@ export interface AssetFolder extends AssetBase {
 
 export interface AssetFile extends AssetBase {
   kind: AssetKind.FILE
-  uploaded: boolean,
+  inProgress?: boolean,
   extension: string,
   type: string,
   size: number,
@@ -38,7 +38,7 @@ export interface AssetMetadata {
 }
 
 export interface UpdateAssetUpload {
-  uploaded: true,
+  inProgress?: boolean,
   size?: number,
   metadata?: AssetMetadata
   updatedAt: FieldValue,
@@ -50,7 +50,7 @@ export interface AssetFolderExport extends Omit<AssetFolder, 'createdAt' | 'upda
   id: string,
 }
 
-export interface AssetFileExport extends Omit<AssetFile, 'createdAt' | 'updatedAt'> {
+export interface AssetFileExport extends Omit<AssetFile, 'createdAt' | 'updatedAt' | 'inProgress'> {
   id: string,
 }
 

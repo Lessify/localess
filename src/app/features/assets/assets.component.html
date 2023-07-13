@@ -81,12 +81,12 @@
       <mat-header-cell *matHeaderCellDef> Preview </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
-          <ng-container *ngIf="element.uploaded; else elseUploaded">
-            <img class="img-thumbnail" width="115" height="115" loading="lazy" alt="thumbnail"
-                 ngSrc="/api/v1/spaces/{{selectedSpace.id}}/assets/{{element.id}}"/>
+          <ng-container *ngIf="element.inProgress; else elseUploaded">
+            <mat-progress-spinner mode="indeterminate"/>
           </ng-container>
           <ng-template #elseUploaded>
-            <mat-progress-spinner mode="indeterminate"/>
+            <img class="img-thumbnail" width="115" height="115" loading="lazy" alt="thumbnail"
+                 ngSrc="/api/v1/spaces/{{selectedSpace.id}}/assets/{{element.id}}"/>
           </ng-template>
         </ng-container>
       </mat-cell>

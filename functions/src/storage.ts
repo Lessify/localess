@@ -14,7 +14,7 @@ export const onFileUpload = storage.onObjectFinalized(async (event) => {
     const assetPath = name.slice(0, -9); // remove '/original'
     const assetSnapshot = await firestoreService.doc(assetPath).get();
     const update: UpdateData<UpdateAssetUpload> = {
-      uploaded: true,
+      inProgress: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
     };
     if (contentType && contentType.startsWith('image/')) {
