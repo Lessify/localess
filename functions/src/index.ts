@@ -2,6 +2,7 @@ import {setGlobalOptions} from 'firebase-functions/v2';
 
 setGlobalOptions({
   timeoutSeconds: 10 * 60,
+  region: 'europe-west6',
 });
 
 export {onAssetDeleted} from './assets';
