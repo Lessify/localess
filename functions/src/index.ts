@@ -46,4 +46,4 @@ export {
   usersSync as userssync,
 } from './users';
 
-export {v1} from './v1';
+export {v1 as v2} from './v1';
