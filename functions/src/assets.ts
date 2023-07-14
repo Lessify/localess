@@ -1,6 +1,6 @@
 import {logger} from 'firebase-functions/v2';
-import {bucket, firestoreService} from './config';
 import {onDocumentDeleted} from 'firebase-functions/v2/firestore';
+import {bucket, firestoreService} from './config';
 import {Asset, AssetKind} from './models/asset.model';
 
 // Firestore events

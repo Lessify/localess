@@ -1,7 +1,7 @@
 import {logger} from 'firebase-functions/v2';
 import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firestore';
-import {Task, TaskExportMetadata, TaskKind, TaskStatus} from './models/task.model';
 import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
+import {Task, TaskExportMetadata, TaskKind, TaskStatus} from './models/task.model';
 import {BATCH_MAX, bucket, firestoreService} from './config';
 import {Asset, AssetExport, AssetFile, AssetFileExport, AssetFolder, AssetFolderExport, AssetKind} from './models/asset.model';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'fs';

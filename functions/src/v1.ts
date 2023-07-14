@@ -1,10 +1,10 @@
 import * as express from 'express';
 import * as cors from 'cors';
 import {https, logger} from 'firebase-functions';
+import {Query} from 'firebase-admin/firestore';
 import {bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
 import {Space} from './models/space.model';
 import {Content, ContentKind, ContentLink} from './models/content.model';
-import {Query} from 'firebase-admin/firestore';
 import {AssetFile} from './models/asset.model';
 import * as os from 'os';
 import * as sharp from 'sharp';

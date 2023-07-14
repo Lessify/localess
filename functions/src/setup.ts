@@ -1,6 +1,6 @@
 import {https, logger} from 'firebase-functions';
-import {authService, firestoreService} from './config';
 import {FieldValue} from 'firebase-admin/firestore';
+import {authService, firestoreService} from './config';
 
 interface Setup {
   displayName?: string | null

@@ -1,10 +1,10 @@
 import {EventContext, firestore, https, logger} from 'firebase-functions';
+import {FieldValue, QueryDocumentSnapshot} from 'firebase-admin/firestore';
 import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
 import {Content, ContentKind, ContentDocument, ContentDocumentStorage, PublishContentData} from './models/content.model';
 import {Schema} from './models/schema.model';
-import {FieldValue, QueryDocumentSnapshot} from 'firebase-admin/firestore';
 import {UserPermission} from './models/user.model';
 
 // Publish

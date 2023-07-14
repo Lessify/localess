@@ -1,7 +1,7 @@
 import {logger, storage} from 'firebase-functions/v2';
+import {FieldValue, UpdateData} from 'firebase-admin/firestore';
 import * as sharp from 'sharp';
 import {bucket, firestoreService} from './config';
-import {FieldValue, UpdateData} from 'firebase-admin/firestore';
 import {UpdateAssetUpload} from './models/asset.model';
 
 export const onFileUpload = storage.onObjectFinalized(async (event) => {

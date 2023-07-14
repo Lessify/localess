@@ -1,6 +1,6 @@
 import {auth, firestore, https, logger} from 'firebase-functions';
-import {authService, firestoreService} from './config';
 import {FieldValue} from 'firebase-admin/firestore';
+import {authService, firestoreService} from './config';
 import {SecurityUtils} from './utils/security-utils';
 import {UserInvite, UserPermission} from './models/user.model';
 
