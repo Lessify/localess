@@ -304,4 +304,4 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   }
 });
 
-export const v1 = onRequest({cors: true}, expressV1);
+export const v1 = onRequest(expressV1);
