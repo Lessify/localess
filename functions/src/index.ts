@@ -5,23 +5,45 @@ setGlobalOptions({
   region: 'europe-west6',
 });
 
-export {onAssetDeleted} from './assets';
+export {
+  onAssetDeleted as onassetdeleted,
+} from './assets';
 
-export {contentPublish, onContentUpdate, onContentDelete, onContentWrite} from './contents';
+export {
+  contentPublish as contentpublish,
+  onContentUpdate as oncontentupdate,
+  onContentDelete as oncontentdelete,
+  onContentWrite as oncontentwrite,
+} from './contents';
 
 export {setup} from './setup';
 
-// eslint-disable-next-line camelcase
-export * as space from './spaces';
+export {
+  onSpaceDelete as onspacedelete,
+} from './spaces';
 
-export {onFileUpload} from './storage';
+export {
+  onFileUpload as onfileupload,
+} from './storage';
 
-export {onTaskCreate, onTaskDeleted} from './tasks';
+export {
+  onTaskCreate as ontaskcreate,
+  onTaskDeleted as ontaskdeleted,
+} from './tasks';
 
 export {translate} from './translate';
 
-export {translationsPublish, onTranslationCreate} from './translations';
+export {
+  translationsPublish as translationspublish,
+  onTranslationCreate as ontranslationcreate,
+} from './translations';
 
-export {onAuthUserCreate, onUserUpdate, userInvite, onUserDelete, usersSync} from './users';
+export {
+  onAuthUserCreate as onauthusercreate,
+  onUserUpdate as onuserupdate,
+  userInvite as userinvite,
+  onUserDelete as onuserdelete,
+  usersSync as userssync,
+} from './users';
 
 export {v1} from './v1';

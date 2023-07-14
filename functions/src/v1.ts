@@ -1,7 +1,7 @@
 import * as express from 'express';
 import * as cors from 'cors';
 import {logger} from 'firebase-functions';
-import {onRequest,HttpsError} from 'firebase-functions/v2/https';
+import {onRequest, HttpsError} from 'firebase-functions/v2/https';
 import {Query} from 'firebase-admin/firestore';
 import {bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
 import {Space} from './models/space.model';
@@ -304,4 +304,4 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   }
 });
 
-export const v1 = onRequest(expressV1);
+export const v1 = onRequest({cors: true}, expressV1);
