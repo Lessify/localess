@@ -1,6 +1,6 @@
 import {logger} from 'firebase-functions/v2';
-import {onCall, HttpsError} from "firebase-functions/v2/https";
-import {onDocumentDeleted, onDocumentUpdated, onDocumentWritten} from "firebase-functions/v2/firestore";
+import {onCall, HttpsError} from 'firebase-functions/v2/https';
+import {onDocumentDeleted, onDocumentUpdated, onDocumentWritten} from 'firebase-functions/v2/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
 import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
@@ -8,9 +8,9 @@ import {Space} from './models/space.model';
 import {Content, ContentKind, ContentDocument, ContentDocumentStorage, PublishContentData} from './models/content.model';
 import {Schema} from './models/schema.model';
 import {UserPermission} from './models/user.model';
-import {findContentByFullSlug, findContentById} from "./services/content.service";
-import {findSpaceById} from "./services/space.service";
-import {findSchemas} from "./services/schema.service";
+import {findContentByFullSlug, findContentById} from './services/content.service';
+import {findSpaceById} from './services/space.service';
+import {findSchemas} from './services/schema.service';
 
 // Publish
 export const contentPublish = onCall<PublishContentData>(async (request) => {

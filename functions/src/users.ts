@@ -1,11 +1,11 @@
 import {auth, logger} from 'firebase-functions';
-import {onCall,HttpsError} from 'firebase-functions/v2/https';
-import {onDocumentDeleted, onDocumentUpdated} from "firebase-functions/v2/firestore";
+import {onCall, HttpsError} from 'firebase-functions/v2/https';
+import {onDocumentDeleted, onDocumentUpdated} from 'firebase-functions/v2/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
 import {authService} from './config';
 import {SecurityUtils} from './utils/security-utils';
 import {User, UserInvite, UserPermission} from './models/user.model';
-import {findUserById} from "./services/user.service";
+import {findUserById} from './services/user.service';
 
 export const onAuthUserCreate = auth.user()
   .onCreate((user, context) => {
@@ -53,7 +53,7 @@ export const userInvite = onCall<UserInvite>(async (request) => {
 });
 
 // TODO add use case for Deleted users from Firebase directly
-export const usersSync = onCall<any>(async (request) => {
+export const usersSync = onCall<never>(async (request) => {
   logger.info('[usersSync] data: ' + JSON.stringify(request.data));
   logger.info('[usersSync] context.auth: ' + JSON.stringify(request.auth));
   if (!SecurityUtils.canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
