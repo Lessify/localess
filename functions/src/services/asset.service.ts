@@ -4,6 +4,17 @@ import Ajv, {ErrorObject} from 'ajv';
 import {assetExportArraySchema} from '../models/asset.model';
 
 /**
+ * find Content by Full Slug
+ * @param {string} spaceId Space identifier
+ * @param {string} parentPath Full Slug path
+ * @return {Query} document reference to the space
+ */
+export function findAssetsByParentPath(spaceId: string, parentPath: string): Query {
+  return firestoreService.collection(`spaces/${spaceId}/assets`)
+    .where('parentPath', '==', parentPath);
+}
+
+/**
  * find Assets
  * @param {string} spaceId Space identifier
  * @param {number} fromDate Space identifier

@@ -1,4 +1,5 @@
-import {https, logger} from 'firebase-functions/v2';
+import {logger} from 'firebase-functions/v2';
+import {onCall,HttpsError} from 'firebase-functions/v2/https';
 import {onDocumentCreated} from 'firebase-functions/v2/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
 import {protos} from '@google-cloud/translate';
@@ -6,7 +7,6 @@ import {SecurityUtils} from './utils/security-utils';
 import {
   bucket,
   firebaseConfig,
-  firestoreService,
   SUPPORT_LOCALES,
   translationService,
 } from './config';
@@ -14,15 +14,17 @@ import {Space} from './models/space.model';
 import {PublishTranslationsData, Translation} from './models/translation.model';
 import {UserPermission} from './models/user.model';
 import {findSpaceById} from './services/space.service';
+import {findTranslations} from './services/translation.service';
 
 
 // Publish
-export const translationsPublish = https.onCall<PublishTranslationsData>(async (request) => {
+export const translationsPublish = onCall<PublishTranslationsData>(async (request) => {
   logger.info('[translationsPublish] data: ' + JSON.stringify(request.data));
   logger.info('[translationsPublish] context.auth: ' + JSON.stringify(request.auth));
-  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_PUBLISH, request.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
-  const spaceSnapshot = await firestoreService.doc(`spaces/${request.data.spaceId}`).get();
-  const translationsSnapshot = await firestoreService.collection(`spaces/${request.data.spaceId}/translations`).get();
+  const {spaceId} = request.data
+  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  const translationsSnapshot = await findTranslations(spaceId).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {
     const space: Space = spaceSnapshot.data() as Space;
     const translations = translationsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
@@ -40,25 +42,25 @@ export const translationsPublish = https.onCall<PublishTranslationsData>(async (
         localeStorage[tr.name] = value;
       }
       // Save generated JSON
-      logger.info(`[translationsPublish] Save file to spaces/${request.data.spaceId}/translations/${locale.id}.json`);
-      bucket.file(`spaces/${request.data.spaceId}/translations/${locale.id}.json`)
+      logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
+      bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`)
         .save(
           JSON.stringify(localeStorage),
           (err?: Error | null) => {
             if (err) {
-              logger.error(`[translationsPublish] Can not save file for Space(${request.data.spaceId}) and Locale(${locale})`);
+              logger.error(`[translationsPublish] Can not save file for Space(${spaceId}) and Locale(${locale})`);
               logger.error(err);
             }
           }
         );
     }
     // Save Cache
-    logger.info(`[translationsPublish] Save file to spaces/${request.data.spaceId}/translations/cache.json`);
-    await bucket.file(`spaces/${request.data.spaceId}/translations/cache.json`).save('');
+    logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/cache.json`);
+    await bucket.file(`spaces/${spaceId}/translations/cache.json`).save('');
     return;
   } else {
-    logger.info(`[translationsPublish] Space ${request.data.spaceId} does not exist or no translations.`);
-    throw new https.HttpsError('not-found', 'Space not found');
+    logger.info(`[translationsPublish] Space ${spaceId} does not exist or no translations.`);
+    throw new HttpsError('not-found', 'Space not found');
   }
 });
 

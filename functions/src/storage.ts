@@ -1,10 +1,11 @@
-import {logger, storage} from 'firebase-functions/v2';
+import {logger} from 'firebase-functions/v2';
+import {onObjectFinalized} from 'firebase-functions/v2/storage';
 import {FieldValue, UpdateData} from 'firebase-admin/firestore';
 import * as sharp from 'sharp';
 import {bucket, firestoreService} from './config';
 import {UpdateAssetUpload} from './models/asset.model';
 
-export const onFileUpload = storage.onObjectFinalized(async (event) => {
+export const onFileUpload = onObjectFinalized(async (event) => {
   logger.info(`[Storage::onFileUpload] name : ${event.data.name}`);
   logger.info(event.data);
   const {name, contentType} = event.data;

@@ -2,6 +2,7 @@ import {logger} from 'firebase-functions/v2';
 import {onDocumentDeleted} from 'firebase-functions/v2/firestore';
 import {bucket, firestoreService} from './config';
 import {Asset, AssetKind} from './models/asset.model';
+import {findAssetsByParentPath} from './services/asset.service';
 
 // Firestore events
 export const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', async (event) => {
@@ -20,10 +21,8 @@ export const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetI
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
     const batch = firestoreService.batch();
-    const assetsSnapshot = await firestoreService
-      .collection(`spaces/${spaceId}/assets`)
-      .where('parentPath', '==', asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`)
-      .get();
+
+    const assetsSnapshot = await findAssetsByParentPath(spaceId,asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`).get();
     assetsSnapshot.docs
       .filter((it) => it.exists)
       .forEach((it) => batch.delete(it.ref));

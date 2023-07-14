@@ -1,6 +1,7 @@
 import * as express from 'express';
 import * as cors from 'cors';
-import {https, logger} from 'firebase-functions';
+import {logger} from 'firebase-functions';
+import {onRequest,HttpsError} from 'firebase-functions/v2/https';
 import {Query} from 'firebase-admin/firestore';
 import {bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
 import {Space} from './models/space.model';
@@ -35,7 +36,7 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) =
         res
           .status(404)
           .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .send(new https.HttpsError('not-found', 'Space not found'));
+          .send(new HttpsError('not-found', 'Space not found'));
         return;
       }
       const space = spaceSnapshot.data() as Space;
@@ -53,13 +54,13 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) =
         .catch(() => {
           res
             .status(404)
-            .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+            .send(new HttpsError('not-found', 'File not found, Publish first.'));
         });
     }
   } else {
     res
       .status(404)
-      .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+      .send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -91,7 +92,7 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
         res
           .status(404)
           .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .send(new https.HttpsError('not-found', 'Space not found'));
+          .send(new HttpsError('not-found', 'Space not found'));
         return;
       }
       let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
@@ -136,7 +137,7 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   } else {
     res
       .status(404)
-      .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+      .send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -156,7 +157,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
     // No records in database
     res
       .status(404)
-      .send(new https.HttpsError('not-found', 'Slug not found'));
+      .send(new HttpsError('not-found', 'Slug not found'));
     return;
   } else {
     contentId = contentsSnapshot.docs[0].id;
@@ -184,7 +185,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
         res
           .status(404)
           .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .send(new https.HttpsError('not-found', 'Space not found'));
+          .send(new HttpsError('not-found', 'Space not found'));
         return;
       }
       const space = spaceSnapshot.data() as Space;
@@ -202,13 +203,13 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
         .catch(() => {
           res
             .status(404)
-            .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+            .send(new HttpsError('not-found', 'File not found, Publish first.'));
         });
     }
   } else {
     res
       .status(404)
-      .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+      .send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -237,7 +238,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =>
         res
           .status(404)
           .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .send(new https.HttpsError('not-found', 'Space not found'));
+          .send(new HttpsError('not-found', 'Space not found'));
         return;
       }
       const space = spaceSnapshot.data() as Space;
@@ -255,13 +256,13 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =>
         .catch(() => {
           res
             .status(404)
-            .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+            .send(new HttpsError('not-found', 'File not found, Publish first.'));
         });
     }
   } else {
     res
       .status(404)
-      .send(new https.HttpsError('not-found', 'File not found, Publish first.'));
+      .send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -298,9 +299,9 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     res
       .status(404)
       .header('Cache-Control', 'no-cache')
-      .send(new https.HttpsError('not-found', 'Asset not found.'));
+      .send(new HttpsError('not-found', 'Asset not found.'));
     return;
   }
 });
 
-export const v1 = https.onRequest(expressV1);
+export const v1 = onRequest(expressV1);
