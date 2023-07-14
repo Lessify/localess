@@ -16,7 +16,6 @@ import {
 } from '@angular/fire/firestore';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {userInvite, usersSync} from '../../../../functions/src';
 
 @Injectable()
 export class UserService {

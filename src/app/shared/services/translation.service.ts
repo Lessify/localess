@@ -24,8 +24,6 @@ import {
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {translationsPublish} from '../../../../functions/src';
-
 
 @Injectable()
 export class TranslationService {
