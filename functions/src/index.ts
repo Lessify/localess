@@ -12,7 +12,7 @@ export {contentPublish, onContentUpdate, onContentDelete, onContentWrite} from '
 export {setup} from './setup';
 
 // eslint-disable-next-line camelcase
-export {onSpaceDelete as on_space_delete} from './spaces';
+export * as space from './spaces';
 
 export {onFileUpload} from './storage';
 
