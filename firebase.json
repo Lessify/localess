@@ -40,7 +40,7 @@
       },
       {
         "source": "/api/translationsPublish",
-        "function": "translationsPublish"
+        "function": "translationspublish"
       },
       {
         "source": "/api/setup",
@@ -48,15 +48,15 @@
       },
       {
         "source": "/api/userInvite",
-        "function": "userInvite"
+        "function": "userinvite"
       },
       {
         "source": "/api/usersSync",
-        "function": "usersSync"
+        "function": "userssync"
       },
       {
         "source": "/api/contentPublish",
-        "function": "contentPublish"
+        "function": "contentpublish"
       },
       {
         "source": "**",
