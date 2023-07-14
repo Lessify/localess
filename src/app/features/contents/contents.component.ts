@@ -45,6 +45,11 @@ import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.co
 import {AddFolderDialogModel} from './add-folder-dialog/add-folder-dialog.model';
 import {EditDialogComponent} from './edit-dialog/edit-dialog.component';
 import {EditDialogModel} from './edit-dialog/edit-dialog.model';
+import {ExportDialogComponent} from './export-dialog/export-dialog.component';
+import {ExportDialogModel, ExportDialogReturn} from './export-dialog/export-dialog.model';
+import {TaskService} from '@shared/services/task.service';
+import {ImportDialogComponent} from './import-dialog/import-dialog.component';
+import {ImportDialogModel, ImportDialogReturn} from './import-dialog/import-dialog.model';
 
 @Component({
   selector: 'll-contents',
@@ -83,6 +88,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
     private readonly schemasService: SchemaService,
     private readonly contentService: ContentService,
     private readonly spaceService: SpaceService,
+    private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
@@ -307,5 +313,67 @@ export class ContentsComponent implements OnInit, OnDestroy {
   openLinksInNewTab() {
     const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/links`
     window.open(url, '_blank')
+  }
+
+  openImportDialog() {
+    this.dialog
+      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
+        ImportDialogComponent,
+        {
+          width: '500px',
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        tap(console.log),
+        switchMap(it =>
+          this.taskService.createContentImportTask(this.selectedSpace!.id, it!.file)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(
+            'Content Import Task has been created.',
+            [
+              {label: 'To Tasks', link: '/features/tasks'}
+            ]
+          );
+        },
+        error: () => {
+          this.notificationService.error('Content Import Task can not be created.');
+        }
+      });
+  }
+
+  openExportDialog() {
+    this.dialog
+      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
+        ExportDialogComponent,
+        {
+          width: '500px',
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.taskService.createContentExportTask(this.selectedSpace!.id, it?.fromDate)
+        )
+      )
+      .subscribe({
+        next: (result) => {
+          this.notificationService.success(
+            'Content Export Task has been created.',
+            [
+              {label: 'To Tasks', link: '/features/tasks'}
+            ]
+          );
+        },
+        error: (err) => {
+          console.error(err)
+          this.notificationService.error('Content Export Task can not be created.');
+        }
+      });
   }
 }

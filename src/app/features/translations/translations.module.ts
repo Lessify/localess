@@ -28,14 +28,11 @@ import {
 import {
   TranslationPluralViewComponent
 } from './translation-plural-view/translation-plural-view.component';
-import {
-  TranslationExportDialogComponent
-} from './translation-export-dialog/translation-export-dialog.component';
-import {
-  TranslationImportDialogComponent
-} from './translation-import-dialog/translation-import-dialog.component';
 import {TranslateService} from '@shared/services/translate.service';
 import {LocaleService} from '@shared/services/locale.service';
+import {TaskService} from '@shared/services/task.service';
+import {ExportDialogComponent} from './export-dialog/export-dialog.component';
+import {ImportDialogComponent} from './import-dialog/import-dialog.component';
 
 
 @NgModule({
@@ -49,11 +46,11 @@ import {LocaleService} from '@shared/services/locale.service';
     TranslationStringViewComponent,
     TranslationAddDialogComponent,
     TranslationEditDialogComponent,
-    TranslationExportDialogComponent,
-    TranslationImportDialogComponent
+    ExportDialogComponent,
+    ImportDialogComponent
   ],
   imports: [SharedModule, TranslationsRoutingModule],
-  providers: [TranslationService, TranslateService, LocaleService]
+  providers: [TranslationService, TranslateService, LocaleService, TaskService]
 })
 export class TranslationsModule {
 }

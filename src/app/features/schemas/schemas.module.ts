@@ -10,11 +10,12 @@ import {AddDialogComponent} from './add-dialog/add-dialog.component';
 import {EditFieldComponent} from './edit-field/edit-field.component';
 import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
 import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
+import {TaskService} from "@shared/services/task.service";
 
 @NgModule({
   declarations: [SchemasComponent, AddDialogComponent, EditFieldComponent, EditComponent, ExportDialogComponent, ImportDialogComponent],
   imports: [SharedModule, SchemasRoutingModule],
-  providers: [SpaceService, SchemaService]
+  providers: [SpaceService, SchemaService, TaskService]
 })
 export class SchemasModule {
 }

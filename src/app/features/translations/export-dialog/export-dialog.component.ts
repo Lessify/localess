@@ -1,17 +1,17 @@
 import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {TranslationExportDialogModel} from './translation-export-dialog.model';
+import {ExportDialogModel} from './export-dialog.model';
 import {KeyValue} from '@angular/common';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 
 @Component({
   selector: 'll-translation-export-dialog',
-  templateUrl: './translation-export-dialog.component.html',
-  styleUrls: ['./translation-export-dialog.component.scss'],
+  templateUrl: './export-dialog.component.html',
+  styleUrls: ['./export-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TranslationExportDialogComponent {
+export class ExportDialogComponent {
 
   today = new Date
 
@@ -28,7 +28,7 @@ export class TranslationExportDialogComponent {
 
   constructor(
     private readonly fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: TranslationExportDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: ExportDialogModel
   ) {
   }
 

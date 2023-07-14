@@ -1,18 +1,24 @@
-export {onAssetDelete} from './assets';
+import {setGlobalOptions} from 'firebase-functions/v2';
+
+setGlobalOptions({
+  timeoutSeconds: 10 * 60,
+});
+
+export {onAssetDeleted} from './assets';
 
 export {contentPublish, onContentUpdate, onContentDelete, onContentWrite} from './contents';
 
 export {setup} from './setup';
 
-export {schemasExport, schemasImport} from './schemas';
-
 export {onSpaceDelete} from './spaces';
 
 export {onFileUpload} from './storage';
 
+export {onTaskCreate, onTaskDeleted} from './tasks';
+
 export {translate} from './translate';
 
-export {translationsPublish, translationsExport, translationsImport, onTranslationCreate} from './translations';
+export {translationsPublish, onTranslationCreate} from './translations';
 
 export {onAuthUserCreate, onUserUpdate, userInvite, onUserDelete, usersSync} from './users';
 

@@ -1,9 +1,9 @@
 import {Timestamp} from 'firebase-admin/firestore';
+import {JSONSchemaType} from 'ajv';
 
 export type Content = ContentDocument | ContentFolder;
 
 export interface ContentBase {
-  id: string,
   kind: ContentKind,
   name: string,
   slug: string
@@ -65,3 +65,54 @@ export interface ContentLink {
   updatedAt: string;
   publishedAt?: string;
 }
+
+export interface ContentFolderExport extends Omit<ContentFolder, 'createdAt' | 'updatedAt'> {
+  id: string,
+}
+
+export interface ContentDocumentExport extends Omit<ContentDocument, 'createdAt' | 'updatedAt'> {
+  id: string,
+}
+
+export type ContentExport = ContentDocumentExport | ContentFolderExport;
+
+export const assetExportArraySchema: JSONSchemaType<ContentExport[]> = {
+  type: 'array',
+  items: {
+    type: 'object',
+    discriminator: {propertyName: 'kind'},
+    required: ['kind', 'id', 'name', 'slug', 'parentSlug', 'fullSlug'],
+    oneOf: [
+      {
+        properties: {
+          id: {type: 'string', nullable: false},
+          kind: {const: 'FOLDER'},
+          name: {type: 'string', nullable: false},
+          slug: {type: 'string', nullable: false},
+          parentSlug: {type: 'string', nullable: false},
+          fullSlug: {type: 'string', nullable: false},
+        },
+        additionalProperties: false,
+      },
+      {
+        properties: {
+          id: {type: 'string', nullable: false},
+          kind: {const: 'DOCUMENT'},
+          name: {type: 'string', nullable: false},
+          slug: {type: 'string', nullable: false},
+          parentSlug: {type: 'string', nullable: false},
+          fullSlug: {type: 'string', nullable: false},
+          schema: {type: 'string', nullable: false},
+          data: {
+            type: 'object',
+            properties: {
+              _id: {type: 'string'},
+              schema: {type: 'string'},
+            },
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+};

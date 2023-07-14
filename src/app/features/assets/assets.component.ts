@@ -35,6 +35,11 @@ import {AddFolderDialogModel} from './add-folder-dialog/add-folder-dialog.model'
 import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.component';
 import {EditFolderDialogComponent} from './edit-folder-dialog/edit-folder-dialog.component';
 import {EditFolderDialogModel} from './edit-folder-dialog/edit-folder-dialog.model';
+import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
+import {ImportDialogModel, ImportDialogReturn} from "./import-dialog/import-dialog.model";
+import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
+import {ExportDialogModel, ExportDialogReturn} from "./export-dialog/export-dialog.model";
+import {TaskService} from "@shared/services/task.service";
 
 @Component({
   selector: 'll-assets',
@@ -46,7 +51,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
   @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
 
-  isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt'];
@@ -64,11 +68,15 @@ export class AssetsComponent implements OnInit, OnDestroy {
   // Subscriptions
   private destroy$ = new Subject();
 
+  // Loading
+  isLoading: boolean = true;
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly assetService: AssetService,
     private readonly spaceService: SpaceService,
+    private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
@@ -203,7 +211,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       .pipe(
         filter((it) => it || false),
         switchMap(_ =>
-          this.assetService.delete(this.selectedSpace!.id, element)
+          this.assetService.delete(this.selectedSpace!.id, element.id)
         )
       )
       .subscribe({
@@ -284,4 +292,67 @@ export class AssetsComponent implements OnInit, OnDestroy {
   filePreview(type: string): boolean {
     return type.startsWith('image/');
   }
+
+  openImportDialog() {
+    this.dialog
+      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
+        ImportDialogComponent,
+        {
+          width: '500px',
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        tap(console.log),
+        switchMap(it =>
+          this.taskService.createAssetImportTask(this.selectedSpace!.id, it!.file)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(
+            'Assets Import Task has been created.',
+            [
+              {label: 'To Tasks', link: '/features/tasks'}
+            ]
+          );
+        },
+        error: () => {
+          this.notificationService.error('Assets Import Task can not be created.');
+        }
+      });
+  }
+
+  openExportDialog() {
+    this.dialog
+      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
+        ExportDialogComponent,
+        {
+          width: '500px',
+        }
+      )
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.taskService.createAssetExportTask(this.selectedSpace!.id, it?.fromDate)
+        )
+      )
+      .subscribe({
+        next: (result) => {
+          this.notificationService.success(
+            'Assets Export Task has been created.',
+            [
+              {label: 'To Tasks', link: '/features/tasks'}
+            ]
+          );
+        },
+        error: (err) => {
+          console.error(err)
+          this.notificationService.error('Assets Export Task can not be created.');
+        }
+      });
+  }
+
 }

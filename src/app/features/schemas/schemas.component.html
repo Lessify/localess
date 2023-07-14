@@ -8,21 +8,16 @@
       Add Schema
     </button>
 
-
-    <button
-      mat-icon-button
-      [matMenuTriggerFor]="extraMenu">
+    <button mat-icon-button [matMenuTriggerFor]="extraMenu">
       <mat-icon>more_vert</mat-icon>
     </button>
 
     <mat-menu #extraMenu="matMenu">
-      <button *ngIf="'SCHEMA_IMPORT' | canUserPerform | async"
-              mat-menu-item (click)="openImportDialog()">
+      <button *ngIf="'SCHEMA_IMPORT' | canUserPerform | async" mat-menu-item (click)="openImportDialog()">
         <mat-icon>cloud_upload</mat-icon>
         <span>Import</span>
       </button>
-      <button *ngIf="'SCHEMA_EXPORT' | canUserPerform | async"
-              mat-menu-item (click)="openExportDialog()">
+      <button *ngIf="'SCHEMA_EXPORT' | canUserPerform | async" mat-menu-item (click)="openExportDialog()">
         <mat-icon>cloud_download</mat-icon>
         <span>Export</span>
       </button>

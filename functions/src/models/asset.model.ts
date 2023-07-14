@@ -1,4 +1,5 @@
 import {FieldValue, Timestamp} from 'firebase-admin/firestore';
+import {JSONSchemaType} from 'ajv';
 
 export type Asset = AssetFile | AssetFolder;
 
@@ -8,7 +9,6 @@ export enum AssetKind {
 }
 
 export interface AssetBase {
-  id: string,
   kind: AssetKind,
   name: string,
   parentPath: string,
@@ -23,6 +23,7 @@ export interface AssetFolder extends AssetBase {
 
 export interface AssetFile extends AssetBase {
   kind: AssetKind.FILE
+  inProgress?: boolean,
   extension: string,
   type: string,
   size: number,
@@ -37,8 +38,64 @@ export interface AssetMetadata {
 }
 
 export interface UpdateAssetUpload {
-  uploaded: true,
+  inProgress?: boolean,
   size?: number,
   metadata?: AssetMetadata
   updatedAt: FieldValue,
 }
+
+// Import and Export
+
+export interface AssetFolderExport extends Omit<AssetFolder, 'createdAt' | 'updatedAt'> {
+  id: string,
+}
+
+export interface AssetFileExport extends Omit<AssetFile, 'createdAt' | 'updatedAt' | 'inProgress'> {
+  id: string,
+}
+
+export type AssetExport = AssetFileExport | AssetFolderExport;
+
+export const assetExportArraySchema: JSONSchemaType<AssetExport[]> = {
+  type: 'array',
+  items: {
+    type: 'object',
+    discriminator: {propertyName: 'kind'},
+    required: ['kind', 'id', 'name', 'parentPath'],
+    oneOf: [
+      {
+        properties: {
+          id: {type: 'string', nullable: false},
+          kind: {const: 'FOLDER'},
+          name: {type: 'string', nullable: false},
+          parentPath: {type: 'string', nullable: false},
+        },
+        // required: ['id', 'name', 'parentPath'],
+        additionalProperties: false,
+      },
+      {
+        properties: {
+          id: {type: 'string', nullable: false},
+          kind: {const: 'FILE'},
+          name: {type: 'string', nullable: false},
+          parentPath: {type: 'string', nullable: false},
+          extension: {type: 'string', nullable: false},
+          type: {type: 'string', nullable: false},
+          size: {type: 'integer', nullable: false},
+          alt: {type: 'string'},
+          metadata: {
+            type: 'object',
+            properties: {
+              format: {type: 'string'},
+              width: {type: 'integer'},
+              height: {type: 'integer'},
+            },
+            additionalProperties: false,
+          },
+          // required: ['id', 'name', 'parentPath'],
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+};

@@ -195,26 +195,3 @@ export interface SchemaUpdateFS {
   fields?: SchemaField[];
   updatedAt: FieldValue;
 }
-
-
-// Export and Export
-export interface SchemasExportData {
-  spaceId: string
-  /**
-   * number of milliseconds.
-   */
-  fromDate?: number
-}
-
-export interface SchemasImportData {
-  spaceId: string
-  schemas: SchemaExportImport[]
-}
-
-export interface SchemaExportImport {
-  id: string;
-  name: string;
-  type: SchemaType;
-  displayName?: string;
-  fields?: SchemaField[];
-}

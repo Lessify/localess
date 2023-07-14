@@ -1,3 +1,35 @@
+import {Timestamp} from 'firebase-admin/firestore';
+
+export interface User {
+  /**
+   * The user's `uid`.
+   */
+  readonly id: string;
+  /**
+   * The user's primary email, if set.
+   */
+  readonly email?: string;
+  /**
+   * The user's display name.
+   */
+  readonly displayName?: string;
+  /**
+   * The user's photo URL.
+   */
+  readonly photoURL?: string;
+  /**
+   * Whether or not the user is disabled: true for disabled; false for enabled.
+   */
+  readonly disabled: boolean;
+
+  readonly role?: UserRole;
+
+  readonly permissions?: string[];
+
+  readonly createdAt: Timestamp;
+  readonly updatedAt: Timestamp;
+}
+
 export interface UserInvite {
   displayName?: string
   email: string
@@ -28,5 +60,13 @@ export enum UserPermission {
   CONTENT_CREATE = 'CONTENT_CREATE',
   CONTENT_UPDATE = 'CONTENT_UPDATE',
   CONTENT_DELETE = 'CONTENT_DELETE',
-  CONTENT_PUBLISH = 'CONTENT_PUBLISH'
+  CONTENT_PUBLISH = 'CONTENT_PUBLISH',
+  CONTENT_EXPORT = 'CONTENT_EXPORT',
+  CONTENT_IMPORT = 'CONTENT_IMPORT',
+  ASSET_READ = 'ASSET_READ',
+  ASSET_CREATE = 'ASSET_CREATE',
+  ASSET_UPDATE = 'ASSET_UPDATE',
+  ASSET_DELETE = 'ASSET_DELETE',
+  ASSET_EXPORT = 'ASSET_EXPORT',
+  ASSET_IMPORT = 'ASSET_IMPORT',
 }

@@ -5,8 +5,8 @@
       <mat-label>Role</mat-label>
       <mat-select formControlName="role">
         <mat-option [value]="undefined">None</mat-option>
-        <mat-option value="custom">Custom</mat-option>
-        <mat-option value="admin">Admin</mat-option>
+        <mat-option [value]="'custom'">Custom</mat-option>
+        <mat-option [value]="'admin'">Admin</mat-option>
       </mat-select>
       <mat-error *ngIf="form.controls['role'].errors as errors">{{fe.errors(errors)}}</mat-error>
     </mat-form-field>
@@ -105,6 +105,14 @@
           <span matListItemTitle>Publish</span>
           <span matListItemLine>Publish Content.</span>
         </mat-list-option>
+        <mat-list-option value="CONTENT_EXPORT">
+          <span matListItemTitle>Export</span>
+          <span matListItemLine>Export Content.</span>
+        </mat-list-option>
+        <mat-list-option value="CONTENT_IMPORT">
+          <span matListItemTitle>Import</span>
+          <span matListItemLine>Import Content.</span>
+        </mat-list-option>
 
         <mat-divider></mat-divider>
         <div mat-subheader>Asset</div>
@@ -123,6 +131,14 @@
         <mat-list-option value="ASSET_DELETE">
           <span matListItemTitle>Delete</span>
           <span matListItemLine>Delete Asset.</span>
+        </mat-list-option>
+        <mat-list-option value="ASSET_EXPORT">
+          <span matListItemTitle>Export</span>
+          <span matListItemLine>Export Asset.</span>
+        </mat-list-option>
+        <mat-list-option value="ASSET_IMPORT">
+          <span matListItemTitle>Import</span>
+          <span matListItemLine>Import Asset.</span>
         </mat-list-option>
 
       </mat-selection-list>

@@ -123,11 +123,7 @@ export class ContentService {
       updatedAt: serverTimestamp()
     }
 
-    return from(
-      addDoc(collection(this.firestore, `spaces/${spaceId}/contents`),
-        addEntity
-      )
-    )
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity))
       .pipe(
         traceUntilFirst('Firestore:Contents:create'),
       );
@@ -144,11 +140,7 @@ export class ContentService {
       updatedAt: serverTimestamp()
     }
 
-    return from(
-      addDoc(collection(this.firestore, `spaces/${spaceId}/contents`),
-        addEntity
-      )
-    )
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity))
       .pipe(
         traceUntilFirst('Firestore:Contents:create'),
       );
@@ -162,11 +154,7 @@ export class ContentService {
       fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
       updatedAt: serverTimestamp()
     }
-    return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`),
-        update
-      )
-    )
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Contents:update'),
       );
@@ -178,11 +166,7 @@ export class ContentService {
       updatedAt: serverTimestamp()
     }
 
-    return from(
-      updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`),
-        update
-      )
-    )
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Contents:update'),
       );
@@ -211,9 +195,7 @@ export class ContentService {
       traceUntilFirst('Firestore:Contents:delete'),
     )*/
 
-    return from(
-      deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`))
-    )
+    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`)))
       .pipe(
         traceUntilFirst('Firestore:Contents:delete'),
       );

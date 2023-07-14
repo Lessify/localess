@@ -17,6 +17,21 @@
 
     </ng-container>
 
+    <button mat-icon-button [matMenuTriggerFor]="extraMenu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+
+    <mat-menu #extraMenu="matMenu">
+      <button *ngIf="'ASSET_IMPORT' | canUserPerform | async" mat-menu-item (click)="openImportDialog()">
+        <mat-icon>cloud_upload</mat-icon>
+        <span>Import</span>
+      </button>
+      <button *ngIf="'ASSET_EXPORT' | canUserPerform | async" mat-menu-item (click)="openExportDialog()">
+        <mat-icon>cloud_download</mat-icon>
+        <span>Export</span>
+      </button>
+    </mat-menu>
+
   </mat-toolbar-row>
 </mat-toolbar>
 
@@ -66,12 +81,12 @@
       <mat-header-cell *matHeaderCellDef> Preview </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
-          <ng-container *ngIf="element.uploaded; else elseUploaded">
-            <img class="img-thumbnail" width="115" height="115" loading="lazy" alt="thumbnail"
-                 ngSrc="/api/v1/spaces/{{selectedSpace.id}}/assets/{{element.id}}"/>
+          <ng-container *ngIf="element.inProgress; else elseUploaded">
+            <mat-progress-spinner mode="indeterminate"/>
           </ng-container>
           <ng-template #elseUploaded>
-            <mat-progress-spinner mode="indeterminate"/>
+            <img class="img-thumbnail" width="115" height="115" loading="lazy" alt="thumbnail"
+                 ngSrc="/api/v1/spaces/{{selectedSpace.id}}/assets/{{element.id}}"/>
           </ng-template>
         </ng-container>
       </mat-cell>

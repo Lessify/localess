@@ -2,27 +2,7 @@ table {
   width: 100%;
 }
 
-mat-header-cell {
-
-  &.mat-column-type {
-    max-width: 120px;
-  }
-
-  &.mat-column-createdAt {
-    max-width: 220px;
-  }
-
-  &.mat-column-updatedAt {
-    max-width: 220px;
-  }
-
-  &.mat-column-actions {
-    max-width: 100px;
-  }
-}
-
-mat-cell {
-  cursor: pointer;
+mat-header-cell, mat-cell {
 
   &.mat-column-type {
     max-width: 120px;

@@ -3,7 +3,7 @@
   <form [formGroup]="form" class="step-container">
     <mat-form-field>
       <mat-label>Type</mat-label>
-      <mat-select formControlName="kind" required (selectionChange)="onKindSelectionChange()">
+      <mat-select formControlName="kind" required (selectionChange)="onKindSelectionChange($event)">
         <mat-option *ngFor="let kind of exportKinds" [value]="kind.key">
           {{kind.value}}
         </mat-option>
@@ -19,23 +19,21 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-checkbox formControlName="onlyNewKeys">Add only new keys ?</mat-checkbox>
-    <br/>
     <button mat-stroked-button (click)="fileInput.click()">
       <mat-icon>upload_file</mat-icon>
       Upload File
     </button>
+    <br/>
     {{fileName}}
 
   </form>
-  <mat-error *ngIf="fileWrong">The selected file does not comply with import type.</mat-error>
+  <mat-error *ngIf="fileWrong">The selected file does not comply with import extension (<b>*{{fileAccept}}</b>).</mat-error>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
     <mat-icon>cloud_upload</mat-icon>
     Import
-    <ng-container *ngIf="contentFieldsCount > 0">({{contentFieldsCount}})</ng-container>
   </button>
 </mat-dialog-actions>
-<input hidden type="file" accept=".json" #fileInput (change)="onFileChange($event)"/>
+<input hidden type="file" [accept]="fileAccept" #fileInput (change)="onFileChange($event)"/>

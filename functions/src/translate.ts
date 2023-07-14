@@ -1,15 +1,17 @@
-import {https, logger} from 'firebase-functions';
+import {logger} from 'firebase-functions/v2';
+import {onCall,HttpsError} from 'firebase-functions/v2/https';
+import {protos} from '@google-cloud/translate';
 import {SecurityUtils} from './utils/security-utils';
 import {firebaseConfig, SUPPORT_LOCALES, translationService} from './config';
 import {TranslateData} from './models/translate.model';
-import {protos} from '@google-cloud/translate';
 import {UserPermission} from './models/user.model';
 
-export const translate = https.onCall(async (data: TranslateData, context) => {
-  logger.info('[translate] data: ' + JSON.stringify(data));
-  logger.info('[translate] context.auth: ' + JSON.stringify(context.auth));
-  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_UPDATE, context.auth)) throw new https.HttpsError('permission-denied', 'permission-denied');
-  if (!(SUPPORT_LOCALES.has(data.sourceLocale) && SUPPORT_LOCALES.has(data.targetLocale))) throw new https.HttpsError('invalid-argument', 'Unsupported language');
+export const translate = onCall<TranslateData>(async (request) => {
+  logger.info('[translate] data: ' + JSON.stringify(request.data));
+  logger.info('[translate] context.auth: ' + JSON.stringify(request.auth));
+  const {content, sourceLocale, targetLocale} = request.data
+  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_UPDATE, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  if (!(SUPPORT_LOCALES.has(sourceLocale) && SUPPORT_LOCALES.has(targetLocale))) throw new HttpsError('invalid-argument', 'Unsupported language');
 
 
   const projectId = firebaseConfig.projectId;
@@ -21,16 +23,16 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
   }
 
 
-  const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
+  const tRequest: protos.google.cloud.translation.v3.ITranslateTextRequest = {
     parent: `projects/${projectId}/locations/${locationId}`,
-    contents: [data.content],
+    contents: [content],
     mimeType: 'text/plain',
-    sourceLanguageCode: data.sourceLocale,
-    targetLanguageCode: data.targetLocale,
+    sourceLanguageCode: sourceLocale,
+    targetLanguageCode: targetLocale,
   };
 
   try {
-    const [responseTranslateText] = await translationService.translateText(request);
+    const [responseTranslateText] = await translationService.translateText(tRequest);
 
     if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
       return responseTranslateText.translations[0].translatedText;
@@ -39,6 +41,6 @@ export const translate = https.onCall(async (data: TranslateData, context) => {
     }
   } catch (e) {
     logger.error(e);
-    throw new https.HttpsError('failed-precondition', `Cloud Translation API has not been used in project ${projectId} before or it is disabled`);
+    throw new HttpsError('failed-precondition', `Cloud Translation API has not been used in project ${projectId} before or it is disabled`);
   }
 });
