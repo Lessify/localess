@@ -79,7 +79,7 @@ export class UserService {
   }
 
   invite(model: UserInvite): Observable<void> {
-    const userInvite = httpsCallableData<UserInvite, void>(this.functions, 'userInvite');
+    const userInvite = httpsCallableData<UserInvite, void>(this.functions, 'userinvite');
     return userInvite(model)
       .pipe(
         traceUntilFirst('Firestore:Users:invite'),
@@ -87,7 +87,7 @@ export class UserService {
   }
 
   sync(): Observable<void> {
-    const usersSync = httpsCallableData<void, void>(this.functions, 'usersSync');
+    const usersSync = httpsCallableData<void, void>(this.functions, 'userssync');
     return usersSync()
       .pipe(
         traceUntilFirst('Functions:Users:sync'),

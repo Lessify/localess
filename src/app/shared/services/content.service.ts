@@ -202,7 +202,7 @@ export class ContentService {
   }
 
   publish(spaceId: string, id: string): Observable<void> {
-    const contentPublish = httpsCallableData<{ spaceId: string, contentId: string }, void>(this.functions, 'contentPublish');
+    const contentPublish = httpsCallableData<{ spaceId: string, contentId: string }, void>(this.functions, 'contentpublish');
     return contentPublish({spaceId, contentId: id})
       .pipe(
         traceUntilFirst('Functions:Contents:publish'),

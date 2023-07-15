@@ -39,7 +39,7 @@
         "function": "translate"
       },
       {
-        "source": "/api/translationsPublish",
+        "source": "/api/translationspublish",
         "function": "translationspublish"
       },
       {
@@ -47,15 +47,15 @@
         "function": "setup"
       },
       {
-        "source": "/api/userInvite",
+        "source": "/api/userinvite",
         "function": "userinvite"
       },
       {
-        "source": "/api/usersSync",
+        "source": "/api/userssync",
         "function": "userssync"
       },
       {
-        "source": "/api/contentPublish",
+        "source": "/api/contentpublish",
         "function": "contentpublish"
       },
       {
