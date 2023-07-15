@@ -32,31 +32,38 @@
     "rewrites": [
       {
         "source": "/api/v1/**",
-        "function": "publicv1"
+        "function": "publicv1",
+        "region": "europe-west6"
       },
       {
         "source": "/api/translate",
-        "function": "translate"
+        "function": "translate",
+        "region": "europe-west6"
       },
       {
         "source": "/api/translationspublish",
-        "function": "translationspublish"
+        "function": "translationspublish",
+        "region": "europe-west6"
       },
       {
         "source": "/api/setup",
-        "function": "setup"
+        "function": "setup",
+        "region": "europe-west6"
       },
       {
         "source": "/api/userinvite",
-        "function": "userinvite"
+        "function": "userinvite",
+        "region": "europe-west6"
       },
       {
         "source": "/api/userssync",
-        "function": "userssync"
+        "function": "userssync",
+        "region": "europe-west6"
       },
       {
         "source": "/api/contentpublish",
-        "function": "contentpublish"
+        "function": "contentpublish",
+        "region": "europe-west6"
       },
       {
         "source": "**",
