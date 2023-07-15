@@ -32,7 +32,7 @@
     "rewrites": [
       {
         "source": "/api/v1/**",
-        "function": "v1"
+        "function": "publicv1"
       },
       {
         "source": "/api/translate",
