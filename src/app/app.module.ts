@@ -82,6 +82,8 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
       if (environment.useEmulators) {
         //connectFunctionsEmulator(functions, 'localhost', 5001);
         functions.customDomain = 'http://localhost:4200/api'
+      } else {
+        functions.region = 'europe-west6'
       }
       return functions;
     }),
