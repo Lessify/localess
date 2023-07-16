@@ -19,7 +19,7 @@ import {
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {ref, Storage, uploadBytes} from '@angular/fire/storage';
+import {getBlob, ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
 import {
   Asset,
@@ -142,6 +142,13 @@ export class AssetService {
     return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`)))
       .pipe(
         traceUntilFirst('Firestore:Assets:delete'),
+      );
+  }
+
+  downloadBlob(spaceId: string, id: string): Observable<Blob> {
+    return from(getBlob(ref(this.storage, `spaces/${spaceId}/assets/${id}/original`)))
+      .pipe(
+        traceUntilFirst('Firestore:Assets:downloadBlob'),
       );
   }
 

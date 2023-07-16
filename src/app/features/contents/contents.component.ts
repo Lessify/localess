@@ -64,7 +64,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = ['select', 'status', 'name', 'slug', 'schema', 'publishedAt', 'createdAt', 'updatedAt'];
+  displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'slug', 'schema', 'publishedAt', 'createdAt', 'updatedAt', 'actions'];
   selection = new SelectionModel<Content>(true, []);
 
   schemas: Schema[] = [];
@@ -199,7 +199,10 @@ export class ContentsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openEditDialog(element: Content): void {
+  openEditDialog(event: Event, element: Content): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
     this.dialog.open<EditDialogComponent, EditDialogModel, ContentUpdate>(
       EditDialogComponent, {
         width: '500px',
@@ -228,7 +231,10 @@ export class ContentsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openDeleteDialog(element: Content): void {
+  openDeleteDialog(event: Event, element: Content): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {

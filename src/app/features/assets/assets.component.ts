@@ -18,7 +18,7 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {NotificationService} from '@shared/services/notification.service';
-import {combineLatest, delay, Subject} from 'rxjs';
+import {combineLatest, Subject} from 'rxjs';
 import {
   ConfirmationDialogComponent
 } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
@@ -30,16 +30,17 @@ import {SelectionModel} from '@angular/cdk/collections';
 import {PathItem} from '@core/state/space/space.model';
 import {actionSpaceAssetPathChange,} from '@core/state/space/space.actions';
 import {AssetService} from '@shared/services/asset.service';
-import {Asset, AssetFolderCreate, AssetFolderUpdate, AssetKind} from '@shared/models/asset.model';
+import {Asset, AssetFile, AssetFolderCreate, AssetFolderUpdate, AssetKind} from '@shared/models/asset.model';
 import {AddFolderDialogModel} from './add-folder-dialog/add-folder-dialog.model';
 import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.component';
 import {EditFolderDialogComponent} from './edit-folder-dialog/edit-folder-dialog.component';
 import {EditFolderDialogModel} from './edit-folder-dialog/edit-folder-dialog.model';
-import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
-import {ImportDialogModel, ImportDialogReturn} from "./import-dialog/import-dialog.model";
-import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
-import {ExportDialogModel, ExportDialogReturn} from "./export-dialog/export-dialog.model";
-import {TaskService} from "@shared/services/task.service";
+import {ImportDialogComponent} from './import-dialog/import-dialog.component';
+import {ImportDialogModel, ImportDialogReturn} from './import-dialog/import-dialog.model';
+import {ExportDialogComponent} from './export-dialog/export-dialog.component';
+import {ExportDialogModel, ExportDialogReturn} from './export-dialog/export-dialog.model';
+import {TaskService} from '@shared/services/task.service';
+import {saveAs} from 'file-saver-es';
 
 @Component({
   selector: 'll-assets',
@@ -53,7 +54,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
-  displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt'];
+  displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt', 'actions'];
   selection = new SelectionModel<Asset>(true, []);
   assets: Asset[] = [];
   assetPath: PathItem[] = [];
@@ -170,7 +171,10 @@ export class AssetsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openEditFolderDialog(element: Asset): void {
+  openEditFolderDialog(event: Event, element: Asset): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
     this.dialog.open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdate>(
       EditFolderDialogComponent, {
         width: '500px',
@@ -199,7 +203,10 @@ export class AssetsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openDeleteDialog(element: Asset): void {
+  openDeleteDialog(event: Event, element: Asset): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
     this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
       ConfirmationDialogComponent, {
         data: {
@@ -353,6 +360,22 @@ export class AssetsComponent implements OnInit, OnDestroy {
           this.notificationService.error('Assets Export Task can not be created.');
         }
       });
+  }
+
+  onDownload(event: Event, element: AssetFile): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.assetService.downloadBlob(this.selectedSpace!.id, element.id)
+      .subscribe({
+        next: (file) => {
+          this.notificationService.success('Task file has been downloaded.');
+          saveAs(file, `${element.name}${element.extension}`)
+        },
+        error: (err) => {
+          this.notificationService.error('Task file can not be downloaded.');
+        }
+      })
   }
 
 }
