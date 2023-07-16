@@ -4,13 +4,14 @@ import {logger} from 'firebase-functions';
 import {onRequest, HttpsError} from 'firebase-functions/v2/https';
 import {Query} from 'firebase-admin/firestore';
 import {bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
-import {Space} from './models/space.model';
-import {Content, ContentKind, ContentLink} from './models/content.model';
 import {AssetFile} from './models/asset.model';
+import {Content, ContentKind, ContentLink} from './models/content.model';
+import {Task} from './models/task.model';
+import {Space} from './models/space.model';
+import {findContentByFullSlug} from './services/content.service';
+import {findSpaceById} from './services/space.service';
 import * as os from 'os';
 import * as sharp from 'sharp';
-import {findSpaceById} from './services/space.service';
-import {findContentByFullSlug} from './services/content.service';
 
 // API V1
 const expressV1 = express();
@@ -271,7 +272,7 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info('v1 spaces asset params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces asset query: ' + JSON.stringify(req.query));
   const {spaceId, assetId} = req.params;
-  const {w: width} = req.query;
+  const {w: width, download} = req.query;
 
   const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
   const [exists] = await assetFile.exists();
@@ -279,7 +280,7 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info(`v1 spaces asset: ${exists} & ${assetSnapshot.exists}`);
   if (exists && assetSnapshot.exists) {
     const asset = assetSnapshot.data() as AssetFile;
-    const tempFilePath = `${os.tmpdir()}/${asset.name}${asset.extension}`;
+    const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
     let filename = `${asset.name}${asset.extension}`;
     // apply resize for valid 'w' parameter and images
     if (width && !Number.isNaN(width) && asset.type.startsWith('image/') && asset.type !== 'image/svg+xml') {
@@ -289,10 +290,41 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     } else {
       await assetFile.download({destination: tempFilePath});
     }
+    let disposition = `inline; filename="${filename}"`;
+    if (download !== undefined) {
+      disposition = `form-data; filename="${filename}"`;
+    }
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-      .header('Content-Disposition', `inline; filename="${filename}"`)
+      .header('Content-Disposition', disposition)
       .contentType(asset.type)
+      .sendFile(tempFilePath);
+    return;
+  } else {
+    res
+      .status(404)
+      .header('Cache-Control', 'no-cache')
+      .send(new HttpsError('not-found', 'Asset not found.'));
+    return;
+  }
+});
+
+expressV1.get('/api/v1/spaces/:spaceId/tasks/:taskId', async (req, res) => {
+  logger.info('v1 spaces task params: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces task query: ' + JSON.stringify(req.query));
+  const {spaceId, taskId} = req.params;
+
+  const taskFile = bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`);
+  const [exists] = await taskFile.exists();
+  const taskSnapshot = await firestoreService.doc(`spaces/${spaceId}/tasks/${taskId}`).get();
+  logger.info(`v1 spaces task: ${exists} & ${taskSnapshot.exists}`);
+  if (exists && taskSnapshot.exists) {
+    const task = taskSnapshot.data() as Task;
+    const tempFilePath = `${os.tmpdir()}/tasks-${taskId}`;
+    await taskFile.download({destination: tempFilePath});
+    res
+      .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
+      .header('Content-Disposition', `form-data; filename="${task.file?.name}"`)
       .sendFile(tempFilePath);
     return;
   } else {

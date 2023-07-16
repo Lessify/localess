@@ -15,7 +15,7 @@ import {
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {getBlob, ref, Storage, uploadBytes} from '@angular/fire/storage';
+import {ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
 import {AssetKind} from '@shared/models/asset.model';
 import {
@@ -55,13 +55,6 @@ export class TaskService {
       .pipe(
         traceUntilFirst('Firestore:Tasks:findById'),
         map((it) => it as Task)
-      );
-  }
-
-  downloadBlob(spaceId: string, id: string): Observable<Blob> {
-    return from(getBlob(ref(this.storage, `spaces/${spaceId}/tasks/${id}/original`)))
-      .pipe(
-        traceUntilFirst('Firestore:Tasks:downloadBlob'),
       );
   }
 

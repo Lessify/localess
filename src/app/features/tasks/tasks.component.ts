@@ -79,16 +79,7 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   onDownload(element: Task): void {
-    this.taskService.downloadBlob(this.selectedSpace!.id, element.id)
-      .subscribe({
-        next: (file) => {
-          this.notificationService.success('Task file has been downloaded.');
-          saveAs(file, element.file?.name)
-        },
-        error: (err) => {
-          this.notificationService.error('Task file can not be downloaded.');
-        }
-      })
+    window.open(`/api/v1/spaces/${this.selectedSpace!.id}/tasks/${element.id}`)
   }
 
   openDeleteDialog(element: Task): void {

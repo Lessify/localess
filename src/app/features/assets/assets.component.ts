@@ -366,16 +366,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.assetService.downloadBlob(this.selectedSpace!.id, element.id)
-      .subscribe({
-        next: (file) => {
-          this.notificationService.success('Task file has been downloaded.');
-          saveAs(file, `${element.name}${element.extension}`)
-        },
-        error: (err) => {
-          this.notificationService.error('Task file can not be downloaded.');
-        }
-      })
+    window.open(`/api/v1/spaces/${this.selectedSpace!.id}/assets/${element.id}?download`)
   }
-
 }
