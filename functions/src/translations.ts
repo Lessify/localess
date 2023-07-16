@@ -1,5 +1,5 @@
 import {logger} from 'firebase-functions/v2';
-import {onCall,HttpsError} from 'firebase-functions/v2/https';
+import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {onDocumentCreated} from 'firebase-functions/v2/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
 import {protos} from '@google-cloud/translate';
@@ -18,10 +18,10 @@ import {findTranslations} from './services/translation.service';
 
 
 // Publish
-export const translationsPublish = onCall<PublishTranslationsData>(async (request) => {
+const translationsPublish = onCall<PublishTranslationsData>(async (request) => {
   logger.info('[translationsPublish] data: ' + JSON.stringify(request.data));
   logger.info('[translationsPublish] context.auth: ' + JSON.stringify(request.auth));
-  const {spaceId} = request.data
+  const {spaceId} = request.data;
   if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await findSpaceById(spaceId).get();
   const translationsSnapshot = await findTranslations(spaceId).get();
@@ -64,7 +64,7 @@ export const translationsPublish = onCall<PublishTranslationsData>(async (reques
   }
 });
 
-export const onTranslationCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async (event) => {
+const onTranslationCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async (event) => {
   logger.info(`[Translation:onCreate] eventId='${event.id}'`);
   logger.info(`[Translation:onCreate] params='${JSON.stringify(event.params)}'`);
   const {spaceId} = event.params;
@@ -125,3 +125,8 @@ export const onTranslationCreate = onDocumentCreated('spaces/{spaceId}/translati
   await event.data.ref.update(update);
   return;
 });
+
+export const translation = {
+  publish: translationsPublish,
+  oncreate: onTranslationCreate,
+};

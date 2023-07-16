@@ -13,13 +13,13 @@ import {findSpaceById} from './services/space.service';
 import {findSchemas} from './services/schema.service';
 
 // Publish
-export const contentPublish = onCall<PublishContentData>(async (request) => {
+const contentPublish = onCall<PublishContentData>(async (request) => {
   logger.info('[contentPublish] data: ' + JSON.stringify(request.data));
   logger.info('[contentPublish] context.auth: ' + JSON.stringify(request.auth));
   if (!SecurityUtils.canPerform(UserPermission.CONTENT_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
-  const {spaceId, contentId} = request.data
+  const {spaceId, contentId} = request.data;
   const spaceSnapshot = await findSpaceById(spaceId).get();
-  const contentSnapshot = await findContentById(spaceId,contentId).get();
+  const contentSnapshot = await findContentById(spaceId, contentId).get();
   const schemasSnapshot = await findSchemas(spaceId).get();
   if (spaceSnapshot.exists && contentSnapshot.exists) {
     const space: Space = spaceSnapshot.data() as Space;
@@ -83,7 +83,7 @@ export const contentPublish = onCall<PublishContentData>(async (request) => {
 });
 
 // Firestore events
-export const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}', async (event) => {
+const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}', async (event) => {
   logger.info(`[Asset::onUpdate] eventId='${event.id}'`);
   logger.info(`[Asset::onUpdate] params='${JSON.stringify(event.params)}'`);
   const {spaceId, contentId} = event.params;
@@ -116,7 +116,7 @@ export const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{con
   return;
 });
 
-export const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}', async (event) => {
+const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}', async (event) => {
   logger.info(`[Content::onDelete] eventId='${event.id}'`);
   logger.info(`[Content::onDelete] params='${JSON.stringify(event.params)}'`);
   const {spaceId, contentId} = event.params;
@@ -132,7 +132,7 @@ export const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{con
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
     const batch = firestoreService.batch();
-    const contentsSnapshot = await findContentByFullSlug(spaceId,content.fullSlug).get();
+    const contentsSnapshot = await findContentByFullSlug(spaceId, content.fullSlug).get();
     contentsSnapshot.docs.filter((it) => it.exists)
       .forEach((it) => batch.delete(it.ref));
     return batch.commit();
@@ -140,7 +140,7 @@ export const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{con
   return;
 });
 
-export const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}', async  (event) => {
+const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}', async (event) => {
   logger.info(`[Content::onWrite] eventId='${event.id}'`);
   logger.info(`[Content::onWrite] params='${JSON.stringify(event.params)}'`);
   const {spaceId} = event.params;
@@ -149,3 +149,10 @@ export const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{cont
   await bucket.file(`spaces/${spaceId}/contents/cache.json`).save('');
   return;
 });
+
+export const content = {
+  publish: contentPublish,
+  onupdate: onContentUpdate,
+  ondelete: onContentDelete,
+  onwrite: onContentWrite,
+};

@@ -126,7 +126,7 @@ export class TranslationService {
   }
 
   publish(spaceId: string): Observable<void> {
-    const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translationspublish');
+    const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-publish');
     return translationsPublish({spaceId})
       .pipe(
         traceUntilFirst('Functions:Translations:publish'),

@@ -5,7 +5,7 @@ import * as sharp from 'sharp';
 import {bucket, firestoreService} from './config';
 import {UpdateAssetUpload} from './models/asset.model';
 
-export const onFileUpload = onObjectFinalized(async (event) => {
+const onFileUpload = onObjectFinalized(async (event) => {
   logger.info(`[Storage::onFileUpload] name : ${event.data.name}`);
   logger.info(event.data);
   const {name, contentType} = event.data;
@@ -36,3 +36,7 @@ export const onFileUpload = onObjectFinalized(async (event) => {
   }
   return;
 });
+
+export const storage = {
+  onupload: onFileUpload,
+};

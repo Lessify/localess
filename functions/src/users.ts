@@ -7,7 +7,7 @@ import {SecurityUtils} from './utils/security-utils';
 import {User, UserInvite, UserPermission} from './models/user.model';
 import {findUserById} from './services/user.service';
 
-export const onAuthUserCreate = auth.user()
+const onAuthUserCreate = auth.user()
   .onCreate((user, context) => {
     logger.info(`[AuthUser::onCreate] id='${user.uid}' eventId='${context.eventId}'`);
     logger.info(`[AuthUser::onCreate] user='${JSON.stringify(user)}'`);
@@ -26,18 +26,18 @@ export const onAuthUserCreate = auth.user()
     }, {merge: true});
   });
 
-export const onAuthUserDelete = auth.user()
-  .onDelete(async (user, context) => {
-    logger.info(`[AuthUser::onDelete] id='${user.uid}' eventId='${context.eventId}'`);
-    const userRef = findUserById(user.uid);
-    const userDS = await userRef.get();
-    if (userDS.exists) {
-      await userRef.delete();
-    }
-    return true;
-  });
+// const onAuthUserDelete = auth.user()
+//   .onDelete(async (user, context) => {
+//     logger.info(`[AuthUser::onDelete] id='${user.uid}' eventId='${context.eventId}'`);
+//     const userRef = findUserById(user.uid);
+//     const userDS = await userRef.get();
+//     if (userDS.exists) {
+//       await userRef.delete();
+//     }
+//     return true;
+//   });
 
-export const userInvite = onCall<UserInvite>(async (request) => {
+const userInvite = onCall<UserInvite>(async (request) => {
   logger.info('[userInvite] data: ' + JSON.stringify(request.data));
   logger.info('[userInvite] context.auth: ' + JSON.stringify(request.auth));
   if (!SecurityUtils.canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
@@ -53,7 +53,7 @@ export const userInvite = onCall<UserInvite>(async (request) => {
 });
 
 // TODO add use case for Deleted users from Firebase directly
-export const usersSync = onCall<never>(async (request) => {
+const usersSync = onCall<never>(async (request) => {
   logger.info('[usersSync] data: ' + JSON.stringify(request.data));
   logger.info('[usersSync] context.auth: ' + JSON.stringify(request.auth));
   if (!SecurityUtils.canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
@@ -106,7 +106,7 @@ export const usersSync = onCall<never>(async (request) => {
   return true;
 });
 
-export const onUserUpdate = onDocumentUpdated('users/{userId}', async (event) => {
+const onUserUpdate = onDocumentUpdated('users/{userId}', async (event) => {
   logger.info(`[User::onUpdate] eventId='${event.id}'`);
   logger.info(`[User::onUpdate] params='${JSON.stringify(event.params)}'`);
   const {userId} = event.params;
@@ -148,9 +148,17 @@ export const onUserUpdate = onDocumentUpdated('users/{userId}', async (event) =>
   return true;
 });
 
-export const onUserDelete = onDocumentDeleted('users/{userId}', async (event) => {
+const onUserDelete = onDocumentDeleted('users/{userId}', async (event) => {
   logger.info(`[User::onDelete] eventId='${event.id}'`);
   logger.info(`[User::onDelete] params='${JSON.stringify(event.params)}'`);
   const {userId} = event.params;
   return authService.deleteUser(userId);
 });
+
+export const user = {
+  onauthcreate: onAuthUserCreate,
+  onupdate: onUserUpdate,
+  ondelete: onUserDelete,
+  invite: userInvite,
+  sync: usersSync,
+};

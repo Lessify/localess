@@ -25,7 +25,7 @@ import {
   TaskKind, TaskSchemaExportCreateFS, TaskSchemaImportCreateFS,
   TaskStatus,
   TaskTranslationExportCreateFS, TaskTranslationImportCreateFS
-} from "@shared/models/task.model";
+} from '@shared/models/task.model';
 
 @Injectable()
 export class TaskService {

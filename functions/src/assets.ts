@@ -5,7 +5,7 @@ import {Asset, AssetKind} from './models/asset.model';
 import {findAssetsByParentPath} from './services/asset.service';
 
 // Firestore events
-export const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', async (event) => {
+const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', async (event) => {
   logger.info(`[Asset::onDelete] eventId='${event.id}'`);
   logger.info(`[Asset::onDelete] params='${JSON.stringify(event.params)}'`);
   const {spaceId, assetId} = event.params;
@@ -30,3 +30,7 @@ export const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetI
   }
   return;
 });
+
+export const asset = {
+  ondelete: onAssetDeleted,
+};

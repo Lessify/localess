@@ -3,7 +3,7 @@ import {onDocumentDeleted} from 'firebase-functions/v2/firestore';
 import {bucket} from './config';
 
 // Firestore events
-export const onSpaceDelete = onDocumentDeleted('spaces/{spaceId}', (event) => {
+const onSpaceDelete = onDocumentDeleted('spaces/{spaceId}', (event) => {
   logger.info(`[Space::onDelete] eventId='${event.id}'`);
   logger.info(`[Task::onDelete] params='${JSON.stringify(event.params)}'`);
   const {spaceId} = event.params;
@@ -11,3 +11,7 @@ export const onSpaceDelete = onDocumentDeleted('spaces/{spaceId}', (event) => {
     prefix: `spaces/${spaceId}/`,
   });
 });
+
+export const space = {
+  ondelete: onSpaceDelete,
+};

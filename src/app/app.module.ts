@@ -20,7 +20,7 @@ import {CoreModule} from '@core/core.module';
 import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
 import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {getFunctions, provideFunctions} from '@angular/fire/functions';
+import {connectFunctionsEmulator, getFunctions, provideFunctions} from '@angular/fire/functions';
 import {getPerformance, providePerformance} from '@angular/fire/performance';
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
 import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
@@ -80,8 +80,9 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
     provideFunctions(() => {
       const functions = getFunctions();
       if (environment.useEmulators) {
-        //connectFunctionsEmulator(functions, 'localhost', 5001);
-        functions.customDomain = 'http://localhost:4200/api'
+        connectFunctionsEmulator(functions, 'localhost', 5001);
+        //functions.customDomain = 'http://localhost:4200/api'
+        functions.region = 'europe-west6'
       } else {
         functions.region = 'europe-west6'
       }

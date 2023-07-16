@@ -29,13 +29,11 @@ import {
   SchemaUpdateFS
 } from '@shared/models/schema.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
-import {Functions} from "@angular/fire/functions";
 
 @Injectable()
 export class SchemaService {
   constructor(
     private readonly firestore: Firestore,
-    private readonly functions: Functions,
   ) {
   }
 

@@ -32,7 +32,7 @@ import {
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
 // Firestore events
-export const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async (event) => {
+const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async (event) => {
   logger.info(`[Task:onCreate] eventId='${event.id}'`);
   logger.info(`[Task:onCreate] params='${JSON.stringify(event.params)}'`);
   logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
@@ -801,7 +801,7 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
   return undefined;
 }
 
-export const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async (event) => {
+const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async (event) => {
   logger.info(`[Task:onTaskDeleted] eventId='${event.id}'`);
   logger.info(`[Task:onTaskDeleted] params='${JSON.stringify(event.params)}'`);
   const {spaceId, taskId} = event.params;
@@ -809,3 +809,8 @@ export const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}'
     prefix: `spaces/${spaceId}/tasks/${taskId}`,
   });
 });
+
+export const task = {
+  oncreate: onTaskCreate,
+  ondelete: onTaskDeleted,
+};
