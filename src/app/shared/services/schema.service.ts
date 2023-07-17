@@ -89,6 +89,7 @@ export class SchemaService {
       name: entity.name,
       displayName: entity.displayName || deleteField(),
       previewField: entity.previewField || deleteField(),
+      previewImage: entity.previewImage || deleteField(),
       fields: entity.fields || deleteField(),
       updatedAt: serverTimestamp()
     }

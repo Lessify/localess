@@ -35,6 +35,14 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>
       <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
     </ng-container>
+    <ng-container matColumnDef="previewImage">
+      <mat-header-cell *matHeaderCellDef> Preview Image </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <img *ngIf="element.previewImage as previewImage"
+             class="img-thumbnail" width="115" height="115" loading="lazy" alt="thumbnail"
+             ngSrc="/api/v1/spaces/{{selectedSpace.id}}/assets/{{previewImage}}"/>
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
@@ -59,6 +67,9 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
+        <button mat-icon-button *ngIf="'SCHEMA_UPDATE' | canUserPerform | async" (click)="openEditDialog(element)" matTooltip="Edit">
+          <mat-icon>edit</mat-icon>
+        </button>
         <button *ngIf="'SCHEMA_DELETE' | canUserPerform | async"
                 mat-icon-button (click)="openDeleteDialog($event, element)" matTooltip="Delete">
           <mat-icon>delete</mat-icon>
@@ -66,7 +77,7 @@
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowSelect(row)"></mat-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
   </mat-table>
   <mat-paginator></mat-paginator>
 </div>

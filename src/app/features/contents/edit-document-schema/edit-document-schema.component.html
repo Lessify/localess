@@ -153,8 +153,16 @@
                 <mat-icon>add_circle</mat-icon>
               </button>
               <mat-menu #schemasMenu="matMenu">
-                <button mat-menu-item *ngFor="let sch of filterSchema(field.schemas)" (click)="addSchemaOne(field, sch)">
+                <button mat-menu-item *ngFor="let sch of filterSchema(field.schemas)" (click)="addSchemaOne(field, sch)"
+                        [llTooltip]="imagePreview" contentType="template"
+                        [display]="sch.previewImage !== undefined"
+                        placement="left" [showDelay]="600" theme="light">
                   {{sch.displayName || sch.name}}
+                  <ng-template #imagePreview>
+                    <img *ngIf="sch.previewImage as previewImage"
+                         class="rounded" width="180" height="180" loading="lazy" alt="thumbnail"
+                         ngSrc="/api/v1/spaces/{{space.id}}/assets/{{previewImage}}"/>
+                  </ng-template>
                 </button>
               </mat-menu>
 
@@ -199,8 +207,16 @@
                 <mat-icon>add_circle</mat-icon>
               </button>
               <mat-menu #schemasMenu="matMenu">
-                <button mat-menu-item *ngFor="let sch of filterSchema(field.schemas)" (click)="addSchemaMany(field, sch)">
+                <button mat-menu-item *ngFor="let sch of filterSchema(field.schemas)" (click)="addSchemaMany(field, sch)"
+                        [llTooltip]="imagePreview" contentType="template"
+                        [display]="sch.previewImage !== undefined"
+                        placement="left" [showDelay]="600" theme="light">
                   {{sch.displayName || sch.name}}
+                  <ng-template #imagePreview>
+                    <img *ngIf="sch.previewImage as previewImage"
+                         class="rounded" width="180" height="180" loading="lazy" alt="thumbnail"
+                         ngSrc="/api/v1/spaces/{{space.id}}/assets/{{previewImage}}"/>
+                  </ng-template>
                 </button>
               </mat-menu>
 

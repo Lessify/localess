@@ -18,9 +18,9 @@ import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {AssetService} from '@shared/services/asset.service';
 import {Space} from '@shared/models/space.model';
-import {AssetsSelectDialogComponent} from '../assets-select-dialog/assets-select-dialog.component';
-import {AssetsSelectDialogModel} from '../assets-select-dialog/assets-select-dialog.model';
 import {environment} from '../../../../../environments/environment';
+import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
+import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/assets-select-dialog.model';
 
 @Component({
   selector: 'll-assets-select',

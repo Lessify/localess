@@ -49,6 +49,11 @@
           <mat-error *ngIf="form.controls['previewField'].errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
 
+        <ll-schema-asset-select
+          [space]="selectedSpace"
+          [assetId]="form.controls['previewImage'].value"
+          (assetChange)="form.controls['previewImage'].setValue($event)"/>
+
         <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="fieldDropDrop($event)">
           <mat-divider></mat-divider>
           <div mat-subheader>Fields</div>

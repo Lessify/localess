@@ -9,7 +9,7 @@ import {
 } from '@shared/models/schema.model';
 import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {environment} from '../../../../environments/environment';
+import {environment} from '../../../../../environments/environment';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
 
 @Component({

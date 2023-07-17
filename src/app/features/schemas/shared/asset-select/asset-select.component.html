@@ -1,0 +1,33 @@
+<form>
+  <mat-form-field floatLabel="always">
+    <mat-label>Preview Image</mat-label>
+    <input matInput hidden>
+    <button mat-raised-button matTextSuffix color="accent" (click)="openAssetSelectDialog()">
+      Add Asset
+    </button>
+    <br>
+    <mat-grid-list cols="1" rowHeight="200px" gutterSize="1">
+      <mat-grid-tile *ngIf="asset" >
+        <mat-grid-tile-header>
+          <span class="spacer"></span>
+          <button mat-icon-button (click)="deleteAsset()">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-grid-tile-header>
+          <ng-container *ngIf="asset.type.startsWith('image/'); else noImage">
+            <img class="img-fluid" width="290" height="200" alt="thumbnail" loading="lazy"
+                 ngSrc="/api/v1/spaces/{{space.id}}/assets/{{asset.id}}"/>
+          </ng-container>
+        <ng-template #noImage>
+          <mat-icon>file_present</mat-icon>
+        </ng-template>
+
+        <mat-grid-tile-footer>{{asset.name}}{{asset.extension}}</mat-grid-tile-footer>
+      </mat-grid-tile>
+    </mat-grid-list>
+  </mat-form-field>
+</form>
+<ng-container *ngIf="isDebug">
+
+  <br/>
+</ng-container>

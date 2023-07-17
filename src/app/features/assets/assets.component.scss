@@ -15,10 +15,16 @@ table {
 //  }
 //}
 
+mat-row {
+  &.row-folder {
+    cursor: pointer;
+  }
+}
+
 mat-cell {
-  cursor: pointer;
   &.mat-column-preview {
     max-width: 150px;
+
     img {
       max-width: 115px;
       max-height: 115px;

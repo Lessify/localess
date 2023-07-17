@@ -41,7 +41,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
-  displayedColumns: string[] = ['type', 'name', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['type', /*'previewImage',*/ 'name', 'createdAt', 'updatedAt', 'actions'];
   schemas: Schema[] = [];
 
   // Subscriptions
@@ -117,7 +117,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       });
   }
 
-  onRowSelect(element: Schema): void {
+  openEditDialog(element: Schema): void {
     this.router.navigate(['features', 'schemas', element.id]);
   }
 

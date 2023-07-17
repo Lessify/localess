@@ -63,6 +63,7 @@ export class EditComponent implements OnInit, OnDestroy {
     name: this.fb.control('', SchemasValidator.NAME),
     displayName: this.fb.control<string | undefined>(undefined, SchemasValidator.DISPLAY_NAME),
     previewField: this.fb.control<string | undefined>(undefined, SchemasValidator.PREVIEW_FIELD),
+    previewImage: this.fb.control<string | undefined>(undefined),
     fields: this.fb.array<SchemaField>([])
   });
 

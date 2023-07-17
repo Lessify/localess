@@ -11,6 +11,7 @@ export interface Schema {
   type: SchemaType;
   displayName?: string;
   previewField?: string;
+  previewImage?: string;
   fields?: SchemaField[];
 
   createdAt: Timestamp;
@@ -175,6 +176,7 @@ export interface SchemaUpdate {
   name: string;
   displayName?: string;
   previewField?: string;
+  previewImage?: string;
   fields?: SchemaField[];
 }
 
@@ -192,6 +194,7 @@ export interface SchemaUpdateFS {
   name: string;
   displayName?: string;
   previewField?: string | FieldValue;
+  previewImage?: string | FieldValue;
   fields?: SchemaField[];
   updatedAt: FieldValue;
 }

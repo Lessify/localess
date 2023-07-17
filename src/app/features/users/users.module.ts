@@ -8,9 +8,9 @@ import {UserDialogComponent} from './user-dialog/user-dialog.component';
 import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog.component';
 
 @NgModule({
-    declarations: [UsersComponent, UserDialogComponent, UserInviteDialogComponent],
+  declarations: [UsersComponent, UserDialogComponent, UserInviteDialogComponent],
   imports: [SharedModule, UsersRoutingModule],
-    providers: [UserService]
+  providers: [UserService]
 })
 export class UsersModule {
 }

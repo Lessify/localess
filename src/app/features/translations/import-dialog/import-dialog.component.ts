@@ -14,8 +14,8 @@ import {MatSelectChange} from '@angular/material/select';
 export class ImportDialogComponent {
 
   exportKinds: KeyValue<string, string>[] = [
-    {key: 'FULL', value: 'JSON FULL'},
-    {key: 'FLAT', value: 'JSON FLAT'}
+    {key: 'FULL', value: 'FULL'},
+    {key: 'FLAT', value: 'FLAT JSON'}
   ]
   fileWrong = false;
   fileName = ''

@@ -1,4 +1,4 @@
-import {NgModule} from '@angular/core';
+import {Directive, NgModule} from '@angular/core';
 import {CommonModule, NgOptimizedImage} from '@angular/common';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 
@@ -48,6 +48,8 @@ import {DigitalStorePipe} from '@shared/pipes/digital-store.pipe';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {DragDropModule} from '@angular/cdk/drag-drop';
 import {TimeDurationPipe} from '@shared/pipes/time-duration.pipe';
+import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
+import {TooltipComponent, TooltipDirective} from '@shared/components/tooltip';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -94,11 +96,14 @@ const SHARED_PIPES: any[] = [
 ]
 
 const SHARED_COMPONENTS: any[] = [
+  AssetsSelectDialogComponent,
   BreadcrumbComponent,
   BreadcrumbItemComponent,
   ConfirmationDialogComponent,
   CustomSnackBarComponent,
   IconComponent,
+  TooltipDirective,
+  TooltipComponent
 ]
 
 @NgModule({

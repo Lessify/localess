@@ -26,7 +26,7 @@ import {SpaceService} from '@shared/services/space.service';
   selector: 'll-assets-select-dialog',
   templateUrl: './assets-select-dialog.component.html',
   styleUrls: ['./assets-select-dialog.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
 

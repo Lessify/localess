@@ -16,9 +16,6 @@ import {LinkSelectComponent} from './shared/link-select/link-select.component';
 import {EditDocumentSchemaComponent} from './edit-document-schema/edit-document-schema.component';
 import {AssetSelectComponent} from './shared/asset-select/asset-select.component';
 import {AssetsSelectComponent} from './shared/assets-select/assets-select.component';
-import {
-  AssetsSelectDialogComponent
-} from './shared/assets-select-dialog/assets-select-dialog.component';
 import {ExportDialogComponent} from './export-dialog/export-dialog.component';
 import {ImportDialogComponent} from './import-dialog/import-dialog.component';
 import {TaskService} from '@shared/services/task.service';
@@ -34,7 +31,6 @@ import {TaskService} from '@shared/services/task.service';
     LinkSelectComponent,
     AssetSelectComponent,
     AssetsSelectComponent,
-    AssetsSelectDialogComponent,
     ExportDialogComponent,
     ImportDialogComponent
   ],

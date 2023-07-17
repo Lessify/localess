@@ -163,7 +163,7 @@
 
 <!--    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>-->
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowSelect(row)"></mat-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowSelect(row)" [class.row-folder]="row.kind === 'FOLDER'"></mat-row>
   </mat-table>
   <mat-paginator></mat-paginator>
 </div>

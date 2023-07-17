@@ -16,8 +16,8 @@ export class ExportDialogComponent {
   today = new Date
 
   exportKinds: KeyValue<string, string>[] = [
-    {key: 'FULL', value: 'JSON FULL'},
-    {key: 'FLAT', value: 'JSON FLAT'}
+    {key: 'FULL', value: 'FULL'},
+    {key: 'FLAT', value: 'FLAT JSON'}
   ]
 
   form: FormGroup = this.fb.group({

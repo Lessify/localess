@@ -1,7 +1,6 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
 import {environment} from '../../../../../environments/environment';
 import {MatDialog} from '@angular/material/dialog';
 import {NotificationService} from '@shared/services/notification.service';
@@ -14,16 +13,16 @@ import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dial
 import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/assets-select-dialog.model';
 
 @Component({
-  selector: 'll-asset-select',
+  selector: 'll-schema-asset-select',
   templateUrl: './asset-select.component.html',
   styleUrls: ['./asset-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AssetSelectComponent implements OnInit {
   isDebug = environment.debug
-  @Input() form?: FormGroup;
-  @Input() component?: SchemaField;
   @Input() space?: Space;
+  @Input() assetId?: string;
+  @Output() assetChange = new EventEmitter<string | undefined>();
   asset?: Asset;
 
   constructor(
@@ -38,16 +37,12 @@ export class AssetSelectComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.form?.value.kind === null) {
-      this.form.patchValue({kind: SchemaFieldKind.ASSET})
-    }
     this.loadData()
   }
 
   loadData(): void {
-    const id: string | undefined = this.form?.value.uri
-    if (id) {
-      this.assetService.findById(this.space?.id!!, id)
+    if (this.assetId) {
+      this.assetService.findById(this.space?.id!!, this.assetId)
         .subscribe({
           next: (asset) => {
             this.asset = asset
@@ -76,27 +71,15 @@ export class AssetSelectComponent implements OnInit {
           this.cd.detectChanges();
           if (selectedAssets && selectedAssets.length > 0) {
             this.asset = selectedAssets[0]
-            this.form?.patchValue({
-              uri: this.asset.id,
-              kind: SchemaFieldKind.ASSET
-            })
-            // this.assets.forEach(it => this.form?.push(this.assetToForm(it)))
+            this.assetChange.emit(this.asset.id)
             this.cd.markForCheck();
           }
         }
       });
   }
 
-  assetToForm(asset: Asset): FormGroup {
-    return this.fb.group({
-      uri: this.fb.control(asset.id),
-      kind: this.fb.control(SchemaFieldKind.ASSET),
-    })
-  }
-
   deleteAsset() {
     this.asset = undefined;
-    this.form?.controls['uri'].setValue(null);
-    //this.form?.reset();
+    this.assetChange.emit(undefined)
   }
 }
