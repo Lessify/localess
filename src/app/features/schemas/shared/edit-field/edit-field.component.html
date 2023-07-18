@@ -154,6 +154,28 @@
         </mat-form-field>
       </ng-container>
 
+      <!--ASSET and ASSETS-->
+      <ng-container *ngIf="['ASSET','ASSETS'].includes(form.value.kind)">
+        <mat-selection-list formControlName="fileTypes">
+          <div mat-subheader>File Types</div>
+          <mat-list-option value="">
+            <span matListItemTitle>Any File</span>
+          </mat-list-option>
+          <mat-list-option value="IMAGES">
+            <span matListItemTitle>Images</span>
+          </mat-list-option>
+          <mat-list-option value="VIDEOS">
+            <span matListItemTitle>Videos</span>
+          </mat-list-option>
+          <mat-list-option value="AUDIOS">
+            <span matListItemTitle>Audios</span>
+          </mat-list-option>
+          <mat-list-option value="TEXTS">
+            <span matListItemTitle>Documents</span>
+          </mat-list-option>
+        </mat-selection-list>
+      </ng-container>
+
     </form>
   </mat-card-content>
 </mat-card>
