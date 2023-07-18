@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {from, Observable} from 'rxjs';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {User, UserInvite, UserUpdateFS} from '../models/user.model';
+import {User, UserInvite, UserPermission, UserRole} from '../models/user.model';
 import {
   collection,
   collectionData,
@@ -11,8 +11,7 @@ import {
   docData,
   Firestore,
   serverTimestamp,
-  setDoc,
-  UpdateData
+  UpdateData, updateDoc
 } from '@angular/fire/firestore';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
@@ -41,8 +40,8 @@ export class UserService {
       );
   }
 
-  update(id: string, role?: string, permissions?: string[]): Observable<void> {
-    const update: UpdateData<UserUpdateFS> = {
+  update(id: string, role?: UserRole, permissions?: UserPermission[]): Observable<void> {
+    const update: UpdateData<User> = {
       role: role,
       permissions: permissions,
       updatedAt: serverTimestamp()
@@ -65,7 +64,7 @@ export class UserService {
       }
     }
 
-    return from(setDoc(doc(this.firestore, `users/${id}`), update, {merge: true}))
+    return from(updateDoc(doc(this.firestore, `users/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Users:update'),
       );

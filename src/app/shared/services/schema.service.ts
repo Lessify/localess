@@ -26,7 +26,6 @@ import {
   SchemaCreateFS,
   SchemaType,
   SchemaUpdate,
-  SchemaUpdateFS
 } from '@shared/models/schema.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 
@@ -82,10 +81,8 @@ export class SchemaService {
   }
 
   update(spaceId: string, id: string, entity: SchemaUpdate): Observable<void> {
-    console.log(entity)
     ObjectUtils.clean(entity);
-
-    const update: UpdateData<SchemaUpdateFS> = {
+    const update: UpdateData<Schema> = {
       name: entity.name,
       displayName: entity.displayName || deleteField(),
       previewField: entity.previewField || deleteField(),
@@ -93,7 +90,6 @@ export class SchemaService {
       fields: entity.fields || deleteField(),
       updatedAt: serverTimestamp()
     }
-    console.log(update)
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Schemas:update'),

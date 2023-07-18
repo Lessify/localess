@@ -9,12 +9,12 @@ import {
   DocumentReference,
   Firestore, orderBy, query, QueryConstraint,
   serverTimestamp,
-  setDoc
+  UpdateData, updateDoc
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {Space, SpaceCreate, SpaceCreateFS, SpaceUpdate, SpaceUpdateFS} from '../models/space.model';
+import {Space, SpaceCreate, SpaceCreateFS, SpaceUpdate} from '../models/space.model';
 import {Locale} from '../models/locale.model';
 
 @Injectable()
@@ -60,11 +60,11 @@ export class SpaceService {
   }
 
   update(id: string, entity: SpaceUpdate): Observable<void> {
-    const update: SpaceUpdateFS = {
+    const update: UpdateData<Space> = {
       name: entity.name,
       updatedAt: serverTimestamp()
     }
-    return from(setDoc(doc(this.firestore, `spaces/${id}`), update, {merge: true}))
+    return from(updateDoc(doc(this.firestore, `spaces/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Spaces:update'),
       );

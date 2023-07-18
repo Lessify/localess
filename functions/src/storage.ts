@@ -3,7 +3,7 @@ import {onObjectFinalized} from 'firebase-functions/v2/storage';
 import {FieldValue, UpdateData} from 'firebase-admin/firestore';
 import * as sharp from 'sharp';
 import {bucket, firestoreService} from './config';
-import {UpdateAssetUpload} from './models/asset.model';
+import {AssetFile} from './models/asset.model';
 
 const onFileUpload = onObjectFinalized(async (event) => {
   logger.info(`[Storage::onFileUpload] name : ${event.data.name}`);
@@ -14,7 +14,7 @@ const onFileUpload = onObjectFinalized(async (event) => {
   if (name && name.startsWith('spaces/') && name.includes('assets') && name.endsWith('/original')) {
     const assetPath = name.slice(0, -9); // remove '/original'
     const assetSnapshot = await firestoreService.doc(assetPath).get();
-    const update: UpdateData<UpdateAssetUpload> = {
+    const update: UpdateData<AssetFile> = {
       inProgress: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
     };

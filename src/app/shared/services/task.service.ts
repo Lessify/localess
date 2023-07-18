@@ -58,16 +58,6 @@ export class TaskService {
       );
   }
 
-  createTask(spaceId: string, kind: TaskKind): Observable<DocumentReference> {
-    let addEntity: any = {
-      kind: AssetKind.FOLDER,
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))
-      .pipe(
-        traceUntilFirst('Firestore:Tasks:create'),
-      );
-  }
-
   createAssetExportTask(spaceId: string, fromDate?: number): Observable<DocumentReference> {
     let addEntity: TaskAssetExportCreateFS = {
       kind: TaskKind.ASSET_EXPORT,

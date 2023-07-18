@@ -90,7 +90,7 @@ export class TranslationService {
   }
 
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
-    const update: UpdateData<TranslationUpdateFS> = {
+    const update: UpdateData<Translation> = {
       updatedAt: serverTimestamp()
     }
 

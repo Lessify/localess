@@ -5,12 +5,14 @@ import {
   doc,
   Firestore,
   serverTimestamp,
-  setDoc
+  UpdateData,
+  updateDoc
 } from '@angular/fire/firestore';
 import {from, Observable, of} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {Locale} from '../models/locale.model';
-import {SpaceFallbackLocaleUpdateFS, SpaceLocalesUpdateFS} from '../models/space.model';
+import {Space} from '../models/space.model';
+
 
 @Injectable()
 export class LocaleService {
@@ -18,32 +20,33 @@ export class LocaleService {
   }
 
   markAsFallback(spaceId: string, entity: Locale): Observable<void> {
-    const update: SpaceFallbackLocaleUpdateFS = {
-      localeFallback: entity, updatedAt: serverTimestamp()
+    const update: UpdateData<Space> = {
+      localeFallback: entity,
+      updatedAt: serverTimestamp()
     }
-    return from(setDoc(doc(this.firestore, `spaces/${spaceId}`), update, {merge: true}))
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update))
       .pipe(
         traceUntilFirst('Firestore:Locales:markAsFallback'),
       );
   }
 
   create(spaceId: string, entity: Locale): Observable<void> {
-    const update: SpaceLocalesUpdateFS = {
+    const update: UpdateData<Space> = {
       locales: arrayUnion(entity),
       updatedAt: serverTimestamp()
     }
-    return from(setDoc(doc(this.firestore, `spaces/${spaceId}`), update, {merge: true}))
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update))
       .pipe(
         traceUntilFirst('Firestore:Locales:create'),
       );
   }
 
   delete(spaceId: string, entity: Locale): Observable<void> {
-    const update: SpaceLocalesUpdateFS = {
+    const update: UpdateData<Space> = {
       locales: arrayRemove(entity),
       updatedAt: serverTimestamp()
     }
-    return from(setDoc(doc(this.firestore, `spaces/${spaceId}`), update, {merge: true}))
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update))
       .pipe(
         traceUntilFirst('Firestore:Locales:delete'),
       );

@@ -1,4 +1,6 @@
+import {UserPermission, UserRole} from '@shared/models/user.model';
+
 export interface UserDialogModel {
-  role?: string;
-  permissions?: string[]
+  role?: UserRole;
+  permissions?: UserPermission[]
 }

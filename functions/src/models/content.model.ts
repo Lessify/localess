@@ -66,6 +66,7 @@ export interface ContentLink {
   publishedAt?: string;
 }
 
+// Import and Export
 export interface ContentFolderExport extends Omit<ContentFolder, 'createdAt' | 'updatedAt'> {
   id: string,
 }

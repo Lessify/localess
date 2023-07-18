@@ -7,15 +7,12 @@ import {
   EmbeddedViewRef,
   ApplicationRef,
   Injector,
-  ComponentRef,
-  OnInit,
   Output,
   EventEmitter,
-  OnDestroy,
   Inject,
   Optional,
   SimpleChanges,
-  TemplateRef
+  TemplateRef, OnChanges, OnDestroy
 } from '@angular/core';
 import { TooltipComponent } from './tooltip.component';
 import { TooltipOptionsService } from './options.service';
@@ -34,7 +31,7 @@ export interface AdComponent {
     exportAs: 'llTooltip',
 })
 
-export class TooltipDirective {
+export class TooltipDirective implements OnChanges, OnDestroy {
 
     hideTimeoutId!: number;
     destroyTimeoutId!: number;
@@ -56,7 +53,7 @@ export class TooltipDirective {
     _animationDuration!: number;
     _maxWidth!: string;
 
-    @Input('options') set options(value: TooltipOptions) {
+    @Input() set options(value: TooltipOptions) {
         if (value && defaultOptions) {
             this._options = value;
         }
@@ -66,16 +63,11 @@ export class TooltipDirective {
     }
 
     @Input('llTooltip') tooltipValue!: string | TemplateRef<any> ;
-    @Input('placement') placement!: string;
-    @Input('autoPlacement') autoPlacement!: boolean;
+    @Input() placement!: string;
+    @Input() autoPlacement!: boolean;
 
     // Content type
-    @Input('content-type') set contentTypeBackwardCompatibility(value: "string" | "html" | "template") {
-        if (value) {
-            this._contentType = value;
-        }
-    }
-    @Input('contentType') set contentType(value: "string" | "html" | "template") {
+    @Input() set contentType(value: "string" | "html" | "template") {
         if (value) {
             this._contentType = value;
         }
@@ -84,16 +76,11 @@ export class TooltipDirective {
         return this._contentType;
     }
 
-    @Input('hide-delay-mobile') hideDelayMobile!: number;
-    @Input('hideDelayTouchscreen') hideDelayTouchscreen!: number;
+    @Input() hideDelayMobile!: number;
+    @Input() hideDelayTouchscreen!: number;
 
     // z-index
-    @Input('z-index') set zIndexBackwardCompatibility(value: number) {
-        if (value) {
-            this._zIndex = value;
-        }
-    }
-    @Input('zIndex') set zIndex(value: number) {
+    @Input() set zIndex(value: number) {
         if (value) {
             this._zIndex = value;
         }
@@ -103,12 +90,7 @@ export class TooltipDirective {
     }
 
     // Animation duration
-    @Input('animation-duration') set animationDurationBackwardCompatibility(value: number) {
-        if (value) {
-            this._animationDuration = value;
-        }
-    }
-    @Input('animationDuration') set animationDuration(value: number) {
+    @Input() set animationDuration(value: number) {
         if (value) {
             this._animationDuration = value;
         }
@@ -118,15 +100,10 @@ export class TooltipDirective {
     }
 
 
-    @Input('trigger') trigger!: string;
+    @Input() trigger!: string;
 
     // Tooltip class
-    @Input('tooltip-class') set tooltipClassBackwardCompatibility(value: string) {
-        if (value) {
-            this._tooltipClass = value;
-        }
-    }
-    @Input('tooltipClass') set tooltipClass(value: string) {
+    @Input() set tooltipClass(value: string) {
         if (value) {
             this._tooltipClass = value;
         }
@@ -135,21 +112,16 @@ export class TooltipDirective {
         return this._tooltipClass;
     }
 
-    @Input('display') display!: boolean;
-    @Input('display-mobile') displayMobile!: boolean;
-    @Input('displayTouchscreen') displayTouchscreen!: boolean;
-    @Input('shadow') shadow!: boolean;
-    @Input('theme') theme!: "dark" | "light";
-    @Input('offset') offset!: number;
-    @Input('width') width!: string;
+    @Input() display!: boolean;
+    @Input() displayMobile!: boolean;
+    @Input() displayTouchscreen!: boolean;
+    @Input() shadow!: boolean;
+    @Input() theme!: "dark" | "light";
+    @Input() offset!: number;
+    @Input() width!: string;
 
     // Max width
-    @Input('max-width') set maxWidthBackwardCompatibility(value: string) {
-        if (value) {
-            this._maxWidth = value;
-        }
-    }
-    @Input('maxWidth') set maxWidth(value: string) {
+    @Input() set maxWidth(value: string) {
         if (value) {
             this._maxWidth = value;
         }
@@ -159,15 +131,10 @@ export class TooltipDirective {
     }
 
 
-    @Input('id') id: any;
+    @Input() id: any;
 
     // Show delay
-    @Input('show-delay') set showDelayBackwardCompatibility(value: number) {
-        if (value) {
-            this._showDelay = value;
-        }
-    }
-    @Input('showDelay') set showDelay(value: number) {
+    @Input() set showDelay(value: number) {
         if (value) {
             this._showDelay = value;
         }
@@ -177,12 +144,7 @@ export class TooltipDirective {
     }
 
     // Hide delay
-    @Input('hide-delay') set hideDelayBackwardCompatibility(value: number) {
-        if (value) {
-            this._hideDelay = value;
-        }
-    }
-    @Input('hideDelay') set hideDelay(value: number) {
+    @Input() set hideDelay(value: number) {
         if (value) {
             this._hideDelay = value;
         }
@@ -191,9 +153,9 @@ export class TooltipDirective {
         return this._hideDelay;
     }
 
-    @Input('hideDelayAfterClick') hideDelayAfterClick!: number;
-    @Input('pointerEvents') pointerEvents!: 'auto' | 'none';
-    @Input('position') position!: {top: number, left: number};
+    @Input() hideDelayAfterClick!: number;
+    @Input() pointerEvents!: 'auto' | 'none';
+    @Input() position!: {top: number, left: number};
 
     get isTooltipDestroyed() {
         return this.componentRef && this.componentRef.hostView.destroyed;
@@ -255,9 +217,6 @@ export class TooltipDirective {
         this.hideAfterClickTimeoutId = window.setTimeout(() => {
             this.destroyTooltip();
         }, this.options['hideDelayAfterClick'])
-    }
-
-    ngOnInit(): void {
     }
 
     ngOnChanges(changes: SimpleChanges) {

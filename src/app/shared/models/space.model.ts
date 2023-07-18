@@ -25,18 +25,3 @@ export interface SpaceCreateFS {
 export interface SpaceUpdate {
   name: string;
 }
-
-export interface SpaceUpdateFS {
-  name: string;
-  updatedAt: FieldValue;
-}
-
-export interface SpaceLocalesUpdateFS {
-  locales: FieldValue;
-  updatedAt: FieldValue;
-}
-
-export interface SpaceFallbackLocaleUpdateFS {
-  localeFallback: Locale;
-  updatedAt: FieldValue;
-}

@@ -1,33 +1,33 @@
-import {FieldValue, Timestamp} from '@angular/fire/firestore';
+import {Timestamp} from '@angular/fire/firestore';
 
 export interface User {
   /**
    * The user's `uid`.
    */
-  readonly id: string;
+  id: string;
   /**
    * The user's primary email, if set.
    */
-  readonly email?: string;
+  email?: string;
   /**
    * The user's display name.
    */
-  readonly displayName?: string;
+  displayName?: string;
   /**
    * The user's photo URL.
    */
-  readonly photoURL?: string;
+  photoURL?: string;
   /**
    * Whether or not the user is disabled: true for disabled; false for enabled.
    */
-  readonly disabled: boolean;
+  disabled: boolean;
 
-  readonly role?: UserRole;
+  role?: UserRole;
 
-  readonly permissions?: string[];
+  permissions?: UserPermission[];
 
-  readonly createdAt: Timestamp;
-  readonly updatedAt: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface UserInvite {
@@ -35,12 +35,6 @@ export interface UserInvite {
   email: string
   password: string
   role: string
-}
-
-export interface UserUpdateFS {
-  role?: string,
-  permissions?: string[];
-  updatedAt: FieldValue;
 }
 
 export type UserRole = 'admin' | 'custom';

@@ -165,7 +165,6 @@ export interface SchemaFieldAssets extends SchemaFieldBase {
 }
 
 // Service
-
 export interface SchemaCreate {
   name: string;
   displayName?: string;
@@ -181,20 +180,10 @@ export interface SchemaUpdate {
 }
 
 // Firestore
-
 export interface SchemaCreateFS {
   name: string;
   displayName?: string;
   type: SchemaType;
   createdAt: FieldValue;
-  updatedAt: FieldValue;
-}
-
-export interface SchemaUpdateFS {
-  name: string;
-  displayName?: string;
-  previewField?: string | FieldValue;
-  previewImage?: string | FieldValue;
-  fields?: SchemaField[];
   updatedAt: FieldValue;
 }

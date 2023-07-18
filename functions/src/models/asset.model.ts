@@ -1,4 +1,4 @@
-import {FieldValue, Timestamp} from 'firebase-admin/firestore';
+import {Timestamp} from 'firebase-admin/firestore';
 import {JSONSchemaType} from 'ajv';
 
 export type Asset = AssetFile | AssetFolder;
@@ -37,15 +37,7 @@ export interface AssetMetadata {
   height?: number;
 }
 
-export interface UpdateAssetUpload {
-  inProgress?: boolean,
-  size?: number,
-  metadata?: AssetMetadata
-  updatedAt: FieldValue,
-}
-
 // Import and Export
-
 export interface AssetFolderExport extends Omit<AssetFolder, 'createdAt' | 'updatedAt'> {
   id: string,
 }

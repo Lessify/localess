@@ -67,9 +67,9 @@ export class AssetSelectComponent implements OnInit {
       .afterClosed()
       .subscribe({
         next: (selectedAssets) => {
-          this.asset = undefined
-          this.cd.detectChanges();
           if (selectedAssets && selectedAssets.length > 0) {
+            this.asset = undefined
+            this.cd.detectChanges();
             this.asset = selectedAssets[0]
             this.assetChange.emit(this.asset.id)
             this.cd.markForCheck();

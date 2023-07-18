@@ -1,15 +1,13 @@
 import {Component, ElementRef, HostListener, HostBinding, Input, OnInit, EventEmitter, Renderer2} from '@angular/core';
 
 @Component({
-    selector: 'tooltip',
+    selector: 'll-tooltip',
     templateUrl: './tooltip.component.html',
-    host: {
-        'class': 'tooltip'
-    },
     styleUrls: ['./tooltip.component.sass']
 })
 
-export class TooltipComponent {
+export class TooltipComponent implements OnInit {
+  @HostBinding('class') class = 'tooltip';
     _show: boolean = false;
     events = new EventEmitter();
 
