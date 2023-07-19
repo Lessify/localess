@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {FormBuilder, FormGroup} from '@angular/forms';
+import {FormBuilder} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../../environments/environment';
 import {MatDialog} from '@angular/material/dialog';
@@ -11,6 +11,7 @@ import {AssetService} from '@shared/services/asset.service';
 import {Space} from '@shared/models/space.model';
 import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/assets-select-dialog.model';
+import {AssetFileType} from "@shared/models/schema.model";
 
 @Component({
   selector: 'll-schema-asset-select',
@@ -61,7 +62,8 @@ export class AssetSelectComponent implements OnInit {
         maxHeight: "calc(100vh - 80px)",
         data: {
           spaceId: this.space?.id!!,
-          multiple: false
+          multiple: false,
+          fileType: AssetFileType.IMAGE
         }
       })
       .afterClosed()

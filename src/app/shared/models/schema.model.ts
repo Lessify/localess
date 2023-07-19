@@ -167,10 +167,12 @@ export interface SchemaFieldAssets extends SchemaFieldBase {
 }
 
 export enum AssetFileType {
-  IMAGES = 'IMAGES',
-  VIDEOS = 'VIDEOS',
-  TEXTS = 'TEXTS',
-  AUDIOS = 'AUDIOS',
+  ANY = 'ANY',
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  TEXT = 'TEXT',
+  AUDIO = 'AUDIO',
+  APPLICATION = 'APPLICATION',
 }
 
 // Service

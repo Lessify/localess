@@ -72,7 +72,7 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
       .pipe(
         switchMap(( path) => {
           this.assetPath = path;
-          return this.assetService.findAll(this.data.spaceId, this.parentPath)
+          return this.assetService.findAll(this.data.spaceId, this.parentPath, this.data.fileType)
         }),
         takeUntil(this.destroy$),
       )

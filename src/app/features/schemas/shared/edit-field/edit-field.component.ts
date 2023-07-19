@@ -12,6 +12,7 @@ import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../../environments/environment';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
+import {MatListOption, MatSelectionListChange} from "@angular/material/list";
 
 @Component({
   selector: 'll-schema-field-edit',
@@ -253,7 +254,7 @@ export class EditFieldComponent implements OnInit {
       case SchemaFieldKind.ASSET: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(undefined, SchemasValidator.FIELD_FILE_TYPES));
+        this.form.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -272,7 +273,7 @@ export class EditFieldComponent implements OnInit {
       case SchemaFieldKind.ASSETS: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(undefined, SchemasValidator.FIELD_FILE_TYPES));
+        this.form.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -335,5 +336,24 @@ export class EditFieldComponent implements OnInit {
     const tmp = options.at(event.previousIndex)
     options.removeAt(event.previousIndex)
     options.insert(event.currentIndex, tmp)
+  }
+
+  assetTypeSelection(event: MatSelectionListChange) {
+    console.log(event)
+    const eventOption = event.options[0]
+    if (eventOption.selected) {
+      if (eventOption.value === AssetFileType.ANY) {
+        // Deselect others
+        this.form.controls['fileTypes'].setValue([AssetFileType.ANY])
+      } else {
+        const values = event.source.selectedOptions.selected.filter(it => it.value !== AssetFileType.ANY).map(it => it.value);
+        this.form.controls['fileTypes'].setValue(values)
+      }
+    } else {
+      // In case nothing is selected, Select ANY
+      if (event.source.selectedOptions.selected.length === 0) {
+        this.form.controls['fileTypes'].setValue([AssetFileType.ANY])
+      }
+    }
   }
 }

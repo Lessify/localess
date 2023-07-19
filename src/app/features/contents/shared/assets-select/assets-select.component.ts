@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
+import {SchemaFieldAssets, SchemaFieldKind} from '@shared/models/schema.model';
 import {MatDialog} from '@angular/material/dialog';
 import {NotificationService} from '@shared/services/notification.service';
 import {Asset} from '@shared/models/asset.model';
@@ -32,7 +32,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
   isDebug = environment.debug
   @Input() form?: FormArray;
   // @Input() ids?: string[];
-  @Input() component?: SchemaField;
+  @Input() component?: SchemaFieldAssets;
   @Input() space?: Space;
 
 
@@ -77,7 +77,8 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
         maxHeight: "calc(100vh - 80px)",
         data: {
           spaceId: this.space?.id!!,
-          multiple: true
+          multiple: true,
+          fileType: this.component?.fileTypes?.at(0)
         }
       })
       .afterClosed()

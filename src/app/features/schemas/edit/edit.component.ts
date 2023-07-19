@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord} from '@angular/forms';
 import {SchemasValidator} from '@shared/validators/schemas.validator';
 import {
@@ -214,12 +208,12 @@ export class EditComponent implements OnInit, OnDestroy {
       }
       case SchemaFieldKind.ASSET: {
         fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE));
-        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(undefined, SchemasValidator.FIELD_FILE_TYPES));
+        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));
         break;
       }
       case SchemaFieldKind.ASSETS: {
         fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE));
-        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(undefined, SchemasValidator.FIELD_FILE_TYPES));
+        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));
         break;
       }
       case SchemaFieldKind.SCHEMA: {

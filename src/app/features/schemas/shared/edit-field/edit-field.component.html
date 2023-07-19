@@ -156,22 +156,37 @@
 
       <!--ASSET and ASSETS-->
       <ng-container *ngIf="['ASSET','ASSETS'].includes(form.value.kind)">
-        <mat-selection-list formControlName="fileTypes">
+        <mat-selection-list formControlName="fileTypes" multiple="false">
           <div mat-subheader>File Types</div>
-          <mat-list-option value="">
+          <mat-list-option value="ANY">
+            <mat-icon matListItemIcon>file_present</mat-icon>
             <span matListItemTitle>Any File</span>
+            <span matListItemLine>All type of files.</span>
           </mat-list-option>
-          <mat-list-option value="IMAGES">
+          <mat-list-option value="IMAGE">
+            <mat-icon matListItemIcon>image</mat-icon>
             <span matListItemTitle>Images</span>
+            <span matListItemLine>Image or graphical files including both bitmap and vector still images.</span>
           </mat-list-option>
-          <mat-list-option value="VIDEOS">
+          <mat-list-option value="VIDEO">
+            <mat-icon matListItemIcon>video_file</mat-icon>
             <span matListItemTitle>Videos</span>
+            <span matListItemLine>Videos files.</span>
           </mat-list-option>
-          <mat-list-option value="AUDIOS">
+          <mat-list-option value="AUDIO">
+            <mat-icon matListItemIcon>audio_file</mat-icon>
             <span matListItemTitle>Audios</span>
+            <span matListItemLine>Audio or music files.</span>
           </mat-list-option>
-          <mat-list-option value="TEXTS">
-            <span matListItemTitle>Documents</span>
+          <mat-list-option value="TEXT">
+            <mat-icon matListItemIcon>description</mat-icon>
+            <span matListItemTitle>Text Documents</span>
+            <span matListItemLine>Text-only files including any human-readable content, source code, or textual data.</span>
+          </mat-list-option>
+          <mat-list-option value="APPLICATION">
+            <mat-icon matListItemIcon>file_present</mat-icon>
+            <span matListItemTitle>Application Documents</span>
+            <span matListItemLine>Any kind of binary data that doesn't fall explicitly into one of the other types.</span>
           </mat-list-option>
         </mat-selection-list>
       </ng-container>

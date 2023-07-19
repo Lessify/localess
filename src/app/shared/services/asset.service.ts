@@ -15,21 +15,23 @@ import {
   serverTimestamp,
   UpdateData,
   updateDoc,
-  where
+  where, or
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
-import {map, switchMap} from 'rxjs/operators';
+import {filter, map, switchMap} from 'rxjs/operators';
 import {
   Asset,
   AssetFileCreateFS,
+  AssetFolder,
   AssetFolderCreate,
   AssetFolderCreateFS,
   AssetFolderUpdate,
-  AssetFolderUpdateFS,
   AssetKind
 } from '@shared/models/asset.model';
+import {AssetFileType} from "@shared/models/schema.model";
+import {QueryFieldFilterConstraint, QueryFilterConstraint} from "@firebase/firestore";
 
 @Injectable()
 export class AssetService {
@@ -39,7 +41,7 @@ export class AssetService {
   ) {
   }
 
-  findAll(spaceId: string, parentPath?: string): Observable<Asset[]> {
+  findAll(spaceId: string, parentPath?: string, fileType?: AssetFileType): Observable<Asset[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('kind', 'desc'), orderBy('name', 'asc')]
     if (parentPath) {
       queryConstrains.push(
@@ -50,7 +52,31 @@ export class AssetService {
         where('parentPath', '==', '')
       )
     }
-
+    let filterFileType: string | undefined = undefined;
+    if (fileType || fileType !== AssetFileType.ANY) {
+      switch (fileType) {
+        case AssetFileType.AUDIO: {
+          filterFileType = 'audio/'
+          break;
+        }
+        case AssetFileType.TEXT: {
+          filterFileType = 'text/'
+          break;
+        }
+        case AssetFileType.IMAGE: {
+          filterFileType = 'image/'
+          break;
+        }
+        case AssetFileType.VIDEO: {
+          filterFileType = 'video/'
+          break;
+        }
+        case AssetFileType.APPLICATION: {
+          filterFileType = 'application/'
+          break;
+        }
+      }
+    }
     return collectionData(
       query(
         collection(this.firestore, `spaces/${spaceId}/assets`),
@@ -59,7 +85,20 @@ export class AssetService {
     )
       .pipe(
         traceUntilFirst('Firestore:Assets:findAll'),
-        map((it) => it as Asset[])
+        map((it) => it as Asset[]),
+        map((assets) => {
+          if(filterFileType) {
+            return assets.filter(it => {
+              if ( it.kind === AssetKind.FILE) {
+                return it.type.startsWith(filterFileType!)
+              }
+              return true
+            })
+          } else {
+            return assets
+          }
+
+        })
       );
   }
 
@@ -128,7 +167,7 @@ export class AssetService {
   }
 
   update(spaceId: string, id: string, entity: AssetFolderUpdate): Observable<void> {
-    const update: UpdateData<AssetFolderUpdateFS> = {
+    const update: UpdateData<AssetFolder> = {
       name: entity.name,
       updatedAt: serverTimestamp()
     }
