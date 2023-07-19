@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
+import {SchemaFieldAsset, SchemaFieldKind} from '@shared/models/schema.model';
 import {environment} from '../../../../../environments/environment';
 import {MatDialog} from '@angular/material/dialog';
 import {NotificationService} from '@shared/services/notification.service';
@@ -22,7 +22,7 @@ import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/a
 export class AssetSelectComponent implements OnInit {
   isDebug = environment.debug
   @Input() form?: FormGroup;
-  @Input() component?: SchemaField;
+  @Input() component?: SchemaFieldAsset;
   @Input() space?: Space;
   asset?: Asset;
 
@@ -66,7 +66,8 @@ export class AssetSelectComponent implements OnInit {
         maxHeight: "calc(100vh - 80px)",
         data: {
           spaceId: this.space?.id!!,
-          multiple: false
+          multiple: false,
+          fileType: this.component?.fileTypes?.at(0)
         }
       })
       .afterClosed()

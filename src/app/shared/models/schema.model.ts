@@ -158,10 +158,21 @@ export interface SchemaFieldLink extends SchemaFieldBase {
 
 export interface SchemaFieldAsset extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSET
+  fileTypes?: AssetFileType[]
 }
 
 export interface SchemaFieldAssets extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSETS
+  fileTypes?: AssetFileType[]
+}
+
+export enum AssetFileType {
+  ANY = 'ANY',
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  TEXT = 'TEXT',
+  AUDIO = 'AUDIO',
+  APPLICATION = 'APPLICATION',
 }
 
 // Service

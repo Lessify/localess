@@ -290,6 +290,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   fileIcon(type: string): string {
     if (type.startsWith('audio/')) return 'audio_file'
+    if (type.startsWith('text/')) return 'description'
     if (type.startsWith('image/')) return 'image'
     if (type.startsWith('font/')) return 'font_download'
     if (type.startsWith('video/')) return 'video_file'
