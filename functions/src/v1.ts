@@ -21,15 +21,15 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) =
   logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
   logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
   const {spaceId, locale} = req.params;
-  const {version} = req.query;
+  const {cv} = req.query;
 
   const cachePath = `spaces/${spaceId}/translations/cache.json`;
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
-    if (version === undefined || version != metadata.generation) {
-      res.redirect(`/api/v1/spaces/${spaceId}/translations/${locale}?version=${metadata.generation}`);
+    if (cv === undefined || cv != metadata.generation) {
+      res.redirect(`/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`);
       return;
     } else {
       const spaceSnapshot = await findSpaceById(spaceId).get();
@@ -70,15 +70,15 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
   const {spaceId} = req.params;
-  const {kind, startSlug, version} = req.query;
+  const {kind, startSlug, cv} = req.query;
 
   const cachePath = `spaces/${spaceId}/contents/cache.json`;
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces links cache meta : ' + JSON.stringify(metadata));
-    if (version === undefined || version != metadata.generation) {
-      let redirectLink = `/api/v1/spaces/${spaceId}/links?version=${metadata.generation}`;
+    if (cv === undefined || cv != metadata.generation) {
+      let redirectLink = `/api/v1/spaces/${spaceId}/links?cv=${metadata.generation}`;
       if (kind !== undefined) {
         redirectLink += `&kind=${kind}`;
       }
@@ -147,7 +147,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content url: ' + req.url);
   const {spaceId} = req.params;
-  const {version, locale} = req.query;
+  const {cv, locale} = req.query;
   const params: Record<string, string> = req.params;
   const fullSlug = params['0'];
   let contentId = '';
@@ -172,8 +172,8 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
-    if (version === undefined || version != metadata.generation) {
-      let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?version=${metadata.generation}`;
+    if (cv === undefined || cv != metadata.generation) {
+      let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?cv=${metadata.generation}`;
       if (locale) {
         url = `${url}&locale=${locale}`;
       }
@@ -218,15 +218,15 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
 expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
   logger.info('v1 spaces content: ' + JSON.stringify(req.params));
   const {spaceId, contentId} = req.params;
-  const {version, locale} = req.query;
+  const {cv, locale} = req.query;
 
   const cachePath = `spaces/${spaceId}/contents/${contentId}/cache.json`;
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
-    if (version === undefined || version != metadata.generation) {
-      let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?version=${metadata.generation}`;
+    if (cv === undefined || cv != metadata.generation) {
+      let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?cv=${metadata.generation}`;
       if (locale) {
         url = `${url}&locale=${locale}`;
       }
