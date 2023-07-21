@@ -14,7 +14,11 @@ import {
   provideAuth
 } from '@angular/fire/auth';
 import {AuthGuardModule} from '@angular/fire/auth-guard';
-import {connectFirestoreEmulator, enableMultiTabIndexedDbPersistence, getFirestore, provideFirestore} from '@angular/fire/firestore';
+import {
+  connectFirestoreEmulator,
+  initializeFirestore,
+  provideFirestore
+} from '@angular/fire/firestore';
 import {connectStorageEmulator, getStorage, provideStorage} from '@angular/fire/storage';
 import {CoreModule} from '@core/core.module';
 import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
@@ -24,12 +28,6 @@ import {connectFunctionsEmulator, getFunctions, provideFunctions} from '@angular
 import {getPerformance, providePerformance} from '@angular/fire/performance';
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
 import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
-
-let resolvePersistenceEnabled: (enabled: boolean) => void;
-
-export const persistenceEnabled = new Promise<boolean>((resolve) => {
-  resolvePersistenceEnabled = resolve;
-});
 
 @NgModule({
   declarations: [
@@ -60,14 +58,10 @@ export const persistenceEnabled = new Promise<boolean>((resolve) => {
       return auth;
     }),
     provideFirestore(() => {
-      const firestore = getFirestore();
+      const firestore = initializeFirestore(getApp(), {localCache: {kind: "persistent"}});
       if (environment.useEmulators) {
         connectFirestoreEmulator(firestore, 'localhost', 8080);
       }
-      enableMultiTabIndexedDbPersistence(firestore).then(
-        () => resolvePersistenceEnabled(true),
-        () => resolvePersistenceEnabled(false)
-      );
       return firestore;
     }),
     provideStorage(() => {
