@@ -17,7 +17,6 @@ import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
-import {AssetKind} from '@shared/models/asset.model';
 import {
   Task,
   TaskAssetExportCreateFS,

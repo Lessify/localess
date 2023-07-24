@@ -87,6 +87,15 @@ const routes: Routes = [
         }
       },
       {
+        path: 'spaces/:spaceId/settings',
+        title: 'Settings',
+        loadChildren: () => import('./settings/settings.module').then(m => m.SettingsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionSpaceManagement
+        }
+      },
+      {
         path: 'translations',
         title: 'Translations',
         loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
@@ -102,15 +111,6 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionTranslationRead
-        }
-      },
-      {
-        path: 'locales',
-        title: 'Locales',
-        loadChildren: () => import('./locales/locales.module').then(m => m.LocalesModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionSpaceManagement
         }
       },
       {

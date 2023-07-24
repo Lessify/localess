@@ -31,10 +31,10 @@ import {NotificationService} from '@shared/services/notification.service';
 import {Subject} from 'rxjs';
 
 @Component({
-  selector: 'll-locales',
+  selector: 'll-space-settings-locales',
   templateUrl: './locales.component.html',
   styleUrls: ['./locales.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LocalesComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, {static: false}) sort?: MatSort;
@@ -64,29 +64,19 @@ export class LocalesComponent implements OnInit, OnDestroy {
     this.store.select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
+        switchMap(it =>  this.spaceService.findById(it.id)),
         takeUntil(this.destroy$),
       )
       .subscribe({
         next: (space) => {
-          this.loadData(space.id);
-        }
-      })
-  }
-
-  loadData(spaceId: string): void {
-    this.spaceService.findById(spaceId)
-      .pipe(
-        takeUntil(this.destroy$),
-      )
-      .subscribe(response => {
-          this.selectedSpace = response;
-          this.dataSource = new MatTableDataSource<Locale>(response.locales);
+          this.selectedSpace = space;
+          this.dataSource = new MatTableDataSource<Locale>(space.locales);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;
           this.cd.markForCheck();
         }
-      )
+      })
   }
 
   openAddDialog(): void {

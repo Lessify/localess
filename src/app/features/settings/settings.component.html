@@ -1,0 +1,20 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    Settings
+    <span class="spacer"></span>
+  </mat-toolbar-row>
+</mat-toolbar>
+<div *ngIf="isLoading" class="loader">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid mt-3">
+  <nav mat-tab-nav-bar [tabPanel]="tabPanel" mat-stretch-tabs="false" mat-align-tabs="center">
+    <a mat-tab-link *ngFor="let tabItem of tabItems" [routerLink]="tabItem.link"
+       (click)="activeTab = tabItem.link" [active]="activeTab === tabItem.link">
+      <mat-icon>{{tabItem.icon}}</mat-icon>&nbsp;
+      <span>{{tabItem.label}}</span>
+    </a>
+  </nav>
+  <mat-tab-nav-panel #tabPanel></mat-tab-nav-panel>
+  <router-outlet></router-outlet>
+</div>
