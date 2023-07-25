@@ -14,7 +14,7 @@ import {
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {Space, SpaceCreate, SpaceCreateFS, SpaceUpdate} from '../models/space.model';
+import {Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUpdate} from '../models/space.model';
 import {Locale} from '../models/locale.model';
 
 @Injectable()
@@ -67,6 +67,17 @@ export class SpaceService {
     return from(updateDoc(doc(this.firestore, `spaces/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Spaces:update'),
+      );
+  }
+
+  updateEnvironments(id: string, environments: SpaceEnvironment[]): Observable<void> {
+    const update: UpdateData<Space> = {
+      environments: environments,
+      updatedAt: serverTimestamp()
+    }
+    return from(updateDoc(doc(this.firestore, `spaces/${id}`), update))
+      .pipe(
+        traceUntilFirst('Firestore:Spaces:updateEnvironments'),
       );
   }
 

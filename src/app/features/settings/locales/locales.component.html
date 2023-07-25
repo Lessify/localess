@@ -1,4 +1,4 @@
-<mat-toolbar>
+<mat-toolbar style="background: transparent">
   <mat-toolbar-row>
     Locales
     <span class="spacer"></span>
@@ -14,7 +14,7 @@
 <div *ngIf="isLoading" class="loader">
   <mat-spinner></mat-spinner>
 </div>
-<div *ngIf="!isLoading" class="container-fluid mt-3">
+<div *ngIf="!isLoading" class="container-fluid my-3">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>

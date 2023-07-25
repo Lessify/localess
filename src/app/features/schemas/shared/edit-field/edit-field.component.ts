@@ -12,7 +12,7 @@ import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {environment} from '../../../../../environments/environment';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {MatListOption, MatSelectionListChange} from "@angular/material/list";
+import {MatSelectionListChange} from "@angular/material/list";
 
 @Component({
   selector: 'll-schema-field-edit',

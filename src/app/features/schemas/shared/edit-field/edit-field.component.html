@@ -87,6 +87,20 @@
 
       <!--Option and Options-->
       <ng-container *ngIf="['OPTION', 'OPTIONS'].includes(form.value.kind)">
+
+        <ng-container *ngIf="['OPTIONS'].includes(form.value.kind)">
+          <mat-form-field>
+            <mat-label>Min Values</mat-label>
+            <input matInput type="number" formControlName="minValues" autocomplete="off"/>
+            <mat-error *ngIf="form.controls['minValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Max Values</mat-label>
+            <input matInput type="number" formControlName="maxValues" autocomplete="off"/>
+            <mat-error *ngIf="form.controls['maxValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+          </mat-form-field>
+        </ng-container>
+
         <h3>Options</h3>
         <mat-divider></mat-divider>
         <br/>
@@ -124,19 +138,6 @@
             </button>
           </mat-action-row>
         </mat-accordion>
-
-        <ng-container *ngIf="['OPTIONS'].includes(form.value.kind)">
-          <mat-form-field>
-            <mat-label>Min Values</mat-label>
-            <input matInput type="number" formControlName="minValues" autocomplete="off"/>
-            <mat-error *ngIf="form.controls['minValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Max Values</mat-label>
-            <input matInput type="number" formControlName="maxValues" autocomplete="off"/>
-            <mat-error *ngIf="form.controls['maxValues']?.errors as errors">{{fe.errors(errors)}}</mat-error>
-          </mat-form-field>
-        </ng-container>
 
       </ng-container>
 

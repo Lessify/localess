@@ -1,6 +1,6 @@
-<mat-toolbar>
+<mat-toolbar style="background: transparent">
   <mat-toolbar-row>
-    General
+    Visual Editor
     <span class="spacer"></span>
     <button mat-raised-button
             color="primary"
@@ -14,20 +14,60 @@
 <div *ngIf="isLoading" class="loader">
   <mat-spinner></mat-spinner>
 </div>
-<div *ngIf="!isLoading" class="container-fluid mt-3">
-  <mat-form-field>
-    <mat-label>Space ID</mat-label>
-    <input matInput type="text" [value]="space.id" readonly/>
-    <button mat-icon-button matSuffix [cdkCopyToClipboard]="space.id" matTooltip="Copy Id">
-      <mat-icon>content_copy</mat-icon>
-    </button>
-  </mat-form-field>
+<div *ngIf="!isLoading" class="container-fluid my-3">
+  <mat-toolbar style="background: transparent">
+    <mat-toolbar-row>
+      Preview URL's
+      <span class="spacer"></span>
+      <button mat-raised-button
+              color="primary"
+              (click)="addEnvironment()">
+        <mat-icon>add</mat-icon>
+        Add Environment
+      </button>
+    </mat-toolbar-row>
+  </mat-toolbar>
+
   <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Space Name</mat-label>
-      <input matInput type="text" formControlName="name" required minLength="3" maxlength="30" autocomplete="off"/>
-      <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/30</mat-hint>
-      <mat-error *ngIf="form.controls['name'].errors as errors">{{fe.errors(errors)}}</mat-error>
-    </mat-form-field>
+    <mat-accordion cdkDropList multi formArrayName="environments" (cdkDropListDropped)="environmentDropDrop($event)">
+      <mat-expansion-panel cdkDrag *ngFor="let option of environments?.controls; index as idx"
+                           [formGroupName]="idx" expanded
+                           [class.invalid]="option.invalid">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+            Environment {{idx+1}}
+            <button mat-icon-button (click)="removeEnvironment(idx)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <mat-form-field style="padding-right: 10px">
+          <mat-label>Name</mat-label>
+          <input matInput type="text" formControlName="name" autocomplete="off"/>
+          <mat-hint align="end">{{option.value.name?.length || 0}}/30</mat-hint>
+          <mat-error *ngIf="option.controls['name']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
+        <mat-form-field style="width: calc(100% - 360px)">
+          <mat-label>Value</mat-label>
+          <input matInput type="text" formControlName="url" autocomplete="off"/>
+          <mat-hint align="end">{{option.value.url?.length || 0}}/250</mat-hint>
+          <mat-error *ngIf="option.controls['url']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
+
+      </mat-expansion-panel>
+    </mat-accordion>
   </form>
 </div>
+<ng-container *ngIf="isDebug">
+  <mat-accordion [multi]="true">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Form : {{form?.valid}} </mat-panel-title>
+      </mat-expansion-panel-header>
+      <pre>{{form.value | json}}</pre>
+      <pre>{{form.errors | json}}</pre>
+    </mat-expansion-panel>
+  </mat-accordion>
+</ng-container>

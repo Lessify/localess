@@ -5,13 +5,15 @@ import {filter, switchMap, takeUntil} from 'rxjs/operators';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {SpaceService} from '@shared/services/space.service';
-import {Space} from '@shared/models/space.model';
+import {Space, SpaceEnvironment} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {Subject} from 'rxjs';
 import {selectSpace} from "@core/state/space/space.selector";
-import {FormBuilder, FormGroup} from "@angular/forms";
+import {FormArray, FormBuilder, FormGroup} from "@angular/forms";
 import {SpaceValidator} from "@shared/validators/space.validator";
 import {FormErrorHandlerService} from "@core/error-handler/form-error-handler.service";
+import {environment} from "../../../../environments/environment";
+import {CdkDragDrop} from "@angular/cdk/drag-drop";
 
 @Component({
   selector: 'll-space-settings-visual-editor',
@@ -20,14 +22,14 @@ import {FormErrorHandlerService} from "@core/error-handler/form-error-handler.se
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VisualEditorComponent implements OnInit, OnDestroy {
-
+  isDebug = environment.debug
   isLoading: boolean = true;
   space?: Space;
 
   // Form
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', SpaceValidator.NAME)
-  });
+    environments: this.fb.array([])
+  }) ;
 
   // Subscriptions
   private destroy$ = new Subject();
@@ -55,15 +57,31 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (space) => {
           this.space = space;
-          this.form.patchValue(space);
+          space.environments?.forEach(env => this.addEnvironment(env))
           this.isLoading = false;
           this.cd.markForCheck();
         }
       })
   }
 
+  get environments(): FormArray<FormGroup> {
+    return this.form.controls['environments'] as FormArray<FormGroup>;
+  }
+
+  addEnvironment(env?: SpaceEnvironment): void {
+    const environment: FormGroup = this.fb.group({
+      name: this.fb.control<string>(env?.name || '', SpaceValidator.ENVIRONMENT_NAME),
+      url: this.fb.control<string>(env?.url || '', SpaceValidator.ENVIRONMENT_URL),
+    })
+    this.environments.push(environment)
+  }
+
+  removeEnvironment(i: number): void {
+    this.environments.removeAt(i);
+  }
+
   save(): void {
-    this.spaceService.update(this.space?.id!, this.form.value)
+    this.spaceService.updateEnvironments(this.space?.id!, this.form.value)
       .subscribe({
         next: () => {
           this.notificationService.success('Space has been updated.');
@@ -77,5 +95,12 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next(undefined)
     this.destroy$.complete()
+  }
+
+  environmentDropDrop(event:CdkDragDrop<string[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    const tmp = this.environments.at(event.previousIndex)
+    this.environments.removeAt(event.previousIndex)
+    this.environments.insert(event.currentIndex, tmp)
   }
 }
