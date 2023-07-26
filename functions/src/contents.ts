@@ -1,12 +1,12 @@
 import {logger} from 'firebase-functions/v2';
-import {onCall, HttpsError} from 'firebase-functions/v2/https';
+import {HttpsError, onCall} from 'firebase-functions/v2/https';
 import {onDocumentDeleted, onDocumentUpdated, onDocumentWritten} from 'firebase-functions/v2/firestore';
-import {FieldValue} from 'firebase-admin/firestore';
+import {FieldValue, UpdateData} from 'firebase-admin/firestore';
 import {SecurityUtils} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
-import {Content, ContentKind, ContentDocument, ContentDocumentStorage, PublishContentData} from './models/content.model';
-import {Schema} from './models/schema.model';
+import {Content, ContentData, ContentDocument, ContentDocumentStorage, ContentKind, PublishContentData} from './models/content.model';
+import {Schema, SchemaFieldKind} from './models/schema.model';
 import {UserPermission} from './models/user.model';
 import {findContentByFullSlug, findContentById} from './services/content.service';
 import {findSpaceById} from './services/space.service';
@@ -39,22 +39,23 @@ const contentPublish = onCall<PublishContentData>(async (request) => {
       };
 
       if (content.data) {
-        documentStorage.data = {
-          _id: content.data._id,
-          schema: content.data.schema,
-        };
-        const schema = schemas.find((it) => it.name == content.data?.schema);
-        for (const field of schema?.fields || []) {
-          if (field.translatable) {
-            let value = content.data[`${field.name}_i18n_${locale.id}`];
-            if (!value) {
-              value = content.data[`${field.name}_i18n_${space.localeFallback.id}`];
-            }
-            documentStorage.data[field.name] = value;
-          } else {
-            documentStorage.data[field.name] = content.data[field.name];
-          }
-        }
+        // documentStorage.data = {
+        //   _id: content.data._id,
+        //   schema: content.data.schema,
+        // };
+        // const schema = schemas.find((it) => it.name == content.data?.schema);
+        documentStorage.data = extractContent(content.data, schemas, locale.id, space.localeFallback.id);
+        // for (const field of schema?.fields || []) {
+        //   if (field.translatable) {
+        //     let value = content.data[`${field.name}_i18n_${locale.id}`];
+        //     if (!value) {
+        //       value = content.data[`${field.name}_i18n_${space.localeFallback.id}`];
+        //     }
+        //     documentStorage.data[field.name] = value;
+        //   } else {
+        //     documentStorage.data[field.name] = content.data[field.name];
+        //   }
+        // }
       }
 
       // Save generated JSON
@@ -105,9 +106,10 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
     contentsSnapshot.docs.filter((it) => it.exists)
       .forEach((it) => {
         const content = it.data() as Content;
-        const update = {
+        const update: UpdateData<Content> = {
           parentSlug: contentAfter.fullSlug,
           fullSlug: `${contentAfter.fullSlug}/${content.slug}`,
+          updatedAt: FieldValue.serverTimestamp(),
         };
         batch.update(it.ref, update);
       });
@@ -149,6 +151,42 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
   await bucket.file(`spaces/${spaceId}/contents/cache.json`).save('');
   return;
 });
+
+/**
+ * extract Locale Content
+ * @param {ContentData} content content
+ * @param {Schema[]} schemas schema
+ * @param {string} locale locale
+ * @param {string} localeFallback fallback locale
+ * @return {ContentData} content
+ */
+function extractContent(content: ContentData, schemas: Schema[], locale: string, localeFallback: string): ContentData {
+  const extractedContentData : ContentData = {
+    _id: content._id,
+    schema: content.schema,
+  };
+  const schema = schemas.find((it) => it.name == content.schema);
+  for (const field of schema?.fields || []) {
+    if (field.kind === SchemaFieldKind.SCHEMA) {
+      extractedContentData[field.name] = extractContent(content[field.name], schemas, locale, localeFallback);
+    } else if (field.kind === SchemaFieldKind.SCHEMAS) {
+      if (Array.isArray(content[field.name])) {
+        extractedContentData[field.name] = (content[field.name] as (ContentData[] | undefined))?.map((it) => extractContent(it, schemas, locale, localeFallback));
+      }
+    } else {
+      if (field.translatable) {
+        let value = content[`${field.name}_i18n_${locale}`];
+        if (!value) {
+          value = content[`${field.name}_i18n_${localeFallback}`];
+        }
+        extractedContentData[field.name] = value;
+      } else {
+        extractedContentData[field.name] = content[field.name];
+      }
+    }
+  }
+  return extractedContentData;
+}
 
 export const content = {
   publish: contentPublish,
