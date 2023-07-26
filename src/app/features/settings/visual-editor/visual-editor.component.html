@@ -1,10 +1,8 @@
-<mat-toolbar style="background: transparent">
+<mat-toolbar class="border-bottom bg-transparent">
   <mat-toolbar-row>
     Visual Editor
     <span class="spacer"></span>
-    <button mat-raised-button
-            color="primary"
-            (click)="save()">
+    <button mat-raised-button color="primary" [disabled]="!form.valid" (click)="save()">
       <mat-icon>save</mat-icon>
       Save
     </button>
@@ -45,13 +43,13 @@
 
         <mat-form-field style="padding-right: 10px">
           <mat-label>Name</mat-label>
-          <input matInput type="text" formControlName="name" autocomplete="off"/>
+          <input matInput type="text" formControlName="name" autocomplete="off" placeholder="Production/Testing/Development"/>
           <mat-hint align="end">{{option.value.name?.length || 0}}/30</mat-hint>
           <mat-error *ngIf="option.controls['name']?.errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
         <mat-form-field style="width: calc(100% - 360px)">
-          <mat-label>Value</mat-label>
-          <input matInput type="text" formControlName="url" autocomplete="off"/>
+          <mat-label>URL</mat-label>
+          <input matInput type="text" formControlName="url" autocomplete="off" placeholder="https://localess.io/api/url"/>
           <mat-hint align="end">{{option.value.url?.length || 0}}/250</mat-hint>
           <mat-error *ngIf="option.controls['url']?.errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>

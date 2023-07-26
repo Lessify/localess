@@ -1,10 +1,8 @@
-<mat-toolbar style="background: transparent">
+<mat-toolbar class="border-bottom bg-transparent">
   <mat-toolbar-row>
     General
     <span class="spacer"></span>
-    <button mat-raised-button
-            color="primary"
-            (click)="save()">
+    <button mat-raised-button color="primary" [disabled]="!form.valid" (click)="save()">
       <mat-icon>save</mat-icon>
       Save
     </button>

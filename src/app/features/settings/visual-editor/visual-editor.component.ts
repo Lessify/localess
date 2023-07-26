@@ -57,6 +57,7 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (space) => {
           this.space = space;
+          this.environments.clear()
           space.environments?.forEach(env => this.addEnvironment(env))
           this.isLoading = false;
           this.cd.markForCheck();
@@ -81,7 +82,7 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
-    this.spaceService.updateEnvironments(this.space?.id!, this.form.value)
+    this.spaceService.updateEnvironments(this.space?.id!, this.form.value.environments)
       .subscribe({
         next: () => {
           this.notificationService.success('Space has been updated.');
