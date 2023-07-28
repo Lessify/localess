@@ -3,7 +3,7 @@ import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {onDocumentCreated} from 'firebase-functions/v2/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
 import {protos} from '@google-cloud/translate';
-import {SecurityUtils} from './utils/security-utils';
+import {canPerform} from './utils/security-utils';
 import {
   bucket,
   firebaseConfig,
@@ -22,7 +22,7 @@ const translationsPublish = onCall<PublishTranslationsData>(async (request) => {
   logger.info('[translationsPublish] data: ' + JSON.stringify(request.data));
   logger.info('[translationsPublish] context.auth: ' + JSON.stringify(request.auth));
   const {spaceId} = request.data;
-  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  if (!canPerform(UserPermission.TRANSLATION_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await findSpaceById(spaceId).get();
   const translationsSnapshot = await findTranslations(spaceId).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {

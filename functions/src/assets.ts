@@ -22,7 +22,7 @@ const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', as
     // It will create recursion
     const batch = firestoreService.batch();
 
-    const assetsSnapshot = await findAssetsByParentPath(spaceId,asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`).get();
+    const assetsSnapshot = await findAssetsByParentPath(spaceId, asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`).get();
     assetsSnapshot.docs
       .filter((it) => it.exists)
       .forEach((it) => batch.delete(it.ref));

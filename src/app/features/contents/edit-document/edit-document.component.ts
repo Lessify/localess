@@ -190,6 +190,11 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     this.router.navigate(['features', 'contents']);
   }
 
+  openDraftInNewTab(locale: string): void {
+    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}?locale=${locale}&version=draft`
+    window.open(url, '_blank')
+  }
+
   openPublishedInNewTab(locale: string): void {
     const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}?locale=${locale}`
     window.open(url, '_blank')

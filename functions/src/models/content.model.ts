@@ -46,7 +46,7 @@ export interface ContentDocumentStorage {
   data?: ContentData;
   createdAt: string;
   updatedAt: string;
-  publishedAt: string;
+  publishedAt?: string;
 }
 
 export interface ContentData extends Record<string, any> {

@@ -1,7 +1,7 @@
 import {logger} from 'firebase-functions/v2';
-import {onCall,HttpsError} from 'firebase-functions/v2/https';
+import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {protos} from '@google-cloud/translate';
-import {SecurityUtils} from './utils/security-utils';
+import {canPerform} from './utils/security-utils';
 import {firebaseConfig, SUPPORT_LOCALES, translationService} from './config';
 import {TranslateData} from './models/translate.model';
 import {UserPermission} from './models/user.model';
@@ -9,8 +9,8 @@ import {UserPermission} from './models/user.model';
 export const translate = onCall<TranslateData>(async (request) => {
   logger.info('[translate] data: ' + JSON.stringify(request.data));
   logger.info('[translate] context.auth: ' + JSON.stringify(request.auth));
-  const {content, sourceLocale, targetLocale} = request.data
-  if (!SecurityUtils.canPerform(UserPermission.TRANSLATION_UPDATE, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const {content, sourceLocale, targetLocale} = request.data;
+  if (!canPerform(UserPermission.TRANSLATION_UPDATE, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
   if (!(SUPPORT_LOCALES.has(sourceLocale) && SUPPORT_LOCALES.has(targetLocale))) throw new HttpsError('invalid-argument', 'Unsupported language');
 
 

@@ -218,9 +218,12 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
 expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
   logger.info('v1 spaces content: ' + JSON.stringify(req.params));
   const {spaceId, contentId} = req.params;
-  const {cv, locale} = req.query;
+  const {cv, locale, version} = req.query;
 
-  const cachePath = `spaces/${spaceId}/contents/${contentId}/cache.json`;
+  let cachePath = `spaces/${spaceId}/contents/${contentId}/cache.json`;
+  if (version === 'draft') {
+    cachePath = `spaces/${spaceId}/contents/${contentId}/draft/cache.json`;
+  }
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
@@ -229,6 +232,9 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =>
       let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?cv=${metadata.generation}`;
       if (locale) {
         url = `${url}&locale=${locale}`;
+      }
+      if (version) {
+        url = `${url}&version=${version}`;
       }
       logger.info(`v1 spaces content redirect to => ${url}`);
       res.redirect(url);
@@ -247,7 +253,11 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =>
       if (!space.locales.some((it) => it.id === locale)) {
         actualLocale = space.localeFallback.id;
       }
-      bucket.file(`spaces/${spaceId}/contents/${contentId}/${actualLocale}.json`).download()
+      let filePath = `spaces/${spaceId}/contents/${contentId}/${actualLocale}.json`;
+      if (version === 'draft') {
+        filePath = `spaces/${spaceId}/contents/${contentId}/draft/${actualLocale}.json`;
+      }
+      bucket.file(filePath).download()
         .then((content) => {
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
