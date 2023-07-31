@@ -58,8 +58,8 @@ const contentPublish = onCall<PublishContentData>(async (request) => {
 
 // Firestore events
 const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}', async (event) => {
-  logger.info(`[Asset::onUpdate] eventId='${event.id}'`);
-  logger.info(`[Asset::onUpdate] params='${JSON.stringify(event.params)}'`);
+  logger.info(`[Content::onUpdate] eventId='${event.id}'`);
+  logger.info(`[Content::onUpdate] params='${JSON.stringify(event.params)}'`);
   const {spaceId, contentId} = event.params;
   // No Data
   if (!event.data) return;
@@ -71,7 +71,11 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
   if (contentBefore.fullSlug === contentAfter.fullSlug) {
     logger.info(`[Content::onUpdate] eventId='${event.id}' id='${contentId}' has no changes in fullSlug`);
     // No Slug change => content change for DOCUMENT.
-    if (contentAfter.kind === ContentKind.DOCUMENT) {
+    if (contentBefore.kind === ContentKind.DOCUMENT && contentAfter.kind === ContentKind.DOCUMENT) {
+      if (contentBefore.publishedAt?.seconds !== contentAfter.publishedAt?.seconds) {
+        logger.info(`[Content::onUpdate] eventId='${event.id}' id='${contentId}' has different publishedAt, it is publish event`);
+        return;
+      }
       const spaceSnapshot = await findSpaceById(spaceId).get();
       const schemasSnapshot = await findSchemas(spaceId).get();
       const space: Space = spaceSnapshot.data() as Space;
@@ -92,10 +96,10 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
           documentStorage.data = extractContent(content.data, schemas, locale.id, space.localeFallback.id);
         }
         // Save generated JSON
-        logger.info(`[Asset::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);
+        logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);
         await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`).save(JSON.stringify(documentStorage));
         // Save Cache
-        logger.info(`[Asset::onUpdate] Save file to spaces/${spaceId}/contents/draft/${contentId}/cache.json`);
+        logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/cache.json`);
         await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/cache.json`).save('');
       }
     }
