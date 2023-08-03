@@ -1,4 +1,4 @@
-import {Directive, NgModule} from '@angular/core';
+import {NgModule} from '@angular/core';
 import {CommonModule, NgOptimizedImage} from '@angular/common';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 
@@ -50,6 +50,7 @@ import {DragDropModule} from '@angular/cdk/drag-drop';
 import {TimeDurationPipe} from '@shared/pipes/time-duration.pipe';
 import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import {TooltipComponent, TooltipDirective} from '@shared/components/tooltip';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -85,7 +86,8 @@ const MATERIAL_MODULES: any[] = [
   ClipboardModule,
   MatBadgeModule,
   MatExpansionModule,
-  DragDropModule
+  DragDropModule,
+  MatButtonToggleModule
 ];
 
 const SHARED_PIPES: any[] = [

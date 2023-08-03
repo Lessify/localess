@@ -55,6 +55,9 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   contentErrors: ContentError[] | null = null;
   documents: ContentDocument[] = [];
 
+  // Form
+  viewForm = this.fb.control('form')
+
   //Loadings
   isLoading: boolean = true;
   isPublishLoading: boolean = false;

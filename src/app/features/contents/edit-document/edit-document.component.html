@@ -7,6 +7,11 @@
     <span class="text-muted">#{{document?.slug}}</span>
     <span class="spacer"></span>
 
+    <mat-button-toggle-group [formControl]="viewForm">
+      <mat-button-toggle value="design"><mat-icon>design_services</mat-icon></mat-button-toggle>
+      <mat-button-toggle value="form"><mat-icon>edit_note</mat-icon></mat-button-toggle>
+    </mat-button-toggle-group>
+
     <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
       {{selectedLocale.name}}
       <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
@@ -83,29 +88,38 @@
 <div *ngIf="isLoading" class="loader">
   <mat-spinner></mat-spinner>
 </div>
-<div *ngIf="!isLoading" class="container-fluid mt-3">
+<div *ngIf="!isLoading" class="container-fluid my-3">
+  <mat-drawer-container >
+    <mat-drawer mode="side" [opened]="viewForm.value === 'design'">
+      Design<br>
+      {{selectedSpace?.environments | json}}
+    </mat-drawer>
+    <mat-drawer-content >
+      <ng-container *ngIf="rootSchema">
 
-  <ng-container *ngIf="rootSchema">
+        <ll-breadcrumb>
+          <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchema(schemaPathItem)">
+            <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch">
+              {{sch.displayName || sch.name}}
+            </ng-container>
+          </ll-breadcrumb-item>
+        </ll-breadcrumb>
 
-    <ll-breadcrumb>
-      <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchema(schemaPathItem)">
-        <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch">
-          {{sch.displayName || sch.name}}
-        </ng-container>
-      </ll-breadcrumb-item>
-    </ll-breadcrumb>
+        <ll-content-document-schema-edit
+          [data]="selectedDocumentData"
+          [schemas]="schemas"
+          [locale]="selectedLocale.id"
+          [localeFallback]="selectedSpace.localeFallback.id"
+          [documents]="documents"
+          [space]="selectedSpace"
+          (schemaChange)="onSchemaChange($event)"
+        />
 
-    <ll-content-document-schema-edit
-      [data]="selectedDocumentData"
-      [schemas]="schemas"
-      [locale]="selectedLocale.id"
-      [localeFallback]="selectedSpace.localeFallback.id"
-      [documents]="documents"
-      [space]="selectedSpace"
-      (schemaChange)="onSchemaChange($event)"
-    />
+      </ng-container>
+    </mat-drawer-content>
+  </mat-drawer-container>
 
-  </ng-container>
+
 
   <ng-container *ngIf="isDebug">
     <mat-divider/>
