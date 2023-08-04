@@ -1,6 +1,6 @@
 <ng-container *ngIf="rootSchema">
 
-  <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">
+  <form [formGroup]="form" *ngIf="!isFormLoading">
     <ng-container *ngFor="let field of rootSchema.fields" [ngSwitch]="field.kind">
       <!--TEXT-->
       <ng-container *ngSwitchCase="'TEXT'">

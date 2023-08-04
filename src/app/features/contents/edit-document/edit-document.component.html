@@ -94,8 +94,8 @@
       Design<br>
       {{selectedSpace?.environments | json}}
     </mat-drawer>
-    <mat-drawer-content >
-      <ng-container *ngIf="rootSchema">
+    <mat-drawer-content>
+      <div *ngIf="rootSchema" class="ms-2">
 
         <ll-breadcrumb>
           <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchema(schemaPathItem)">
@@ -115,7 +115,7 @@
           (schemaChange)="onSchemaChange($event)"
         />
 
-      </ng-container>
+      </div>
     </mat-drawer-content>
   </mat-drawer-container>
 
