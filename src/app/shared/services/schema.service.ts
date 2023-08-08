@@ -20,13 +20,7 @@ import {
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {
-  Schema,
-  SchemaCreate,
-  SchemaCreateFS,
-  SchemaType,
-  SchemaUpdate,
-} from '@shared/models/schema.model';
+import {Schema, SchemaCreate, SchemaCreateFS, SchemaType, SchemaUpdate,} from '@shared/models/schema.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 
 @Injectable()

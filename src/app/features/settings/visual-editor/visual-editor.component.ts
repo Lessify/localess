@@ -8,12 +8,12 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space, SpaceEnvironment} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {Subject} from 'rxjs';
-import {selectSpace} from "@core/state/space/space.selector";
-import {FormArray, FormBuilder, FormGroup} from "@angular/forms";
-import {SpaceValidator} from "@shared/validators/space.validator";
+import {selectSpace} from '@core/state/space/space.selector';
+import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
+import {SpaceValidator} from '@shared/validators/space.validator';
 import {FormErrorHandlerService} from "@core/error-handler/form-error-handler.service";
-import {environment} from "../../../../environments/environment";
 import {CdkDragDrop} from "@angular/cdk/drag-drop";
+import {selectSettings} from "@core/state/settings/settings.selectors";
 
 @Component({
   selector: 'll-space-settings-visual-editor',
@@ -22,7 +22,6 @@ import {CdkDragDrop} from "@angular/cdk/drag-drop";
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VisualEditorComponent implements OnInit, OnDestroy {
-  isDebug = environment.debug
   isLoading: boolean = true;
   space?: Space;
 
@@ -32,6 +31,7 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
   }) ;
 
   // Subscriptions
+  settings$ = this.store.select(selectSettings);
   private destroy$ = new Subject();
 
   constructor(

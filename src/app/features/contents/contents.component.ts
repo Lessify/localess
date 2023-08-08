@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit,
-  ViewChild
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -21,19 +14,9 @@ import {NotificationService} from '@shared/services/notification.service';
 import {Schema, SchemaType} from '@shared/models/schema.model';
 import {SchemaService} from '@shared/services/schema.service';
 import {combineLatest, Subject} from 'rxjs';
-import {
-  ConfirmationDialogComponent
-} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {
-  ConfirmationDialogModel
-} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {
-  Content,
-  ContentFolderCreate,
-  ContentKind,
-  ContentDocumentCreate,
-  ContentUpdate
-} from '@shared/models/content.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {Content, ContentDocumentCreate, ContentFolderCreate, ContentKind, ContentUpdate} from '@shared/models/content.model';
 import {ContentService} from '@shared/services/content.service';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 import {SelectionModel} from '@angular/cdk/collections';

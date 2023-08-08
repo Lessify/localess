@@ -2,7 +2,6 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} fr
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {SchemaFieldAsset, SchemaFieldKind} from '@shared/models/schema.model';
-import {environment} from '../../../../../environments/environment';
 import {MatDialog} from '@angular/material/dialog';
 import {NotificationService} from '@shared/services/notification.service';
 import {Asset} from '@shared/models/asset.model';
@@ -12,6 +11,7 @@ import {AssetService} from '@shared/services/asset.service';
 import {Space} from '@shared/models/space.model';
 import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/assets-select-dialog.model';
+import {selectSettings} from "@core/state/settings/settings.selectors";
 
 @Component({
   selector: 'll-asset-select',
@@ -20,11 +20,13 @@ import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/a
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AssetSelectComponent implements OnInit {
-  isDebug = environment.debug
   @Input() form?: FormGroup;
   @Input() component?: SchemaFieldAsset;
   @Input() space?: Space;
   asset?: Asset;
+
+  //Subscriptions
+  settings$ = this.store.select(selectSettings);
 
   constructor(
     private readonly fb: FormBuilder,

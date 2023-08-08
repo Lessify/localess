@@ -14,11 +14,7 @@ import {
   provideAuth
 } from '@angular/fire/auth';
 import {AuthGuardModule} from '@angular/fire/auth-guard';
-import {
-  connectFirestoreEmulator,
-  initializeFirestore,
-  provideFirestore
-} from '@angular/fire/firestore';
+import {connectFirestoreEmulator, initializeFirestore, provideFirestore} from '@angular/fire/firestore';
 import {connectStorageEmulator, getStorage, provideStorage} from '@angular/fire/storage';
 import {CoreModule} from '@core/core.module';
 import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';

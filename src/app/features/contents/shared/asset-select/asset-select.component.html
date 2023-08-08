@@ -34,8 +34,8 @@
 
   <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
 </form>
-<ng-container *ngIf="isDebug">
-  <mat-accordion>
+<ng-container *ngIf="settings$ | async as settings">
+  <mat-accordion *ngIf="settings.debugEnabled">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Form => {{form?.valid}}</mat-panel-title>

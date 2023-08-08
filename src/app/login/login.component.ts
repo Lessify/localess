@@ -20,6 +20,7 @@ import {AppState} from '@core/state/core.state';
 import {authLogin, authLogout} from '@core/core.module';
 import {environment} from '../../environments/environment';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {selectSettings} from "@core/state/settings/settings.selectors";
 
 @Component({
   selector: 'll-login',
@@ -42,10 +43,11 @@ export class LoginComponent implements OnDestroy {
 
   showLoginButton = false;
   showLogoutButton = false;
-  isDebug: boolean = environment.debug
   public readonly user: Observable<User | null> = EMPTY;
-  private readonly userDisposable: Subscription | undefined;
   parsedToken?: Promise<IdTokenResult>;
+  // Subscriptions
+  settings$ = this.store.select(selectSettings);
+  private readonly userDisposable: Subscription | undefined;
 
   constructor(
     private readonly store: Store<AppState>,

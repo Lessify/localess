@@ -20,10 +20,15 @@ import {map, switchMap} from 'rxjs/operators';
 import {
   Task,
   TaskAssetExportCreateFS,
-  TaskAssetImportCreateFS, TaskContentExportCreateFS, TaskContentImportCreateFS,
-  TaskKind, TaskSchemaExportCreateFS, TaskSchemaImportCreateFS,
+  TaskAssetImportCreateFS,
+  TaskContentExportCreateFS,
+  TaskContentImportCreateFS,
+  TaskKind,
+  TaskSchemaExportCreateFS,
+  TaskSchemaImportCreateFS,
   TaskStatus,
-  TaskTranslationExportCreateFS, TaskTranslationImportCreateFS
+  TaskTranslationExportCreateFS,
+  TaskTranslationImportCreateFS
 } from '@shared/models/task.model';
 
 @Injectable()

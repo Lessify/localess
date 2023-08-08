@@ -34,8 +34,8 @@
   <mat-error *ngIf="form.errors as errors">{{fe.errors(errors)}}</mat-error>
 </form>
 
-<ng-container *ngIf="isDebug">
-  <mat-accordion [multi]="true">
+<ng-container *ngIf="settings$ | async as settings">
+  <mat-accordion [multi]="true" *ngIf="settings.debugEnabled">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Form : {{form?.valid}} : {{form?.length}} {{form.updateValueAndValidity()}}</mat-panel-title>
@@ -51,5 +51,4 @@
     </mat-expansion-panel>
   </mat-accordion>
   <mat-divider></mat-divider>
-  <br/>
 </ng-container>

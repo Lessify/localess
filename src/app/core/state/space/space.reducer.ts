@@ -1,10 +1,6 @@
 import {Action, ActionReducer, createReducer, on} from '@ngrx/store';
 import {SpaceState} from './space.model';
-import {
-  actionSpaceAssetPathChange,
-  actionSpaceChange,
-  actionSpaceContentPathChange
-} from './space.actions';
+import {actionSpaceAssetPathChange, actionSpaceChange, actionSpaceContentPathChange} from './space.actions';
 
 
 export const initialState: SpaceState = {

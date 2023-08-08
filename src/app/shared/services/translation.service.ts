@@ -13,14 +13,7 @@ import {
   updateDoc
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
-import {
-  Translation,
-  TranslationCreate,
-  TranslationCreateFS,
-  TranslationType,
-  TranslationUpdate,
-  TranslationUpdateFS
-} from '../models/translation.model';
+import {Translation, TranslationCreate, TranslationCreateFS, TranslationType, TranslationUpdate} from '../models/translation.model';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {Functions, httpsCallableData} from '@angular/fire/functions';

@@ -17,12 +17,14 @@ import {ContentData, ContentDocument} from '@shared/models/content.model';
 import {takeUntil} from 'rxjs/operators';
 import {debounceTime, Subject} from 'rxjs';
 import {v4} from 'uuid';
-import {environment} from '../../../../environments/environment';
 import {ContentHelperService} from '@shared/services/content-helper.service';
 import {Space} from '@shared/models/space.model';
 import {ObjectUtils} from '@core/utils/object-utils.service';
 import {SchemaSelectChange} from './edit-document-schema.model';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
+import {selectSettings} from "@core/state/settings/settings.selectors";
+import {Store} from "@ngrx/store";
+import {AppState} from "@core/state/core.state";
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -35,6 +37,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   // Form
   form: FormRecord = this.fb.record({});
   // Subscriptions
+  settings$ = this.store.select(selectSettings);
   private destroy$ = new Subject();
 
   @Input() data: ContentData = {_id: '', schema: ''};
@@ -45,7 +48,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   @Input() space?: Space;
   @Output() schemaChange = new EventEmitter<SchemaSelectChange>();
 
-  isDebug = environment.debug
   rootSchema?: Schema;
   schemaMapById: Map<string, Schema> = new Map<string, Schema>();
   schemaMapByName: Map<string, Schema> = new Map<string, Schema>();
@@ -58,6 +60,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     private readonly cd: ChangeDetectorRef,
     private readonly contentHelperService: ContentHelperService,
     readonly fe: FormErrorHandlerService,
+    private readonly store: Store<AppState>,
   ) {
   }
 

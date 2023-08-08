@@ -1,22 +1,11 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component, HostBinding,
-  OnDestroy,
-  OnInit
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder} from '@angular/forms';
 import {Schema,} from '@shared/models/schema.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchemaService} from '@shared/services/schema.service';
 import {ContentService} from '@shared/services/content.service';
-import {
-  ContentError,
-  ContentKind,
-  ContentDocument,
-  ContentData
-} from '@shared/models/content.model';
+import {ContentData, ContentDocument, ContentError, ContentKind} from '@shared/models/content.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
@@ -27,10 +16,10 @@ import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {DEFAULT_LOCALE, Locale} from '@shared/models/locale.model';
 import {v4} from 'uuid';
-import {environment} from '../../../../environments/environment';
 import {ContentHelperService} from '@shared/services/content-helper.service';
 import {SchemaPathItem} from './edit-document.model';
 import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.model';
+import {selectSettings} from "@core/state/settings/settings.selectors";
 
 @Component({
   selector: 'll-content-document-edit',
@@ -40,7 +29,6 @@ import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.m
 })
 export class EditDocumentComponent implements OnInit, OnDestroy {
 
-  isDebug = environment.debug
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
   availableLocales: Locale[] = [];
@@ -56,7 +44,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   documents: ContentDocument[] = [];
 
   // Form
-  viewForm = this.fb.control('form')
+  viewForm = this.fb.control<'form'| 'design'>('form')
 
   //Loadings
   isLoading: boolean = true;
@@ -64,6 +52,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   isSaveLoading: boolean = false;
 
   // Subscriptions
+  settings$ = this.store.select(selectSettings);
   private destroy$ = new Subject();
 
   constructor(

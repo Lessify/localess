@@ -22,14 +22,14 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {
   Content,
-  ContentFolderCreate,
-  ContentFolderCreateFS,
-  ContentKind,
+  ContentData,
   ContentDocument,
   ContentDocumentCreate,
   ContentDocumentCreateFS,
-  ContentData,
   ContentDocumentDataUpdateFS,
+  ContentFolderCreate,
+  ContentFolderCreateFS,
+  ContentKind,
   ContentUpdate,
   ContentUpdateFS
 } from '@shared/models/content.model';

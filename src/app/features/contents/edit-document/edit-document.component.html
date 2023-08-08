@@ -88,11 +88,17 @@
 <div *ngIf="isLoading" class="loader">
   <mat-spinner></mat-spinner>
 </div>
-<div *ngIf="!isLoading" class="container-fluid my-3">
-  <mat-drawer-container >
+<div *ngIf="!isLoading" class="container-fluid my-3" style="height: calc(100vh - 165px);">
+  <mat-drawer-container autosize="true">
     <mat-drawer mode="side" [opened]="viewForm.value === 'design'">
-      Design<br>
-      {{selectedSpace?.environments | json}}
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          Title
+        </mat-card-header>
+        <mat-card-content>
+          {{selectedSpace?.environments | json}}
+        </mat-card-content>
+      </mat-card>
     </mat-drawer>
     <mat-drawer-content>
       <div *ngIf="rootSchema" class="ms-2">
@@ -118,13 +124,11 @@
       </div>
     </mat-drawer-content>
   </mat-drawer-container>
+  <mat-divider/>
 
 
-
-  <ng-container *ngIf="isDebug">
-    <mat-divider/>
-    <br/>
-    <mat-accordion>
+  <ng-container *ngIf="settings$ | async as settings">
+    <mat-accordion *ngIf="settings.debugEnabled">
       <mat-expansion-panel>
         <mat-expansion-panel-header>
           <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
@@ -134,7 +138,4 @@
     </mat-accordion>
     <br/>
   </ng-container>
-
-
-
 </div>

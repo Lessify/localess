@@ -15,12 +15,12 @@ import {
   serverTimestamp,
   UpdateData,
   updateDoc,
-  where, or
+  where
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
-import {filter, map, switchMap} from 'rxjs/operators';
+import {map, switchMap} from 'rxjs/operators';
 import {
   Asset,
   AssetFileCreateFS,
@@ -31,7 +31,6 @@ import {
   AssetKind
 } from '@shared/models/asset.model';
 import {AssetFileType} from "@shared/models/schema.model";
-import {QueryFieldFilterConstraint, QueryFilterConstraint} from "@firebase/firestore";
 
 @Injectable()
 export class AssetService {

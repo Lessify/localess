@@ -25,11 +25,7 @@ import {CustomSerializer} from './router/custom-serializer';
 import {LocalStorageService} from './local-storage/local-storage.service';
 import {HttpErrorInterceptor} from './http-interceptors/http-error.interceptor';
 import {SettingsEffects} from './state/settings/settings.effects';
-import {
-  selectEffectiveTheme,
-  selectSettingsLanguage,
-  selectSettingsStickyHeader
-} from './state/settings/settings.selectors';
+import {selectEffectiveTheme, selectSettingsLanguage, selectSettingsStickyHeader} from './state/settings/settings.selectors';
 import {MatButtonModule} from '@angular/material/button';
 import {AuthEffects} from './state/auth/auth.effects';
 import {selectAuth, selectIsAuthenticated} from './state/auth/auth.selectors';

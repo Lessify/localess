@@ -7,9 +7,13 @@ import {
   doc,
   docData,
   DocumentReference,
-  Firestore, orderBy, query, QueryConstraint,
+  Firestore,
+  orderBy,
+  query,
+  QueryConstraint,
   serverTimestamp,
-  UpdateData, updateDoc
+  UpdateData,
+  updateDoc
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
