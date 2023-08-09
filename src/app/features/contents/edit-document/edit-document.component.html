@@ -88,20 +88,39 @@
 <div *ngIf="isLoading" class="loader">
   <mat-spinner></mat-spinner>
 </div>
-<div *ngIf="!isLoading" class="container-fluid my-3" style="height: calc(100vh - 165px);">
+<div *ngIf="!isLoading" class="container-fluid">
   <mat-drawer-container autosize="true">
     <mat-drawer mode="side" [opened]="viewForm.value === 'design'">
-      <mat-card appearance="outlined">
+      <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment else noEnv">
         <mat-card-header>
-          Title
+          <mat-card-title>{{selectedEnvironment?.name}}</mat-card-title>
+          <mat-card-subtitle>{{selectedEnvironment?.url}}</mat-card-subtitle>
+          <span class="spacer"></span>
+          <button mat-icon-button [matMenuTriggerFor]="envMenu">
+            <mat-icon>arrow_drop_down</mat-icon>
+          </button>
+          <mat-menu #envMenu="matMenu">
+            <button mat-menu-item *ngFor="let env of selectedSpace?.environments" (click)="changeEnvironment(env)" [disabled]="env === selectedEnvironment">{{env.name}} | {{env.url}}</button>
+          </mat-menu>
         </mat-card-header>
+        <mat-divider/>
         <mat-card-content>
-          {{selectedSpace?.environments | json}}
+          <iframe id="preview" [src]="iframeUrl"></iframe>
         </mat-card-content>
       </mat-card>
+      <ng-template #noEnv>
+        <div class="container text-center h-100">
+          <div class="row h-100">
+            <div class="col align-self-center">
+              No Configured Environments.<br/>
+              You can configure them in Settings.
+            </div>
+          </div>
+        </div>
+      </ng-template>
     </mat-drawer>
     <mat-drawer-content>
-      <div *ngIf="rootSchema" class="ms-2">
+      <div *ngIf="rootSchema" class="container">
 
         <ll-breadcrumb>
           <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchema(schemaPathItem)">
@@ -124,8 +143,6 @@
       </div>
     </mat-drawer-content>
   </mat-drawer-container>
-  <mat-divider/>
-
 
   <ng-container *ngIf="settings$ | async as settings">
     <mat-accordion *ngIf="settings.debugEnabled">
@@ -136,6 +153,5 @@
         <pre>{{documentData | json}}</pre>
       </mat-expansion-panel>
     </mat-accordion>
-    <br/>
   </ng-container>
 </div>

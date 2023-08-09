@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit
 import {FormBuilder} from '@angular/forms';
 import {Schema,} from '@shared/models/schema.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchemaService} from '@shared/services/schema.service';
 import {ContentService} from '@shared/services/content.service';
@@ -12,14 +13,14 @@ import {selectSpace} from '@core/state/space/space.selector';
 import {distinctUntilChanged, filter, switchMap, takeUntil} from 'rxjs/operators';
 import {combineLatest, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
-import {Space} from '@shared/models/space.model';
+import {Space, SpaceEnvironment} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {DEFAULT_LOCALE, Locale} from '@shared/models/locale.model';
 import {v4} from 'uuid';
 import {ContentHelperService} from '@shared/services/content-helper.service';
 import {SchemaPathItem} from './edit-document.model';
 import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.model';
-import {selectSettings} from "@core/state/settings/settings.selectors";
+import {selectSettings} from '@core/state/settings/settings.selectors';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -31,6 +32,8 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
 
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
+  selectedEnvironment?: SpaceEnvironment;
+  iframeUrl?: SafeUrl;
   availableLocales: Locale[] = [];
   entityId: string;
   document?: ContentDocument;
@@ -44,7 +47,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   documents: ContentDocument[] = [];
 
   // Form
-  viewForm = this.fb.control<'form'| 'design'>('form')
+  viewForm = this.fb.control<'form'| 'design'>('design')
 
   //Loadings
   isLoading: boolean = true;
@@ -66,6 +69,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
     private readonly contentHelperService: ContentHelperService,
+    private readonly sanitizer: DomSanitizer,
     readonly fe: FormErrorHandlerService,
   ) {
     this.entityId = this.activatedRoute.snapshot.paramMap.get('contentId') || "";
@@ -117,7 +121,10 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
 
           // Select content base on path
           this.navigateToSchema(this.schemaPath[this.schemaPath.length - 1])
-
+          // Select Environment
+          if (this.selectedEnvironment === undefined && space.environments && space.environments.length > 0) {
+            this.changeEnvironment(space.environments[0])
+          }
           this.schemas = schemas;
           this.schemaMapByName = new Map<string, Schema>(this.schemas?.map(it => [it.name, it]));
           this.isLoading = false;
@@ -236,5 +243,10 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       }
       this.selectedDocumentData = localSelectedContent;
     }
+  }
+
+  changeEnvironment(env: SpaceEnvironment): void {
+    this.selectedEnvironment = env;
+    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url);
   }
 }
