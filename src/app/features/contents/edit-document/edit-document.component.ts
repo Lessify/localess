@@ -1,12 +1,12 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder} from '@angular/forms';
-import {Schema,} from '@shared/models/schema.model';
+import {Schema, SchemaFieldKind,} from '@shared/models/schema.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchemaService} from '@shared/services/schema.service';
 import {ContentService} from '@shared/services/content.service';
-import {ContentData, ContentDocument, ContentError, ContentKind} from '@shared/models/content.model';
+import {ContentData, ContentDocument, ContentError, ContentKind, EditorEvent} from '@shared/models/content.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
@@ -21,6 +21,7 @@ import {ContentHelperService} from '@shared/services/content-helper.service';
 import {SchemaPathItem} from './edit-document.model';
 import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.model';
 import {selectSettings} from '@core/state/settings/settings.selectors';
+import {ObjectUtils} from "@core/utils/object-utils.service";
 
 @Component({
   selector: 'll-content-document-edit',
@@ -47,7 +48,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   documents: ContentDocument[] = [];
 
   // Form
-  viewForm = this.fb.control<'form'| 'design'>('design')
+  viewForm = this.fb.control<'form' | 'design'>('design')
 
   //Loadings
   isLoading: boolean = true;
@@ -248,5 +249,65 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   changeEnvironment(env: SpaceEnvironment): void {
     this.selectedEnvironment = env;
     this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url);
+  }
+
+  @HostListener('window:message', ['$event'])
+  contentIdLink(event: MessageEvent<EditorEvent>): void {
+    if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
+      console.log('MessageEvent')
+      console.log(event)
+      // find element
+      const schemasByName = new Map<string, Schema>(this.schemas.map(it => [it.name, it]));
+      const contentIdIteration = ObjectUtils.clone(event.data.path)
+      // Iterative traversing content and validating fields.
+      let selectedContentId = contentIdIteration.shift()
+      // check Root Schema
+      if (this.documentData._id === selectedContentId) {
+        const schema = schemasByName.get(this.documentData.schema)
+        if (schema) {
+          this.navigateToSchema({
+            contentId: this.documentData._id,
+            schemaName: this.documentData.schema,
+            fieldName: ''
+          });
+          selectedContentId = contentIdIteration.shift()
+        } else {
+          console.log('schema not-found')
+          return
+        }
+      } else {
+        console.log('root id not-found')
+        return
+      }
+      // Navigate to
+      while (selectedContentId) {
+        const schema = schemasByName.get(this.selectedDocumentData.schema)
+        if (schema) {
+          for (const field of schema.fields || []) {
+            if (field.kind === SchemaFieldKind.SCHEMA) {
+              const cData: ContentData | undefined = this.selectedDocumentData[field.name];
+            }
+            if (field.kind === SchemaFieldKind.SCHEMAS) {
+              const cData: ContentData[] | undefined = this.selectedDocumentData[field.name];
+            }
+
+          }
+          // schema.fields?.filter((it) => it.kind === SchemaFieldKind.SCHEMA)
+          //   .forEach((field) => {
+          //     const sch: ContentData | undefined = selectedContent![field.name];
+          //     if (sch) {
+          //       contentIteration.push(sch)
+          //     }
+          //   })
+          // schema.fields?.filter((it) => it.kind === SchemaFieldKind.SCHEMAS)
+          //   .forEach((field) => {
+          //     const sch: ContentData[] | undefined = selectedContent![field.name];
+          //     sch?.forEach((it) => contentIteration.push(it));
+          //   })
+        }
+        selectedContentId = contentIdIteration.shift()
+      }
+      console.log('not-found')
+    }
   }
 }

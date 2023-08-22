@@ -96,3 +96,10 @@ export interface ContentDocumentDataUpdateFS {
   data: ContentData;
   updatedAt: FieldValue;
 }
+
+// Events
+export interface EditorEvent {
+  owner: string,
+  id: string
+  path: string[]
+}
