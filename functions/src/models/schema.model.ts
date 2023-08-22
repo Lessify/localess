@@ -161,7 +161,7 @@ export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
           type: 'object',
           properties: {
             name: {type: 'string', nullable: false},
-            kind: {type: 'string', enu: Object.values(SchemaFieldKind), nullable: false},
+            kind: {type: 'string', /*enum: Object.values(SchemaFieldKind),*/ nullable: false},
             displayName: {type: 'string', nullable: true},
             required: {type: 'boolean', nullable: true},
             description: {type: 'string', nullable: true},

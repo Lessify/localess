@@ -121,7 +121,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
           }
 
           // Select content base on path
-          this.navigateToSchema(this.schemaPath[this.schemaPath.length - 1])
+          this.navigateToSchemaBackwards(this.schemaPath[this.schemaPath.length - 1])
           // Select Environment
           if (this.selectedEnvironment === undefined && space.environments && space.environments.length > 0) {
             this.changeEnvironment(space.environments[0])
@@ -210,22 +210,25 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   onSchemaChange(event: SchemaSelectChange): void {
-    this.schemaPath.push({
+    this.navigateToSchemaForwards({
       contentId: event.contentId,
       schemaName: event.schemaName,
       fieldName: event.fieldName
     });
-    const field = this.selectedDocumentData[event.fieldName]
-    console.log(Array.isArray(field))
+  }
 
+  navigateToSchemaForwards(pathItem: SchemaPathItem): void {
+    this.schemaPath.push(pathItem);
+    const field = this.selectedDocumentData[pathItem.fieldName]
     if (Array.isArray(field)) {
-      this.selectedDocumentData = field.find((it: ContentData) => it._id == event.contentId);
+      this.selectedDocumentData = field.find((it: ContentData) => it._id == pathItem.contentId);
     } else {
       this.selectedDocumentData = field
     }
   }
 
-  navigateToSchema(pathItem: SchemaPathItem): void {
+  navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
+    console.log(pathItem)
     const idx = this.schemaPath.findIndex((it) => it.contentId == pathItem.contentId);
     this.schemaPath.splice(idx + 1);
     // Select Root
@@ -265,49 +268,57 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       if (this.documentData._id === selectedContentId) {
         const schema = schemasByName.get(this.documentData.schema)
         if (schema) {
-          this.navigateToSchema({
+          this.navigateToSchemaBackwards({
             contentId: this.documentData._id,
             schemaName: this.documentData.schema,
             fieldName: ''
           });
           selectedContentId = contentIdIteration.shift()
         } else {
-          console.log('schema not-found')
+          console.log(`schema ${this.selectedDocumentData.schema} not-found`)
           return
         }
       } else {
-        console.log('root id not-found')
+        console.log(`root id ${selectedContentId} not-found`)
         return
       }
       // Navigate to
       while (selectedContentId) {
         const schema = schemasByName.get(this.selectedDocumentData.schema)
         if (schema) {
-          for (const field of schema.fields || []) {
+          schemaFieldsLoop: for (const field of schema.fields || []) {
             if (field.kind === SchemaFieldKind.SCHEMA) {
               const cData: ContentData | undefined = this.selectedDocumentData[field.name];
+              if (cData?._id === selectedContentId) {
+                this.navigateToSchemaForwards({
+                  contentId: selectedContentId!,
+                  fieldName: field.name,
+                  schemaName: schema.name
+                });
+                selectedContentId = contentIdIteration.shift();
+                break;
+              }
             }
             if (field.kind === SchemaFieldKind.SCHEMAS) {
               const cData: ContentData[] | undefined = this.selectedDocumentData[field.name];
+              for (const content of cData || []){
+                if (content._id === selectedContentId) {
+                  this.navigateToSchemaForwards({
+                    contentId: selectedContentId,
+                    fieldName: field.name,
+                    schemaName: schema.name
+                  });
+                  selectedContentId = contentIdIteration.shift();
+                  break schemaFieldsLoop;
+                }
+              }
             }
-
           }
-          // schema.fields?.filter((it) => it.kind === SchemaFieldKind.SCHEMA)
-          //   .forEach((field) => {
-          //     const sch: ContentData | undefined = selectedContent![field.name];
-          //     if (sch) {
-          //       contentIteration.push(sch)
-          //     }
-          //   })
-          // schema.fields?.filter((it) => it.kind === SchemaFieldKind.SCHEMAS)
-          //   .forEach((field) => {
-          //     const sch: ContentData[] | undefined = selectedContent![field.name];
-          //     sch?.forEach((it) => contentIteration.push(it));
-          //   })
+        } else {
+          console.log(`schema ${this.selectedDocumentData.schema} not-found`)
         }
-        selectedContentId = contentIdIteration.shift()
       }
-      console.log('not-found')
+      console.log(`id ${selectedContentId} not-found`)
     }
   }
 }

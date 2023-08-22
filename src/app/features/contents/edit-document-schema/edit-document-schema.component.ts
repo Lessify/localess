@@ -65,8 +65,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('ngOnChanges')
-    console.log(changes)
+    // console.log('ngOnChanges')
+    // console.log(changes)
 
     const schemasChange = changes['schemas'];
     if (schemasChange) {
@@ -126,11 +126,11 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
         )
         .subscribe({
           next: (formValue) => {
-            console.group('form')
-            console.log(Object.getOwnPropertyNames(formValue))
-            console.log(formValue)
-            console.log('Before')
-            console.log(ObjectUtils.clone(this.data))
+            // console.group('form')
+            // console.log(Object.getOwnPropertyNames(formValue))
+            // console.log(formValue)
+            // console.log('Before')
+            // console.log(ObjectUtils.clone(this.data))
 
             for (const key of Object.getOwnPropertyNames(formValue)) {
               const value = formValue[key]
@@ -143,9 +143,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
                 }
               }
             }
-            console.log('After')
-            console.log(ObjectUtils.clone(this.data))
-            console.groupEnd()
+            // console.log('After')
+            // console.log(ObjectUtils.clone(this.data))
+            // console.groupEnd()
           },
           error: (err) => console.log(err),
           complete: () => console.log('completed')

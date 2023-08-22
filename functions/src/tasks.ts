@@ -519,6 +519,7 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
  * @param {string} taskId original task
  */
 async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+  logger.info(`[Task:onCreate:SCHEMA:IMPORT] Started`);
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
@@ -527,12 +528,13 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
   const schemas = JSON.parse(readFileSync(`${tmpTaskFolder}/schemas.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'SCHEMA') return 'WRONG_METADATA';
+  logger.info(`[Task:onCreate:SCHEMA:IMPORT] schemas=${JSON.stringify(schemas)}`);
   const errors = validateSchemaImport(schemas);
   if (errors) {
-    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
+    logger.warn(`[Task:onCreate:SCHEMA:IMPORT] invalid=${JSON.stringify(errors)}`);
     return errors;
   }
-  logger.info(`[Task:onCreate] valid=${schemas.length}`);
+  logger.info(`[Task:onCreate:SCHEMA:IMPORT] valid=${schemas.length}`);
   let totalChanges = 0;
   let count = 0;
   let batch = firestoreService.batch();
@@ -562,18 +564,18 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
     totalChanges++;
     count++;
     if (count === BATCH_MAX ) {
-      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+      logger.info('[Task:onCreate:SCHEMA:IMPORT] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
     }
   }
-  logger.info('[Task:onCreate] end remaining: ' + count);
+  logger.info('[Task:onCreate:SCHEMA:IMPORT] end remaining: ' + count);
   if (count > 0) {
-    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+    logger.info('[Task:onCreate:SCHEMA:IMPORT] batch.commit() : ' + totalChanges);
     await batch.commit();
   }
-  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate:SCHEMA:IMPORT] bulk total changes : ' + totalChanges);
   return undefined;
 }
 

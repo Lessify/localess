@@ -123,7 +123,7 @@
       <div *ngIf="rootSchema" class="container">
 
         <ll-breadcrumb>
-          <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchema(schemaPathItem)">
+          <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchemaBackwards(schemaPathItem)">
             <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch">
               {{sch.displayName || sch.name}}
             </ng-container>
