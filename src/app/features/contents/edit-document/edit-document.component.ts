@@ -218,6 +218,8 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   navigateToSchemaForwards(pathItem: SchemaPathItem): void {
+    console.group('navigateToSchemaForwards')
+    console.log(pathItem)
     this.schemaPath.push(pathItem);
     const field = this.selectedDocumentData[pathItem.fieldName]
     if (Array.isArray(field)) {
@@ -225,16 +227,20 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     } else {
       this.selectedDocumentData = field
     }
+    console.groupEnd()
   }
 
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
+    console.group('navigateToSchemaBackwards')
     console.log(pathItem)
     const idx = this.schemaPath.findIndex((it) => it.contentId == pathItem.contentId);
     this.schemaPath.splice(idx + 1);
     // Select Root
     if (idx == 0) {
+      console.log(`Navigate to Root idx=${idx}`)
       this.selectedDocumentData = this.documentData;
     } else {
+      console.log(`Navigate to Child idx=${idx}`)
       let localSelectedContent = this.documentData;
       for (const path of this.schemaPath) {
         if (path.fieldName === '') continue;
@@ -247,6 +253,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       }
       this.selectedDocumentData = localSelectedContent;
     }
+    console.groupEnd()
   }
 
   changeEnvironment(env: SpaceEnvironment): void {
@@ -259,6 +266,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       console.log('MessageEvent')
       console.log(event)
+      console.log(event.data.path)
       // find element
       const schemasByName = new Map<string, Schema>(this.schemas.map(it => [it.name, it]));
       const contentIdIteration = ObjectUtils.clone(event.data.path)
@@ -266,6 +274,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       let selectedContentId = contentIdIteration.shift()
       // check Root Schema
       if (this.documentData._id === selectedContentId) {
+        console.log('root',selectedContentId)
         const schema = schemasByName.get(this.documentData.schema)
         if (schema) {
           this.navigateToSchemaBackwards({
@@ -282,20 +291,21 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
         console.log(`root id ${selectedContentId} not-found`)
         return
       }
-      // Navigate to
+      // Navigate to child
       while (selectedContentId) {
+        console.log('child', selectedContentId)
         const schema = schemasByName.get(this.selectedDocumentData.schema)
         if (schema) {
           schemaFieldsLoop: for (const field of schema.fields || []) {
             if (field.kind === SchemaFieldKind.SCHEMA) {
               const cData: ContentData | undefined = this.selectedDocumentData[field.name];
-              if (cData?._id === selectedContentId) {
+              if (cData && cData._id === selectedContentId) {
                 this.navigateToSchemaForwards({
                   contentId: selectedContentId!,
                   fieldName: field.name,
-                  schemaName: schema.name
+                  schemaName: cData.schema
                 });
-                selectedContentId = contentIdIteration.shift();
+
                 break;
               }
             }
@@ -306,16 +316,17 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
                   this.navigateToSchemaForwards({
                     contentId: selectedContentId,
                     fieldName: field.name,
-                    schemaName: schema.name
+                    schemaName: content.schema
                   });
-                  selectedContentId = contentIdIteration.shift();
                   break schemaFieldsLoop;
                 }
               }
             }
           }
+          selectedContentId = contentIdIteration.shift();
         } else {
           console.log(`schema ${this.selectedDocumentData.schema} not-found`)
+          return;
         }
       }
       console.log(`id ${selectedContentId} not-found`)
