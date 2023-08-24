@@ -289,7 +289,6 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
           }
         }
       }
-
       node = nodeIterator.shift()
     }
     console.log(this.documentIdsTree)
