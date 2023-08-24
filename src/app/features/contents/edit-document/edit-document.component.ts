@@ -40,6 +40,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   document?: ContentDocument;
   documentData: ContentData = {_id: '', schema: ''};
   selectedDocumentData: ContentData = {_id: '', schema: ''};
+  documentIdsTree: Map<string, string[]> = new Map<string, string[]>
   rootSchema?: Schema;
   schemaMapByName?: Map<string, Schema>;
   schemaPath: SchemaPathItem[] = [];
@@ -128,6 +129,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
           }
           this.schemas = schemas;
           this.schemaMapByName = new Map<string, Schema>(this.schemas?.map(it => [it.name, it]));
+          this.generateDocumentIdsTree()
           this.isLoading = false;
           this.cd.markForCheck();
         }
@@ -261,6 +263,39 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url);
   }
 
+  generateDocumentIdsTree() {
+    console.group('generateDocumentIdsTree')
+    const nodeIterator: {path: string[], data: ContentData}[] = [{path: [this.documentData._id], data: this.documentData}]
+    let node = nodeIterator.shift()
+    while (node) {
+      console.log(node)
+      this.documentIdsTree.set(node.data._id, node.path)
+      const schema = this.schemaMapByName?.get(node.data.schema)
+      if (schema) {
+        for (const field of schema.fields || []) {
+          if (field.kind === SchemaFieldKind.SCHEMA) {
+            const cData: ContentData | undefined = node.data[field.name];
+            if (cData) {
+              nodeIterator.push({path: [...node.path, cData._id], data: cData})
+            }
+          }
+          if (field.kind === SchemaFieldKind.SCHEMAS) {
+            const cData: ContentData[] | undefined = node.data[field.name];
+            for (const content of cData || []) {
+              if (cData) {
+                nodeIterator.push({path: [...node.path, content._id], data: content})
+              }
+            }
+          }
+        }
+      }
+
+      node = nodeIterator.shift()
+    }
+    console.log(this.documentIdsTree)
+    console.groupEnd()
+  }
+
   @HostListener('window:message', ['$event'])
   contentIdLink(event: MessageEvent<EditorEvent>): void {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
@@ -268,14 +303,13 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       console.log(event)
       console.log(event.data.path)
       // find element
-      const schemasByName = new Map<string, Schema>(this.schemas.map(it => [it.name, it]));
-      const contentIdIteration = ObjectUtils.clone(event.data.path)
+      const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(event.data.id)) || []
       // Iterative traversing content and validating fields.
       let selectedContentId = contentIdIteration.shift()
       // check Root Schema
       if (this.documentData._id === selectedContentId) {
-        console.log('root',selectedContentId)
-        const schema = schemasByName.get(this.documentData.schema)
+        console.log('root', selectedContentId)
+        const schema = this.schemaMapByName?.get(this.documentData.schema)
         if (schema) {
           this.navigateToSchemaBackwards({
             contentId: this.documentData._id,
@@ -294,7 +328,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       // Navigate to child
       while (selectedContentId) {
         console.log('child', selectedContentId)
-        const schema = schemasByName.get(this.selectedDocumentData.schema)
+        const schema = this.schemaMapByName?.get(this.selectedDocumentData.schema)
         if (schema) {
           schemaFieldsLoop: for (const field of schema.fields || []) {
             if (field.kind === SchemaFieldKind.SCHEMA) {
@@ -311,7 +345,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
             }
             if (field.kind === SchemaFieldKind.SCHEMAS) {
               const cData: ContentData[] | undefined = this.selectedDocumentData[field.name];
-              for (const content of cData || []){
+              for (const content of cData || []) {
                 if (content._id === selectedContentId) {
                   this.navigateToSchemaForwards({
                     contentId: selectedContentId,

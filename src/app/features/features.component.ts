@@ -28,7 +28,7 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {environment} from '../../environments/environment';
-import {UserPermission} from '@shared/models/user.model';
+import {UserPermission, USER_PERMISSIONS_IMPORT_EXPORT} from '@shared/models/user.model';
 import {DEFAULT_LOCALE} from "@shared/models/locale.model";
 import {selectSettings} from '@core/state/settings/settings.selectors';
 import {MatSlideToggleChange} from "@angular/material/slide-toggle";
@@ -39,7 +39,7 @@ interface SideMenuItem {
   icon: string;
   link: string;
   label: string;
-  permission?: UserPermission;
+  permission?: UserPermission | UserPermission[];
 }
 
 @Component({
@@ -70,7 +70,7 @@ export class FeaturesComponent implements OnInit {
     {link: 'contents', label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ},
     {link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ},
     {link: 'schemas', label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ},
-    {link: 'tasks', label: 'Tasks', icon: 'task'},
+    {link: 'tasks', label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT},
   ];
 
   adminSideMenu: SideMenuItem[] = [
@@ -196,7 +196,7 @@ export class FeaturesComponent implements OnInit {
       {link: 'contents', label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ},
       {link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ},
       {link: 'schemas', label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ},
-      {link: 'tasks', label: 'Tasks', icon: 'task'},
+      {link: 'tasks', label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT},
       {link: `spaces/${spaceId}/settings`, label: 'Settings', icon: 'settings', permission: UserPermission.SPACE_MANAGEMENT},
     ]
   }

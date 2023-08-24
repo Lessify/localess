@@ -69,3 +69,19 @@ export enum UserPermission {
   ASSET_EXPORT = 'ASSET_EXPORT',
   ASSET_IMPORT = 'ASSET_IMPORT',
 }
+
+export const USER_PERMISSIONS_IMPORT = [
+  UserPermission.TRANSLATION_IMPORT,
+  UserPermission.SCHEMA_IMPORT,
+  UserPermission.CONTENT_IMPORT,
+  UserPermission.ASSET_IMPORT,
+]
+
+export const USER_PERMISSIONS_EXPORT = [
+  UserPermission.TRANSLATION_EXPORT,
+  UserPermission.SCHEMA_EXPORT,
+  UserPermission.CONTENT_EXPORT,
+  UserPermission.ASSET_EXPORT,
+]
+
+export const USER_PERMISSIONS_IMPORT_EXPORT = [...USER_PERMISSIONS_IMPORT, ...USER_PERMISSIONS_EXPORT]
