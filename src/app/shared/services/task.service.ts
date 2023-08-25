@@ -30,7 +30,7 @@ import {
   TaskTranslationExportCreateFS,
   TaskTranslationImportCreateFS
 } from '@shared/models/task.model';
-import {getBlob} from "@firebase/storage";
+import {getDownloadURL} from "@firebase/storage";
 
 @Injectable()
 export class TaskService {
@@ -224,8 +224,8 @@ export class TaskService {
       );
   }
 
-  download(spaceId: string, id: string): Observable<Blob> {
-    return from(getBlob(ref(this.storage, `spaces/${spaceId}/tasks/${id}/original`)))
+  downloadUrl(spaceId: string, id: string): Observable<string> {
+    return from(getDownloadURL(ref(this.storage, `spaces/${spaceId}/tasks/${id}/original`)))
   }
 
   delete(spaceId: string, id: string): Observable<void> {
