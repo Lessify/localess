@@ -335,12 +335,11 @@ expressV1.get('/api/v1/spaces/:spaceId/tasks/:taskId', async (req, res) => {
     await taskFile.download({destination: tempFilePath});
     const downloadURL = await getDownloadURL(taskFile);
     res
-      .redirect(downloadURL);
-/*      .header('Transfer-Encoding', 'chunked')
       .header('Content-Type', 'application/zip')
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
       .header('Content-Disposition', `form-data; filename="${task.file?.name}"`)
-      .sendFile(tempFilePath);*/
+      .redirect(downloadURL);
+      // .sendFile(tempFilePath);
     return;
   } else {
     res
