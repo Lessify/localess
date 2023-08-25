@@ -332,12 +332,13 @@ expressV1.get('/api/v1/spaces/:spaceId/tasks/:taskId', async (req, res) => {
     const task = taskSnapshot.data() as Task;
     const tempFilePath = `${os.tmpdir()}/tasks-${taskId}`;
     await taskFile.download({destination: tempFilePath});
+    const [file] = await taskFile.download();
     res
       // .header('Transfer-Encoding', 'chunked')
       .header('Content-Type', 'application/zip')
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
       .header('Content-Disposition', `form-data; filename="${task.file?.name}"`)
-      .download(tempFilePath);
+      .socket?.write(file);
       // .sendFile(tempFilePath);
     return;
   } else {
