@@ -16,6 +16,7 @@ import {selectSpace} from "@core/state/space/space.selector";
 import {ConfirmationDialogComponent} from "@shared/components/confirmation-dialog/confirmation-dialog.component";
 import {ConfirmationDialogModel} from "@shared/components/confirmation-dialog/confirmation-dialog.model";
 import {SpaceService} from "@shared/services/space.service";
+import {saveAs} from "file-saver-es";
 
 @Component({
   selector: 'll-tasks',
@@ -78,7 +79,13 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   onDownload(element: Task): void {
-    window.open(`/api/v1/spaces/${this.selectedSpace!.id}/tasks/${element.id}`)
+    this.taskService.download(this.selectedSpace!.id, element.id)
+      .subscribe({
+        next: (file) => {
+          saveAs(file, element.file?.name)
+        }
+      })
+    //window.open(`/api/v1/spaces/${this.selectedSpace!.id}/tasks/${element.id}`)
   }
 
   openDeleteDialog(element: Task): void {

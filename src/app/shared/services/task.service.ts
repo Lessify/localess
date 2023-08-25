@@ -30,6 +30,7 @@ import {
   TaskTranslationExportCreateFS,
   TaskTranslationImportCreateFS
 } from '@shared/models/task.model';
+import {getBlob} from "@firebase/storage";
 
 @Injectable()
 export class TaskService {
@@ -221,6 +222,10 @@ export class TaskService {
         ),
         traceUntilFirst('Firestore:Tasks:create'),
       );
+  }
+
+  download(spaceId: string, id: string): Observable<Blob> {
+    return from(getBlob(ref(this.storage, `spaces/${spaceId}/tasks/${id}/original`)))
   }
 
   delete(spaceId: string, id: string): Observable<void> {
