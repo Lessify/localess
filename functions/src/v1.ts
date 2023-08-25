@@ -3,6 +3,7 @@ import * as cors from 'cors';
 import {logger} from 'firebase-functions';
 import {onRequest, HttpsError} from 'firebase-functions/v2/https';
 import {Query} from 'firebase-admin/firestore';
+import {getDownloadURL} from 'firebase-admin/storage';
 import {bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
 import {AssetFile} from './models/asset.model';
 import {Content, ContentKind, ContentLink} from './models/content.model';
@@ -332,14 +333,14 @@ expressV1.get('/api/v1/spaces/:spaceId/tasks/:taskId', async (req, res) => {
     const task = taskSnapshot.data() as Task;
     const tempFilePath = `${os.tmpdir()}/tasks-${taskId}`;
     await taskFile.download({destination: tempFilePath});
-    const [file] = await taskFile.download();
+    const downloadURL = await getDownloadURL(taskFile);
     res
-      // .header('Transfer-Encoding', 'chunked')
+      .redirect(downloadURL);
+/*      .header('Transfer-Encoding', 'chunked')
       .header('Content-Type', 'application/zip')
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
       .header('Content-Disposition', `form-data; filename="${task.file?.name}"`)
-      .socket?.write(file);
-      // .sendFile(tempFilePath);
+      .sendFile(tempFilePath);*/
     return;
   } else {
     res
