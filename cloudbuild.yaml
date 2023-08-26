@@ -24,5 +24,8 @@ steps:
       - 'LOCALESS_AUTH_PROVIDERS=${_LOCALESS_AUTH_PROVIDERS}'
   # deploy to firebase
   - name: gcr.io/$PROJECT_ID/firebase
-    id: 'deploy'
+    id: 'firebase-deploy'
     args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force' ]
+  - name: 'gcr.io/cloud-builders/gsutil'
+    id: 'gsutil-cors'
+    args:  [ 'cors', 'set', 'cors.json', 'gs://${_LOCALESS_FIREBASE_PROJECT_ID}']
