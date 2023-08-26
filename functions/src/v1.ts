@@ -330,6 +330,8 @@ expressV1.get('/api/v1/spaces/:spaceId/tasks/:taskId', async (req, res) => {
   const taskSnapshot = await firestoreService.doc(`spaces/${spaceId}/tasks/${taskId}`).get();
   logger.info(`v1 spaces task: ${exists} & ${taskSnapshot.exists}`);
   if (exists && taskSnapshot.exists) {
+    const [metadata] = await taskFile.getMetadata();
+    logger.info(`v1 spaces task file metadata: ${JSON.stringify(metadata)}`);
     const task = taskSnapshot.data() as Task;
     const tempFilePath = `${os.tmpdir()}/tasks-${taskId}`;
     await taskFile.download({destination: tempFilePath});
