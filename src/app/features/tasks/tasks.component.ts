@@ -79,13 +79,13 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   onDownload(element: Task): void {
-    this.taskService.downloadUrl(this.selectedSpace!.id, element.id)
-      .subscribe({
-        next: (url) => {
-          saveAs(url, element.file?.name || 'unknown')
-        }
-      })
-    //window.open(`/api/v1/spaces/${this.selectedSpace!.id}/tasks/${element.id}`)
+    // this.taskService.downloadUrl(this.selectedSpace!.id, element.id)
+    //   .subscribe({
+    //     next: (url) => {
+    //       saveAs(url, element.file?.name || 'unknown')
+    //     }
+    //   })
+    window.open(`/api/v1/spaces/${this.selectedSpace!.id}/tasks/${element.id}`)
   }
 
   openDeleteDialog(element: Task): void {
