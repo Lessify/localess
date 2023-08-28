@@ -85,7 +85,6 @@ export class TasksComponent implements OnInit, OnDestroy {
           saveAs(url, element.file?.name || 'unknown')
         }
       })
-    // window.open(`/api/v1/spaces/${this.selectedSpace!.id}/tasks/${element.id}`)
   }
 
   openDeleteDialog(element: Task): void {

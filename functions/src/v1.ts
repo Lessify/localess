@@ -6,7 +6,6 @@ import {Query} from 'firebase-admin/firestore';
 import {bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
 import {AssetFile} from './models/asset.model';
 import {Content, ContentKind, ContentLink} from './models/content.model';
-import {Task} from './models/task.model';
 import {Space} from './models/space.model';
 import {findContentByFullSlug} from './services/content.service';
 import {findSpaceById} from './services/space.service';
@@ -309,40 +308,6 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .header('Content-Disposition', disposition)
       .contentType(asset.type)
       .sendFile(tempFilePath);
-    return;
-  } else {
-    res
-      .status(404)
-      .header('Cache-Control', 'no-cache')
-      .send(new HttpsError('not-found', 'Asset not found.'));
-    return;
-  }
-});
-
-expressV1.get('/api/v1/spaces/:spaceId/tasks/:taskId', async (req, res) => {
-  logger.info('v1 spaces task params: ' + JSON.stringify(req.params));
-  logger.info('v1 spaces task query: ' + JSON.stringify(req.query));
-  const {spaceId, taskId} = req.params;
-
-  const taskFile = bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`);
-  const [exists] = await taskFile.exists();
-  const taskSnapshot = await firestoreService.doc(`spaces/${spaceId}/tasks/${taskId}`).get();
-  logger.info(`v1 spaces task: ${exists} & ${taskSnapshot.exists}`);
-  if (exists && taskSnapshot.exists) {
-    const [metadata] = await taskFile.getMetadata();
-    logger.info(`v1 spaces task file metadata: ${JSON.stringify(metadata)}`);
-    const task = taskSnapshot.data() as Task;
-    const tempFilePath = `${os.tmpdir()}/tasks-${taskId}`;
-    await taskFile.download({destination: tempFilePath});
-    const [data] = await taskFile.download();
-    // const downloadURL = await getDownloadURL(taskFile);
-    res
-      .header('Content-Type', 'application/zip')
-      .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-      .header('Content-Disposition', `form-data; filename="${task.file?.name}"`)
-      // .redirect(downloadURL);
-      .socket?.write(data);
-      // .sendFile(tempFilePath);
     return;
   } else {
     res

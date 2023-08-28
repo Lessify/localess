@@ -519,7 +519,7 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
  * @param {string} taskId original task
  */
 async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
-  logger.info(`[Task:onCreate:SCHEMA:IMPORT] Started`);
+  logger.info('[Task:onCreate:SCHEMA:IMPORT] Started');
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;

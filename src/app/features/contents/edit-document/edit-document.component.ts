@@ -49,7 +49,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   documents: ContentDocument[] = [];
 
   // Form
-  viewForm = this.fb.control<'form' | 'design'>('design')
+  editorEnabledCtr = this.fb.control<boolean>(false)
 
   //Loadings
   isLoading: boolean = true;
@@ -103,6 +103,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
           this.availableLocales = space.locales;
           this.documents = documents;
 
+
           if (document.kind === ContentKind.DOCUMENT) {
             this.document = document;
             this.rootSchema = schemas.find(it => it.id === document.schema);
@@ -110,6 +111,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
               _id: v4(),
               schema: this.rootSchema?.name || ''
             };
+            this.editorEnabledCtr.setValue(document.editorEnabled === true);
           }
 
           // Generate initial path only once
@@ -166,6 +168,14 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     //console.log(this.contentErrors)
 
     if (!this.contentErrors) {
+      if (this.document?.editorEnabled !== this.editorEnabledCtr.value) {
+        this.contentService.updateDocumentEditorEnabled(this.selectedSpace!.id, this.entityId, this.editorEnabledCtr.value || false)
+          .subscribe({
+            next: () => {
+              console.log('updateDocumentEditorEnabled updated')
+            }
+          })
+      }
       this.contentService.updateDocumentData(this.selectedSpace!.id, this.entityId, this.documentData)
         .subscribe({
           next: () => {
@@ -220,8 +230,8 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   navigateToSchemaForwards(pathItem: SchemaPathItem): void {
-    console.group('navigateToSchemaForwards')
-    console.log(pathItem)
+    //console.group('navigateToSchemaForwards')
+    //console.log(pathItem)
     this.schemaPath.push(pathItem);
     const field = this.selectedDocumentData[pathItem.fieldName]
     if (Array.isArray(field)) {
@@ -229,20 +239,20 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     } else {
       this.selectedDocumentData = field
     }
-    console.groupEnd()
+    //console.groupEnd()
   }
 
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
-    console.group('navigateToSchemaBackwards')
-    console.log(pathItem)
+    //console.group('navigateToSchemaBackwards')
+    //console.log(pathItem)
     const idx = this.schemaPath.findIndex((it) => it.contentId == pathItem.contentId);
     this.schemaPath.splice(idx + 1);
     // Select Root
     if (idx == 0) {
-      console.log(`Navigate to Root idx=${idx}`)
+      //console.log(`Navigate to Root idx=${idx}`)
       this.selectedDocumentData = this.documentData;
     } else {
-      console.log(`Navigate to Child idx=${idx}`)
+      //console.log(`Navigate to Child idx=${idx}`)
       let localSelectedContent = this.documentData;
       for (const path of this.schemaPath) {
         if (path.fieldName === '') continue;
@@ -255,7 +265,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       }
       this.selectedDocumentData = localSelectedContent;
     }
-    console.groupEnd()
+    //console.groupEnd()
   }
 
   changeEnvironment(env: SpaceEnvironment): void {
@@ -264,11 +274,10 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   generateDocumentIdsTree() {
-    console.group('generateDocumentIdsTree')
-    const nodeIterator: {path: string[], data: ContentData}[] = [{path: [this.documentData._id], data: this.documentData}]
+    //console.group('generateDocumentIdsTree')
+    const nodeIterator: { path: string[], data: ContentData }[] = [{path: [this.documentData._id], data: this.documentData}]
     let node = nodeIterator.shift()
     while (node) {
-      console.log(node)
       this.documentIdsTree.set(node.data._id, node.path)
       const schema = this.schemaMapByName?.get(node.data.schema)
       if (schema) {
@@ -291,8 +300,8 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       }
       node = nodeIterator.shift()
     }
-    console.log(this.documentIdsTree)
-    console.groupEnd()
+    // console.log(this.documentIdsTree)
+    //console.groupEnd()
   }
 
   @HostListener('window:message', ['$event'])
@@ -300,7 +309,6 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       console.log('MessageEvent')
       console.log(event)
-      console.log(event.data.path)
       // find element
       const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(event.data.id)) || []
       // Iterative traversing content and validating fields.
@@ -338,7 +346,6 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
                   fieldName: field.name,
                   schemaName: cData.schema
                 });
-
                 break;
               }
             }

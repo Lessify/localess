@@ -7,9 +7,9 @@
     <span class="text-muted">#{{document?.slug}}</span>
     <span class="spacer"></span>
 
-    <mat-button-toggle-group [formControl]="viewForm">
-      <mat-button-toggle value="design"><mat-icon>design_services</mat-icon></mat-button-toggle>
-      <mat-button-toggle value="form"><mat-icon>edit_note</mat-icon></mat-button-toggle>
+    <mat-button-toggle-group [formControl]="editorEnabledCtr">
+      <mat-button-toggle [value]="true"><mat-icon>design_services</mat-icon></mat-button-toggle>
+      <mat-button-toggle [value]="false"><mat-icon>edit_note</mat-icon></mat-button-toggle>
     </mat-button-toggle-group>
 
     <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
@@ -90,7 +90,7 @@
 </div>
 <div *ngIf="!isLoading" class="container-fluid">
   <mat-drawer-container autosize="true">
-    <mat-drawer mode="side" [opened]="viewForm.value === 'design'">
+    <mat-drawer mode="side" [opened]="editorEnabledCtr.value === true">
       <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment else noEnv">
         <mat-card-header>
           <mat-card-title>{{selectedEnvironment?.name}}</mat-card-title>

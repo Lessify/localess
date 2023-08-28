@@ -26,12 +26,10 @@ import {
   ContentDocument,
   ContentDocumentCreate,
   ContentDocumentCreateFS,
-  ContentDocumentDataUpdateFS,
   ContentFolderCreate,
   ContentFolderCreateFS,
   ContentKind,
   ContentUpdate,
-  ContentUpdateFS
 } from '@shared/models/content.model';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
 import {ContentHelperService} from '@shared/services/content-helper.service';
@@ -147,7 +145,7 @@ export class ContentService {
   }
 
   update(spaceId: string, id: string, parentSlug: string, entity: ContentUpdate): Observable<void> {
-    const update: UpdateData<ContentUpdateFS> = {
+    const update: UpdateData<Content> = {
       name: entity.name,
       slug: entity.slug,
       parentSlug: parentSlug,
@@ -161,7 +159,7 @@ export class ContentService {
   }
 
   updateDocumentData(spaceId: string, id: string, data: ContentData): Observable<void> {
-    const update: UpdateData<ContentDocumentDataUpdateFS> = {
+    const update: UpdateData<ContentDocument> = {
       data: this.contentHelperService.clone(data),
       updatedAt: serverTimestamp()
     }
@@ -169,6 +167,18 @@ export class ContentService {
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update))
       .pipe(
         traceUntilFirst('Firestore:Contents:update'),
+      );
+  }
+
+  updateDocumentEditorEnabled(spaceId: string, id: string, enabled: boolean): Observable<void> {
+    const update: UpdateData<ContentDocument> = {
+      editorEnabled: enabled,
+      updatedAt: serverTimestamp()
+    }
+
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update))
+      .pipe(
+        traceUntilFirst('Firestore:Contents:updateEditorEnabled'),
       );
   }
 
