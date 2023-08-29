@@ -75,3 +75,22 @@ mat-nav-list.ll-mat-nav-list-gap {
     }
   }
 }
+
+mat-list.assets {
+
+  mat-list-item {
+    border-width: 1px;
+    border-color: $border-grey-color;
+    border-style: solid;
+    border-radius: 5px!important;
+    margin-bottom: 8px;
+
+    img.mat-mdc-list-item-avatar {
+      border-radius: unset;
+      margin: 0 8px 0 0!important;
+      height: 72px;
+      width: 72px;
+    }
+
+  }
+}

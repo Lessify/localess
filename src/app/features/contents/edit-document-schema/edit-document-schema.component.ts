@@ -19,7 +19,6 @@ import {debounceTime, Subject} from 'rxjs';
 import {v4} from 'uuid';
 import {ContentHelperService} from '@shared/services/content-helper.service';
 import {Space} from '@shared/models/space.model';
-import {ObjectUtils} from '@core/utils/object-utils.service';
 import {SchemaSelectChange} from './edit-document-schema.model';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {selectSettings} from "@core/state/settings/settings.selectors";

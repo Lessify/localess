@@ -1,5 +1,42 @@
 <form *ngIf="form" [formGroup]="form">
-  <mat-form-field floatLabel="always">
+  <mat-card class="ll-not-shadow">
+    <mat-card-header>
+      <mat-card-title-group>
+        <mat-card-title>
+          {{component?.displayName || component?.name}}
+          <mat-icon *ngIf="component?.translatable" matTooltip="The field is translatable">language</mat-icon>
+        </mat-card-title>
+        <button mat-icon-button matTooltip="Add Asset" (click)="openAssetSelectDialog()">
+          <mat-icon>attach_file</mat-icon>
+        </button>
+      </mat-card-title-group>
+    </mat-card-header>
+    <mat-divider></mat-divider>
+    <mat-card-content>
+      <mat-list class="assets" *ngIf="asset">
+        <mat-list-item>
+          <img *ngIf="asset.type.startsWith('image/'); else noImage"
+               matListItemAvatar class="img-fluid"
+               width="290" height="200" alt="thumbnail" loading="lazy"
+               ngSrc="/api/v1/spaces/{{space.id}}/assets/{{asset.id}}"/>
+          <ng-template #noImage>
+            <mat-icon matListItemIcon>file_present</mat-icon>
+          </ng-template>
+          <div matListItemTitle>{{asset.name}}{{asset.extension}}</div>
+          <div matListItemLine>{{asset.alt}}</div>
+          <mat-action-list matListItemMeta>
+            <button mat-icon-button (click)="deleteAsset()">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-action-list>
+        </mat-list-item>
+      </mat-list>
+      <mat-hint *ngIf="component?.description">{{component.description}}</mat-hint>
+      <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
+    </mat-card-content>
+  </mat-card>
+
+  <!--<mat-form-field floatLabel="always">
     <mat-label>{{component?.displayName || component?.name}}</mat-label>
     <input matInput [required]="component.required" hidden>
     <button mat-raised-button matTextSuffix color="accent" (click)="openAssetSelectDialog()">
@@ -14,10 +51,10 @@
             <mat-icon>delete</mat-icon>
           </button>
         </mat-grid-tile-header>
-          <ng-container *ngIf="asset.type.startsWith('image/'); else noImage">
-            <img class="img-fluid" width="290" height="200" alt="thumbnail" loading="lazy"
-                 ngSrc="/api/v1/spaces/{{space.id}}/assets/{{asset.id}}"/>
-          </ng-container>
+        <ng-container *ngIf="asset.type.startsWith('image/'); else noImage">
+          <img class="img-fluid" width="290" height="200" alt="thumbnail" loading="lazy"
+               ngSrc="/api/v1/spaces/{{space.id}}/assets/{{asset.id}}"/>
+        </ng-container>
         <ng-template #noImage>
           <mat-icon>file_present</mat-icon>
         </ng-template>
@@ -30,9 +67,8 @@
     <mat-hint *ngIf="component?.description">{{component.description}}</mat-hint>
     <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
 
-  </mat-form-field>
+  </mat-form-field>-->
 
-  <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
 </form>
 <ng-container *ngIf="settings$ | async as settings">
   <mat-accordion *ngIf="settings.debugEnabled">
