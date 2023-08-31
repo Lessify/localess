@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  OnDestroy,
-  OnInit,
-  ViewChild
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {combineLatest, debounceTime, EMPTY, Observable, startWith, Subject} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
 import {filter, map, switchMap, takeUntil} from 'rxjs/operators';
@@ -18,29 +10,16 @@ import {TranslationService} from '@shared/services/translation.service';
 import {SpaceService} from '@shared/services/space.service';
 import {AppState} from '@core/state/core.state';
 import {Locale} from '@shared/models/locale.model';
-import {
-  Translation,
-  TranslationCreate,
-  TranslationStatus,
-  TranslationUpdate
-} from '@shared/models/translation.model';
+import {Translation, TranslationCreate, TranslationStatus, TranslationUpdate} from '@shared/models/translation.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {Space} from '@shared/models/space.model';
-import {
-  TranslationAddDialogComponent
-} from './translation-add-dialog/translation-add-dialog.component';
+import {TranslationAddDialogComponent} from './translation-add-dialog/translation-add-dialog.component';
 import {TranslationAddDialogModel} from './translation-add-dialog/translation-add-dialog.model';
 import {TranslationEditDialogModel} from './translation-edit-dialog/translation-edit-dialog.model';
-import {
-  TranslationEditDialogComponent
-} from './translation-edit-dialog/translation-edit-dialog.component';
+import {TranslationEditDialogComponent} from './translation-edit-dialog/translation-edit-dialog.component';
 import {ObjectUtils} from '@core/utils/object-utils.service';
-import {
-  ConfirmationDialogComponent
-} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {
-  ConfirmationDialogModel
-} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {TranslateService} from '@shared/services/translate.service';
 import {LocaleService} from '@shared/services/locale.service';
 import {NotificationService} from '@shared/services/notification.service';

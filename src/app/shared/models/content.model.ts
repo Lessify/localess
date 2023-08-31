@@ -33,6 +33,7 @@ export interface ContentDocument extends ContentBase {
   schema: string;
   data?: ContentData;
   publishedAt?: Timestamp;
+  editorEnabled?: boolean
 }
 
 export interface ContentFolder extends ContentBase {
@@ -84,15 +85,8 @@ export interface ContentFolderCreateFS extends ContentCreateFS {
   kind: ContentKind.FOLDER
 }
 
-export interface ContentUpdateFS {
-  name: string;
-  slug: string;
-  parentSlug: string
-  fullSlug: string
-  updatedAt: FieldValue;
-}
-
-export interface ContentDocumentDataUpdateFS {
-  data: ContentData;
-  updatedAt: FieldValue;
+// Events
+export interface EditorEvent {
+  owner: string,
+  id: string
 }

@@ -1,36 +1,27 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder} from '@angular/forms';
-import {Schema,} from '@shared/models/schema.model';
+import {Schema, SchemaFieldKind,} from '@shared/models/schema.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
+import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SchemaService} from '@shared/services/schema.service';
 import {ContentService} from '@shared/services/content.service';
-import {
-  ContentError,
-  ContentKind,
-  ContentDocument,
-  ContentData
-} from '@shared/models/content.model';
+import {ContentData, ContentDocument, ContentError, ContentKind, EditorEvent} from '@shared/models/content.model';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {selectSpace} from '@core/state/space/space.selector';
 import {distinctUntilChanged, filter, switchMap, takeUntil} from 'rxjs/operators';
 import {combineLatest, Subject} from 'rxjs';
 import {SpaceService} from '@shared/services/space.service';
-import {Space} from '@shared/models/space.model';
+import {Space, SpaceEnvironment} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {DEFAULT_LOCALE, Locale} from '@shared/models/locale.model';
 import {v4} from 'uuid';
-import {environment} from '../../../../environments/environment';
 import {ContentHelperService} from '@shared/services/content-helper.service';
 import {SchemaPathItem} from './edit-document.model';
 import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.model';
+import {selectSettings} from '@core/state/settings/settings.selectors';
+import {ObjectUtils} from "@core/utils/object-utils.service";
 
 @Component({
   selector: 'll-content-document-edit',
@@ -40,14 +31,16 @@ import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.m
 })
 export class EditDocumentComponent implements OnInit, OnDestroy {
 
-  isDebug = environment.debug
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
+  selectedEnvironment?: SpaceEnvironment;
+  iframeUrl?: SafeUrl;
   availableLocales: Locale[] = [];
   entityId: string;
   document?: ContentDocument;
   documentData: ContentData = {_id: '', schema: ''};
   selectedDocumentData: ContentData = {_id: '', schema: ''};
+  documentIdsTree: Map<string, string[]> = new Map<string, string[]>
   rootSchema?: Schema;
   schemaMapByName?: Map<string, Schema>;
   schemaPath: SchemaPathItem[] = [];
@@ -55,12 +48,16 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   contentErrors: ContentError[] | null = null;
   documents: ContentDocument[] = [];
 
+  // Form
+  editorEnabledCtr = this.fb.control<boolean>(false)
+
   //Loadings
   isLoading: boolean = true;
   isPublishLoading: boolean = false;
   isSaveLoading: boolean = false;
 
   // Subscriptions
+  settings$ = this.store.select(selectSettings);
   private destroy$ = new Subject();
 
   constructor(
@@ -74,6 +71,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
     private readonly contentHelperService: ContentHelperService,
+    private readonly sanitizer: DomSanitizer,
     readonly fe: FormErrorHandlerService,
   ) {
     this.entityId = this.activatedRoute.snapshot.paramMap.get('contentId') || "";
@@ -105,6 +103,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
           this.availableLocales = space.locales;
           this.documents = documents;
 
+
           if (document.kind === ContentKind.DOCUMENT) {
             this.document = document;
             this.rootSchema = schemas.find(it => it.id === document.schema);
@@ -112,6 +111,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
               _id: v4(),
               schema: this.rootSchema?.name || ''
             };
+            this.editorEnabledCtr.setValue(document.editorEnabled === true);
           }
 
           // Generate initial path only once
@@ -124,10 +124,14 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
           }
 
           // Select content base on path
-          this.navigateToSchema(this.schemaPath[this.schemaPath.length - 1])
-
+          this.navigateToSchemaBackwards(this.schemaPath[this.schemaPath.length - 1])
+          // Select Environment
+          if (this.selectedEnvironment === undefined && space.environments && space.environments.length > 0) {
+            this.changeEnvironment(space.environments[0])
+          }
           this.schemas = schemas;
           this.schemaMapByName = new Map<string, Schema>(this.schemas?.map(it => [it.name, it]));
+          this.generateDocumentIdsTree()
           this.isLoading = false;
           this.cd.markForCheck();
         }
@@ -164,6 +168,14 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     //console.log(this.contentErrors)
 
     if (!this.contentErrors) {
+      if (this.document?.editorEnabled !== this.editorEnabledCtr.value) {
+        this.contentService.updateDocumentEditorEnabled(this.selectedSpace!.id, this.entityId, this.editorEnabledCtr.value || false)
+          .subscribe({
+            next: () => {
+              console.log('updateDocumentEditorEnabled updated')
+            }
+          })
+      }
       this.contentService.updateDocumentData(this.selectedSpace!.id, this.entityId, this.documentData)
         .subscribe({
           next: () => {
@@ -190,6 +202,11 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     this.router.navigate(['features', 'contents']);
   }
 
+  openDraftInNewTab(locale: string): void {
+    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}?locale=${locale}&version=draft`
+    window.open(url, '_blank')
+  }
+
   openPublishedInNewTab(locale: string): void {
     const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}?locale=${locale}`
     window.open(url, '_blank')
@@ -205,28 +222,37 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   onSchemaChange(event: SchemaSelectChange): void {
-    this.schemaPath.push({
+    this.navigateToSchemaForwards({
       contentId: event.contentId,
       schemaName: event.schemaName,
       fieldName: event.fieldName
     });
-    const field = this.selectedDocumentData[event.fieldName]
-    console.log(Array.isArray(field))
+  }
 
+  navigateToSchemaForwards(pathItem: SchemaPathItem): void {
+    //console.group('navigateToSchemaForwards')
+    //console.log(pathItem)
+    this.schemaPath.push(pathItem);
+    const field = this.selectedDocumentData[pathItem.fieldName]
     if (Array.isArray(field)) {
-      this.selectedDocumentData = field.find((it: ContentData) => it._id == event.contentId);
+      this.selectedDocumentData = field.find((it: ContentData) => it._id == pathItem.contentId);
     } else {
       this.selectedDocumentData = field
     }
+    //console.groupEnd()
   }
 
-  navigateToSchema(pathItem: SchemaPathItem): void {
+  navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
+    //console.group('navigateToSchemaBackwards')
+    //console.log(pathItem)
     const idx = this.schemaPath.findIndex((it) => it.contentId == pathItem.contentId);
     this.schemaPath.splice(idx + 1);
     // Select Root
     if (idx == 0) {
+      //console.log(`Navigate to Root idx=${idx}`)
       this.selectedDocumentData = this.documentData;
     } else {
+      //console.log(`Navigate to Child idx=${idx}`)
       let localSelectedContent = this.documentData;
       for (const path of this.schemaPath) {
         if (path.fieldName === '') continue;
@@ -238,6 +264,112 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
         }
       }
       this.selectedDocumentData = localSelectedContent;
+    }
+    //console.groupEnd()
+  }
+
+  changeEnvironment(env: SpaceEnvironment): void {
+    this.selectedEnvironment = env;
+    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url);
+  }
+
+  generateDocumentIdsTree() {
+    //console.group('generateDocumentIdsTree')
+    const nodeIterator: { path: string[], data: ContentData }[] = [{path: [this.documentData._id], data: this.documentData}]
+    let node = nodeIterator.shift()
+    while (node) {
+      this.documentIdsTree.set(node.data._id, node.path)
+      const schema = this.schemaMapByName?.get(node.data.schema)
+      if (schema) {
+        for (const field of schema.fields || []) {
+          if (field.kind === SchemaFieldKind.SCHEMA) {
+            const cData: ContentData | undefined = node.data[field.name];
+            if (cData) {
+              nodeIterator.push({path: [...node.path, cData._id], data: cData})
+            }
+          }
+          if (field.kind === SchemaFieldKind.SCHEMAS) {
+            const cData: ContentData[] | undefined = node.data[field.name];
+            for (const content of cData || []) {
+              if (cData) {
+                nodeIterator.push({path: [...node.path, content._id], data: content})
+              }
+            }
+          }
+        }
+      }
+      node = nodeIterator.shift()
+    }
+    // console.log(this.documentIdsTree)
+    //console.groupEnd()
+  }
+
+  @HostListener('window:message', ['$event'])
+  contentIdLink(event: MessageEvent<EditorEvent>): void {
+    if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
+      console.log('MessageEvent')
+      console.log(event)
+      // find element
+      const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(event.data.id)) || []
+      // Iterative traversing content and validating fields.
+      let selectedContentId = contentIdIteration.shift()
+      // check Root Schema
+      if (this.documentData._id === selectedContentId) {
+        console.log('root', selectedContentId)
+        const schema = this.schemaMapByName?.get(this.documentData.schema)
+        if (schema) {
+          this.navigateToSchemaBackwards({
+            contentId: this.documentData._id,
+            schemaName: this.documentData.schema,
+            fieldName: ''
+          });
+          selectedContentId = contentIdIteration.shift()
+        } else {
+          console.log(`schema ${this.selectedDocumentData.schema} not-found`)
+          return
+        }
+      } else {
+        console.log(`root id ${selectedContentId} not-found`)
+        return
+      }
+      // Navigate to child
+      while (selectedContentId) {
+        console.log('child', selectedContentId)
+        const schema = this.schemaMapByName?.get(this.selectedDocumentData.schema)
+        if (schema) {
+          schemaFieldsLoop: for (const field of schema.fields || []) {
+            if (field.kind === SchemaFieldKind.SCHEMA) {
+              const cData: ContentData | undefined = this.selectedDocumentData[field.name];
+              if (cData && cData._id === selectedContentId) {
+                this.navigateToSchemaForwards({
+                  contentId: selectedContentId!,
+                  fieldName: field.name,
+                  schemaName: cData.schema
+                });
+                break;
+              }
+            }
+            if (field.kind === SchemaFieldKind.SCHEMAS) {
+              const cData: ContentData[] | undefined = this.selectedDocumentData[field.name];
+              for (const content of cData || []) {
+                if (content._id === selectedContentId) {
+                  this.navigateToSchemaForwards({
+                    contentId: selectedContentId,
+                    fieldName: field.name,
+                    schemaName: content.schema
+                  });
+                  break schemaFieldsLoop;
+                }
+              }
+            }
+          }
+          selectedContentId = contentIdIteration.shift();
+        } else {
+          console.log(`schema ${this.selectedDocumentData.schema} not-found`)
+          return;
+        }
+      }
+      console.log(`id ${selectedContentId} not-found`)
     }
   }
 }

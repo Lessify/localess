@@ -133,7 +133,7 @@ export class ContentHelperService {
           result[field.name] = value;
         }
       })
-    console.log(result)
+    // console.log(result)
     return result
   }
 

@@ -7,6 +7,11 @@
     <span class="text-muted">#{{document?.slug}}</span>
     <span class="spacer"></span>
 
+    <mat-button-toggle-group [formControl]="editorEnabledCtr">
+      <mat-button-toggle [value]="true"><mat-icon>design_services</mat-icon></mat-button-toggle>
+      <mat-button-toggle [value]="false"><mat-icon>edit_note</mat-icon></mat-button-toggle>
+    </mat-button-toggle-group>
+
     <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
       {{selectedLocale.name}}
       <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
@@ -61,15 +66,17 @@
       <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
     </ng-container>
 
-    <button
-      mat-icon-button
-      [matMenuTriggerFor]="importMenu">
+    <button mat-icon-button [matMenuTriggerFor]="importMenu">
       <mat-icon>more_vert</mat-icon>
     </button>
 
     <mat-menu #importMenu="matMenu">
-      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales"
-              (click)="openPublishedInNewTab(locale.id)">
+      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="openDraftInNewTab(locale.id)">
+        <mat-icon>mode_edit</mat-icon>
+        <span>Draft {{locale.name}} JSON</span>
+      </button>
+      <mat-divider/>
+      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="openPublishedInNewTab(locale.id)">
         <mat-icon>public</mat-icon>
         <span>Published {{locale.name}} JSON</span>
       </button>
@@ -81,34 +88,64 @@
 <div *ngIf="isLoading" class="loader">
   <mat-spinner></mat-spinner>
 </div>
-<div *ngIf="!isLoading" class="container-fluid mt-3">
+<div *ngIf="!isLoading" class="container-fluid">
+  <mat-drawer-container autosize="true">
+    <mat-drawer mode="side" [opened]="editorEnabledCtr.value === true">
+      <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment else noEnv">
+        <mat-card-header>
+          <mat-card-title>{{selectedEnvironment?.name}}</mat-card-title>
+          <mat-card-subtitle>{{selectedEnvironment?.url}}</mat-card-subtitle>
+          <span class="spacer"></span>
+          <button mat-icon-button [matMenuTriggerFor]="envMenu">
+            <mat-icon>arrow_drop_down</mat-icon>
+          </button>
+          <mat-menu #envMenu="matMenu">
+            <button mat-menu-item *ngFor="let env of selectedSpace?.environments" (click)="changeEnvironment(env)" [disabled]="env === selectedEnvironment">{{env.name}} | {{env.url}}</button>
+          </mat-menu>
+        </mat-card-header>
+        <mat-divider/>
+        <mat-card-content>
+          <iframe id="preview" [src]="iframeUrl"></iframe>
+        </mat-card-content>
+      </mat-card>
+      <ng-template #noEnv>
+        <div class="container text-center h-100">
+          <div class="row h-100">
+            <div class="col align-self-center">
+              No Configured Environments.<br/>
+              You can configure them in Settings.
+            </div>
+          </div>
+        </div>
+      </ng-template>
+    </mat-drawer>
+    <mat-drawer-content>
+      <div *ngIf="rootSchema" class="container">
 
-  <ng-container *ngIf="rootSchema">
+        <ll-breadcrumb>
+          <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchemaBackwards(schemaPathItem)">
+            <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch">
+              {{sch.displayName || sch.name}}
+            </ng-container>
+          </ll-breadcrumb-item>
+        </ll-breadcrumb>
 
-    <ll-breadcrumb>
-      <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchema(schemaPathItem)">
-        <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch">
-          {{sch.displayName || sch.name}}
-        </ng-container>
-      </ll-breadcrumb-item>
-    </ll-breadcrumb>
+        <ll-content-document-schema-edit
+          [data]="selectedDocumentData"
+          [schemas]="schemas"
+          [locale]="selectedLocale.id"
+          [localeFallback]="selectedSpace.localeFallback.id"
+          [documents]="documents"
+          [space]="selectedSpace"
+          (schemaChange)="onSchemaChange($event)"
+        />
 
-    <ll-content-document-schema-edit
-      [data]="selectedDocumentData"
-      [schemas]="schemas"
-      [locale]="selectedLocale.id"
-      [localeFallback]="selectedSpace.localeFallback.id"
-      [documents]="documents"
-      [space]="selectedSpace"
-      (schemaChange)="onSchemaChange($event)"
-    />
+      </div>
+    </mat-drawer-content>
+  </mat-drawer-container>
 
-  </ng-container>
-
-  <ng-container *ngIf="isDebug">
-    <mat-divider/>
-    <br/>
-    <mat-accordion>
+  <ng-container *ngIf="settings$ | async as settings">
+    <mat-accordion *ngIf="settings.debugEnabled">
       <mat-expansion-panel>
         <mat-expansion-panel-header>
           <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
@@ -116,9 +153,5 @@
         <pre>{{documentData | json}}</pre>
       </mat-expansion-panel>
     </mat-accordion>
-    <br/>
   </ng-container>
-
-
-
 </div>

@@ -28,6 +28,9 @@
 
 
     <span class="spacer"></span>
+    <button mat-icon-button (click)="onSettingsMenuExpendedChangeState()" matTooltip="Settings">
+      <mat-icon>settings</mat-icon>
+    </button>
     <button mat-icon-button  routerLink="/features/me" matTooltip="My Profile">
       <mat-icon>account_circle</mat-icon>
     </button>
@@ -38,7 +41,7 @@
 
   <mat-sidenav-container autosize="true">
 
-    <mat-sidenav mode="side" opened="true" [class.collapsed]="!settings.mainMenuExpended">
+    <mat-sidenav mode="side" opened="true" position="start" [class.collapsed]="!settings.mainMenuExpended">
       <mat-nav-list>
 
         <ng-container *ngIf="selectedSpace">
@@ -71,6 +74,15 @@
         <mat-divider/>
         <div mat-subheader *ngIf="settings.mainMenuExpended">Version : {{version}}</div>
       </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav mode="over" [opened]="isSettingsMenuExpended" position="end" (openedChange)="isSettingsMenuExpended = $event">
+      <mat-list>
+        <div mat-subheader>Settings</div>
+        <mat-list-item *ngIf="isDebug">
+          <mat-slide-toggle [checked]="settings.debugEnabled" (change)="onDebugEnabledChangeState($event)">Enable Debug</mat-slide-toggle>
+        </mat-list-item>
+      </mat-list>
     </mat-sidenav>
 
     <mat-sidenav-content>

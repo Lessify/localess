@@ -1,0 +1,31 @@
+<mat-toolbar class="border-bottom bg-transparent">
+  <mat-toolbar-row>
+    General
+    <span class="spacer"></span>
+    <button mat-raised-button color="primary" [disabled]="!form.valid" (click)="save()">
+      <mat-icon>save</mat-icon>
+      Save
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div *ngIf="isLoading" class="loader">
+  <mat-spinner></mat-spinner>
+</div>
+<div *ngIf="!isLoading" class="container-fluid my-3">
+  <mat-form-field>
+    <mat-label>Space ID</mat-label>
+    <input matInput type="text" [value]="space.id" readonly/>
+    <button mat-icon-button matSuffix [cdkCopyToClipboard]="space.id" matTooltip="Copy Id">
+      <mat-icon>content_copy</mat-icon>
+    </button>
+  </mat-form-field>
+  <form [formGroup]="form">
+    <mat-form-field>
+      <mat-label>Space Name</mat-label>
+      <input matInput type="text" formControlName="name" required minLength="3" maxlength="30" autocomplete="off"/>
+      <mat-hint align="end">{{form.controls['name'].value?.length || 0}}/30</mat-hint>
+      <mat-error *ngIf="form.controls['name'].errors as errors">{{fe.errors(errors)}}</mat-error>
+    </mat-form-field>
+  </form>
+</div>

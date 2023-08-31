@@ -1,14 +1,14 @@
 import {logger} from 'firebase-functions/v2';
-import {onCall, HttpsError} from 'firebase-functions/v2/https';
+import {HttpsError, onCall} from 'firebase-functions/v2/https';
 import {onDocumentDeleted, onDocumentUpdated, onDocumentWritten} from 'firebase-functions/v2/firestore';
-import {FieldValue} from 'firebase-admin/firestore';
-import {SecurityUtils} from './utils/security-utils';
+import {FieldValue, UpdateData} from 'firebase-admin/firestore';
+import {canPerform} from './utils/security-utils';
 import {bucket, firestoreService} from './config';
 import {Space} from './models/space.model';
-import {Content, ContentKind, ContentDocument, ContentDocumentStorage, PublishContentData} from './models/content.model';
+import {Content, ContentDocument, ContentDocumentStorage, ContentKind, PublishContentData} from './models/content.model';
 import {Schema} from './models/schema.model';
 import {UserPermission} from './models/user.model';
-import {findContentByFullSlug, findContentById} from './services/content.service';
+import {extractContent, findContentByFullSlug, findContentById} from './services/content.service';
 import {findSpaceById} from './services/space.service';
 import {findSchemas} from './services/schema.service';
 
@@ -16,7 +16,7 @@ import {findSchemas} from './services/schema.service';
 const contentPublish = onCall<PublishContentData>(async (request) => {
   logger.info('[contentPublish] data: ' + JSON.stringify(request.data));
   logger.info('[contentPublish] context.auth: ' + JSON.stringify(request.auth));
-  if (!SecurityUtils.canPerform(UserPermission.CONTENT_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  if (!canPerform(UserPermission.CONTENT_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const {spaceId, contentId} = request.data;
   const spaceSnapshot = await findSpaceById(spaceId).get();
   const contentSnapshot = await findContentById(spaceId, contentId).get();
@@ -37,38 +37,12 @@ const contentPublish = onCall<PublishContentData>(async (request) => {
         updatedAt: content.updatedAt.toDate().toISOString(),
         publishedAt: new Date().toISOString(),
       };
-
       if (content.data) {
-        documentStorage.data = {
-          _id: content.data._id,
-          schema: content.data.schema,
-        };
-        const schema = schemas.find((it) => it.name == content.data?.schema);
-        for (const field of schema?.fields || []) {
-          if (field.translatable) {
-            let value = content.data[`${field.name}_i18n_${locale.id}`];
-            if (!value) {
-              value = content.data[`${field.name}_i18n_${space.localeFallback.id}`];
-            }
-            documentStorage.data[field.name] = value;
-          } else {
-            documentStorage.data[field.name] = content.data[field.name];
-          }
-        }
+        documentStorage.data = extractContent(content.data, schemas, locale.id, space.localeFallback.id);
       }
-
       // Save generated JSON
       logger.info(`[contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/${locale.id}.json`);
-      bucket.file(`spaces/${spaceId}/contents/${contentId}/${locale.id}.json`)
-        .save(
-          JSON.stringify(documentStorage),
-          (err?: Error | null) => {
-            if (err) {
-              logger.error(`[contentPublish] Can not save file for Space(${spaceId}), Content(${contentId}) and Locale(${locale})`);
-              logger.error(err);
-            }
-          }
-        );
+      await bucket.file(`spaces/${spaceId}/contents/${contentId}/${locale.id}.json`).save(JSON.stringify(documentStorage));
     }
     // Save Cache
     logger.info(`[contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/cache.json`);
@@ -84,17 +58,51 @@ const contentPublish = onCall<PublishContentData>(async (request) => {
 
 // Firestore events
 const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}', async (event) => {
-  logger.info(`[Asset::onUpdate] eventId='${event.id}'`);
-  logger.info(`[Asset::onUpdate] params='${JSON.stringify(event.params)}'`);
+  logger.info(`[Content::onUpdate] eventId='${event.id}'`);
+  logger.info(`[Content::onUpdate] params='${JSON.stringify(event.params)}'`);
   const {spaceId, contentId} = event.params;
   // No Data
   if (!event.data) return;
   const contentBefore = event.data.before.data() as Content;
   const contentAfter = event.data.after.data() as Content;
   logger.info(`[Content::onUpdate] eventId='${event.id}' id='${contentId}' slug before='${contentBefore.fullSlug}' after='${contentAfter.fullSlug}'`);
+  // Logic related to fullSlug change, in case a folder change a SLUG and it should be cascaded to all childs
   // First level check, check if the slug is different
   if (contentBefore.fullSlug === contentAfter.fullSlug) {
     logger.info(`[Content::onUpdate] eventId='${event.id}' id='${contentId}' has no changes in fullSlug`);
+    // No Slug change => content change for DOCUMENT.
+    if (contentBefore.kind === ContentKind.DOCUMENT && contentAfter.kind === ContentKind.DOCUMENT) {
+      if (contentBefore.publishedAt?.seconds !== contentAfter.publishedAt?.seconds) {
+        logger.info(`[Content::onUpdate] eventId='${event.id}' id='${contentId}' has different publishedAt, it is publish event`);
+        return;
+      }
+      const spaceSnapshot = await findSpaceById(spaceId).get();
+      const schemasSnapshot = await findSchemas(spaceId).get();
+      const space: Space = spaceSnapshot.data() as Space;
+      const content: ContentDocument = contentAfter;
+      const schemas = schemasSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schema);
+      for (const locale of space.locales) {
+        const documentStorage: ContentDocumentStorage = {
+          id: event.data.after.id,
+          name: content.name,
+          locale: locale.id,
+          slug: content.slug,
+          fullSlug: content.fullSlug,
+          parentSlug: content.parentSlug,
+          createdAt: content.createdAt.toDate().toISOString(),
+          updatedAt: content.updatedAt.toDate().toISOString(),
+        };
+        if (content.data) {
+          documentStorage.data = extractContent(content.data, schemas, locale.id, space.localeFallback.id);
+        }
+        // Save generated JSON
+        logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);
+        await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`).save(JSON.stringify(documentStorage));
+        // Save Cache
+        logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/cache.json`);
+        await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/cache.json`).save('');
+      }
+    }
   } else {
     // In case it is a PAGE, skip recursion as PAGE doesn't have child
     if (contentAfter.kind === ContentKind.DOCUMENT) return;
@@ -105,9 +113,10 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
     contentsSnapshot.docs.filter((it) => it.exists)
       .forEach((it) => {
         const content = it.data() as Content;
-        const update = {
+        const update: UpdateData<Content> = {
           parentSlug: contentAfter.fullSlug,
           fullSlug: `${contentAfter.fullSlug}/${content.slug}`,
+          updatedAt: FieldValue.serverTimestamp(),
         };
         batch.update(it.ref, update);
       });
@@ -124,6 +133,7 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
   if (!event.data) return;
   const content = event.data.data() as Content;
   logger.info(`[Content::onDelete] eventId='${event.id}' id='${event.data.id}' fullSlug='${content.fullSlug}'`);
+  // Logic related to delete, in case a folder is deleted it should be cascaded to all childs
   if (content.kind === ContentKind.DOCUMENT) {
     return bucket.deleteFiles({
       prefix: `spaces/${spaceId}/contents/${contentId}`,
@@ -144,7 +154,7 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
   logger.info(`[Content::onWrite] eventId='${event.id}'`);
   logger.info(`[Content::onWrite] params='${JSON.stringify(event.params)}'`);
   const {spaceId} = event.params;
-  // Save Cache
+  // Save Cache, to make sure LINKS are cached correctly with caceh version
   logger.info(`[Content::onWrite] Save file to spaces/${spaceId}/contents/cache.json`);
   await bucket.file(`spaces/${spaceId}/contents/cache.json`).save('');
   return;

@@ -6,8 +6,10 @@ import {ContentDocument} from '@shared/models/content.model';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {debounceTime, Observable, of, startWith} from 'rxjs';
 import {map} from 'rxjs/operators';
-import {environment} from '../../../../../environments/environment';
 import {MatSlideToggleChange} from '@angular/material/slide-toggle';
+import {selectSettings} from "@core/state/settings/settings.selectors";
+import {Store} from "@ngrx/store";
+import {AppState} from "@core/state/core.state";
 
 @Component({
   selector: 'll-link-select',
@@ -16,7 +18,6 @@ import {MatSlideToggleChange} from '@angular/material/slide-toggle';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LinkSelectComponent implements OnInit {
-  isDebug = environment.debug
   @Input() form?: FormGroup;
   @Input() component?: SchemaField;
   @Input() pages: ContentDocument[] = []
@@ -25,9 +26,13 @@ export class LinkSelectComponent implements OnInit {
   searchCtrl: FormControl = new FormControl();
   filteredContent: Observable<ContentDocument[]> = of([]);
 
+  // Subscriptions
+  settings$ = this.store.select(selectSettings);
+
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
+    private readonly store: Store<AppState>,
   ) {
   }
 

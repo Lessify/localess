@@ -1,7 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {FormBuilder} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {environment} from '../../../../../environments/environment';
 import {MatDialog} from '@angular/material/dialog';
 import {NotificationService} from '@shared/services/notification.service';
 import {Asset} from '@shared/models/asset.model';
@@ -20,7 +19,6 @@ import {AssetFileType} from "@shared/models/schema.model";
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AssetSelectComponent implements OnInit {
-  isDebug = environment.debug
   @Input() space?: Space;
   @Input() assetId?: string;
   @Output() assetChange = new EventEmitter<string | undefined>();

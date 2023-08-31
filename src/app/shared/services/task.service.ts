@@ -17,15 +17,20 @@ import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {ref, Storage, uploadBytes} from '@angular/fire/storage';
 import {map, switchMap} from 'rxjs/operators';
-import {AssetKind} from '@shared/models/asset.model';
 import {
   Task,
   TaskAssetExportCreateFS,
-  TaskAssetImportCreateFS, TaskContentExportCreateFS, TaskContentImportCreateFS,
-  TaskKind, TaskSchemaExportCreateFS, TaskSchemaImportCreateFS,
+  TaskAssetImportCreateFS,
+  TaskContentExportCreateFS,
+  TaskContentImportCreateFS,
+  TaskKind,
+  TaskSchemaExportCreateFS,
+  TaskSchemaImportCreateFS,
   TaskStatus,
-  TaskTranslationExportCreateFS, TaskTranslationImportCreateFS
+  TaskTranslationExportCreateFS,
+  TaskTranslationImportCreateFS
 } from '@shared/models/task.model';
+import {getDownloadURL} from "@firebase/storage";
 
 @Injectable()
 export class TaskService {
@@ -217,6 +222,10 @@ export class TaskService {
         ),
         traceUntilFirst('Firestore:Tasks:create'),
       );
+  }
+
+  downloadUrl(spaceId: string, id: string): Observable<string> {
+    return from(getDownloadURL(ref(this.storage, `spaces/${spaceId}/tasks/${id}/original`)))
   }
 
   delete(spaceId: string, id: string): Observable<void> {

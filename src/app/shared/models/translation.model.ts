@@ -49,9 +49,3 @@ export interface TranslationUpdate {
   labels: string[]
   description: string
 }
-
-export interface TranslationUpdateFS {
-  labels: string[]
-  description: string
-  updatedAt: FieldValue
-}

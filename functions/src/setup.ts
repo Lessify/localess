@@ -1,5 +1,5 @@
 import {logger} from 'firebase-functions/v2';
-import {onCall,HttpsError} from 'firebase-functions/v2/https';
+import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {FieldValue} from 'firebase-admin/firestore';
 import {authService, firestoreService} from './config';
 

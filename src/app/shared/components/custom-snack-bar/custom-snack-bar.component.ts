@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  HostBinding,
-  Inject,
-  ViewEncapsulation
-} from '@angular/core';
+import {ChangeDetectionStrategy, Component, HostBinding, Inject, ViewEncapsulation} from '@angular/core';
 import {MAT_SNACK_BAR_DATA} from '@angular/material/snack-bar';
 import {CustomSnackBarModel} from '@shared/components/custom-snack-bar/custom-snack-bar.model';
 import {Router} from '@angular/router';

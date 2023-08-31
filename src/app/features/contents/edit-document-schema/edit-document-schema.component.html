@@ -1,6 +1,6 @@
 <ng-container *ngIf="rootSchema">
 
-  <form [formGroup]="form" class="step-container" *ngIf="!isFormLoading">
+  <form [formGroup]="form" *ngIf="!isFormLoading">
     <ng-container *ngFor="let field of rootSchema.fields" [ngSwitch]="field.kind">
       <!--TEXT-->
       <ng-container *ngSwitchCase="'TEXT'">
@@ -264,10 +264,8 @@
 </ng-container>
 
 
-<ng-container *ngIf="isDebug">
-  <mat-divider/>
-  <br/>
-  <mat-accordion>
+<ng-container *ngIf="settings$ | async as settings">
+  <mat-accordion *ngIf="settings.debugEnabled">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>EditDocumentSchema Form => {{form?.valid}}</mat-panel-title>
@@ -276,5 +274,4 @@
       <pre>{{form.errors | json}}</pre>
     </mat-expansion-panel>
   </mat-accordion>
-  <br/>
 </ng-container>

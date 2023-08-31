@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit,
-  ViewChild
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatDialog} from '@angular/material/dialog';
@@ -20,12 +13,8 @@ import {UserDialogComponent} from './user-dialog/user-dialog.component';
 import {UserDialogModel} from './user-dialog/user-dialog.model';
 import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog.component';
 import {UserInviteDialogResponse} from './user-invite-dialog/user-invite-dialog.model';
-import {
-  ConfirmationDialogComponent
-} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {
-  ConfirmationDialogModel
-} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {Subject} from 'rxjs';
 

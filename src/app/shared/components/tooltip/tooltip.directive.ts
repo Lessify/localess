@@ -1,23 +1,25 @@
 import {
+  ApplicationRef,
+  ComponentFactoryResolver,
   Directive,
   ElementRef,
-  HostListener,
-  Input,
-  ComponentFactoryResolver,
   EmbeddedViewRef,
-  ApplicationRef,
-  Injector,
-  Output,
   EventEmitter,
+  HostListener,
   Inject,
+  Injector,
+  Input,
+  OnChanges,
+  OnDestroy,
   Optional,
+  Output,
   SimpleChanges,
-  TemplateRef, OnChanges, OnDestroy
+  TemplateRef
 } from '@angular/core';
-import { TooltipComponent } from './tooltip.component';
-import { TooltipOptionsService } from './options.service';
-import { defaultOptions, backwardCompatibilityOptions } from './options';
-import { TooltipOptions } from './options.interface';
+import {TooltipComponent} from './tooltip.component';
+import {TooltipOptionsService} from './options.service';
+import {backwardCompatibilityOptions, defaultOptions} from './options';
+import {TooltipOptions} from './options.interface';
 
 export interface AdComponent {
     data: any;

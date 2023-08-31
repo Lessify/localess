@@ -1,4 +1,4 @@
-import {Directive, NgModule} from '@angular/core';
+import {NgModule} from '@angular/core';
 import {CommonModule, NgOptimizedImage} from '@angular/common';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 
@@ -26,18 +26,14 @@ import {MatTableModule} from '@angular/material/table';
 import {MatPaginatorModule} from '@angular/material/paginator';
 import {MatSortModule} from '@angular/material/sort';
 import {MatDialogModule} from '@angular/material/dialog';
-import {
-  ConfirmationDialogComponent
-} from './components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogComponent} from './components/confirmation-dialog/confirmation-dialog.component';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {ScrollingModule} from '@angular/cdk/scrolling';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {TranslationFilterPipe} from './pipes/translation-filter.pipe';
 import {IconComponent} from './components/icon/icon.component';
-import {
-  CustomSnackBarComponent
-} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
+import {CustomSnackBarComponent} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
 import {RouterLink} from '@angular/router';
 import {BreadcrumbComponent} from '@shared/components/breadcrumb/breadcrumb.component';
 import {BreadcrumbItemComponent} from '@shared/components/breadcrumb/breadcrumb-item.component';
@@ -50,6 +46,7 @@ import {DragDropModule} from '@angular/cdk/drag-drop';
 import {TimeDurationPipe} from '@shared/pipes/time-duration.pipe';
 import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import {TooltipComponent, TooltipDirective} from '@shared/components/tooltip';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -85,7 +82,8 @@ const MATERIAL_MODULES: any[] = [
   ClipboardModule,
   MatBadgeModule,
   MatExpansionModule,
-  DragDropModule
+  DragDropModule,
+  MatButtonToggleModule
 ];
 
 const SHARED_PIPES: any[] = [

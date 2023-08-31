@@ -32,3 +32,5 @@ export const actionSettingsChangeAnimationsElements = createAction(
 export const actionSettingsChangeHour = createAction('[Settings] Change Hours', props<{ hour: number }>());
 
 export const actionSettingsChangeMainMenuExpended = createAction('[Settings] Change Main Menu Expended');
+
+export const actionSettingsChangeDebugEnabled = createAction('[Settings] Change Debug Enabled');

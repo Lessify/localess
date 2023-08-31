@@ -19,6 +19,7 @@ export interface ContentDocument extends ContentBase {
   schema: string;
   data?: ContentData;
   publishedAt?: Timestamp;
+  editorEnabled?: boolean;
 }
 
 export interface ContentFolder extends ContentBase {
@@ -46,7 +47,7 @@ export interface ContentDocumentStorage {
   data?: ContentData;
   createdAt: string;
   updatedAt: string;
-  publishedAt: string;
+  publishedAt?: string;
 }
 
 export interface ContentData extends Record<string, any> {
@@ -104,6 +105,7 @@ export const assetExportArraySchema: JSONSchemaType<ContentExport[]> = {
           parentSlug: {type: 'string', nullable: false},
           fullSlug: {type: 'string', nullable: false},
           schema: {type: 'string', nullable: false},
+          editorEnabled: {type: 'boolean', nullable: true},
           data: {
             type: 'object',
             properties: {

@@ -1,5 +1,10 @@
 @use '@angular/material' as mat;
 
+:host {
+  height: 100%;
+  display: block;
+}
+
 mat-form-field {
   width: 100%;
 }
@@ -13,6 +18,32 @@ mat-form-field {
   }
   &.draft {
     color: mat.get-color-from-palette(mat.$amber-palette, 500);
+  }
+}
+
+mat-drawer-container {
+  height: 100%;
+}
+
+mat-drawer {
+  width: calc(100% - 400px)
+}
+
+.container-fluid {
+  height: calc(100vh - 130px);
+  padding: 0;
+}
+
+mat-card.browser {
+  height: 100%;
+  mat-card-content {
+    height: 100%;
+    padding: 0;
+    iframe {
+      width: 100%;
+      height: calc(100% - 5px);
+      border: none;
+    }
   }
 }
 

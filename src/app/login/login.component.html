@@ -56,9 +56,9 @@
     </div>
     <div class="col"></div>
   </div>
-  <div class="row">
+  <div class="row" *ngIf="settings$ | async as settings">
     <div class="col">
-      <p *ngIf="isDebug" class="text-break">
+      <p *ngIf="settings.debugEnabled" class="text-break">
         <b>showLogoutButton</b> = {{showLogoutButton}} <br/>
         <b>showLoginButton</b> = {{showLoginButton}} <br/>
         <b>isGoogleAuthEnabled</b> = {{isGoogleAuthEnabled}} <br/>

@@ -15,17 +15,14 @@ import {
   actionSettingsChangeAnimationsPage,
   actionSettingsChangeAnimationsPageDisabled,
   actionSettingsChangeAutoNightMode,
+  actionSettingsChangeDebugEnabled,
   actionSettingsChangeHour,
-  actionSettingsChangeLanguage, actionSettingsChangeMainMenuExpended,
+  actionSettingsChangeLanguage,
+  actionSettingsChangeMainMenuExpended,
   actionSettingsChangeStickyHeader,
   actionSettingsChangeTheme
 } from './settings.actions';
-import {
-  selectEffectiveTheme,
-  selectElementsAnimations,
-  selectPageAnimations,
-  selectSettingsLanguage
-} from './settings.selectors';
+import {selectEffectiveTheme, selectElementsAnimations, selectPageAnimations, selectSettingsLanguage} from './settings.selectors';
 import {State} from './settings.model';
 
 export const SETTINGS_KEY = 'SETTINGS';
@@ -57,7 +54,8 @@ export class SettingsEffects {
           actionSettingsChangeLanguage,
           actionSettingsChangeStickyHeader,
           actionSettingsChangeTheme,
-          actionSettingsChangeMainMenuExpended
+          actionSettingsChangeMainMenuExpended,
+          actionSettingsChangeDebugEnabled,
         ),
         withLatestFrom(this.store.pipe(select(selectSettingsState))),
         tap(([action, settings]) => this.localStorageService.setItem(SETTINGS_KEY, settings))

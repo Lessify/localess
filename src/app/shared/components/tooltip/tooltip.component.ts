@@ -1,4 +1,4 @@
-import {Component, ElementRef, HostListener, HostBinding, Input, OnInit, EventEmitter, Renderer2} from '@angular/core';
+import {Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnInit, Renderer2} from '@angular/core';
 
 @Component({
     selector: 'll-tooltip',

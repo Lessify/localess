@@ -11,7 +11,6 @@ import {
   SchemaUpdate
 } from '@shared/models/schema.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {environment} from '../../../../environments/environment';
 import {CommonValidator} from '@shared/validators/common.validator';
 import {SchemaService} from "@shared/services/schema.service";
 import {ActivatedRoute, Router} from "@angular/router";
@@ -24,6 +23,7 @@ import {SpaceService} from "@shared/services/space.service";
 import {Space} from "@shared/models/space.model";
 import {NotificationService} from "@shared/services/notification.service";
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
+import {selectSettings} from "@core/state/settings/settings.selectors";
 
 @Component({
   selector: 'll-schema-edit',
@@ -33,7 +33,6 @@ import {CdkDragDrop} from '@angular/cdk/drag-drop';
 })
 export class EditComponent implements OnInit, OnDestroy {
 
-  isDebug = environment.debug
   selectedSpace?: Space;
   entityId: string;
   entity?: Schema;
@@ -52,6 +51,7 @@ export class EditComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   isSaveLoading: boolean = false;
   // Subscriptions
+  settings$ = this.store.select(selectSettings);
   private destroy$ = new Subject();
 
   form: FormRecord = this.fb.record({

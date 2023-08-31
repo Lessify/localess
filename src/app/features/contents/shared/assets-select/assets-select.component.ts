@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  Input,
-  OnDestroy,
-  OnInit,
-  Output
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {SchemaFieldAssets, SchemaFieldKind} from '@shared/models/schema.model';
@@ -18,9 +9,9 @@ import {Store} from '@ngrx/store';
 import {AppState} from '@core/state/core.state';
 import {AssetService} from '@shared/services/asset.service';
 import {Space} from '@shared/models/space.model';
-import {environment} from '../../../../../environments/environment';
 import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/assets-select-dialog.model';
+import {selectSettings} from "@core/state/settings/settings.selectors";
 
 @Component({
   selector: 'll-assets-select',
@@ -29,9 +20,7 @@ import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/a
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AssetsSelectComponent implements OnInit, OnDestroy {
-  isDebug = environment.debug
   @Input() form?: FormArray;
-  // @Input() ids?: string[];
   @Input() component?: SchemaFieldAssets;
   @Input() space?: Space;
 
@@ -39,6 +28,8 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
   @Output() assetsChange = new EventEmitter<string[]>();
 
   assets: Asset[] = []
+  // Subscriptions
+  settings$ = this.store.select(selectSettings);
 
   constructor(
     private readonly fb: FormBuilder,

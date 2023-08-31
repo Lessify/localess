@@ -1,12 +1,7 @@
 import {Injectable, NgZone} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
-import {
-  CustomSnackBarComponent
-} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
-import {
-  ActionRoute,
-  CustomSnackBarModel
-} from '@shared/components/custom-snack-bar/custom-snack-bar.model';
+import {CustomSnackBarComponent} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
+import {ActionRoute, CustomSnackBarModel} from '@shared/components/custom-snack-bar/custom-snack-bar.model';
 
 @Injectable({
   providedIn: 'root'

@@ -18,11 +18,13 @@ export interface Schema {
 
 export type SchemaField = SchemaFieldText
   | SchemaFieldTextarea
+  | SchemaFieldMarkdown
   | SchemaFieldNumber
   | SchemaFieldColor
   | SchemaFieldDate
   | SchemaFieldDateTime
   | SchemaFieldBoolean
+  | SchemaFieldSchema
   | SchemasFieldSchema
   | SchemaFieldOption
   | SchemaFieldOptions
@@ -33,6 +35,7 @@ export type SchemaField = SchemaFieldText
 export enum SchemaFieldKind {
   TEXT = 'TEXT',
   TEXTAREA = 'TEXTAREA',
+  MARKDOWN = 'MARKDOWN',
   NUMBER = 'NUMBER',
   COLOR = 'COLOR',
   DATE = 'DATE',
@@ -43,6 +46,7 @@ export enum SchemaFieldKind {
   LINK = 'LINK',
   ASSET = 'ASSET',
   ASSETS = 'ASSETS',
+  SCHEMA = 'SCHEMA',
   SCHEMAS = 'SCHEMAS',
 }
 
@@ -64,6 +68,12 @@ export interface SchemaFieldText extends SchemaFieldBase {
 
 export interface SchemaFieldTextarea extends SchemaFieldBase {
   kind: SchemaFieldKind.TEXTAREA;
+  minLength?: number;
+  maxLength?: number;
+}
+
+export interface SchemaFieldMarkdown extends SchemaFieldBase {
+  kind: SchemaFieldKind.MARKDOWN;
   minLength?: number;
   maxLength?: number;
 }
@@ -92,6 +102,11 @@ export interface SchemaFieldBoolean extends SchemaFieldBase {
 
 export interface SchemasFieldSchema extends SchemaFieldBase {
   kind: SchemaFieldKind.SCHEMAS;
+  schemas?: string[];
+}
+
+export interface SchemaFieldSchema extends SchemaFieldBase {
+  kind: SchemaFieldKind.SCHEMA;
   schemas?: string[];
 }
 
@@ -146,7 +161,7 @@ export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
           type: 'object',
           properties: {
             name: {type: 'string', nullable: false},
-            kind: {type: 'string', enu: Object.values(SchemaFieldKind), nullable: false},
+            kind: {type: 'string', /*enum: Object.values(SchemaFieldKind),*/ nullable: false},
             displayName: {type: 'string', nullable: true},
             required: {type: 'boolean', nullable: true},
             description: {type: 'string', nullable: true},

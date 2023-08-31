@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  EventEmitter,
-  Input,
-  OnChanges,
-  OnInit,
-  Output,
-  SimpleChanges
-} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {debounceTime} from 'rxjs';
 import {TranslationValidator} from '@shared/validators/translation.validator';
@@ -42,21 +33,21 @@ export class TranslationArrayEditComponent implements OnInit, OnChanges {
       });
   }
 
-  values(): FormArray {
+  get values(): FormArray {
     return this.form.controls['values'] as FormArray;
   }
 
   addItem(): void {
-    this.values().push(
+    this.values.push(
       this.fb.control(null, TranslationValidator.ARRAY_VALUE)
     );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.values().clear();
+    this.values.clear();
     JSON.parse(changes['value'].currentValue || '[]')
       .forEach((it: any) =>
-        this.values().push(this.fb.control(it, TranslationValidator.ARRAY_VALUE))
+        this.values.push(this.fb.control(it, TranslationValidator.ARRAY_VALUE))
       );
     if (changes['value'].isFirstChange()) {
       this.valueChange.emit(changes['value'].currentValue);
@@ -64,6 +55,6 @@ export class TranslationArrayEditComponent implements OnInit, OnChanges {
   }
 
   removeItem(i: number): void {
-    this.values().removeAt(i);
+    this.values.removeAt(i);
   }
 }

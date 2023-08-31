@@ -11,7 +11,8 @@ import {
   docData,
   Firestore,
   serverTimestamp,
-  UpdateData, updateDoc
+  UpdateData,
+  updateDoc
 } from '@angular/fire/firestore';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';

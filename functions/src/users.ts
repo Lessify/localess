@@ -3,7 +3,7 @@ import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {onDocumentDeleted, onDocumentUpdated} from 'firebase-functions/v2/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
 import {authService} from './config';
-import {SecurityUtils} from './utils/security-utils';
+import {canPerform} from './utils/security-utils';
 import {User, UserInvite, UserPermission} from './models/user.model';
 import {findUserById} from './services/user.service';
 
@@ -40,7 +40,7 @@ const onAuthUserCreate = auth.user()
 const userInvite = onCall<UserInvite>(async (request) => {
   logger.info('[userInvite] data: ' + JSON.stringify(request.data));
   logger.info('[userInvite] context.auth: ' + JSON.stringify(request.auth));
-  if (!SecurityUtils.canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const adminUser = await authService.createUser({
     displayName: request.data.displayName,
@@ -56,7 +56,7 @@ const userInvite = onCall<UserInvite>(async (request) => {
 const usersSync = onCall<never>(async (request) => {
   logger.info('[usersSync] data: ' + JSON.stringify(request.data));
   logger.info('[usersSync] context.auth: ' + JSON.stringify(request.auth));
-  if (!SecurityUtils.canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const listUsers = await authService.listUsers();
   listUsers.users.map(async (userRecord) => {
