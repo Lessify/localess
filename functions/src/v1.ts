@@ -70,32 +70,49 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
   const {spaceId} = req.params;
-  const {kind, startSlug, cv} = req.query;
-
+  const {kind, startSlug, cv, token} = req.query;
+  if (!validateToken(token)) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (!spaceSnapshot.exists) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
+  if (!tokenSnapshot.exists) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
   const cachePath = `spaces/${spaceId}/contents/cache.json`;
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces links cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
-      let redirectLink = `/api/v1/spaces/${spaceId}/links?cv=${metadata.generation}`;
+      let url = `/api/v1/spaces/${spaceId}/links?cv=${metadata.generation}`;
       if (kind !== undefined) {
-        redirectLink += `&kind=${kind}`;
+        url += `&kind=${kind}`;
       }
       if (startSlug !== undefined) {
-        redirectLink += `&startSlug=${startSlug}`;
+        url += `&startSlug=${startSlug}`;
       }
-      res.redirect(redirectLink);
+      if (token) {
+        url += `&token=${token}`;
+      }
+      res.redirect(url);
       return;
     } else {
-      const spaceSnapshot = await findSpaceById(spaceId).get();
-      if (!spaceSnapshot.exists) {
-        res
-          .status(404)
-          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .send(new HttpsError('not-found', 'Space not found'));
-        return;
-      }
       let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
       if (kind) {
         contentsQuery = contentsQuery.where('kind', '==', kind);
@@ -198,13 +215,13 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?cv=${metadata.generation}`;
       if (locale) {
-        url = `${url}&locale=${locale}`;
+        url += `&locale=${locale}`;
       }
       if (version) {
-        url = `${url}&version=${version}`;
+        url += `&version=${version}`;
       }
       if (token) {
-        url = `${url}&token=${token}`;
+        url += `&token=${token}`;
       }
       logger.info(`v1 spaces content redirect to => ${url}`);
       res.redirect(url);
@@ -278,13 +295,13 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =>
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?cv=${metadata.generation}`;
       if (locale) {
-        url = `${url}&locale=${locale}`;
+        url += `&locale=${locale}`;
       }
       if (version) {
-        url = `${url}&version=${version}`;
+        url += `&version=${version}`;
       }
       if (token) {
-        url = `${url}&token=${token}`;
+        url += `&token=${token}`;
       }
       logger.info(`v1 spaces content redirect to => ${url}`);
       res.redirect(url);
