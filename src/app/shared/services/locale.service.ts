@@ -5,7 +5,6 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {Locale} from '../models/locale.model';
 import {Space} from '../models/space.model';
 
-
 @Injectable()
 export class LocaleService {
   constructor(private firestore: Firestore) {
@@ -18,7 +17,7 @@ export class LocaleService {
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update))
       .pipe(
-        traceUntilFirst('Firestore:Locales:markAsFallback'),
+        traceUntilFirst('Firestore:Spaces:Locales:markAsFallback'),
       );
   }
 
@@ -29,7 +28,7 @@ export class LocaleService {
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update))
       .pipe(
-        traceUntilFirst('Firestore:Locales:create'),
+        traceUntilFirst('Firestore:Spaces:Locales:create'),
       );
   }
 
@@ -40,7 +39,7 @@ export class LocaleService {
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update))
       .pipe(
-        traceUntilFirst('Firestore:Locales:delete'),
+        traceUntilFirst('Firestore:Spaces:Locales:delete'),
       );
   }
 

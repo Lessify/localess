@@ -1,5 +1,6 @@
 import {FieldValue, Timestamp} from '@angular/fire/firestore';
 import {Locale} from './locale.model';
+import {Token} from "@shared/models/token.model";
 
 export interface Space {
   id: string;
@@ -9,6 +10,9 @@ export interface Space {
   localeFallback: Locale;
   // Environments
   environments?: SpaceEnvironment[];
+  // Tokens
+  tokens?: Token[];
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
