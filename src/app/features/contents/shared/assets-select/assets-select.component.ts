@@ -1,4 +1,15 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges
+} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {SchemaFieldAssets, SchemaFieldKind} from '@shared/models/schema.model';
@@ -19,7 +30,7 @@ import {selectSettings} from "@core/state/settings/settings.selectors";
   styleUrls: ['./assets-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AssetsSelectComponent implements OnInit, OnDestroy {
+export class AssetsSelectComponent implements OnInit, OnChanges, OnDestroy {
   @Input() form?: FormArray;
   @Input() component?: SchemaFieldAssets;
   @Input() space?: Space;
@@ -42,8 +53,17 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
   ) {
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    //console.group('AssetsSelectComponent:ngOnChanges')
+    //console.log(changes)
+    //console.groupEnd()
+  }
+
   ngOnInit(): void {
+    //console.group('AssetsSelectComponent:ngOnInit')
+    //console.log(this.form)
     this.loadData()
+    //console.groupEnd()
   }
 
   loadData(): void {

@@ -293,7 +293,7 @@ export class EditComponent implements OnInit, OnDestroy {
         }
       });
 
-    console.groupEnd()
+    //console.groupEnd()
   }
 
   back(): void {

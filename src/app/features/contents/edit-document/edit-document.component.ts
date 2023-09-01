@@ -21,7 +21,7 @@ import {ContentHelperService} from '@shared/services/content-helper.service';
 import {SchemaPathItem} from './edit-document.model';
 import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.model';
 import {selectSettings} from '@core/state/settings/settings.selectors';
-import {ObjectUtils} from "@core/utils/object-utils.service";
+import {ObjectUtils} from '@core/utils/object-utils.service';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -102,7 +102,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
           this.selectedLocale = space.localeFallback;
           this.availableLocales = space.locales;
           this.documents = documents;
-
+          //console.log(ObjectUtils.clone(document))
 
           if (document.kind === ContentKind.DOCUMENT) {
             this.document = document;
@@ -158,10 +158,11 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
-    console.group('save')
+    //console.group('save')
     this.isSaveLoading = true;
 
-    //console.log(this.pageData)
+    //console.log('documentData', this.documentData)
+    //console.log('document', this.document)
 
     this.contentErrors = this.contentHelperService.validateContent(this.documentData, this.schemas, this.selectedLocale.id)
 
@@ -195,7 +196,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       this.notificationService.warn('Content is not valid. Please check all fields are filled correctly.')
       this.isSaveLoading = false;
     }
-    console.groupEnd()
+    //console.groupEnd()
   }
 
   back(): void {
@@ -244,12 +245,13 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
 
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
     //console.group('navigateToSchemaBackwards')
-    //console.log(pathItem)
+    //console.log('pathItem', pathItem)
     const idx = this.schemaPath.findIndex((it) => it.contentId == pathItem.contentId);
     this.schemaPath.splice(idx + 1);
     // Select Root
     if (idx == 0) {
       //console.log(`Navigate to Root idx=${idx}`)
+      //console.log('documentData', ObjectUtils.clone(this.documentData))
       this.selectedDocumentData = this.documentData;
     } else {
       //console.log(`Navigate to Child idx=${idx}`)
@@ -263,6 +265,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
           localSelectedContent = field
         }
       }
+      //console.log('localSelectedContent', localSelectedContent)
       this.selectedDocumentData = localSelectedContent;
     }
     //console.groupEnd()
@@ -300,7 +303,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       }
       node = nodeIterator.shift()
     }
-    // console.log(this.documentIdsTree)
+    //console.log(this.documentIdsTree)
     //console.groupEnd()
   }
 

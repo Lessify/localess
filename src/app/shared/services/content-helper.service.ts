@@ -1,9 +1,10 @@
 import {Injectable} from '@angular/core';
 import {Schema, SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
 import {FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {ContentData, ContentError} from '@shared/models/content.model';
+import {AssetContent, ContentData, ContentError} from '@shared/models/content.model';
 import {CommonValidator} from '@shared/validators/common.validator';
 import {v4} from 'uuid';
+import {Asset} from "@shared/models/asset.model";
 
 @Injectable()
 export class ContentHelperService {
@@ -33,7 +34,9 @@ export class ContentHelperService {
             if (content instanceof Array) {
               // Assets
               if (content.some((it) => it.kind === SchemaFieldKind.ASSET)) {
-                form.controls[fieldName] = this.assetsToFormArray(content)
+                const assets: AssetContent[] = content
+                const fa = form.controls[fieldName] as FormArray
+                assets.forEach((it) => fa.push(this.assetContentToForm(it)))
               }
             }
           })
@@ -184,6 +187,8 @@ export class ContentHelperService {
   }
 
   generateSchemaForm(schema: Schema, isFallbackLocale: boolean): FormRecord {
+    //console.group('ContentHelperService:generateSchemaForm')
+    //console.log('schema', schema)
     const form: FormRecord = this.fb.record({});
     for (const field of schema.fields || []) {
       const validators: ValidatorFn[] = []
@@ -311,15 +316,23 @@ export class ContentHelperService {
         }
       }
     }
+    //console.groupEnd()
     return form;
   }
 
-  assetsToFormArray(uris: { uri: string }[]): FormArray {
-    return this.fb.array(uris.map(it => this.fb.group({
+  assetsContentToFormArray(uris: AssetContent[]): FormArray {
+    return this.fb.array(uris.map((it) => this.fb.group({
       uri: this.fb.control(it.uri, Validators.required),
       kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
     })))
   }
+  assetContentToForm(asset: AssetContent): FormGroup {
+    return this.fb.group({
+      uri: this.fb.control(asset.uri),
+      kind: this.fb.control(asset.kind),
+    })
+  }
+
 
   assetsFormArray(uris: string[]): FormArray {
     return this.fb.array(uris.map(it => this.fb.group({

@@ -90,3 +90,17 @@ export interface EditorEvent {
   owner: string,
   id: string
 }
+
+// Special Types
+
+export interface AssetContent {
+  kind: 'ASSET'
+  uri: string
+}
+
+export interface LinkContent {
+  kind: 'LINK'
+  type: 'url' | 'content'
+  target: '_blank' | '_self'
+  uri: string
+}
