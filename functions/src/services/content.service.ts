@@ -2,7 +2,7 @@ import {firestoreService} from '../config';
 import {DocumentReference, Query, Timestamp} from 'firebase-admin/firestore';
 import Ajv, {ErrorObject} from 'ajv';
 import {assetExportArraySchema, ContentData} from '../models/content.model';
-import {Schema, SchemaFieldKind} from "../models/schema.model";
+import {Schema, SchemaFieldKind} from '../models/schema.model';
 
 /**
  * find Content by Full Slug
@@ -70,10 +70,14 @@ export function extractContent(content: ContentData, schemas: Schema[], locale: 
   const schema = schemas.find((it) => it.name == content.schema);
   for (const field of schema?.fields || []) {
     if (field.kind === SchemaFieldKind.SCHEMA) {
-      extractedContentData[field.name] = extractContent(content[field.name], schemas, locale, localeFallback);
+      const fieldContent: ContentData | undefined = content[field.name];
+      if (fieldContent) {
+        extractedContentData[field.name] = extractContent(fieldContent, schemas, locale, localeFallback);
+      }
     } else if (field.kind === SchemaFieldKind.SCHEMAS) {
-      if (Array.isArray(content[field.name])) {
-        extractedContentData[field.name] = (content[field.name] as ContentData[]).map((it) => extractContent(it, schemas, locale, localeFallback));
+      const fieldContent: ContentData[] | undefined = content[field.name];
+      if (fieldContent && Array.isArray(fieldContent)) {
+        extractedContentData[field.name] = fieldContent.map((it) => extractContent(it, schemas, locale, localeFallback));
       }
     } else {
       if (field.translatable) {
