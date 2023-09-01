@@ -277,4 +277,19 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     moveItemInArray(data, event.previousIndex, event.currentIndex);
   }
 
+  previewText(content: ContentData, schema: Schema, locale: string): string | undefined {
+    console.log(schema)
+    if (schema.previewField) {
+      const field = schema.fields?.find((it) => it.name === schema.previewField)
+      if (field) {
+        if (field.translatable) {
+          return content[schema.previewField + '_i18n_' + locale]
+        } else {
+          return content[schema.previewField]
+        }
+      }
+    }
+    return undefined
+  }
+
 }

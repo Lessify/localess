@@ -177,7 +177,7 @@
                 </span>
                 <span matListItemLine *ngIf="schemaMapByName.get(item.schema) as sch">
                   <ng-container *ngIf="sch.previewField">
-                    {{item[sch.previewField]}}
+                    {{previewText(item, sch, locale)}}
                   </ng-container>
                  </span>
                 <mat-action-list matListItemMeta>
@@ -233,7 +233,7 @@
                 </span>
                 <span matListItemLine *ngIf="schemaMapByName.get(item.schema) as sch">
                   <ng-container *ngIf="sch.previewField">
-                    {{item[sch.previewField]}}
+                    {{previewText(item, sch, locale)}}
                   </ng-container>
                  </span>
                 <mat-action-list matListItemMeta>

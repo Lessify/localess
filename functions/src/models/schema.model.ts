@@ -10,6 +10,8 @@ export interface Schema {
   name: string;
   type: SchemaType;
   displayName?: string;
+  previewField?: string;
+  previewImage?: string;
   fields?: SchemaField[];
 
   createdAt: Timestamp;
@@ -154,6 +156,8 @@ export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
       name: {type: 'string', nullable: false},
       type: {type: 'string', enum: Object.values(SchemaType), nullable: false},
       displayName: {type: 'string', nullable: true},
+      previewField: {type: 'string', nullable: true},
+      previewImage: {type: 'string', nullable: true},
       fields: {
         type: 'array',
         nullable: true,

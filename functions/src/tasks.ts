@@ -482,6 +482,8 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
         name: schema.name,
         type: schema.type,
         displayName: schema.displayName,
+        previewField: schema.previewField,
+        previewImage: schema.previewImage,
         fields: schema.fields,
       });
     });
@@ -546,6 +548,8 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
         name: schema.name,
         type: schema.type,
         displayName: schema.displayName || FieldValue.delete(),
+        previewField: schema.previewField || FieldValue.delete(),
+        previewImage: schema.previewImage || FieldValue.delete(),
         fields: schema.fields || FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       };
@@ -558,6 +562,8 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
         updatedAt: FieldValue.serverTimestamp(),
       };
       if (schema.displayName) add.displayName = schema.displayName;
+      if (schema.previewField) add.previewField = schema.previewField;
+      if (schema.previewImage) add.previewImage = schema.previewImage;
       if (schema.fields) add.fields = schema.fields;
       batch.set(schemaRef, add);
     }
