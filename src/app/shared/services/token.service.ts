@@ -7,7 +7,7 @@ import {
   doc,
   docData,
   DocumentReference,
-  Firestore,
+  Firestore, limit,
   orderBy,
   query,
   QueryConstraint,
@@ -34,6 +34,19 @@ export class TokenService {
     )
       .pipe(
         traceUntilFirst('Firestore:Tokens:findAll'),
+        map((it) => it as Token[])
+      );
+  }
+
+  findFirst(spaceId: string): Observable<Token[]> {
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces/${spaceId}/tokens`),
+        limit(1)),
+      {idField: 'id'}
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Tokens:findFirst'),
         map((it) => it as Token[])
       );
   }

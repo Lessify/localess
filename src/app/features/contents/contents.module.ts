@@ -19,6 +19,7 @@ import {AssetsSelectComponent} from './shared/assets-select/assets-select.compon
 import {ExportDialogComponent} from './export-dialog/export-dialog.component';
 import {ImportDialogComponent} from './import-dialog/import-dialog.component';
 import {TaskService} from '@shared/services/task.service';
+import {TokenService} from "@shared/services/token.service";
 
 @NgModule({
   declarations: [
@@ -35,7 +36,7 @@ import {TaskService} from '@shared/services/task.service';
     ImportDialogComponent
   ],
   imports: [SharedModule, ContentsRoutingModule],
-  providers: [SpaceService, SchemaService, ContentService, ContentHelperService, AssetService, TaskService]
+  providers: [SpaceService, SchemaService, ContentService, ContentHelperService, AssetService, TaskService, TokenService]
 })
 export class ContentsModule {
 }

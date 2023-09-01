@@ -22,6 +22,7 @@ import {SchemaPathItem} from './edit-document.model';
 import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.model';
 import {selectSettings} from '@core/state/settings/settings.selectors';
 import {ObjectUtils} from '@core/utils/object-utils.service';
+import {TokenService} from "@shared/services/token.service";
 
 @Component({
   selector: 'll-content-document-edit',
@@ -68,6 +69,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     private readonly spaceService: SpaceService,
     private readonly schemaService: SchemaService,
     private readonly contentService: ContentService,
+    private readonly tokenService: TokenService,
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
     private readonly contentHelperService: ContentHelperService,
@@ -204,13 +206,38 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   openDraftInNewTab(locale: string): void {
-    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}?locale=${locale}&version=draft`
-    window.open(url, '_blank')
+    this.tokenService.findFirst(this.selectedSpace!.id)
+      .subscribe({
+        next: (tokens) => {
+          console.log(tokens)
+          if (tokens.length === 1) {
+            const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}`)
+            url.searchParams.set('locale', locale)
+            url.searchParams.set('version', 'draft')
+            url.searchParams.set('token', tokens[0].id)
+            window.open(url, '_blank')
+          } else {
+            this.notificationService.warn('Please create Access Token in your Space Settings')
+          }
+        }
+      })
   }
 
   openPublishedInNewTab(locale: string): void {
-    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}?locale=${locale}`
-    window.open(url, '_blank')
+    this.tokenService.findFirst(this.selectedSpace!.id)
+      .subscribe({
+        next: (tokens) => {
+          console.log(tokens)
+          if (tokens.length === 1) {
+            const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}`)
+            url.searchParams.set('locale', locale)
+            url.searchParams.set('token', tokens[0].id)
+            window.open(url, '_blank')
+          } else {
+            this.notificationService.warn('Please create Access Token in your Space Settings')
+          }
+        }
+      })
   }
 
   ngOnDestroy(): void {
