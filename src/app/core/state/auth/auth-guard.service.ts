@@ -1,5 +1,5 @@
-import {Injectable, Optional} from '@angular/core';
-import {CanActivate, Router, UrlTree} from '@angular/router';
+import {inject, Injectable, Optional} from '@angular/core';
+import {ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree} from '@angular/router';
 import {Observable} from 'rxjs';
 import {Auth, authState} from '@angular/fire/auth';
 import {map} from 'rxjs/operators';
@@ -9,8 +9,9 @@ import {AppState} from '../core.state';
 @Injectable({
   providedIn: 'root'
 })
-export class AuthGuardService implements CanActivate {
-  constructor(private store: Store<AppState>, @Optional() private auth: Auth, private router: Router) {}
+export class AuthGuardService {
+  constructor(private store: Store<AppState>, @Optional() private auth: Auth, private router: Router) {
+  }
 
   canActivate(): Observable<boolean | UrlTree> {
     return authState(this.auth).pipe(
@@ -36,4 +37,21 @@ export class AuthGuardService implements CanActivate {
       })
     );*/
   }
+}
+
+
+export function authGuard(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+  const auth = inject(Auth);
+  const router = inject(Router);
+  return authState(auth)
+    .pipe(
+      map((u) => !!u),
+      map((it) => {
+        if (it) {
+          return it;
+        } else {
+          return router.createUrlTree(['/login']);
+        }
+      })
+    );
 }
