@@ -14,6 +14,8 @@ export interface Schema {
   previewImage?: string;
   fields?: SchemaField[];
 
+  locked?: boolean
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

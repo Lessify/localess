@@ -17,6 +17,7 @@ import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {Plugin, PluginConfig, PluginStatus} from '@shared/models/plugin.model';
 import {PartialWithFieldValue} from '@firebase/firestore';
+import {SchemaFieldKind, SchemaType} from "@shared/models/schema.model";
 
 @Injectable()
 export class PluginService {
@@ -113,7 +114,29 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginConfig> = {
     id: 'localess-ecommerce',
     name: 'E-Commerce',
     owner: 'Lessify GmbH',
-    version: '0'
+    version: '0',
+    schemaPrefix: 'localess',
+    schemas: [
+      {
+        id: 'localess-product',
+        type: SchemaType.ROOT,
+        name: 'localess-product',
+        displayName: 'Product',
+        locked: true,
+        fields: [
+          {
+            name: 'name',
+            displayName: 'Name',
+            kind: SchemaFieldKind.TEXT,
+            description: 'Product name',
+            minLength: 3,
+            maxLength: 100,
+            required: true,
+            translatable: true
+          }
+        ]
+      }
+    ]
   },
   'localess-simple': {
     id: 'localess-simple',

@@ -1,4 +1,5 @@
-import {Timestamp} from "@angular/fire/firestore";
+import {Timestamp} from '@angular/fire/firestore';
+import {Schema} from '@shared/models/schema.model';
 
 export interface Plugin {
   id: string
@@ -23,6 +24,14 @@ export interface PluginConfig {
   name: string
   owner: string
   version: string
+  schemaPrefix?: string
+
+
+
+  schemas?: SchemaConfig[]
+}
+
+export interface SchemaConfig extends Omit<Schema, 'createdAt' | 'updatedAt'> {
 }
 
 //
