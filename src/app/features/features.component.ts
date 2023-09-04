@@ -71,6 +71,7 @@ export class FeaturesComponent implements OnInit {
     {link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ},
     {link: 'schemas', label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ},
     {link: 'tasks', label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT},
+    {link: 'plugins', label: 'Plugins', icon: 'extension', permission: UserPermission.SPACE_MANAGEMENT},
   ];
 
   adminSideMenu: SideMenuItem[] = [
@@ -197,6 +198,7 @@ export class FeaturesComponent implements OnInit {
       {link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ},
       {link: 'schemas', label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ},
       {link: 'tasks', label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT},
+      {link: 'plugins', label: 'Plugins', icon: 'extension', permission: UserPermission.SPACE_MANAGEMENT},
       {link: `spaces/${spaceId}/settings`, label: 'Settings', icon: 'settings', permission: UserPermission.SPACE_MANAGEMENT},
     ]
   }

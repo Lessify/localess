@@ -6,7 +6,7 @@ import {CollectionReference, DocumentReference} from 'firebase-admin/firestore';
  * @return {DocumentReference} document reference to the space
  */
 export function findUsers(): CollectionReference {
-  return firestoreService.collection(`users`);
+  return firestoreService.collection('users');
 }
 
 /**
