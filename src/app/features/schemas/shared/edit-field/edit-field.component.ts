@@ -256,6 +256,26 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('fileTypes')
         break;
       }
+      case SchemaFieldKind.REFERENCE: {
+        // ADD
+        // REMOVE
+        this.form.removeControl('translatable')
+        // Text & TextArea
+        this.form.removeControl('minLength')
+        this.form.removeControl('maxLength')
+        // Number
+        this.form.removeControl('minValue')
+        this.form.removeControl('maxValue')
+        // Option & Options
+        this.form.removeControl('options')
+        this.form.removeControl('minValues')
+        this.form.removeControl('maxValues')
+        // Schema
+        this.form.removeControl('schemas')
+        // Asset & Assets
+        this.form.removeControl('fileTypes')
+        break;
+      }
       case SchemaFieldKind.ASSET: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE));

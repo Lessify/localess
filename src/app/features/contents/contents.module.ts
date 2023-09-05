@@ -20,6 +20,7 @@ import {ExportDialogComponent} from './export-dialog/export-dialog.component';
 import {ImportDialogComponent} from './import-dialog/import-dialog.component';
 import {TaskService} from '@shared/services/task.service';
 import {TokenService} from "@shared/services/token.service";
+import {ReferenceSelectComponent} from "./shared/reference-select/reference-select.component";
 
 @NgModule({
   declarations: [
@@ -30,6 +31,7 @@ import {TokenService} from "@shared/services/token.service";
     EditDocumentComponent,
     EditDocumentSchemaComponent,
     LinkSelectComponent,
+    ReferenceSelectComponent,
     AssetSelectComponent,
     AssetsSelectComponent,
     ExportDialogComponent,

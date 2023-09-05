@@ -206,6 +206,10 @@ export class EditComponent implements OnInit, OnDestroy {
         fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
         break;
       }
+      case SchemaFieldKind.REFERENCE: {
+        //fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
+        break;
+      }
       case SchemaFieldKind.ASSET: {
         fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE));
         fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));

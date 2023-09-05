@@ -31,6 +31,7 @@ export type SchemaField = SchemaFieldText
   | SchemaFieldOption
   | SchemaFieldOptions
   | SchemaFieldLink
+  | SchemaFieldReference
   | SchemaFieldAsset
   | SchemaFieldAssets;
 
@@ -46,6 +47,7 @@ export enum SchemaFieldKind {
   OPTION = 'OPTION',
   OPTIONS = 'OPTIONS',
   LINK = 'LINK',
+  REFERENCE = 'REFERENCE',
   ASSET = 'ASSET',
   ASSETS = 'ASSETS',
   SCHEMA = 'SCHEMA',
@@ -69,6 +71,7 @@ export const schemaFieldKindDescriptions: Record<string, FieldKindDescription> =
   'OPTION': {name: 'Single Option', icon: 'list'},
   'OPTIONS': {name: 'Multiple Options', icon: 'list'},
   'LINK': {name: 'Link', icon: 'link'},
+  'REFERENCE': {name: 'Reference', icon: 'link'},
   'ASSET': {name: 'Asset ( One )', icon: 'attachment'},
   'ASSETS': {name: 'Assets ( Many )', icon: 'attachment'},
   'SCHEMA': {name: 'Schema ( One )', icon: 'polyline'},
@@ -82,7 +85,7 @@ export interface SchemaFieldBase {
   required?: boolean;
   description?: string;
   defaultValue?: string;
-  translatable? : boolean;
+  translatable?: boolean;
 }
 
 export interface SchemaFieldText extends SchemaFieldBase {
@@ -154,6 +157,10 @@ export interface SchemaFieldOptions extends SchemaFieldBase {
 
 export interface SchemaFieldLink extends SchemaFieldBase {
   kind: SchemaFieldKind.LINK
+}
+
+export interface SchemaFieldReference extends SchemaFieldBase {
+  kind: SchemaFieldKind.REFERENCE
 }
 
 export interface SchemaFieldAsset extends SchemaFieldBase {

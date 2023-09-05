@@ -1,0 +1,36 @@
+<form *ngIf="form" [formGroup]="form">
+  <mat-form-field>
+    <mat-label>{{component.displayName || component.name}}</mat-label>
+    <mat-icon matIconPrefix>link</mat-icon>
+
+    <input matInput [required]="component.required"
+           [matAutocomplete]="auto"
+           [formControl]="searchCtrl">
+    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
+      <mat-option *ngFor="let link of filteredContent | async" [value]="link">
+        <span>{{link.name}}</span> |
+        <small>{{link.slug}}</small>
+      </mat-option>
+    </mat-autocomplete>
+
+    <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
+      <mat-icon>clear</mat-icon>
+    </button>
+    <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
+    <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
+    <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
+  </mat-form-field>
+  <br/>
+  <br/>
+</form>
+<ng-container *ngIf="settings$ | async as settings">
+  <mat-accordion *ngIf="settings.debugEnabled">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Form => {{form?.valid}}</mat-panel-title>
+      </mat-expansion-panel-header>
+      <pre>{{form.value | json}}</pre>
+      <pre>{{form.errors | json}}</pre>
+    </mat-expansion-panel>
+  </mat-accordion>
+</ng-container>
