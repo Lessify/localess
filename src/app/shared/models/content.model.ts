@@ -104,3 +104,8 @@ export interface LinkContent {
   target: '_blank' | '_self'
   uri: string
 }
+
+export interface ReferenceContent {
+  kind: 'REFERENCE'
+  uri: string
+}

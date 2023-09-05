@@ -71,7 +71,7 @@ export class CommonValidator {
       if (ownSkip && ownSkip === control.value) {
         return null;
       }
-      if (['_id', 'id', 'schema', 'kind'].some(it => it === control.value)) {
+      if (['_id', 'schema', 'kind'].some(it => it === control.value)) {
         return {reservedName: true}
       }
       if (names.some(it => it === control.value)) {

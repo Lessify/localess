@@ -6,18 +6,17 @@ import {ContentDocument} from '@shared/models/content.model';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {debounceTime, Observable, of, startWith} from 'rxjs';
 import {map} from 'rxjs/operators';
-import {MatSlideToggleChange} from '@angular/material/slide-toggle';
-import {selectSettings} from "@core/state/settings/settings.selectors";
-import {Store} from "@ngrx/store";
-import {AppState} from "@core/state/core.state";
+import {selectSettings} from '@core/state/settings/settings.selectors';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/state/core.state';
 
 @Component({
-  selector: 'll-link-select',
-  templateUrl: './link-select.component.html',
-  styleUrls: ['./link-select.component.scss'],
+  selector: 'll-reference-select',
+  templateUrl: './reference-select.component.html',
+  styleUrls: ['./reference-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LinkSelectComponent implements OnInit {
+export class ReferenceSelectComponent implements OnInit {
   @Input({required: true}) form?: FormGroup;
   @Input({required: true}) component?: SchemaField;
   @Input({required: true}) documents: ContentDocument[] = []
@@ -38,10 +37,10 @@ export class LinkSelectComponent implements OnInit {
 
   ngOnInit(): void {
     // Data init in case everything is null
-    if (this.form?.value.kind === null || this.form?.value.type === null) {
-      this.form.patchValue({kind: SchemaFieldKind.LINK, type: 'url', target: '_self'})
+    if (this.form?.value.kind === null) {
+      this.form.patchValue({kind: SchemaFieldKind.REFERENCE})
     }
-    if (this.form?.value.type === 'content' && this.form?.value.uri !== null) {
+    if (this.form?.value.uri !== null) {
       this.searchCtrl.patchValue(this.documents.find(it => it.id === this.form?.value.uri))
     }
 
@@ -51,11 +50,6 @@ export class LinkSelectComponent implements OnInit {
         debounceTime(300),
         map((search) => this.documents?.filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || [])
       )
-  }
-
-  onTypeChange(type: string): void {
-    this.form?.patchValue({uri: null, type})
-    this.searchCtrl.reset()
   }
 
   displayContent(content?: ContentDocument): string {
@@ -70,13 +64,5 @@ export class LinkSelectComponent implements OnInit {
   contentReset(): void {
     this.searchCtrl.setValue('');
     this.form?.controls['uri'].setValue(null);
-  }
-
-  targetChange(event: MatSlideToggleChange): void {
-    if (event.checked) {
-      this.form?.controls['target'].setValue('_blank')
-    } else {
-      this.form?.controls['target'].setValue('_self')
-    }
   }
 }

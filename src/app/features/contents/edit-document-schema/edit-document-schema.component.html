@@ -126,7 +126,14 @@
         <ll-link-select *ngIf="form.controls[field.name]"
                         [form]="form.controls[field.name]"
                         [component]="field"
-                        [pages]="documents"/>
+                        [documents]="documents"/>
+      </ng-container>
+      <!--REFERENCE-->
+      <ng-container *ngSwitchCase="'REFERENCE'">
+        <ll-reference-select *ngIf="form.controls[field.name]"
+                        [form]="form.controls[field.name]"
+                        [component]="field"
+                        [documents]="documents"/>
       </ng-container>
       <!--ASSET-->
       <ng-container *ngSwitchCase="'ASSET'">

@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {Schema, SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
 import {FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {AssetContent, ContentData, ContentError} from '@shared/models/content.model';
+import {AssetContent, ContentData, ContentError, ReferenceContent} from '@shared/models/content.model';
 import {CommonValidator} from '@shared/validators/common.validator';
 import {v4} from 'uuid';
 import {Asset} from "@shared/models/asset.model";
@@ -49,6 +49,16 @@ export class ContentHelperService {
               if (control instanceof FormGroup) {
                 switch (control.value.kind) {
                   case SchemaFieldKind.LINK: {
+                    errors.push({
+                      contentId: selectedContent._id,
+                      schema: schema.displayName || schema.name,
+                      fieldName: controlName,
+                      fieldDisplayName: component?.displayName,
+                      errors: control.controls['uri'].errors
+                    })
+                    break;
+                  }
+                  case SchemaFieldKind.REFERENCE: {
                     errors.push({
                       contentId: selectedContent._id,
                       schema: schema.displayName || schema.name,
@@ -157,6 +167,12 @@ export class ContentHelperService {
           if (Object.getOwnPropertyNames(target[fieldName]).some(it => it === 'kind')) {
             switch (target[fieldName]['kind']) {
               case SchemaFieldKind.LINK: {
+                if (target[fieldName]['uri'] === undefined || target[fieldName]['uri'] === '') {
+                  delete target[fieldName];
+                }
+                break;
+              }
+              case SchemaFieldKind.REFERENCE: {
                 if (target[fieldName]['uri'] === undefined || target[fieldName]['uri'] === '') {
                   delete target[fieldName];
                 }
@@ -282,6 +298,17 @@ export class ContentHelperService {
             kind: this.fb.control(SchemaFieldKind.LINK, Validators.required),
             type: this.fb.control<'url' | 'content'>('url', Validators.required),
             target: this.fb.control<'_blank' | '_self'>('_self', Validators.required),
+            uri: this.fb.control<string | undefined>({
+              value: undefined,
+              disabled: disabled
+            }, validators)
+          })
+          form.setControl(field.name, link)
+          break;
+        }
+        case SchemaFieldKind.REFERENCE: {
+          const link = this.fb.group({
+            kind: this.fb.control(SchemaFieldKind.REFERENCE, Validators.required),
             uri: this.fb.control<string | undefined>({
               value: undefined,
               disabled: disabled
