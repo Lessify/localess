@@ -31,6 +31,7 @@ export type SchemaField = SchemaFieldText
   | SchemaFieldOption
   | SchemaFieldOptions
   | SchemaFieldLink
+  | SchemaFieldReference
   | SchemaFieldAsset
   | SchemaFieldAssets;
 
@@ -46,6 +47,7 @@ export enum SchemaFieldKind {
   OPTION = 'OPTION',
   OPTIONS = 'OPTIONS',
   LINK = 'LINK',
+  REFERENCE = 'REFERENCE',
   ASSET = 'ASSET',
   ASSETS = 'ASSETS',
   SCHEMA = 'SCHEMA',
@@ -131,6 +133,10 @@ export interface SchemaFieldOptions extends SchemaFieldBase {
 
 export interface SchemaFieldLink extends SchemaFieldBase {
   kind: SchemaFieldKind.LINK
+}
+
+export interface SchemaFieldReference extends SchemaFieldBase {
+  kind: SchemaFieldKind.REFERENCE
 }
 
 export interface SchemaFieldAsset extends SchemaFieldBase {
