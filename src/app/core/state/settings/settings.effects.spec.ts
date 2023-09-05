@@ -53,7 +53,8 @@ describe('SettingsEffects', () => {
         stickyHeader: false,
         pageAnimationsDisabled: true,
         hour: 12,
-        mainMenuExpended: true
+        mainMenuExpended: true,
+        debugEnabled: false
       };
       store.pipe.and.returnValue(of(settings));
       const persistAction = actionSettingsChangeTheme({ theme: 'DEFAULT' });

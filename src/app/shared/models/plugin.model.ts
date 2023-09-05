@@ -7,6 +7,10 @@ export interface Plugin {
   name?: string
   owner?: string
 
+  configurations?: PluginConfiguration[]
+
+
+  // it is identified by comparing db and available list
   status?: PluginStatus
 
   createdAt: Timestamp;
@@ -14,21 +18,27 @@ export interface Plugin {
 }
 
 export enum PluginStatus {
-  AVAILABLE = 'AVAILABLE',
   INSTALLED = 'INSTALLED',
   UNKNOWN = 'UNKNOWN'
 }
 
-export interface PluginConfig {
+export interface PluginDefinition {
   id: string
   name: string
   owner: string
   version: string
   schemaPrefix?: string
 
-
-
   schemas?: SchemaConfig[]
+
+  configurations?: PluginConfiguration[]
+}
+
+export interface PluginConfiguration {
+  name: string
+  displayName: string
+  required: boolean
+  description?: string
 }
 
 export interface SchemaConfig extends Omit<Schema, 'createdAt' | 'updatedAt'> {

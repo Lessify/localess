@@ -4,7 +4,7 @@ import {FormBuilder} from '@angular/forms';
 import {InstallDialogModel} from './install-dialog.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {MatTableDataSource} from "@angular/material/table";
-import {PluginConfig} from "@shared/models/plugin.model";
+import {PluginDefinition} from "@shared/models/plugin.model";
 
 @Component({
   selector: 'll-plugin-install-dialog',
@@ -14,7 +14,7 @@ import {PluginConfig} from "@shared/models/plugin.model";
 })
 export class InstallDialogComponent {
 
-  dataSource: MatTableDataSource<PluginConfig> = new MatTableDataSource<PluginConfig>(this.data.plugins);
+  dataSource: MatTableDataSource<PluginDefinition> = new MatTableDataSource<PluginDefinition>(this.data.plugins);
   displayedColumns: string[] = ['name', 'owner', 'version', 'actions'];
 
   constructor(

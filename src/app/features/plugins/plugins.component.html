@@ -46,6 +46,9 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
+        <button mat-icon-button (click)="openConfigurationDialog(element)" matTooltip="Configuration" [disabled]="element.configurations === undefined">
+          <mat-icon>settings</mat-icon>
+        </button>
         <button mat-icon-button (click)="openUninstallDialog(element)" matTooltip="Uninstall">
           <mat-icon>desktop_access_disabled</mat-icon>
         </button>

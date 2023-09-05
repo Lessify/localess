@@ -15,7 +15,7 @@ import {
 import {from, Observable, of} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {Plugin, PluginConfig, PluginStatus} from '@shared/models/plugin.model';
+import {Plugin, PluginDefinition, PluginStatus} from '@shared/models/plugin.model';
 import {PartialWithFieldValue} from '@firebase/firestore';
 import {SchemaFieldKind, SchemaType} from "@shared/models/schema.model";
 
@@ -42,12 +42,8 @@ export class PluginService {
           it.map((plugin) => {
             const aPlugin = AVAILABLE_PLUGINS_MAP[plugin.id]
             if (aPlugin) {
-              plugin.name = aPlugin.name
-              plugin.owner = aPlugin.owner
               plugin.status = PluginStatus.INSTALLED
             } else {
-              plugin.name = 'Unknown'
-              plugin.owner = 'Unknown'
               plugin.status = PluginStatus.UNKNOWN
             }
             return plugin;
@@ -56,13 +52,13 @@ export class PluginService {
       );
   }
 
-  findAllAvailable(spaceId: string): Observable<PluginConfig[]> {
+  findAllAvailable(spaceId: string): Observable<PluginDefinition[]> {
     return collectionData(collection(this.firestore, `spaces/${spaceId}/plugins`), {idField: 'id'})
       .pipe(
         traceUntilFirst('Firestore:Plugins:findAll'),
         map((it) => it as Plugin[]),
         map((dbPlugins) => {
-          const pcl: PluginConfig[] = []
+          const pcl: PluginDefinition[] = []
           Object.getOwnPropertyNames(AVAILABLE_PLUGINS_MAP)
             .forEach((aPluginId) => {
               const isPluginInstalled = dbPlugins.some((it) => it.id === aPluginId);
@@ -87,7 +83,10 @@ export class PluginService {
     const plugin = AVAILABLE_PLUGINS_MAP[id]
     if (plugin) {
       const addEntity: PartialWithFieldValue<Plugin> = {
+        name: plugin.name,
+        owner: plugin.owner,
         version: plugin.version,
+        configurations: plugin.configurations,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
@@ -109,7 +108,7 @@ export class PluginService {
 
 }
 
-const AVAILABLE_PLUGINS_MAP: Record<string, PluginConfig> = {
+const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
   'localess-ecommerce': {
     id: 'localess-ecommerce',
     name: 'E-Commerce',
@@ -138,10 +137,18 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginConfig> = {
       }
     ]
   },
-  'localess-simple': {
-    id: 'localess-simple',
-    name: 'Simple',
+  'stripe': {
+    id: 'stripe',
+    name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '0'
+    version: '0',
+    configurations: [
+      {
+        name: 'webhookSecret',
+        displayName: 'webhookSecret',
+        required: true,
+        description: 'Stripe Webhook Secret'
+      }
+    ]
   }
 }

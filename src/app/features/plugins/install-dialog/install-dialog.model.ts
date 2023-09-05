@@ -1,5 +1,5 @@
-import {PluginConfig} from '@shared/models/plugin.model';
+import {PluginDefinition} from '@shared/models/plugin.model';
 
 export interface InstallDialogModel {
-  plugins: PluginConfig[]
+  plugins: PluginDefinition[]
 }

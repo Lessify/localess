@@ -15,9 +15,12 @@ import {ConfirmationDialogComponent} from "@shared/components/confirmation-dialo
 import {ConfirmationDialogModel} from "@shared/components/confirmation-dialog/confirmation-dialog.model";
 import {SpaceService} from "@shared/services/space.service";
 import {PluginService} from "@shared/services/plugin.service";
-import {Plugin, PluginConfig} from "@shared/models/plugin.model";
+import {Plugin, PluginDefinition} from "@shared/models/plugin.model";
 import {InstallDialogComponent} from "./install-dialog/install-dialog.component";
 import {InstallDialogModel} from "./install-dialog/install-dialog.model";
+import {ConfigDialogComponent} from "./config-dialog/config-dialog.component";
+import {ConfigDialogModel} from "./config-dialog/config-dialog.model";
+import {ObjectUtils} from "@core/utils/object-utils.service";
 
 @Component({
   selector: 'll-plugins',
@@ -32,7 +35,7 @@ export class PluginsComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   dataSource: MatTableDataSource<Plugin> = new MatTableDataSource<Plugin>([]);
   displayedColumns: string[] = ['id', 'name', 'owner', 'version', 'status', 'createdAt', 'updatedAt', 'actions'];
-  availablePlugins: PluginConfig[] = [];
+  availablePlugins: PluginDefinition[] = [];
 
   selectedSpace?: Space;
 
@@ -106,6 +109,25 @@ export class PluginsComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.notificationService.error(`Plugin can not be installed.`);
+        }
+      });
+  }
+
+  openConfigurationDialog(element: Plugin): void {
+    this.dialog.open<ConfigDialogComponent, ConfigDialogModel, boolean>(
+      ConfigDialogComponent, {
+        width: '500px',
+        data: {
+          plugin: ObjectUtils.clone(element)
+        }
+      })
+      .afterClosed()
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`Plugin '${element.name}' has been updated.`);
+        },
+        error: (err) => {
+          this.notificationService.error(`Plugin '${element.name}' can not be updated.`);
         }
       });
   }
