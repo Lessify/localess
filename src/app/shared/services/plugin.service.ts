@@ -20,6 +20,7 @@ import {map} from 'rxjs/operators';
 import {Plugin, PluginConfiguration, PluginDefinition, PluginStatus} from '@shared/models/plugin.model';
 import {PartialWithFieldValue} from '@firebase/firestore';
 import {ContentKind} from "@shared/models/content.model";
+import {SchemaFieldKind, SchemaType} from "@shared/models/schema.model";
 
 @Injectable()
 export class PluginService {
@@ -90,6 +91,7 @@ export class PluginService {
         version: plugin.version,
         configurationFields: plugin.configurationFields,
         contents: plugin.contents,
+        schemas: plugin.schemas,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
@@ -144,6 +146,25 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
         slug: 'stripe',
         parentSlug: '',
         fullSlug: 'stripe'
+      }
+    ],
+    schemas: [
+      {
+        id: 'stripe-product',
+        name: 'stripe-product',
+        displayName: 'Stripe Product',
+        type: SchemaType.ROOT,
+        previewField: 'id',
+        fields: [
+          {
+            name: 'id',
+            kind: SchemaFieldKind.TEXT,
+            displayName: 'ID',
+            description: 'Product unique identifier',
+            required: true,
+            translatable: false,
+          }
+        ]
       }
     ]
   }

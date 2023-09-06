@@ -12,7 +12,7 @@ export interface Plugin {
   configuration?: PluginConfiguration
 
   contents?: PluginContentDefinition[]
-
+  schemas?: SchemaConfig[]
 
   // it is identified by comparing db and available list
   status?: PluginStatus

@@ -11,6 +11,7 @@ export interface Plugin {
   configurationFields?: PluginConfigurationField[]
   configuration?: PluginConfiguration
 
+  schemas?: SchemaConfig[]
   contents?: PluginContentDefinition[]
 
   // it is identified by comparing db and available list
@@ -31,9 +32,9 @@ export interface PluginDefinition {
   owner: string
   version: string
   schemaPrefix?: string
-  contents?: PluginContentDefinition[]
 
   schemas?: SchemaConfig[]
+  contents?: PluginContentDefinition[]
 
   configurationFields?: PluginConfigurationField[]
 }

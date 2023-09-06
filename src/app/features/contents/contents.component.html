@@ -93,9 +93,6 @@
           </ng-container>
           <ng-container *ngSwitchCase="'FOLDER'">
             <mat-icon>folder</mat-icon>
-            <ng-container *ngIf="element.locked">
-              <mat-icon [matTooltip]="element.lockedBy ? 'Locked By '+element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
-            </ng-container>
           </ng-container>
         </ng-container>
 
@@ -104,6 +101,9 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
+        <ng-container *ngIf="element.locked">
+          <mat-icon [matTooltip]="element.lockedBy ? 'Locked By '+element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
+        </ng-container>
         {{element.name}}
       </mat-cell>
     </ng-container>

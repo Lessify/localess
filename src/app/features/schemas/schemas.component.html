@@ -46,6 +46,9 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
+        <ng-container *ngIf="element.locked">
+          <mat-icon [matTooltip]="element.lockedBy ? 'Locked By '+element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
+        </ng-container>
         {{element.displayName}} &nbsp;<span class="text-muted">#{{element.name}}</span>
       </mat-cell>
     </ng-container>
@@ -67,11 +70,16 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button *ngIf="'SCHEMA_UPDATE' | canUserPerform | async" (click)="openEditDialog(element)" matTooltip="Edit">
+        <button mat-icon-button *ngIf="'SCHEMA_UPDATE' | canUserPerform | async"
+                (click)="openEditDialog(element)"
+                [disabled]="element.locked"
+                matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
         <button *ngIf="'SCHEMA_DELETE' | canUserPerform | async"
-                mat-icon-button (click)="openDeleteDialog($event, element)" matTooltip="Delete">
+                mat-icon-button (click)="openDeleteDialog($event, element)"
+                [disabled]="element.locked"
+                matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

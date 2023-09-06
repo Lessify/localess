@@ -4,6 +4,7 @@ import {FieldValue, WithFieldValue} from 'firebase-admin/firestore';
 import {firestoreService} from './config';
 import {Plugin} from './models/plugin.model';
 import {ContentFolder, ContentKind} from './models/content.model';
+import {Schema} from './models/schema.model';
 
 const onPluginCreate = onDocumentCreated('spaces/{spaceId}/plugins/{pluginId}', async (event) => {
   logger.info(`[Plugin:onPluginCreate] eventId='${event.id}'`);
@@ -15,9 +16,24 @@ const onPluginCreate = onDocumentCreated('spaces/{spaceId}/plugins/{pluginId}', 
   logger.info(`[Plugin:onPluginCreate] data='${JSON.stringify(plugin)}'`);
   let batch = firestoreService.batch();
   let count = 0;
+  for (const schema of plugin.schemas || []) {
+    const add: WithFieldValue<Schema> = {
+      name: schema.name,
+      displayName: schema.displayName,
+      type: schema.type,
+      previewField: schema.previewField,
+      fields: schema.fields,
+      locked: true,
+      lockedBy: plugin.name,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }
+    batch.set(firestoreService.doc(`spaces/${spaceId}/schemas/${schema.id}`), add, {merge: true})
+    count++;
+  }
   for (const content of plugin.contents || []) {
     if (content.kind === ContentKind.FOLDER) {
-      const add : WithFieldValue<ContentFolder> = {
+      const add: WithFieldValue<ContentFolder> = {
         kind: content.kind,
         name: content.name,
         slug: content.slug,
@@ -30,7 +46,6 @@ const onPluginCreate = onDocumentCreated('spaces/{spaceId}/plugins/{pluginId}', 
       }
       batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${content.id}`), add, {merge: true});
     }
-
     count++;
   }
   if (count > 0) {
