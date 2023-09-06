@@ -52,9 +52,10 @@ export interface PluginContentDefinition {
   id: string,
   kind: ContentKind,
   name: string,
+  //Slug
   slug: string
   parentSlug: string
-  fullSlug: string
+  fullSlug: string,
 }
 
 export interface SchemaConfig extends Omit<Schema, 'createdAt' | 'updatedAt'> {

@@ -20,9 +20,15 @@ export interface ContentBase {
   id: string,
   kind: ContentKind,
   name: string,
+
+  //Slug
   slug: string
   parentSlug: string
   fullSlug: string
+
+  //Lock
+  locked?: boolean
+  lockedBy?: string
 
   createdAt: Timestamp;
   updatedAt: Timestamp;

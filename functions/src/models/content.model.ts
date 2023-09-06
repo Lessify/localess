@@ -6,9 +6,15 @@ export type Content = ContentDocument | ContentFolder;
 export interface ContentBase {
   kind: ContentKind,
   name: string,
+
+  //Slug
   slug: string
   parentSlug: string
   fullSlug: string
+
+  //Lock
+  locked?: boolean
+  lockedBy?: string
 
   createdAt: Timestamp;
   updatedAt: Timestamp;

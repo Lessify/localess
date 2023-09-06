@@ -57,6 +57,7 @@ export interface PluginContentDefinition {
 }
 
 export interface SchemaConfig extends Omit<Schema, 'createdAt' | 'updatedAt'> {
+  id: string
 }
 
 //

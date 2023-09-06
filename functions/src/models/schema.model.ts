@@ -14,6 +14,10 @@ export interface Schema {
   previewImage?: string;
   fields?: SchemaField[];
 
+  //Lock
+  locked?: boolean
+  lockedBy?: string
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -164,6 +168,8 @@ export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
       displayName: {type: 'string', nullable: true},
       previewField: {type: 'string', nullable: true},
       previewImage: {type: 'string', nullable: true},
+      locked: {type: 'boolean', nullable: true},
+      lockedBy: {type: 'string', nullable: true},
       fields: {
         type: 'array',
         nullable: true,

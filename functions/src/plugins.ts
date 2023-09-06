@@ -23,6 +23,8 @@ const onPluginCreate = onDocumentCreated('spaces/{spaceId}/plugins/{pluginId}', 
         slug: content.slug,
         parentSlug: content.parentSlug,
         fullSlug: content.fullSlug,
+        locked: true,
+        lockedBy: plugin.name,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       }
