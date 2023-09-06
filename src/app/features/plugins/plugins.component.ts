@@ -15,7 +15,7 @@ import {ConfirmationDialogComponent} from "@shared/components/confirmation-dialo
 import {ConfirmationDialogModel} from "@shared/components/confirmation-dialog/confirmation-dialog.model";
 import {SpaceService} from "@shared/services/space.service";
 import {PluginService} from "@shared/services/plugin.service";
-import {Plugin, PluginDefinition} from "@shared/models/plugin.model";
+import {Plugin, PluginConfiguration, PluginDefinition} from "@shared/models/plugin.model";
 import {InstallDialogComponent} from "./install-dialog/install-dialog.component";
 import {InstallDialogModel} from "./install-dialog/install-dialog.model";
 import {ConfigDialogComponent} from "./config-dialog/config-dialog.component";
@@ -114,7 +114,7 @@ export class PluginsComponent implements OnInit, OnDestroy {
   }
 
   openConfigurationDialog(element: Plugin): void {
-    this.dialog.open<ConfigDialogComponent, ConfigDialogModel, boolean>(
+    this.dialog.open<ConfigDialogComponent, ConfigDialogModel, PluginConfiguration>(
       ConfigDialogComponent, {
         width: '500px',
         data: {
@@ -122,6 +122,12 @@ export class PluginsComponent implements OnInit, OnDestroy {
         }
       })
       .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.pluginService.updateConfiguration(this.selectedSpace!.id, element.id, it!)
+        )
+      )
       .subscribe({
         next: () => {
           this.notificationService.success(`Plugin '${element.name}' has been updated.`);

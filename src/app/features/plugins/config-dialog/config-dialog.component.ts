@@ -23,7 +23,7 @@ export class ConfigDialogComponent {
   }
 
   generateForm(): void {
-    for (const config of this.data.plugin.configurations || []) {
+    for (const config of this.data.plugin.configurationFields || []) {
       const validators: ValidatorFn[] = []
       if (config.required) {
         validators.push(Validators.required)

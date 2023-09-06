@@ -36,6 +36,11 @@
         "region": "europe-west6"
       },
       {
+        "source": "/api/stripe/**",
+        "function": "stripeApi",
+        "region": "europe-west6"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

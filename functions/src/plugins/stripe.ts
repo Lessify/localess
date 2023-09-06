@@ -3,7 +3,8 @@ import cors from 'cors';
 import Stripe from 'stripe';
 import {logger} from 'firebase-functions';
 import {onRequest, HttpsError} from 'firebase-functions/v2/https';
-import {findPluginById} from './services/plugin.service';
+import {findPluginById} from '../services/plugin.service';
+import {Plugin} from '../models/plugin.model';
 
 const stripe = new Stripe('', {apiVersion: '2023-08-16'});
 const expressStripe = express();
@@ -22,10 +23,19 @@ expressStripe.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw
       .send(new HttpsError('not-found', 'not found'));
     return;
   }
+  const plugin = pluginSnapshot.data() as Plugin;
+  const {webhookSecret} = plugin.configuration || {};
+  if (webhookSecret === undefined) {
+    res
+      .status(404)
+      .send(new HttpsError('not-found', 'secret not found'));
+    return;
+  }
+
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, 'webhookSecret.value()');
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;

@@ -10,14 +10,16 @@ import {
   query,
   QueryConstraint,
   serverTimestamp,
-  setDoc
+  setDoc,
+  UpdateData,
+  updateDoc
 } from '@angular/fire/firestore';
 import {from, Observable, of} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {Plugin, PluginDefinition, PluginStatus} from '@shared/models/plugin.model';
+import {Plugin, PluginConfiguration, PluginDefinition, PluginStatus} from '@shared/models/plugin.model';
 import {PartialWithFieldValue} from '@firebase/firestore';
-import {SchemaFieldKind, SchemaType} from "@shared/models/schema.model";
+import {ContentKind} from "@shared/models/content.model";
 
 @Injectable()
 export class PluginService {
@@ -86,7 +88,8 @@ export class PluginService {
         name: plugin.name,
         owner: plugin.owner,
         version: plugin.version,
-        configurations: plugin.configurations,
+        configurationFields: plugin.configurationFields,
+        contents: plugin.contents,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
@@ -99,6 +102,17 @@ export class PluginService {
     return of('not-found')
   }
 
+  updateConfiguration(spaceId: string, id: string, configuration: PluginConfiguration): Observable<void> {
+    const update: UpdateData<Plugin> = {
+      configuration: configuration,
+      updatedAt: serverTimestamp()
+    }
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), update))
+      .pipe(
+        traceUntilFirst('Firestore:Plugins:updateConfiguration'),
+      );
+  }
+
   uninstall(spaceId: string, id: string): Observable<void> {
     return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`)))
       .pipe(
@@ -109,45 +123,27 @@ export class PluginService {
 }
 
 const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
-  'localess-ecommerce': {
-    id: 'localess-ecommerce',
-    name: 'E-Commerce',
-    owner: 'Lessify GmbH',
-    version: '0',
-    schemaPrefix: 'localess',
-    schemas: [
-      {
-        id: 'localess-product',
-        type: SchemaType.ROOT,
-        name: 'localess-product',
-        displayName: 'Product',
-        locked: true,
-        fields: [
-          {
-            name: 'name',
-            displayName: 'Name',
-            kind: SchemaFieldKind.TEXT,
-            description: 'Product name',
-            minLength: 3,
-            maxLength: 100,
-            required: true,
-            translatable: true
-          }
-        ]
-      }
-    ]
-  },
   'stripe': {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
     version: '0',
-    configurations: [
+    configurationFields: [
       {
         name: 'webhookSecret',
         displayName: 'webhookSecret',
         required: true,
         description: 'Stripe Webhook Secret'
+      }
+    ],
+    contents: [
+      {
+        id: 'stripe',
+        kind: ContentKind.FOLDER,
+        name: 'Stripe',
+        slug: 'stripe',
+        parentSlug: '',
+        fullSlug: 'stripe'
       }
     ]
   }

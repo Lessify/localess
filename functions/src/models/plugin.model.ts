@@ -1,6 +1,6 @@
-import {Timestamp} from '@angular/fire/firestore';
-import {Schema} from '@shared/models/schema.model';
-import {ContentKind} from '@shared/models/content.model';
+import {Timestamp} from 'firebase-admin/firestore';
+import {Schema} from './schema.model';
+import {ContentKind} from "./content.model";
 
 export interface Plugin {
   id: string
@@ -12,7 +12,6 @@ export interface Plugin {
   configuration?: PluginConfiguration
 
   contents?: PluginContentDefinition[]
-
 
   // it is identified by comparing db and available list
   status?: PluginStatus
