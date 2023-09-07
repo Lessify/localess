@@ -17,10 +17,10 @@ import {
 import {from, Observable, of} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
-import {Plugin, PluginConfiguration, PluginDefinition, PluginStatus} from '@shared/models/plugin.model';
+import {Plugin, PluginConfiguration, PluginDefinition} from '@shared/models/plugin.model';
 import {PartialWithFieldValue} from '@firebase/firestore';
-import {ContentKind} from "@shared/models/content.model";
-import {SchemaFieldKind, SchemaType} from "@shared/models/schema.model";
+import {ContentKind} from '@shared/models/content.model';
+import {SchemaFieldKind, SchemaType} from '@shared/models/schema.model';
 
 @Injectable()
 export class PluginService {
@@ -44,11 +44,7 @@ export class PluginService {
         map((it) =>
           it.map((plugin) => {
             const aPlugin = AVAILABLE_PLUGINS_MAP[plugin.id]
-            if (aPlugin) {
-              plugin.status = PluginStatus.INSTALLED
-            } else {
-              plugin.status = PluginStatus.UNKNOWN
-            }
+            plugin.latestVersion = aPlugin.version
             return plugin;
           })
         )
@@ -90,8 +86,8 @@ export class PluginService {
         owner: plugin.owner,
         version: plugin.version,
         configurationFields: plugin.configurationFields,
-        contents: plugin.contents,
-        schemas: plugin.schemas,
+        install: plugin.install,
+        uninstall: plugin.uninstall,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
@@ -129,7 +125,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '0',
+    version: '1',
     configurationFields: [
       {
         name: 'webhookSecret',
@@ -138,34 +134,40 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
         description: 'Stripe Webhook Secret'
       }
     ],
-    contents: [
-      {
-        id: 'stripe',
-        kind: ContentKind.FOLDER,
-        name: 'Stripe',
-        slug: 'stripe',
-        parentSlug: '',
-        fullSlug: 'stripe'
-      }
-    ],
-    schemas: [
-      {
-        id: 'stripe-product',
-        name: 'stripe-product',
-        displayName: 'Stripe Product',
-        type: SchemaType.ROOT,
-        previewField: 'id',
-        fields: [
-          {
-            name: 'id',
-            kind: SchemaFieldKind.TEXT,
-            displayName: 'ID',
-            description: 'Product unique identifier',
-            required: true,
-            translatable: false,
-          }
-        ]
-      }
-    ]
+    install: {
+      contents: [
+        {
+          id: 'stripe',
+          kind: ContentKind.FOLDER,
+          name: 'Stripe',
+          slug: 'stripe',
+          parentSlug: '',
+          fullSlug: 'stripe'
+        }
+      ],
+      schemas: [
+        {
+          id: 'stripe-product',
+          name: 'stripe-product',
+          displayName: 'Stripe Product',
+          type: SchemaType.ROOT,
+          previewField: 'id',
+          fields: [
+            {
+              name: 'id',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'ID',
+              description: 'Product unique identifier',
+              required: true,
+              translatable: false,
+            }
+          ]
+        }
+      ]
+    },
+    uninstall: {
+      contentRootIds: ['stripe'],
+      schemasIds: ['stripe-product']
+    }
   }
 }

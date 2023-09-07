@@ -34,11 +34,8 @@
 
   </mat-toolbar-row>
 </mat-toolbar>
-
-<div *ngIf="isLoading" class="loader">
-  <mat-spinner/>
-</div>
-<div *ngIf="!isLoading" class="container-fluid mt-3">
+<mat-progress-bar *ngIf="isLoading" mode="query"/>
+<div class="container-fluid mt-3">
   <ll-breadcrumb>
     <ll-breadcrumb-item *ngFor="let pathItem of assetPath" (click)="navigateToSlug(pathItem)">
       <ng-container *ngIf="pathItem.fullSlug === ''">

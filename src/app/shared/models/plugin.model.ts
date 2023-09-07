@@ -1,29 +1,24 @@
 import {Timestamp} from '@angular/fire/firestore';
 import {Schema} from '@shared/models/schema.model';
-import {ContentKind} from '@shared/models/content.model';
+import {Content, ContentKind} from '@shared/models/content.model';
 
 export interface Plugin {
   id: string
   version: string
-  name?: string
-  owner?: string
+  name: string
+  owner: string
 
-  configurationFields?: PluginConfigurationField[]
+  configurationFields?: PluginConfigurationField[],
   configuration?: PluginConfiguration
 
-  contents?: PluginContentDefinition[]
-  schemas?: SchemaConfig[]
+  install?: PluginInstallDefinition
+  uninstall?: PluginUninstallDefinition
 
   // it is identified by comparing db and available list
-  status?: PluginStatus
+  latestVersion?: string
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
-}
-
-export enum PluginStatus {
-  INSTALLED = 'INSTALLED',
-  UNKNOWN = 'UNKNOWN'
 }
 
 export interface PluginDefinition {
@@ -32,11 +27,9 @@ export interface PluginDefinition {
   owner: string
   version: string
   schemaPrefix?: string
-  contents?: PluginContentDefinition[]
-
-  schemas?: SchemaConfig[]
-
-  configurationFields?: PluginConfigurationField[]
+  configurationFields?: PluginConfigurationField[],
+  install?: PluginInstallDefinition
+  uninstall?: PluginUninstallDefinition
 }
 
 export interface PluginConfigurationField {
@@ -58,7 +51,24 @@ export interface PluginContentDefinition {
   fullSlug: string,
 }
 
-export interface SchemaConfig extends Omit<Schema, 'createdAt' | 'updatedAt'> {
+export interface PluginInstallDefinition {
+  // Content to be created when it is installed
+  contents?: PluginContentDefinition[]
+  // Schema to be created when it is installed
+  schemas?: PluginSchemaDefinition[]
+}
+
+export interface PluginUninstallDefinition {
+  // Keep history of all content root ID's you have ever created and needs to be deleted
+  contentRootIds?: string[]
+  // Keep history of all schema ID's you have ever created and needs to be deleted
+  schemasIds?: string[]
+}
+
+export interface PluginSchemaDefinition extends Omit<Schema, 'createdAt' | 'updatedAt'> {
+}
+
+export interface PluginContentDefinition extends Omit<Content, 'createdAt' | 'updatedAt'> {
 }
 
 //

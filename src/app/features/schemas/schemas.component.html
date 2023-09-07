@@ -25,11 +25,8 @@
 
   </mat-toolbar-row>
 </mat-toolbar>
-
-<div *ngIf="isLoading" class="loader">
-  <mat-spinner></mat-spinner>
-</div>
-<div *ngIf="!isLoading" class="container-fluid mt-3">
+<mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
+<div class="container-fluid mt-3">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>

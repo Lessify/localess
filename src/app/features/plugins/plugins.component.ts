@@ -34,7 +34,7 @@ export class PluginsComponent implements OnInit, OnDestroy {
 
   isLoading: boolean = true;
   dataSource: MatTableDataSource<Plugin> = new MatTableDataSource<Plugin>([]);
-  displayedColumns: string[] = ['id', 'name', 'owner', 'version', 'status', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'owner', 'version', 'createdAt', 'updatedAt', 'actions'];
   availablePlugins: PluginDefinition[] = [];
 
   selectedSpace?: Space;
@@ -114,6 +114,31 @@ export class PluginsComponent implements OnInit, OnDestroy {
   }
 
   openConfigurationDialog(element: Plugin): void {
+    this.dialog.open<ConfigDialogComponent, ConfigDialogModel, PluginConfiguration>(
+      ConfigDialogComponent, {
+        width: '500px',
+        data: {
+          plugin: ObjectUtils.clone(element)
+        }
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it =>
+          this.pluginService.updateConfiguration(this.selectedSpace!.id, element.id, it!)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`Plugin '${element.name}' has been updated.`);
+        },
+        error: (err) => {
+          this.notificationService.error(`Plugin '${element.name}' can not be updated.`);
+        }
+      });
+  }
+
+  openUpdateDialog(element: Plugin): void {
     this.dialog.open<ConfigDialogComponent, ConfigDialogModel, PluginConfiguration>(
       ConfigDialogComponent, {
         width: '500px',

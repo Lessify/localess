@@ -8,11 +8,7 @@ mat-header-cell, mat-cell {
   }
 
   &.mat-column-version {
-    max-width: 130px;
-  }
-
-  &.mat-column-status {
-    max-width: 120px;
+    max-width: 100px;
   }
 
   &.mat-column-createdAt {
@@ -24,6 +20,6 @@ mat-header-cell, mat-cell {
   }
 
   &.mat-column-actions {
-    max-width: 140px;
+    max-width: 180px;
   }
 }
