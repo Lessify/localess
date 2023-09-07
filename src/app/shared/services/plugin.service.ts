@@ -78,7 +78,7 @@ export class PluginService {
       );
   }
 
-  install(spaceId: string, id: string): Observable<'installed' | 'not-found'> {
+  install(spaceId: string, id: string): Observable<boolean> {
     const plugin = AVAILABLE_PLUGINS_MAP[id]
     if (plugin) {
       const addEntity: PartialWithFieldValue<Plugin> = {
@@ -94,10 +94,10 @@ export class PluginService {
       return from(setDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), addEntity))
         .pipe(
           traceUntilFirst('Firestore:Plugins:create'),
-          map(it => 'installed')
+          map(it => true)
         );
     }
-    return of('not-found')
+    return of(false)
   }
 
   updateConfiguration(spaceId: string, id: string, configuration: PluginConfiguration): Observable<void> {
@@ -109,6 +109,27 @@ export class PluginService {
       .pipe(
         traceUntilFirst('Firestore:Plugins:updateConfiguration'),
       );
+  }
+
+  updateVersion(spaceId: string, id: string): Observable<boolean> {
+    const plugin = AVAILABLE_PLUGINS_MAP[id]
+    if (plugin) {
+      const update: UpdateData<Plugin> = {
+        name: plugin.name,
+        owner: plugin.owner,
+        version: plugin.version,
+        configurationFields: plugin.configurationFields,
+        install: plugin.install,
+        uninstall: plugin.uninstall,
+        updatedAt: serverTimestamp()
+      }
+      return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), update))
+        .pipe(
+          traceUntilFirst('Firestore:Plugins:updateVersion'),
+          map(it => true)
+        );
+    }
+    return of(false)
   }
 
   uninstall(spaceId: string, id: string): Observable<void> {
@@ -142,7 +163,8 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
           name: 'Stripe',
           slug: 'stripe',
           parentSlug: '',
-          fullSlug: 'stripe'
+          fullSlug: 'stripe',
+          version: 0
         }
       ],
       schemas: [
@@ -161,7 +183,8 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               required: true,
               translatable: false,
             }
-          ]
+          ],
+          version: 0
         }
       ]
     },

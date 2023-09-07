@@ -3,9 +3,9 @@ import {Schema} from './schema.model';
 import {Content} from './content.model';
 
 export interface Plugin {
-  version: string
   name: string
   owner: string
+  version: string
 
   configurationFields?: PluginConfigurationField[],
   configuration?: PluginConfiguration
@@ -26,8 +26,6 @@ export interface PluginConfigurationField {
 
 export type PluginConfiguration = Record<string, string>
 
-
-
 export interface PluginInstallDefinition {
   // Content to be created when it is installed
   contents?: PluginContentDefinition[]
@@ -44,10 +42,14 @@ export interface PluginUninstallDefinition {
 
 export interface PluginContentDefinition extends Omit<Content, 'createdAt' | 'updatedAt'>{
   id: string,
+  // Increase number in case you have changes
+  version: number
 }
 
 export interface PluginSchemaDefinition extends Omit<Schema, 'createdAt' | 'updatedAt'> {
   id: string
+  // Increase number in case you have changes
+  version: number
 }
 
 //

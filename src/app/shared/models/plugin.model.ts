@@ -4,9 +4,9 @@ import {Content, ContentKind} from '@shared/models/content.model';
 
 export interface Plugin {
   id: string
-  version: string
   name: string
   owner: string
+  version: string
 
   configurationFields?: PluginConfigurationField[],
   configuration?: PluginConfiguration
@@ -66,9 +66,13 @@ export interface PluginUninstallDefinition {
 }
 
 export interface PluginSchemaDefinition extends Omit<Schema, 'createdAt' | 'updatedAt'> {
+  // Increase number in case you have changes
+  version: number
 }
 
 export interface PluginContentDefinition extends Omit<Content, 'createdAt' | 'updatedAt'> {
+  // Increase number in case you have changes
+  version: number
 }
 
 //

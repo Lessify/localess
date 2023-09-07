@@ -104,8 +104,11 @@ export class PluginsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (value) => {
-          console.log(value)
-          this.notificationService.success(`Plugin has been installed.`);
+          if (value) {
+            this.notificationService.success(`Plugin has been installed.`);
+          } else {
+            this.notificationService.warn(`Plugin can not be installed.`);
+          }
         },
         error: (err) => {
           this.notificationService.error(`Plugin can not be installed.`);
@@ -113,24 +116,28 @@ export class PluginsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openConfigurationDialog(element: Plugin): void {
-    this.dialog.open<ConfigDialogComponent, ConfigDialogModel, PluginConfiguration>(
-      ConfigDialogComponent, {
-        width: '500px',
+  openUpdateVersionDialog(element: Plugin): void {
+    this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
+      ConfirmationDialogComponent, {
         data: {
-          plugin: ObjectUtils.clone(element)
+          title: 'Update Plugin',
+          content: `Are you sure about Updating Plugin with name '${element.name}'.`
         }
       })
       .afterClosed()
       .pipe(
-        filter(it => it !== undefined),
-        switchMap(it =>
-          this.pluginService.updateConfiguration(this.selectedSpace!.id, element.id, it!)
+        filter((it) => it || false),
+        switchMap(_ =>
+          this.pluginService.updateVersion(this.selectedSpace!.id, element.id)
         )
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success(`Plugin '${element.name}' has been updated.`);
+        next: (value) => {
+          if (value) {
+            this.notificationService.success(`Plugin '${element.name}' has been updated.`);
+          } else {
+            this.notificationService.warn(`Plugin '${element.name}' can not be updated.`);
+          }
         },
         error: (err) => {
           this.notificationService.error(`Plugin '${element.name}' can not be updated.`);
@@ -138,7 +145,7 @@ export class PluginsComponent implements OnInit, OnDestroy {
       });
   }
 
-  openUpdateDialog(element: Plugin): void {
+  openConfigurationDialog(element: Plugin): void {
     this.dialog.open<ConfigDialogComponent, ConfigDialogModel, PluginConfiguration>(
       ConfigDialogComponent, {
         width: '500px',

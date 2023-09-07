@@ -14,7 +14,7 @@ export interface Schema {
   previewImage?: string;
   fields?: SchemaField[];
 
-  //Lock
+  // Lock
   locked?: boolean
   lockedBy?: string
 

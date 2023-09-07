@@ -7,12 +7,12 @@ export interface ContentBase {
   kind: ContentKind,
   name: string,
 
-  //Slug
+  // Slug
   slug: string
   parentSlug: string
   fullSlug: string
 
-  //Lock
+  // Lock
   locked?: boolean
   lockedBy?: string
 
