@@ -65,4 +65,4 @@ expressStripe.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw
   res.send();
 });
 
-export const stripeApi = onRequest(expressStripe);
+export const stripeapi = onRequest(expressStripe);
