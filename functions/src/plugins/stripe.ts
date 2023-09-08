@@ -7,11 +7,11 @@ import {findPluginById} from '../services/plugin.service';
 import {Plugin} from '../models/plugin.model';
 
 const stripeApp = new Stripe('', {apiVersion: '2023-08-16'});
-const expressStripe = express();
-expressStripe.use(cors({origin: true}));
-expressStripe.use(express.json());
+const expressApp = express();
+expressApp.use(cors({origin: true}));
+expressApp.use(express.json());
 
-expressStripe.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({type: 'application/json'}), async (req, res) => {
   logger.info('stripe params : ' + JSON.stringify(req.params));
   logger.info('stripe query : ' + JSON.stringify(req.query));
   const sig = req.headers['stripe-signature'] as string;
@@ -67,5 +67,5 @@ expressStripe.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw
 });
 
 export const stripe = {
-  api: onRequest(expressStripe),
+  api: onRequest(expressApp),
 };
