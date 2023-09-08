@@ -6,7 +6,7 @@ import {onRequest, HttpsError} from 'firebase-functions/v2/https';
 import {findPluginById} from '../services/plugin.service';
 import {Plugin} from '../models/plugin.model';
 
-const stripe = new Stripe('', {apiVersion: '2023-08-16'});
+const stripeApp = new Stripe('', {apiVersion: '2023-08-16'});
 const expressStripe = express();
 expressStripe.use(cors({origin: true}));
 expressStripe.use(express.json());
@@ -35,7 +35,7 @@ expressStripe.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    event = stripeApp.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
@@ -66,4 +66,6 @@ expressStripe.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw
   res.send();
 });
 
-export const stripeapi = onRequest(expressStripe);
+export const stripe = {
+  api: onRequest(expressStripe),
+};

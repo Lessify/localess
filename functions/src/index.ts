@@ -28,4 +28,4 @@ export {user} from './users';
 export {v1 as publicv1} from './v1';
 
 // Plugins API
-export {stripeapi} from './plugins/stripe';
+export {stripe} from './plugins/stripe';
