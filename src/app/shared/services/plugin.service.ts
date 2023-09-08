@@ -20,7 +20,7 @@ import {map} from 'rxjs/operators';
 import {Plugin, PluginConfiguration, PluginDefinition} from '@shared/models/plugin.model';
 import {PartialWithFieldValue} from '@firebase/firestore';
 import {ContentKind} from '@shared/models/content.model';
-import {SchemaFieldKind, SchemaType} from '@shared/models/schema.model';
+import {SchemaFieldBoolean, SchemaFieldKind, SchemaFieldText, SchemaFieldTextarea, SchemaType} from '@shared/models/schema.model';
 import {Functions, httpsCallableData} from "@angular/fire/functions";
 
 @Injectable()
@@ -158,7 +158,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '6',
+    version: '7',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -206,7 +206,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
           name: 'stripe-product',
           displayName: 'Stripe Product',
           type: SchemaType.ROOT,
-          previewField: 'id',
+          previewField: 'name',
           fields: [
             {
               name: 'id',
@@ -215,9 +215,41 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               description: 'Product unique identifier.',
               required: true,
               translatable: false,
-            }
+            } as SchemaFieldText,
+            {
+              name: 'active',
+              kind: SchemaFieldKind.BOOLEAN,
+              displayName: 'Active',
+              description: 'Whether the product is currently available for purchase.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldBoolean,
+            {
+              name: 'name',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'Name',
+              description: 'The product’s name, meant to be displayable to the customer.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldText,
+            {
+              name: 'description',
+              kind: SchemaFieldKind.TEXTAREA,
+              displayName: 'Description',
+              description: 'The product’s description, meant to be displayable to the customer. Use this field to optionally store a long form explanation of the product being sold for your own rendering purposes.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldTextarea,
+            {
+              name: 'livemode',
+              kind: SchemaFieldKind.BOOLEAN,
+              displayName: 'Live Mode',
+              description: 'Has the value true if the object exists in live mode or the value false if the object exists in test mode.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldBoolean,
           ],
-          version: 4
+          version: 6
         }
       ]
     },

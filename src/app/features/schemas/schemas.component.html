@@ -68,9 +68,7 @@
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <button mat-icon-button *ngIf="'SCHEMA_UPDATE' | canUserPerform | async"
-                (click)="openEditDialog(element)"
-                [disabled]="element.locked"
-                matTooltip="Edit">
+                (click)="openEditDialog(element)" matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
         <button *ngIf="'SCHEMA_DELETE' | canUserPerform | async"

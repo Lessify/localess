@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
-import {SchemasValidator} from '@shared/validators/schemas.validator';
+import {SchemaValidator} from '@shared/validators/schema.validator';
 import {
   AssetFileType,
   Schema,
@@ -63,8 +63,8 @@ export class EditFieldComponent implements OnInit {
 
   generateOptionForm(): FormGroup {
     return this.fb.group({
-      name: this.fb.control('', SchemasValidator.FIELD_OPTION_NAME),
-      value: this.fb.control('', SchemasValidator.FIELD_OPTION_VALUE),
+      name: this.fb.control('', SchemaValidator.FIELD_OPTION_NAME),
+      value: this.fb.control('', SchemaValidator.FIELD_OPTION_VALUE),
     })
   }
 
@@ -76,9 +76,9 @@ export class EditFieldComponent implements OnInit {
       case SchemaFieldKind.TEXTAREA:
       case SchemaFieldKind.MARKDOWN: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
-        this.form.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MIN_LENGTH))
-        this.form.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MAX_LENGTH))
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
+        this.form.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_LENGTH))
+        this.form.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_LENGTH))
         // REMOVE
         // Number
         this.form.removeControl('minValue')
@@ -95,9 +95,9 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.NUMBER: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
-        this.form.addControl('minValue', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MIN_VALUE));
-        this.form.addControl('maxValue', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MAX_VALUE));
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
+        this.form.addControl('minValue', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUE));
+        this.form.addControl('maxValue', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUE));
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -114,7 +114,7 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.COLOR: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -135,7 +135,7 @@ export class EditFieldComponent implements OnInit {
 
       case SchemaFieldKind.DATE: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -155,7 +155,7 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.DATETIME: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -175,7 +175,7 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.BOOLEAN: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -195,8 +195,8 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.OPTION: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemasValidator.FIELD_OPTIONS)
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
+        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS)
         options.push(this.generateOptionForm())
         this.form.addControl('options', options)
         // REMOVE
@@ -217,12 +217,12 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.OPTIONS: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemasValidator.FIELD_OPTIONS)
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
+        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS)
         options.push(this.generateOptionForm())
         this.form.addControl('options', options)
-        this.form.addControl('minValues', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MIN_VALUES));
-        this.form.addControl('maxValues', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MAX_VALUES));
+        this.form.addControl('minValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUES));
+        this.form.addControl('maxValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUES));
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -238,7 +238,7 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.LINK: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -278,8 +278,8 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.ASSET: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES));
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
@@ -297,8 +297,8 @@ export class EditFieldComponent implements OnInit {
       }
       case SchemaFieldKind.ASSETS: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));
+        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES));
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength')
