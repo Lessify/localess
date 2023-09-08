@@ -41,6 +41,7 @@ expressStripe.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw
     return;
   }
   logger.info(`event type ${event.type}`);
+  logger.info(JSON.stringify(event));
   // Handle the event
   switch (event.type) {
     case 'product.created': {

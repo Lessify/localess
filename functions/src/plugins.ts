@@ -62,7 +62,7 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
   // No Data
   if (!event.data) return;
   const before = event.data.before.data() as Plugin;
-  const after = event.data.before.data() as Plugin;
+  const after = event.data.after.data() as Plugin;
   logger.info(`[Plugin:onUpdate] before='${JSON.stringify(before)}'`);
   logger.info(`[Plugin:onUpdate] after='${JSON.stringify(after)}'`);
   const batch = firestoreService.batch();
@@ -70,6 +70,7 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
   // Check version
   if (before.version === after.version) {
     // No plugin changes expected, expect configuration changes
+    logger.info('[Plugin:onUpdate] no version changes');
     return;
   }
   // Check Installation schema Updates
@@ -101,7 +102,7 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
             fields: afterSchema.fields,
             locked: true,
             lockedBy: after.name,
-            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           };
           batch.update(firestoreService.doc(`spaces/${spaceId}/schemas/${key}`), update);
           count++;

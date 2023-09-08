@@ -114,6 +114,7 @@ export class PluginService {
   updateVersion(spaceId: string, id: string): Observable<boolean> {
     const plugin = AVAILABLE_PLUGINS_MAP[id]
     if (plugin) {
+      console.log(plugin)
       const update: UpdateData<Plugin> = {
         name: plugin.name,
         owner: plugin.owner,
@@ -146,7 +147,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '1',
+    version: '3',
     configurationFields: [
       {
         name: 'webhookSecret',
@@ -164,7 +165,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
           slug: 'stripe',
           parentSlug: '',
           fullSlug: 'stripe',
-          version: 0
+          version: 2
         }
       ],
       schemas: [
@@ -179,12 +180,12 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               name: 'id',
               kind: SchemaFieldKind.TEXT,
               displayName: 'ID',
-              description: 'Product unique identifier',
+              description: 'Product unique identifier.',
               required: true,
               translatable: false,
             }
           ],
-          version: 0
+          version: 2
         }
       ]
     },
