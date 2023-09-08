@@ -4,7 +4,9 @@ import Stripe from 'stripe';
 import {logger} from 'firebase-functions';
 import {onRequest, onCall, HttpsError} from 'firebase-functions/v2/https';
 import {findPluginById} from '../services/plugin.service';
+import {canPerform} from '../utils/security-utils';
 import {Plugin, PluginActionData} from '../models/plugin.model';
+import {UserPermission} from '../models/user.model';
 
 const expressApp = express();
 expressApp
@@ -31,12 +33,12 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
     return;
   }
 
-  const stripeApp = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
+  const stripe = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
 
   let event: Stripe.Event;
 
   try {
-    event = stripeApp.webhooks.constructEvent((req as any).rawBody, sig, webhookSigningSecret);
+    event = stripe.webhooks.constructEvent((req as any).rawBody, sig, webhookSigningSecret);
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
@@ -70,6 +72,21 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
 const productSync = onCall<PluginActionData>(async (request) => {
   logger.info('[productSync] data: ' + JSON.stringify(request.data));
   logger.info('[productSync] context.auth: ' + JSON.stringify(request.auth));
+  if (!canPerform(UserPermission.SPACE_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const {spaceId} = request.data;
+  const pluginSnapshot = await findPluginById(spaceId, 'stripe').get();
+  if (!pluginSnapshot.exists) {
+    throw new HttpsError('failed-precondition', 'Stripe Plugin not installed.');
+  }
+  const plugin = pluginSnapshot.data() as Plugin;
+  const {apiSecretKey} = plugin.configuration || {};
+  if (apiSecretKey === undefined) {
+    throw new HttpsError('failed-precondition', 'API Secret Key not configured.');
+  }
+  const stripe = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
+  await stripe.products.list().autoPagingEach((it) => {
+    logger.info('[productSync] product: ' + JSON.stringify(it));
+  });
 });
 
 export const stripe = {
