@@ -9,7 +9,7 @@ import {Plugin} from '../models/plugin.model';
 const stripe = new Stripe('', {apiVersion: '2023-08-16'});
 const expressStripe = express();
 expressStripe.use(cors({origin: true}));
-
+expressStripe.use(express.json());
 
 expressStripe.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({type: 'application/json'}), async (req, res) => {
   logger.info('stripe params : ' + JSON.stringify(req.params));
