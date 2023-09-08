@@ -158,7 +158,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '5',
+    version: '6',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -175,7 +175,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     ],
     actions: [
       {
-        id: 'productSync',
+        id: 'productsync',
         name: 'Product Sync'
       }
     ],

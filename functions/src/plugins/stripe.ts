@@ -91,5 +91,5 @@ const productSync = onCall<PluginActionData>(async (request) => {
 
 export const stripe = {
   api: onRequest(expressApp),
-  productSync: productSync,
+  productsync: productSync,
 };
