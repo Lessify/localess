@@ -6,19 +6,16 @@ import {onRequest, HttpsError} from 'firebase-functions/v2/https';
 import {findPluginById} from '../services/plugin.service';
 import {Plugin} from '../models/plugin.model';
 
-
 const expressApp = express();
 expressApp
-  // .use(express.json())
   .use(cors({origin: true}));
 
 expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({type: '*/*'}), async (req, res) => {
   logger.info('stripe params : ' + JSON.stringify(req.params));
   logger.info('stripe query : ' + JSON.stringify(req.query));
-  logger.info('stripe headers : ' + JSON.stringify(req.headers));
-  logger.info('stripe body : ' + JSON.stringify(req.body));
   const sig = req.headers['stripe-signature']!;
   const {spaceId} = req.params;
+  const request = req as any;
   const pluginSnapshot = await findPluginById(spaceId, 'stripe').get();
   if (!pluginSnapshot.exists) {
     res
@@ -27,7 +24,6 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
     return;
   }
   const plugin = pluginSnapshot.data() as Plugin;
-  logger.info('stripe plugin config: ' + JSON.stringify(plugin.configuration));
   const {apiSecretKey, webhookSigningSecret} = plugin.configuration || {};
   if (apiSecretKey === undefined || webhookSigningSecret === undefined) {
     res
@@ -41,7 +37,7 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
   let event: Stripe.Event;
 
   try {
-    event = stripeApp.webhooks.constructEvent(req.body.toString(), sig, webhookSigningSecret);
+    event = stripeApp.webhooks.constructEvent(request.rawBody, sig, webhookSigningSecret);
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
