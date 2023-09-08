@@ -12,7 +12,7 @@ expressApp
   // .use(express.json())
   .use(cors({origin: true}));
 
-expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({type: '*/*'}), async (req, res) => {
   logger.info('stripe params : ' + JSON.stringify(req.params));
   logger.info('stripe query : ' + JSON.stringify(req.query));
   logger.info('stripe headers : ' + JSON.stringify(req.headers));
@@ -41,7 +41,7 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
   let event: Stripe.Event;
 
   try {
-    event = stripeApp.webhooks.constructEvent(req.body, sig, webhookSigningSecret);
+    event = stripeApp.webhooks.constructEvent(req.body.toString(), sig, webhookSigningSecret);
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
