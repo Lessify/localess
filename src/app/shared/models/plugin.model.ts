@@ -9,7 +9,10 @@ export interface Plugin {
   version: string
 
   configurationFields?: PluginConfigurationField[],
-  configuration?: PluginConfiguration
+  configuration?: PluginConfiguration,
+
+  // Action menu that will appear as dropdown
+  actions?: PluginActionDefinition[]
 
   install?: PluginInstallDefinition
   uninstall?: PluginUninstallDefinition
@@ -27,7 +30,11 @@ export interface PluginDefinition {
   owner: string
   version: string
   schemaPrefix?: string
+  // Configuration Dialog to collect data
   configurationFields?: PluginConfigurationField[],
+  // Action menu that will appear as dropdown
+  actions?: PluginActionDefinition[]
+
   install?: PluginInstallDefinition
   uninstall?: PluginUninstallDefinition
 }
@@ -40,16 +47,6 @@ export interface PluginConfigurationField {
 }
 
 export type PluginConfiguration = Record<string, string>
-
-export interface PluginContentDefinition {
-  id: string,
-  kind: ContentKind,
-  name: string,
-  //Slug
-  slug: string
-  parentSlug: string
-  fullSlug: string,
-}
 
 export interface PluginInstallDefinition {
   // Content to be created when it is installed
@@ -75,4 +72,8 @@ export interface PluginContentDefinition extends Omit<Content, 'createdAt' | 'up
   version: number
 }
 
-//
+export interface PluginActionDefinition {
+  id: string,
+  name: string,
+  icon?: string
+}

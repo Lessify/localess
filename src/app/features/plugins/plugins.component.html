@@ -48,12 +48,29 @@
         <button mat-icon-button (click)="openUpdateVersionDialog(element)" matTooltip="Update to the latest version" [disabled]="element.version === element.latestVersion">
           <mat-icon>sync</mat-icon>
         </button>
-        <button mat-icon-button (click)="openConfigurationDialog(element)" matTooltip="Configuration" [disabled]="element.configurationFields === undefined">
-          <mat-icon>settings</mat-icon>
+        <button mat-icon-button [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
         </button>
-        <button mat-icon-button (click)="openUninstallDialog(element)" matTooltip="Uninstall">
-          <mat-icon>desktop_access_disabled</mat-icon>
-        </button>
+
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="openConfigurationDialog(element)" [disabled]="element.configurationFields === undefined">
+            <mat-icon>settings</mat-icon>
+            <span>Configuration</span>
+          </button>
+          <mat-divider></mat-divider>
+          <ng-container *ngIf="element.actions">
+            <button mat-menu-item *ngFor="let action of element.actions" (click)="openActionDialog(element, action)">
+              <mat-icon>{{action.icon || 'send'}}</mat-icon>
+              <span>{{action.name}}</span>
+            </button>
+          </ng-container>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="openUninstallDialog(element)">
+            <mat-icon>desktop_access_disabled</mat-icon>
+            <span>Uninstall</span>
+          </button>
+        </mat-menu>
+
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>

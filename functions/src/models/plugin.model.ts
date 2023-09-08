@@ -9,6 +9,7 @@ export interface Plugin {
 
   configurationFields?: PluginConfigurationField[],
   configuration?: PluginConfiguration
+  actions?: PluginActionDefinition[]
 
   install?: PluginInstallDefinition
   uninstall?: PluginUninstallDefinition
@@ -52,4 +53,12 @@ export interface PluginSchemaDefinition extends Omit<Schema, 'createdAt' | 'upda
   version: number
 }
 
-//
+export interface PluginActionDefinition {
+  id: string,
+  name: string,
+  icon?: string
+}
+
+export interface PluginActionData {
+  spaceId: string
+}

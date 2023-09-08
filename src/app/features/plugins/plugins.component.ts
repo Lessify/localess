@@ -15,7 +15,7 @@ import {ConfirmationDialogComponent} from "@shared/components/confirmation-dialo
 import {ConfirmationDialogModel} from "@shared/components/confirmation-dialog/confirmation-dialog.model";
 import {SpaceService} from "@shared/services/space.service";
 import {PluginService} from "@shared/services/plugin.service";
-import {Plugin, PluginConfiguration, PluginDefinition} from "@shared/models/plugin.model";
+import {Plugin, PluginActionDefinition, PluginConfiguration, PluginDefinition} from "@shared/models/plugin.model";
 import {InstallDialogComponent} from "./install-dialog/install-dialog.component";
 import {InstallDialogModel} from "./install-dialog/install-dialog.model";
 import {ConfigDialogComponent} from "./config-dialog/config-dialog.component";
@@ -166,6 +166,31 @@ export class PluginsComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.notificationService.error(`Plugin '${element.name}' can not be updated.`);
+        }
+      });
+  }
+
+  openActionDialog(element: Plugin, action: PluginActionDefinition): void {
+    this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
+      ConfirmationDialogComponent, {
+        data: {
+          title: 'Plugin Action',
+          content: `Are you sure about Executing Plugin '${element.name}' with Action '${action.name}' .`
+        }
+      })
+      .afterClosed()
+      .pipe(
+        filter((it) => it || false),
+        switchMap(it =>
+          this.pluginService.sendEvent(this.selectedSpace!.id, element.id, action.id)
+        )
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`Plugin '${element.name}' with Action '${action.name}' has been executed.`);
+        },
+        error: (err) => {
+          this.notificationService.error(`Plugin '${element.name}' with Action '${action.name}' can not been executed.`);
         }
       });
   }

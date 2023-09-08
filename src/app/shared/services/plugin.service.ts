@@ -21,11 +21,13 @@ import {Plugin, PluginConfiguration, PluginDefinition} from '@shared/models/plug
 import {PartialWithFieldValue} from '@firebase/firestore';
 import {ContentKind} from '@shared/models/content.model';
 import {SchemaFieldKind, SchemaType} from '@shared/models/schema.model';
+import {Functions, httpsCallableData} from "@angular/fire/functions";
 
 @Injectable()
 export class PluginService {
   constructor(
     private readonly firestore: Firestore,
+    private readonly functions: Functions,
   ) {
   }
 
@@ -86,6 +88,7 @@ export class PluginService {
         owner: plugin.owner,
         version: plugin.version,
         configurationFields: plugin.configurationFields,
+        actions: plugin.actions,
         install: plugin.install,
         uninstall: plugin.uninstall,
         createdAt: serverTimestamp(),
@@ -98,6 +101,14 @@ export class PluginService {
         );
     }
     return of(false)
+  }
+
+  sendEvent(spaceId: string, id: string, actionId: string): Observable<void> {
+    const pluginEvent = httpsCallableData<{ spaceId: string}, void>(this.functions, `${id}-${actionId}`);
+    return pluginEvent({spaceId})
+      .pipe(
+        traceUntilFirst(`Functions:Plugins:sendEvent:${id}-${actionId}`),
+      );
   }
 
   updateConfiguration(spaceId: string, id: string, configuration: PluginConfiguration): Observable<void> {
@@ -114,12 +125,12 @@ export class PluginService {
   updateVersion(spaceId: string, id: string): Observable<boolean> {
     const plugin = AVAILABLE_PLUGINS_MAP[id]
     if (plugin) {
-      console.log(plugin)
       const update: UpdateData<Plugin> = {
         name: plugin.name,
         owner: plugin.owner,
         version: plugin.version,
         configurationFields: plugin.configurationFields,
+        actions: plugin.actions,
         install: plugin.install,
         uninstall: plugin.uninstall,
         updatedAt: serverTimestamp()
@@ -147,7 +158,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '3',
+    version: '5',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -158,8 +169,14 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
       {
         name: 'webhookSigningSecret',
         displayName: 'Webhook Signing Secret',
-        required: true,
+        required: false,
         description: 'Can be fond in Webhook details page.'
+      }
+    ],
+    actions: [
+      {
+        id: 'productSync',
+        name: 'Product Sync'
       }
     ],
     install: {
@@ -172,7 +189,16 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
           parentSlug: '',
           fullSlug: 'stripe',
           version: 2
-        }
+        },
+        {
+          id: 'stripe-products',
+          kind: ContentKind.FOLDER,
+          name: 'Products',
+          slug: 'products',
+          parentSlug: 'stripe',
+          fullSlug: 'stripe/products',
+          version: 3
+        },
       ],
       schemas: [
         {
@@ -191,7 +217,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             }
           ],
-          version: 2
+          version: 4
         }
       ]
     },

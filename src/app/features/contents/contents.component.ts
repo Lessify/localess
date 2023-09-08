@@ -269,6 +269,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   onRowSelect(element: Content): void {
+    this.isLoading = true;
     if (element.kind === ContentKind.DOCUMENT) {
       element.publishedAt
       if (this.schemasMap.has(element.schema)) {
@@ -287,11 +288,11 @@ export class ContentsComponent implements OnInit, OnDestroy {
         fullSlug: element.fullSlug
       })
       this.store.dispatch(actionSpaceContentPathChange({contentPath}))
-
     }
   }
 
   navigateToSlug(pathItem: PathItem) {
+    this.isLoading = true;
     this.selection.clear()
     const contentPath = ObjectUtils.clone(this.contentPath)
     const idx = contentPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);

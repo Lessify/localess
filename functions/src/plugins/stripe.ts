@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import Stripe from 'stripe';
 import {logger} from 'firebase-functions';
-import {onRequest, HttpsError} from 'firebase-functions/v2/https';
+import {onRequest, onCall, HttpsError} from 'firebase-functions/v2/https';
 import {findPluginById} from '../services/plugin.service';
-import {Plugin} from '../models/plugin.model';
+import {Plugin, PluginActionData} from '../models/plugin.model';
 
 const expressApp = express();
 expressApp
@@ -67,6 +67,12 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
   res.send();
 });
 
+const productSync = onCall<PluginActionData>(async (request) => {
+  logger.info('[productSync] data: ' + JSON.stringify(request.data));
+  logger.info('[productSync] context.auth: ' + JSON.stringify(request.auth));
+});
+
 export const stripe = {
   api: onRequest(expressApp),
+  productSync: productSync,
 };
