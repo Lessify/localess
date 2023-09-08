@@ -150,10 +150,16 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     version: '3',
     configurationFields: [
       {
-        name: 'webhookSecret',
-        displayName: 'webhookSecret',
+        name: 'apiSecretKey',
+        displayName: 'API Secret Key',
         required: true,
-        description: 'Stripe Webhook Secret'
+        description: 'Can be found in API Keys tab.'
+      },
+      {
+        name: 'webhookSigningSecret',
+        displayName: 'Webhook Signing Secret',
+        required: true,
+        description: 'Can be fond in Webhook details page.'
       }
     ],
     install: {

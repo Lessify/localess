@@ -6,10 +6,11 @@ import {onRequest, HttpsError} from 'firebase-functions/v2/https';
 import {findPluginById} from '../services/plugin.service';
 import {Plugin} from '../models/plugin.model';
 
-const stripeApp = new Stripe('', {apiVersion: '2023-08-16'});
+
 const expressApp = express();
-expressApp.use(cors({origin: true}));
-expressApp.use(express.json());
+expressApp
+  .use(express.json())
+  .use(cors({origin: true}));
 
 expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({type: 'application/json'}), async (req, res) => {
   logger.info('stripe params : ' + JSON.stringify(req.params));
@@ -24,18 +25,20 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
     return;
   }
   const plugin = pluginSnapshot.data() as Plugin;
-  const {webhookSecret} = plugin.configuration || {};
-  if (webhookSecret === undefined) {
+  const {apiSecretKey, webhookSigningSecret} = plugin.configuration || {};
+  if (apiSecretKey === undefined || webhookSigningSecret === undefined) {
     res
       .status(404)
-      .send(new HttpsError('not-found', 'secret not found'));
+      .send(new HttpsError('not-found', 'configuration not found'));
     return;
   }
+
+  const stripeApp = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
 
   let event: Stripe.Event;
 
   try {
-    event = stripeApp.webhooks.constructEvent(req.body, sig, webhookSecret);
+    event = stripeApp.webhooks.constructEvent(req.body, sig, webhookSigningSecret);
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
