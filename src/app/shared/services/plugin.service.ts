@@ -169,7 +169,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '35',
+    version: '1',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -221,7 +221,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
           slug: 'stripe',
           parentSlug: '',
           fullSlug: 'stripe',
-          version: 2
+          version: 1
         },
         {
           id: 'stripe-products',
@@ -230,7 +230,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
           slug: 'products',
           parentSlug: 'stripe',
           fullSlug: 'stripe/products',
-          version: 3
+          version: 1
         },
       ],
       schemas: [
@@ -308,7 +308,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               schemas: ['stripe-product-price']
             } as SchemaFieldSchemas
           ],
-          version: 12
+          version: 1
         },
         {
           id: 'stripe-product-price',
@@ -436,7 +436,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               schemas: ['stripe-product-price-tier']
             } as SchemaFieldSchemas
           ],
-          version: 19
+          version: 1
         },
         {
           id: 'stripe-product-price-recurring',
@@ -524,7 +524,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               ]
             } as SchemaFieldOption,
           ],
-          version: 2
+          version: 1
         },
         {
           id: 'stripe-product-price-tier',
@@ -558,7 +558,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldNumber,
           ],
-          version: 3
+          version: 1
         }
       ]
     },
