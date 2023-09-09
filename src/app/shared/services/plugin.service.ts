@@ -24,7 +24,7 @@ import {
   SchemaFieldBoolean,
   SchemaFieldKind,
   SchemaFieldNumber,
-  SchemaFieldOption,
+  SchemaFieldOption, SchemaFieldSchema,
   SchemaFieldSchemas,
   SchemaFieldText,
   SchemaFieldTextarea,
@@ -169,7 +169,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '16',
+    version: '35',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -185,9 +185,9 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
       },
       {
         name: 'productSyncActive',
-        displayName: 'Product Sync Active',
+        displayName: 'Product Sync',
         required: false,
-        description: 'Product active status to be synced',
+        description: 'Products to sync.',
         defaultValue: 'all',
         options: [
           {
@@ -195,11 +195,11 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
             value: 'all'
           },
           {
-            name: 'Yes',
+            name: 'Active Only',
             value: 'true'
           },
           {
-            name: 'No',
+            name: 'Archived Only',
             value: 'false'
           }
         ]
@@ -305,15 +305,15 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               displayName: 'Prices',
               description: 'Product prices',
               required: false,
-              schemas: ['stripe-price']
+              schemas: ['stripe-product-price']
             } as SchemaFieldSchemas
           ],
-          version: 11
+          version: 12
         },
         {
-          id: 'stripe-price',
-          name: 'stripe-price',
-          displayName: 'Stripe Price',
+          id: 'stripe-product-price',
+          name: 'stripe-product-price',
+          displayName: 'Stripe Product Price',
           type: SchemaType.NODE,
           previewField: 'id',
           fields: [
@@ -366,7 +366,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
               options: [
                 {
-                  name: 'One tIME',
+                  name: 'One Time',
                   value: 'one_time'
                 },
                 {
@@ -376,11 +376,29 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               ]
             } as SchemaFieldOption,
             {
+              name: 'tiers_mode',
+              kind: SchemaFieldKind.OPTION,
+              displayName: 'Tiers Mode',
+              description: 'Defines if the tiering price should be graduated or volume based. In volume-based tiering, the maximum quantity within a period determines the per unit price. In graduated tiering, pricing can change as the quantity grows.',
+              required: false,
+              translatable: false,
+              options: [
+                {
+                  name: 'Graduated',
+                  value: 'graduated'
+                },
+                {
+                  name: 'Volume',
+                  value: 'volume'
+                }
+              ]
+            } as SchemaFieldOption,
+            {
               name: 'unit_amount',
               kind: SchemaFieldKind.NUMBER,
               displayName: 'Unit Amount',
               description: 'The unit amount in rappen/cent to be charged, represented as a whole integer if possible. Only set if billing_scheme=per_unit.',
-              required: true,
+              required: false,
               translatable: false,
             } as SchemaFieldNumber,
             {
@@ -401,14 +419,152 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
                 }
               ]
             } as SchemaFieldOption,
+            {
+              name: 'recurring',
+              kind: SchemaFieldKind.SCHEMA,
+              displayName: 'Recurring',
+              description: 'The recurring components of a price such as interval and usage_type.',
+              required: false,
+              schemas: ['stripe-product-price-recurring']
+            } as SchemaFieldSchema,
+            {
+              name: 'tiers',
+              kind: SchemaFieldKind.SCHEMAS,
+              displayName: 'Tiers',
+              description: 'Each element represents a pricing tier. This parameter requires billing_scheme to be set to tiered. See also the documentation for billing_scheme. This field is not included by default. To include it in the response, expand the tiers field.',
+              required: false,
+              schemas: ['stripe-product-price-tier']
+            } as SchemaFieldSchemas
           ],
-          version: 13
+          version: 19
+        },
+        {
+          id: 'stripe-product-price-recurring',
+          name: 'stripe-product-price-recurring',
+          displayName: 'Stripe Product Price Recurring',
+          type: SchemaType.NODE,
+          previewField: 'interval',
+          fields: [
+            {
+              name: 'aggregate_usage',
+              kind: SchemaFieldKind.OPTION,
+              displayName: 'Aggregate Usage',
+              description: 'Specifies a usage aggregation strategy for prices of usage_type=metered. Allowed values are sum for summing up all usage during a period, last_during_period for using the last usage record reported within a period, last_ever for using the last usage record ever (across period bounds) or max which uses the usage record with the maximum reported usage during a period. Defaults to sum.',
+              required: false,
+              translatable: false,
+              options: [
+                {
+                  name: 'Last During Period',
+                  value: 'last_during_period'
+                },
+                {
+                  name: 'Last Ever',
+                  value: 'last_ever'
+                },
+                {
+                  name: 'Max',
+                  value: 'max'
+                },
+                {
+                  name: 'Sum',
+                  value: 'sum'
+                }
+              ]
+            } as SchemaFieldOption,
+            {
+              name: 'interval',
+              kind: SchemaFieldKind.OPTION,
+              displayName: 'Interval',
+              description: 'Specifies a usage aggregation strategy for prices of usage_type=metered. Allowed values are sum for summing up all usage during a period, last_during_period for using the last usage record reported within a period, last_ever for using the last usage record ever (across period bounds) or max which uses the usage record with the maximum reported usage during a period. Defaults to sum.',
+              required: true,
+              translatable: false,
+              options: [
+                {
+                  name: 'Day',
+                  value: 'day'
+                },
+                {
+                  name: 'Month',
+                  value: 'month'
+                },
+                {
+                  name: 'Week',
+                  value: 'week'
+                },
+                {
+                  name: 'Year',
+                  value: 'year'
+                }
+              ]
+            } as SchemaFieldOption,
+            {
+              name: 'interval_count',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Interval Count',
+              description: 'The number of intervals (specified in the interval attribute) between subscription billings. For example, interval=month and interval_count=3 bills every 3 months.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldNumber,
+            {
+              name: 'usage_type',
+              kind: SchemaFieldKind.OPTION,
+              displayName: 'Usage Type',
+              description: 'Configures how the quantity per period should be determined. Can be either metered or licensed. licensed automatically bills the quantity set when adding it to a subscription. metered aggregates the total usage based on usage records. Defaults to licensed.',
+              required: true,
+              translatable: false,
+              options: [
+                {
+                  name: 'Licensed',
+                  value: 'licensed'
+                },
+                {
+                  name: 'Metered',
+                  value: 'metered'
+                }
+              ]
+            } as SchemaFieldOption,
+          ],
+          version: 2
+        },
+        {
+          id: 'stripe-product-price-tier',
+          name: 'stripe-product-price-tier',
+          displayName: 'Stripe Product Price Tier',
+          previewField: 'up_to',
+          type: SchemaType.NODE,
+          fields: [
+            {
+              name: 'flat_amount',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Flat Amount',
+              description: 'Price for the entire tier.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldNumber,
+            {
+              name: 'unit_amount',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Unit Amount',
+              description: 'Per unit price for units relevant to the tier.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldNumber,
+            {
+              name: 'up_to',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Up To',
+              description: 'Up to and including to this quantity will be contained in the tier.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldNumber,
+          ],
+          version: 3
         }
       ]
     },
     uninstall: {
       contentRootIds: ['stripe'],
-      schemasIds: ['stripe-product', 'stripe-price']
+      schemasIds: ['stripe-product', 'stripe-product-price', 'stripe-product-price-recurring', 'stripe-product-price-tire']
     }
   }
 }

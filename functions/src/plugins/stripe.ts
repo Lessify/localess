@@ -10,6 +10,7 @@ import {UserPermission} from '../models/user.model';
 import {firestoreService} from '../config';
 import {ContentData, ContentDocument, ContentKind} from '../models/content.model';
 import {FieldValue, WithFieldValue} from 'firebase-admin/firestore';
+import {v4} from 'uuid';
 
 const expressApp = express();
 expressApp
@@ -100,26 +101,47 @@ const productSync = onCall<PluginActionData>(async (request) => {
       break;
     }
   }
-  await stripe.products.list({active: active}).autoPagingEach((product) => {
+  logger.info(`[productSync] to sync active=${active}`);
+  await stripe.products.list({active: active}).autoPagingEach(async (product) => {
     logger.info('[productSync] product: ' + JSON.stringify(product));
     const prices: ContentData[] = [];
-    stripe.prices.list({product: product.id}).autoPagingEach((price) => {
-      logger.info('[productSync] price: ' + JSON.stringify(price));
-      prices.push(
-        {
-          _id: price.id,
-          schema: 'stripe-price',
-          nickname: price.nickname,
-          id: price.id,
-          active: price.active,
-          currency: price.currency,
-          livemode: price.livemode,
-          type: price.type,
-          unit_amount: price.unit_amount,
-          billing_scheme: price.billing_scheme,
-        } as ContentData
-      );
+    await stripe.prices.list({product: product.id, expand: ['data.tiers']}).autoPagingEach((price) => {
+      logger.info(`[productSync] product:${product.id} price:${price.id} ` + JSON.stringify(price));
+      const priceContent: ContentData = {
+        _id: price.id,
+        schema: 'stripe-product-price',
+        id: price.id,
+        nickname: price.nickname,
+        active: price.active,
+        currency: price.currency,
+        livemode: price.livemode,
+        type: price.type,
+        unit_amount: price.unit_amount,
+        billing_scheme: price.billing_scheme,
+        tiers_mode: price.tiers_mode,
+        recurring: price.recurring && {
+          _id: v4(),
+          schema: 'stripe-product-price-recurring',
+          aggregate_usage: price.recurring.aggregate_usage,
+          interval: price.recurring.interval,
+          interval_count: price.recurring.interval_count,
+          usage_type: price.recurring.usage_type,
+        },
+      };
+      if (price.tiers) {
+        priceContent.tiers = price.tiers.map((tire) =>
+          ({
+            _id: v4(),
+            schema: 'stripe-product-price-tier',
+            flat_amount: tire.flat_amount,
+            unit_amount: tire.unit_amount,
+            up_to: tire.up_to,
+          })
+        );
+      }
+      prices.push(priceContent);
     });
+    // logger.info(`[productSync] prices ${JSON.stringify(prices)}`);
     const documentId = `stripe-product-${product.id}`;
     const add: WithFieldValue<ContentDocument> = {
       kind: ContentKind.DOCUMENT,

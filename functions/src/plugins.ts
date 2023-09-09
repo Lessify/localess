@@ -91,15 +91,16 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
       const afterHas = afterMap.has(key);
       if (beforeHas && afterHas) {
         // Update
+        logger.info(`[Plugin:onUpdate] schema=${key} update`);
         const beforeSchema = beforeMap.get(key)!;
         const afterSchema = afterMap.get(key)!;
         if (beforeSchema.version !== afterSchema.version) {
           const update: UpdateData<Schema> = {
             name: afterSchema.name,
-            displayName: afterSchema.displayName,
             type: afterSchema.type,
-            previewField: afterSchema.previewField,
-            fields: afterSchema.fields,
+            displayName: afterSchema.displayName || FieldValue.delete(),
+            previewField: afterSchema.previewField || FieldValue.delete(),
+            fields: afterSchema.fields || FieldValue.delete(),
             locked: true,
             lockedBy: after.name,
             updatedAt: FieldValue.serverTimestamp(),
@@ -109,23 +110,25 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
         }
       } else if (beforeHas) {
         // Delete
+        logger.info(`[Plugin:onUpdate] schema=${key} delete`);
         batch.delete(firestoreService.doc(`spaces/${spaceId}/schemas/${key}`));
         count++;
       } else if (afterHas) {
         // Add
+        logger.info(`[Plugin:onUpdate] schema=${key} add`);
         const schema = afterMap.get(key)!;
         const add: WithFieldValue<Schema> = {
           name: schema.name,
-          displayName: schema.displayName,
           type: schema.type,
-          previewField: schema.previewField,
-          fields: schema.fields,
+          displayName: schema.displayName || FieldValue.delete(),
+          previewField: schema.previewField || FieldValue.delete(),
+          fields: schema.fields || FieldValue.delete(),
           locked: true,
           lockedBy: after.name,
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };
-        batch.set(firestoreService.doc(`spaces/${spaceId}/schemas/${key}`), add);
+        batch.set(firestoreService.doc(`spaces/${spaceId}/schemas/${key}`), add, {merge: true});
         count++;
       }
     }
@@ -147,6 +150,7 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
       const beforeHas = beforeMap.has(key);
       const afterHas = afterMap.has(key);
       if (beforeHas && afterHas) {
+        logger.info(`[Plugin:onUpdate] content=${key} update`);
         // Update
         const beforeContent = beforeMap.get(key)!;
         const afterContent = afterMap.get(key)!;
@@ -168,10 +172,12 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
         }
       } else if (beforeHas) {
         // Delete
+        logger.info(`[Plugin:onUpdate] content=${key} delete`);
         batch.delete(firestoreService.doc(`spaces/${spaceId}/contents/${key}`));
         count++;
       } else if (afterHas) {
         // Add
+        logger.info(`[Plugin:onUpdate] content=${key} add`);
         const content = afterMap.get(key);
         if (content && content.kind === ContentKind.FOLDER) {
           const add: WithFieldValue<ContentFolder> = {
@@ -185,7 +191,7 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
           };
-          batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${key}`), add);
+          batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${key}`), add, {merge: true});
           count++;
         }
       }
