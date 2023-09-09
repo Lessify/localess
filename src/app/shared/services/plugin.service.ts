@@ -158,7 +158,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '7',
+    version: '8',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -249,7 +249,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldBoolean,
           ],
-          version: 6
+          version: 7
         }
       ]
     },

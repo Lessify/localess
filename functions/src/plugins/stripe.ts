@@ -2,11 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import Stripe from 'stripe';
 import {logger} from 'firebase-functions';
-import {onRequest, onCall, HttpsError} from 'firebase-functions/v2/https';
+import {HttpsError, onCall, onRequest} from 'firebase-functions/v2/https';
 import {findPluginById} from '../services/plugin.service';
 import {canPerform} from '../utils/security-utils';
 import {Plugin, PluginActionData} from '../models/plugin.model';
 import {UserPermission} from '../models/user.model';
+import {firestoreService} from '../config';
+import {ContentDocument, ContentKind} from '../models/content.model';
+import {FieldValue, WithFieldValue} from 'firebase-admin/firestore';
+import {v4} from 'uuid';
 
 const expressApp = express();
 expressApp
@@ -84,9 +88,40 @@ const productSync = onCall<PluginActionData>(async (request) => {
     throw new HttpsError('failed-precondition', 'API Secret Key not configured.');
   }
   const stripe = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
-  await stripe.products.list().autoPagingEach((it) => {
-    logger.info('[productSync] product: ' + JSON.stringify(it));
+  const batch = firestoreService.batch();
+  let count = 0;
+  await stripe.products.list().autoPagingEach((product) => {
+    logger.info('[productSync] product: ' + JSON.stringify(product));
+    const documentId = `stripe-product-${product.id}`;
+    const add: WithFieldValue<ContentDocument> = {
+      kind: ContentKind.DOCUMENT,
+      name: product.name,
+      slug: product.id,
+      parentSlug: 'stripe/products',
+      fullSlug: `stripe/products/${product.id}`,
+      schema: 'stripe-product',
+      data: {
+        _id: v4(),
+        schema: 'stripe-product',
+        id: product.id,
+        name: product.name,
+        active: product.active,
+        description: product.description,
+        livemode: product.livemode,
+      },
+      locked: true,
+      lockedBy: 'Stripe',
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${documentId}`), add, {merge: true});
+    count++;
   });
+  if (count > 0) {
+    logger.info('[productSync] batch.commit() : ' + count);
+    await batch.commit();
+  }
+  logger.info('[productSync] finished');
 });
 
 export const stripe = {
