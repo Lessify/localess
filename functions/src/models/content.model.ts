@@ -56,7 +56,7 @@ export interface ContentDocumentStorage {
   publishedAt?: string;
 }
 
-export interface ContentData extends Record<string, any> {
+export interface ContentData extends Record<string, any | ContentData | ContentData[]> {
   _id: string;
   schema: string;
 }

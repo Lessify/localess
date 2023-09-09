@@ -3,6 +3,7 @@ import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {ConfigDialogModel} from './config-dialog.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
+import {PluginConfiguration} from "@shared/models/plugin.model";
 
 @Component({
   selector: 'll-plugin-config-dialog',
@@ -19,16 +20,20 @@ export class ConfigDialogComponent {
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: ConfigDialogModel
   ) {
-    this.generateForm()
+    this.generateForm(data.plugin.configuration)
   }
 
-  generateForm(): void {
+  generateForm(configuration?: PluginConfiguration): void {
     for (const config of this.data.plugin.configurationFields || []) {
       const validators: ValidatorFn[] = []
       if (config.required) {
         validators.push(Validators.required)
       }
-      this.form.setControl(config.name, this.fb.control<string | undefined>(undefined, validators))
+      let value = config.defaultValue
+      if (configuration && configuration[config.name] !== undefined) {
+        value = configuration[config.name]
+      }
+      this.form.setControl(config.name, this.fb.control<string | undefined>(value, validators))
     }
   }
 }

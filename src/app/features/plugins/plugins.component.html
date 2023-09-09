@@ -59,7 +59,7 @@
           </button>
           <mat-divider></mat-divider>
           <ng-container *ngIf="element.actions">
-            <button mat-menu-item *ngFor="let action of element.actions" (click)="openActionDialog(element, action)">
+            <button mat-menu-item *ngFor="let action of element.actions" (click)="openActionDialog(element, action)" [matTooltip]="action.description">
               <mat-icon>{{action.icon || 'send'}}</mat-icon>
               <span>{{action.name}}</span>
             </button>

@@ -49,7 +49,7 @@ export class SchemaValidator {
   ];
 
   public static FIELD_DESCRIPTION: ValidatorFn[] = [
-    Validators.maxLength(250)
+    Validators.maxLength(500)
   ];
 
   public static FIELD_DEFAULT_VALUE: ValidatorFn[] = [

@@ -44,6 +44,13 @@ export interface PluginConfigurationField {
   displayName: string
   required: boolean
   description?: string
+  defaultValue?: string
+  options?: PluginConfigurationFieldOption[]
+}
+
+export interface PluginConfigurationFieldOption {
+  name: string,
+  value: string
 }
 
 export type PluginConfiguration = Record<string, string>
@@ -75,5 +82,6 @@ export interface PluginContentDefinition extends Omit<Content, 'createdAt' | 'up
 export interface PluginActionDefinition {
   id: string,
   name: string,
-  icon?: string
+  icon?: string,
+  description?: string
 }

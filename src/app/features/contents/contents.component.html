@@ -147,7 +147,6 @@
         </button>
         <button mat-icon-button *ngIf="'CONTENT_DELETE' | canUserPerform | async"
                 (click)="openDeleteDialog($event, element)"
-                [disabled]="element.locked"
                 matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>

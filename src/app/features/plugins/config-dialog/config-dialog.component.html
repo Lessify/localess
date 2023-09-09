@@ -5,7 +5,14 @@
     <ng-container *ngFor="let config of data.plugin.configurationFields">
       <mat-form-field>
         <mat-label>{{config.displayName}}</mat-label>
-        <input matInput type="text" [formControlName]="config.name" [required]="config.required" autocomplete="off"/>
+        <mat-select *ngIf="config.options; else elseTextField" [formControlName]="config.name" [required]="config.required">
+          <mat-option *ngFor="let option of config.options" [value]="option.value">
+            {{option.name}}
+          </mat-option>
+        </mat-select>
+        <ng-template #elseTextField>
+          <input matInput type="text" [formControlName]="config.name" [required]="config.required" autocomplete="off"/>
+        </ng-template>
         <mat-hint *ngIf="config.description">{{config.description}}</mat-hint>
         <mat-error *ngIf="form.controls[config.name].errors as errors">{{fe.errors(errors)}}</mat-error>
       </mat-form-field>

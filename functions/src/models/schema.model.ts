@@ -31,7 +31,7 @@ export type SchemaField = SchemaFieldText
   | SchemaFieldDateTime
   | SchemaFieldBoolean
   | SchemaFieldSchema
-  | SchemasFieldSchema
+  | SchemaFieldSchemas
   | SchemaFieldOption
   | SchemaFieldOptions
   | SchemaFieldLink
@@ -108,7 +108,7 @@ export interface SchemaFieldBoolean extends SchemaFieldBase {
   kind: SchemaFieldKind.BOOLEAN;
 }
 
-export interface SchemasFieldSchema extends SchemaFieldBase {
+export interface SchemaFieldSchemas extends SchemaFieldBase {
   kind: SchemaFieldKind.SCHEMAS;
   schemas?: string[];
 }

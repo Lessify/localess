@@ -20,8 +20,18 @@ import {map} from 'rxjs/operators';
 import {Plugin, PluginConfiguration, PluginDefinition} from '@shared/models/plugin.model';
 import {PartialWithFieldValue} from '@firebase/firestore';
 import {ContentKind} from '@shared/models/content.model';
-import {SchemaFieldBoolean, SchemaFieldKind, SchemaFieldText, SchemaFieldTextarea, SchemaType} from '@shared/models/schema.model';
+import {
+  SchemaFieldBoolean,
+  SchemaFieldKind,
+  SchemaFieldNumber,
+  SchemaFieldOption,
+  SchemaFieldSchemas,
+  SchemaFieldText,
+  SchemaFieldTextarea,
+  SchemaType
+} from '@shared/models/schema.model';
 import {Functions, httpsCallableData} from "@angular/fire/functions";
+import {ObjectUtils} from "@core/utils/object-utils.service";
 
 @Injectable()
 export class PluginService {
@@ -112,6 +122,7 @@ export class PluginService {
   }
 
   updateConfiguration(spaceId: string, id: string, configuration: PluginConfiguration): Observable<void> {
+    ObjectUtils.clean(configuration)
     const update: UpdateData<Plugin> = {
       configuration: configuration,
       updatedAt: serverTimestamp()
@@ -158,7 +169,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '8',
+    version: '16',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -171,12 +182,34 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
         displayName: 'Webhook Signing Secret',
         required: false,
         description: 'Can be fond in Webhook details page.'
+      },
+      {
+        name: 'productSyncActive',
+        displayName: 'Product Sync Active',
+        required: false,
+        description: 'Product active status to be synced',
+        defaultValue: 'all',
+        options: [
+          {
+            name: 'All',
+            value: 'all'
+          },
+          {
+            name: 'Yes',
+            value: 'true'
+          },
+          {
+            name: 'No',
+            value: 'false'
+          }
+        ]
       }
     ],
     actions: [
       {
         id: 'productsync',
-        name: 'Product Sync'
+        name: 'Product Sync',
+        description: 'Sync Products via Stripe API'
       }
     ],
     install: {
@@ -217,14 +250,6 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldText,
             {
-              name: 'active',
-              kind: SchemaFieldKind.BOOLEAN,
-              displayName: 'Active',
-              description: 'Whether the product is currently available for purchase.',
-              required: true,
-              translatable: false,
-            } as SchemaFieldBoolean,
-            {
               name: 'name',
               kind: SchemaFieldKind.TEXT,
               displayName: 'Name',
@@ -232,6 +257,14 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               required: true,
               translatable: false,
             } as SchemaFieldText,
+            {
+              name: 'active',
+              kind: SchemaFieldKind.BOOLEAN,
+              displayName: 'Active',
+              description: 'Whether the product is currently available for purchase.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldBoolean,
             {
               name: 'description',
               kind: SchemaFieldKind.TEXTAREA,
@@ -248,14 +281,134 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               required: true,
               translatable: false,
             } as SchemaFieldBoolean,
+            {
+              name: 'type',
+              kind: SchemaFieldKind.OPTION,
+              displayName: 'Type',
+              description: 'Has the value true if the object exists in live mode or the value false if the object exists in test mode.',
+              required: true,
+              translatable: false,
+              options: [
+                {
+                  name: 'Good',
+                  value: 'good'
+                },
+                {
+                  name: 'Service',
+                  value: 'service'
+                }
+              ]
+            } as SchemaFieldOption,
+            {
+              name: 'prices',
+              kind: SchemaFieldKind.SCHEMAS,
+              displayName: 'Prices',
+              description: 'Product prices',
+              required: false,
+              schemas: ['stripe-price']
+            } as SchemaFieldSchemas
           ],
-          version: 7
+          version: 11
+        },
+        {
+          id: 'stripe-price',
+          name: 'stripe-price',
+          displayName: 'Stripe Price',
+          type: SchemaType.NODE,
+          previewField: 'id',
+          fields: [
+            {
+              name: 'id',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'ID',
+              description: 'Price unique identifier.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldText,
+            {
+              name: 'nickname',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'Nickname',
+              description: 'A brief description of the price, hidden from customers.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldText,
+            {
+              name: 'active',
+              kind: SchemaFieldKind.BOOLEAN,
+              displayName: 'Active',
+              description: 'Whether the price can be used for new purchases.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldBoolean,
+            {
+              name: 'currency',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'Currency',
+              description: 'Three-letter ISO currency code, in lowercase.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldText,
+            {
+              name: 'livemode',
+              kind: SchemaFieldKind.BOOLEAN,
+              displayName: 'Live Mode',
+              description: 'Has the value true if the object exists in live mode or the value false if the object exists in test mode.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldBoolean,
+            {
+              name: 'type',
+              kind: SchemaFieldKind.OPTION,
+              displayName: 'Type',
+              description: 'One of one_time or recurring depending on whether the price is for a one-time purchase or a recurring (subscription) purchase.',
+              required: true,
+              translatable: false,
+              options: [
+                {
+                  name: 'One tIME',
+                  value: 'one_time'
+                },
+                {
+                  name: 'Recurring',
+                  value: 'recurring'
+                }
+              ]
+            } as SchemaFieldOption,
+            {
+              name: 'unit_amount',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Unit Amount',
+              description: 'The unit amount in rappen/cent to be charged, represented as a whole integer if possible. Only set if billing_scheme=per_unit.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldNumber,
+            {
+              name: 'billing_scheme',
+              kind: SchemaFieldKind.OPTION,
+              displayName: 'Billing Scheme',
+              description: 'Describes how to compute the price per period. Either per_unit or tiered. per_unit indicates that the fixed amount (specified in unit_amount or unit_amount_decimal) will be charged per unit in quantity (for prices with usage_type=licensed), or per unit of total usage (for prices with usage_type=metered). tiered indicates that the unit pricing will be computed using a tiering strategy as defined using the tiers and tiers_mode attributes.',
+              required: true,
+              translatable: false,
+              options: [
+                {
+                  name: 'Per Unit',
+                  value: 'per_unit'
+                },
+                {
+                  name: 'Tiered',
+                  value: 'tiered'
+                }
+              ]
+            } as SchemaFieldOption,
+          ],
+          version: 13
         }
       ]
     },
     uninstall: {
       contentRootIds: ['stripe'],
-      schemasIds: ['stripe-product']
+      schemasIds: ['stripe-product', 'stripe-price']
     }
   }
 }

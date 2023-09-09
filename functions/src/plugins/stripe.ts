@@ -8,9 +8,8 @@ import {canPerform} from '../utils/security-utils';
 import {Plugin, PluginActionData} from '../models/plugin.model';
 import {UserPermission} from '../models/user.model';
 import {firestoreService} from '../config';
-import {ContentDocument, ContentKind} from '../models/content.model';
+import {ContentData, ContentDocument, ContentKind} from '../models/content.model';
 import {FieldValue, WithFieldValue} from 'firebase-admin/firestore';
-import {v4} from 'uuid';
 
 const expressApp = express();
 expressApp
@@ -83,15 +82,44 @@ const productSync = onCall<PluginActionData>(async (request) => {
     throw new HttpsError('failed-precondition', 'Stripe Plugin not installed.');
   }
   const plugin = pluginSnapshot.data() as Plugin;
-  const {apiSecretKey} = plugin.configuration || {};
+  const {apiSecretKey, productSyncActive} = plugin.configuration || {};
   if (apiSecretKey === undefined) {
     throw new HttpsError('failed-precondition', 'API Secret Key not configured.');
   }
   const stripe = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
   const batch = firestoreService.batch();
   let count = 0;
-  await stripe.products.list().autoPagingEach((product) => {
+  let active: boolean | undefined;
+  switch (productSyncActive) {
+    case 'true': {
+      active = true;
+      break;
+    }
+    case 'false': {
+      active = false;
+      break;
+    }
+  }
+  await stripe.products.list({active: active}).autoPagingEach((product) => {
     logger.info('[productSync] product: ' + JSON.stringify(product));
+    const prices: ContentData[] = [];
+    stripe.prices.list({product: product.id}).autoPagingEach((price) => {
+      logger.info('[productSync] price: ' + JSON.stringify(price));
+      prices.push(
+        {
+          _id: price.id,
+          schema: 'stripe-price',
+          nickname: price.nickname,
+          id: price.id,
+          active: price.active,
+          currency: price.currency,
+          livemode: price.livemode,
+          type: price.type,
+          unit_amount: price.unit_amount,
+          billing_scheme: price.billing_scheme,
+        } as ContentData
+      );
+    });
     const documentId = `stripe-product-${product.id}`;
     const add: WithFieldValue<ContentDocument> = {
       kind: ContentKind.DOCUMENT,
@@ -101,14 +129,16 @@ const productSync = onCall<PluginActionData>(async (request) => {
       fullSlug: `stripe/products/${product.id}`,
       schema: 'stripe-product',
       data: {
-        _id: v4(),
+        _id: product.id,
         schema: 'stripe-product',
         id: product.id,
         name: product.name,
         active: product.active,
         description: product.description,
         livemode: product.livemode,
-      },
+        type: product.type,
+        prices: prices,
+      } as ContentData,
       locked: true,
       lockedBy: 'Stripe',
       createdAt: FieldValue.serverTimestamp(),
