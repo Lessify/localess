@@ -134,7 +134,9 @@ const productSync = onCall<PluginActionData>(async (request) => {
             _id: v4(),
             schema: 'stripe-product-price-tier',
             flat_amount: tire.flat_amount,
+            flat_amount_decimal: tire.flat_amount_decimal,
             unit_amount: tire.unit_amount,
+            unit_amount_decimal: tire.unit_amount_decimal,
             up_to: tire.up_to,
           })
         );

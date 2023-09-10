@@ -542,6 +542,14 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldNumber,
             {
+              name: 'flat_amount_decimal',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'Flat Amount Decimal',
+              description: 'Price for the entire tier.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldText,
+            {
               name: 'unit_amount',
               kind: SchemaFieldKind.NUMBER,
               displayName: 'Unit Amount',
@@ -549,6 +557,14 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               required: false,
               translatable: false,
             } as SchemaFieldNumber,
+            {
+              name: 'unit_amount_decimal',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'Unit Amount Decimal',
+              description: 'Per unit price for units relevant to the tier.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldText,
             {
               name: 'up_to',
               kind: SchemaFieldKind.NUMBER,
