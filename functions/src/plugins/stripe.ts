@@ -117,6 +117,7 @@ const productSync = onCall<PluginActionData>(async (request) => {
         livemode: price.livemode,
         type: price.type,
         unit_amount: price.unit_amount,
+        unit_amount_decimal: price.unit_amount_decimal,
         billing_scheme: price.billing_scheme,
         tiers_mode: price.tiers_mode,
         recurring: price.recurring && {

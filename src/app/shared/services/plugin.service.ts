@@ -169,7 +169,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '1',
+    version: '1.0.0',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -402,6 +402,14 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldNumber,
             {
+              name: 'unit_amount_decimal',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'Unit Amount Decimal',
+              description: 'The unit amount in rappen/cent to be charged, represented as a whole integer if possible. Only set if billing_scheme=per_unit.',
+              required: false,
+              translatable: false,
+            } as SchemaFieldText,
+            {
               name: 'billing_scheme',
               kind: SchemaFieldKind.OPTION,
               displayName: 'Billing Scheme',
@@ -436,7 +444,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               schemas: ['stripe-product-price-tier']
             } as SchemaFieldSchemas
           ],
-          version: 1
+          version: 2
         },
         {
           id: 'stripe-product-price-recurring',
@@ -574,7 +582,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldNumber,
           ],
-          version: 1
+          version: 2
         }
       ]
     },
