@@ -169,7 +169,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '1.0.0',
+    version: '1.0.0-beta-1',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -300,6 +300,22 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               ]
             } as SchemaFieldOption,
             {
+              name: 'shippable',
+              kind: SchemaFieldKind.BOOLEAN,
+              displayName: 'Shippable',
+              description: 'Whether this product is shipped (i.e., physical goods).',
+              required: false,
+              translatable: false,
+            } as SchemaFieldBoolean,
+            {
+              name: 'package_dimensions',
+              kind: SchemaFieldKind.SCHEMA,
+              displayName: 'Package Dimensions',
+              description: 'The dimensions of this product for shipping purposes.',
+              required: false,
+              schemas: ['stripe-product-package-dimensions']
+            } as SchemaFieldSchema,
+            {
               name: 'prices',
               kind: SchemaFieldKind.SCHEMAS,
               displayName: 'Prices',
@@ -307,6 +323,47 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               required: false,
               schemas: ['stripe-product-price']
             } as SchemaFieldSchemas
+          ],
+          version: 1
+        },
+        {
+          id: 'stripe-product-package-dimensions',
+          name: 'stripe-product-package-dimensions',
+          displayName: 'Stripe Product Package Dimensions',
+          type: SchemaType.NODE,
+          fields: [
+            {
+              name: 'height',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Height',
+              description: 'Height, in inches.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldNumber,
+            {
+              name: 'length',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Length',
+              description: 'Length, in inches.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldNumber,
+            {
+              name: 'weight',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Weight',
+              description: 'Weight, in inches.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldNumber,
+            {
+              name: 'width',
+              kind: SchemaFieldKind.NUMBER,
+              displayName: 'Width',
+              description: 'Width, in inches.',
+              required: true,
+              translatable: false,
+            } as SchemaFieldNumber,
           ],
           version: 1
         },
@@ -394,6 +451,15 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               ]
             } as SchemaFieldOption,
             {
+              name: 'lookup_key',
+              kind: SchemaFieldKind.TEXT,
+              displayName: 'Lookup Key',
+              description: 'A lookup key used to retrieve prices dynamically from a static string. This may be up to 200 characters.',
+              required: false,
+              translatable: false,
+              maxLength: 200
+            } as SchemaFieldText,
+            {
               name: 'unit_amount',
               kind: SchemaFieldKind.NUMBER,
               displayName: 'Unit Amount',
@@ -428,6 +494,26 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               ]
             } as SchemaFieldOption,
             {
+              name: 'tax_behavior',
+              kind: SchemaFieldKind.OPTION,
+              displayName: 'Tax Behavior',
+              description: 'Only required if a default tax behavior was not provided in the Stripe Tax settings. Specifies whether the price is considered inclusive of taxes or exclusive of taxes. One of inclusive, exclusive, or unspecified. Once specified as either inclusive or exclusive, it cannot be changed.',
+              required: false,
+              translatable: false,
+              options: [
+                {
+                  name: 'Exclusive',
+                  value: 'exclusive'
+                },
+                {
+                  name: 'Inclusive',
+                  value: 'inclusive'
+                },{
+                  name: 'Unspecified',
+                  value: 'unspecified'
+                }              ]
+            } as SchemaFieldOption,
+            {
               name: 'recurring',
               kind: SchemaFieldKind.SCHEMA,
               displayName: 'Recurring',
@@ -444,7 +530,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               schemas: ['stripe-product-price-tier']
             } as SchemaFieldSchemas
           ],
-          version: 2
+          version: 3
         },
         {
           id: 'stripe-product-price-recurring',
@@ -588,7 +674,13 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     },
     uninstall: {
       contentRootIds: ['stripe'],
-      schemasIds: ['stripe-product', 'stripe-product-price', 'stripe-product-price-recurring', 'stripe-product-price-tire']
+      schemasIds: [
+        'stripe-product',
+        'stripe-product-package-dimensions',
+        'stripe-product-price',
+        'stripe-product-price-recurring',
+        'stripe-product-price-tire'
+      ]
     }
   }
 }
