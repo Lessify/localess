@@ -63,8 +63,8 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
   if (!event.data) return;
   const before = event.data.before.data() as Plugin;
   const after = event.data.after.data() as Plugin;
-  logger.info(`[Plugin:onUpdate] before='${JSON.stringify(before)}'`);
-  logger.info(`[Plugin:onUpdate] after='${JSON.stringify(after)}'`);
+  // logger.info(`[Plugin:onUpdate] before='${JSON.stringify(before)}'`);
+  // logger.info(`[Plugin:onUpdate] after='${JSON.stringify(after)}'`);
   const batch = firestoreService.batch();
   let count = 0;
   // Check version
@@ -91,10 +91,10 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
       const afterHas = afterMap.has(key);
       if (beforeHas && afterHas) {
         // Update
-        logger.info(`[Plugin:onUpdate] schema=${key} update`);
         const beforeSchema = beforeMap.get(key)!;
         const afterSchema = afterMap.get(key)!;
         if (beforeSchema.version !== afterSchema.version) {
+          logger.info(`[Plugin:onUpdate] schema=${key} update`);
           const update: UpdateData<Schema> = {
             name: afterSchema.name,
             type: afterSchema.type,
@@ -150,12 +150,12 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
       const beforeHas = beforeMap.has(key);
       const afterHas = afterMap.has(key);
       if (beforeHas && afterHas) {
-        logger.info(`[Plugin:onUpdate] content=${key} update`);
         // Update
         const beforeContent = beforeMap.get(key)!;
         const afterContent = afterMap.get(key)!;
         if (beforeContent.version !== afterContent.version) {
           if (afterContent.kind === ContentKind.FOLDER) {
+            logger.info(`[Plugin:onUpdate] content=${key} update`);
             const update: UpdateData<ContentFolder> = {
               kind: afterContent.kind,
               name: afterContent.name,
@@ -177,9 +177,9 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
         count++;
       } else if (afterHas) {
         // Add
-        logger.info(`[Plugin:onUpdate] content=${key} add`);
         const content = afterMap.get(key);
         if (content && content.kind === ContentKind.FOLDER) {
+          logger.info(`[Plugin:onUpdate] content=${key} add`);
           const add: WithFieldValue<ContentFolder> = {
             kind: content.kind,
             name: content.name,

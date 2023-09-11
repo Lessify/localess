@@ -3,14 +3,15 @@ import cors from 'cors';
 import Stripe from 'stripe';
 import {logger} from 'firebase-functions';
 import {HttpsError, onCall, onRequest} from 'firebase-functions/v2/https';
-import {findPluginById} from '../services/plugin.service';
-import {canPerform} from '../utils/security-utils';
-import {Plugin, PluginActionData} from '../models/plugin.model';
-import {UserPermission} from '../models/user.model';
-import {firestoreService} from '../config';
-import {ContentData, ContentDocument, ContentKind} from '../models/content.model';
+import {findPluginById} from '../../services/plugin.service';
+import {canPerform} from '../../utils/security-utils';
+import {Plugin, PluginActionData} from '../../models/plugin.model';
+import {UserPermission} from '../../models/user.model';
+import {firestoreService} from '../../config';
+import {ContentDocument, ContentKind} from '../../models/content.model';
 import {FieldValue, WithFieldValue} from 'firebase-admin/firestore';
-import {v4} from 'uuid';
+import {priceToContentData, productToContentData} from "./utils";
+import {PriceContentData, ProductContentData} from "./model";
 
 const expressApp = express();
 expressApp
@@ -90,7 +91,7 @@ const productSync = onCall<PluginActionData>(async (request) => {
   const stripe = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
   const batch = firestoreService.batch();
   let count = 0;
-  let active: boolean | undefined;
+  let active: boolean | undefined = true;
   switch (productSyncActive) {
     case 'true': {
       active = true;
@@ -100,82 +101,46 @@ const productSync = onCall<PluginActionData>(async (request) => {
       active = false;
       break;
     }
+    case 'all': {
+      active = undefined;
+      break;
+    }
   }
   logger.info(`[productSync] to sync active=${active}`);
-  await stripe.products.list({active: active}).autoPagingEach(async (product) => {
-    logger.info('[productSync] product: ' + JSON.stringify(product));
-    const prices: ContentData[] = [];
-    await stripe.prices.list({product: product.id, expand: ['data.tiers']}).autoPagingEach((price) => {
-      logger.info(`[productSync] product:${product.id} price:${price.id} ` + JSON.stringify(price));
-      const priceContent: ContentData = {
-        _id: price.id,
-        schema: 'stripe-product-price',
-        id: price.id,
-        active: price.active,
-        billing_scheme: price.billing_scheme,
-        currency: price.currency,
-        livemode: price.livemode,
-        lookup_key: price.lookup_key,
-        nickname: price.nickname,
-        recurring: price.recurring && {
-          _id: v4(),
-          schema: 'stripe-product-price-recurring',
-          aggregate_usage: price.recurring.aggregate_usage,
-          interval: price.recurring.interval,
-          interval_count: price.recurring.interval_count,
-          usage_type: price.recurring.usage_type,
-        },
-        tax_behavior: price.tax_behavior,
-        tiers_mode: price.tiers_mode,
-        type: price.type,
-        unit_amount: price.unit_amount,
-        unit_amount_decimal: price.unit_amount_decimal,
-      };
-      if (price.tiers) {
-        priceContent.tiers = price.tiers.map((tire) =>
-          ({
-            _id: v4(),
-            schema: 'stripe-product-price-tier',
-            flat_amount: tire.flat_amount,
-            flat_amount_decimal: tire.flat_amount_decimal,
-            unit_amount: tire.unit_amount,
-            unit_amount_decimal: tire.unit_amount_decimal,
-            up_to: tire.up_to,
-          })
-        );
+  await stripe.products.list({
+    active: active,
+    expand: ['data.default_price', 'data.default_price.tiers'],
+  })
+    .autoPagingEach(async (product) => {
+      // logger.info('[productSync] product: ' + JSON.stringify(product));
+      const prices: PriceContentData[] = [];
+      await stripe.prices.list({product: product.id, expand: ['data.tiers']})
+        .autoPagingEach((price) => {
+          logger.info(`[productSync] product:${product.id} price:${price.id} ` + JSON.stringify(price));
+          prices.push(priceToContentData(price));
+        });
+      // logger.info(`[productSync] prices ${JSON.stringify(prices)}`);
+      const documentId = `stripe-product-${product.id}`;
+      const productData: ProductContentData = productToContentData(product);
+      if (prices.length > 0) {
+        productData.prices = prices;
       }
-      prices.push(priceContent);
-    });
-    // logger.info(`[productSync] prices ${JSON.stringify(prices)}`);
-    const documentId = `stripe-product-${product.id}`;
-    const add: WithFieldValue<ContentDocument> = {
-      kind: ContentKind.DOCUMENT,
-      name: product.name,
-      slug: product.id,
-      parentSlug: 'stripe/products',
-      fullSlug: `stripe/products/${product.id}`,
-      schema: 'stripe-product',
-      data: {
-        _id: product.id,
-        schema: 'stripe-product',
-        id: product.id,
-        active: product.active,
-        description: product.description,
-        livemode: product.livemode,
+      const add: WithFieldValue<ContentDocument<ProductContentData>> = {
+        kind: ContentKind.DOCUMENT,
         name: product.name,
-        package_dimensions: product.package_dimensions,
-        shippable: product.shippable,
-        type: product.type,
-        prices: prices,
-      } as ContentData,
-      locked: true,
-      lockedBy: 'Stripe',
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    };
-    batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${documentId}`), add, {merge: true});
-    count++;
-  });
+        slug: product.id,
+        parentSlug: 'stripe/products',
+        fullSlug: `stripe/products/${product.id}`,
+        schema: 'stripe-product',
+        data: productData,
+        locked: true,
+        lockedBy: 'Stripe',
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${documentId}`), add, {merge: true});
+      count++;
+    });
   if (count > 0) {
     logger.info('[productSync] batch.commit() : ' + count);
     await batch.commit();

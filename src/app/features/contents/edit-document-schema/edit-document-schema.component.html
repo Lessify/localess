@@ -85,6 +85,7 @@
       </ng-container>
       <!--BOOLEAN-->
       <ng-container *ngSwitchCase="'BOOLEAN'">
+        <br/>
         &nbsp;&nbsp;<mat-slide-toggle [formControlName]="field.name">{{field.displayName || field.name}}</mat-slide-toggle>
         &nbsp;
         <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
