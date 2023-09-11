@@ -1,7 +1,8 @@
 import {Stripe} from 'stripe';
 import {
   PackageDimensionRecurringContentData,
-  PriceContentData, PriceCustomUnitAmountContentData,
+  PriceContentData,
+  PriceCustomUnitAmountContentData,
   PriceRecurringContentData,
   PriceTireContentData,
   ProductContentData,
@@ -111,4 +112,14 @@ export function priceCustomUnitAmountToContentData(data: Stripe.Price.CustomUnit
     preset: data.preset,
   };
   return result;
+}
+
+export async function generateProductWithPricesData(stripe: Stripe, product: Stripe.Product): Promise<ProductContentData> {
+  const productData: ProductContentData = productToContentData(product);
+  const prices = await stripe.prices.list({product: product.id, expand: ['data.tiers']}).autoPagingToArray({limit: 100});
+  const pricesData: PriceContentData[] = prices.map((price) => priceToContentData(price));
+  if (pricesData.length > 0) {
+    productData.prices = pricesData;
+  }
+  return productData;
 }

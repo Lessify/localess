@@ -9,9 +9,9 @@ import {Plugin, PluginActionData} from '../../models/plugin.model';
 import {UserPermission} from '../../models/user.model';
 import {firestoreService} from '../../config';
 import {ContentDocument, ContentKind} from '../../models/content.model';
-import {FieldValue, WithFieldValue} from 'firebase-admin/firestore';
-import {priceToContentData, productToContentData} from "./utils";
-import {PriceContentData, ProductContentData} from "./model";
+import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
+import {generateProductWithPricesData} from './utils';
+import {ProductContentData} from './model';
 
 const expressApp = express();
 expressApp
@@ -37,11 +37,8 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
       .send(new HttpsError('not-found', 'configuration not found'));
     return;
   }
-
   const stripe = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
-
   let event: Stripe.Event;
-
   try {
     event = stripe.webhooks.constructEvent((req as any).rawBody, sig, webhookSigningSecret);
   } catch (err: any) {
@@ -49,27 +46,41 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
     return;
   }
   logger.info(`event type ${event.type}`);
-  logger.info(JSON.stringify(event.data));
+  logger.info(JSON.stringify(event.data.object));
   // Handle the event
-  switch (event.type) {
-    case 'product.created': {
-      console.log(`event type ${event.type}`);
-      break;
-    }
-    case 'product.updated': {
-      console.log(`event type ${event.type}`);
-      break;
-    }
-    case 'product.deleted': {
-      console.log(`event type ${event.type}`);
-      break;
-    }
-    default: {
-      console.log(`Unhandled event type ${event.type}`);
-    }
+  if (event.type === 'product.created') {
+    const product = event.data.object as Stripe.Product;
+    const documentId = `stripe-product-${product.id}`;
+    const productData = await generateProductWithPricesData(stripe, product);
+    const add: WithFieldValue<ContentDocument<ProductContentData>> = {
+      kind: ContentKind.DOCUMENT,
+      name: product.name,
+      slug: product.id,
+      parentSlug: 'stripe/products',
+      fullSlug: `stripe/products/${product.id}`,
+      schema: 'stripe-product',
+      data: productData,
+      locked: true,
+      lockedBy: 'Stripe',
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    await firestoreService.doc(`spaces/${spaceId}/contents/${documentId}`).set(add, {merge: true});
+  } else if (event.type === 'product.updated') {
+    const product = event.data.object as Stripe.Product;
+    const documentId = `stripe-product-${product.id}`;
+    const productData = await generateProductWithPricesData(stripe, product);
+    const update: UpdateData<ContentDocument<ProductContentData>> = {
+      data: productData,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    await firestoreService.doc(`spaces/${spaceId}/contents/${documentId}`).update(update, {exists: true});
+  } else if (event.type === 'product.deleted') {
+    const product = event.data.object as Stripe.Product;
+    await firestoreService.doc(`spaces/${spaceId}/contents/stripe-product-${product.id}`).delete({exists: true});
+  } else {
+    console.log(`Unhandled event type ${event.type}`);
   }
-
-
   // Return a 200 response to acknowledge receipt of the event
   res.send();
 });
@@ -92,19 +103,12 @@ const productSync = onCall<PluginActionData>(async (request) => {
   const batch = firestoreService.batch();
   let count = 0;
   let active: boolean | undefined = true;
-  switch (productSyncActive) {
-    case 'true': {
-      active = true;
-      break;
-    }
-    case 'false': {
-      active = false;
-      break;
-    }
-    case 'all': {
-      active = undefined;
-      break;
-    }
+  if (productSyncActive === 'true') {
+    active = true;
+  } else if (productSyncActive === 'false') {
+    active = false;
+  } else if (productSyncActive === 'all') {
+    active = undefined;
   }
   logger.info(`[productSync] to sync active=${active}`);
   await stripe.products.list({
@@ -113,18 +117,8 @@ const productSync = onCall<PluginActionData>(async (request) => {
   })
     .autoPagingEach(async (product) => {
       // logger.info('[productSync] product: ' + JSON.stringify(product));
-      const prices: PriceContentData[] = [];
-      await stripe.prices.list({product: product.id, expand: ['data.tiers']})
-        .autoPagingEach((price) => {
-          logger.info(`[productSync] product:${product.id} price:${price.id} ` + JSON.stringify(price));
-          prices.push(priceToContentData(price));
-        });
-      // logger.info(`[productSync] prices ${JSON.stringify(prices)}`);
       const documentId = `stripe-product-${product.id}`;
-      const productData: ProductContentData = productToContentData(product);
-      if (prices.length > 0) {
-        productData.prices = prices;
-      }
+      const productData = await generateProductWithPricesData(stripe, product);
       const add: WithFieldValue<ContentDocument<ProductContentData>> = {
         kind: ContentKind.DOCUMENT,
         name: product.name,

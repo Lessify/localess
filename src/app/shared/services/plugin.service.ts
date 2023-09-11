@@ -169,7 +169,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '1.0.0-beta-4',
+    version: '1.0.0-beta-5',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -209,6 +209,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
       {
         id: 'productsync',
         name: 'Product Sync',
+        icon: 'sync',
         description: 'Sync Products via Stripe API'
       }
     ],
