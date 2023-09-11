@@ -324,7 +324,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               schemas: ['stripe-product-price']
             } as SchemaFieldSchemas
           ],
-          version: 1
+          version: 2
         },
         {
           id: 'stripe-product-package-dimensions',
