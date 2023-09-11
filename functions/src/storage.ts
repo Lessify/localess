@@ -1,7 +1,7 @@
 import {logger} from 'firebase-functions/v2';
 import {onObjectFinalized} from 'firebase-functions/v2/storage';
 import {FieldValue, UpdateData} from 'firebase-admin/firestore';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import {bucket, firestoreService} from './config';
 import {AssetFile} from './models/asset.model';
 

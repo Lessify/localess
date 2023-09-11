@@ -810,8 +810,8 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
 }
 
 const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async (event) => {
-  logger.info(`[Task:onTaskDeleted] eventId='${event.id}'`);
-  logger.info(`[Task:onTaskDeleted] params='${JSON.stringify(event.params)}'`);
+  logger.info(`[Task:onDeleted] eventId='${event.id}'`);
+  logger.info(`[Task:onDeleted] params='${JSON.stringify(event.params)}'`);
   const {spaceId, taskId} = event.params;
   return bucket.deleteFiles({
     prefix: `spaces/${spaceId}/tasks/${taskId}`,

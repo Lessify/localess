@@ -42,14 +42,6 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   flex: 1 1 auto;
 }
 
-.loader {
-  align-content: center !important;
-  justify-content: center !important;
-  flex-wrap: wrap !important;
-  display: flex !important;
-  height: calc(100vh - 65px);
-}
-
 .allow-cr {
   white-space: pre-line;
 }

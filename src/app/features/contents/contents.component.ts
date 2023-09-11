@@ -33,6 +33,7 @@ import {ExportDialogModel, ExportDialogReturn} from './export-dialog/export-dial
 import {TaskService} from '@shared/services/task.service';
 import {ImportDialogComponent} from './import-dialog/import-dialog.component';
 import {ImportDialogModel, ImportDialogReturn} from './import-dialog/import-dialog.model';
+import {TokenService} from "@shared/services/token.service";
 
 @Component({
   selector: 'll-contents',
@@ -70,6 +71,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly schemasService: SchemaService,
     private readonly contentService: ContentService,
+    private readonly tokenService: TokenService,
     private readonly spaceService: SpaceService,
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
@@ -269,6 +271,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   onRowSelect(element: Content): void {
+    this.isLoading = true;
     if (element.kind === ContentKind.DOCUMENT) {
       element.publishedAt
       if (this.schemasMap.has(element.schema)) {
@@ -287,11 +290,11 @@ export class ContentsComponent implements OnInit, OnDestroy {
         fullSlug: element.fullSlug
       })
       this.store.dispatch(actionSpaceContentPathChange({contentPath}))
-
     }
   }
 
   navigateToSlug(pathItem: PathItem) {
+    this.isLoading = true;
     this.selection.clear()
     const contentPath = ObjectUtils.clone(this.contentPath)
     const idx = contentPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);
@@ -300,8 +303,18 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   openLinksInNewTab() {
-    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/links`
-    window.open(url, '_blank')
+    this.tokenService.findFirst(this.selectedSpace!.id)
+      .subscribe({
+        next: (tokens) => {
+          if (tokens.length === 1) {
+            const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/links`)
+            url.searchParams.set('token', tokens[0].id)
+            window.open(url, '_blank')
+          } else {
+            this.notificationService.warn('Please create Access Token in your Space Settings')
+          }
+        }
+      })
   }
 
   openImportDialog() {

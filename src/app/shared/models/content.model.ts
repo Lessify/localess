@@ -20,18 +20,24 @@ export interface ContentBase {
   id: string,
   kind: ContentKind,
   name: string,
+
+  //Slug
   slug: string
   parentSlug: string
   fullSlug: string
+
+  //Lock
+  locked?: boolean
+  lockedBy?: string
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-export interface ContentDocument extends ContentBase {
+export interface ContentDocument<T extends ContentData = ContentData> extends ContentBase {
   kind: ContentKind.DOCUMENT
   schema: string;
-  data?: ContentData;
+  data?: T;
   publishedAt?: Timestamp;
   editorEnabled?: boolean
 }

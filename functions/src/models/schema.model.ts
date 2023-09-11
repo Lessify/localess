@@ -14,6 +14,10 @@ export interface Schema {
   previewImage?: string;
   fields?: SchemaField[];
 
+  // Lock
+  locked?: boolean
+  lockedBy?: string
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -27,7 +31,7 @@ export type SchemaField = SchemaFieldText
   | SchemaFieldDateTime
   | SchemaFieldBoolean
   | SchemaFieldSchema
-  | SchemasFieldSchema
+  | SchemaFieldSchemas
   | SchemaFieldOption
   | SchemaFieldOptions
   | SchemaFieldLink
@@ -104,7 +108,7 @@ export interface SchemaFieldBoolean extends SchemaFieldBase {
   kind: SchemaFieldKind.BOOLEAN;
 }
 
-export interface SchemasFieldSchema extends SchemaFieldBase {
+export interface SchemaFieldSchemas extends SchemaFieldBase {
   kind: SchemaFieldKind.SCHEMAS;
   schemas?: string[];
 }
@@ -164,6 +168,8 @@ export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
       displayName: {type: 'string', nullable: true},
       previewField: {type: 'string', nullable: true},
       previewImage: {type: 'string', nullable: true},
+      locked: {type: 'boolean', nullable: true},
+      lockedBy: {type: 'string', nullable: true},
       fields: {
         type: 'array',
         nullable: true,

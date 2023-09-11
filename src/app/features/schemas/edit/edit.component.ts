@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord} from '@angular/forms';
-import {SchemasValidator} from '@shared/validators/schemas.validator';
+import {SchemaValidator} from '@shared/validators/schema.validator';
 import {
   AssetFileType,
   Schema,
@@ -45,7 +45,7 @@ export class EditComponent implements OnInit, OnDestroy {
   selectedFieldIdx ?: number;
 
   fieldReservedNames: string[] = [];
-  newFieldName = this.fb.control('', [...SchemasValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
+  newFieldName = this.fb.control('', [...SchemaValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
 
   //Loadings
   isLoading: boolean = true;
@@ -55,9 +55,9 @@ export class EditComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject();
 
   form: FormRecord = this.fb.record({
-    name: this.fb.control('', SchemasValidator.NAME),
-    displayName: this.fb.control<string | undefined>(undefined, SchemasValidator.DISPLAY_NAME),
-    previewField: this.fb.control<string | undefined>(undefined, SchemasValidator.PREVIEW_FIELD),
+    name: this.fb.control('', SchemaValidator.NAME),
+    displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
+    previewField: this.fb.control<string | undefined>(undefined, SchemaValidator.PREVIEW_FIELD),
     previewImage: this.fb.control<string | undefined>(undefined),
     fields: this.fb.array<SchemaField>([])
   });
@@ -107,7 +107,7 @@ export class EditComponent implements OnInit, OnDestroy {
           this.entity = schema;
 
           // Form
-          this.form.controls['name'].setValidators([...SchemasValidator.NAME, CommonValidator.reservedName(this.reservedNames, this.entity?.name)])
+          this.form.controls['name'].setValidators([...SchemaValidator.NAME, CommonValidator.reservedName(this.reservedNames, this.entity?.name)])
           this.form.patchValue(schema);
 
           this.fields.clear()
@@ -138,8 +138,8 @@ export class EditComponent implements OnInit, OnDestroy {
 
   generateOptionForm(option?: SchemaFieldOptionSelectable): FormGroup {
     return this.fb.group({
-      name: this.fb.control(option?.name, SchemasValidator.FIELD_OPTION_NAME),
-      value: this.fb.control(option?.value, SchemasValidator.FIELD_OPTION_VALUE),
+      name: this.fb.control(option?.name, SchemaValidator.FIELD_OPTION_NAME),
+      value: this.fb.control(option?.value, SchemaValidator.FIELD_OPTION_VALUE),
     })
   }
 
@@ -150,60 +150,60 @@ export class EditComponent implements OnInit, OnDestroy {
     const defaultKind = SchemaFieldKind.TEXT;
     const fieldForm = this.fb.group<{}>({
       // Base
-      name: this.fb.control(fieldName, [...SchemasValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames, fieldName)]),
-      kind: this.fb.control(element?.kind || defaultKind, SchemasValidator.FIELD_KIND),
-      displayName: this.fb.control<string | undefined>(element?.displayName, SchemasValidator.FIELD_DISPLAY_NAME),
-      required: this.fb.control<boolean | undefined>(element?.required, SchemasValidator.FIELD_REQUIRED),
-      description: this.fb.control<string | undefined>(element?.description, SchemasValidator.FIELD_DESCRIPTION),
-      defaultValue: this.fb.control<string | undefined>(element?.defaultValue, SchemasValidator.FIELD_DEFAULT_VALUE),
+      name: this.fb.control(fieldName, [...SchemaValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames, fieldName)]),
+      kind: this.fb.control(element?.kind || defaultKind, SchemaValidator.FIELD_KIND),
+      displayName: this.fb.control<string | undefined>(element?.displayName, SchemaValidator.FIELD_DISPLAY_NAME),
+      required: this.fb.control<boolean | undefined>(element?.required, SchemaValidator.FIELD_REQUIRED),
+      description: this.fb.control<string | undefined>(element?.description, SchemaValidator.FIELD_DESCRIPTION),
+      defaultValue: this.fb.control<string | undefined>(element?.defaultValue, SchemaValidator.FIELD_DEFAULT_VALUE),
     })
 
     switch (element?.kind) {
       case SchemaFieldKind.TEXT:
       case SchemaFieldKind.TEXTAREA:
       case SchemaFieldKind.MARKDOWN:{
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
-        fieldForm.addControl('minLength', this.fb.control<number | undefined>(element.minLength, SchemasValidator.FIELD_MIN_LENGTH))
-        fieldForm.addControl('maxLength', this.fb.control<number | undefined>(element.maxLength, SchemasValidator.FIELD_MAX_LENGTH))
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl('minLength', this.fb.control<number | undefined>(element.minLength, SchemaValidator.FIELD_MIN_LENGTH))
+        fieldForm.addControl('maxLength', this.fb.control<number | undefined>(element.maxLength, SchemaValidator.FIELD_MAX_LENGTH))
         break;
       }
       case SchemaFieldKind.NUMBER: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
-        fieldForm.addControl('minValue', this.fb.control<number | undefined>(element.minValue, SchemasValidator.FIELD_MIN_VALUE));
-        fieldForm.addControl('maxValue', this.fb.control<number | undefined>(element.maxValue, SchemasValidator.FIELD_MAX_VALUE));
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl('minValue', this.fb.control<number | undefined>(element.minValue, SchemaValidator.FIELD_MIN_VALUE));
+        fieldForm.addControl('maxValue', this.fb.control<number | undefined>(element.maxValue, SchemaValidator.FIELD_MAX_VALUE));
         break;
       }
       case SchemaFieldKind.COLOR: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
         break;
       }
       case SchemaFieldKind.DATE: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
         break;
       }
       case SchemaFieldKind.BOOLEAN: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
         break;
       }
       case SchemaFieldKind.OPTION: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemasValidator.FIELD_OPTIONS);
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
         element.options.forEach(it => options.push(this.generateOptionForm(it)))
         fieldForm.addControl('options', options)
 
         break;
       }
       case SchemaFieldKind.OPTIONS: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemasValidator.FIELD_OPTIONS);
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
         element.options.forEach(it => options.push(this.generateOptionForm(it)))
         fieldForm.addControl('options', options)
-        fieldForm.addControl('minValues', this.fb.control<number | undefined>(element.minValues, SchemasValidator.FIELD_MIN_VALUES));
-        fieldForm.addControl('maxValues', this.fb.control<number | undefined>(element.maxValues, SchemasValidator.FIELD_MAX_VALUES));
+        fieldForm.addControl('minValues', this.fb.control<number | undefined>(element.minValues, SchemaValidator.FIELD_MIN_VALUES));
+        fieldForm.addControl('maxValues', this.fb.control<number | undefined>(element.maxValues, SchemaValidator.FIELD_MAX_VALUES));
         break;
       }
       case SchemaFieldKind.LINK: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
         break;
       }
       case SchemaFieldKind.REFERENCE: {
@@ -211,28 +211,28 @@ export class EditComponent implements OnInit, OnDestroy {
         break;
       }
       case SchemaFieldKind.ASSET: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE));
-        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE));
+        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES));
         break;
       }
       case SchemaFieldKind.ASSETS: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemasValidator.FIELD_TRANSLATABLE));
-        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemasValidator.FIELD_FILE_TYPES));
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE));
+        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES));
         break;
       }
       case SchemaFieldKind.SCHEMA: {
-        fieldForm.addControl('schemas', this.fb.control<string[] | undefined>(element.schemas, SchemasValidator.FIELD_SCHEMA));
+        fieldForm.addControl('schemas', this.fb.control<string[] | undefined>(element.schemas, SchemaValidator.FIELD_SCHEMA));
         break;
       }
       case SchemaFieldKind.SCHEMAS: {
-        fieldForm.addControl('schemas', this.fb.control<string[] | undefined>(element.schemas, SchemasValidator.FIELD_SCHEMAS));
+        fieldForm.addControl('schemas', this.fb.control<string[] | undefined>(element.schemas, SchemaValidator.FIELD_SCHEMAS));
         break;
       }
       // By default, it is a new TEXT
       default: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemasValidator.FIELD_TRANSLATABLE))
-        fieldForm.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MIN_LENGTH))
-        fieldForm.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemasValidator.FIELD_MAX_LENGTH))
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_LENGTH))
+        fieldForm.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_LENGTH))
       }
     }
     this.fields.push(fieldForm);

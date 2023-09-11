@@ -96,6 +96,15 @@ const routes: Routes = [
         }
       },
       {
+        path: 'plugins',
+        title: 'Plugins',
+        loadChildren: () => import('./plugins/plugins.module').then(m => m.PluginsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionSpaceManagement
+        }
+      },
+      {
         path: 'translations',
         title: 'Translations',
         loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),

@@ -72,6 +72,12 @@ service cloud.firestore {
         allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
         allow write: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
       }
+
+      // Plugins
+      match /plugins/{pluginId} {
+        allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
+        allow write: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
+      }
     }
 
     // Users

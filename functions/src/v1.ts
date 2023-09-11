@@ -1,5 +1,7 @@
-import * as express from 'express';
-import * as cors from 'cors';
+import express from 'express';
+import cors from 'cors';
+import os from 'os';
+import sharp from 'sharp';
 import {logger} from 'firebase-functions';
 import {HttpsError, onRequest} from 'firebase-functions/v2/https';
 import {Query} from 'firebase-admin/firestore';
@@ -10,14 +12,12 @@ import {Space} from './models/space.model';
 import {findContentByFullSlug} from './services/content.service';
 import {findSpaceById} from './services/space.service';
 import {findTokenById, validateToken} from './services/token.service';
-import * as os from 'os';
-import * as sharp from 'sharp';
 
 // API V1
-const expressV1 = express();
-expressV1.use(cors({origin: true}));
+const expressApp = express();
+expressApp.use(cors({origin: true}));
 
-expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) => {
+expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) => {
   logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
   logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
   const {spaceId, locale} = req.params;
@@ -66,7 +66,7 @@ expressV1.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) =
   }
 });
 
-expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
+expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
   const {spaceId} = req.params;
@@ -160,7 +160,7 @@ expressV1.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   }
 });
 
-expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
+expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content url: ' + req.url);
   const {spaceId} = req.params;
@@ -257,7 +257,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   }
 });
 
-expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
+expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
   logger.info('v1 spaces content: ' + JSON.stringify(req.params));
   const {spaceId, contentId} = req.params;
   const {cv, locale, version, token} = req.query;
@@ -337,7 +337,7 @@ expressV1.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =>
   }
 });
 
-expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
+expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info('v1 spaces asset params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces asset query: ' + JSON.stringify(req.query));
   const {spaceId, assetId} = req.params;
@@ -378,4 +378,4 @@ expressV1.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   }
 });
 
-export const v1 = onRequest(expressV1);
+export const v1 = onRequest(expressApp);

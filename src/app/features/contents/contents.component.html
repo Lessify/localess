@@ -46,11 +46,8 @@
 
   </mat-toolbar-row>
 </mat-toolbar>
-
-<div *ngIf="isLoading" class="loader">
-  <mat-spinner/>
-</div>
-<div *ngIf="!isLoading" class="container-fluid mt-3">
+<mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
+<div class="container-fluid mt-3">
   <ll-breadcrumb>
     <ll-breadcrumb-item *ngFor="let pathItem of contentPath" (click)="navigateToSlug(pathItem)">
       <ng-container *ngIf="pathItem.fullSlug === ''">
@@ -101,6 +98,9 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
+        <ng-container *ngIf="element.locked">
+          <mat-icon [matTooltip]="element.lockedBy ? 'Locked By '+element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
+        </ng-container>
         {{element.name}}
       </mat-cell>
     </ng-container>
@@ -139,10 +139,15 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button *ngIf="'CONTENT_UPDATE' | canUserPerform | async" (click)="openEditDialog($event, element)" matTooltip="Edit">
+        <button mat-icon-button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
+                (click)="openEditDialog($event, element)"
+                [disabled]="element.locked"
+                matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button *ngIf="'CONTENT_DELETE' | canUserPerform | async" (click)="openDeleteDialog($event, element)" matTooltip="Delete">
+        <button mat-icon-button *ngIf="'CONTENT_DELETE' | canUserPerform | async"
+                (click)="openDeleteDialog($event, element)"
+                matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

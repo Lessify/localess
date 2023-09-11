@@ -7,7 +7,6 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatInputModule} from '@angular/material/input';
-import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatCardModule} from '@angular/material/card';
@@ -55,7 +54,6 @@ const MATERIAL_MODULES: any[] = [
   MatTabsModule,
   MatChipsModule,
   MatInputModule,
-  MatProgressSpinnerModule,
   MatCheckboxModule,
   MatCardModule,
   MatListModule,

@@ -31,6 +31,7 @@ export class ContentHelperService {
         Object.getOwnPropertyNames(extractSchemaContent)
           .forEach(fieldName => {
             const content = extractSchemaContent[fieldName]
+            console.log(fieldName, content)
             if (content instanceof Array) {
               // Assets
               if (content.some((it) => it.kind === SchemaFieldKind.ASSET)) {
@@ -40,6 +41,9 @@ export class ContentHelperService {
               }
             }
           })
+
+        console.log(extractSchemaContent)
+        console.log(form.value)
 
         if (form.invalid) {
           for (const controlName in form.controls) {
@@ -130,10 +134,13 @@ export class ContentHelperService {
   }
 
   extractSchemaContent(data: ContentData, schema: Schema, locale: string, full: boolean): Record<string, any> {
+    //console.group('extractSchemaContent')
+    //console.log('data',data)
     const result: Record<string, any> = {}
     schema.fields
       ?.filter(it => full || ![SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS].includes(it.kind))
       ?.forEach((field) => {
+        //console.log('field', field)
         let value;
         if (field.translatable) {
           // Extract Locale specific values
@@ -142,11 +149,12 @@ export class ContentHelperService {
           // Extract not translatable values in fallback locale
           value = data[field.name]
         }
-        if (value) {
+        if (value !== undefined) {
           result[field.name] = value;
         }
       })
-    // console.log(result)
+    //console.log('result',result)
+    //console.groupEnd()
     return result
   }
 

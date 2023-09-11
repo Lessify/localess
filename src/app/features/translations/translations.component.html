@@ -42,10 +42,8 @@
 
   </mat-toolbar-row>
 </mat-toolbar>
-<div *ngIf="isLoading" class="loader">
-  <mat-spinner></mat-spinner>
-</div>
-<div *ngIf="!isLoading" class="container-fluid">
+<mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
+<div class="container-fluid">
   <div class="d-flex flex-row justify-content-between">
     <div class="py-2 pe-2" style="width: 25%">
       <mat-form-field>
