@@ -154,6 +154,16 @@
           <mat-error *ngIf="form.controls['schemas']?.errors as errors">{{fe.errors(errors)}}</mat-error>
         </mat-form-field>
       </ng-container>
+      <!--REFERENCE-->
+      <ng-container *ngIf="['REFERENCE'].includes(form.value.kind)">
+        <mat-form-field>
+          <mat-label>Path</mat-label>
+          <input matInput type="text" formControlName="path" autocomplete="off"/>
+          <mat-hint>Path to be filtered by</mat-hint>
+          <mat-hint align="end">{{form.value.path?.length || 0}}/500</mat-hint>
+          <mat-error *ngIf="form.controls['path']?.errors as errors">{{fe.errors(errors)}}</mat-error>
+        </mat-form-field>
+      </ng-container>
 
       <!--ASSET and ASSETS-->
       <ng-container *ngIf="['ASSET','ASSETS'].includes(form.value.kind)">

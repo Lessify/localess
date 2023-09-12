@@ -24,7 +24,9 @@ import {
   SchemaFieldBoolean,
   SchemaFieldKind,
   SchemaFieldNumber,
-  SchemaFieldOption, SchemaFieldSchema,
+  SchemaFieldOption,
+  SchemaFieldReference,
+  SchemaFieldSchema,
   SchemaFieldSchemas,
   SchemaFieldText,
   SchemaFieldTextarea,
@@ -169,7 +171,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
     id: 'stripe',
     name: 'Stripe',
     owner: 'Lessify GmbH',
-    version: '1.0.0-beta-5',
+    version: '1.0.0-beta-9',
     configurationFields: [
       {
         name: 'apiSecretKey',
@@ -211,6 +213,12 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
         name: 'Product Sync',
         icon: 'sync',
         description: 'Sync Products via Stripe API'
+      },
+      {
+        id: 'pricesync',
+        name: 'Price Sync',
+        icon: 'sync',
+        description: 'Sync Price via Stripe API'
       }
     ],
     install: {
@@ -232,6 +240,15 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
           parentSlug: 'stripe',
           fullSlug: 'stripe/products',
           version: 1
+        },
+        {
+          id: 'stripe-prices',
+          kind: ContentKind.FOLDER,
+          name: 'Prices',
+          slug: 'prices',
+          parentSlug: 'stripe',
+          fullSlug: 'stripe/prices',
+          version: 0
         },
       ],
       schemas: [
@@ -260,12 +277,11 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
             } as SchemaFieldBoolean,
             {
               name: 'default_price',
-              kind: SchemaFieldKind.SCHEMA,
-              displayName: 'Default Price',
-              description: 'Default Product prices',
+              kind: SchemaFieldKind.REFERENCE,
+              displayName: 'Default Price Reference',
               required: false,
-              schemas: ['stripe-product-price']
-            } as SchemaFieldSchema,
+              path: 'stripe/prices',
+            } as SchemaFieldReference,
             {
               name: 'description',
               kind: SchemaFieldKind.TEXTAREA,
@@ -298,14 +314,6 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               required: false,
               schemas: ['stripe-product-package-dimensions']
             } as SchemaFieldSchema,
-            {
-              name: 'prices',
-              kind: SchemaFieldKind.SCHEMAS,
-              displayName: 'Prices',
-              description: 'Product prices',
-              required: false,
-              schemas: ['stripe-product-price']
-            } as SchemaFieldSchemas,
             {
               name: 'shippable',
               kind: SchemaFieldKind.BOOLEAN,
@@ -341,7 +349,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldText,
           ],
-          version: 4
+          version: 2
         },
         {
           id: 'stripe-product-package-dimensions',
@@ -385,10 +393,10 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
           version: 1
         },
         {
-          id: 'stripe-product-price',
-          name: 'stripe-product-price',
-          displayName: 'Stripe Product Price',
-          type: SchemaType.NODE,
+          id: 'stripe-price',
+          name: 'stripe-price',
+          displayName: 'Stripe Price',
+          type: SchemaType.ROOT,
           previewField: 'id',
           fields: [
             {
@@ -439,7 +447,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               displayName: 'Custom Unit Amount',
               description: 'When set, provides configuration for the amount to be adjusted by the customer during Checkout Sessions and Payment Links.',
               required: false,
-              schemas: ['stripe-product-price-custom-unit-amount']
+              schemas: ['stripe-price-custom-unit-amount']
             } as SchemaFieldSchema,
             {
               name: 'livemode',
@@ -467,12 +475,19 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldText,
             {
+              name: 'product',
+              kind: SchemaFieldKind.REFERENCE,
+              displayName: 'Product Reference',
+              required: true,
+              path: 'stripe/products',
+            } as SchemaFieldReference,
+            {
               name: 'recurring',
               kind: SchemaFieldKind.SCHEMA,
               displayName: 'Recurring',
               description: 'The recurring components of a price such as interval and usage_type.',
               required: false,
-              schemas: ['stripe-product-price-recurring']
+              schemas: ['stripe-price-recurring']
             } as SchemaFieldSchema,
             {
               name: 'tax_behavior',
@@ -500,7 +515,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               displayName: 'Tiers',
               description: 'Each element represents a pricing tier. This parameter requires billing_scheme to be set to tiered. See also the documentation for billing_scheme. This field is not included by default. To include it in the response, expand the tiers field.',
               required: false,
-              schemas: ['stripe-product-price-tier']
+              schemas: ['stripe-price-tier']
             } as SchemaFieldSchemas,
             {
               name: 'tiers_mode',
@@ -555,11 +570,11 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldText
           ],
-          version: 4
+          version: 7
         },
         {
-          id: 'stripe-product-price-recurring',
-          name: 'stripe-product-price-recurring',
+          id: 'stripe-price-recurring',
+          name: 'stripe-price-recurring',
           displayName: 'Stripe Product Price Recurring',
           type: SchemaType.NODE,
           previewField: 'interval',
@@ -643,11 +658,11 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               ]
             } as SchemaFieldOption,
           ],
-          version: 1
+          version: 2
         },
         {
-          id: 'stripe-product-price-tier',
-          name: 'stripe-product-price-tier',
+          id: 'stripe-price-tier',
+          name: 'stripe-price-tier',
           displayName: 'Stripe Product Price Tier',
           previewField: 'up_to',
           type: SchemaType.NODE,
@@ -693,12 +708,12 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldNumber,
           ],
-          version: 2
+          version: 3
         },
         {
-          id: 'stripe-product-price-custom-unit-amount',
-          name: 'stripe-product-price-custom-unit-amount',
-          displayName: 'Stripe Product Price Custom Unit Amount',
+          id: 'stripe-price-custom-unit-amount',
+          name: 'stripe-price-custom-unit-amount',
+          displayName: 'Stripe Price Custom Unit Amount',
           type: SchemaType.NODE,
           fields: [
             {
@@ -726,7 +741,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
               translatable: false,
             } as SchemaFieldNumber,
           ],
-          version: 0
+          version: 1
         }
       ]
     },
@@ -735,11 +750,32 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
       schemasIds: [
         'stripe-product',
         'stripe-product-package-dimensions',
-        'stripe-product-price',
-        'stripe-product-price-recurring',
-        'stripe-product-price-tire',
-        'stripe-product-price-custom-unit-amount'
+        'stripe-price',
+        'stripe-price-recurring',
+        'stripe-price-tire',
+        'stripe-price-custom-unit-amount'
       ]
     }
+  },
+  'll-ecommerce' : {
+    id: 'll-ecommerce',
+    name: 'Localess E-Commerce',
+    owner: 'Lessify GmbH',
+    version: '0.0.1-beta-0',
+    install : {
+      contents: [
+      ],
+      schemas: [
+        {
+          id: 'll-product',
+          name: 'll-product',
+          type: SchemaType.ROOT,
+          displayName: 'Product',
+          previewField: 'name',
+          fields: [],
+          version: 0
+        }
+      ]
+    },
   }
 }

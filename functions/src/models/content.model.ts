@@ -73,6 +73,23 @@ export interface ContentLink {
   publishedAt?: string;
 }
 
+export interface AssetContent {
+  kind: 'ASSET'
+  uri: string
+}
+
+export interface LinkContent {
+  kind: 'LINK'
+  type: 'url' | 'content'
+  target: '_blank' | '_self'
+  uri: string
+}
+
+export interface ReferenceContent {
+  kind: 'REFERENCE'
+  uri: string
+}
+
 // Import and Export
 export interface ContentFolderExport extends Omit<ContentFolder, 'createdAt' | 'updatedAt'> {
   id: string,

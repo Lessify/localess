@@ -1,10 +1,9 @@
 import {Injectable} from '@angular/core';
 import {Schema, SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
 import {FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {AssetContent, ContentData, ContentError, ReferenceContent} from '@shared/models/content.model';
+import {AssetContent, ContentData, ContentError} from '@shared/models/content.model';
 import {CommonValidator} from '@shared/validators/common.validator';
 import {v4} from 'uuid';
-import {Asset} from "@shared/models/asset.model";
 
 @Injectable()
 export class ContentHelperService {

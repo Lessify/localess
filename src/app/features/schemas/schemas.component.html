@@ -27,6 +27,20 @@
 </mat-toolbar>
 <mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
 <div class="container-fluid mt-3">
+  <div>
+    <form [formGroup]="filter">
+      <mat-form-field *ngIf="lockedByList && lockedByList.size > 0">
+        <mat-label>Locked By</mat-label>
+        <mat-select formControlName="lockedBy">
+          <mat-option [value]="undefined">None</mat-option>
+          <mat-option *ngFor="let item of lockedByList" [value]="item">
+            {{item}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </form>
+  </div>
+
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>

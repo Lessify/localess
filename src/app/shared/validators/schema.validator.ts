@@ -105,4 +105,8 @@ export class SchemaValidator {
   public static FIELD_FILE_TYPES: ValidatorFn[] = [
   ];
 
+  public static FIELD_REFERENCE_PATH: ValidatorFn[] = [
+    CommonValidator.noSpaceAround,
+  ];
+
 }

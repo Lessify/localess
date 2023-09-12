@@ -10,8 +10,8 @@ import {UserPermission} from '../../models/user.model';
 import {firestoreService} from '../../config';
 import {ContentDocument, ContentKind} from '../../models/content.model';
 import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
-import {generateProductWithPricesData} from './utils';
-import {ProductContentData} from './model';
+import {priceToContentData, productToContentData} from './utils';
+import {PriceContentData, ProductContentData} from './model';
 
 const expressApp = express();
 expressApp
@@ -51,7 +51,7 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
   if (event.type === 'product.created') {
     const product = event.data.object as Stripe.Product;
     const documentId = `stripe-product-${product.id}`;
-    const productData = await generateProductWithPricesData(stripe, product);
+    const productData = productToContentData(product);
     const add: WithFieldValue<ContentDocument<ProductContentData>> = {
       kind: ContentKind.DOCUMENT,
       name: product.name,
@@ -69,7 +69,7 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
   } else if (event.type === 'product.updated') {
     const product = event.data.object as Stripe.Product;
     const documentId = `stripe-product-${product.id}`;
-    const productData = await generateProductWithPricesData(stripe, product);
+    const productData = productToContentData(product);
     const update: UpdateData<ContentDocument<ProductContentData>> = {
       data: productData,
       updatedAt: FieldValue.serverTimestamp(),
@@ -78,6 +78,36 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({t
   } else if (event.type === 'product.deleted') {
     const product = event.data.object as Stripe.Product;
     await firestoreService.doc(`spaces/${spaceId}/contents/stripe-product-${product.id}`).delete({exists: true});
+  } else if (event.type === 'price.created') {
+    const price = event.data.object as Stripe.Price;
+    const documentId = `stripe-product-${price.id}`;
+    const priceData = priceToContentData(price);
+    const add: WithFieldValue<ContentDocument<PriceContentData>> = {
+      kind: ContentKind.DOCUMENT,
+      name: price.nickname || price.id,
+      slug: price.id,
+      parentSlug: 'stripe/products',
+      fullSlug: `stripe/products/${price.id}`,
+      schema: 'stripe-product',
+      data: priceData,
+      locked: true,
+      lockedBy: 'Stripe',
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    await firestoreService.doc(`spaces/${spaceId}/contents/${documentId}`).set(add, {merge: true});
+  } else if (event.type === 'price.updated') {
+    const price = event.data.object as Stripe.Price;
+    const documentId = `stripe-product-${price.id}`;
+    const priceData = priceToContentData(price);
+    const update: UpdateData<ContentDocument<PriceContentData>> = {
+      data: priceData,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    await firestoreService.doc(`spaces/${spaceId}/contents/${documentId}`).update(update, {exists: true});
+  } else if (event.type === 'price.deleted') {
+    const price = event.data.object as Stripe.Price;
+    await firestoreService.doc(`spaces/${spaceId}/contents/stripe-price-${price.id}`).delete({exists: true});
   } else {
     console.log(`Unhandled event type ${event.type}`);
   }
@@ -113,12 +143,12 @@ const productSync = onCall<PluginActionData>(async (request) => {
   logger.info(`[productSync] to sync active=${active}`);
   await stripe.products.list({
     active: active,
-    expand: ['data.default_price', 'data.default_price.tiers'],
+    // expand: ['data.default_price', 'data.default_price.tiers'],
   })
     .autoPagingEach(async (product) => {
-      // logger.info('[productSync] product: ' + JSON.stringify(product));
+      logger.info('[productSync] product: ' + JSON.stringify(product));
       const documentId = `stripe-product-${product.id}`;
-      const productData = await generateProductWithPricesData(stripe, product);
+      const productData = productToContentData(product);
       const add: WithFieldValue<ContentDocument<ProductContentData>> = {
         kind: ContentKind.DOCUMENT,
         name: product.name,
@@ -142,7 +172,65 @@ const productSync = onCall<PluginActionData>(async (request) => {
   logger.info('[productSync] finished');
 });
 
+const priceSync = onCall<PluginActionData>(async (request) => {
+  logger.info('[priceSync] data: ' + JSON.stringify(request.data));
+  logger.info('[priceSync] context.auth: ' + JSON.stringify(request.auth));
+  if (!canPerform(UserPermission.SPACE_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const {spaceId} = request.data;
+  const pluginSnapshot = await findPluginById(spaceId, 'stripe').get();
+  if (!pluginSnapshot.exists) {
+    throw new HttpsError('failed-precondition', 'Stripe Plugin not installed.');
+  }
+  const plugin = pluginSnapshot.data() as Plugin;
+  const {apiSecretKey, productSyncActive} = plugin.configuration || {};
+  if (apiSecretKey === undefined) {
+    throw new HttpsError('failed-precondition', 'API Secret Key not configured.');
+  }
+  const stripe = new Stripe(apiSecretKey, {apiVersion: '2023-08-16'});
+  const batch = firestoreService.batch();
+  let count = 0;
+  let active: boolean | undefined = true;
+  if (productSyncActive === 'true') {
+    active = true;
+  } else if (productSyncActive === 'false') {
+    active = false;
+  } else if (productSyncActive === 'all') {
+    active = undefined;
+  }
+  logger.info(`[priceSync] to sync active=${active}`);
+  await stripe.prices.list({
+    active: active,
+    expand: ['data.tiers'],
+  })
+    .autoPagingEach(async (price) => {
+      logger.info('[priceSync] price: ' + JSON.stringify(price));
+      const documentId = `stripe-price-${price.id}`;
+      const priceData = priceToContentData(price);
+      const add: WithFieldValue<ContentDocument<PriceContentData>> = {
+        kind: ContentKind.DOCUMENT,
+        name: price.nickname || price.id,
+        slug: price.id,
+        parentSlug: 'stripe/prices',
+        fullSlug: `stripe/prices/${price.id}`,
+        schema: 'stripe-price',
+        data: priceData,
+        locked: true,
+        lockedBy: 'Stripe',
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${documentId}`), add, {merge: true});
+      count++;
+    });
+  if (count > 0) {
+    logger.info('[priceSync] batch.commit() : ' + count);
+    await batch.commit();
+  }
+  logger.info('[priceSync] finished');
+});
+
 export const stripe = {
   api: onRequest(expressApp),
   productsync: productSync,
+  pricesync: priceSync,
 };

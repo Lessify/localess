@@ -91,6 +91,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('slug')
         break;
       }
       case SchemaFieldKind.NUMBER: {
@@ -110,6 +112,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('slug')
         break;
       }
       case SchemaFieldKind.COLOR: {
@@ -130,6 +134,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('slug')
         break;
       }
 
@@ -151,6 +157,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.DATETIME: {
@@ -171,6 +179,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.BOOLEAN: {
@@ -191,6 +201,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.OPTION: {
@@ -213,6 +225,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.OPTIONS: {
@@ -234,6 +248,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.LINK: {
@@ -254,10 +270,13 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.REFERENCE: {
         // ADD
+        this.form.addControl('path', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_REFERENCE_PATH))
         // REMOVE
         this.form.removeControl('translatable')
         // Text & TextArea
@@ -274,6 +293,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.ASSET: {
@@ -293,6 +314,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('maxValues')
         // Schema
         this.form.removeControl('schemas')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.ASSETS: {
@@ -312,6 +335,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('maxValues')
         // Schema
         this.form.removeControl('schemas')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.SCHEMA: {
@@ -331,6 +356,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('maxValues')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.SCHEMAS: {
@@ -350,6 +377,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('maxValues')
         // Asset & Assets
         this.form.removeControl('fileTypes')
+        // Reference
+        this.form.removeControl('path')
         break;
       }
     }

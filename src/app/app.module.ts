@@ -98,8 +98,8 @@ import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
     {
       provide: MAT_PAGINATOR_DEFAULT_OPTIONS,
       useValue: {
-        pageSize: 25,
-        pageSizeOptions: [25, 50, 100],
+        pageSize: 20,
+        pageSizeOptions: [10, 20, 50, 100],
         showFirstLastButtons: true
       }
     },

@@ -23,6 +23,7 @@ import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
 import {ExportDialogModel, ExportDialogReturn} from "./export-dialog/export-dialog.model";
 import {ImportDialogModel, ImportDialogReturn} from "./import-dialog/import-dialog.model";
 import {TaskService} from "@shared/services/task.service";
+import {FormBuilder} from "@angular/forms";
 
 @Component({
   selector: 'll-schemas',
@@ -43,6 +44,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
   dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
   displayedColumns: string[] = ['type', /*'previewImage',*/ 'name', 'createdAt', 'updatedAt', 'actions'];
   schemas: Schema[] = [];
+  lockedByList?: Set<string>;
+
+  // Form
+  filter = this.fb.group({
+    lockedBy: this.fb.control<string | undefined>(undefined)
+  })
 
   // Subscriptions
   private destroy$ = new Subject();
@@ -59,12 +66,23 @@ export class SchemasComponent implements OnInit, OnDestroy {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
+    private readonly fb: FormBuilder,
     private readonly store: Store<AppState>
   ) {
   }
 
   ngOnInit(): void {
     this.loadData();
+    this.filter.valueChanges.subscribe({
+      next: (value) => {
+        console.log(value)
+        if (value.lockedBy) {
+          this.dataSource.filter = JSON.stringify(value)
+        } else {
+          this.dataSource.filter = ''
+        }
+      }
+    })
   }
 
   loadData(): void {
@@ -83,7 +101,23 @@ export class SchemasComponent implements OnInit, OnDestroy {
         next: ([space, schemas]) => {
           this.selectedSpace = space
           this.schemas = schemas;
+          this.lockedByList = schemas.reduce((acc, item) => {
+              if (item.lockedBy) {
+                acc.add(item.lockedBy)
+              }
+              return acc;
+            },
+            new Set<string>()
+          )
           this.dataSource = new MatTableDataSource<Schema>(schemas);
+          this.dataSource.filterPredicate = (data, filter) => {
+            if (filter === '') return true;
+            const filterValue = JSON.parse(filter)
+            if (filterValue.lockedBy) {
+              return data.lockedBy === filterValue.lockedBy
+            }
+            return true
+          }
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;

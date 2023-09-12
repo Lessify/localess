@@ -141,6 +141,7 @@ export interface SchemaFieldLink extends SchemaFieldBase {
 
 export interface SchemaFieldReference extends SchemaFieldBase {
   kind: SchemaFieldKind.REFERENCE
+  path?: string
 }
 
 export interface SchemaFieldAsset extends SchemaFieldBase {

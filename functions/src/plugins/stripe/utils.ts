@@ -24,8 +24,11 @@ export function productToContentData(data: Stripe.Product): ProductContentData {
     type: data.type,
     unit_label: data.unit_label,
   };
-  if (data.default_price) {
-    result.default_price = priceToContentData(data.default_price as Stripe.Price);
+  if (data.default_price && typeof data.default_price === 'string') {
+    result.default_price = {
+      kind: 'REFERENCE',
+      uri: `stripe-price-${data.default_price}`,
+    };
   }
   if (data.package_dimensions) {
     result.package_dimensions = packageDimensionsToContentData(data.package_dimensions);
@@ -36,7 +39,7 @@ export function productToContentData(data: Stripe.Product): ProductContentData {
 export function priceToContentData(data: Stripe.Price): PriceContentData {
   const result: PriceContentData = {
     _id: data.id,
-    schema: 'stripe-product-price',
+    schema: 'stripe-price',
     id: data.id,
     active: data.active,
     billing_scheme: data.billing_scheme,
@@ -45,6 +48,10 @@ export function priceToContentData(data: Stripe.Price): PriceContentData {
     livemode: data.livemode,
     lookup_key: data.lookup_key,
     nickname: data.nickname,
+    product: {
+      kind: 'REFERENCE',
+      uri: `stripe-product-${data.product}`,
+    },
     // recurring
     tax_behavior: data.tax_behavior,
     // tires
@@ -55,7 +62,7 @@ export function priceToContentData(data: Stripe.Price): PriceContentData {
     unit_amount_decimal: data.unit_amount_decimal,
   };
   if (data.custom_unit_amount) {
-    result.custom_unit_amount = priceCustomUnitAmountToContentData(data.custom_unit_amount)
+    result.custom_unit_amount = priceCustomUnitAmountToContentData(data.custom_unit_amount);
   }
   if (data.recurring) {
     result.recurring = recurringToContentData(data.recurring);
@@ -69,7 +76,7 @@ export function priceToContentData(data: Stripe.Price): PriceContentData {
 export function recurringToContentData(data: Stripe.Price.Recurring): PriceRecurringContentData {
   const result: PriceRecurringContentData = {
     _id: v4(),
-    schema: 'stripe-product-price-recurring',
+    schema: 'stripe-price-recurring',
     aggregate_usage: data.aggregate_usage,
     interval: data.interval,
     interval_count: data.interval_count,
@@ -81,7 +88,7 @@ export function recurringToContentData(data: Stripe.Price.Recurring): PriceRecur
 export function tireToContentData(data: Stripe.Price.Tier): PriceTireContentData {
   const result: PriceTireContentData = {
     _id: v4(),
-    schema: 'stripe-product-price-tier',
+    schema: 'stripe-price-tier',
     flat_amount: data.flat_amount,
     flat_amount_decimal: data.flat_amount_decimal,
     unit_amount: data.unit_amount,
@@ -106,7 +113,7 @@ export function packageDimensionsToContentData(data: Stripe.Product.PackageDimen
 export function priceCustomUnitAmountToContentData(data: Stripe.Price.CustomUnitAmount): PriceCustomUnitAmountContentData {
   const result: PriceCustomUnitAmountContentData = {
     _id: v4(),
-    schema: 'stripe-product-price-custom-unit-amount',
+    schema: 'stripe-price-custom-unit-amount',
     maximum: data.maximum,
     minimum: data.minimum,
     preset: data.preset,

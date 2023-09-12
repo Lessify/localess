@@ -24,8 +24,6 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {selectSettings} from "@core/state/settings/settings.selectors";
 import {Store} from "@ngrx/store";
 import {AppState} from "@core/state/core.state";
-import {ObjectUtils} from "@core/utils/object-utils.service";
-import {Asset} from "@shared/models/asset.model";
 
 @Component({
   selector: 'll-content-document-schema-edit',

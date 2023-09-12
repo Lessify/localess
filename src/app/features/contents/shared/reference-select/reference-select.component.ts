@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
+import {SchemaFieldKind, SchemaFieldReference} from '@shared/models/schema.model';
 import {ContentDocument} from '@shared/models/content.model';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {debounceTime, Observable, of, startWith} from 'rxjs';
@@ -18,7 +18,7 @@ import {AppState} from '@core/state/core.state';
 })
 export class ReferenceSelectComponent implements OnInit {
   @Input({required: true}) form?: FormGroup;
-  @Input({required: true}) component?: SchemaField;
+  @Input({required: true}) component?: SchemaFieldReference;
   @Input({required: true}) documents: ContentDocument[] = []
 
   // Search
@@ -48,7 +48,18 @@ export class ReferenceSelectComponent implements OnInit {
       .pipe(
         startWith(''),
         debounceTime(300),
-        map((search) => this.documents?.filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || [])
+        map((search) => this.documents?.filter((it) => {
+            if (this.component && this.component.path) {
+              if (it.parentSlug === this.component.path) {
+                return it.name.includes(search) || it.fullSlug.includes(search)
+              } else {
+                return false
+              }
+            } else {
+              return it.name.includes(search) || it.fullSlug.includes(search)
+            }
+          }
+        ) || [])
       )
   }
 
