@@ -258,10 +258,12 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
 });
 
 expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
-  logger.info('v1 spaces content: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
   const {spaceId, contentId} = req.params;
   const {cv, locale, version, token} = req.query;
   if (!validateToken(token)) {
+    logger.info('v1 spaces content Token Not Valid string: ' + token);
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -270,6 +272,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
   }
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (!spaceSnapshot.exists) {
+    logger.info('v1 spaces content Space not exist: ' + spaceId);
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -278,6 +281,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
   }
   const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
   if (!tokenSnapshot.exists) {
+    logger.info('v1 spaces content Token not exist: ' + token);
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
