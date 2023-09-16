@@ -81,6 +81,25 @@ export class ContentService {
       );
   }
 
+  findAllByName(spaceId: string, name: string, max: number = 20): Observable<Content[]> {
+    const queryConstrains: QueryConstraint[] = [
+      where('name', '>=', name),
+      where('name', '<=', `${name}~`),
+      limit(max)
+    ]
+
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces/${spaceId}/contents`),
+        ...queryConstrains),
+      {idField: 'id'}
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Contents:findAllByName'),
+        map((it) => it as Content[])
+      );
+  }
+
   findAllDocumentsByName(spaceId: string, name: string, max: number = 20): Observable<ContentDocument[]> {
     const queryConstrains: QueryConstraint[] = [
       where('kind', '==', ContentKind.DOCUMENT),

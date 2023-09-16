@@ -11,7 +11,7 @@
     </mat-form-field>
 
     <mat-form-field *ngIf="form.value.kind === 'FLAT'">
-      <mat-label>Type</mat-label>
+      <mat-label>Locale</mat-label>
       <mat-select formControlName="locale" required>
         <mat-option *ngFor="let locale of data.locales" [value]="locale.id">
           {{locale.name}}

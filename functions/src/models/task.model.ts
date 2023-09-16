@@ -25,6 +25,7 @@ export interface Task {
   // Export Only
   fromDate?: number,
   locale?: string,
+  uri?: string,
   // Import Only
   tmpPath?: string,
   file?: {

@@ -28,8 +28,13 @@ export interface Task {
   kind: TaskKind,
   status: TaskStatus,
 
+  // import file
   file?: TaskFile
+  // export by date
   fromDate?: number
+  // export content
+  uri?: string
+  // translations
   locale?: string
 
   message?: string
@@ -63,6 +68,7 @@ export interface TaskContentExportCreateFS extends TaskCreateFS {
   kind: TaskKind.CONTENT_EXPORT,
   status: TaskStatus.INITIATED,
   fromDate?: number
+  uri?: string
 }
 
 export interface TaskContentImportCreateFS extends TaskCreateFS {

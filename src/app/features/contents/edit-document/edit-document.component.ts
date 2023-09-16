@@ -22,7 +22,7 @@ import {SchemaPathItem} from './edit-document.model';
 import {SchemaSelectChange} from '../edit-document-schema/edit-document-schema.model';
 import {selectSettings} from '@core/state/settings/settings.selectors';
 import {ObjectUtils} from '@core/utils/object-utils.service';
-import {TokenService} from "@shared/services/token.service";
+import {TokenService} from '@shared/services/token.service';
 
 @Component({
   selector: 'll-content-document-edit',

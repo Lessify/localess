@@ -354,13 +354,16 @@ export class ContentsComponent implements OnInit, OnDestroy {
         ExportDialogComponent,
         {
           width: '500px',
+          data: {
+            spaceId: this.selectedSpace!.id
+          }
         }
       )
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.taskService.createContentExportTask(this.selectedSpace!.id, it?.fromDate)
+          this.taskService.createContentExportTask(this.selectedSpace!.id, it?.fromDate, it?.uri)
         )
       )
       .subscribe({

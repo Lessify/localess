@@ -11,6 +11,24 @@
       <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
       <mat-datepicker #picker></mat-datepicker>
     </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Content</mat-label>
+
+      <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl">
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
+        <mat-option *ngFor="let link of filteredContent | async" [value]="link">
+          <mat-icon>{{link.kind === 'FOLDER' ? 'folder' : 'article'}}</mat-icon>
+          <span>{{link.name}}</span> |
+          <small>{{link.slug}}</small>
+        </mat-option>
+      </mat-autocomplete>
+
+      <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
+        <mat-icon>clear</mat-icon>
+      </button>
+      <mat-hint>Will export only a specific Document or Folder with sub-Documents.</mat-hint>
+    </mat-form-field>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
