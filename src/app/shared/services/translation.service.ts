@@ -17,6 +17,7 @@ import {Translation, TranslationCreate, TranslationCreateFS, TranslationType, Tr
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
+import {deleteField} from "@firebase/firestore";
 
 @Injectable()
 export class TranslationService {
@@ -89,9 +90,13 @@ export class TranslationService {
 
     if (entity.labels && entity.labels.length > 0) {
       update.labels = entity.labels
+    } else {
+      update.labels = deleteField()
     }
     if (entity.description && entity.description.length > 0) {
       update.description = entity.description
+    } else {
+      update.description = deleteField()
     }
 
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update))
