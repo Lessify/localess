@@ -1,7 +1,7 @@
 import {ContentData, ReferenceContent} from '../../models/content.model';
 import {Stripe} from 'stripe';
 
-export interface ProductContentData extends ContentData, Omit<Stripe.Product, 'object' | 'created' | 'url' | 'metadata' | 'updated' | 'images' | 'tax_code' | 'default_price' | 'package_dimensions' > {
+export interface ProductContentData extends ContentData, Omit<Stripe.Product, 'object' | 'created' | 'url' | 'metadata' | 'updated' | 'images' | 'tax_code' | 'default_price' | 'package_dimensions' | 'features' > {
   schema: 'stripe-product'
   default_price?: ReferenceContent | null
   package_dimensions?: PackageDimensionRecurringContentData | null
