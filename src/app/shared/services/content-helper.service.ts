@@ -307,7 +307,7 @@ export class ContentHelperService {
             target: this.fb.control<'_blank' | '_self'>('_self', Validators.required),
             uri: this.fb.control<string | undefined>({
               value: undefined,
-              disabled: disabled
+              disabled: false, //disabled
             }, validators)
           })
           form.setControl(field.name, link)
@@ -318,20 +318,22 @@ export class ContentHelperService {
             kind: this.fb.control(SchemaFieldKind.REFERENCE, Validators.required),
             uri: this.fb.control<string | undefined>({
               value: undefined,
-              disabled: disabled
+              disabled: false, //disabled
             }, validators)
           })
           form.setControl(field.name, link)
           break;
         }
         case SchemaFieldKind.ASSET: {
-          form.setControl(field.name, this.fb.group({
-            uri: this.fb.control<string | undefined>({
-              value: undefined,
-              disabled: disabled
-            }, validators),
-            kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-          }))
+          form.setControl(
+            field.name, this.fb.group({
+              uri: this.fb.control<string | undefined>({
+                value: undefined,
+                disabled: false, //disabled
+              }, validators),
+              kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
+            })
+          )
           break;
         }
         case SchemaFieldKind.ASSETS: {
@@ -360,6 +362,7 @@ export class ContentHelperService {
       kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
     })))
   }
+
   assetContentToForm(asset: AssetContent): FormGroup {
     return this.fb.group({
       uri: this.fb.control(asset.uri),

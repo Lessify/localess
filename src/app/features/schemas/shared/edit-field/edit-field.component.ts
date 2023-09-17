@@ -293,8 +293,6 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('schemas')
         // Asset & Assets
         this.form.removeControl('fileTypes')
-        // Reference
-        this.form.removeControl('path')
         break;
       }
       case SchemaFieldKind.ASSET: {
