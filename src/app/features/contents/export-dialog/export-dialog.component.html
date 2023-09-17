@@ -1,5 +1,6 @@
 <h1 mat-dialog-title>Contents Export</h1>
 <mat-dialog-content>
+  <br/>
   <form [formGroup]="form" class="step-container">
 
     <mat-form-field>
@@ -20,7 +21,7 @@
         <mat-option *ngFor="let link of filteredContent | async" [value]="link">
           <mat-icon>{{link.kind === 'FOLDER' ? 'folder' : 'article'}}</mat-icon>
           <span>{{link.name}}</span> |
-          <small>{{link.slug}}</small>
+          <small>{{link.fullSlug}}</small>
         </mat-option>
       </mat-autocomplete>
 

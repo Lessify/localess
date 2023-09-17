@@ -9,7 +9,7 @@
     <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
       <mat-option *ngFor="let link of filteredContent | async" [value]="link">
         <span>{{link.name}}</span> |
-        <small>{{link.slug}}</small>
+        <small>{{link.fullSlug}}</small>
       </mat-option>
     </mat-autocomplete>
 
