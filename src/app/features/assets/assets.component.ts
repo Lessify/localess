@@ -326,13 +326,16 @@ export class AssetsComponent implements OnInit, OnDestroy {
         ExportDialogComponent,
         {
           width: '500px',
+          data: {
+            spaceId: this.selectedSpace!.id
+          }
         }
       )
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.taskService.createAssetExportTask(this.selectedSpace!.id, it?.fromDate)
+          this.taskService.createAssetExportTask(this.selectedSpace!.id, it?.path)
         )
       )
       .subscribe({

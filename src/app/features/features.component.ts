@@ -29,9 +29,9 @@ import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {environment} from '../../environments/environment';
 import {UserPermission, USER_PERMISSIONS_IMPORT_EXPORT} from '@shared/models/user.model';
-import {DEFAULT_LOCALE} from "@shared/models/locale.model";
+import {DEFAULT_LOCALE} from '@shared/models/locale.model';
 import {selectSettings} from '@core/state/settings/settings.selectors';
-import {MatSlideToggleChange} from "@angular/material/slide-toggle";
+import {MatSlideToggleChange} from '@angular/material/slide-toggle';
 
 const ROLE_ADMIN = 'admin';
 

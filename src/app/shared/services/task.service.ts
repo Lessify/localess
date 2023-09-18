@@ -30,7 +30,7 @@ import {
   TaskTranslationExportCreateFS,
   TaskTranslationImportCreateFS
 } from '@shared/models/task.model';
-import {getDownloadURL} from "@firebase/storage";
+import {getDownloadURL} from '@firebase/storage';
 
 @Injectable()
 export class TaskService {
@@ -63,15 +63,15 @@ export class TaskService {
       );
   }
 
-  createAssetExportTask(spaceId: string, fromDate?: number): Observable<DocumentReference> {
+  createAssetExportTask(spaceId: string, path?: string): Observable<DocumentReference> {
     let addEntity: TaskAssetExportCreateFS = {
       kind: TaskKind.ASSET_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }
-    if (fromDate) {
-      addEntity.fromDate = fromDate
+    if (path) {
+      addEntity.path = path
     }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))
       .pipe(
@@ -102,18 +102,15 @@ export class TaskService {
       );
   }
 
-  createContentExportTask(spaceId: string, fromDate?: number, uri?: string): Observable<DocumentReference> {
+  createContentExportTask(spaceId: string, path?: string): Observable<DocumentReference> {
     let addEntity: TaskContentExportCreateFS = {
       kind: TaskKind.CONTENT_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }
-    if (fromDate) {
-      addEntity.fromDate = fromDate
-    }
-    if (uri) {
-      addEntity.uri = uri
+    if (path) {
+      addEntity.path = path
     }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))
       .pipe(

@@ -2,7 +2,7 @@ import {env} from './env'
 import packageInfo from '../../package.json';
 
 export const environment = {
-  appName: "Localess",
+  appName: 'Localess',
   firebase: {
     projectId: env.LOCALESS_FIREBASE_PROJECT_ID,
     appId: env.LOCALESS_FIREBASE_APP_ID,

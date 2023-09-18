@@ -10,17 +10,17 @@ import {AppState} from '@core/state/core.state';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {combineLatest, Subject} from 'rxjs';
-import {selectSpace} from "@core/state/space/space.selector";
-import {ConfirmationDialogComponent} from "@shared/components/confirmation-dialog/confirmation-dialog.component";
-import {ConfirmationDialogModel} from "@shared/components/confirmation-dialog/confirmation-dialog.model";
-import {SpaceService} from "@shared/services/space.service";
-import {PluginService} from "@shared/services/plugin.service";
-import {Plugin, PluginActionDefinition, PluginConfiguration, PluginDefinition} from "@shared/models/plugin.model";
-import {InstallDialogComponent} from "./install-dialog/install-dialog.component";
-import {InstallDialogModel} from "./install-dialog/install-dialog.model";
-import {ConfigDialogComponent} from "./config-dialog/config-dialog.component";
-import {ConfigDialogModel} from "./config-dialog/config-dialog.model";
-import {ObjectUtils} from "@core/utils/object-utils.service";
+import {selectSpace} from '@core/state/space/space.selector';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {SpaceService} from '@shared/services/space.service';
+import {PluginService} from '@shared/services/plugin.service';
+import {Plugin, PluginActionDefinition, PluginConfiguration, PluginDefinition} from '@shared/models/plugin.model';
+import {InstallDialogComponent} from './install-dialog/install-dialog.component';
+import {InstallDialogModel} from './install-dialog/install-dialog.model';
+import {ConfigDialogComponent} from './config-dialog/config-dialog.component';
+import {ConfigDialogModel} from './config-dialog/config-dialog.model';
+import {ObjectUtils} from '@core/utils/object-utils.service';
 
 @Component({
   selector: 'll-plugins',
@@ -87,10 +87,10 @@ export class PluginsComponent implements OnInit, OnDestroy {
   openInstallDialog(): void {
     this.dialog.open<InstallDialogComponent, InstallDialogModel, string>(
       InstallDialogComponent, {
-        minWidth: "900px",
-        width: "calc(100vw - 160px)",
-        maxWidth: "1000px",
-        maxHeight: "calc(100vh - 80px)",
+        minWidth: '900px',
+        width: 'calc(100vw - 160px)',
+        maxWidth: '1000px',
+        maxHeight: 'calc(100vh - 80px)',
         data: {
           plugins: this.availablePlugins
         }

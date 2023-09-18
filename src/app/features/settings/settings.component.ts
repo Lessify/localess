@@ -10,7 +10,7 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {Subject} from 'rxjs';
-import {activate} from "@angular/fire/remote-config";
+import {activate} from '@angular/fire/remote-config';
 
 interface TabItem {
   icon: string;

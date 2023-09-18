@@ -3,7 +3,7 @@ import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormRecord, ValidatorFn, Validators} from '@angular/forms';
 import {ConfigDialogModel} from './config-dialog.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {PluginConfiguration} from "@shared/models/plugin.model";
+import {PluginConfiguration} from '@shared/models/plugin.model';
 
 @Component({
   selector: 'll-plugin-config-dialog',

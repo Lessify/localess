@@ -76,7 +76,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
     private readonly sanitizer: DomSanitizer,
     readonly fe: FormErrorHandlerService,
   ) {
-    this.entityId = this.activatedRoute.snapshot.paramMap.get('contentId') || "";
+    this.entityId = this.activatedRoute.snapshot.paramMap.get('contentId') || '';
   }
 
   ngOnInit(): void {

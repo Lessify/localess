@@ -2,7 +2,6 @@ import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core'
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {ExportDialogModel} from './export-dialog.model';
-import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 import {ContentService} from '@shared/services/content.service';
 import {debounceTime, Observable, of, startWith, switchMap} from 'rxjs';
 import {Content} from '@shared/models/content.model';
@@ -16,11 +15,8 @@ import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 })
 export class ExportDialogComponent implements OnInit {
 
-  today = new Date
-
   form: FormGroup = this.fb.group({
-    fromDate: this.fb.control(undefined),
-    uri: this.fb.control(undefined)
+    path: this.fb.control(undefined)
   });
 
   //Search
@@ -38,18 +34,11 @@ export class ExportDialogComponent implements OnInit {
     this.filteredContent = this.searchCtrl.valueChanges
       .pipe(
         startWith(''),
-        debounceTime(300),
+        debounceTime(500),
         switchMap((it) => {
-          console.log(it)
           return this.contentService.findAllByName(this.data.spaceId, it, 5)
         })
       )
-  }
-
-  dateChange(event: MatDatepickerInputEvent<unknown>): void {
-    if (event.value instanceof Date) {
-      this.form.controls['fromDate'].setValue(event.value.getTime());
-    }
   }
 
   displayContent(content?: Content): string {
@@ -58,11 +47,11 @@ export class ExportDialogComponent implements OnInit {
 
   contentSelected(event: MatAutocompleteSelectedEvent): void {
     const content = event.option.value as Content;
-    this.form?.controls['uri'].setValue(content.id);
+    this.form?.controls['path'].setValue(content.id);
   }
 
   contentReset(): void {
     this.searchCtrl.setValue('');
-    this.form?.controls['uri'].setValue(null);
+    this.form?.controls['path'].setValue(null);
   }
 }

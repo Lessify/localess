@@ -11,10 +11,10 @@ import {
 import {MatSelectChange} from '@angular/material/select';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {MatSelectionListChange} from "@angular/material/list";
-import {Store} from "@ngrx/store";
-import {AppState} from "@core/state/core.state";
-import {selectSettings} from "@core/state/settings/settings.selectors";
+import {MatSelectionListChange} from '@angular/material/list';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/state/core.state';
+import {selectSettings} from '@core/state/settings/settings.selectors';
 
 @Component({
   selector: 'll-schema-field-edit',

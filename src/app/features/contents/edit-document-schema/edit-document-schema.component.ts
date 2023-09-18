@@ -21,9 +21,9 @@ import {ContentHelperService} from '@shared/services/content-helper.service';
 import {Space} from '@shared/models/space.model';
 import {SchemaSelectChange} from './edit-document-schema.model';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {selectSettings} from "@core/state/settings/settings.selectors";
-import {Store} from "@ngrx/store";
-import {AppState} from "@core/state/core.state";
+import {selectSettings} from '@core/state/settings/settings.selectors';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/state/core.state';
 
 @Component({
   selector: 'll-content-document-schema-edit',

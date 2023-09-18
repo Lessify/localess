@@ -16,8 +16,8 @@ import {NotificationService} from '@shared/services/notification.service';
 import {combineLatest, Subject} from 'rxjs';
 import {TokenDialogComponent} from './token-dialog/token-dialog.component';
 import {TokenDialogModel} from './token-dialog/token-dialog.model';
-import {Token} from "@shared/models/token.model";
-import {TokenService} from "@shared/services/token.service";
+import {Token} from '@shared/models/token.model';
+import {TokenService} from '@shared/services/token.service';
 
 @Component({
   selector: 'll-space-settings-tokens',

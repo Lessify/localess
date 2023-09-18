@@ -10,7 +10,7 @@ import {AssetService} from '@shared/services/asset.service';
 import {Space} from '@shared/models/space.model';
 import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/assets-select-dialog.model';
-import {AssetFileType} from "@shared/models/schema.model";
+import {AssetFileType} from '@shared/models/schema.model';
 
 @Component({
   selector: 'll-schema-asset-select',
@@ -54,10 +54,10 @@ export class AssetSelectComponent implements OnInit {
   openAssetSelectDialog(): void {
     this.dialog.open<AssetsSelectDialogComponent, AssetsSelectDialogModel, Asset[] | undefined>(
       AssetsSelectDialogComponent, {
-        minWidth: "900px",
-        width: "calc(100vw - 160px)",
-        maxWidth: "1280px",
-        maxHeight: "calc(100vh - 80px)",
+        minWidth: '900px',
+        width: 'calc(100vw - 160px)',
+        maxWidth: '1280px',
+        maxHeight: 'calc(100vh - 80px)',
         data: {
           spaceId: this.space?.id!!,
           multiple: false,

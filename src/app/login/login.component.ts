@@ -20,7 +20,7 @@ import {AppState} from '@core/state/core.state';
 import {authLogin, authLogout} from '@core/core.module';
 import {environment} from '../../environments/environment';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {selectSettings} from "@core/state/settings/settings.selectors";
+import {selectSettings} from '@core/state/settings/settings.selectors';
 
 @Component({
   selector: 'll-login',

@@ -33,7 +33,7 @@ export interface Task {
   // export by date
   fromDate?: number
   // export content
-  uri?: string
+  path?: string
   // translations
   locale?: string
 
@@ -54,7 +54,7 @@ export interface TaskCreateFS {
 export interface TaskAssetExportCreateFS extends TaskCreateFS {
   kind: TaskKind.ASSET_EXPORT,
   status: TaskStatus.INITIATED,
-  fromDate?: number
+  path?: string
 }
 
 export interface TaskAssetImportCreateFS extends TaskCreateFS {
@@ -67,8 +67,7 @@ export interface TaskAssetImportCreateFS extends TaskCreateFS {
 export interface TaskContentExportCreateFS extends TaskCreateFS {
   kind: TaskKind.CONTENT_EXPORT,
   status: TaskStatus.INITIATED,
-  fromDate?: number
-  uri?: string
+  path?: string
 }
 
 export interface TaskContentImportCreateFS extends TaskCreateFS {

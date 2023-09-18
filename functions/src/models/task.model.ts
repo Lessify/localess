@@ -23,9 +23,9 @@ export interface Task {
   kind: TaskKind,
   status: TaskStatus,
   // Export Only
-  fromDate?: number,
-  locale?: string,
-  uri?: string,
+  fromDate?: number, // translations
+  locale?: string, // translations
+  path?: string, // contents
   // Import Only
   tmpPath?: string,
   file?: {
@@ -43,4 +43,5 @@ export interface Task {
 export interface TaskExportMetadata {
   kind: 'ASSET' | 'CONTENT' | 'SCHEMA' | 'TRANSLATION',
   fromDate?: number,
+  path?: string
 }

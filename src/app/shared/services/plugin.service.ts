@@ -32,8 +32,8 @@ import {
   SchemaFieldTextarea,
   SchemaType
 } from '@shared/models/schema.model';
-import {Functions, httpsCallableData} from "@angular/fire/functions";
-import {ObjectUtils} from "@core/utils/object-utils.service";
+import {Functions, httpsCallableData} from '@angular/fire/functions';
+import {ObjectUtils} from '@core/utils/object-utils.service';
 
 @Injectable()
 export class PluginService {

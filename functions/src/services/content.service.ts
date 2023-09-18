@@ -1,8 +1,16 @@
 import {firestoreService} from '../config';
 import {DocumentReference, Query, Timestamp} from 'firebase-admin/firestore';
 import Ajv, {ErrorObject} from 'ajv';
-import {assetExportArraySchema, ContentData} from '../models/content.model';
+import {
+  assetExportArraySchema,
+  Content,
+  ContentData,
+  ContentDocumentExport, ContentExport,
+  ContentFolderExport,
+  ContentKind,
+} from '../models/content.model';
 import {Schema, SchemaFieldKind} from '../models/schema.model';
+import {logger} from 'firebase-functions/v2';
 
 /**
  * find Content by Full Slug
@@ -11,8 +19,44 @@ import {Schema, SchemaFieldKind} from '../models/schema.model';
  * @return {DocumentReference} document reference to the space
  */
 export function findContentByFullSlug(spaceId: string, fullSlug: string): Query {
+  logger.info(`[findContentByFullSlug] spaceId=${spaceId} fullSlug=${fullSlug}`);
   return firestoreService.collection(`spaces/${spaceId}/contents`)
     .where('fullSlug', '==', fullSlug).limit(1);
+}
+
+/**
+ * find Content by Parent Slug
+ * @param {string} spaceId Space identifier
+ * @param {string} parentSlug Parent Slug path
+ * @return {DocumentReference} document reference to the space
+ */
+export function findContentByParentSlug(spaceId: string, parentSlug: string): Query {
+  return firestoreService.collection(`spaces/${spaceId}/contents`)
+    .where('parentSlug', '==', parentSlug).limit(1);
+}
+
+/**
+ * find Content by Slug
+ * @param {string} spaceId Space identifier
+ * @param {string} slug Slug path
+ * @return {DocumentReference} document reference to the space
+ */
+export function findContentBySlug(spaceId: string, slug: string): Query {
+  return firestoreService.collection(`spaces/${spaceId}/contents`)
+    .where('slug', '==', slug).limit(1);
+}
+
+/**
+ * find Content by Full Slug
+ * @param {string} spaceId Space identifier
+ * @param {string} startFullSlug Start Full Slug path
+ * @return {DocumentReference} document reference to the space
+ */
+export function findContentsByStartFullSlug(spaceId: string, startFullSlug: string): Query {
+  logger.info(`[findContentsByStartFullSlug] spaceId=${spaceId} startFullSlug=${startFullSlug}`);
+  return firestoreService.collection(`spaces/${spaceId}/contents`)
+    .where('fullSlug', '>=', startFullSlug)
+    .where('fullSlug', '<', `${startFullSlug}~`);
 }
 
 /**
@@ -22,6 +66,7 @@ export function findContentByFullSlug(spaceId: string, fullSlug: string): Query 
  * @return {DocumentReference} document reference to the space
  */
 export function findContentById(spaceId: string, id: string): DocumentReference {
+  logger.info(`[findContentById] spaceId=${spaceId} id=${id}`);
   return firestoreService.doc(`spaces/${spaceId}/contents/${id}`);
 }
 
@@ -92,4 +137,36 @@ export function extractContent(content: ContentData, schemas: Schema[], locale: 
     }
   }
   return extractedContentData;
+}
+
+
+/**
+ * validate imported JSON
+ * @param {string} docId Document ID
+ * @param {Content} content Content
+ * @return {ContentExport} exported content
+ */
+export function docContentToExport(docId: string, content: Content): ContentExport | undefined {
+  if (content.kind === ContentKind.FOLDER) {
+    return {
+      id: docId,
+      kind: ContentKind.FOLDER,
+      name: content.name,
+      slug: content.slug,
+      parentSlug: content.parentSlug,
+      fullSlug: content.fullSlug,
+    } as ContentFolderExport;
+  } else if (content.kind === ContentKind.DOCUMENT) {
+    return {
+      id: docId,
+      kind: ContentKind.DOCUMENT,
+      name: content.name,
+      slug: content.slug,
+      parentSlug: content.parentSlug,
+      fullSlug: content.fullSlug,
+      schema: content.schema,
+      data: content.data,
+    } as ContentDocumentExport;
+  }
+  return undefined;
 }

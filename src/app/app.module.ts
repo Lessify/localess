@@ -54,7 +54,7 @@ import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
       return auth;
     }),
     provideFirestore(() => {
-      const firestore = initializeFirestore(getApp(), {localCache: {kind: "persistent"}});
+      const firestore = initializeFirestore(getApp(), {localCache: {kind: 'persistent'}});
       if (environment.useEmulators) {
         connectFirestoreEmulator(firestore, 'localhost', 8080);
       }

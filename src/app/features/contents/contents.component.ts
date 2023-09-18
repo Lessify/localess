@@ -33,7 +33,7 @@ import {ExportDialogModel, ExportDialogReturn} from './export-dialog/export-dial
 import {TaskService} from '@shared/services/task.service';
 import {ImportDialogComponent} from './import-dialog/import-dialog.component';
 import {ImportDialogModel, ImportDialogReturn} from './import-dialog/import-dialog.model';
-import {TokenService} from "@shared/services/token.service";
+import {TokenService} from '@shared/services/token.service';
 
 @Component({
   selector: 'll-contents',
@@ -363,7 +363,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         switchMap(it =>
-          this.taskService.createContentExportTask(this.selectedSpace!.id, it?.fromDate, it?.uri)
+          this.taskService.createContentExportTask(this.selectedSpace!.id, it?.path)
         )
       )
       .subscribe({

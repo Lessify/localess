@@ -3,21 +3,20 @@ import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firest
 import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
 import {Task, TaskExportMetadata, TaskKind, TaskStatus} from './models/task.model';
 import {BATCH_MAX, bucket, firestoreService} from './config';
-import {Asset, AssetExport, AssetFile, AssetFileExport, AssetFolder, AssetFolderExport, AssetKind} from './models/asset.model';
+import {Asset, AssetExport, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'fs';
 import {zip} from 'compressing';
 import {ErrorObject} from 'ajv';
-import {findAssetById, findAssets, validateAssetImport} from './services/asset.service';
+import {docAssetToExport, findAssetById, findAssets, findAssetsByStartFullSlug, validateAssetImport} from './services/asset.service';
+import {Content, ContentDocument, ContentExport, ContentFolder, ContentKind} from './models/content.model';
 import {
-  Content,
-  ContentDocument,
-  ContentDocumentExport,
-  ContentExport,
-  ContentFolder,
-  ContentFolderExport,
-  ContentKind,
-} from './models/content.model';
-import {findContentById, findContents, validateContentImport} from './services/content.service';
+  docContentToExport,
+  findContentByFullSlug,
+  findContentById,
+  findContents,
+  findContentsByStartFullSlug,
+  validateContentImport,
+} from './services/content.service';
 import {tmpdir} from 'os';
 import {Schema, SchemaExport} from './models/schema.model';
 import {findSchemaById, findSchemas, validateSchemaImport} from './services/schema.service';
@@ -155,37 +154,53 @@ const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async 
  * @param {Task} task original task
  */
 async function assetsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
-  const exportAssets: AssetExport[] = [];
-  const assetsSnapshot = await findAssets(spaceId, task.fromDate).get();
-  assetsSnapshot.docs.filter((it) => it.exists)
-    .forEach((doc) => {
-      const asset = doc.data() as Asset;
-      if (asset.kind === AssetKind.FOLDER) {
-        exportAssets.push({
-          id: doc.id,
-          kind: AssetKind.FOLDER,
-          name: asset.name,
-          parentPath: asset.parentPath,
-        } as AssetFolderExport);
-      } else if (asset.kind === AssetKind.FILE) {
-        exportAssets.push({
-          id: doc.id,
-          kind: AssetKind.FILE,
-          name: asset.name,
-          parentPath: asset.parentPath,
-          extension: asset.extension,
-          type: asset.type,
-          size: asset.size,
-          alt: asset.alt,
-          metadata: asset.metadata,
-        } as AssetFileExport);
+  const exportAssets: (AssetExport | undefined)[] = [];
+  if (task.path) {
+    // Only specific folder or asset
+    const rootAssetSnapshot = await findAssetById(spaceId, task.path).get();
+    if (rootAssetSnapshot.exists) {
+      const rootAsset = rootAssetSnapshot.data() as Asset;
+      exportAssets.push(docAssetToExport(rootAssetSnapshot.id, rootAsset));
+      logger.info(`[Task:onCreate:assetsExport] root id=${rootAssetSnapshot.id} name=${rootAsset.name}`);
+      // folder, all sub documents
+      if (rootAsset.kind === AssetKind.FOLDER) {
+        const startParentPath = rootAsset.parentPath === '' ? rootAssetSnapshot.id : `${rootAsset.parentPath}/${rootAssetSnapshot.id}`;
+        const assetsSnapshot = await findAssetsByStartFullSlug(spaceId, startParentPath).get();
+        assetsSnapshot.docs.forEach((doc) => {
+          const asset = doc.data() as Asset;
+          exportAssets.push(docAssetToExport(doc.id, asset));
+          logger.info(`[Task:onCreate:assetsExport] sub-folder id=${doc.id} name=${asset.name}`);
+        });
       }
-    });
+      // it is not located in root folder, requires to extract all folder till
+      if (rootAsset.parentPath !== '') {
+        const assetIds = rootAsset.parentPath.split('/');
+        for (const assetId of assetIds) {
+          const assetSnapshot = await findAssetById(spaceId, assetId).get();
+          const asset = assetSnapshot.data() as Asset;
+          logger.info(`[Task:onCreate:assetsExport] path id=${assetSnapshot.id} name=${asset.name}`);
+          exportAssets.push(docAssetToExport(assetSnapshot.id, asset));
+        }
+      }
+    } else {
+      // path not exist
+    }
+  } else {
+    // Export Everything
+    const assetsSnapshot = await findAssets(spaceId).get();
+    assetsSnapshot.docs.filter((it) => it.exists)
+      .forEach((doc) => {
+        const asset = doc.data() as Asset;
+        exportAssets.push(docAssetToExport(doc.id, asset));
+      });
+  }
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'ASSET',
-    fromDate: task.fromDate,
   };
+  if (task.path) {
+    fileMetadata.path = task.path;
+  }
   // Create TMP Folder
   mkdirSync(tmpTaskFolder);
   // Create assets.json
@@ -198,7 +213,9 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
   mkdirSync(assetsTmpFolder);
 
   await Promise.all(
-    exportAssets.filter((it) => it.kind === AssetKind.FILE)
+    exportAssets
+      .map((it) => it!)
+      .filter((it) => it.kind === AssetKind.FILE)
       .map((asset) =>
         bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`)
           .download({destination: `${assetsTmpFolder}/${asset.id}`})
@@ -280,7 +297,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
     }
     totalChanges++;
     count++;
-    if (count === BATCH_MAX ) {
+    if (count === BATCH_MAX) {
       logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
@@ -313,38 +330,65 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
  * @param {Task} task original task
  */
 async function contentsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
-  const exportContents: ContentExport[] = [];
-  const contentsSnapshot = await findContents(spaceId, task.fromDate).get();
-  contentsSnapshot.docs.filter((it) => it.exists)
-    .forEach((doc) => {
-      const content = doc.data() as Content;
-      if (content.kind === ContentKind.FOLDER) {
-        exportContents.push({
-          id: doc.id,
-          kind: ContentKind.FOLDER,
-          name: content.name,
-          slug: content.slug,
-          parentSlug: content.parentSlug,
-          fullSlug: content.fullSlug,
-        } as ContentFolderExport);
-      } else if (content.kind === ContentKind.DOCUMENT) {
-        exportContents.push({
-          id: doc.id,
-          kind: ContentKind.DOCUMENT,
-          name: content.name,
-          slug: content.slug,
-          parentSlug: content.parentSlug,
-          fullSlug: content.fullSlug,
-          schema: content.schema,
-          data: content.data,
-        } as ContentDocumentExport);
+  const exportContents: (ContentExport | undefined)[] = [];
+  if (task.path) {
+    // Only specific folder or document
+    const rootContentSnapshot = await findContentById(spaceId, task.path).get();
+    if (rootContentSnapshot.exists) {
+      const rootContent = rootContentSnapshot.data() as Content;
+      exportContents.push(docContentToExport(rootContentSnapshot.id, rootContent));
+      logger.info(`[Task:onCreate:contentsExport] root fullSlug=${rootContent.fullSlug}`);
+      // folder, all sub documents
+      if (rootContent.kind === ContentKind.FOLDER) {
+        const contentsSnapshot = await findContentsByStartFullSlug(spaceId, `${rootContent.fullSlug}/`).get();
+        contentsSnapshot.docs.forEach((doc) => {
+          const content = doc.data() as Content;
+          exportContents.push(docContentToExport(doc.id, content));
+          logger.info(`[Task:onCreate:contentsExport] sub-folder fullSlug=${content.fullSlug}`);
+        });
       }
-    });
+      // it is not located in root folder, requires to extract all folder till
+      if (rootContent.parentSlug !== '') {
+        // iterate over all sub-folders
+        const slugs = rootContent.parentSlug.split('/');
+        let navigationSlug = '';
+        for (const slug of slugs) {
+          if (navigationSlug === '') {
+            // root
+            // find by parentSlug = navigationSlug
+            navigationSlug = slug;
+          } else {
+            // not root
+            // find by parentSlug = navigationSlug
+            navigationSlug = `${navigationSlug}/${slug}`;
+          }
+          const contentsSnapshot = await findContentByFullSlug(spaceId, navigationSlug).get();
+          contentsSnapshot.docs.forEach((doc) => {
+            const content = doc.data() as Content;
+            logger.info(`[Task:onCreate:contentsExport] path fullSlug=${content.fullSlug}`);
+            exportContents.push(docContentToExport(doc.id, content));
+          });
+        }
+      }
+    } else {
+      // path not exist
+    }
+  } else {
+    // Export Everything
+    const contentsSnapshot = await findContents(spaceId).get();
+    contentsSnapshot.docs.filter((it) => it.exists)
+      .forEach((doc) => {
+        const content = doc.data() as Content;
+        exportContents.push(docContentToExport(doc.id, content));
+      });
+  }
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'CONTENT',
-    fromDate: task.fromDate,
   };
+  if (task.path) {
+    fileMetadata.path = task.path;
+  }
   // Create TMP Folder
   mkdirSync(tmpTaskFolder);
   // Create assets.json
@@ -449,7 +493,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
     }
     totalChanges++;
     count++;
-    if (count === BATCH_MAX ) {
+    if (count === BATCH_MAX) {
       logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
@@ -569,7 +613,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
     }
     totalChanges++;
     count++;
-    if (count === BATCH_MAX ) {
+    if (count === BATCH_MAX) {
       logger.info('[Task:onCreate:SCHEMA:IMPORT] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
@@ -720,7 +764,7 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
     }
     totalChanges++;
     count++;
-    if (count === BATCH_MAX ) {
+    if (count === BATCH_MAX) {
       logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
@@ -793,7 +837,7 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
       totalChanges++;
     }
     count++;
-    if (count === BATCH_MAX ) {
+    if (count === BATCH_MAX) {
       logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();

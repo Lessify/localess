@@ -3,8 +3,8 @@ import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder} from '@angular/forms';
 import {InstallDialogModel} from './install-dialog.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {MatTableDataSource} from "@angular/material/table";
-import {PluginDefinition} from "@shared/models/plugin.model";
+import {MatTableDataSource} from '@angular/material/table';
+import {PluginDefinition} from '@shared/models/plugin.model';
 
 @Component({
   selector: 'll-plugin-install-dialog',

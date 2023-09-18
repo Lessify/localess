@@ -1,7 +1,8 @@
 import {firestoreService} from '../config';
 import {Timestamp, DocumentReference, Query} from 'firebase-admin/firestore';
 import Ajv, {ErrorObject} from 'ajv';
-import {assetExportArraySchema} from '../models/asset.model';
+import {Asset, AssetExport, assetExportArraySchema, AssetFileExport, AssetFolderExport, AssetKind} from '../models/asset.model';
+import {logger} from 'firebase-functions/v2';
 
 /**
  * find Content by Full Slug
@@ -12,6 +13,19 @@ import {assetExportArraySchema} from '../models/asset.model';
 export function findAssetsByParentPath(spaceId: string, parentPath: string): Query {
   return firestoreService.collection(`spaces/${spaceId}/assets`)
     .where('parentPath', '==', parentPath);
+}
+
+/**
+ * find Assets by Full Slug
+ * @param {string} spaceId Space identifier
+ * @param {string} startParentPath Start Parent Path
+ * @return {DocumentReference} document reference to the space
+ */
+export function findAssetsByStartFullSlug(spaceId: string, startParentPath: string): Query {
+  logger.info(`[findAssetsByStartFullSlug] spaceId=${spaceId} startParentPath=${startParentPath}`);
+  return firestoreService.collection(`spaces/${spaceId}/assets`)
+    .where('parentPath', '>=', startParentPath)
+    .where('parentPath', '<', `${startParentPath}~`);
 }
 
 /**
@@ -51,4 +65,34 @@ export function validateAssetImport(data: unknown): ErrorObject[] | undefined | 
   } else {
     return validate.errors;
   }
+}
+
+/**
+ * validate imported JSON
+ * @param {string} docId Document ID
+ * @param {Asset} asset Content
+ * @return {ContentExport} exported content
+ */
+export function docAssetToExport(docId: string, asset: Asset): AssetExport | undefined {
+  if (asset.kind === AssetKind.FOLDER) {
+    return {
+      id: docId,
+      kind: AssetKind.FOLDER,
+      name: asset.name,
+      parentPath: asset.parentPath,
+    } as AssetFolderExport;
+  } else if (asset.kind === AssetKind.FILE) {
+    return {
+      id: docId,
+      kind: AssetKind.FILE,
+      name: asset.name,
+      parentPath: asset.parentPath,
+      extension: asset.extension,
+      type: asset.type,
+      size: asset.size,
+      alt: asset.alt,
+      metadata: asset.metadata,
+    } as AssetFileExport;
+  }
+  return undefined;
 }

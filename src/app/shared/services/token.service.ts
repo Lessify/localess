@@ -15,8 +15,8 @@ import {
 } from '@angular/fire/firestore';
 import {from, Observable} from 'rxjs';
 import {traceUntilFirst} from '@angular/fire/performance';
-import {Token, TokenCreateFS} from "@shared/models/token.model";
-import {map} from "rxjs/operators";
+import {Token, TokenCreateFS} from '@shared/models/token.model';
+import {map} from 'rxjs/operators';
 
 @Injectable()
 export class TokenService {

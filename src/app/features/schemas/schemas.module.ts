@@ -12,7 +12,7 @@ import {ExportDialogComponent} from './export-dialog/export-dialog.component';
 import {ImportDialogComponent} from './import-dialog/import-dialog.component';
 import {TaskService} from '@shared/services/task.service';
 import {AssetSelectComponent} from './shared/asset-select/asset-select.component';
-import {AssetService} from "@shared/services/asset.service";
+import {AssetService} from '@shared/services/asset.service';
 
 @NgModule({
   declarations: [

@@ -4,7 +4,7 @@
 import packageInfo from '../../package.json';
 
 export const environment = {
-  appName: "Localess [Dev]",
+  appName: 'Localess [Dev]',
   firebase: {
     projectId: 'localess-dev',
     appId: '1:923248451826:web:47779533df41508d8a706b',

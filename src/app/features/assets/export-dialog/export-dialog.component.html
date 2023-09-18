@@ -1,16 +1,21 @@
 <h1 mat-dialog-title>Assets Export</h1>
 <mat-dialog-content>
+  <br/>
   <form [formGroup]="form" class="step-container">
-
     <mat-form-field>
-      <mat-label>From Date</mat-label>
-      <input matInput [matDatepicker]="picker" readonly [max]="today"
-             (click)="picker.open()" (dateChange)="dateChange($event)">
-      <mat-datepicker-toggle matIconSuffix (click)="picker.select(null)">
-        <mat-icon matDatepickerToggleIcon>clear</mat-icon>
-      </mat-datepicker-toggle>
-      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
+      <mat-label>Content</mat-label>
+      <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl">
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
+        <mat-option *ngFor="let asset of filteredAsset | async" [value]="asset">
+          <mat-icon>{{asset.kind === 'FOLDER' ? 'folder' : 'attachment'}}</mat-icon>
+          <span>{{asset.name}}</span>
+        </mat-option>
+      </mat-autocomplete>
+
+      <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
+        <mat-icon>clear</mat-icon>
+      </button>
+      <mat-hint>Will export only a specific Document or Folder with sub-Documents.</mat-hint>
     </mat-form-field>
   </form>
 </mat-dialog-content>

@@ -8,7 +8,7 @@ import {
   docData,
   documentId,
   DocumentReference,
-  Firestore,
+  Firestore, limit,
   orderBy,
   query,
   QueryConstraint,
@@ -30,7 +30,7 @@ import {
   AssetFolderUpdate,
   AssetKind
 } from '@shared/models/asset.model';
-import {AssetFileType} from "@shared/models/schema.model";
+import {AssetFileType} from '@shared/models/schema.model';
 
 @Injectable()
 export class AssetService {
@@ -98,6 +98,25 @@ export class AssetService {
           }
 
         })
+      );
+  }
+
+  findAllByName(spaceId: string, name: string, max: number = 20): Observable<Asset[]> {
+    const queryConstrains: QueryConstraint[] = [
+      where('name', '>=', name),
+      where('name', '<=', `${name}~`),
+      limit(max)
+    ]
+
+    return collectionData(
+      query(
+        collection(this.firestore, `spaces/${spaceId}/assets`),
+        ...queryConstrains),
+      {idField: 'id'}
+    )
+      .pipe(
+        traceUntilFirst('Firestore:Assets:findAllByName'),
+        map((it) => it as Asset[])
       );
   }
 

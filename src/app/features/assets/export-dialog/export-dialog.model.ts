@@ -1,9 +1,10 @@
 export interface ExportDialogModel {
+  spaceId: string
 }
 
 export interface  ExportDialogReturn {
   /**
-   * number of milliseconds.
+   * asset id
    */
-  fromDate?: number
+  path?: string
 }

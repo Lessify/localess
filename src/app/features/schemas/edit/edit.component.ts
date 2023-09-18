@@ -12,18 +12,18 @@ import {
 } from '@shared/models/schema.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 import {CommonValidator} from '@shared/validators/common.validator';
-import {SchemaService} from "@shared/services/schema.service";
-import {ActivatedRoute, Router} from "@angular/router";
-import {selectSpace} from "@core/state/space/space.selector";
-import {filter, switchMap, takeUntil} from "rxjs/operators";
-import {combineLatest, Subject} from "rxjs";
-import {Store} from "@ngrx/store";
-import {AppState} from "@core/state/core.state";
-import {SpaceService} from "@shared/services/space.service";
-import {Space} from "@shared/models/space.model";
-import {NotificationService} from "@shared/services/notification.service";
+import {SchemaService} from '@shared/services/schema.service';
+import {ActivatedRoute, Router} from '@angular/router';
+import {selectSpace} from '@core/state/space/space.selector';
+import {filter, switchMap, takeUntil} from 'rxjs/operators';
+import {combineLatest, Subject} from 'rxjs';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/state/core.state';
+import {SpaceService} from '@shared/services/space.service';
+import {Space} from '@shared/models/space.model';
+import {NotificationService} from '@shared/services/notification.service';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {selectSettings} from "@core/state/settings/settings.selectors";
+import {selectSettings} from '@core/state/settings/settings.selectors';
 
 @Component({
   selector: 'll-schema-edit',
@@ -73,7 +73,7 @@ export class EditComponent implements OnInit, OnDestroy {
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
   ) {
-    this.entityId = this.activatedRoute.snapshot.paramMap.get('schemaId') || "";
+    this.entityId = this.activatedRoute.snapshot.paramMap.get('schemaId') || '';
   }
 
   ngOnInit(): void {

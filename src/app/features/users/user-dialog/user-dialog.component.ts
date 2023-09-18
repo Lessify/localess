@@ -3,9 +3,9 @@ import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {UserDialogModel} from './user-dialog.model';
 import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {Store} from "@ngrx/store";
-import {AppState} from "@core/state/core.state";
-import {selectSettings} from "@core/state/settings/settings.selectors";
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/state/core.state';
+import {selectSettings} from '@core/state/settings/settings.selectors';
 
 @Component({
   selector: 'll-user-dialog',

@@ -17,7 +17,7 @@ import {Translation, TranslationCreate, TranslationCreateFS, TranslationType, Tr
 import {traceUntilFirst} from '@angular/fire/performance';
 import {map} from 'rxjs/operators';
 import {Functions, httpsCallableData} from '@angular/fire/functions';
-import {deleteField} from "@firebase/firestore";
+import {deleteField} from '@firebase/firestore';
 
 @Injectable()
 export class TranslationService {

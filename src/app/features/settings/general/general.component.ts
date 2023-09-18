@@ -8,10 +8,10 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {Subject} from 'rxjs';
-import {selectSpace} from "@core/state/space/space.selector";
-import {FormBuilder, FormGroup} from "@angular/forms";
-import {SpaceValidator} from "@shared/validators/space.validator";
-import {FormErrorHandlerService} from "@core/error-handler/form-error-handler.service";
+import {selectSpace} from '@core/state/space/space.selector';
+import {FormBuilder, FormGroup} from '@angular/forms';
+import {SpaceValidator} from '@shared/validators/space.validator';
+import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-space-settings-general',

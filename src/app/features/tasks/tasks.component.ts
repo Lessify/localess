@@ -10,13 +10,13 @@ import {AppState} from '@core/state/core.state';
 import {Space} from '@shared/models/space.model';
 import {NotificationService} from '@shared/services/notification.service';
 import {combineLatest, Subject} from 'rxjs';
-import {TaskService} from "@shared/services/task.service";
-import {Task} from "@shared/models/task.model";
-import {selectSpace} from "@core/state/space/space.selector";
-import {ConfirmationDialogComponent} from "@shared/components/confirmation-dialog/confirmation-dialog.component";
-import {ConfirmationDialogModel} from "@shared/components/confirmation-dialog/confirmation-dialog.model";
-import {SpaceService} from "@shared/services/space.service";
-import {saveAs} from "file-saver-es";
+import {TaskService} from '@shared/services/task.service';
+import {Task} from '@shared/models/task.model';
+import {selectSpace} from '@core/state/space/space.selector';
+import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {SpaceService} from '@shared/services/space.service';
+import {saveAs} from 'file-saver-es';
 
 @Component({
   selector: 'll-tasks',

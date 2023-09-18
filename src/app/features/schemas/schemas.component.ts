@@ -18,12 +18,12 @@ import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/co
 import {Schema, SchemaCreate} from '@shared/models/schema.model';
 import {AddDialogComponent} from './add-dialog/add-dialog.component';
 import {AddDialogModel} from './add-dialog/add-dialog.model';
-import {ExportDialogComponent} from "./export-dialog/export-dialog.component";
-import {ImportDialogComponent} from "./import-dialog/import-dialog.component";
-import {ExportDialogModel, ExportDialogReturn} from "./export-dialog/export-dialog.model";
-import {ImportDialogModel, ImportDialogReturn} from "./import-dialog/import-dialog.model";
-import {TaskService} from "@shared/services/task.service";
-import {FormBuilder} from "@angular/forms";
+import {ExportDialogComponent} from './export-dialog/export-dialog.component';
+import {ImportDialogComponent} from './import-dialog/import-dialog.component';
+import {ExportDialogModel, ExportDialogReturn} from './export-dialog/export-dialog.model';
+import {ImportDialogModel, ImportDialogReturn} from './import-dialog/import-dialog.model';
+import {TaskService} from '@shared/services/task.service';
+import {FormBuilder} from '@angular/forms';
 
 @Component({
   selector: 'll-schemas',

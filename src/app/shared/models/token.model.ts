@@ -1,4 +1,4 @@
-import {FieldValue} from "@angular/fire/firestore";
+import {FieldValue} from '@angular/fire/firestore';
 
 export interface Token {
   id: string

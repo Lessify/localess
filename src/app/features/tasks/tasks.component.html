@@ -36,11 +36,16 @@
       <mat-header-cell *matHeaderCellDef> Description</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div>
-          <div *ngIf="element.fromDate as fromDate else fullExport">
-            From Date : {{fromDate | date}}
+          <div *ngIf="(element.fromDate || element.path) else fullExport">
+            <ng-container *ngIf="element.fromDate">
+              Partial export by date : {{element.fromDate | date}}
+            </ng-container>
+            <ng-container *ngIf="element.path">
+              Partial export by path
+            </ng-container>
           </div>
           <ng-template #fullExport>
-            <div>Full Export</div>
+            <div>Full export</div>
           </ng-template>
           <div *ngIf="element.locale as locale">
             Locale : {{locale}}
