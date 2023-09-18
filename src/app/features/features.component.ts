@@ -28,10 +28,12 @@ import {SpaceService} from '@shared/services/space.service';
 import {Space} from '@shared/models/space.model';
 import {selectSpace} from '@core/state/space/space.selector';
 import {environment} from '../../environments/environment';
-import {UserPermission, USER_PERMISSIONS_IMPORT_EXPORT} from '@shared/models/user.model';
+import {USER_PERMISSIONS_IMPORT_EXPORT, UserPermission} from '@shared/models/user.model';
 import {DEFAULT_LOCALE} from '@shared/models/locale.model';
 import {selectSettings} from '@core/state/settings/settings.selectors';
 import {MatSlideToggleChange} from '@angular/material/slide-toggle';
+import {ReposService} from "@shared/generated/services/repos.service";
+import {Release} from "@shared/generated/models/release";
 
 const ROLE_ADMIN = 'admin';
 
@@ -40,6 +42,7 @@ interface SideMenuItem {
   link: string;
   label: string;
   permission?: UserPermission | UserPermission[];
+  color?: 'primairy'
 }
 
 @Component({
@@ -64,6 +67,7 @@ export class FeaturesComponent implements OnInit {
   selectedSpace?: Space;
   logo = 'assets/logo.png';
   version = environment.version
+  release?: Release;
 
   userSideMenu: SideMenuItem[] = [
     {link: 'translations', label: 'Translations', icon: 'translate', permission: UserPermission.TRANSLATION_READ},
@@ -80,6 +84,7 @@ export class FeaturesComponent implements OnInit {
   ];
 
   communitySideMenu: SideMenuItem[] = [
+    {link: 'https://github.com/sponsors/Lessify', label: 'Sponsor', icon: 'volunteer_activism'},
     {link: 'https://github.com/Lessify/localess', label: 'Code', icon: 'code'},
     {link: 'https://github.com/Lessify/localess/issues', label: 'Feedback', icon: 'forum'},
     {link: 'https://github.com/Lessify/localess/wiki', label: 'Help', icon: 'help'},
@@ -97,43 +102,50 @@ export class FeaturesComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly router: Router,
     private readonly activatedRoute: ActivatedRoute,
+    private readonly reposService: ReposService,
     @Optional() private auth: Auth
   ) {
-    user(this.auth)
-    .subscribe((user) => {
-      // Sign-in
-      if (user) {
-        // console.log(user);
-        // const tokenResult = await user.getIdTokenResult()
-        this.store.dispatch(
-          actionUserChange({
-            id: user.uid,
-            displayName: user.displayName,
-            email: user.email,
-            emailVerified: user.emailVerified,
-            role: undefined,
-            photoURL: user.photoURL,
-            permissions: undefined
-          })
-        );
-        from(user.getIdTokenResult())
-        .subscribe((token) => {
-          if (token.claims['role'] || token.claims['permissions']) {
-            const role = token.claims['role'].toString();
-            const permissions = token.claims['permissions'] as string[] | undefined;
-            this.store.dispatch(actionUserRoleChange({role, permissions}));
-            if (role === ROLE_ADMIN) {
-              this.isRoleAdmin = true;
-            }
-          } else {
-            this.isRoleNone = true;
-          }
-          this.cd.markForCheck();
-        });
-      } else {
-        this.store.dispatch(authLogout());
+    reposService.reposGetLatestRelease({owner: 'Lessify', repo: 'localess'}).subscribe({
+      next: (value) => {
+        //console.log(value)
+        this.release = value
       }
-    });
+    })
+    user(this.auth)
+      .subscribe((user) => {
+        // Sign-in
+        if (user) {
+          // console.log(user);
+          // const tokenResult = await user.getIdTokenResult()
+          this.store.dispatch(
+            actionUserChange({
+              id: user.uid,
+              displayName: user.displayName,
+              email: user.email,
+              emailVerified: user.emailVerified,
+              role: undefined,
+              photoURL: user.photoURL,
+              permissions: undefined
+            })
+          );
+          from(user.getIdTokenResult())
+            .subscribe((token) => {
+              if (token.claims['role'] || token.claims['permissions']) {
+                const role = token.claims['role'].toString();
+                const permissions = token.claims['permissions'] as string[] | undefined;
+                this.store.dispatch(actionUserRoleChange({role, permissions}));
+                if (role === ROLE_ADMIN) {
+                  this.isRoleAdmin = true;
+                }
+              } else {
+                this.isRoleNone = true;
+              }
+              this.cd.markForCheck();
+            });
+        } else {
+          this.store.dispatch(authLogout());
+        }
+      });
   }
 
   private static isIEorEdgeOrSafari(): boolean {
@@ -162,33 +174,33 @@ export class FeaturesComponent implements OnInit {
       this.spaceService.findAll(),
       this.store.select(selectSpace)
     ])
-    .subscribe({
-      next: ([spaces, space]) => {
-        if (spaces.length === 0) {
-          this.selectedSpace = undefined
-        }
-        //Spaces change
-        /*        if (this.spaces.length !== spaces.length) {
-                  if (this.spaces.length > spaces.length) {
-                    this.selectedSpace = undefined
-                  }
-                }*/
-        //Selected Space change
-        if (space.id !== this.selectedSpace?.id) {
-          let selected = spaces.find(it => it.id === space.id)
-          if (selected == null && spaces.length > 0) {
-            selected = spaces[0]
+      .subscribe({
+        next: ([spaces, space]) => {
+          if (spaces.length === 0) {
+            this.selectedSpace = undefined
           }
-          if (selected) {
-            this.selectedSpace = selected
-            this.store.dispatch(actionSpaceChange(selected))
+          //Spaces change
+          /*        if (this.spaces.length !== spaces.length) {
+                    if (this.spaces.length > spaces.length) {
+                      this.selectedSpace = undefined
+                    }
+                  }*/
+          //Selected Space change
+          if (space.id !== this.selectedSpace?.id) {
+            let selected = spaces.find(it => it.id === space.id)
+            if (selected == null && spaces.length > 0) {
+              selected = spaces[0]
+            }
+            if (selected) {
+              this.selectedSpace = selected
+              this.store.dispatch(actionSpaceChange(selected))
+            }
           }
+          this.generateUserSideMenu(this.selectedSpace!.id)
+          this.spaces = spaces
+          this.cd.markForCheck()
         }
-        this.generateUserSideMenu(this.selectedSpace!.id)
-        this.spaces = spaces
-        this.cd.markForCheck()
-      }
-    })
+      })
   }
 
   generateUserSideMenu(spaceId: string): void {
