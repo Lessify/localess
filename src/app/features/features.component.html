@@ -76,7 +76,7 @@
         <mat-list-item>
           Version : {{version}}
           <mat-action-list matListItemMeta
-                           *ngIf="release && release.tag_name !== version"
+                           *ngIf="release && release.tag_name > version"
                            [matTooltip]="'A new version is available : ' + release.name">
             <mat-icon>info</mat-icon>
           </mat-action-list>
