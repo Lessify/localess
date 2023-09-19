@@ -1,5 +1,5 @@
 <div class="wrapper" *ngIf="settings$ | async as settings">
-  <mat-toolbar color="primary">
+  <mat-toolbar [color]="toolbarColor">
     <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
       <mat-icon>{{settings.mainMenuExpended ? 'menu_open' : 'menu'}}</mat-icon>
     </button>

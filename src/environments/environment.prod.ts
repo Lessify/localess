@@ -15,6 +15,11 @@ export const environment = {
     customDomain: env.LOCALESS_AUTH_CUSTOM_DOMAIN,
     providers: env.LOCALESS_AUTH_PROVIDERS
   },
+  ui: {
+    toolbar: {
+      color: env.LOCALESS_UI_TOOLBAR_COLOR || 'primary'
+    }
+  },
   production: true,
   test: false,
   debug: false,

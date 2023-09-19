@@ -32,8 +32,9 @@ import {USER_PERMISSIONS_IMPORT_EXPORT, UserPermission} from '@shared/models/use
 import {DEFAULT_LOCALE} from '@shared/models/locale.model';
 import {selectSettings} from '@core/state/settings/settings.selectors';
 import {MatSlideToggleChange} from '@angular/material/slide-toggle';
-import {ReposService} from "@shared/generated/services/repos.service";
-import {Release} from "@shared/generated/models/release";
+import {ReposService} from '@shared/generated/services/repos.service';
+import {Release} from '@shared/generated/models/release';
+import {ThemePalette} from '@angular/material/core';
 
 const ROLE_ADMIN = 'admin';
 
@@ -67,6 +68,7 @@ export class FeaturesComponent implements OnInit {
   selectedSpace?: Space;
   logo = 'assets/logo.png';
   version = environment.version
+  toolbarColor: ThemePalette = environment.ui.toolbar.color as ThemePalette
   release?: Release;
 
   userSideMenu: SideMenuItem[] = [

@@ -18,6 +18,11 @@ export const environment = {
     customDomain: '*',
     providers: 'GOOGLE,MICROSOFT'
   },
+  ui: {
+    toolbar: {
+      color: 'primary'
+    }
+  },
   production: false,
   test: true,
   debug: true,
