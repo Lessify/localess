@@ -21,4 +21,7 @@ export class SpaceValidator {
     Validators.minLength(3),
     Validators.maxLength(250)
   ];
+
+  public static UI_COLOR: ValidatorFn[] = [
+  ];
 }

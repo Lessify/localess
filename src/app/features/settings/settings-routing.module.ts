@@ -5,6 +5,7 @@ import {LocalesComponent} from './locales/locales.component';
 import {GeneralComponent} from './general/general.component';
 import {VisualEditorComponent} from './visual-editor/visual-editor.component';
 import {TokensComponent} from './tokens/tokens.component';
+import {UiComponent} from "./ui/ui.component";
 
 const routes: Routes = [
   { path: '', redirectTo: 'general', pathMatch: 'full' },
@@ -27,6 +28,10 @@ const routes: Routes = [
       {
         path: 'tokens',
         component: TokensComponent,
+      },
+      {
+        path: 'ui',
+        component: UiComponent,
       }
     ]
   },

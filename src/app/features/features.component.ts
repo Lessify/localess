@@ -68,7 +68,6 @@ export class FeaturesComponent implements OnInit {
   selectedSpace?: Space;
   logo = 'assets/logo.png';
   version = environment.version
-  toolbarColor: ThemePalette = environment.ui.toolbar.color as ThemePalette
   release?: Release;
 
   userSideMenu: SideMenuItem[] = [

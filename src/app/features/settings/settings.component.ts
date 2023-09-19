@@ -36,9 +36,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
   activeTab = 'general'
   tabItems: TabItem[] = [
     {icon: 'space_dashboard', label: 'General', link: 'general'},
+    {icon: 'palette', label: 'UI', link: 'ui'},
     {icon: 'language', label: 'Locales', link: 'locales'},
     {icon: 'shape_line', label: 'Visual Editor', link: 'visual-editor'},
     {icon: 'badge', label: 'Access Tokens', link: 'tokens'},
+
   ]
 
   // Subscriptions
