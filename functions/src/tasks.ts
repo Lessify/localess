@@ -31,121 +31,126 @@ import {
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
 // Firestore events
-const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async event => {
-  logger.info(`[Task:onCreate] eventId='${event.id}'`);
-  logger.info(`[Task:onCreate] params='${JSON.stringify(event.params)}'`);
-  logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
-  const { spaceId, taskId } = event.params;
-  // No Data
-  if (!event.data) return;
-  const task = event.data.data() as Task;
-  logger.info(`[Task:onCreate] task='${JSON.stringify(task)}'`);
-  // Proceed only with INITIATED Tasks
-  if (task.status !== TaskStatus.INITIATED) return;
+const onTaskCreate = onDocumentCreated(
+  {
+    document: 'spaces/{spaceId}/tasks/{taskId}',
+    memory: '1GiB',
+  },
+  async event => {
+    logger.info(`[Task:onCreate] eventId='${event.id}'`);
+    logger.info(`[Task:onCreate] params='${JSON.stringify(event.params)}'`);
+    logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
+    const { spaceId, taskId } = event.params;
+    // No Data
+    if (!event.data) return;
+    const task = event.data.data() as Task;
+    logger.info(`[Task:onCreate] task='${JSON.stringify(task)}'`);
+    // Proceed only with INITIATED Tasks
+    if (task.status !== TaskStatus.INITIATED) return;
 
-  const updateToInProgress: UpdateData<Task> = {
-    status: TaskStatus.IN_PROGRESS,
-    updatedAt: FieldValue.serverTimestamp(),
-  };
-  if (task.kind.endsWith('_IMPORT')) {
-    if (task.tmpPath) {
-      const newPath = `spaces/${spaceId}/tasks/${taskId}/original`;
-      await bucket.file(task.tmpPath).move(newPath);
-      updateToInProgress.tmpPath = FieldValue.delete();
+    const updateToInProgress: UpdateData<Task> = {
+      status: TaskStatus.IN_PROGRESS,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    if (task.kind.endsWith('_IMPORT')) {
+      if (task.tmpPath) {
+        const newPath = `spaces/${spaceId}/tasks/${taskId}/original`;
+        await bucket.file(task.tmpPath).move(newPath);
+        updateToInProgress.tmpPath = FieldValue.delete();
+      }
     }
-  }
-  // Update to IN_PROGRESS
-  logger.info(`[Task:onCreate] update='${JSON.stringify(updateToInProgress)}'`);
-  await event.data.ref.update(updateToInProgress);
-  // Run Task
-  const updateToFinished: UpdateData<Task> = {
-    status: TaskStatus.FINISHED,
-    updatedAt: FieldValue.serverTimestamp(),
-  };
+    // Update to IN_PROGRESS
+    logger.info(`[Task:onCreate] update='${JSON.stringify(updateToInProgress)}'`);
+    await event.data.ref.update(updateToInProgress);
+    // Run Task
+    const updateToFinished: UpdateData<Task> = {
+      status: TaskStatus.FINISHED,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
 
-  if (task.kind === TaskKind.ASSET_EXPORT) {
-    const metadata = await assetsExport(spaceId, taskId, task);
-    logger.info(`[Task:onCreate] metadata='${JSON.stringify(metadata)}'`);
-    updateToFinished['file'] = {
-      name: `asset-export-${taskId}.lla.zip`,
-      size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
-    };
-  } else if (task.kind === TaskKind.ASSET_IMPORT) {
-    const errors = await assetsImport(spaceId, taskId);
-    if (errors) {
-      updateToFinished.status = TaskStatus.ERROR;
-      if (errors === 'WRONG_METADATA') {
-        updateToFinished.message = 'It is not a Asset Export file.';
-      } else if (Array.isArray(errors)) {
-        updateToFinished.message = 'Asset data is invalid.';
-      }
-    }
-  } else if (task.kind === TaskKind.CONTENT_EXPORT) {
-    const metadata = await contentsExport(spaceId, taskId, task);
-    updateToFinished['file'] = {
-      name: `content-export-${taskId}.llc.zip`,
-      size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
-    };
-  } else if (task.kind === TaskKind.CONTENT_IMPORT) {
-    const errors = await contentsImport(spaceId, taskId);
-    if (errors) {
-      updateToFinished.status = TaskStatus.ERROR;
-      if (errors === 'WRONG_METADATA') {
-        updateToFinished.message = 'It is not a Content Export file.';
-      } else if (Array.isArray(errors)) {
-        updateToFinished.message = 'Content data is invalid.';
-      }
-    }
-  } else if (task.kind === TaskKind.SCHEMA_EXPORT) {
-    const metadata = await schemasExport(spaceId, taskId, task);
-    updateToFinished['file'] = {
-      name: `schema-export-${taskId}.lls.zip`,
-      size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
-    };
-  } else if (task.kind === TaskKind.SCHEMA_IMPORT) {
-    const errors = await schemasImport(spaceId, taskId);
-    if (errors) {
-      updateToFinished.status = TaskStatus.ERROR;
-      if (errors === 'WRONG_METADATA') {
-        updateToFinished.message = 'It is not a Schema Export file.';
-      } else if (Array.isArray(errors)) {
-        updateToFinished.message = 'Schema data is invalid.';
-      }
-    }
-  } else if (task.kind === TaskKind.TRANSLATION_EXPORT) {
-    if (task.locale) {
-      const metadata = await translationsExportJsonFlat(spaceId, taskId, task);
+    if (task.kind === TaskKind.ASSET_EXPORT) {
+      const metadata = await assetsExport(spaceId, taskId, task);
+      logger.info(`[Task:onCreate] metadata='${JSON.stringify(metadata)}'`);
       updateToFinished['file'] = {
-        name: `translation-${task.locale}-export-${taskId}.json`,
+        name: `asset-export-${taskId}.lla.zip`,
         size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
       };
-    } else {
-      const metadata = await translationsExport(spaceId, taskId, task);
+    } else if (task.kind === TaskKind.ASSET_IMPORT) {
+      const errors = await assetsImport(spaceId, taskId);
+      if (errors) {
+        updateToFinished.status = TaskStatus.ERROR;
+        if (errors === 'WRONG_METADATA') {
+          updateToFinished.message = 'It is not a Asset Export file.';
+        } else if (Array.isArray(errors)) {
+          updateToFinished.message = 'Asset data is invalid.';
+        }
+      }
+    } else if (task.kind === TaskKind.CONTENT_EXPORT) {
+      const metadata = await contentsExport(spaceId, taskId, task);
       updateToFinished['file'] = {
-        name: `translation-export-${taskId}.llt.zip`,
+        name: `content-export-${taskId}.llc.zip`,
         size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
       };
-    }
-  } else if (task.kind === TaskKind.TRANSLATION_IMPORT) {
-    let errors: any;
-    if (task.locale) {
-      errors = await translationsImportJsonFlat(spaceId, taskId, task);
-    } else {
-      errors = await translationsImport(spaceId, taskId);
-    }
-    if (errors) {
-      updateToFinished.status = TaskStatus.ERROR;
-      if (errors === 'WRONG_METADATA') {
-        updateToFinished.message = 'It is not a Translation Export file.';
-      } else if (Array.isArray(errors)) {
-        updateToFinished.message = 'Translation data is invalid.';
+    } else if (task.kind === TaskKind.CONTENT_IMPORT) {
+      const errors = await contentsImport(spaceId, taskId);
+      if (errors) {
+        updateToFinished.status = TaskStatus.ERROR;
+        if (errors === 'WRONG_METADATA') {
+          updateToFinished.message = 'It is not a Content Export file.';
+        } else if (Array.isArray(errors)) {
+          updateToFinished.message = 'Content data is invalid.';
+        }
+      }
+    } else if (task.kind === TaskKind.SCHEMA_EXPORT) {
+      const metadata = await schemasExport(spaceId, taskId, task);
+      updateToFinished['file'] = {
+        name: `schema-export-${taskId}.lls.zip`,
+        size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+      };
+    } else if (task.kind === TaskKind.SCHEMA_IMPORT) {
+      const errors = await schemasImport(spaceId, taskId);
+      if (errors) {
+        updateToFinished.status = TaskStatus.ERROR;
+        if (errors === 'WRONG_METADATA') {
+          updateToFinished.message = 'It is not a Schema Export file.';
+        } else if (Array.isArray(errors)) {
+          updateToFinished.message = 'Schema data is invalid.';
+        }
+      }
+    } else if (task.kind === TaskKind.TRANSLATION_EXPORT) {
+      if (task.locale) {
+        const metadata = await translationsExportJsonFlat(spaceId, taskId, task);
+        updateToFinished['file'] = {
+          name: `translation-${task.locale}-export-${taskId}.json`,
+          size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+        };
+      } else {
+        const metadata = await translationsExport(spaceId, taskId, task);
+        updateToFinished['file'] = {
+          name: `translation-export-${taskId}.llt.zip`,
+          size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+        };
+      }
+    } else if (task.kind === TaskKind.TRANSLATION_IMPORT) {
+      let errors: any;
+      if (task.locale) {
+        errors = await translationsImportJsonFlat(spaceId, taskId, task);
+      } else {
+        errors = await translationsImport(spaceId, taskId);
+      }
+      if (errors) {
+        updateToFinished.status = TaskStatus.ERROR;
+        if (errors === 'WRONG_METADATA') {
+          updateToFinished.message = 'It is not a Translation Export file.';
+        } else if (Array.isArray(errors)) {
+          updateToFinished.message = 'Translation data is invalid.';
+        }
       }
     }
-  }
-  // Export Finished
-  logger.info(`[Task:onCreate] update='${JSON.stringify(updateToFinished)}'`);
-  await event.data.ref.update(updateToFinished);
-});
+    // Export Finished
+    logger.info(`[Task:onCreate] update='${JSON.stringify(updateToFinished)}'`);
+    await event.data.ref.update(updateToFinished);
+  });
 
 /**
  * assetExport Job
@@ -218,8 +223,8 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
       .map(it => it!)
       .filter(it => it.kind === AssetKind.FILE)
       .map(asset =>
-        bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` })
-      )
+        bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` }),
+      ),
   );
 
   await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
@@ -778,7 +783,7 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
 async function translationsImportJsonFlat(
   spaceId: string,
   taskId: string,
-  task: Task
+  task: Task,
 ): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
