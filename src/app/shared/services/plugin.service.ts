@@ -748,7 +748,7 @@ const AVAILABLE_PLUGINS_MAP: Record<string, PluginDefinition> = {
         'stripe-product-package-dimensions',
         'stripe-price',
         'stripe-price-recurring',
-        'stripe-price-tire',
+        'stripe-price-tier',
         'stripe-price-custom-unit-amount',
       ],
     },
