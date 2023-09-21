@@ -10,6 +10,7 @@ export const environment = {
     apiKey: env.LOCALESS_FIREBASE_API_KEY,
     authDomain: env.LOCALESS_FIREBASE_AUTH_DOMAIN,
     messagingSenderId: env.LOCALESS_FIREBASE_MESSAGING_SENDER_ID,
+    measurementId: env.LOCALESS_FIREBASE_MEASUREMENT_ID,
   },
   auth: {
     customDomain: env.LOCALESS_AUTH_CUSTOM_DOMAIN,
