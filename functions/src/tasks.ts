@@ -254,10 +254,10 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
   if (fileMetadata.kind !== 'ASSET') return 'WRONG_METADATA';
   const errors = validateAssetImport(assets);
   if (errors) {
-    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
+    logger.warn(`[Task:onCreate:assetsImport] invalid=${JSON.stringify(errors)}`);
     return errors;
   }
-  logger.info(`[Task:onCreate] valid=${assets.length}`);
+  logger.info(`[Task:onCreate:assetsImport] valid=${assets.length}`);
   let totalChanges = 0;
   let count = 0;
   let batch = firestoreService.batch();
@@ -300,28 +300,36 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
     totalChanges++;
     count++;
     if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+      logger.info('[Task:onCreate:assetsImport] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
-      ids.forEach((value, key) => {
-        logger.info(`[Task:onCreate] Save File ${key}`);
-        bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
-      });
+      for (const [key, value] of ids) {
+        logger.info(`[Task:onCreate:assetsImport] Save File ${key}`);
+        await bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
+      }
+      // ids.forEach((value, key) => {
+      //   logger.info(`[Task:onCreate] Save File ${key}`);
+      //   bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
+      // });
       ids.clear();
     }
   }
-  logger.info('[Task:onCreate] end remaining: ' + count);
+  logger.info('[Task:onCreate:assetsImport] end remaining: ' + count);
   if (count > 0) {
-    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+    logger.info('[Task:onCreate:assetsImport] batch.commit() : ' + totalChanges);
     await batch.commit();
-    ids.forEach((value, key) => {
-      logger.info(`[Task:onCreate] Save File ${key}`);
-      bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
-    });
+    for (const [key, value] of ids) {
+      logger.info(`[Task:onCreate:assetsImport] Save File ${key}`);
+      await bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
+    }
+    // ids.forEach((value, key) => {
+    //   logger.info(`[Task:onCreate] Save File ${key}`);
+    //   await bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
+    // });
     ids.clear();
   }
-  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate:assetsImport] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
