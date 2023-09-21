@@ -34,7 +34,7 @@ const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 const onTaskCreate = onDocumentCreated(
   {
     document: 'spaces/{spaceId}/tasks/{taskId}',
-    memory: '1GiB',
+    memory: '512MiB',
   },
   async event => {
     logger.info(`[Task:onCreate] eventId='${event.id}'`);
