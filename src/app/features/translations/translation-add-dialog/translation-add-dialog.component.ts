@@ -1,15 +1,15 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {FormBuilder, FormGroup} from '@angular/forms';
-import {MatChipInputEvent} from '@angular/material/chips';
-import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {TranslationValidator} from '@shared/validators/translation.validator';
-import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { FormBuilder, FormGroup } from '@angular/forms';
+import { MatChipInputEvent } from '@angular/material/chips';
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { TranslationValidator } from '@shared/validators/translation.validator';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-translation-add-dialog',
   templateUrl: './translation-add-dialog.component.html',
   styleUrls: ['./translation-add-dialog.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationAddDialogComponent {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
@@ -20,14 +20,14 @@ export class TranslationAddDialogComponent {
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
     labels: this.fb.control([], TranslationValidator.LABEL),
-    autoTranslate: this.fb.control(undefined)
+    autoTranslate: this.fb.control(undefined),
   });
 
   constructor(
     private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
+    readonly fe: FormErrorHandlerService
   ) {
-    this.form.valueChanges.subscribe(it => console.log(it))
+    this.form.valueChanges.subscribe(it => console.log(it));
   }
 
   addLabel(event: MatChipInputEvent): void {

@@ -1,33 +1,27 @@
-import {logger} from 'firebase-functions/v2';
-import {onCall, HttpsError} from 'firebase-functions/v2/https';
-import {onDocumentCreated} from 'firebase-functions/v2/firestore';
-import {FieldValue} from 'firebase-admin/firestore';
-import {protos} from '@google-cloud/translate';
-import {canPerform} from './utils/security-utils';
-import {
-  bucket,
-  firebaseConfig,
-  SUPPORT_LOCALES,
-  translationService,
-} from './config';
-import {Space} from './models/space.model';
-import {PublishTranslationsData, Translation} from './models/translation.model';
-import {UserPermission} from './models/user.model';
-import {findSpaceById} from './services/space.service';
-import {findTranslations} from './services/translation.service';
-
+import { logger } from 'firebase-functions/v2';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { protos } from '@google-cloud/translate';
+import { canPerform } from './utils/security-utils';
+import { bucket, firebaseConfig, SUPPORT_LOCALES, translationService } from './config';
+import { Space } from './models/space.model';
+import { PublishTranslationsData, Translation } from './models/translation.model';
+import { UserPermission } from './models/user.model';
+import { findSpaceById } from './services/space.service';
+import { findTranslations } from './services/translation.service';
 
 // Publish
-const translationsPublish = onCall<PublishTranslationsData>(async (request) => {
+const translationsPublish = onCall<PublishTranslationsData>(async request => {
   logger.info('[translationsPublish] data: ' + JSON.stringify(request.data));
   logger.info('[translationsPublish] context.auth: ' + JSON.stringify(request.auth));
-  const {spaceId} = request.data;
+  const { spaceId } = request.data;
   if (!canPerform(UserPermission.TRANSLATION_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await findSpaceById(spaceId).get();
   const translationsSnapshot = await findTranslations(spaceId).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {
     const space: Space = spaceSnapshot.data() as Space;
-    const translations = translationsSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Translation);
+    const translations = translationsSnapshot.docs.filter(it => it.exists).map(it => it.data() as Translation);
 
     for (const locale of space.locales) {
       const localeStorage: Record<string, string> = {};
@@ -43,16 +37,12 @@ const translationsPublish = onCall<PublishTranslationsData>(async (request) => {
       }
       // Save generated JSON
       logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
-      bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`)
-        .save(
-          JSON.stringify(localeStorage),
-          (err?: Error | null) => {
-            if (err) {
-              logger.error(`[translationsPublish] Can not save file for Space(${spaceId}) and Locale(${locale})`);
-              logger.error(err);
-            }
-          }
-        );
+      bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`).save(JSON.stringify(localeStorage), (err?: Error | null) => {
+        if (err) {
+          logger.error(`[translationsPublish] Can not save file for Space(${spaceId}) and Locale(${locale})`);
+          logger.error(err);
+        }
+      });
     }
     // Save Cache
     logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/cache.json`);
@@ -64,10 +54,10 @@ const translationsPublish = onCall<PublishTranslationsData>(async (request) => {
   }
 });
 
-const onTranslationCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async (event) => {
+const onTranslationCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async event => {
   logger.info(`[Translation:onCreate] eventId='${event.id}'`);
   logger.info(`[Translation:onCreate] params='${JSON.stringify(event.params)}'`);
-  const {spaceId} = event.params;
+  const { spaceId } = event.params;
 
   // No Data
   if (!event.data) return;

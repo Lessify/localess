@@ -1,4 +1,4 @@
-import {selectAuth, selectIsAuthenticated} from './auth.selectors';
+import { selectAuth, selectIsAuthenticated } from './auth.selectors';
 
 describe('Auth Selectors', () => {
   it('selectAuth', () => {
@@ -15,9 +15,9 @@ describe('Auth Selectors', () => {
 function createAuthState() {
   return {
     auth: {
-      isAuthenticated: false
+      isAuthenticated: false,
     },
     settings: {} as any,
-    router: {} as any
+    router: {} as any,
   };
 }

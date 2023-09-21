@@ -1,5 +1,5 @@
 export interface SchemaSelectChange {
-  contentId: string
-  fieldName: string
-  schemaName: string
+  contentId: string;
+  fieldName: string;
+  schemaName: string;
 }

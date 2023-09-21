@@ -1,13 +1,11 @@
-import {Pipe, PipeTransform} from '@angular/core';
+import { Pipe, PipeTransform } from '@angular/core';
 
 const K = 1000;
-const M = K *1000;
+const M = K * 1000;
 const G = M * 1000;
 
-@Pipe({name: 'digitalStore'})
+@Pipe({ name: 'digitalStore' })
 export class DigitalStorePipe implements PipeTransform {
-
-
   transform(size?: number): string {
     if (size != undefined) {
       switch (size.toFixed().length) {
@@ -27,7 +25,8 @@ export class DigitalStorePipe implements PipeTransform {
         case 11:
         case 12:
           return `${(size / G).toFixed(2)} GB`;
-        default: return `${size} B`;
+        default:
+          return `${size} B`;
       }
     }
     return '';

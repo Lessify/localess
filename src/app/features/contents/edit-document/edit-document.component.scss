@@ -14,7 +14,7 @@ mat-form-field {
     color: mat.get-color-from-palette(mat.$green-palette, 500);
   }
   &.not-published {
-    color:  mat.get-color-from-palette(mat.$gray-palette, 500);
+    color: mat.get-color-from-palette(mat.$gray-palette, 500);
   }
   &.draft {
     color: mat.get-color-from-palette(mat.$amber-palette, 500);
@@ -26,7 +26,7 @@ mat-drawer-container {
 }
 
 mat-drawer {
-  width: calc(100% - 400px)
+  width: calc(100% - 400px);
 }
 
 .container-fluid {
@@ -46,5 +46,3 @@ mat-card.browser {
     }
   }
 }
-
-

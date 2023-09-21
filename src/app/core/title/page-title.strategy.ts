@@ -1,8 +1,8 @@
-import {Title} from '@angular/platform-browser';
-import {Injectable} from '@angular/core';
-import {RouterStateSnapshot, TitleStrategy} from '@angular/router';
+import { Title } from '@angular/platform-browser';
+import { Injectable } from '@angular/core';
+import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 
-import {environment as env} from '../../../environments/environment';
+import { environment as env } from '../../../environments/environment';
 
 @Injectable()
 export class PageTitleStrategy extends TitleStrategy {

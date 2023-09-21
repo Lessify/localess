@@ -1,4 +1,4 @@
-import {Stripe} from 'stripe';
+import { Stripe } from 'stripe';
 import {
   PackageDimensionRecurringContentData,
   PriceContentData,
@@ -7,7 +7,7 @@ import {
   PriceTireContentData,
   ProductContentData,
 } from './model';
-import {v4} from 'uuid';
+import { v4 } from 'uuid';
 
 export function productToContentData(data: Stripe.Product): ProductContentData {
   const result: ProductContentData = {
@@ -68,7 +68,7 @@ export function priceToContentData(data: Stripe.Price): PriceContentData {
     result.recurring = recurringToContentData(data.recurring);
   }
   if (data.tiers) {
-    result.tiers = data.tiers.map((it) => tireToContentData(it));
+    result.tiers = data.tiers.map(it => tireToContentData(it));
   }
   return result;
 }
@@ -123,8 +123,8 @@ export function priceCustomUnitAmountToContentData(data: Stripe.Price.CustomUnit
 
 export async function generateProductWithPricesData(stripe: Stripe, product: Stripe.Product): Promise<ProductContentData> {
   const productData: ProductContentData = productToContentData(product);
-  const prices = await stripe.prices.list({product: product.id, expand: ['data.tiers']}).autoPagingToArray({limit: 100});
-  const pricesData: PriceContentData[] = prices.map((price) => priceToContentData(price));
+  const prices = await stripe.prices.list({ product: product.id, expand: ['data.tiers'] }).autoPagingToArray({ limit: 100 });
+  const pricesData: PriceContentData[] = prices.map(price => priceToContentData(price));
   if (pricesData.length > 0) {
     productData.prices = pricesData;
   }

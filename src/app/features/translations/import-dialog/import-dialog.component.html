@@ -1,12 +1,12 @@
 <h1 mat-dialog-title>Translations Import</h1>
 <mat-dialog-content>
-  <br/>
+  <br />
   <form [formGroup]="form" class="step-container">
     <mat-form-field>
       <mat-label>Type</mat-label>
       <mat-select formControlName="kind" required (selectionChange)="onKindSelectionChange($event)">
         <mat-option *ngFor="let kind of exportKinds" [value]="kind.key">
-          {{kind.value}}
+          {{ kind.value }}
         </mat-option>
       </mat-select>
     </mat-form-field>
@@ -15,7 +15,7 @@
       <mat-label>Type</mat-label>
       <mat-select formControlName="locale" required>
         <mat-option *ngFor="let locale of data.locales" [value]="locale.id">
-          {{locale.name}}
+          {{ locale.name }}
         </mat-option>
       </mat-select>
     </mat-form-field>
@@ -24,11 +24,13 @@
       <mat-icon>upload_file</mat-icon>
       Upload File
     </button>
-    <br/>
-    {{fileName}}
-
+    <br />
+    {{ fileName }}
   </form>
-  <mat-error *ngIf="fileWrong">The selected file does not comply with import extension (<b>*{{fileAccept}}</b>).</mat-error>
+  <mat-error *ngIf="fileWrong"
+    >The selected file does not comply with import extension (<b>*{{ fileAccept }}</b
+    >).</mat-error
+  >
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
@@ -37,4 +39,4 @@
     Import
   </button>
 </mat-dialog-actions>
-<input hidden type="file" [accept]="fileAccept" #fileInput (change)="onFileChange($event)"/>
+<input hidden type="file" [accept]="fileAccept" #fileInput (change)="onFileChange($event)" />

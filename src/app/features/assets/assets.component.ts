@@ -1,44 +1,44 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
-import {MatTableDataSource} from '@angular/material/table';
-import {MatDialog} from '@angular/material/dialog';
-import {filter, switchMap, takeUntil, tap} from 'rxjs/operators';
-import {MatSort} from '@angular/material/sort';
-import {MatPaginator} from '@angular/material/paginator';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {SpaceService} from '@shared/services/space.service';
-import {Space} from '@shared/models/space.model';
-import {selectSpace} from '@core/state/space/space.selector';
-import {NotificationService} from '@shared/services/notification.service';
-import {combineLatest, Subject} from 'rxjs';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {ObjectUtils} from '@core/utils/object-utils.service';
-import {SelectionModel} from '@angular/cdk/collections';
-import {PathItem} from '@core/state/space/space.model';
-import {actionSpaceAssetPathChange,} from '@core/state/space/space.actions';
-import {AssetService} from '@shared/services/asset.service';
-import {Asset, AssetFile, AssetFolderCreate, AssetFolderUpdate, AssetKind} from '@shared/models/asset.model';
-import {AddFolderDialogModel} from './add-folder-dialog/add-folder-dialog.model';
-import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.component';
-import {EditFolderDialogComponent} from './edit-folder-dialog/edit-folder-dialog.component';
-import {EditFolderDialogModel} from './edit-folder-dialog/edit-folder-dialog.model';
-import {ImportDialogComponent} from './import-dialog/import-dialog.component';
-import {ImportDialogModel, ImportDialogReturn} from './import-dialog/import-dialog.model';
-import {ExportDialogComponent} from './export-dialog/export-dialog.component';
-import {ExportDialogModel, ExportDialogReturn} from './export-dialog/export-dialog.model';
-import {TaskService} from '@shared/services/task.service';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatDialog } from '@angular/material/dialog';
+import { filter, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { MatSort } from '@angular/material/sort';
+import { MatPaginator } from '@angular/material/paginator';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
+import { SpaceService } from '@shared/services/space.service';
+import { Space } from '@shared/models/space.model';
+import { selectSpace } from '@core/state/space/space.selector';
+import { NotificationService } from '@shared/services/notification.service';
+import { combineLatest, Subject } from 'rxjs';
+import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { ObjectUtils } from '@core/utils/object-utils.service';
+import { SelectionModel } from '@angular/cdk/collections';
+import { PathItem } from '@core/state/space/space.model';
+import { actionSpaceAssetPathChange } from '@core/state/space/space.actions';
+import { AssetService } from '@shared/services/asset.service';
+import { Asset, AssetFile, AssetFolderCreate, AssetFolderUpdate, AssetKind } from '@shared/models/asset.model';
+import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
+import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
+import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
+import { EditFolderDialogModel } from './edit-folder-dialog/edit-folder-dialog.model';
+import { ImportDialogComponent } from './import-dialog/import-dialog.component';
+import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { ExportDialogComponent } from './export-dialog/export-dialog.component';
+import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { TaskService } from '@shared/services/task.service';
 
 @Component({
   selector: 'll-assets',
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsComponent implements OnInit, OnDestroy {
-  @ViewChild(MatSort, {static: false}) sort?: MatSort;
-  @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
+  @ViewChild(MatSort, { static: false }) sort?: MatSort;
+  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
@@ -69,85 +69,79 @@ export class AssetsComponent implements OnInit, OnDestroy {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>,
-  ) {
-  }
+    private readonly store: Store<AppState>
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
   }
 
   loadData(): void {
-    this.store.select(selectSpace)
+    this.store
+      .select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         tap(it => {
           if (it.assetPath && it.assetPath.length > 0) {
             this.assetPath = it.assetPath;
           } else {
-            this.assetPath = [{
-              name: 'Root',
-              fullSlug: ''
-            }];
+            this.assetPath = [
+              {
+                name: 'Root',
+                fullSlug: '',
+              },
+            ];
           }
         }),
-        switchMap(it =>
-          combineLatest([
-            this.spaceService.findById(it.id),
-            this.assetService.findAll(it.id, this.parentPath)
-          ])
-        ),
-        takeUntil(this.destroy$),
+        switchMap(it => combineLatest([this.spaceService.findById(it.id), this.assetService.findAll(it.id, this.parentPath)])),
+        takeUntil(this.destroy$)
       )
       .subscribe({
         next: ([space, assets]) => {
-          this.selectedSpace = space
+          this.selectedSpace = space;
           this.assets = assets;
 
           this.dataSource = new MatTableDataSource<Asset>(assets);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;
-          this.selection.clear()
+          this.selection.clear();
           this.cd.markForCheck();
-        }
-      })
+        },
+      });
   }
 
   onFileUpload(event: Event): void {
     if (event.target && event.target instanceof HTMLInputElement) {
-      const target = event.target as HTMLInputElement
+      const target = event.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
         for (let idx = 0; idx < target.files.length; idx++) {
           const file = target.files[idx];
-          this.assetService.createFile(this.selectedSpace?.id!, this.parentPath, file)
-            .subscribe({
-              next: () => {
-                this.notificationService.success(`Asset '${file.name}' has been uploaded.`);
-              },
-              error: () => {
-                this.notificationService.error(`Asset '${file.name}' can not be uploaded.`);
-              }
-            });
+          this.assetService.createFile(this.selectedSpace?.id!, this.parentPath, file).subscribe({
+            next: () => {
+              this.notificationService.success(`Asset '${file.name}' has been uploaded.`);
+            },
+            error: () => {
+              this.notificationService.error(`Asset '${file.name}' can not be uploaded.`);
+            },
+          });
         }
       }
     }
   }
 
   openAddFolderDialog(): void {
-    this.dialog.open<AddFolderDialogComponent, AddFolderDialogModel, AssetFolderCreate>(
-      AddFolderDialogComponent, {
+    this.dialog
+      .open<AddFolderDialogComponent, AddFolderDialogModel, AssetFolderCreate>(AddFolderDialogComponent, {
         width: '500px',
         data: {
           reservedNames: this.assets.map(it => it.name),
-        }
+        },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.assetService.createFolder(this.selectedSpace!.id, this.parentPath, it!)
-        )
+        switchMap(it => this.assetService.createFolder(this.selectedSpace!.id, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -155,7 +149,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.notificationService.error('Folder can not be created.');
-        }
+        },
       });
   }
 
@@ -163,31 +157,28 @@ export class AssetsComponent implements OnInit, OnDestroy {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.dialog.open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdate>(
-      EditFolderDialogComponent, {
+    this.dialog
+      .open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdate>(EditFolderDialogComponent, {
         width: '500px',
         data: {
           reservedNames: this.assets.map(it => it.name),
           asset: ObjectUtils.clone(element),
-        }
-      }
-    )
+        },
+      })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.assetService.update(this.selectedSpace!.id, element.id, it!)
-        )
+        switchMap(it => this.assetService.update(this.selectedSpace!.id, element.id, it!))
       )
       .subscribe({
         next: () => {
-          this.selection.clear()
-          this.cd.markForCheck()
+          this.selection.clear();
+          this.cd.markForCheck();
           this.notificationService.success('Folder has been updated.');
         },
         error: () => {
           this.notificationService.error('Folder can not be updated.');
-        }
+        },
       });
   }
 
@@ -195,36 +186,33 @@ export class AssetsComponent implements OnInit, OnDestroy {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
-      ConfirmationDialogComponent, {
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
           title: 'Delete Asset',
-          content: `Are you sure about deleting Asset with name: ${element.name}.`
-        }
+          content: `Are you sure about deleting Asset with name: ${element.name}.`,
+        },
       })
       .afterClosed()
       .pipe(
-        filter((it) => it || false),
-        switchMap(_ =>
-          this.assetService.delete(this.selectedSpace!.id, element.id)
-        )
+        filter(it => it || false),
+        switchMap(_ => this.assetService.delete(this.selectedSpace!.id, element.id))
       )
       .subscribe({
         next: () => {
-          this.selection.clear()
-          this.cd.markForCheck()
+          this.selection.clear();
+          this.cd.markForCheck();
           this.notificationService.success(`Asset '${element.name}' has been deleted.`);
         },
-        error: (err) => {
+        error: err => {
           this.notificationService.error(`Asset '${element.name}' can not be deleted.`);
-        }
+        },
       });
   }
 
-
   ngOnDestroy(): void {
-    this.destroy$.next(undefined)
-    this.destroy$.complete()
+    this.destroy$.next(undefined);
+    this.destroy$.complete();
   }
 
   // TABLE
@@ -257,32 +245,31 @@ export class AssetsComponent implements OnInit, OnDestroy {
     // }
 
     if (element.kind === AssetKind.FOLDER) {
-      this.selection.clear()
-      const assetPath = ObjectUtils.clone(this.assetPath)
+      this.selection.clear();
+      const assetPath = ObjectUtils.clone(this.assetPath);
       assetPath.push({
         name: element.name,
-        fullSlug: element.parentPath ? `${element.parentPath}/${element.id}` : element.id
-      })
-      this.store.dispatch(actionSpaceAssetPathChange({assetPath}))
-
+        fullSlug: element.parentPath ? `${element.parentPath}/${element.id}` : element.id,
+      });
+      this.store.dispatch(actionSpaceAssetPathChange({ assetPath }));
     }
   }
 
   navigateToSlug(pathItem: PathItem) {
-    this.selection.clear()
-    const assetPath = ObjectUtils.clone(this.assetPath)
-    const idx = assetPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);
+    this.selection.clear();
+    const assetPath = ObjectUtils.clone(this.assetPath);
+    const idx = assetPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     assetPath.splice(idx + 1);
-    this.store.dispatch(actionSpaceAssetPathChange({assetPath}))
+    this.store.dispatch(actionSpaceAssetPathChange({ assetPath }));
   }
 
   fileIcon(type: string): string {
-    if (type.startsWith('audio/')) return 'audio_file'
-    if (type.startsWith('text/')) return 'description'
-    if (type.startsWith('image/')) return 'image'
-    if (type.startsWith('font/')) return 'font_download'
-    if (type.startsWith('video/')) return 'video_file'
-    return 'file_present'
+    if (type.startsWith('audio/')) return 'audio_file';
+    if (type.startsWith('text/')) return 'description';
+    if (type.startsWith('image/')) return 'image';
+    if (type.startsWith('font/')) return 'font_download';
+    if (type.startsWith('video/')) return 'video_file';
+    return 'file_present';
   }
 
   filePreview(type: string): boolean {
@@ -291,66 +278,46 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
-        ImportDialogComponent,
-        {
-          width: '500px',
-        }
-      )
+      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(ImportDialogComponent, {
+        width: '500px',
+      })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
         tap(console.log),
-        switchMap(it =>
-          this.taskService.createAssetImportTask(this.selectedSpace!.id, it!.file)
-        )
+        switchMap(it => this.taskService.createAssetImportTask(this.selectedSpace!.id, it!.file))
       )
       .subscribe({
         next: () => {
-          this.notificationService.success(
-            'Assets Import Task has been created.',
-            [
-              {label: 'To Tasks', link: '/features/tasks'}
-            ]
-          );
+          this.notificationService.success('Assets Import Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
         },
         error: () => {
           this.notificationService.error('Assets Import Task can not be created.');
-        }
+        },
       });
   }
 
   openExportDialog() {
     this.dialog
-      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
-        ExportDialogComponent,
-        {
-          width: '500px',
-          data: {
-            spaceId: this.selectedSpace!.id
-          }
-        }
-      )
+      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
+        width: '500px',
+        data: {
+          spaceId: this.selectedSpace!.id,
+        },
+      })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.taskService.createAssetExportTask(this.selectedSpace!.id, it?.path)
-        )
+        switchMap(it => this.taskService.createAssetExportTask(this.selectedSpace!.id, it?.path))
       )
       .subscribe({
-        next: (result) => {
-          this.notificationService.success(
-            'Assets Export Task has been created.',
-            [
-              {label: 'To Tasks', link: '/features/tasks'}
-            ]
-          );
+        next: result => {
+          this.notificationService.success('Assets Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
         },
-        error: (err) => {
-          console.error(err)
+        error: err => {
+          console.error(err);
           this.notificationService.error('Assets Export Task can not be created.');
-        }
+        },
       });
   }
 
@@ -358,6 +325,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    window.open(`/api/v1/spaces/${this.selectedSpace!.id}/assets/${element.id}?download`)
+    window.open(`/api/v1/spaces/${this.selectedSpace!.id}/assets/${element.id}?download`);
   }
 }

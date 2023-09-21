@@ -1,34 +1,32 @@
-import {NgModule} from '@angular/core';
-import {BrowserModule} from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
 
-import {AppRoutingModule} from './app-routing.module';
-import {AppComponent} from './app.component';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {getApp, initializeApp, provideFirebaseApp} from '@angular/fire/app';
-import {environment} from '../environments/environment';
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
+import { environment } from '../environments/environment';
 import {
   browserPopupRedirectResolver,
   connectAuthEmulator,
   indexedDBLocalPersistence,
   initializeAuth,
-  provideAuth
+  provideAuth,
 } from '@angular/fire/auth';
-import {AuthGuardModule} from '@angular/fire/auth-guard';
-import {connectFirestoreEmulator, initializeFirestore, provideFirestore} from '@angular/fire/firestore';
-import {connectStorageEmulator, getStorage, provideStorage} from '@angular/fire/storage';
-import {CoreModule} from '@core/core.module';
-import {MAT_PAGINATOR_DEFAULT_OPTIONS} from '@angular/material/paginator';
-import {MAT_CHIPS_DEFAULT_OPTIONS} from '@angular/material/chips';
-import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {connectFunctionsEmulator, getFunctions, provideFunctions} from '@angular/fire/functions';
-import {getPerformance, providePerformance} from '@angular/fire/performance';
-import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
-import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
+import { AuthGuardModule } from '@angular/fire/auth-guard';
+import { connectFirestoreEmulator, initializeFirestore, provideFirestore } from '@angular/fire/firestore';
+import { connectStorageEmulator, getStorage, provideStorage } from '@angular/fire/storage';
+import { CoreModule } from '@core/core.module';
+import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
+import { MAT_CHIPS_DEFAULT_OPTIONS } from '@angular/material/chips';
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { connectFunctionsEmulator, getFunctions, provideFunctions } from '@angular/fire/functions';
+import { getPerformance, providePerformance } from '@angular/fire/performance';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
+import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 
 @NgModule({
-  declarations: [
-    AppComponent
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     AppRoutingModule,
@@ -44,17 +42,17 @@ import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
     provideAuth(() => {
       const auth = initializeAuth(getApp(), {
         persistence: indexedDBLocalPersistence,
-        popupRedirectResolver: browserPopupRedirectResolver
+        popupRedirectResolver: browserPopupRedirectResolver,
       });
       if (environment.useEmulators) {
         connectAuthEmulator(auth, 'http://localhost:9099', {
-          disableWarnings: true
+          disableWarnings: true,
         });
       }
       return auth;
     }),
     provideFirestore(() => {
-      const firestore = initializeFirestore(getApp(), {localCache: {kind: 'persistent'}});
+      const firestore = initializeFirestore(getApp(), { localCache: { kind: 'persistent' } });
       if (environment.useEmulators) {
         connectFirestoreEmulator(firestore, 'localhost', 8080);
       }
@@ -72,15 +70,15 @@ import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
       if (environment.useEmulators) {
         connectFunctionsEmulator(functions, 'localhost', 5001);
         //functions.customDomain = 'http://localhost:4200/api'
-        functions.region = 'europe-west6'
+        functions.region = 'europe-west6';
       } else {
-        functions.region = 'europe-west6'
+        functions.region = 'europe-west6';
       }
       return functions;
     }),
     providePerformance(() => {
       return getPerformance();
-    })
+    }),
   ],
   providers: [
     {
@@ -92,25 +90,24 @@ import {IMAGE_LOADER, ImageLoaderConfig} from '@angular/common';
         } else {
           return config.src;
         }
-      }
+      },
     },
-    {provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: {appearance: 'outline'}},
+    { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } },
     {
       provide: MAT_PAGINATOR_DEFAULT_OPTIONS,
       useValue: {
         pageSize: 20,
         pageSizeOptions: [10, 20, 50, 100],
-        showFirstLastButtons: true
-      }
+        showFirstLastButtons: true,
+      },
     },
     {
       provide: MAT_CHIPS_DEFAULT_OPTIONS,
       useValue: {
-        separatorKeyCodes: [ENTER, COMMA]
-      }
-    }
+        separatorKeyCodes: [ENTER, COMMA],
+      },
+    },
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule {
-}
+export class AppModule {}

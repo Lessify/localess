@@ -1,6 +1,5 @@
 <div class="container">
-  <div class="row">
-  </div>
+  <div class="row"></div>
   <div class="row align-items-start">
     <div class="col"></div>
     <div class="col">
@@ -11,26 +10,22 @@
         <form [formGroup]="form">
           <mat-form-field>
             <mat-label>Email</mat-label>
-            <input matInput type="text" formControlName="email" required/>
+            <input matInput type="text" formControlName="email" required />
           </mat-form-field>
           <mat-form-field>
             <mat-label>Password</mat-label>
-            <input matInput type="password" formControlName="password" required/>
+            <input matInput type="password" formControlName="password" required />
           </mat-form-field>
           <div class="d-flex justify-content-center">
             <button mat-raised-button color="primary" (click)="loginWithEmailAndPassword(form.value.email, form.value.password)">
               LogIn
             </button>
             <div class="px-2"></div>
-            <button mat-raised-button color="accent" (click)="form.reset()">
-              Reset
-            </button>
+            <button mat-raised-button color="accent" (click)="form.reset()">Reset</button>
           </div>
           <div class="py-2"></div>
           <div class="d-flex justify-content-center">
-            <button mat-stroked-button routerLink="/reset">
-              Forgot Password ?
-            </button>
+            <button mat-stroked-button routerLink="/reset">Forgot Password ?</button>
           </div>
         </form>
         <div *ngIf="isGoogleAuthEnabled || isMicrosoftAuthEnabled">
@@ -38,9 +33,7 @@
           <mat-divider></mat-divider>
           <div class="py-2"></div>
           <div class="d-flex justify-content-center">
-            <button *ngIf="isGoogleAuthEnabled" mat-raised-button color="warn" (click)="loginWithGoogle()">LogIn
-              with Google
-            </button>
+            <button *ngIf="isGoogleAuthEnabled" mat-raised-button color="warn" (click)="loginWithGoogle()">LogIn with Google</button>
             <div class="px-2"></div>
             <button *ngIf="isMicrosoftAuthEnabled" mat-raised-button color="warn" (click)="loginWithMicrosoft()">
               LogIn with Microsoft
@@ -50,7 +43,7 @@
       </div>
 
       <p *ngIf="showLogoutButton">
-        Hello {{ (user| async)?.displayName}} <br/>
+        Hello {{ (user | async)?.displayName }} <br />
         <button (click)="logout()" *ngIf="showLogoutButton">Log out</button>
       </p>
     </div>
@@ -59,16 +52,16 @@
   <div class="row" *ngIf="settings$ | async as settings">
     <div class="col">
       <p *ngIf="settings.debugEnabled" class="text-break">
-        <b>showLogoutButton</b> = {{showLogoutButton}} <br/>
-        <b>showLoginButton</b> = {{showLoginButton}} <br/>
-        <b>isGoogleAuthEnabled</b> = {{isGoogleAuthEnabled}} <br/>
-        <b>isMicrosoftAuthEnabled</b> = {{isMicrosoftAuthEnabled}} <br/>
+        <b>showLogoutButton</b> = {{ showLogoutButton }} <br />
+        <b>showLoginButton</b> = {{ showLoginButton }} <br />
+        <b>isGoogleAuthEnabled</b> = {{ isGoogleAuthEnabled }} <br />
+        <b>isMicrosoftAuthEnabled</b> = {{ isMicrosoftAuthEnabled }} <br />
         <!--user = {{ user | async | json}} <br/>-->
-        <b>userId</b> = {{ (user | async)?.uid }} <br/>
-        <b>userDisplayName</b> = {{ (user | async)?.displayName }} <br/>
-        <b>userEmail</b> = {{ (user | async)?.email }} <br/>
-        <b>parsedToken</b> = {{ parsedToken | async | json }} <br/>
-        <b>auth</b> = {{ auth | json }} <br/>
+        <b>userId</b> = {{ (user | async)?.uid }} <br />
+        <b>userDisplayName</b> = {{ (user | async)?.displayName }} <br />
+        <b>userEmail</b> = {{ (user | async)?.email }} <br />
+        <b>parsedToken</b> = {{ parsedToken | async | json }} <br />
+        <b>auth</b> = {{ auth | json }} <br />
       </p>
     </div>
   </div>

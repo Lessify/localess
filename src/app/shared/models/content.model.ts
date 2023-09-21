@@ -1,5 +1,5 @@
-import {FieldValue, Timestamp} from '@angular/fire/firestore';
-import {ValidationErrors} from '@angular/forms';
+import { FieldValue, Timestamp } from '@angular/fire/firestore';
+import { ValidationErrors } from '@angular/forms';
 
 export interface ContentError {
   contentId: string;
@@ -17,38 +17,38 @@ export interface ContentData extends Record<string, any> {
 export type Content = ContentDocument | ContentFolder;
 
 export interface ContentBase {
-  id: string,
-  kind: ContentKind,
-  name: string,
+  id: string;
+  kind: ContentKind;
+  name: string;
 
   //Slug
-  slug: string
-  parentSlug: string
-  fullSlug: string
+  slug: string;
+  parentSlug: string;
+  fullSlug: string;
 
   //Lock
-  locked?: boolean
-  lockedBy?: string
+  locked?: boolean;
+  lockedBy?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
 export interface ContentDocument<T extends ContentData = ContentData> extends ContentBase {
-  kind: ContentKind.DOCUMENT
+  kind: ContentKind.DOCUMENT;
   schema: string;
   data?: T;
   publishedAt?: Timestamp;
-  editorEnabled?: boolean
+  editorEnabled?: boolean;
 }
 
 export interface ContentFolder extends ContentBase {
-  kind: ContentKind.FOLDER
+  kind: ContentKind.FOLDER;
 }
 
 export enum ContentKind {
   FOLDER = 'FOLDER',
-  DOCUMENT = 'DOCUMENT'
+  DOCUMENT = 'DOCUMENT',
 }
 
 // Service
@@ -72,46 +72,46 @@ export interface ContentFolderCreate {
 // Firestore
 
 export interface ContentCreateFS {
-  kind: ContentKind
+  kind: ContentKind;
   name: string;
   slug: string;
-  parentSlug: string
-  fullSlug: string
+  parentSlug: string;
+  fullSlug: string;
 
   createdAt: FieldValue;
   updatedAt: FieldValue;
 }
 
 export interface ContentDocumentCreateFS extends ContentCreateFS {
-  kind: ContentKind.DOCUMENT
+  kind: ContentKind.DOCUMENT;
   schema: string;
 }
 
 export interface ContentFolderCreateFS extends ContentCreateFS {
-  kind: ContentKind.FOLDER
+  kind: ContentKind.FOLDER;
 }
 
 // Events
 export interface EditorEvent {
-  owner: string,
-  id: string
+  owner: string;
+  id: string;
 }
 
 // Special Types
 
 export interface AssetContent {
-  kind: 'ASSET'
-  uri: string
+  kind: 'ASSET';
+  uri: string;
 }
 
 export interface LinkContent {
-  kind: 'LINK'
-  type: 'url' | 'content'
-  target: '_blank' | '_self'
-  uri: string
+  kind: 'LINK';
+  type: 'url' | 'content';
+  target: '_blank' | '_self';
+  uri: string;
 }
 
 export interface ReferenceContent {
-  kind: 'REFERENCE'
-  uri: string
+  kind: 'REFERENCE';
+  uri: string;
 }

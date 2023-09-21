@@ -6,14 +6,14 @@ import {
   actionSettingsChangeHour,
   actionSettingsChangeLanguage,
   actionSettingsChangeStickyHeader,
-  actionSettingsChangeTheme
+  actionSettingsChangeTheme,
 } from './settings.actions';
-import {NIGHT_MODE_THEME} from './settings.model';
+import { NIGHT_MODE_THEME } from './settings.model';
 
 describe('Settings Actions', () => {
   it('should create ActionSettingsChangeTheme action', () => {
     const action = actionSettingsChangeTheme({
-      theme: NIGHT_MODE_THEME
+      theme: NIGHT_MODE_THEME,
     });
 
     expect(action.type).toEqual(actionSettingsChangeTheme.type);
@@ -22,7 +22,7 @@ describe('Settings Actions', () => {
 
   it('should create ActionSettingsChangeAnimationsElements action', () => {
     const action = actionSettingsChangeAnimationsElements({
-      elementsAnimations: true
+      elementsAnimations: true,
     });
 
     expect(action.type).toEqual(actionSettingsChangeAnimationsElements.type);
@@ -31,7 +31,7 @@ describe('Settings Actions', () => {
 
   it('should create ActionSettingsChangeAnimationsPage action', () => {
     const action = actionSettingsChangeAnimationsPage({
-      pageAnimations: true
+      pageAnimations: true,
     });
 
     expect(action.type).toEqual(actionSettingsChangeAnimationsPage.type);
@@ -40,7 +40,7 @@ describe('Settings Actions', () => {
 
   it('should create ActionSettingsChangeAnimationsPageDisabled action', () => {
     const action = actionSettingsChangeAnimationsPageDisabled({
-      pageAnimationsDisabled: true
+      pageAnimationsDisabled: true,
     });
 
     expect(action.type).toEqual(actionSettingsChangeAnimationsPageDisabled.type);
@@ -49,7 +49,7 @@ describe('Settings Actions', () => {
 
   it('should create ActionSettingsChangeAutoNightMode action', () => {
     const action = actionSettingsChangeAutoNightMode({
-      autoNightMode: true
+      autoNightMode: true,
     });
 
     expect(action.type).toEqual(actionSettingsChangeAutoNightMode.type);
@@ -58,7 +58,7 @@ describe('Settings Actions', () => {
 
   it('should create ActionSettingsChangeLanguage action', () => {
     const action = actionSettingsChangeLanguage({
-      language: 'en'
+      language: 'en',
     });
 
     expect(action.type).toEqual(actionSettingsChangeLanguage.type);
@@ -67,7 +67,7 @@ describe('Settings Actions', () => {
 
   it('should create ActionSettingsChangeStickyHeader action', () => {
     const action = actionSettingsChangeStickyHeader({
-      stickyHeader: true
+      stickyHeader: true,
     });
 
     expect(action.type).toEqual(actionSettingsChangeStickyHeader.type);
@@ -76,7 +76,7 @@ describe('Settings Actions', () => {
 
   it('should create ActionSettingsChangeHour action', () => {
     const action = actionSettingsChangeHour({
-      hour: 7
+      hour: 7,
     });
 
     expect(action.type).toEqual(actionSettingsChangeHour.type);

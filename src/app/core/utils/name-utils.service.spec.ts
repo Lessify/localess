@@ -1,8 +1,7 @@
-import {NameUtils} from './name-utils.service';
+import { NameUtils } from './name-utils.service';
 
 describe('Test Name Utils', () => {
   it('contains spaces', () => {
-    expect(NameUtils.sanitize('  no  name   ')).toEqual('noname')
+    expect(NameUtils.sanitize('  no  name   ')).toEqual('noname');
   });
-
 });

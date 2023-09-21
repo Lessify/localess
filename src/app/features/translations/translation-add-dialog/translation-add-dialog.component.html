@@ -1,54 +1,48 @@
 <h1 mat-dialog-title>Add Translation</h1>
 <mat-dialog-content>
-  <br/>
+  <br />
   <form [formGroup]="form" class="step-container">
     <mat-form-field>
       <mat-label>Name</mat-label>
-      <input matInput type="text" #name formControlName="name" required autocomplete="off"/>
-      <mat-hint align="end">{{name.value?.length || 0}}/150</mat-hint>
-      <mat-error *ngIf="form.controls['name'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <input matInput type="text" #name formControlName="name" required autocomplete="off" />
+      <mat-hint align="end">{{ name.value?.length || 0 }}/150</mat-hint>
+      <mat-error *ngIf="form.controls['name'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
     <mat-form-field *ngIf="false">
       <mat-label>Type</mat-label>
       <mat-select formControlName="type" required>
         <mat-option *ngFor="let type of translationTypes" [value]="type">
-          {{type}}
+          {{ type }}
         </mat-option>
       </mat-select>
-      <mat-error *ngIf="form.controls['type'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <mat-error *ngIf="form.controls['type'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
     <mat-form-field>
       <mat-label>Description</mat-label>
-      <textarea matInput #description
-                class="cdk-textarea-autosize"
-                formControlName="description"></textarea>
-      <mat-hint align="end">{{description.value?.length || 0}}/250</mat-hint>
-      <mat-error *ngIf="form.controls['description'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <textarea matInput #description class="cdk-textarea-autosize" formControlName="description"></textarea>
+      <mat-hint align="end">{{ description.value?.length || 0 }}/250</mat-hint>
+      <mat-error *ngIf="form.controls['description'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
     <mat-form-field>
       <mat-label>Value</mat-label>
-      <textarea matInput #defaultValue
-                class="cdk-textarea-autosize"
-                formControlName="value"></textarea>
-      <mat-hint align="end">{{defaultValue.value?.length || 0}}/1000</mat-hint>
-      <mat-error *ngIf="form.controls['value'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <textarea matInput #defaultValue class="cdk-textarea-autosize" formControlName="value"></textarea>
+      <mat-hint align="end">{{ defaultValue.value?.length || 0 }}/1000</mat-hint>
+      <mat-error *ngIf="form.controls['value'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
 
-    <mat-form-field >
+    <mat-form-field>
       <mat-chip-grid #chipList aria-label="Label Selection">
-        <mat-chip-row
-          *ngFor="let label of form.controls['labels'].value"
-          selectable
-          removable
-          (removed)="removeLabel(label)">
-          {{label}}
+        <mat-chip-row *ngFor="let label of form.controls['labels'].value" selectable removable (removed)="removeLabel(label)">
+          {{ label }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip-row>
-        <input matInput placeholder="Add Label..."
-               [matChipInputFor]="chipList"
-               [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-               matChipInputAddOnBlur
-               (matChipInputTokenEnd)="addLabel($event)">
+        <input
+          matInput
+          placeholder="Add Label..."
+          [matChipInputFor]="chipList"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          matChipInputAddOnBlur
+          (matChipInputTokenEnd)="addLabel($event)" />
       </mat-chip-grid>
     </mat-form-field>
 
@@ -57,7 +51,5 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">
-    Save
-  </button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

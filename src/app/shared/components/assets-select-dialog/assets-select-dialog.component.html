@@ -6,7 +6,7 @@
       <ng-container *ngIf="pathItem.fullSlug === ''">
         <mat-icon>home</mat-icon>
       </ng-container>
-      {{pathItem.name}}
+      {{ pathItem.name }}
     </ll-breadcrumb-item>
   </ll-breadcrumb>
   <mat-divider></mat-divider>
@@ -15,9 +15,11 @@
     <ng-container matColumnDef="select">
       <mat-header-cell *matHeaderCellDef> # </mat-header-cell>
       <mat-cell *matCellDef="let row">
-        <mat-checkbox *ngIf="row.kind === 'FILE'" (click)="$event.stopPropagation()"
-                      (change)="$event ? selection.toggle(row) : null"
-                      [checked]="selection.isSelected(row)">
+        <mat-checkbox
+          *ngIf="row.kind === 'FILE'"
+          (click)="$event.stopPropagation()"
+          (change)="$event ? selection.toggle(row) : null"
+          [checked]="selection.isSelected(row)">
         </mat-checkbox>
       </mat-cell>
     </ng-container>
@@ -26,7 +28,7 @@
       <mat-cell *matCellDef="let element">
         <ng-container [ngSwitch]="element.kind">
           <ng-container *ngSwitchCase="'FILE'">
-            <mat-icon>{{fileIcon(element.type)}}</mat-icon>
+            <mat-icon>{{ fileIcon(element.type) }}</mat-icon>
           </ng-container>
           <ng-container *ngSwitchCase="'FOLDER'">
             <mat-icon>folder</mat-icon>
@@ -38,8 +40,13 @@
       <mat-header-cell *matHeaderCellDef> Preview </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
-          <img class="img-thumbnail" width="115" height="115" alt="thumbnail" loading="lazy"
-               ngSrc="/api/v1/spaces/{{data.spaceId}}/assets/{{element.id}}"/>
+          <img
+            class="img-thumbnail"
+            width="115"
+            height="115"
+            alt="thumbnail"
+            loading="lazy"
+            ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
         </ng-container>
       </mat-cell>
     </ng-container>
@@ -47,11 +54,9 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div>
-          <div>{{element.name}}{{element.extension}}</div>
+          <div>{{ element.name }}{{ element.extension }}</div>
           <div *ngIf="element.metadata as metadata" class="fw-light">
-            <ng-container *ngIf="metadata.width && metadata.height">
-              W{{metadata.width}} x H{{metadata.height}}
-            </ng-container>
+            <ng-container *ngIf="metadata.width && metadata.height"> W{{ metadata.width }} x H{{ metadata.height }} </ng-container>
           </div>
         </div>
       </mat-cell>
@@ -59,34 +64,31 @@
     <ng-container matColumnDef="size">
       <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{element.size | digitalStore}}
+        {{ element.size | digitalStore }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="type">
       <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{element.type}}
+        {{ element.type }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.updatedAt?.toDate() | date:'medium'}} </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }} </mat-cell>
     </ng-container>
 
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowSelect(row)"></mat-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>
   <mat-paginator></mat-paginator>
-
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Close</button>
   <button mat-raised-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     <ng-container *ngIf="selection.selected.length > 1; else elseAsset">
-      Add Selected Assets ({{selection.selected.length}})
+      Add Selected Assets ({{ selection.selected.length }})
     </ng-container>
-    <ng-template #elseAsset>
-      Add Selected Asset
-    </ng-template>
+    <ng-template #elseAsset> Add Selected Asset </ng-template>
   </button>
 </mat-dialog-actions>

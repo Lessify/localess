@@ -1,6 +1,6 @@
 <h1 mat-dialog-title>User</h1>
 <mat-dialog-content>
-  <br/>
+  <br />
   <form [formGroup]="form" class="step-container">
     <mat-form-field>
       <mat-label>Role</mat-label>
@@ -9,13 +9,12 @@
         <mat-option [value]="'custom'">Custom</mat-option>
         <mat-option [value]="'admin'">Admin</mat-option>
       </mat-select>
-      <mat-error *ngIf="form.controls['role'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <mat-error *ngIf="form.controls['role'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
 
     <ng-container *ngIf="form.value.role === 'custom'">
       <b>Permissions</b>
       <mat-selection-list formControlName="permissions">
-
         <div mat-subheader>Administration</div>
         <mat-list-option value="USER_MANAGEMENT">
           <span matListItemTitle>User Management</span>
@@ -141,11 +140,9 @@
           <span matListItemTitle>Import</span>
           <span matListItemLine>Import Asset.</span>
         </mat-list-option>
-
       </mat-selection-list>
     </ng-container>
   </form>
-
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>
@@ -153,5 +150,5 @@
 </mat-dialog-actions>
 
 <ng-container *ngIf="settings$ | async as settings">
-  <pre *ngIf="settings.debugEnabled">{{form.value | json}}</pre>
+  <pre *ngIf="settings.debugEnabled">{{ form.value | json }}</pre>
 </ng-container>

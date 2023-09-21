@@ -1,48 +1,44 @@
-import {Injectable} from '@angular/core';
-import {Schema, SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
-import {FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators} from '@angular/forms';
-import {AssetContent, ContentData, ContentError} from '@shared/models/content.model';
-import {CommonValidator} from '@shared/validators/common.validator';
-import {v4} from 'uuid';
+import { Injectable } from '@angular/core';
+import { Schema, SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
+import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
+import { AssetContent, ContentData, ContentError } from '@shared/models/content.model';
+import { CommonValidator } from '@shared/validators/common.validator';
+import { v4 } from 'uuid';
 
 @Injectable()
 export class ContentHelperService {
-  constructor(
-    private readonly fb: FormBuilder,
-  ) {
-  }
+  constructor(private readonly fb: FormBuilder) {}
 
   validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] | null {
     const errors: ContentError[] = [];
     const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
-    const contentIteration = [data]
+    const contentIteration = [data];
     // Iterative traversing content and validating fields.
-    let selectedContent = contentIteration.pop()
+    let selectedContent = contentIteration.pop();
     while (selectedContent) {
-      const schema = schemasByName.get(selectedContent.schema)
+      const schema = schemasByName.get(selectedContent.schema);
       if (schema) {
         const schemaFieldsMap = new Map<string, SchemaField>(schema.fields?.map(it => [it.name, it]));
-        const form = this.generateSchemaForm(schema, true)
-        const extractSchemaContent = this.extractSchemaContent(selectedContent, schema, locale, true)
-        form.patchValue(extractSchemaContent)
+        const form = this.generateSchemaForm(schema, true);
+        const extractSchemaContent = this.extractSchemaContent(selectedContent, schema, locale, true);
+        form.patchValue(extractSchemaContent);
 
         // handle array like Asset Array
-        Object.getOwnPropertyNames(extractSchemaContent)
-          .forEach(fieldName => {
-            const content = extractSchemaContent[fieldName]
-            console.log(fieldName, content)
-            if (content instanceof Array) {
-              // Assets
-              if (content.some((it) => it.kind === SchemaFieldKind.ASSET)) {
-                const assets: AssetContent[] = content
-                const fa = form.controls[fieldName] as FormArray
-                assets.forEach((it) => fa.push(this.assetContentToForm(it)))
-              }
+        Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
+          const content = extractSchemaContent[fieldName];
+          console.log(fieldName, content);
+          if (content instanceof Array) {
+            // Assets
+            if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
+              const assets: AssetContent[] = content;
+              const fa = form.controls[fieldName] as FormArray;
+              assets.forEach(it => fa.push(this.assetContentToForm(it)));
             }
-          })
+          }
+        });
 
-        console.log(extractSchemaContent)
-        console.log(form.value)
+        console.log(extractSchemaContent);
+        console.log(form.value);
 
         if (form.invalid) {
           for (const controlName in form.controls) {
@@ -57,8 +53,8 @@ export class ContentHelperService {
                       schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
-                      errors: control.controls['uri'].errors
-                    })
+                      errors: control.controls['uri'].errors,
+                    });
                     break;
                   }
                   case SchemaFieldKind.REFERENCE: {
@@ -67,8 +63,8 @@ export class ContentHelperService {
                       schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
-                      errors: control.controls['uri'].errors
-                    })
+                      errors: control.controls['uri'].errors,
+                    });
                     break;
                   }
                   case SchemaFieldKind.ASSET: {
@@ -77,12 +73,12 @@ export class ContentHelperService {
                       schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
-                      errors: control.controls['uri'].errors
-                    })
+                      errors: control.controls['uri'].errors,
+                    });
                     break;
                   }
                   default: {
-                    console.log(`Unknown KIND : ${control.value}`)
+                    console.log(`Unknown KIND : ${control.value}`);
                   }
                 }
               } else {
@@ -91,8 +87,8 @@ export class ContentHelperService {
                   schema: schema.displayName || schema.name,
                   fieldName: controlName,
                   fieldDisplayName: component?.displayName,
-                  errors: control.errors
-                })
+                  errors: control.errors,
+                });
               }
             } else {
               // Work around for Form Array required
@@ -104,8 +100,8 @@ export class ContentHelperService {
                       schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
-                      errors: {required: true}
-                    })
+                      errors: { required: true },
+                    });
                   }
                 }
               }
@@ -113,21 +109,21 @@ export class ContentHelperService {
           }
         }
         schema.fields
-          ?.filter((it) => it.kind === SchemaFieldKind.SCHEMA)
-          .forEach((field) => {
+          ?.filter(it => it.kind === SchemaFieldKind.SCHEMA)
+          .forEach(field => {
             const sch: ContentData | undefined = selectedContent![field.name];
             if (sch) {
-              contentIteration.push(sch)
+              contentIteration.push(sch);
             }
-          })
+          });
         schema.fields
-          ?.filter((it) => it.kind === SchemaFieldKind.SCHEMAS)
-          .forEach((field) => {
+          ?.filter(it => it.kind === SchemaFieldKind.SCHEMAS)
+          .forEach(field => {
             const sch: ContentData[] | undefined = selectedContent![field.name];
-            sch?.forEach((it) => contentIteration.push(it));
-          })
+            sch?.forEach(it => contentIteration.push(it));
+          });
       }
-      selectedContent = contentIteration.pop()
+      selectedContent = contentIteration.pop();
     }
     return errors.length > 0 ? errors : null;
   }
@@ -135,26 +131,26 @@ export class ContentHelperService {
   extractSchemaContent(data: ContentData, schema: Schema, locale: string, full: boolean): Record<string, any> {
     //console.group('extractSchemaContent')
     //console.log('data',data)
-    const result: Record<string, any> = {}
+    const result: Record<string, any> = {};
     schema.fields
       ?.filter(it => full || ![SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS].includes(it.kind))
-      ?.forEach((field) => {
+      ?.forEach(field => {
         //console.log('field', field)
         let value;
         if (field.translatable) {
           // Extract Locale specific values
-          value = data[`${field.name}_i18n_${locale}`]
+          value = data[`${field.name}_i18n_${locale}`];
         } else {
           // Extract not translatable values in fallback locale
-          value = data[field.name]
+          value = data[field.name];
         }
         if (value !== undefined) {
           result[field.name] = value;
         }
-      })
+      });
     //console.log('result',result)
     //console.groupEnd()
-    return result
+    return result;
   }
 
   clone<T>(source: T, generateNewID: boolean = false): T {
@@ -194,9 +190,9 @@ export class ContentHelperService {
             }
           }
         }
-        const value = target[fieldName]
+        const value = target[fieldName];
         if (generateNewID && fieldName === '_id') {
-          target[fieldName] = v4()
+          target[fieldName] = v4();
         }
         if (value == null) {
           delete target[fieldName];
@@ -214,90 +210,138 @@ export class ContentHelperService {
     //console.log('schema', schema)
     const form: FormRecord = this.fb.record({});
     for (const field of schema.fields || []) {
-      const validators: ValidatorFn[] = []
+      const validators: ValidatorFn[] = [];
       if (field.required) {
-        validators.push(Validators.required)
+        validators.push(Validators.required);
       }
       // translatable + fallBackLocale => disabled = false
       // translatable + !fallBackLocale => disabled = false
       // !translatable + fallBackLocale => disabled = false
       // !translatable + !fallBackLocale => disabled = true
-      const disabled = !((field.translatable === true) || (isFallbackLocale))
+      const disabled = !(field.translatable === true || isFallbackLocale);
       switch (field.kind) {
         case SchemaFieldKind.TEXT:
         case SchemaFieldKind.TEXTAREA:
         case SchemaFieldKind.MARKDOWN: {
           if (field.minLength) {
-            validators.push(Validators.minLength(field.minLength))
+            validators.push(Validators.minLength(field.minLength));
           }
           if (field.maxLength) {
-            validators.push(Validators.maxLength(field.maxLength))
+            validators.push(Validators.maxLength(field.maxLength));
           }
-          form.setControl(field.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<string | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
         case SchemaFieldKind.NUMBER: {
           if (field.minValue) {
-            validators.push(Validators.min(field.minValue))
+            validators.push(Validators.min(field.minValue));
           }
           if (field.maxValue) {
-            validators.push(Validators.max(field.maxValue))
+            validators.push(Validators.max(field.maxValue));
           }
-          form.setControl(field.name, this.fb.control<number | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<number | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
         case SchemaFieldKind.COLOR: {
-          form.setControl(field.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<string | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
         case SchemaFieldKind.BOOLEAN: {
-          form.setControl(field.name, this.fb.control<boolean | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<boolean | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
         case SchemaFieldKind.DATE: {
-          form.setControl(field.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<string | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
         case SchemaFieldKind.DATETIME: {
-          form.setControl(field.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<string | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
         case SchemaFieldKind.OPTION: {
-          form.setControl(field.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<string | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
         case SchemaFieldKind.OPTIONS: {
           if (field.minValues) {
-            validators.push(Validators.minLength(field.minValues))
+            validators.push(Validators.minLength(field.minValues));
           }
           if (field.maxValues) {
-            validators.push(Validators.maxLength(field.maxValues))
+            validators.push(Validators.maxLength(field.maxValues));
           }
-          form.setControl(field.name, this.fb.control<string | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<string | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
         case SchemaFieldKind.LINK: {
@@ -305,49 +349,65 @@ export class ContentHelperService {
             kind: this.fb.control(SchemaFieldKind.LINK, Validators.required),
             type: this.fb.control<'url' | 'content'>('url', Validators.required),
             target: this.fb.control<'_blank' | '_self'>('_self', Validators.required),
-            uri: this.fb.control<string | undefined>({
-              value: undefined,
-              disabled: false, //disabled
-            }, validators)
-          })
-          form.setControl(field.name, link)
+            uri: this.fb.control<string | undefined>(
+              {
+                value: undefined,
+                disabled: false, //disabled
+              },
+              validators
+            ),
+          });
+          form.setControl(field.name, link);
           break;
         }
         case SchemaFieldKind.REFERENCE: {
           const link = this.fb.group({
             kind: this.fb.control(SchemaFieldKind.REFERENCE, Validators.required),
-            uri: this.fb.control<string | undefined>({
-              value: undefined,
-              disabled: false, //disabled
-            }, validators)
-          })
-          form.setControl(field.name, link)
+            uri: this.fb.control<string | undefined>(
+              {
+                value: undefined,
+                disabled: false, //disabled
+              },
+              validators
+            ),
+          });
+          form.setControl(field.name, link);
           break;
         }
         case SchemaFieldKind.ASSET: {
           form.setControl(
-            field.name, this.fb.group({
-              uri: this.fb.control<string | undefined>({
-                value: undefined,
-                disabled: false, //disabled
-              }, validators),
+            field.name,
+            this.fb.group({
+              uri: this.fb.control<string | undefined>(
+                {
+                  value: undefined,
+                  disabled: false, //disabled
+                },
+                validators
+              ),
               kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
             })
-          )
+          );
           break;
         }
         case SchemaFieldKind.ASSETS: {
           if (field.required) {
-            validators.push(CommonValidator.minLength(1))
+            validators.push(CommonValidator.minLength(1));
           }
           form.setControl(field.name, this.fb.array([], validators));
           break;
         }
         case SchemaFieldKind.SCHEMA: {
-          form.setControl(field.name, this.fb.control<any | undefined>({
-            value: undefined,
-            disabled: disabled
-          }, validators))
+          form.setControl(
+            field.name,
+            this.fb.control<any | undefined>(
+              {
+                value: undefined,
+                disabled: disabled,
+              },
+              validators
+            )
+          );
           break;
         }
       }
@@ -357,31 +417,38 @@ export class ContentHelperService {
   }
 
   assetsContentToFormArray(uris: AssetContent[]): FormArray {
-    return this.fb.array(uris.map((it) => this.fb.group({
-      uri: this.fb.control(it.uri, Validators.required),
-      kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-    })))
+    return this.fb.array(
+      uris.map(it =>
+        this.fb.group({
+          uri: this.fb.control(it.uri, Validators.required),
+          kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
+        })
+      )
+    );
   }
 
   assetContentToForm(asset: AssetContent): FormGroup {
     return this.fb.group({
       uri: this.fb.control(asset.uri),
       kind: this.fb.control(asset.kind),
-    })
+    });
   }
 
-
   assetsFormArray(uris: string[]): FormArray {
-    return this.fb.array(uris.map(it => this.fb.group({
-      uri: this.fb.control(it, Validators.required),
-      kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-    })))
+    return this.fb.array(
+      uris.map(it =>
+        this.fb.group({
+          uri: this.fb.control(it, Validators.required),
+          kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
+        })
+      )
+    );
   }
 
   assetFormGroup(uri: string): FormGroup {
     return this.fb.group({
       uri: this.fb.control(uri, Validators.required),
       kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-    })
+    });
   }
 }

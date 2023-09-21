@@ -1,10 +1,10 @@
-import {authReducer, initialState} from './auth.reducer';
-import {AuthState} from './auth.models';
-import {authLogin, authLogout} from './auth.actions';
+import { authReducer, initialState } from './auth.reducer';
+import { AuthState } from './auth.models';
+import { authLogin, authLogout } from './auth.actions';
 
 describe('AuthReducer', () => {
   const TEST_INITIAL_STATE: AuthState = {
-    isAuthenticated: false
+    isAuthenticated: false,
   };
 
   it('should return default state', () => {

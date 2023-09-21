@@ -3,8 +3,9 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{document?.name}}</span>&nbsp;
-    <span class="text-muted">#{{document?.slug}}</span>
+    <span>{{ document?.name }}</span
+    >&nbsp;
+    <span class="text-muted">#{{ document?.slug }}</span>
     <span class="spacer"></span>
 
     <mat-button-toggle-group [formControl]="editorEnabledCtr">
@@ -13,46 +14,51 @@
     </mat-button-toggle-group>
 
     <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
-      {{selectedLocale.name}}
+      {{ selectedLocale.name }}
       <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
     </button>
 
     <mat-menu #localesMenu="matMenu">
       <button mat-menu-item *ngFor="let locale of availableLocales" (click)="onLocaleChanged(locale)">
         <span [class.fw-semibold]="locale.id === selectedLocale.id">
-          {{locale.name}}
+          {{ locale.name }}
           <span *ngIf="locale.id === selectedSpace?.localeFallback.id"> (Fallback)</span>
         </span>
       </button>
     </mat-menu>
 
     <button mat-icon-button *ngIf="contentErrors" [matMenuTriggerFor]="contentErrorsMenu">
-      <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline
-      </mat-icon>
+      <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline </mat-icon>
     </button>
 
     <mat-menu class="mat-menu-error-messages" #contentErrorsMenu="matMenu" xPosition="before">
       <mat-list>
         <mat-list-item *ngFor="let error of contentErrors">
           <mat-icon color="warn" matListItemIcon>warning</mat-icon>
-          In <b>{{error.schema}}</b> the <b>{{error.fieldDisplayName || error.fieldName}}</b> {{fe.errors(error.errors)}}
+          In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }}
         </mat-list-item>
       </mat-list>
     </mat-menu>
 
-    <button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
-            mat-raised-button color="primary" matTooltip="Save the page"
-            [disabled]="isSaveLoading"
-            (click)="save()">
-      <ll-icon [animate]="isSaveLoading" start="save" end="sync"/>
+    <button
+      *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
+      mat-raised-button
+      color="primary"
+      matTooltip="Save the page"
+      [disabled]="isSaveLoading"
+      (click)="save()">
+      <ll-icon [animate]="isSaveLoading" start="save" end="sync" />
       Save
     </button>
 
-    <button *ngIf="'CONTENT_PUBLISH' | canUserPerform | async"
-            mat-raised-button color="accent" matTooltip="Publish to be available via API call"
-            [disabled]="isPublishLoading"
-            (click)="publish()">
-      <ll-icon [animate]="isPublishLoading" start="publish" end="sync"/>
+    <button
+      *ngIf="'CONTENT_PUBLISH' | canUserPerform | async"
+      mat-raised-button
+      color="accent"
+      matTooltip="Publish to be available via API call"
+      [disabled]="isPublishLoading"
+      (click)="publish()">
+      <ll-icon [animate]="isPublishLoading" start="publish" end="sync" />
       Publish
     </button>
 
@@ -73,35 +79,40 @@
     <mat-menu #importMenu="matMenu">
       <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="openDraftInNewTab(locale.id)">
         <mat-icon>mode_edit</mat-icon>
-        <span>Draft {{locale.name}} JSON</span>
+        <span>Draft {{ locale.name }} JSON</span>
       </button>
-      <mat-divider/>
+      <mat-divider />
       <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="openPublishedInNewTab(locale.id)">
         <mat-icon>public</mat-icon>
-        <span>Published {{locale.name}} JSON</span>
+        <span>Published {{ locale.name }} JSON</span>
       </button>
     </mat-menu>
-
   </mat-toolbar-row>
 </mat-toolbar>
 
-<mat-progress-bar *ngIf="isLoading" mode="query"/>
+<mat-progress-bar *ngIf="isLoading" mode="query" />
 <div *ngIf="!isLoading" class="container-fluid">
   <mat-drawer-container autosize="true">
     <mat-drawer mode="side" [opened]="editorEnabledCtr.value === true">
-      <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment else noEnv">
+      <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment; else noEnv">
         <mat-card-header>
-          <mat-card-title>{{selectedEnvironment?.name}}</mat-card-title>
-          <mat-card-subtitle>{{selectedEnvironment?.url}}</mat-card-subtitle>
+          <mat-card-title>{{ selectedEnvironment?.name }}</mat-card-title>
+          <mat-card-subtitle>{{ selectedEnvironment?.url }}</mat-card-subtitle>
           <span class="spacer"></span>
           <button mat-icon-button [matMenuTriggerFor]="envMenu">
             <mat-icon>arrow_drop_down</mat-icon>
           </button>
           <mat-menu #envMenu="matMenu">
-            <button mat-menu-item *ngFor="let env of selectedSpace?.environments" (click)="changeEnvironment(env)" [disabled]="env === selectedEnvironment">{{env.name}} | {{env.url}}</button>
+            <button
+              mat-menu-item
+              *ngFor="let env of selectedSpace?.environments"
+              (click)="changeEnvironment(env)"
+              [disabled]="env === selectedEnvironment">
+              {{ env.name }} | {{ env.url }}
+            </button>
           </mat-menu>
         </mat-card-header>
-        <mat-divider/>
+        <mat-divider />
         <mat-card-content>
           <iframe id="preview" [src]="iframeUrl"></iframe>
         </mat-card-content>
@@ -110,7 +121,7 @@
         <div class="container text-center h-100">
           <div class="row h-100">
             <div class="col align-self-center">
-              No Configured Environments.<br/>
+              No Configured Environments.<br />
               You can configure them in Settings.
             </div>
           </div>
@@ -119,12 +130,12 @@
     </mat-drawer>
     <mat-drawer-content>
       <div *ngIf="rootSchema" class="container">
-        <br/>
+        <br />
 
         <ll-breadcrumb>
           <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchemaBackwards(schemaPathItem)">
             <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch">
-              {{sch.displayName || sch.name}}
+              {{ sch.displayName || sch.name }}
             </ng-container>
           </ll-breadcrumb-item>
         </ll-breadcrumb>
@@ -136,9 +147,7 @@
           [localeFallback]="selectedSpace.localeFallback.id"
           [documents]="documents"
           [space]="selectedSpace"
-          (schemaChange)="onSchemaChange($event)"
-        />
-
+          (schemaChange)="onSchemaChange($event)" />
       </div>
     </mat-drawer-content>
   </mat-drawer-container>
@@ -149,7 +158,7 @@
         <mat-expansion-panel-header>
           <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
         </mat-expansion-panel-header>
-        <pre>{{documentData | json}}</pre>
+        <pre>{{ documentData | json }}</pre>
       </mat-expansion-panel>
     </mat-accordion>
   </ng-container>

@@ -1,4 +1,4 @@
-import {authLogin, authLogout} from './auth.actions';
+import { authLogin, authLogout } from './auth.actions';
 
 describe('Auth Actions', () => {
   it('should create ActionAuthLogin action', () => {

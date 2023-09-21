@@ -1,37 +1,34 @@
 <div class="wrapper" *ngIf="settings$ | async as settings">
   <mat-toolbar [color]="selectedSpace?.ui?.color || 'primary'">
     <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
-      <mat-icon>{{settings.mainMenuExpended ? 'menu_open' : 'menu'}}</mat-icon>
+      <mat-icon>{{ settings.mainMenuExpended ? 'menu_open' : 'menu' }}</mat-icon>
     </button>
     <span class="name">Localess</span>
     <span class="spacer"></span>
 
     <ng-container *ngIf="selectedSpace; else elseNoSpace">
       <button mat-flat-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
-        {{selectedSpace.name}}
+        {{ selectedSpace.name }}
         <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
       </button>
       <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
         <button mat-menu-item *ngFor="let space of spaces" (click)="onSpaceSelection(space)">
-         <span [class.fw-semibold]="space.id === selectedSpace.id">
-           {{space.name}}
-         </span>
+          <span [class.fw-semibold]="space.id === selectedSpace.id">
+            {{ space.name }}
+          </span>
         </button>
       </mat-menu>
     </ng-container>
 
     <ng-template #elseNoSpace>
-      <button mat-raised-button color="warn" routerLink="/features/spaces">
-        No Spaces. Click here to create one.
-      </button>
+      <button mat-raised-button color="warn" routerLink="/features/spaces">No Spaces. Click here to create one.</button>
     </ng-template>
-
 
     <span class="spacer"></span>
     <button mat-icon-button (click)="onSettingsMenuExpendedChangeState()" matTooltip="Settings">
       <mat-icon>settings</mat-icon>
     </button>
-    <button mat-icon-button  routerLink="/features/me" matTooltip="My Profile">
+    <button mat-icon-button routerLink="/features/me" matTooltip="My Profile">
       <mat-icon>account_circle</mat-icon>
     </button>
     <button mat-icon-button (click)="onLogoutClick()" matTooltip="LogOut">
@@ -40,51 +37,49 @@
   </mat-toolbar>
 
   <mat-sidenav-container autosize="true">
-
     <mat-sidenav mode="side" opened="true" position="start" [class.collapsed]="!settings.mainMenuExpended">
       <mat-nav-list>
-
         <ng-container *ngIf="selectedSpace">
           <ng-container *ngFor="let item of userSideMenu">
             <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
-              <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
-              <div matListItemTitle *ngIf="settings.mainMenuExpended">{{item.label}}</div>
+              <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
+              <div matListItemTitle *ngIf="settings.mainMenuExpended">{{ item.label }}</div>
             </mat-list-item>
           </ng-container>
         </ng-container>
 
-        <ng-container *ngIf="(userPermission.USER_MANAGEMENT | canUserPerform | async ) || (userPermission.SPACE_MANAGEMENT | canUserPerform | async )">
-          <mat-divider/>
+        <ng-container
+          *ngIf="(userPermission.USER_MANAGEMENT | canUserPerform | async) || (userPermission.SPACE_MANAGEMENT | canUserPerform | async)">
+          <mat-divider />
           <div mat-subheader *ngIf="settings.mainMenuExpended">Admin</div>
           <ng-container *ngFor="let item of adminSideMenu">
             <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
-              <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
-              <div matListItemTitle *ngIf="settings.mainMenuExpended">{{item.label}}</div>
+              <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
+              <div matListItemTitle *ngIf="settings.mainMenuExpended">{{ item.label }}</div>
             </mat-list-item>
           </ng-container>
         </ng-container>
 
-        <mat-divider/>
+        <mat-divider />
         <div mat-subheader *ngIf="settings.mainMenuExpended">Community and Support</div>
         <mat-list-item *ngFor="let item of communitySideMenu" (click)="openNewTab(item.link)">
-          <mat-icon matListItemIcon [matTooltip]="item.label">{{item.icon}}</mat-icon>
-          <div matListItemTitle *ngIf="settings.mainMenuExpended">{{item.label}}</div>
+          <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
+          <div matListItemTitle *ngIf="settings.mainMenuExpended">{{ item.label }}</div>
         </mat-list-item>
       </mat-nav-list>
-      <mat-divider/>
+      <mat-divider />
       <mat-list *ngIf="settings.mainMenuExpended">
         <mat-list-item>
-          Version : {{version}}
-          <mat-action-list matListItemMeta
-                           *ngIf="release && release.tag_name > version"
-                           [matTooltip]="'A new version is available : ' + release.name">
+          Version : {{ version }}
+          <mat-action-list
+            matListItemMeta
+            *ngIf="release && release.tag_name > version"
+            [matTooltip]="'A new version is available : ' + release.name">
             <mat-icon>info</mat-icon>
           </mat-action-list>
         </mat-list-item>
-        <mat-divider/>
-        <mat-list-item>
-          Developed by <a href="https://lessify.io" target="_blank">Lessify</a>
-        </mat-list-item>
+        <mat-divider />
+        <mat-list-item> Developed by <a href="https://lessify.io" target="_blank">Lessify</a> </mat-list-item>
       </mat-list>
     </mat-sidenav>
 
@@ -98,11 +93,8 @@
     </mat-sidenav>
 
     <mat-sidenav-content>
-      <ng-container *ngIf="isRoleNone">
-        Please contact your administrator to grant you access to resources.
-      </ng-container>
+      <ng-container *ngIf="isRoleNone"> Please contact your administrator to grant you access to resources. </ng-container>
       <router-outlet></router-outlet>
     </mat-sidenav-content>
-
   </mat-sidenav-container>
 </div>

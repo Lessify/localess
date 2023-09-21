@@ -1,8 +1,8 @@
-import {FieldValue, Timestamp} from '@angular/fire/firestore';
+import { FieldValue, Timestamp } from '@angular/fire/firestore';
 
 export enum SchemaType {
   ROOT = 'ROOT',
-  NODE = 'NODE'
+  NODE = 'NODE',
 }
 
 export interface Schema {
@@ -15,14 +15,15 @@ export interface Schema {
   fields?: SchemaField[];
 
   //Lock
-  locked?: boolean
-  lockedBy?: string
+  locked?: boolean;
+  lockedBy?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-export type SchemaField = SchemaFieldText
+export type SchemaField =
+  | SchemaFieldText
   | SchemaFieldTextarea
   | SchemaFieldMarkdown
   | SchemaFieldNumber
@@ -59,28 +60,28 @@ export enum SchemaFieldKind {
 }
 
 export interface FieldKindDescription {
-  name: string
-  icon: string
+  name: string;
+  icon: string;
 }
 
 export const schemaFieldKindDescriptions: Record<string, FieldKindDescription> = {
-  'TEXT': {name: 'Text', icon: 'title'},
-  'TEXTAREA': {name: 'TextArea', icon: 'rtt'},
-  'MARKDOWN': {name: 'Markdown', icon: 'functions'},
-  'NUMBER': {name: 'Number', icon: 'pin'},
-  'COLOR': {name: 'Color', icon: 'colorize'},
-  'DATE': {name: 'Date', icon: 'event'},
-  'DATETIME': {name: 'Date and Time', icon: 'schedule'},
-  'BOOLEAN': {name: 'Boolean', icon: 'toggle_on'},
-  'OPTION': {name: 'Single Option', icon: 'list'},
-  'OPTIONS': {name: 'Multiple Options', icon: 'list'},
-  'LINK': {name: 'Link', icon: 'link'},
-  'REFERENCE': {name: 'Reference', icon: 'link'},
-  'ASSET': {name: 'Asset ( One )', icon: 'attachment'},
-  'ASSETS': {name: 'Assets ( Many )', icon: 'attachment'},
-  'SCHEMA': {name: 'Schema ( One )', icon: 'polyline'},
-  'SCHEMAS': {name: 'Schemas ( Many )', icon: 'polyline'},
-}
+  TEXT: { name: 'Text', icon: 'title' },
+  TEXTAREA: { name: 'TextArea', icon: 'rtt' },
+  MARKDOWN: { name: 'Markdown', icon: 'functions' },
+  NUMBER: { name: 'Number', icon: 'pin' },
+  COLOR: { name: 'Color', icon: 'colorize' },
+  DATE: { name: 'Date', icon: 'event' },
+  DATETIME: { name: 'Date and Time', icon: 'schedule' },
+  BOOLEAN: { name: 'Boolean', icon: 'toggle_on' },
+  OPTION: { name: 'Single Option', icon: 'list' },
+  OPTIONS: { name: 'Multiple Options', icon: 'list' },
+  LINK: { name: 'Link', icon: 'link' },
+  REFERENCE: { name: 'Reference', icon: 'link' },
+  ASSET: { name: 'Asset ( One )', icon: 'attachment' },
+  ASSETS: { name: 'Assets ( Many )', icon: 'attachment' },
+  SCHEMA: { name: 'Schema ( One )', icon: 'polyline' },
+  SCHEMAS: { name: 'Schemas ( Many )', icon: 'polyline' },
+};
 
 export interface SchemaFieldBase {
   name: string;
@@ -160,22 +161,22 @@ export interface SchemaFieldOptions extends SchemaFieldBase {
 }
 
 export interface SchemaFieldLink extends SchemaFieldBase {
-  kind: SchemaFieldKind.LINK
+  kind: SchemaFieldKind.LINK;
 }
 
 export interface SchemaFieldReference extends SchemaFieldBase {
-  kind: SchemaFieldKind.REFERENCE
-  path?: string
+  kind: SchemaFieldKind.REFERENCE;
+  path?: string;
 }
 
 export interface SchemaFieldAsset extends SchemaFieldBase {
-  kind: SchemaFieldKind.ASSET
-  fileTypes?: AssetFileType[]
+  kind: SchemaFieldKind.ASSET;
+  fileTypes?: AssetFileType[];
 }
 
 export interface SchemaFieldAssets extends SchemaFieldBase {
-  kind: SchemaFieldKind.ASSETS
-  fileTypes?: AssetFileType[]
+  kind: SchemaFieldKind.ASSETS;
+  fileTypes?: AssetFileType[];
 }
 
 export enum AssetFileType {

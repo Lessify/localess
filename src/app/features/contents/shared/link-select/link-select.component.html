@@ -1,8 +1,8 @@
 <form *ngIf="form" [formGroup]="form">
   <mat-form-field>
-    <mat-label>{{component.displayName || component.name}}</mat-label>
+    <mat-label>{{ component.displayName || component.name }}</mat-label>
     <button mat-icon-button matIconPrefix [matMenuTriggerFor]="linkMenu">
-      <mat-icon>{{form.value.type === 'content'? 'link' : 'public'}}</mat-icon>
+      <mat-icon>{{ form.value.type === 'content' ? 'link' : 'public' }}</mat-icon>
     </button>
     <mat-menu #linkMenu="matMenu">
       <button mat-menu-item (click)="onTypeChange('url')">
@@ -16,45 +16,46 @@
     </mat-menu>
     <ng-container [ngSwitch]="form.value.type">
       <ng-container *ngSwitchCase="'url'">
-        <input matInput type="url"
-               formControlName="uri"
-               [required]="component.required"
-               autocomplete="off"/>
+        <input matInput type="url" formControlName="uri" [required]="component.required" autocomplete="off" />
       </ng-container>
       <ng-container *ngSwitchCase="'content'">
-        <input matInput [required]="component.required"
-               [matAutocomplete]="auto"
-               [formControl]="searchCtrl">
+        <input matInput [required]="component.required" [matAutocomplete]="auto" [formControl]="searchCtrl" />
         <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
           <mat-option *ngFor="let link of filteredContent | async" [value]="link">
-            <span>{{link.name}}</span> |
-            <small>{{link.fullSlug}}</small>
+            <span>{{ link.name }}</span> |
+            <small>{{ link.fullSlug }}</small>
           </mat-option>
         </mat-autocomplete>
       </ng-container>
     </ng-container>
 
-
-    <button *ngIf="form.value.type === 'content'" mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
+    <button
+      *ngIf="form.value.type === 'content'"
+      mat-icon-button
+      matTextSuffix
+      (click)="contentReset()"
+      [disabled]="searchCtrl.value === ''">
       <mat-icon>clear</mat-icon>
     </button>
     <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-    <mat-hint *ngIf="component.description">{{component.description}}</mat-hint>
-    <mat-error *ngIf="form.controls['uri'].errors as errors">{{fe.errors(errors)}}</mat-error>
+    <mat-hint *ngIf="component.description">{{ component.description }}</mat-hint>
+    <mat-error *ngIf="form.controls['uri'].errors as errors">{{ fe.errors(errors) }}</mat-error>
   </mat-form-field>
 
-  &nbsp;&nbsp;<mat-slide-toggle [checked]="form.value.target === '_blank'" (change)="targetChange($event)">Open in a new window</mat-slide-toggle>
-  <br/>
-  <br/>
+  &nbsp;&nbsp;<mat-slide-toggle [checked]="form.value.target === '_blank'" (change)="targetChange($event)"
+    >Open in a new window</mat-slide-toggle
+  >
+  <br />
+  <br />
 </form>
 <ng-container *ngIf="settings$ | async as settings">
   <mat-accordion *ngIf="settings.debugEnabled">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Form => {{form?.valid}}</mat-panel-title>
+        <mat-panel-title>Form => {{ form?.valid }}</mat-panel-title>
       </mat-expansion-panel-header>
-      <pre>{{form.value | json}}</pre>
-      <pre>{{form.errors | json}}</pre>
+      <pre>{{ form.value | json }}</pre>
+      <pre>{{ form.errors | json }}</pre>
     </mat-expansion-panel>
   </mat-accordion>
 </ng-container>

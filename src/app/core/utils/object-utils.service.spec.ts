@@ -1,4 +1,4 @@
-import {ObjectUtils} from './object-utils.service';
+import { ObjectUtils } from './object-utils.service';
 
 describe('Test Object Utils', () => {
   it('is equal', () => {
@@ -8,10 +8,10 @@ describe('Test Object Utils', () => {
       object: {
         a: 'a',
         b: 'b',
-        c: 'c'
+        c: 'c',
       },
       array: [1, 2, 3, 4],
-      arrayObj: [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }]
+      arrayObj: [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }],
     };
     const clone: any = ObjectUtils.clone(original);
     expect(original).toEqual(clone);
@@ -19,7 +19,7 @@ describe('Test Object Utils', () => {
 
   it('number do not change', () => {
     const original: any = {
-      number: 1
+      number: 1,
     };
     const clone: any = ObjectUtils.clone(original);
     expect(original).toEqual(clone);
@@ -29,7 +29,7 @@ describe('Test Object Utils', () => {
 
   it('string do not change', () => {
     const original: any = {
-      string: 'abc'
+      string: 'abc',
     };
     const clone: any = ObjectUtils.clone(original);
     expect(original).toEqual(clone);
@@ -42,8 +42,8 @@ describe('Test Object Utils', () => {
       object: {
         a: 'a',
         b: 'b',
-        c: 'c'
-      }
+        c: 'c',
+      },
     };
     const clone: any = ObjectUtils.clone(original);
     expect(original).toEqual(clone);
@@ -53,7 +53,7 @@ describe('Test Object Utils', () => {
 
   it('array remove do not change', () => {
     const original: any = {
-      array: [1, 2, 3, 4]
+      array: [1, 2, 3, 4],
     };
     const clone: any = ObjectUtils.clone(original);
     expect(original).toEqual(clone);
@@ -63,7 +63,7 @@ describe('Test Object Utils', () => {
 
   it('array change do not change', () => {
     const original: any = {
-      array: [1, 2, 3, 4]
+      array: [1, 2, 3, 4],
     };
     const clone: any = ObjectUtils.clone(original);
     expect(original).toEqual(clone);
@@ -73,7 +73,7 @@ describe('Test Object Utils', () => {
 
   it('array of Objects remove do not change', () => {
     const original: any = {
-      arrayObj: [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }]
+      arrayObj: [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }],
     };
     const clone: any = ObjectUtils.clone(original);
     expect(original).toEqual(clone);
@@ -83,7 +83,7 @@ describe('Test Object Utils', () => {
 
   it('array of Objects change do not change', () => {
     const original: any = {
-      arrayObj: [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }]
+      arrayObj: [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }],
     };
     const clone: any = ObjectUtils.clone(original);
     expect(original).toEqual(clone);

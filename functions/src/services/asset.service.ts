@@ -1,8 +1,8 @@
-import {firestoreService} from '../config';
-import {Timestamp, DocumentReference, Query} from 'firebase-admin/firestore';
-import Ajv, {ErrorObject} from 'ajv';
-import {Asset, AssetExport, assetExportArraySchema, AssetFileExport, AssetFolderExport, AssetKind} from '../models/asset.model';
-import {logger} from 'firebase-functions/v2';
+import { firestoreService } from '../config';
+import { Timestamp, DocumentReference, Query } from 'firebase-admin/firestore';
+import Ajv, { ErrorObject } from 'ajv';
+import { Asset, AssetExport, assetExportArraySchema, AssetFileExport, AssetFolderExport, AssetKind } from '../models/asset.model';
+import { logger } from 'firebase-functions/v2';
 
 /**
  * find Content by Full Slug
@@ -11,8 +11,7 @@ import {logger} from 'firebase-functions/v2';
  * @return {Query} document reference to the space
  */
 export function findAssetsByParentPath(spaceId: string, parentPath: string): Query {
-  return firestoreService.collection(`spaces/${spaceId}/assets`)
-    .where('parentPath', '==', parentPath);
+  return firestoreService.collection(`spaces/${spaceId}/assets`).where('parentPath', '==', parentPath);
 }
 
 /**
@@ -23,7 +22,8 @@ export function findAssetsByParentPath(spaceId: string, parentPath: string): Que
  */
 export function findAssetsByStartFullSlug(spaceId: string, startParentPath: string): Query {
   logger.info(`[findAssetsByStartFullSlug] spaceId=${spaceId} startParentPath=${startParentPath}`);
-  return firestoreService.collection(`spaces/${spaceId}/assets`)
+  return firestoreService
+    .collection(`spaces/${spaceId}/assets`)
     .where('parentPath', '>=', startParentPath)
     .where('parentPath', '<', `${startParentPath}~`);
 }
@@ -58,7 +58,7 @@ export function findAssetById(spaceId: string, id: string): DocumentReference {
  * @return {ErrorObject[]} errors in case they exist
  */
 export function validateAssetImport(data: unknown): ErrorObject[] | undefined | null {
-  const ajv = new Ajv({discriminator: true});
+  const ajv = new Ajv({ discriminator: true });
   const validate = ajv.compile(assetExportArraySchema);
   if (validate(data)) {
     return undefined;

@@ -1,18 +1,18 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {AssetsSelectDialogModel} from './assets-select-dialog.model';
-import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {PathItem} from '@core/state/space/space.model';
-import {ObjectUtils} from '@core/utils/object-utils.service';
-import {SelectionModel} from '@angular/cdk/collections';
-import {Asset, AssetKind} from '@shared/models/asset.model';
-import {switchMap, takeUntil} from 'rxjs/operators';
-import {BehaviorSubject, Subject} from 'rxjs';
-import {MatTableDataSource} from '@angular/material/table';
-import {AssetService} from '@shared/services/asset.service';
-import {MatSort} from '@angular/material/sort';
-import {MatPaginator} from '@angular/material/paginator';
-import {SpaceService} from '@shared/services/space.service';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { AssetsSelectDialogModel } from './assets-select-dialog.model';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { PathItem } from '@core/state/space/space.model';
+import { ObjectUtils } from '@core/utils/object-utils.service';
+import { SelectionModel } from '@angular/cdk/collections';
+import { Asset, AssetKind } from '@shared/models/asset.model';
+import { switchMap, takeUntil } from 'rxjs/operators';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { MatTableDataSource } from '@angular/material/table';
+import { AssetService } from '@shared/services/asset.service';
+import { MatSort } from '@angular/material/sort';
+import { MatPaginator } from '@angular/material/paginator';
+import { SpaceService } from '@shared/services/space.service';
 
 @Component({
   selector: 'll-assets-select-dialog',
@@ -21,9 +21,8 @@ import {SpaceService} from '@shared/services/space.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
-
-  @ViewChild(MatSort, {static: false}) sort?: MatSort;
-  @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
+  @ViewChild(MatSort, { static: false }) sort?: MatSort;
+  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
   assets: Asset[] = [];
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
@@ -40,10 +39,12 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
 
   // Subscriptions
   private destroy$ = new Subject();
-  path$ = new BehaviorSubject<PathItem[]>([{
-    name: 'Root',
-    fullSlug: ''
-  }]);
+  path$ = new BehaviorSubject<PathItem[]>([
+    {
+      name: 'Root',
+      fullSlug: '',
+    },
+  ]);
 
   constructor(
     private readonly assetService: AssetService,
@@ -52,63 +53,63 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
     private readonly cd: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA)
     public data: AssetsSelectDialogModel
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
   }
 
   loadData(): void {
-      this.path$.asObservable()
+    this.path$
+      .asObservable()
       .pipe(
-        switchMap(( path) => {
+        switchMap(path => {
           this.assetPath = path;
-          return this.assetService.findAll(this.data.spaceId, this.parentPath, this.data.fileType)
+          return this.assetService.findAll(this.data.spaceId, this.parentPath, this.data.fileType);
         }),
-        takeUntil(this.destroy$),
+        takeUntil(this.destroy$)
       )
       .subscribe({
-        next: (assets) => {
+        next: assets => {
           this.assets = assets;
 
           this.dataSource = new MatTableDataSource<Asset>(assets);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.cd.markForCheck();
-        }
+        },
       });
   }
 
   navigateToSlug(pathItem: PathItem) {
-    const assetPath = ObjectUtils.clone(this.assetPath)
-    const idx = assetPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);
+    const assetPath = ObjectUtils.clone(this.assetPath);
+    const idx = assetPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     assetPath.splice(idx + 1);
-    this.path$.next(assetPath)
+    this.path$.next(assetPath);
   }
 
   onRowSelect(element: Asset): void {
     if (element.kind === AssetKind.FILE) {
-      this.selection.toggle(element)
+      this.selection.toggle(element);
       return;
     }
 
     if (element.kind === AssetKind.FOLDER) {
-      const assetPath = ObjectUtils.clone(this.assetPath)
+      const assetPath = ObjectUtils.clone(this.assetPath);
       assetPath.push({
         name: element.name,
-        fullSlug: element.parentPath ? `${element.parentPath}/${element.id}` : element.id
-      })
-      this.path$.next(assetPath)
+        fullSlug: element.parentPath ? `${element.parentPath}/${element.id}` : element.id,
+      });
+      this.path$.next(assetPath);
     }
   }
 
   fileIcon(type: string): string {
-    if (type.startsWith('audio/')) return 'audio_file'
-    if (type.startsWith('image/')) return 'image'
-    if (type.startsWith('font/')) return 'font_download'
-    if (type.startsWith('video/')) return 'video_file'
-    return 'file_present'
+    if (type.startsWith('audio/')) return 'audio_file';
+    if (type.startsWith('image/')) return 'image';
+    if (type.startsWith('font/')) return 'font_download';
+    if (type.startsWith('video/')) return 'video_file';
+    return 'file_present';
   }
 
   filePreview(type: string): boolean {
@@ -116,9 +117,8 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next(undefined)
-    this.destroy$.complete()
-    this.path$.complete()
+    this.destroy$.next(undefined);
+    this.destroy$.complete();
+    this.path$.complete();
   }
-
 }

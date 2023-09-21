@@ -1,20 +1,20 @@
 <h1 mat-dialog-title>User Invite</h1>
 <mat-dialog-content>
-  <br/>
+  <br />
   <form [formGroup]="form" class="step-container">
     <mat-form-field>
       <mat-label>Email</mat-label>
-      <input matInput type="email" formControlName="email" required autocomplete="off"/>
-      <mat-error *ngIf="form.controls['email'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <input matInput type="email" formControlName="email" required autocomplete="off" />
+      <mat-error *ngIf="form.controls['email'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
     <mat-form-field>
       <mat-label>Password</mat-label>
-      <input matInput type="password" formControlName="password" required autocomplete="off"/>
-      <mat-error *ngIf="form.controls['password'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <input matInput type="password" formControlName="password" required autocomplete="off" />
+      <mat-error *ngIf="form.controls['password'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
     <mat-form-field>
       <mat-label>Display Name</mat-label>
-      <input matInput type="text" formControlName="displayName" autocomplete="off"/>
+      <input matInput type="text" formControlName="displayName" autocomplete="off" />
     </mat-form-field>
     <mat-form-field>
       <mat-label>Role</mat-label>
@@ -28,7 +28,6 @@
     <ng-container *ngIf="form.value.role === 'custom'">
       <b>Permissions</b>
       <mat-selection-list formControlName="permissions">
-
         <div mat-subheader>Administration</div>
         <mat-list-option value="USER_MANAGEMENT">
           <span matListItemTitle>User Management</span>
@@ -154,10 +153,8 @@
           <span matListItemTitle>Import</span>
           <span matListItemLine>Import Asset.</span>
         </mat-list-option>
-
       </mat-selection-list>
     </ng-container>
-
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
@@ -167,6 +164,6 @@
 
 <ng-container *ngIf="settings$ | async as settings">
   <ng-container *ngIf="settings.debugEnabled">
-    <pre>{{form.value | json}}</pre>
+    <pre>{{ form.value | json }}</pre>
   </ng-container>
 </ng-container>

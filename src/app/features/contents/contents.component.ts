@@ -1,49 +1,49 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
-import {MatTableDataSource} from '@angular/material/table';
-import {MatDialog} from '@angular/material/dialog';
-import {filter, switchMap, takeUntil, tap} from 'rxjs/operators';
-import {MatSort} from '@angular/material/sort';
-import {MatPaginator} from '@angular/material/paginator';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {SpaceService} from '@shared/services/space.service';
-import {Space} from '@shared/models/space.model';
-import {selectSpace} from '@core/state/space/space.selector';
-import {NotificationService} from '@shared/services/notification.service';
-import {Schema, SchemaType} from '@shared/models/schema.model';
-import {SchemaService} from '@shared/services/schema.service';
-import {combineLatest, Subject} from 'rxjs';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {Content, ContentDocumentCreate, ContentFolderCreate, ContentKind, ContentUpdate} from '@shared/models/content.model';
-import {ContentService} from '@shared/services/content.service';
-import {ObjectUtils} from '@core/utils/object-utils.service';
-import {SelectionModel} from '@angular/cdk/collections';
-import {PathItem} from '@core/state/space/space.model';
-import {actionSpaceContentPathChange} from '@core/state/space/space.actions';
-import {AddDocumentDialogComponent} from './add-document-dialog/add-document-dialog.component';
-import {AddDocumentDialogModel} from './add-document-dialog/add-document-dialog.model';
-import {AddFolderDialogComponent} from './add-folder-dialog/add-folder-dialog.component';
-import {AddFolderDialogModel} from './add-folder-dialog/add-folder-dialog.model';
-import {EditDialogComponent} from './edit-dialog/edit-dialog.component';
-import {EditDialogModel} from './edit-dialog/edit-dialog.model';
-import {ExportDialogComponent} from './export-dialog/export-dialog.component';
-import {ExportDialogModel, ExportDialogReturn} from './export-dialog/export-dialog.model';
-import {TaskService} from '@shared/services/task.service';
-import {ImportDialogComponent} from './import-dialog/import-dialog.component';
-import {ImportDialogModel, ImportDialogReturn} from './import-dialog/import-dialog.model';
-import {TokenService} from '@shared/services/token.service';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatDialog } from '@angular/material/dialog';
+import { filter, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { MatSort } from '@angular/material/sort';
+import { MatPaginator } from '@angular/material/paginator';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
+import { SpaceService } from '@shared/services/space.service';
+import { Space } from '@shared/models/space.model';
+import { selectSpace } from '@core/state/space/space.selector';
+import { NotificationService } from '@shared/services/notification.service';
+import { Schema, SchemaType } from '@shared/models/schema.model';
+import { SchemaService } from '@shared/services/schema.service';
+import { combineLatest, Subject } from 'rxjs';
+import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { Content, ContentDocumentCreate, ContentFolderCreate, ContentKind, ContentUpdate } from '@shared/models/content.model';
+import { ContentService } from '@shared/services/content.service';
+import { ObjectUtils } from '@core/utils/object-utils.service';
+import { SelectionModel } from '@angular/cdk/collections';
+import { PathItem } from '@core/state/space/space.model';
+import { actionSpaceContentPathChange } from '@core/state/space/space.actions';
+import { AddDocumentDialogComponent } from './add-document-dialog/add-document-dialog.component';
+import { AddDocumentDialogModel } from './add-document-dialog/add-document-dialog.model';
+import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
+import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
+import { EditDialogComponent } from './edit-dialog/edit-dialog.component';
+import { EditDialogModel } from './edit-dialog/edit-dialog.model';
+import { ExportDialogComponent } from './export-dialog/export-dialog.component';
+import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { TaskService } from '@shared/services/task.service';
+import { ImportDialogComponent } from './import-dialog/import-dialog.component';
+import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { TokenService } from '@shared/services/token.service';
 
 @Component({
   selector: 'll-contents',
   templateUrl: './contents.component.html',
   styleUrls: ['./contents.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContentsComponent implements OnInit, OnDestroy {
-  @ViewChild(MatSort, {static: false}) sort?: MatSort;
-  @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
+  @ViewChild(MatSort, { static: false }) sort?: MatSort;
+  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
   isLoading: boolean = true;
   selectedSpace?: Space;
@@ -77,42 +77,44 @@ export class ContentsComponent implements OnInit, OnDestroy {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>,
-  ) {
-  }
+    private readonly store: Store<AppState>
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
   }
 
   loadData(): void {
-    this.store.select(selectSpace)
+    this.store
+      .select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         tap(it => {
           if (it.contentPath && it.contentPath.length > 0) {
             this.contentPath = it.contentPath;
           } else {
-            this.contentPath = [{
-              name: 'Root',
-              fullSlug: ''
-            }];
+            this.contentPath = [
+              {
+                name: 'Root',
+                fullSlug: '',
+              },
+            ];
           }
         }),
         switchMap(it =>
           combineLatest([
             this.spaceService.findById(it.id),
             this.schemasService.findAll(it.id, SchemaType.ROOT),
-            this.contentService.findAll(it.id, this.parentPath)
+            this.contentService.findAll(it.id, this.parentPath),
           ])
         ),
-        takeUntil(this.destroy$),
+        takeUntil(this.destroy$)
       )
       .subscribe({
         next: ([space, schemas, contents]) => {
-          this.selectedSpace = space
+          this.selectedSpace = space;
           this.schemas = schemas;
-          this.schemasMap = schemas.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schema>())
+          this.schemasMap = schemas.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schema>());
           this.contents = contents;
           // if (this.contentPath.length == 0) {
           //   this.contentPath.push({
@@ -125,28 +127,26 @@ export class ContentsComponent implements OnInit, OnDestroy {
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;
-          this.selection.clear()
+          this.selection.clear();
           this.cd.markForCheck();
-        }
-      })
+        },
+      });
   }
 
   openAddDocumentDialog(): void {
-    this.dialog.open<AddDocumentDialogComponent, AddDocumentDialogModel, ContentDocumentCreate>(
-      AddDocumentDialogComponent, {
+    this.dialog
+      .open<AddDocumentDialogComponent, AddDocumentDialogModel, ContentDocumentCreate>(AddDocumentDialogComponent, {
         width: '500px',
         data: {
           schemas: this.schemas,
           reservedNames: this.contents.map(it => it.name),
           reservedSlugs: this.contents.map(it => it.slug),
-        }
+        },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.contentService.createDocument(this.selectedSpace!.id, this.parentPath, it!)
-        )
+        switchMap(it => this.contentService.createDocument(this.selectedSpace!.id, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -154,25 +154,23 @@ export class ContentsComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.notificationService.error('Document can not be created.');
-        }
+        },
       });
   }
 
   openAddFolderDialog(): void {
-    this.dialog.open<AddFolderDialogComponent, AddFolderDialogModel, ContentFolderCreate>(
-      AddFolderDialogComponent, {
+    this.dialog
+      .open<AddFolderDialogComponent, AddFolderDialogModel, ContentFolderCreate>(AddFolderDialogComponent, {
         width: '500px',
         data: {
           reservedNames: this.contents.map(it => it.name),
           reservedSlugs: this.contents.map(it => it.slug),
-        }
+        },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.contentService.createFolder(this.selectedSpace!.id, this.parentPath, it!)
-        )
+        switchMap(it => this.contentService.createFolder(this.selectedSpace!.id, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -180,7 +178,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.notificationService.error('Folder can not be created.');
-        }
+        },
       });
   }
 
@@ -188,31 +186,29 @@ export class ContentsComponent implements OnInit, OnDestroy {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.dialog.open<EditDialogComponent, EditDialogModel, ContentUpdate>(
-      EditDialogComponent, {
+    this.dialog
+      .open<EditDialogComponent, EditDialogModel, ContentUpdate>(EditDialogComponent, {
         width: '500px',
         data: {
           content: ObjectUtils.clone(element),
           reservedNames: this.contents.map(it => it.name),
           reservedSlugs: this.contents.map(it => it.slug),
-        }
+        },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.contentService.update(this.selectedSpace!.id, element.id, this.parentPath, it!)
-        )
+        switchMap(it => this.contentService.update(this.selectedSpace!.id, element.id, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
-          this.selection.clear()
-          this.cd.markForCheck()
+          this.selection.clear();
+          this.cd.markForCheck();
           this.notificationService.success('Content has been updated.');
         },
         error: () => {
           this.notificationService.error('Content can not be updated.');
-        }
+        },
       });
   }
 
@@ -220,36 +216,33 @@ export class ContentsComponent implements OnInit, OnDestroy {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
-      ConfirmationDialogComponent, {
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
           title: 'Delete Content',
-          content: `Are you sure about deleting Content with name: ${element.name}.`
-        }
+          content: `Are you sure about deleting Content with name: ${element.name}.`,
+        },
       })
       .afterClosed()
       .pipe(
-        filter((it) => it || false),
-        switchMap(_ =>
-          this.contentService.delete(this.selectedSpace!.id, element)
-        )
+        filter(it => it || false),
+        switchMap(_ => this.contentService.delete(this.selectedSpace!.id, element))
       )
       .subscribe({
         next: () => {
-          this.selection.clear()
-          this.cd.markForCheck()
+          this.selection.clear();
+          this.cd.markForCheck();
           this.notificationService.success(`Content '${element.name}' has been deleted.`);
         },
-        error: (err) => {
+        error: err => {
           this.notificationService.error(`Content '${element.name}' can not be deleted.`);
-        }
+        },
       });
   }
 
-
   ngOnDestroy(): void {
-    this.destroy$.next(undefined)
-    this.destroy$.complete()
+    this.destroy$.next(undefined);
+    this.destroy$.complete();
   }
 
   // TABLE
@@ -273,7 +266,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   onRowSelect(element: Content): void {
     this.isLoading = true;
     if (element.kind === ContentKind.DOCUMENT) {
-      element.publishedAt
+      element.publishedAt;
       if (this.schemasMap.has(element.schema)) {
         this.router.navigate(['features', 'contents', element.id]);
       } else {
@@ -283,102 +276,81 @@ export class ContentsComponent implements OnInit, OnDestroy {
     }
 
     if (element.kind === ContentKind.FOLDER) {
-      this.selection.clear()
-      const contentPath = ObjectUtils.clone(this.contentPath)
+      this.selection.clear();
+      const contentPath = ObjectUtils.clone(this.contentPath);
       contentPath.push({
         name: element.name,
-        fullSlug: element.fullSlug
-      })
-      this.store.dispatch(actionSpaceContentPathChange({contentPath}))
+        fullSlug: element.fullSlug,
+      });
+      this.store.dispatch(actionSpaceContentPathChange({ contentPath }));
     }
   }
 
   navigateToSlug(pathItem: PathItem) {
     this.isLoading = true;
-    this.selection.clear()
-    const contentPath = ObjectUtils.clone(this.contentPath)
-    const idx = contentPath.findIndex((it) => it.fullSlug == pathItem.fullSlug);
+    this.selection.clear();
+    const contentPath = ObjectUtils.clone(this.contentPath);
+    const idx = contentPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     contentPath.splice(idx + 1);
-    this.store.dispatch(actionSpaceContentPathChange({contentPath}))
+    this.store.dispatch(actionSpaceContentPathChange({ contentPath }));
   }
 
   openLinksInNewTab() {
-    this.tokenService.findFirst(this.selectedSpace!.id)
-      .subscribe({
-        next: (tokens) => {
-          if (tokens.length === 1) {
-            const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/links`)
-            url.searchParams.set('token', tokens[0].id)
-            window.open(url, '_blank')
-          } else {
-            this.notificationService.warn('Please create Access Token in your Space Settings')
-          }
+    this.tokenService.findFirst(this.selectedSpace!.id).subscribe({
+      next: tokens => {
+        if (tokens.length === 1) {
+          const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/links`);
+          url.searchParams.set('token', tokens[0].id);
+          window.open(url, '_blank');
+        } else {
+          this.notificationService.warn('Please create Access Token in your Space Settings');
         }
-      })
+      },
+    });
   }
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(
-        ImportDialogComponent,
-        {
-          width: '500px',
-        }
-      )
+      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(ImportDialogComponent, {
+        width: '500px',
+      })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
         tap(console.log),
-        switchMap(it =>
-          this.taskService.createContentImportTask(this.selectedSpace!.id, it!.file)
-        )
+        switchMap(it => this.taskService.createContentImportTask(this.selectedSpace!.id, it!.file))
       )
       .subscribe({
         next: () => {
-          this.notificationService.success(
-            'Content Import Task has been created.',
-            [
-              {label: 'To Tasks', link: '/features/tasks'}
-            ]
-          );
+          this.notificationService.success('Content Import Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
         },
         error: () => {
           this.notificationService.error('Content Import Task can not be created.');
-        }
+        },
       });
   }
 
   openExportDialog() {
     this.dialog
-      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(
-        ExportDialogComponent,
-        {
-          width: '500px',
-          data: {
-            spaceId: this.selectedSpace!.id
-          }
-        }
-      )
+      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
+        width: '500px',
+        data: {
+          spaceId: this.selectedSpace!.id,
+        },
+      })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.taskService.createContentExportTask(this.selectedSpace!.id, it?.path)
-        )
+        switchMap(it => this.taskService.createContentExportTask(this.selectedSpace!.id, it?.path))
       )
       .subscribe({
-        next: (result) => {
-          this.notificationService.success(
-            'Content Export Task has been created.',
-            [
-              {label: 'To Tasks', link: '/features/tasks'}
-            ]
-          );
+        next: result => {
+          this.notificationService.success('Content Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
         },
-        error: (err) => {
-          console.error(err)
+        error: err => {
+          console.error(err);
           this.notificationService.error('Content Export Task can not be created.');
-        }
+        },
       });
   }
 }

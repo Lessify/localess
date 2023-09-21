@@ -1,15 +1,15 @@
-import {logger} from 'firebase-functions/v2';
-import {onDocumentCreated, onDocumentDeleted, onDocumentUpdated} from 'firebase-functions/v2/firestore';
-import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
-import {firestoreService} from './config';
-import {Plugin, PluginContentDefinition, PluginSchemaDefinition} from './models/plugin.model';
-import {ContentFolder, ContentKind} from './models/content.model';
-import {Schema} from './models/schema.model';
+import { logger } from 'firebase-functions/v2';
+import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
+import { firestoreService } from './config';
+import { Plugin, PluginContentDefinition, PluginSchemaDefinition } from './models/plugin.model';
+import { ContentFolder, ContentKind } from './models/content.model';
+import { Schema } from './models/schema.model';
 
-const onPluginCreate = onDocumentCreated('spaces/{spaceId}/plugins/{pluginId}', async (event) => {
+const onPluginCreate = onDocumentCreated('spaces/{spaceId}/plugins/{pluginId}', async event => {
   logger.info(`[Plugin:onCreate] eventId='${event.id}'`);
   logger.info(`[Plugin:onCreate] params='${JSON.stringify(event.params)}'`);
-  const {spaceId, pluginId} = event.params;
+  const { spaceId, pluginId } = event.params;
   // No Data
   if (!event.data) return;
   const plugin = event.data.data() as Plugin;
@@ -55,10 +55,10 @@ const onPluginCreate = onDocumentCreated('spaces/{spaceId}/plugins/{pluginId}', 
   logger.info(`[Plugin:onCreate] id=${pluginId} finished`);
 });
 
-const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', async (event) => {
+const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', async event => {
   logger.info(`[Plugin:onUpdate] eventId='${event.id}'`);
   logger.info(`[Plugin:onUpdate] params='${JSON.stringify(event.params)}'`);
-  const {spaceId, pluginId} = event.params;
+  const { spaceId, pluginId } = event.params;
   // No Data
   if (!event.data) return;
   const before = event.data.before.data() as Plugin;
@@ -75,8 +75,8 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
   }
   // Check Installation schema Updates
   {
-    const beforeMap = new Map<string, PluginSchemaDefinition>(before.install?.schemas?.map((it) => [it.id, it]));
-    const afterMap = new Map<string, PluginSchemaDefinition>(after.install?.schemas?.map((it) => [it.id, it]));
+    const beforeMap = new Map<string, PluginSchemaDefinition>(before.install?.schemas?.map(it => [it.id, it]));
+    const afterMap = new Map<string, PluginSchemaDefinition>(after.install?.schemas?.map(it => [it.id, it]));
     // Merge all keys
     const allKeys = new Set<string>();
     for (const key of beforeMap.keys()) {
@@ -128,15 +128,15 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };
-        batch.set(firestoreService.doc(`spaces/${spaceId}/schemas/${key}`), add, {merge: true});
+        batch.set(firestoreService.doc(`spaces/${spaceId}/schemas/${key}`), add, { merge: true });
         count++;
       }
     }
   }
   // Check Installation content Updates
   {
-    const beforeMap = new Map<string, PluginContentDefinition>(before.install?.contents?.map((it) => [it.id, it]));
-    const afterMap = new Map<string, PluginContentDefinition>(after.install?.contents?.map((it) => [it.id, it]));
+    const beforeMap = new Map<string, PluginContentDefinition>(before.install?.contents?.map(it => [it.id, it]));
+    const afterMap = new Map<string, PluginContentDefinition>(after.install?.contents?.map(it => [it.id, it]));
     // Merge all keys
     const allKeys = new Set<string>();
     for (const key of beforeMap.keys()) {
@@ -191,7 +191,7 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
           };
-          batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${key}`), add, {merge: true});
+          batch.set(firestoreService.doc(`spaces/${spaceId}/contents/${key}`), add, { merge: true });
           count++;
         }
       }
@@ -204,10 +204,10 @@ const onPluginUpdate = onDocumentUpdated('spaces/{spaceId}/plugins/{pluginId}', 
   logger.info(`[Plugin:onUpdate] id=${pluginId} finished`);
 });
 
-const onPluginDelete = onDocumentDeleted('spaces/{spaceId}/plugins/{pluginId}', async (event) => {
+const onPluginDelete = onDocumentDeleted('spaces/{spaceId}/plugins/{pluginId}', async event => {
   logger.info(`[Plugin:onDelete] eventId='${event.id}'`);
   logger.info(`[Plugin:onDelete] params='${JSON.stringify(event.params)}'`);
-  const {spaceId, pluginId} = event.params;
+  const { spaceId, pluginId } = event.params;
   // No Data
   if (!event.data) return;
   const plugin = event.data.data() as Plugin;

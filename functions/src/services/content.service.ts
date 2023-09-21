@@ -1,16 +1,17 @@
-import {firestoreService} from '../config';
-import {DocumentReference, Query, Timestamp} from 'firebase-admin/firestore';
-import Ajv, {ErrorObject} from 'ajv';
+import { firestoreService } from '../config';
+import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
+import Ajv, { ErrorObject } from 'ajv';
 import {
   assetExportArraySchema,
   Content,
   ContentData,
-  ContentDocumentExport, ContentExport,
+  ContentDocumentExport,
+  ContentExport,
   ContentFolderExport,
   ContentKind,
 } from '../models/content.model';
-import {Schema, SchemaFieldKind} from '../models/schema.model';
-import {logger} from 'firebase-functions/v2';
+import { Schema, SchemaFieldKind } from '../models/schema.model';
+import { logger } from 'firebase-functions/v2';
 
 /**
  * find Content by Full Slug
@@ -20,8 +21,7 @@ import {logger} from 'firebase-functions/v2';
  */
 export function findContentByFullSlug(spaceId: string, fullSlug: string): Query {
   logger.info(`[findContentByFullSlug] spaceId=${spaceId} fullSlug=${fullSlug}`);
-  return firestoreService.collection(`spaces/${spaceId}/contents`)
-    .where('fullSlug', '==', fullSlug).limit(1);
+  return firestoreService.collection(`spaces/${spaceId}/contents`).where('fullSlug', '==', fullSlug).limit(1);
 }
 
 /**
@@ -31,8 +31,7 @@ export function findContentByFullSlug(spaceId: string, fullSlug: string): Query 
  * @return {DocumentReference} document reference to the space
  */
 export function findContentByParentSlug(spaceId: string, parentSlug: string): Query {
-  return firestoreService.collection(`spaces/${spaceId}/contents`)
-    .where('parentSlug', '==', parentSlug).limit(1);
+  return firestoreService.collection(`spaces/${spaceId}/contents`).where('parentSlug', '==', parentSlug).limit(1);
 }
 
 /**
@@ -42,8 +41,7 @@ export function findContentByParentSlug(spaceId: string, parentSlug: string): Qu
  * @return {DocumentReference} document reference to the space
  */
 export function findContentBySlug(spaceId: string, slug: string): Query {
-  return firestoreService.collection(`spaces/${spaceId}/contents`)
-    .where('slug', '==', slug).limit(1);
+  return firestoreService.collection(`spaces/${spaceId}/contents`).where('slug', '==', slug).limit(1);
 }
 
 /**
@@ -54,7 +52,8 @@ export function findContentBySlug(spaceId: string, slug: string): Query {
  */
 export function findContentsByStartFullSlug(spaceId: string, startFullSlug: string): Query {
   logger.info(`[findContentsByStartFullSlug] spaceId=${spaceId} startFullSlug=${startFullSlug}`);
-  return firestoreService.collection(`spaces/${spaceId}/contents`)
+  return firestoreService
+    .collection(`spaces/${spaceId}/contents`)
     .where('fullSlug', '>=', startFullSlug)
     .where('fullSlug', '<', `${startFullSlug}~`);
 }
@@ -90,7 +89,7 @@ export function findContents(spaceId: string, fromDate?: number): Query {
  * @return {ErrorObject[]} errors in case they exist
  */
 export function validateContentImport(data: unknown): ErrorObject[] | undefined | null {
-  const ajv = new Ajv({discriminator: true});
+  const ajv = new Ajv({ discriminator: true });
   const validate = ajv.compile(assetExportArraySchema);
   if (validate(data)) {
     return undefined;
@@ -108,11 +107,11 @@ export function validateContentImport(data: unknown): ErrorObject[] | undefined 
  * @return {ContentData} content
  */
 export function extractContent(content: ContentData, schemas: Schema[], locale: string, localeFallback: string): ContentData {
-  const extractedContentData : ContentData = {
+  const extractedContentData: ContentData = {
     _id: content._id,
     schema: content.schema,
   };
-  const schema = schemas.find((it) => it.name == content.schema);
+  const schema = schemas.find(it => it.name == content.schema);
   for (const field of schema?.fields || []) {
     if (field.kind === SchemaFieldKind.SCHEMA) {
       const fieldContent: ContentData | undefined = content[field.name];
@@ -122,7 +121,7 @@ export function extractContent(content: ContentData, schemas: Schema[], locale: 
     } else if (field.kind === SchemaFieldKind.SCHEMAS) {
       const fieldContent: ContentData[] | undefined = content[field.name];
       if (fieldContent && Array.isArray(fieldContent)) {
-        extractedContentData[field.name] = fieldContent.map((it) => extractContent(it, schemas, locale, localeFallback));
+        extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale, localeFallback));
       }
     } else {
       if (field.translatable) {
@@ -138,7 +137,6 @@ export function extractContent(content: ContentData, schemas: Schema[], locale: 
   }
   return extractedContentData;
 }
-
 
 /**
  * validate imported JSON

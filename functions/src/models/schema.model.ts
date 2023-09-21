@@ -1,9 +1,9 @@
-import {Timestamp} from 'firebase-admin/firestore';
-import {JSONSchemaType} from 'ajv';
+import { Timestamp } from 'firebase-admin/firestore';
+import { JSONSchemaType } from 'ajv';
 
 export enum SchemaType {
   ROOT = 'ROOT',
-  NODE = 'NODE'
+  NODE = 'NODE',
 }
 
 export interface Schema {
@@ -15,14 +15,15 @@ export interface Schema {
   fields?: SchemaField[];
 
   // Lock
-  locked?: boolean
-  lockedBy?: string
+  locked?: boolean;
+  lockedBy?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-export type SchemaField = SchemaFieldText
+export type SchemaField =
+  | SchemaFieldText
   | SchemaFieldTextarea
   | SchemaFieldMarkdown
   | SchemaFieldNumber
@@ -65,7 +66,7 @@ export interface SchemaFieldBase {
   required?: boolean;
   description?: string;
   defaultValue?: string;
-  translatable? : boolean;
+  translatable?: boolean;
 }
 
 export interface SchemaFieldText extends SchemaFieldBase {
@@ -136,22 +137,21 @@ export interface SchemaFieldOptions extends SchemaFieldBase {
 }
 
 export interface SchemaFieldLink extends SchemaFieldBase {
-  kind: SchemaFieldKind.LINK
+  kind: SchemaFieldKind.LINK;
 }
 
 export interface SchemaFieldReference extends SchemaFieldBase {
-  kind: SchemaFieldKind.REFERENCE
-  path?: string
+  kind: SchemaFieldKind.REFERENCE;
+  path?: string;
 }
 
 export interface SchemaFieldAsset extends SchemaFieldBase {
-  kind: SchemaFieldKind.ASSET
+  kind: SchemaFieldKind.ASSET;
 }
 
 export interface SchemaFieldAssets extends SchemaFieldBase {
-  kind: SchemaFieldKind.ASSETS
+  kind: SchemaFieldKind.ASSETS;
 }
-
 
 // Export and Import
 export interface SchemaExport extends Omit<Schema, 'createdAt' | 'updatedAt'> {
@@ -163,27 +163,27 @@ export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
   items: {
     type: 'object',
     properties: {
-      id: {type: 'string', nullable: false},
-      name: {type: 'string', nullable: false},
-      type: {type: 'string', enum: Object.values(SchemaType), nullable: false},
-      displayName: {type: 'string', nullable: true},
-      previewField: {type: 'string', nullable: true},
-      previewImage: {type: 'string', nullable: true},
-      locked: {type: 'boolean', nullable: true},
-      lockedBy: {type: 'string', nullable: true},
+      id: { type: 'string', nullable: false },
+      name: { type: 'string', nullable: false },
+      type: { type: 'string', enum: Object.values(SchemaType), nullable: false },
+      displayName: { type: 'string', nullable: true },
+      previewField: { type: 'string', nullable: true },
+      previewImage: { type: 'string', nullable: true },
+      locked: { type: 'boolean', nullable: true },
+      lockedBy: { type: 'string', nullable: true },
       fields: {
         type: 'array',
         nullable: true,
         items: {
           type: 'object',
           properties: {
-            name: {type: 'string', nullable: false},
-            kind: {type: 'string', /*enum: Object.values(SchemaFieldKind),*/ nullable: false},
-            displayName: {type: 'string', nullable: true},
-            required: {type: 'boolean', nullable: true},
-            description: {type: 'string', nullable: true},
-            defaultValue: {type: 'string', nullable: true},
-            translatable: {type: 'boolean', nullable: true},
+            name: { type: 'string', nullable: false },
+            kind: { type: 'string', /*enum: Object.values(SchemaFieldKind),*/ nullable: false },
+            displayName: { type: 'string', nullable: true },
+            required: { type: 'boolean', nullable: true },
+            description: { type: 'string', nullable: true },
+            defaultValue: { type: 'string', nullable: true },
+            translatable: { type: 'boolean', nullable: true },
           },
           required: ['name', 'kind'],
           additionalProperties: true,

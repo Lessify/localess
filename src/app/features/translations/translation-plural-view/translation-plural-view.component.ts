@@ -1,25 +1,24 @@
-import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 interface Plural {
-  0: string,
-  1: string,
-  2: string,
-  3: string,
-  4: string,
-  5: string
+  0: string;
+  1: string;
+  2: string;
+  3: string;
+  4: string;
+  5: string;
 }
 
 @Component({
   selector: 'll-translation-plural-view',
   templateUrl: './translation-plural-view.component.html',
   styleUrls: ['./translation-plural-view.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationPluralViewComponent {
   @Input() value: string = '';
 
-  constructor() {
-  }
+  constructor() {}
 
   extract(): Plural {
     return JSON.parse(this.value || '{}');

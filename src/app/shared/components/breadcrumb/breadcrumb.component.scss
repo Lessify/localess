@@ -1,4 +1,4 @@
-@import "../../../../styles/styles-variables";
+@import '../../../../styles/styles-variables';
 
 section {
   width: 100%;
@@ -6,7 +6,6 @@ section {
   padding-bottom: 2rem;
   padding-left: 1rem;
 }
-
 
 :host ::ng-deep ll-breadcrumb-item:not(:last-child):after {
   content: '>';

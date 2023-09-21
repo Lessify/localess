@@ -1,11 +1,11 @@
-import {TestBed} from '@angular/core/testing';
-import {MockStore, provideMockStore} from '@ngrx/store/testing';
+import { TestBed } from '@angular/core/testing';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 
-import {AppState} from '../core.state';
+import { AppState } from '../core.state';
 
-import {AuthGuardService} from './auth-guard.service';
-import {AuthState} from './auth.models';
-import {selectIsAuthenticated} from './auth.selectors';
+import { AuthGuardService } from './auth-guard.service';
+import { AuthState } from './auth.models';
+import { selectIsAuthenticated } from './auth.selectors';
 
 describe('AuthGuardService', () => {
   let authGuardService: AuthGuardService;
@@ -13,7 +13,7 @@ describe('AuthGuardService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [AuthGuardService, provideMockStore()]
+      providers: [AuthGuardService, provideMockStore()],
     });
     authGuardService = TestBed.inject<AuthGuardService>(AuthGuardService);
     store = TestBed.inject(MockStore);
@@ -25,7 +25,7 @@ describe('AuthGuardService', () => {
   });
 
   it('should return isAuthenticated from authState', () => {
-    authGuardService.canActivate().subscribe((canActivate) => {
+    authGuardService.canActivate().subscribe(canActivate => {
       expect(canActivate).toBe(true);
     });
   });
@@ -33,6 +33,6 @@ describe('AuthGuardService', () => {
 
 function createState(authState: AuthState) {
   return {
-    auth: authState
+    auth: authState,
   } as AppState;
 }

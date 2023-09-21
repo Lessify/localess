@@ -1,4 +1,4 @@
-import {Content} from '@shared/models/content.model';
+import { Content } from '@shared/models/content.model';
 
 export interface EditDialogModel {
   content: Content;

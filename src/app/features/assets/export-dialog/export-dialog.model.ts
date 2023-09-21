@@ -1,10 +1,10 @@
 export interface ExportDialogModel {
-  spaceId: string
+  spaceId: string;
 }
 
-export interface  ExportDialogReturn {
+export interface ExportDialogReturn {
   /**
    * asset id
    */
-  path?: string
+  path?: string;
 }

@@ -9,7 +9,7 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-<mat-progress-bar *ngIf="isLoading" mode="query"/>
+<mat-progress-bar *ngIf="isLoading" mode="query" />
 <div *ngIf="space" class="container-fluid my-3">
   <form [formGroup]="form">
     <mat-form-field>
@@ -19,7 +19,7 @@
         <mat-option value="accent">Accent</mat-option>
         <mat-option value="warn">Warn</mat-option>
       </mat-select>
-      <mat-error *ngIf="form.controls['color'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <mat-error *ngIf="form.controls['color'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
   </form>
 </div>

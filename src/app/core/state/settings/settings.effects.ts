@@ -1,14 +1,14 @@
-import {Router} from '@angular/router';
-import {Injectable, NgZone} from '@angular/core';
-import {OverlayContainer} from '@angular/cdk/overlay';
-import {select, Store} from '@ngrx/store';
-import {Actions, createEffect, ofType} from '@ngrx/effects';
-import {combineLatest, merge, of} from 'rxjs';
-import {distinctUntilChanged, tap, withLatestFrom} from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { Injectable, NgZone } from '@angular/core';
+import { OverlayContainer } from '@angular/cdk/overlay';
+import { select, Store } from '@ngrx/store';
+import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { combineLatest, merge, of } from 'rxjs';
+import { distinctUntilChanged, tap, withLatestFrom } from 'rxjs/operators';
 
-import {selectSettingsState} from '../core.state';
-import {LocalStorageService} from '../../local-storage/local-storage.service';
-import {AnimationsService} from '../../animations/animations.service';
+import { selectSettingsState } from '../core.state';
+import { LocalStorageService } from '../../local-storage/local-storage.service';
+import { AnimationsService } from '../../animations/animations.service';
 
 import {
   actionSettingsChangeAnimationsElements,
@@ -20,10 +20,10 @@ import {
   actionSettingsChangeLanguage,
   actionSettingsChangeMainMenuExpended,
   actionSettingsChangeStickyHeader,
-  actionSettingsChangeTheme
+  actionSettingsChangeTheme,
 } from './settings.actions';
-import {selectEffectiveTheme, selectElementsAnimations, selectPageAnimations, selectSettingsLanguage} from './settings.selectors';
-import {State} from './settings.model';
+import { selectEffectiveTheme, selectElementsAnimations, selectPageAnimations, selectSettingsLanguage } from './settings.selectors';
+import { State } from './settings.model';
 
 export const SETTINGS_KEY = 'SETTINGS';
 
@@ -38,7 +38,7 @@ export class SettingsEffects {
       const hour = new Date().getHours();
       if (hour !== this.hour) {
         this.hour = hour;
-        this.ngZone.run(() => this.store.dispatch(actionSettingsChangeHour({hour})));
+        this.ngZone.run(() => this.store.dispatch(actionSettingsChangeHour({ hour })));
       }
     }, 60_000)
   );
@@ -55,31 +55,23 @@ export class SettingsEffects {
           actionSettingsChangeStickyHeader,
           actionSettingsChangeTheme,
           actionSettingsChangeMainMenuExpended,
-          actionSettingsChangeDebugEnabled,
+          actionSettingsChangeDebugEnabled
         ),
         withLatestFrom(this.store.pipe(select(selectSettingsState))),
         tap(([action, settings]) => this.localStorageService.setItem(SETTINGS_KEY, settings))
       ),
-    {dispatch: false}
+    { dispatch: false }
   );
 
   updateRouteAnimationType = createEffect(
     () =>
-      merge(
-        INIT,
-        this.actions$.pipe(ofType(actionSettingsChangeAnimationsElements, actionSettingsChangeAnimationsPage))
-      ).pipe(
-        withLatestFrom(
-          combineLatest([
-            this.store.pipe(select(selectPageAnimations)),
-            this.store.pipe(select(selectElementsAnimations))
-          ])
-        ),
+      merge(INIT, this.actions$.pipe(ofType(actionSettingsChangeAnimationsElements, actionSettingsChangeAnimationsPage))).pipe(
+        withLatestFrom(combineLatest([this.store.pipe(select(selectPageAnimations)), this.store.pipe(select(selectElementsAnimations))])),
         tap(([action, [pageAnimations, elementsAnimations]]) =>
           this.animationsService.updateRouteAnimationType(pageAnimations, elementsAnimations)
         )
       ),
-    {dispatch: false}
+    { dispatch: false }
   );
 
   updateTheme = createEffect(
@@ -95,17 +87,12 @@ export class SettingsEffects {
           classList.add(effectiveTheme);
         })
       ),
-    {dispatch: false}
+    { dispatch: false }
   );
 
-  setTranslateServiceLanguage = createEffect(
-    () =>
-      this.store.pipe(
-        select(selectSettingsLanguage),
-        distinctUntilChanged(),
-      ),
-    {dispatch: false}
-  );
+  setTranslateServiceLanguage = createEffect(() => this.store.pipe(select(selectSettingsLanguage), distinctUntilChanged()), {
+    dispatch: false,
+  });
 
   constructor(
     private actions$: Actions,
@@ -115,6 +102,5 @@ export class SettingsEffects {
     private localStorageService: LocalStorageService,
     private animationsService: AnimationsService,
     private ngZone: NgZone
-  ) {
-  }
+  ) {}
 }

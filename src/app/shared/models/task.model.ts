@@ -1,4 +1,4 @@
-import {FieldValue, Timestamp} from '@angular/fire/firestore';
+import { FieldValue, Timestamp } from '@angular/fire/firestore';
 
 export enum TaskKind {
   ASSET_EXPORT = 'ASSET_EXPORT',
@@ -8,7 +8,7 @@ export enum TaskKind {
   SCHEMA_EXPORT = 'SCHEMA_EXPORT',
   SCHEMA_IMPORT = 'SCHEMA_IMPORT',
   TRANSLATION_EXPORT = 'TRANSLATION_EXPORT',
-  TRANSLATION_IMPORT = 'TRANSLATION_IMPORT'
+  TRANSLATION_IMPORT = 'TRANSLATION_IMPORT',
 }
 
 export enum TaskStatus {
@@ -19,88 +19,88 @@ export enum TaskStatus {
 }
 
 export interface TaskFile {
-  name: string,
-  size: number,
+  name: string;
+  size: number;
 }
 
 export interface Task {
-  id: string,
-  kind: TaskKind,
-  status: TaskStatus,
+  id: string;
+  kind: TaskKind;
+  status: TaskStatus;
 
   // import file
-  file?: TaskFile
+  file?: TaskFile;
   // export by date
-  fromDate?: number
+  fromDate?: number;
   // export content
-  path?: string
+  path?: string;
   // translations
-  locale?: string
+  locale?: string;
 
-  message?: string
+  message?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
 export interface TaskCreateFS {
-  kind: TaskKind,
-  status: TaskStatus
+  kind: TaskKind;
+  status: TaskStatus;
 
   createdAt: FieldValue;
   updatedAt: FieldValue;
 }
 
 export interface TaskAssetExportCreateFS extends TaskCreateFS {
-  kind: TaskKind.ASSET_EXPORT,
-  status: TaskStatus.INITIATED,
-  path?: string
+  kind: TaskKind.ASSET_EXPORT;
+  status: TaskStatus.INITIATED;
+  path?: string;
 }
 
 export interface TaskAssetImportCreateFS extends TaskCreateFS {
-  kind: TaskKind.ASSET_IMPORT,
-  status: TaskStatus.INITIATED,
-  tmpPath: string
-  file: TaskFile
+  kind: TaskKind.ASSET_IMPORT;
+  status: TaskStatus.INITIATED;
+  tmpPath: string;
+  file: TaskFile;
 }
 
 export interface TaskContentExportCreateFS extends TaskCreateFS {
-  kind: TaskKind.CONTENT_EXPORT,
-  status: TaskStatus.INITIATED,
-  path?: string
+  kind: TaskKind.CONTENT_EXPORT;
+  status: TaskStatus.INITIATED;
+  path?: string;
 }
 
 export interface TaskContentImportCreateFS extends TaskCreateFS {
-  kind: TaskKind.CONTENT_IMPORT,
-  status: TaskStatus.INITIATED,
-  tmpPath: string
-  file: TaskFile
+  kind: TaskKind.CONTENT_IMPORT;
+  status: TaskStatus.INITIATED;
+  tmpPath: string;
+  file: TaskFile;
 }
 
 export interface TaskSchemaExportCreateFS extends TaskCreateFS {
-  kind: TaskKind.SCHEMA_EXPORT,
-  status: TaskStatus.INITIATED,
-  fromDate?: number
+  kind: TaskKind.SCHEMA_EXPORT;
+  status: TaskStatus.INITIATED;
+  fromDate?: number;
 }
 
 export interface TaskSchemaImportCreateFS extends TaskCreateFS {
-  kind: TaskKind.SCHEMA_IMPORT,
-  status: TaskStatus.INITIATED,
-  tmpPath: string
-  file: TaskFile
+  kind: TaskKind.SCHEMA_IMPORT;
+  status: TaskStatus.INITIATED;
+  tmpPath: string;
+  file: TaskFile;
 }
 
 export interface TaskTranslationExportCreateFS extends TaskCreateFS {
-  kind: TaskKind.TRANSLATION_EXPORT,
-  status: TaskStatus.INITIATED,
-  fromDate?: number
-  locale?: string,
+  kind: TaskKind.TRANSLATION_EXPORT;
+  status: TaskStatus.INITIATED;
+  fromDate?: number;
+  locale?: string;
 }
 
 export interface TaskTranslationImportCreateFS extends TaskCreateFS {
-  kind: TaskKind.TRANSLATION_IMPORT,
-  status: TaskStatus.INITIATED,
-  locale?: string,
-  tmpPath: string,
-  file: TaskFile
+  kind: TaskKind.TRANSLATION_IMPORT;
+  status: TaskStatus.INITIATED;
+  locale?: string;
+  tmpPath: string;
+  file: TaskFile;
 }

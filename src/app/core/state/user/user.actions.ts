@@ -1,5 +1,5 @@
-import {createAction, props} from '@ngrx/store';
-import {UserRole} from '@shared/models/user.model';
+import { createAction, props } from '@ngrx/store';
+import { UserRole } from '@shared/models/user.model';
 
 // tslint:disable-next-line:typedef
 export const actionUserChange = createAction(
@@ -11,7 +11,7 @@ export const actionUserChange = createAction(
     emailVerified: boolean;
     role?: UserRole;
     permissions?: string[];
-    photoURL?: string | null
+    photoURL?: string | null;
   }>()
 );
 

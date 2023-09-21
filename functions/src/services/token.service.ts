@@ -1,5 +1,5 @@
-import {CollectionReference, DocumentReference} from 'firebase-admin/firestore';
-import {firestoreService} from '../config';
+import { CollectionReference, DocumentReference } from 'firebase-admin/firestore';
+import { firestoreService } from '../config';
 
 /**
  * find Tasks

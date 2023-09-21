@@ -1,5 +1,5 @@
-import {Timestamp} from 'firebase-admin/firestore';
-import {Locale} from './locale.model';
+import { Timestamp } from 'firebase-admin/firestore';
+import { Locale } from './locale.model';
 
 export interface Space {
   id: string;

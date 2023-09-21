@@ -4,8 +4,7 @@
     <span class="spacer"></span>
 
     <ng-container *ngIf="'CONTENT_CREATE' | canUserPerform | async">
-      <button mat-raised-button color="primary"
-        [matMenuTriggerFor]="contentCreateMenu">
+      <button mat-raised-button color="primary" [matMenuTriggerFor]="contentCreateMenu">
         <mat-icon>add</mat-icon>
         Add Content
       </button>
@@ -26,7 +25,6 @@
     </button>
 
     <mat-menu #extraMenu="matMenu">
-
       <button mat-menu-item (click)="openLinksInNewTab()">
         <mat-icon>link</mat-icon>
         <span>Links</span>
@@ -41,9 +39,7 @@
         <mat-icon>cloud_download</mat-icon>
         <span>Export</span>
       </button>
-
     </mat-menu>
-
   </mat-toolbar-row>
 </mat-toolbar>
 <mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
@@ -53,7 +49,7 @@
       <ng-container *ngIf="pathItem.fullSlug === ''">
         <mat-icon>home</mat-icon>
       </ng-container>
-      {{pathItem.name}}
+      {{ pathItem.name }}
     </ll-breadcrumb-item>
   </ll-breadcrumb>
 
@@ -61,15 +57,17 @@
     <!-- Checkbox Column -->
     <ng-container matColumnDef="select">
       <mat-header-cell *matHeaderCellDef>
-        <mat-checkbox (change)="$event ? toggleAllRows() : null"
-                      [checked]="selection.hasValue() && isAllSelected()"
-                      [indeterminate]="selection.hasValue() && !isAllSelected()">
+        <mat-checkbox
+          (change)="$event ? toggleAllRows() : null"
+          [checked]="selection.hasValue() && isAllSelected()"
+          [indeterminate]="selection.hasValue() && !isAllSelected()">
         </mat-checkbox>
       </mat-header-cell>
       <mat-cell *matCellDef="let row">
-        <mat-checkbox (click)="$event.stopPropagation()"
-                      (change)="$event ? selection.toggle(row) : null"
-                      [checked]="selection.isSelected(row)">
+        <mat-checkbox
+          (click)="$event.stopPropagation()"
+          (change)="$event ? selection.toggle(row) : null"
+          [checked]="selection.isSelected(row)">
         </mat-checkbox>
       </mat-cell>
     </ng-container>
@@ -92,89 +90,90 @@
             <mat-icon>folder</mat-icon>
           </ng-container>
         </ng-container>
-
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.locked">
-          <mat-icon [matTooltip]="element.lockedBy ? 'Locked By '+element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
+          <mat-icon [matTooltip]="element.lockedBy ? 'Locked By ' + element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
         </ng-container>
-        {{element.name}}
+        {{ element.name }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="slug">
       <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{element.slug}}
+        {{ element.slug }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="schema">
       <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'DOCUMENT'">
-          <ng-container *ngIf="schemasMap.get(element.schema) as schema else unknownSchema">
-            {{schema.displayName || schema.name}}
+          <ng-container *ngIf="schemasMap.get(element.schema) as schema; else unknownSchema">
+            {{ schema.displayName || schema.name }}
           </ng-container>
-          <ng-template #unknownSchema>
-            unknown...
-          </ng-template>
+          <ng-template #unknownSchema> unknown... </ng-template>
         </ng-container>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="publishedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="publishedAt"> Published At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.publishedAt?.toDate() | date:'medium'}} </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.publishedAt?.toDate() | date: 'medium' }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.createdAt?.toDate() | date:'medium'}} </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.createdAt?.toDate() | date: 'medium' }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.updatedAt?.toDate() | date:'medium'}} </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }} </mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
-                (click)="openEditDialog($event, element)"
-                [disabled]="element.locked"
-                matTooltip="Edit">
+        <button
+          mat-icon-button
+          *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
+          (click)="openEditDialog($event, element)"
+          [disabled]="element.locked"
+          matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button *ngIf="'CONTENT_DELETE' | canUserPerform | async"
-                (click)="openDeleteDialog($event, element)"
-                matTooltip="Delete">
+        <button
+          mat-icon-button
+          *ngIf="'CONTENT_DELETE' | canUserPerform | async"
+          (click)="openDeleteDialog($event, element)"
+          matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>
     </ng-container>
 
-<!--    <ng-container matColumnDef="actions">-->
-<!--      <mat-header-cell mat-header-cell *matHeaderCellDef>-->
-<!--        <button mat-stroked-button-->
-<!--                *ngIf="'CONTENT_UPDATE' | canUserPerform | async"-->
-<!--                [disabled]="selection.selected.length !== 1"-->
-<!--                (click)="openEditDialog(selection.selected[0])">-->
-<!--          <mat-icon>edit</mat-icon>-->
-<!--          Edit-->
-<!--        </button>-->
-<!--        <button mat-stroked-button-->
-<!--                *ngIf="'CONTENT_DELETE' | canUserPerform | async"-->
-<!--                [disabled]="selection.selected.length !== 1"-->
-<!--                (click)="openDeleteDialog(selection.selected[0])">-->
-<!--          <mat-icon>delete</mat-icon>-->
-<!--          Delete-->
-<!--        </button>-->
-<!--      </mat-header-cell>-->
-<!--    </ng-container>-->
+    <!--    <ng-container matColumnDef="actions">-->
+    <!--      <mat-header-cell mat-header-cell *matHeaderCellDef>-->
+    <!--        <button mat-stroked-button-->
+    <!--                *ngIf="'CONTENT_UPDATE' | canUserPerform | async"-->
+    <!--                [disabled]="selection.selected.length !== 1"-->
+    <!--                (click)="openEditDialog(selection.selected[0])">-->
+    <!--          <mat-icon>edit</mat-icon>-->
+    <!--          Edit-->
+    <!--        </button>-->
+    <!--        <button mat-stroked-button-->
+    <!--                *ngIf="'CONTENT_DELETE' | canUserPerform | async"-->
+    <!--                [disabled]="selection.selected.length !== 1"-->
+    <!--                (click)="openDeleteDialog(selection.selected[0])">-->
+    <!--          <mat-icon>delete</mat-icon>-->
+    <!--          Delete-->
+    <!--        </button>-->
+    <!--      </mat-header-cell>-->
+    <!--    </ng-container>-->
 
-<!--    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>-->
+    <!--    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>-->
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowSelect(row)"></mat-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>
   <mat-paginator></mat-paginator>
 </div>

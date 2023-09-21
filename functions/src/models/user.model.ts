@@ -1,4 +1,4 @@
-import {Timestamp} from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export interface User {
   /**
@@ -31,11 +31,11 @@ export interface User {
 }
 
 export interface UserInvite {
-  displayName?: string
-  email: string
-  password: string
-  role?: UserRole
-  permissions?: string[]
+  displayName?: string;
+  email: string;
+  password: string;
+  role?: UserRole;
+  permissions?: string[];
 }
 
 export type UserRole = 'admin' | 'custom';

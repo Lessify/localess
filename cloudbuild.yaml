@@ -2,11 +2,11 @@ steps:
   - name: 'node:18'
     id: 'install-deps'
     entrypoint: npm
-    args: [ 'install' ]
+    args: ['install']
   - name: 'node:18'
     id: 'install-functions-deps'
     entrypoint: npm
-    args: [ '--prefix','functions','install', '--platform=linuxmusl' ]
+    args: ['--prefix', 'functions', 'install', '--platform=linuxmusl']
   - name: 'node:18'
     id: 'build-prod'
     entrypoint: npm
@@ -25,7 +25,7 @@ steps:
   # deploy to firebase
   - name: gcr.io/$PROJECT_ID/firebase
     id: 'firebase-deploy'
-    args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force' ]
+    args: ['deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force']
   - name: 'gcr.io/cloud-builders/gsutil'
     id: 'gsutil-cors'
-    args:  [ 'cors', 'set', 'cors.json', 'gs://${_LOCALESS_FIREBASE_STORAGE_BUCKET}']
+    args: ['cors', 'set', 'cors.json', 'gs://${_LOCALESS_FIREBASE_STORAGE_BUCKET}']

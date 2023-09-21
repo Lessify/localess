@@ -1,15 +1,15 @@
-import {Component, Optional} from '@angular/core';
-import {Auth, sendPasswordResetEmail, User} from '@angular/fire/auth';
-import {Router} from '@angular/router';
-import {EMPTY, Observable} from 'rxjs';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import { Component, Optional } from '@angular/core';
+import { Auth, sendPasswordResetEmail, User } from '@angular/fire/auth';
+import { Router } from '@angular/router';
+import { EMPTY, Observable } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'll-reset',
   templateUrl: './reset.component.html',
-  styleUrls: ['./reset.component.scss']
+  styleUrls: ['./reset.component.scss'],
 })
 export class ResetComponent {
   redirect = ['/login'];
@@ -26,12 +26,11 @@ export class ResetComponent {
     @Optional() public readonly auth: Auth,
     private readonly router: Router,
     private readonly fb: FormBuilder
-  ) {
-  }
+  ) {}
 
   async passwordReset(): Promise<void> {
     await sendPasswordResetEmail(this.auth, this.form.value.email);
-    this.form.reset()
+    this.form.reset();
     await this.router.navigate(this.redirect);
   }
 }

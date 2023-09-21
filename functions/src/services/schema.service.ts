@@ -1,7 +1,7 @@
-import {firestoreService} from '../config';
-import {DocumentReference, Query, Timestamp} from 'firebase-admin/firestore';
-import Ajv, {ErrorObject} from 'ajv';
-import {schemaExportArraySchema} from '../models/schema.model';
+import { firestoreService } from '../config';
+import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
+import Ajv, { ErrorObject } from 'ajv';
+import { schemaExportArraySchema } from '../models/schema.model';
 
 /**
  * find Schema by ID

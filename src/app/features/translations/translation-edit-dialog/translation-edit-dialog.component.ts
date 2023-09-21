@@ -1,29 +1,28 @@
-import {ChangeDetectionStrategy, Component, Inject, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup} from '@angular/forms';
-import {MatChipInputEvent} from '@angular/material/chips';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {TranslationValidator} from '@shared/validators/translation.validator';
-import {Translation} from '@shared/models/translation.model';
-import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
+import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup } from '@angular/forms';
+import { MatChipInputEvent } from '@angular/material/chips';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { TranslationValidator } from '@shared/validators/translation.validator';
+import { Translation } from '@shared/models/translation.model';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 
 @Component({
   selector: 'll-translation-edit-dialog',
   templateUrl: './translation-edit-dialog.component.html',
   styleUrls: ['./translation-edit-dialog.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationEditDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({
     description: this.fb.control('', TranslationValidator.DESCRIPTION),
-    labels: this.fb.control([], TranslationValidator.DESCRIPTION)
+    labels: this.fb.control([], TranslationValidator.DESCRIPTION),
   });
 
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: Translation
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
     if (this.data != null) {

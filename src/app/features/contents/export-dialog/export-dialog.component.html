@@ -1,15 +1,15 @@
 <h1 mat-dialog-title>Contents Export</h1>
 <mat-dialog-content>
-  <br/>
+  <br />
   <form [formGroup]="form">
     <mat-form-field>
       <mat-label>Content</mat-label>
-      <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl">
+      <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl" />
       <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
         <mat-option *ngFor="let link of filteredContent | async" [value]="link">
-          <mat-icon>{{link.kind === 'FOLDER' ? 'folder' : 'article'}}</mat-icon>
-          <span>{{link.name}}</span> |
-          <small>{{link.fullSlug}}</small>
+          <mat-icon>{{ link.kind === 'FOLDER' ? 'folder' : 'article' }}</mat-icon>
+          <span>{{ link.name }}</span> |
+          <small>{{ link.fullSlug }}</small>
         </mat-option>
       </mat-autocomplete>
 

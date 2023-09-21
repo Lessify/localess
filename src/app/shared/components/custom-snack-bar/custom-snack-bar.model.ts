@@ -1,9 +1,9 @@
 export interface CustomSnackBarModel {
   message: string;
-  actions?: ActionRoute[]
+  actions?: ActionRoute[];
 }
 
 export interface ActionRoute {
-  label: string
-  link: string
+  label: string;
+  link: string;
 }

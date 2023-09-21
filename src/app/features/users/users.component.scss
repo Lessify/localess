@@ -2,7 +2,8 @@ table {
   width: 100%;
 }
 
-mat-header-cell, mat-cell {
+mat-header-cell,
+mat-cell {
   &.mat-column-avatar {
     max-width: 100px;
   }

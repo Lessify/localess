@@ -1,10 +1,9 @@
 <form *ngIf="form">
-
   <mat-card class="ll-not-shadow">
     <mat-card-header>
       <mat-card-title-group>
         <mat-card-title>
-          {{component?.displayName || component?.name}}
+          {{ component?.displayName || component?.name }}
           <mat-icon *ngIf="component?.translatable" matTooltip="The field is translatable">language</mat-icon>
         </mat-card-title>
         <button mat-icon-button matTooltip="Add Asset" (click)="openAssetSelectDialog()">
@@ -16,15 +15,20 @@
     <mat-card-content>
       <mat-list class="assets">
         <mat-list-item *ngFor="let asset of assets; index as idx">
-          <img *ngIf="asset.type.startsWith('image/'); else noImage"
-               matListItemAvatar class="img-fluid"
-               width="290" height="200" alt="thumbnail" loading="lazy"
-               ngSrc="/api/v1/spaces/{{space.id}}/assets/{{asset.id}}"/>
+          <img
+            *ngIf="asset.type.startsWith('image/'); else noImage"
+            matListItemAvatar
+            class="img-fluid"
+            width="290"
+            height="200"
+            alt="thumbnail"
+            loading="lazy"
+            ngSrc="/api/v1/spaces/{{ space.id }}/assets/{{ asset.id }}" />
           <ng-template #noImage>
             <mat-icon matListItemIcon>file_present</mat-icon>
           </ng-template>
-          <div matListItemTitle>{{asset.name}}{{asset.extension}}</div>
-          <div matListItemLine>{{asset.alt}}</div>
+          <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
+          <div matListItemLine>{{ asset.alt }}</div>
           <mat-action-list matListItemMeta>
             <button mat-icon-button (click)="deleteAsset(idx)">
               <mat-icon>delete</mat-icon>
@@ -32,8 +36,8 @@
           </mat-action-list>
         </mat-list-item>
       </mat-list>
-      <mat-hint *ngIf="component?.description">{{component.description}}</mat-hint>
-      <mat-error *ngIf="form.errors as errors">{{fe.errors(errors)}}</mat-error>
+      <mat-hint *ngIf="component?.description">{{ component.description }}</mat-hint>
+      <mat-error *ngIf="form.errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-card-content>
   </mat-card>
 
@@ -75,16 +79,16 @@
   <mat-accordion [multi]="true" *ngIf="settings.debugEnabled">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Form : {{form?.valid}} : {{form?.length}} {{form.updateValueAndValidity()}}</mat-panel-title>
+        <mat-panel-title>Form : {{ form?.valid }} : {{ form?.length }} {{ form.updateValueAndValidity() }}</mat-panel-title>
       </mat-expansion-panel-header>
-      <pre>{{form.value | json}}</pre>
-      <pre>{{form.errors | json}}</pre>
+      <pre>{{ form.value | json }}</pre>
+      <pre>{{ form.errors | json }}</pre>
     </mat-expansion-panel>
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Assets => {{assets.length}}</mat-panel-title>
+        <mat-panel-title>Assets => {{ assets.length }}</mat-panel-title>
       </mat-expansion-panel-header>
-      <pre>{{assets | json}}</pre>
+      <pre>{{ assets | json }}</pre>
     </mat-expansion-panel>
   </mat-accordion>
 </ng-container>

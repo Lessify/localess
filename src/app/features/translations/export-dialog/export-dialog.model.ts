@@ -1,24 +1,24 @@
-import {Locale} from '@shared/models/locale.model';
+import { Locale } from '@shared/models/locale.model';
 
 export interface ExportDialogModel {
-  locales: Locale[]
+  locales: Locale[];
 }
 
-export type ExportDialogReturn = ExportFullDialogReturn | ExportFlatDialogReturn
+export type ExportDialogReturn = ExportFullDialogReturn | ExportFlatDialogReturn;
 
 export interface ExportFullDialogReturn {
-  kind: 'FULL'
+  kind: 'FULL';
   /**
    * number of milliseconds.
    */
-  fromDate?: number
+  fromDate?: number;
 }
 
 export interface ExportFlatDialogReturn {
-  kind: 'FLAT'
-  locale: string
+  kind: 'FLAT';
+  locale: string;
   /**
    * number of milliseconds.
    */
-  fromDate?: number
+  fromDate?: number;
 }

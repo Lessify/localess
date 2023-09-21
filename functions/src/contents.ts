@@ -1,30 +1,30 @@
-import {logger} from 'firebase-functions/v2';
-import {HttpsError, onCall} from 'firebase-functions/v2/https';
-import {onDocumentDeleted, onDocumentUpdated, onDocumentWritten} from 'firebase-functions/v2/firestore';
-import {FieldValue, UpdateData} from 'firebase-admin/firestore';
-import {canPerform} from './utils/security-utils';
-import {bucket, firestoreService} from './config';
-import {Space} from './models/space.model';
-import {Content, ContentDocument, ContentDocumentStorage, ContentKind, PublishContentData} from './models/content.model';
-import {Schema} from './models/schema.model';
-import {UserPermission} from './models/user.model';
-import {extractContent, findContentByFullSlug, findContentById} from './services/content.service';
-import {findSpaceById} from './services/space.service';
-import {findSchemas} from './services/schema.service';
+import { logger } from 'firebase-functions/v2';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { FieldValue, UpdateData } from 'firebase-admin/firestore';
+import { canPerform } from './utils/security-utils';
+import { bucket, firestoreService } from './config';
+import { Space } from './models/space.model';
+import { Content, ContentDocument, ContentDocumentStorage, ContentKind, PublishContentData } from './models/content.model';
+import { Schema } from './models/schema.model';
+import { UserPermission } from './models/user.model';
+import { extractContent, findContentByFullSlug, findContentById } from './services/content.service';
+import { findSpaceById } from './services/space.service';
+import { findSchemas } from './services/schema.service';
 
 // Publish
-const contentPublish = onCall<PublishContentData>(async (request) => {
+const contentPublish = onCall<PublishContentData>(async request => {
   logger.info('[contentPublish] data: ' + JSON.stringify(request.data));
   logger.info('[contentPublish] context.auth: ' + JSON.stringify(request.auth));
   if (!canPerform(UserPermission.CONTENT_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
-  const {spaceId, contentId} = request.data;
+  const { spaceId, contentId } = request.data;
   const spaceSnapshot = await findSpaceById(spaceId).get();
   const contentSnapshot = await findContentById(spaceId, contentId).get();
   const schemasSnapshot = await findSchemas(spaceId).get();
   if (spaceSnapshot.exists && contentSnapshot.exists) {
     const space: Space = spaceSnapshot.data() as Space;
     const content: ContentDocument = contentSnapshot.data() as ContentDocument;
-    const schemas = schemasSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schema);
+    const schemas = schemasSnapshot.docs.filter(it => it.exists).map(it => it.data() as Schema);
     for (const locale of space.locales) {
       const documentStorage: ContentDocumentStorage = {
         id: contentSnapshot.id,
@@ -48,7 +48,7 @@ const contentPublish = onCall<PublishContentData>(async (request) => {
     logger.info(`[contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/cache.json`);
     await bucket.file(`spaces/${spaceId}/contents/${contentId}/cache.json`).save('');
     // Update publishedAt
-    await contentSnapshot.ref.update({publishedAt: FieldValue.serverTimestamp()});
+    await contentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
     return;
   } else {
     logger.info(`[contentPublish] Content ${contentId} does not exist.`);
@@ -57,15 +57,17 @@ const contentPublish = onCall<PublishContentData>(async (request) => {
 });
 
 // Firestore events
-const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}', async (event) => {
+const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}', async event => {
   logger.info(`[Content::onUpdate] eventId='${event.id}'`);
   logger.info(`[Content::onUpdate] params='${JSON.stringify(event.params)}'`);
-  const {spaceId, contentId} = event.params;
+  const { spaceId, contentId } = event.params;
   // No Data
   if (!event.data) return;
   const contentBefore = event.data.before.data() as Content;
   const contentAfter = event.data.after.data() as Content;
-  logger.info(`[Content::onUpdate] eventId='${event.id}' id='${contentId}' slug before='${contentBefore.fullSlug}' after='${contentAfter.fullSlug}'`);
+  logger.info(
+    `[Content::onUpdate] eventId='${event.id}' id='${contentId}' slug before='${contentBefore.fullSlug}' after='${contentAfter.fullSlug}'`
+  );
   // Logic related to fullSlug change, in case a folder change a SLUG and it should be cascaded to all childs
   // First level check, check if the slug is different
   if (contentBefore.fullSlug === contentAfter.fullSlug) {
@@ -80,7 +82,7 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
       const schemasSnapshot = await findSchemas(spaceId).get();
       const space: Space = spaceSnapshot.data() as Space;
       const content: ContentDocument = contentAfter;
-      const schemas = schemasSnapshot.docs.filter((it) => it.exists).map((it) => it.data() as Schema);
+      const schemas = schemasSnapshot.docs.filter(it => it.exists).map(it => it.data() as Schema);
       for (const locale of space.locales) {
         const documentStorage: ContentDocumentStorage = {
           id: event.data.after.id,
@@ -110,8 +112,9 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
     // It will create recursion
     const batch = firestoreService.batch();
     const contentsSnapshot = await findContentByFullSlug(spaceId, contentBefore.fullSlug).get();
-    contentsSnapshot.docs.filter((it) => it.exists)
-      .forEach((it) => {
+    contentsSnapshot.docs
+      .filter(it => it.exists)
+      .forEach(it => {
         const content = it.data() as Content;
         const update: UpdateData<Content> = {
           parentSlug: contentAfter.fullSlug,
@@ -125,10 +128,10 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
   return;
 });
 
-const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}', async (event) => {
+const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}', async event => {
   logger.info(`[Content::onDelete] eventId='${event.id}'`);
   logger.info(`[Content::onDelete] params='${JSON.stringify(event.params)}'`);
-  const {spaceId, contentId} = event.params;
+  const { spaceId, contentId } = event.params;
   // No Data
   if (!event.data) return;
   const content = event.data.data() as Content;
@@ -143,17 +146,16 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
     // It will create recursion
     const batch = firestoreService.batch();
     const contentsSnapshot = await findContentByFullSlug(spaceId, content.fullSlug).get();
-    contentsSnapshot.docs.filter((it) => it.exists)
-      .forEach((it) => batch.delete(it.ref));
+    contentsSnapshot.docs.filter(it => it.exists).forEach(it => batch.delete(it.ref));
     return batch.commit();
   }
   return;
 });
 
-const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}', async (event) => {
+const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}', async event => {
   logger.info(`[Content::onWrite] eventId='${event.id}'`);
   logger.info(`[Content::onWrite] params='${JSON.stringify(event.params)}'`);
-  const {spaceId} = event.params;
+  const { spaceId } = event.params;
   // Save Cache, to make sure LINKS are cached correctly with caceh version
   logger.info(`[Content::onWrite] Save file to spaces/${spaceId}/contents/cache.json`);
   await bucket.file(`spaces/${spaceId}/contents/cache.json`).save('');

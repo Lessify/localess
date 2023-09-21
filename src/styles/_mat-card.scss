@@ -7,7 +7,7 @@ mat-card {
     box-shadow: none;
     background-color: transparent;
   }
-  &.invalid{
+  &.invalid {
     border: solid 2px mat.get-color-from-palette($error-colors);
   }
 }

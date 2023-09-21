@@ -1,9 +1,9 @@
 <div matSnackBarLabel>
-  {{data.message}}
+  {{ data.message }}
 </div>
 
 <div matSnackBarActions *ngIf="data.actions">
   <button mat-raised-button matSnackBarAction *ngFor="let action of data.actions" (click)="navigate(action.link)">
-    {{action.label}}
+    {{ action.label }}
   </button>
 </div>

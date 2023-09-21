@@ -1,9 +1,8 @@
-export interface ExportDialogModel {
-}
+export interface ExportDialogModel {}
 
-export interface  ExportDialogReturn {
+export interface ExportDialogReturn {
   /**
    * number of milliseconds.
    */
-  fromDate?: number
+  fromDate?: number;
 }

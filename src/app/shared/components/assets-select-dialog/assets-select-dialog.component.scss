@@ -12,7 +12,8 @@ mat-cell {
   }
 }
 
-mat-header-cell, mat-cell {
+mat-header-cell,
+mat-cell {
   &.mat-column-preview {
     max-width: 150px;
   }

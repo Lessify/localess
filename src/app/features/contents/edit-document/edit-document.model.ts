@@ -1,5 +1,5 @@
 export interface SchemaPathItem {
-  contentId: string
-  fieldName: string
-  schemaName: string
+  contentId: string;
+  fieldName: string;
+  schemaName: string;
 }

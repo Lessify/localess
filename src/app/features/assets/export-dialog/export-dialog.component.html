@@ -1,14 +1,14 @@
 <h1 mat-dialog-title>Assets Export</h1>
 <mat-dialog-content>
-  <br/>
+  <br />
   <form [formGroup]="form" class="step-container">
     <mat-form-field>
       <mat-label>Content</mat-label>
-      <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl">
+      <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl" />
       <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
         <mat-option *ngFor="let asset of filteredAsset | async" [value]="asset">
-          <mat-icon>{{asset.kind === 'FOLDER' ? 'folder' : 'attachment'}}</mat-icon>
-          <span>{{asset.name}}</span>
+          <mat-icon>{{ asset.kind === 'FOLDER' ? 'folder' : 'attachment' }}</mat-icon>
+          <span>{{ asset.name }}</span>
         </mat-option>
       </mat-autocomplete>
 

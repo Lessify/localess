@@ -1,4 +1,4 @@
 export interface TranslationEditDialogModel {
-  labels: string[]
+  labels: string[];
   description: string;
 }

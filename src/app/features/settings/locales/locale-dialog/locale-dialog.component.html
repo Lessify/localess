@@ -1,16 +1,14 @@
 <h1 mat-dialog-title>Locale Form</h1>
 <mat-dialog-content>
-  <br/>
+  <br />
   <form [formGroup]="form" class="step-container">
     <mat-form-field>
       <mat-label> Locale </mat-label>
-      <input matInput type="text" formControlName="locale" required [matAutocomplete]="auto"/>
+      <input matInput type="text" formControlName="locale" required [matAutocomplete]="auto" />
       <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayLocale">
-        <mat-option *ngFor="let locale of filteredLocales | async" [value]="locale">
-          {{locale.name}} ({{locale.id}})
-        </mat-option>
+        <mat-option *ngFor="let locale of filteredLocales | async" [value]="locale"> {{ locale.name }} ({{ locale.id }}) </mat-option>
       </mat-autocomplete>
-      <mat-error *ngIf="form.controls['locale'].errors as errors">{{fe.errors(errors)}}</mat-error>
+      <mat-error *ngIf="form.controls['locale'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>
   </form>
 </mat-dialog-content>

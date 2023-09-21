@@ -3,13 +3,13 @@
 @import 'styles-variables';
 
 mat-nav-list.ll-mat-nav-list-gap {
-
   .cdk-drag-preview {
     box-sizing: border-box;
     border-radius: 4px;
-    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
-    0 8px 10px 1px rgba(0, 0, 0, 0.14),
-    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0 5px 5px -3px rgba(0, 0, 0, 0.2),
+      0 8px 10px 1px rgba(0, 0, 0, 0.14),
+      0 3px 14px 2px rgba(0, 0, 0, 0.12);
   }
 
   .cdk-drag-placeholder {
@@ -36,7 +36,7 @@ mat-nav-list.ll-mat-nav-list-gap {
       background: rgba(0, 0, 0, 0.04);
     }
 
-    &.invalid{
+    &.invalid {
       border: solid 2px mat.get-color-from-palette($error-colors);
     }
 
@@ -77,20 +77,18 @@ mat-nav-list.ll-mat-nav-list-gap {
 }
 
 mat-list.assets {
-
   mat-list-item {
     border-width: 1px;
     border-color: $border-grey-color;
     border-style: solid;
-    border-radius: 5px!important;
+    border-radius: 5px !important;
     margin-bottom: 8px;
 
     img.mat-mdc-list-item-avatar {
       border-radius: unset;
-      margin: 0 8px 0 0!important;
+      margin: 0 8px 0 0 !important;
       height: 72px;
       width: 72px;
     }
-
   }
 }

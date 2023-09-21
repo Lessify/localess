@@ -17,8 +17,7 @@ $button-vertical-margin: -(math.div($button-height - $line-height, 2));
 
 .mat-simple-snackbar-action {
   flex-shrink: 0;
-  margin: $button-vertical-margin $button-horizontal-margin * -1
-  $button-vertical-margin $button-horizontal-margin;
+  margin: $button-vertical-margin $button-horizontal-margin * -1 $button-vertical-margin $button-horizontal-margin;
 
   button {
     max-height: $button-height;

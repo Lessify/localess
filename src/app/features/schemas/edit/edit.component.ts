@@ -1,6 +1,6 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
-import {AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord} from '@angular/forms';
-import {SchemaValidator} from '@shared/validators/schema.validator';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
+import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
   AssetFileType,
   Schema,
@@ -8,41 +8,40 @@ import {
   SchemaFieldKind,
   schemaFieldKindDescriptions,
   SchemaFieldOptionSelectable,
-  SchemaUpdate
+  SchemaUpdate,
 } from '@shared/models/schema.model';
-import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {CommonValidator} from '@shared/validators/common.validator';
-import {SchemaService} from '@shared/services/schema.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {selectSpace} from '@core/state/space/space.selector';
-import {filter, switchMap, takeUntil} from 'rxjs/operators';
-import {combineLatest, Subject} from 'rxjs';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {SpaceService} from '@shared/services/space.service';
-import {Space} from '@shared/models/space.model';
-import {NotificationService} from '@shared/services/notification.service';
-import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {selectSettings} from '@core/state/settings/settings.selectors';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { CommonValidator } from '@shared/validators/common.validator';
+import { SchemaService } from '@shared/services/schema.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { selectSpace } from '@core/state/space/space.selector';
+import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { combineLatest, Subject } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
+import { SpaceService } from '@shared/services/space.service';
+import { Space } from '@shared/models/space.model';
+import { NotificationService } from '@shared/services/notification.service';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { selectSettings } from '@core/state/settings/settings.selectors';
 
 @Component({
   selector: 'll-schema-edit',
   templateUrl: './edit.component.html',
   styleUrls: ['./edit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditComponent implements OnInit, OnDestroy {
-
   selectedSpace?: Space;
   entityId: string;
   entity?: Schema;
-  reservedNames: string[] = []
+  reservedNames: string[] = [];
   schemas: Schema[] = [];
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
   nameReadonly = true;
   fieldNameReadonly = true;
 
-  selectedFieldIdx ?: number;
+  selectedFieldIdx?: number;
 
   fieldReservedNames: string[] = [];
   newFieldName = this.fb.control('', [...SchemaValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
@@ -59,7 +58,7 @@ export class EditComponent implements OnInit, OnDestroy {
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     previewField: this.fb.control<string | undefined>(undefined, SchemaValidator.PREVIEW_FIELD),
     previewImage: this.fb.control<string | undefined>(undefined),
-    fields: this.fb.array<SchemaField>([])
+    fields: this.fb.array<SchemaField>([]),
   });
 
   constructor(
@@ -71,33 +70,33 @@ export class EditComponent implements OnInit, OnDestroy {
     private readonly spaceService: SpaceService,
     private readonly schemaService: SchemaService,
     private readonly store: Store<AppState>,
-    private readonly notificationService: NotificationService,
+    private readonly notificationService: NotificationService
   ) {
     this.entityId = this.activatedRoute.snapshot.paramMap.get('schemaId') || '';
   }
 
   ngOnInit(): void {
     this.loadData(this.entityId);
-
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next(undefined)
-    this.destroy$.complete()
+    this.destroy$.next(undefined);
+    this.destroy$.complete();
   }
 
   loadData(entityId: string): void {
-    this.store.select(selectSpace)
+    this.store
+      .select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it =>
           combineLatest([
             this.spaceService.findById(it.id),
             this.schemaService.findAll(it.id),
-            this.schemaService.findById(it.id, entityId)
+            this.schemaService.findById(it.id, entityId),
           ])
         ),
-        takeUntil(this.destroy$),
+        takeUntil(this.destroy$)
       )
       .subscribe({
         next: ([space, schemas, schema]) => {
@@ -107,21 +106,22 @@ export class EditComponent implements OnInit, OnDestroy {
           this.entity = schema;
 
           // Form
-          this.form.controls['name'].setValidators([...SchemaValidator.NAME, CommonValidator.reservedName(this.reservedNames, this.entity?.name)])
+          this.form.controls['name'].setValidators([
+            ...SchemaValidator.NAME,
+            CommonValidator.reservedName(this.reservedNames, this.entity?.name),
+          ]);
           this.form.patchValue(schema);
 
-          this.fields.clear()
-          schema.fields?.forEach(it => this.addField(it))
+          this.fields.clear();
+          schema.fields?.forEach(it => this.addField(it));
           if (this.selectedFieldIdx === undefined) {
             this.selectComponent(this.fields.length - 1);
           }
 
           this.isLoading = false;
           this.cd.markForCheck();
-
-        }
-      })
-
+        },
+      });
   }
 
   get fields(): FormArray<FormGroup> {
@@ -129,23 +129,23 @@ export class EditComponent implements OnInit, OnDestroy {
   }
 
   fieldControlAt(index: number, controlName: string): AbstractControl | undefined {
-    return this.fields.at(index)?.controls[controlName]
+    return this.fields.at(index)?.controls[controlName];
   }
 
   fieldAt(index: number): FormGroup | undefined {
-    return this.fields.at(index)
+    return this.fields.at(index);
   }
 
   generateOptionForm(option?: SchemaFieldOptionSelectable): FormGroup {
     return this.fb.group({
       name: this.fb.control(option?.name, SchemaValidator.FIELD_OPTION_NAME),
       value: this.fb.control(option?.value, SchemaValidator.FIELD_OPTION_VALUE),
-    })
+    });
   }
 
   addField(element?: SchemaField) {
     const fieldName = element?.name || this.newFieldName.value || '';
-    this.fieldReservedNames.push(fieldName)
+    this.fieldReservedNames.push(fieldName);
 
     const defaultKind = SchemaFieldKind.TEXT;
     const fieldForm = this.fb.group<{}>({
@@ -156,68 +156,104 @@ export class EditComponent implements OnInit, OnDestroy {
       required: this.fb.control<boolean | undefined>(element?.required, SchemaValidator.FIELD_REQUIRED),
       description: this.fb.control<string | undefined>(element?.description, SchemaValidator.FIELD_DESCRIPTION),
       defaultValue: this.fb.control<string | undefined>(element?.defaultValue, SchemaValidator.FIELD_DEFAULT_VALUE),
-    })
+    });
 
     switch (element?.kind) {
       case SchemaFieldKind.TEXT:
       case SchemaFieldKind.TEXTAREA:
-      case SchemaFieldKind.MARKDOWN:{
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
-        fieldForm.addControl('minLength', this.fb.control<number | undefined>(element.minLength, SchemaValidator.FIELD_MIN_LENGTH))
-        fieldForm.addControl('maxLength', this.fb.control<number | undefined>(element.maxLength, SchemaValidator.FIELD_MAX_LENGTH))
+      case SchemaFieldKind.MARKDOWN: {
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
+        fieldForm.addControl('minLength', this.fb.control<number | undefined>(element.minLength, SchemaValidator.FIELD_MIN_LENGTH));
+        fieldForm.addControl('maxLength', this.fb.control<number | undefined>(element.maxLength, SchemaValidator.FIELD_MAX_LENGTH));
         break;
       }
       case SchemaFieldKind.NUMBER: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
         fieldForm.addControl('minValue', this.fb.control<number | undefined>(element.minValue, SchemaValidator.FIELD_MIN_VALUE));
         fieldForm.addControl('maxValue', this.fb.control<number | undefined>(element.maxValue, SchemaValidator.FIELD_MAX_VALUE));
         break;
       }
       case SchemaFieldKind.COLOR: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
         break;
       }
       case SchemaFieldKind.DATE: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
         break;
       }
       case SchemaFieldKind.BOOLEAN: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
         break;
       }
       case SchemaFieldKind.OPTION: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        element.options.forEach(it => options.push(this.generateOptionForm(it)))
-        fieldForm.addControl('options', options)
+        element.options.forEach(it => options.push(this.generateOptionForm(it)));
+        fieldForm.addControl('options', options);
 
         break;
       }
       case SchemaFieldKind.OPTIONS: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        element.options.forEach(it => options.push(this.generateOptionForm(it)))
-        fieldForm.addControl('options', options)
+        element.options.forEach(it => options.push(this.generateOptionForm(it)));
+        fieldForm.addControl('options', options);
         fieldForm.addControl('minValues', this.fb.control<number | undefined>(element.minValues, SchemaValidator.FIELD_MIN_VALUES));
         fieldForm.addControl('maxValues', this.fb.control<number | undefined>(element.maxValues, SchemaValidator.FIELD_MAX_VALUES));
         break;
       }
       case SchemaFieldKind.LINK: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE))
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
         break;
       }
       case SchemaFieldKind.REFERENCE: {
-        fieldForm.addControl('path', this.fb.control<string | undefined>(element.path, SchemaValidator.FIELD_REFERENCE_PATH))
+        fieldForm.addControl('path', this.fb.control<string | undefined>(element.path, SchemaValidator.FIELD_REFERENCE_PATH));
         break;
       }
       case SchemaFieldKind.ASSET: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE));
-        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES));
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
+        fieldForm.addControl(
+          'fileTypes',
+          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES)
+        );
         break;
       }
       case SchemaFieldKind.ASSETS: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE));
-        fieldForm.addControl('fileTypes', this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES));
+        fieldForm.addControl(
+          'translatable',
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+        );
+        fieldForm.addControl(
+          'fileTypes',
+          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES)
+        );
         break;
       }
       case SchemaFieldKind.SCHEMA: {
@@ -230,9 +266,9 @@ export class EditComponent implements OnInit, OnDestroy {
       }
       // By default, it is a new TEXT
       default: {
-        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE))
-        fieldForm.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_LENGTH))
-        fieldForm.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_LENGTH))
+        fieldForm.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        fieldForm.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_LENGTH));
+        fieldForm.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_LENGTH));
       }
     }
     this.fields.push(fieldForm);
@@ -247,7 +283,7 @@ export class EditComponent implements OnInit, OnDestroy {
     event.preventDefault();
     event.stopImmediatePropagation();
     // Remove name from reserved names
-    const cValue = this.fieldControlAt(index, 'name')?.value
+    const cValue = this.fieldControlAt(index, 'name')?.value;
     if (cValue) {
       const idx = this.fieldReservedNames.indexOf(cValue);
       if (idx !== -1) {
@@ -281,21 +317,20 @@ export class EditComponent implements OnInit, OnDestroy {
     //console.group('save')
     this.isSaveLoading = true;
 
-    this.schemaService.update(this.selectedSpace!.id, this.entityId, this.form.value as SchemaUpdate)
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Schema has been updated.');
-        },
-        error: () => {
-          this.notificationService.error('Schema can not be updated.');
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isSaveLoading = false
-            this.cd.markForCheck()
-          }, 1000)
-        }
-      });
+    this.schemaService.update(this.selectedSpace!.id, this.entityId, this.form.value as SchemaUpdate).subscribe({
+      next: () => {
+        this.notificationService.success('Schema has been updated.');
+      },
+      error: () => {
+        this.notificationService.error('Schema can not be updated.');
+      },
+      complete: () => {
+        setTimeout(() => {
+          this.isSaveLoading = false;
+          this.cd.markForCheck();
+        }, 1000);
+      },
+    });
 
     //console.groupEnd()
   }
@@ -306,8 +341,8 @@ export class EditComponent implements OnInit, OnDestroy {
 
   fieldDropDrop(event: CdkDragDrop<string[]>): void {
     if (event.previousIndex === event.currentIndex) return;
-    const tmp = this.fields.at(event.previousIndex)
-    this.fields.removeAt(event.previousIndex)
-    this.fields.insert(event.currentIndex, tmp)
+    const tmp = this.fields.at(event.previousIndex);
+    this.fields.removeAt(event.previousIndex);
+    this.fields.insert(event.currentIndex, tmp);
   }
 }

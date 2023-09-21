@@ -1,4 +1,4 @@
-import {initialState, settingsReducer} from './settings.reducer';
+import { initialState, settingsReducer } from './settings.reducer';
 
 import {
   actionSettingsChangeAnimationsElements,
@@ -8,7 +8,7 @@ import {
   actionSettingsChangeHour,
   actionSettingsChangeLanguage,
   actionSettingsChangeStickyHeader,
-  actionSettingsChangeTheme
+  actionSettingsChangeTheme,
 } from './settings.actions';
 
 describe('SettingsReducer', () => {
@@ -32,7 +32,7 @@ describe('SettingsReducer', () => {
 
   it('should update pageAnimations', () => {
     const action = actionSettingsChangeAnimationsPage({
-      pageAnimations: false
+      pageAnimations: false,
     });
     const state = settingsReducer(undefined, action);
     expect(state.pageAnimations).toEqual(false);
@@ -40,7 +40,7 @@ describe('SettingsReducer', () => {
 
   it('should update pageAnimationsDisabled and pageAnimations', () => {
     const action = actionSettingsChangeAnimationsPageDisabled({
-      pageAnimationsDisabled: true
+      pageAnimationsDisabled: true,
     });
     const state = settingsReducer(undefined, action);
     expect(state.pageAnimationsDisabled).toEqual(true);
@@ -49,7 +49,7 @@ describe('SettingsReducer', () => {
 
   it('should update elementsAnimations', () => {
     const action = actionSettingsChangeAnimationsElements({
-      elementsAnimations: false
+      elementsAnimations: false,
     });
     const state = settingsReducer(undefined, action);
     expect(state.elementsAnimations).toEqual(false);
@@ -57,7 +57,7 @@ describe('SettingsReducer', () => {
 
   it('should update autoNightMode', () => {
     const action = actionSettingsChangeAutoNightMode({
-      autoNightMode: true
+      autoNightMode: true,
     });
     const state = settingsReducer(undefined, action);
     expect(state.autoNightMode).toEqual(true);
@@ -65,7 +65,7 @@ describe('SettingsReducer', () => {
 
   it('should update stickyHeader', () => {
     const action = actionSettingsChangeStickyHeader({
-      stickyHeader: false
+      stickyHeader: false,
     });
     const state = settingsReducer(undefined, action);
     expect(state.stickyHeader).toEqual(false);
@@ -73,7 +73,7 @@ describe('SettingsReducer', () => {
 
   it('should update hour', () => {
     const action = actionSettingsChangeHour({
-      hour: 7
+      hour: 7,
     });
     const state = settingsReducer(undefined, action);
     expect(state.hour).toEqual(7);

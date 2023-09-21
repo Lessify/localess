@@ -1,30 +1,30 @@
-import {Timestamp} from 'firebase-admin/firestore';
-import {JSONSchemaType} from 'ajv';
+import { Timestamp } from 'firebase-admin/firestore';
+import { JSONSchemaType } from 'ajv';
 
 export enum TranslationType {
   STRING = 'STRING',
   PLURAL = 'PLURAL',
-  ARRAY = 'ARRAY'
+  ARRAY = 'ARRAY',
 }
 
 export interface Translation {
-  name: string
-  type: TranslationType
-  locales: Record<string, string>
-  labels?: string[]
-  autoTranslate?: boolean
-  description?: string
-  createdAt: Timestamp
-  updatedAt: Timestamp
+  name: string;
+  type: TranslationType;
+  locales: Record<string, string>;
+  labels?: string[];
+  autoTranslate?: boolean;
+  description?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface PublishTranslationsData {
-  spaceId: string
+  spaceId: string;
 }
 
 // Import and Export
-export interface TranslationExport extends Omit<Translation, 'autoTranslate' | 'createdAt' | 'updatedAt'>{
-  id: string
+export interface TranslationExport extends Omit<Translation, 'autoTranslate' | 'createdAt' | 'updatedAt'> {
+  id: string;
 }
 
 export const translationExportArraySchema: JSONSchemaType<TranslationExport[]> = {
@@ -32,9 +32,9 @@ export const translationExportArraySchema: JSONSchemaType<TranslationExport[]> =
   items: {
     type: 'object',
     properties: {
-      id: {type: 'string', nullable: false},
-      name: {type: 'string', nullable: false},
-      type: {type: 'string', enum: Object.values(TranslationType), nullable: false},
+      id: { type: 'string', nullable: false },
+      name: { type: 'string', nullable: false },
+      type: { type: 'string', enum: Object.values(TranslationType), nullable: false },
       locales: {
         type: 'object',
         nullable: false,
@@ -45,9 +45,9 @@ export const translationExportArraySchema: JSONSchemaType<TranslationExport[]> =
       labels: {
         type: 'array',
         nullable: true,
-        items: {type: 'string', nullable: true},
+        items: { type: 'string', nullable: true },
       },
-      description: {type: 'string', nullable: true},
+      description: { type: 'string', nullable: true },
     },
     required: ['name', 'type', 'locales'],
     additionalProperties: false,

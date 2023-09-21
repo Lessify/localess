@@ -16,7 +16,7 @@ export const environment = {
   },
   auth: {
     customDomain: '*',
-    providers: 'GOOGLE,MICROSOFT'
+    providers: 'GOOGLE,MICROSOFT',
   },
   production: false,
   test: true,

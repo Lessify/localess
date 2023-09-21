@@ -1,11 +1,11 @@
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-import {SettingsComponent} from './settings.component';
-import {LocalesComponent} from './locales/locales.component';
-import {GeneralComponent} from './general/general.component';
-import {VisualEditorComponent} from './visual-editor/visual-editor.component';
-import {TokensComponent} from './tokens/tokens.component';
-import {UiComponent} from "./ui/ui.component";
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { SettingsComponent } from './settings.component';
+import { LocalesComponent } from './locales/locales.component';
+import { GeneralComponent } from './general/general.component';
+import { VisualEditorComponent } from './visual-editor/visual-editor.component';
+import { TokensComponent } from './tokens/tokens.component';
+import { UiComponent } from './ui/ui.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'general', pathMatch: 'full' },
@@ -32,13 +32,13 @@ const routes: Routes = [
       {
         path: 'ui',
         component: UiComponent,
-      }
-    ]
+      },
+    ],
   },
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
 export class SettingsRoutingModule {}

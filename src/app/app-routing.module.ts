@@ -1,42 +1,41 @@
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-import {authGuard} from '@core/state/auth/auth-guard.service';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { authGuard } from '@core/state/auth/auth-guard.service';
 
 const routes: Routes = [
   {
     path: '',
     redirectTo: 'features',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: 'login',
     title: 'Login',
-    loadChildren: () => import('./login/login.module').then((m) => m.LoginModule)
+    loadChildren: () => import('./login/login.module').then(m => m.LoginModule),
   },
   {
     path: 'reset',
     title: 'Forgot Password',
-    loadChildren: () => import('./reset/reset.module').then((m) => m.ResetModule)
+    loadChildren: () => import('./reset/reset.module').then(m => m.ResetModule),
   },
   {
     path: 'setup',
     title: 'Initial Setup',
-    loadChildren: () => import('./setup/setup.module').then((m) => m.SetupModule),
+    loadChildren: () => import('./setup/setup.module').then(m => m.SetupModule),
   },
   {
     path: 'features',
-    loadChildren: () => import('./features/features.module').then((m) => m.FeaturesModule),
-    canActivate: [authGuard]
+    loadChildren: () => import('./features/features.module').then(m => m.FeaturesModule),
+    canActivate: [authGuard],
   },
   {
     path: '**',
-    redirectTo: 'features'
-  }
+    redirectTo: 'features',
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule {
-}
+export class AppRoutingModule {}

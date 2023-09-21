@@ -30,7 +30,8 @@ mat-cell {
   }
 }
 
-mat-header-cell, mat-cell {
+mat-header-cell,
+mat-cell {
   &.mat-column-select {
     max-width: 80px;
   }

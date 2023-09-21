@@ -1,30 +1,32 @@
-import {auth, logger} from 'firebase-functions';
-import {onCall, HttpsError} from 'firebase-functions/v2/https';
-import {onDocumentDeleted, onDocumentUpdated} from 'firebase-functions/v2/firestore';
-import {FieldValue} from 'firebase-admin/firestore';
-import {authService} from './config';
-import {canPerform} from './utils/security-utils';
-import {User, UserInvite, UserPermission} from './models/user.model';
-import {findUserById} from './services/user.service';
+import { auth, logger } from 'firebase-functions';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { authService } from './config';
+import { canPerform } from './utils/security-utils';
+import { User, UserInvite, UserPermission } from './models/user.model';
+import { findUserById } from './services/user.service';
 
-const onAuthUserCreate = auth.user()
-  .onCreate((user, context) => {
-    logger.info(`[AuthUser::onCreate] id='${user.uid}' eventId='${context.eventId}'`);
-    logger.info(`[AuthUser::onCreate] user='${JSON.stringify(user)}'`);
-    if (!user.email) {
-      return null;
-    }
-    const userRef = findUserById(user.uid);
+const onAuthUserCreate = auth.user().onCreate((user, context) => {
+  logger.info(`[AuthUser::onCreate] id='${user.uid}' eventId='${context.eventId}'`);
+  logger.info(`[AuthUser::onCreate] user='${JSON.stringify(user)}'`);
+  if (!user.email) {
+    return null;
+  }
+  const userRef = findUserById(user.uid);
 
-    return userRef.set({
+  return userRef.set(
+    {
       email: user.email,
       displayName: user.displayName || FieldValue.delete(),
       photoURL: user.photoURL || FieldValue.delete(),
       disabled: user.disabled,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-    }, {merge: true});
-  });
+    },
+    { merge: true }
+  );
+});
 
 // const onAuthUserDelete = auth.user()
 //   .onDelete(async (user, context) => {
@@ -37,7 +39,7 @@ const onAuthUserCreate = auth.user()
 //     return true;
 //   });
 
-const userInvite = onCall<UserInvite>(async (request) => {
+const userInvite = onCall<UserInvite>(async request => {
   logger.info('[userInvite] data: ' + JSON.stringify(request.data));
   logger.info('[userInvite] context.auth: ' + JSON.stringify(request.auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
@@ -48,18 +50,18 @@ const userInvite = onCall<UserInvite>(async (request) => {
     password: request.data.password,
     disabled: false,
   });
-  await authService.setCustomUserClaims(adminUser.uid, {role: request.data.role, permissions: request.data.permissions});
+  await authService.setCustomUserClaims(adminUser.uid, { role: request.data.role, permissions: request.data.permissions });
   return true;
 });
 
 // TODO add use case for Deleted users from Firebase directly
-const usersSync = onCall<never>(async (request) => {
+const usersSync = onCall<never>(async request => {
   logger.info('[usersSync] data: ' + JSON.stringify(request.data));
   logger.info('[usersSync] context.auth: ' + JSON.stringify(request.auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const listUsers = await authService.listUsers();
-  listUsers.users.map(async (userRecord) => {
+  listUsers.users.map(async userRecord => {
     logger.debug('[usersSync] userRecord: ' + JSON.stringify(userRecord));
     const userRef = findUserById(userRecord.uid);
     const userSnapshot = await userRef.get();
@@ -77,39 +79,45 @@ const usersSync = onCall<never>(async (request) => {
         userRecord.customClaims?.['permissions'] !== user['permissions']
       ) {
         logger.debug(`[usersSync] user: id='${userSnapshot.id}' to be updated`);
-        await userRef.set({
-          email: userRecord.email,
-          displayName: userRecord.displayName || FieldValue.delete(),
-          photoURL: userRecord.photoURL || FieldValue.delete(),
-          disabled: userRecord.disabled,
-          role: userRecord.customClaims?.['role'] || FieldValue.delete(),
-          permissions: userRecord.customClaims?.['permissions'] || FieldValue.delete(),
-          updatedAt: FieldValue.serverTimestamp(),
-        }, {merge: true});
+        await userRef.set(
+          {
+            email: userRecord.email,
+            displayName: userRecord.displayName || FieldValue.delete(),
+            photoURL: userRecord.photoURL || FieldValue.delete(),
+            disabled: userRecord.disabled,
+            role: userRecord.customClaims?.['role'] || FieldValue.delete(),
+            permissions: userRecord.customClaims?.['permissions'] || FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
       } else {
         logger.debug(`[usersSync] user: id='${userSnapshot.id}' no updates required`);
       }
     } else {
       logger.debug(`[usersSync] user: id='${userSnapshot.id}' to be added`);
-      await userRef.set({
-        email: userRecord.email,
-        displayName: userRecord.displayName || FieldValue.delete(),
-        photoURL: userRecord.photoURL || FieldValue.delete(),
-        disabled: userRecord.disabled,
-        role: userRecord.customClaims?.['role'],
-        permissions: userRecord.customClaims?.['permissions'],
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, {merge: true});
+      await userRef.set(
+        {
+          email: userRecord.email,
+          displayName: userRecord.displayName || FieldValue.delete(),
+          photoURL: userRecord.photoURL || FieldValue.delete(),
+          disabled: userRecord.disabled,
+          role: userRecord.customClaims?.['role'],
+          permissions: userRecord.customClaims?.['permissions'],
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
     }
   });
   return true;
 });
 
-const onUserUpdate = onDocumentUpdated('users/{userId}', async (event) => {
+const onUserUpdate = onDocumentUpdated('users/{userId}', async event => {
   logger.info(`[User::onUpdate] eventId='${event.id}'`);
   logger.info(`[User::onUpdate] params='${JSON.stringify(event.params)}'`);
-  const {userId} = event.params;
+  const { userId } = event.params;
   // No Data
   if (!event.data) return;
   const before = event.data.before.data() as User;
@@ -123,16 +131,26 @@ const onUserUpdate = onDocumentUpdated('users/{userId}', async (event) => {
 
   if (roleBefore !== roleAfter || permissionsBefore !== permissionsAfter) {
     logger.info(`[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' from='${roleBefore}' to='${roleAfter}'`);
-    logger.info(`[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' from='${permissionsBefore}' to='${permissionsAfter}'`);
+    logger.info(
+      `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' from='${permissionsBefore}' to='${permissionsAfter}'`
+    );
     const userRecord = await authService.getUser(userId);
     // check if role update already in Auth
     if (userRecord.customClaims?.['role'] !== roleAfter || userRecord.customClaims?.['permissions'] !== permissionsAfter) {
-      logger.debug(`[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update required.`);
-      logger.debug(`[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update required.`);
-      return await authService.setCustomUserClaims(userId, {role: roleAfter, permissions: permissionsAfter});
+      logger.debug(
+        `[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update required.`
+      );
+      logger.debug(
+        `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update required.`
+      );
+      return await authService.setCustomUserClaims(userId, { role: roleAfter, permissions: permissionsAfter });
     } else {
-      logger.debug(`[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update not required.`);
-      logger.debug(`[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update not required.`);
+      logger.debug(
+        `[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update not required.`
+      );
+      logger.debug(
+        `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update not required.`
+      );
     }
     return true;
   }
@@ -148,10 +166,10 @@ const onUserUpdate = onDocumentUpdated('users/{userId}', async (event) => {
   return true;
 });
 
-const onUserDelete = onDocumentDeleted('users/{userId}', async (event) => {
+const onUserDelete = onDocumentDeleted('users/{userId}', async event => {
   logger.info(`[User::onDelete] eventId='${event.id}'`);
   logger.info(`[User::onDelete] params='${JSON.stringify(event.params)}'`);
-  const {userId} = event.params;
+  const { userId } = event.params;
   return authService.deleteUser(userId);
 });
 

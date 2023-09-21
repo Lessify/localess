@@ -2,7 +2,8 @@ table {
   width: 100%;
 }
 
-mat-header-cell, mat-cell {
+mat-header-cell,
+mat-cell {
   &.mat-column-id {
     max-width: 250px;
   }

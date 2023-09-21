@@ -1,6 +1,6 @@
 <form [formGroup]="form">
   <mat-form-field class="edit">
     <textarea matInput #input maxlength="1000" rows="6" formControlName="value"></textarea>
-    <mat-hint align="end">{{input.value?.length || 0}}/1000</mat-hint>
+    <mat-hint align="end">{{ input.value?.length || 0 }}/1000</mat-hint>
   </mat-form-field>
 </form>

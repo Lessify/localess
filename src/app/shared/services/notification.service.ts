@@ -1,17 +1,16 @@
-import {Injectable, NgZone} from '@angular/core';
-import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
-import {CustomSnackBarComponent} from '@shared/components/custom-snack-bar/custom-snack-bar.component';
-import {ActionRoute, CustomSnackBarModel} from '@shared/components/custom-snack-bar/custom-snack-bar.model';
+import { Injectable, NgZone } from '@angular/core';
+import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
+import { CustomSnackBarComponent } from '@shared/components/custom-snack-bar/custom-snack-bar.component';
+import { ActionRoute, CustomSnackBarModel } from '@shared/components/custom-snack-bar/custom-snack-bar.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class NotificationService {
   constructor(
     private readonly snackBar: MatSnackBar,
     private readonly zone: NgZone
-  ) {
-  }
+  ) {}
 
   default(message: string, actions?: ActionRoute[]) {
     this.show({
@@ -19,8 +18,8 @@ export class NotificationService {
       panelClass: 'default-notification-overlay',
       data: {
         message: message,
-        actions: actions
-      }
+        actions: actions,
+      },
     });
   }
 
@@ -30,8 +29,8 @@ export class NotificationService {
       panelClass: 'info-notification-overlay',
       data: {
         message: message,
-        actions: actions
-      }
+        actions: actions,
+      },
     });
   }
 
@@ -41,8 +40,8 @@ export class NotificationService {
       panelClass: 'success-notification-overlay',
       data: {
         message: message,
-        actions: actions
-      }
+        actions: actions,
+      },
     });
   }
 
@@ -52,8 +51,8 @@ export class NotificationService {
       panelClass: 'warning-notification-overlay',
       data: {
         message: message,
-        actions: actions
-      }
+        actions: actions,
+      },
     });
   }
 
@@ -63,8 +62,8 @@ export class NotificationService {
       panelClass: 'error-notification-overlay',
       data: {
         message: message,
-        actions: actions
-      }
+        actions: actions,
+      },
     });
   }
 

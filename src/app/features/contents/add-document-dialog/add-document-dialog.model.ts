@@ -1,7 +1,7 @@
-import {Schema} from '@shared/models/schema.model';
+import { Schema } from '@shared/models/schema.model';
 
 export interface AddDocumentDialogModel {
-  schemas: Schema[]
+  schemas: Schema[];
   reservedNames: string[];
   reservedSlugs: string[];
 }

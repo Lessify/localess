@@ -1,4 +1,4 @@
-import {Timestamp} from '@angular/fire/firestore';
+import { Timestamp } from '@angular/fire/firestore';
 
 export interface User {
   /**
@@ -31,10 +31,10 @@ export interface User {
 }
 
 export interface UserInvite {
-  displayName?: string
-  email: string
-  password: string
-  role: string
+  displayName?: string;
+  email: string;
+  password: string;
+  role: string;
 }
 
 export type UserRole = 'admin' | 'custom';
@@ -75,13 +75,13 @@ export const USER_PERMISSIONS_IMPORT = [
   UserPermission.SCHEMA_IMPORT,
   UserPermission.CONTENT_IMPORT,
   UserPermission.ASSET_IMPORT,
-]
+];
 
 export const USER_PERMISSIONS_EXPORT = [
   UserPermission.TRANSLATION_EXPORT,
   UserPermission.SCHEMA_EXPORT,
   UserPermission.CONTENT_EXPORT,
   UserPermission.ASSET_EXPORT,
-]
+];
 
-export const USER_PERMISSIONS_IMPORT_EXPORT = [...USER_PERMISSIONS_IMPORT, ...USER_PERMISSIONS_EXPORT]
+export const USER_PERMISSIONS_IMPORT_EXPORT = [...USER_PERMISSIONS_IMPORT, ...USER_PERMISSIONS_EXPORT];

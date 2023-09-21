@@ -1,4 +1,4 @@
-import {env} from './env'
+import { env } from './env';
 import packageInfo from '../../package.json';
 
 export const environment = {
@@ -13,7 +13,7 @@ export const environment = {
   },
   auth: {
     customDomain: env.LOCALESS_AUTH_CUSTOM_DOMAIN,
-    providers: env.LOCALESS_AUTH_PROVIDERS
+    providers: env.LOCALESS_AUTH_PROVIDERS,
   },
   production: true,
   test: false,

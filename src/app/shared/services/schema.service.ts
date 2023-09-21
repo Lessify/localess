@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   addDoc,
   collection,
@@ -15,48 +15,36 @@ import {
   serverTimestamp,
   UpdateData,
   updateDoc,
-  where
+  where,
 } from '@angular/fire/firestore';
-import {from, Observable} from 'rxjs';
-import {traceUntilFirst} from '@angular/fire/performance';
-import {map} from 'rxjs/operators';
-import {Schema, SchemaCreate, SchemaCreateFS, SchemaType, SchemaUpdate,} from '@shared/models/schema.model';
-import {ObjectUtils} from '@core/utils/object-utils.service';
+import { from, Observable } from 'rxjs';
+import { traceUntilFirst } from '@angular/fire/performance';
+import { map } from 'rxjs/operators';
+import { Schema, SchemaCreate, SchemaCreateFS, SchemaType, SchemaUpdate } from '@shared/models/schema.model';
+import { ObjectUtils } from '@core/utils/object-utils.service';
 
 @Injectable()
 export class SchemaService {
-  constructor(
-    private readonly firestore: Firestore,
-  ) {
-  }
+  constructor(private readonly firestore: Firestore) {}
 
   findAll(spaceId: string, type?: SchemaType): Observable<Schema[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')]
+    const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')];
 
     if (type) {
-      queryConstrains.push(
-        where('type', '==', type)
-      )
+      queryConstrains.push(where('type', '==', type));
     }
 
-    return collectionData(
-      query(
-        collection(this.firestore, `spaces/${spaceId}/schemas`),
-        ...queryConstrains
-      ), {idField: 'id'}
-    )
-      .pipe(
-        traceUntilFirst('Firestore:Schemas:findAll'),
-        map((it) => it as Schema[])
-      );
+    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/schemas`), ...queryConstrains), { idField: 'id' }).pipe(
+      traceUntilFirst('Firestore:Schemas:findAll'),
+      map(it => it as Schema[])
+    );
   }
 
   findById(spaceId: string, id: string): Observable<Schema> {
-    return docData(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), {idField: 'id'})
-      .pipe(
-        traceUntilFirst('Firestore:Schemas:findById'),
-        map((it) => it as Schema)
-      );
+    return docData(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), { idField: 'id' }).pipe(
+      traceUntilFirst('Firestore:Schemas:findById'),
+      map(it => it as Schema)
+    );
   }
 
   create(spaceId: string, entity: SchemaCreate): Observable<DocumentReference> {
@@ -65,13 +53,12 @@ export class SchemaService {
       displayName: entity.displayName,
       type: entity.type,
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    }
+      updatedAt: serverTimestamp(),
+    };
 
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/schemas`), addEntity))
-      .pipe(
-        traceUntilFirst('Firestore:Schemas:create'),
-      );
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/schemas`), addEntity)).pipe(
+      traceUntilFirst('Firestore:Schemas:create')
+    );
   }
 
   update(spaceId: string, id: string, entity: SchemaUpdate): Observable<void> {
@@ -82,19 +69,14 @@ export class SchemaService {
       previewField: entity.previewField || deleteField(),
       previewImage: entity.previewImage || deleteField(),
       fields: entity.fields || deleteField(),
-      updatedAt: serverTimestamp()
-    }
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), update))
-      .pipe(
-        traceUntilFirst('Firestore:Schemas:update'),
-      );
+      updatedAt: serverTimestamp(),
+    };
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), update)).pipe(
+      traceUntilFirst('Firestore:Schemas:update')
+    );
   }
 
   delete(spaceId: string, id: string): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`)))
-      .pipe(
-        traceUntilFirst('Firestore:Schemas:delete'),
-      );
+    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`))).pipe(traceUntilFirst('Firestore:Schemas:delete'));
   }
-
 }

@@ -1,6 +1,5 @@
 @import '../../styles/styles-variables';
 
-
 .wrapper {
   height: calc(100% - 64px);
   //display: flex;
@@ -17,7 +16,6 @@
   }
 
   mat-sidenav-container {
-
     // when side-nav is collapsed
     mat-sidenav.collapsed {
       mat-list-item {
@@ -29,18 +27,15 @@
     }
 
     mat-sidenav-content {
-
     }
   }
-
-
 }
 
 mat-form-field {
   width: 100%;
 }
 
-.mat-mdc-list-item.active{
+.mat-mdc-list-item.active {
   background: rgba(0, 0, 0, 0.04);
 }
 
@@ -113,7 +108,6 @@ mat-sidenav-container {
       margin-top: 64px;
       overflow: hidden;
     }
-
   }
 
   @media (max-width: $toolbar-breakpoint) {
@@ -124,7 +118,7 @@ mat-sidenav-container {
 }
 
 mat-sidenav {
- // width: 250px;
+  // width: 250px;
 
   .branding {
     height: 64px;

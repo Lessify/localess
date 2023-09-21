@@ -1,4 +1,4 @@
-import {Timestamp} from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export enum TaskKind {
   ASSET_EXPORT = 'ASSET_EXPORT',
@@ -8,7 +8,7 @@ export enum TaskKind {
   SCHEMA_EXPORT = 'SCHEMA_EXPORT',
   SCHEMA_IMPORT = 'SCHEMA_IMPORT',
   TRANSLATION_EXPORT = 'TRANSLATION_EXPORT',
-  TRANSLATION_IMPORT = 'TRANSLATION_IMPORT'
+  TRANSLATION_IMPORT = 'TRANSLATION_IMPORT',
 }
 
 export enum TaskStatus {
@@ -19,21 +19,21 @@ export enum TaskStatus {
 }
 
 export interface Task {
-  id: string,
-  kind: TaskKind,
-  status: TaskStatus,
+  id: string;
+  kind: TaskKind;
+  status: TaskStatus;
   // Export Only
-  fromDate?: number, // translations
-  locale?: string, // translations
-  path?: string, // contents
+  fromDate?: number; // translations
+  locale?: string; // translations
+  path?: string; // contents
   // Import Only
-  tmpPath?: string,
+  tmpPath?: string;
   file?: {
-    name: string,
-    size: number,
-  }
+    name: string;
+    size: number;
+  };
   // Error Message
-  message?: string
+  message?: string;
   // Dates
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -41,7 +41,7 @@ export interface Task {
 
 // FireStore
 export interface TaskExportMetadata {
-  kind: 'ASSET' | 'CONTENT' | 'SCHEMA' | 'TRANSLATION',
-  fromDate?: number,
-  path?: string
+  kind: 'ASSET' | 'CONTENT' | 'SCHEMA' | 'TRANSLATION';
+  fromDate?: number;
+  path?: string;
 }

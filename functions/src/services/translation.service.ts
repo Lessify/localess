@@ -1,7 +1,7 @@
-import {firestoreService} from '../config';
-import {DocumentReference, Query, Timestamp} from 'firebase-admin/firestore';
-import Ajv, {ErrorObject} from 'ajv';
-import {translationExportArraySchema, translationFlatExportSchema} from '../models/translation.model';
+import { firestoreService } from '../config';
+import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
+import Ajv, { ErrorObject } from 'ajv';
+import { translationExportArraySchema, translationFlatExportSchema } from '../models/translation.model';
 
 /**
  * find Translation by ID

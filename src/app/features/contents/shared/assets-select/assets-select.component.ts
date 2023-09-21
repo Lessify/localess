@@ -1,33 +1,32 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
-import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
-import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchemaFieldAssets, SchemaFieldKind} from '@shared/models/schema.model';
-import {MatDialog} from '@angular/material/dialog';
-import {NotificationService} from '@shared/services/notification.service';
-import {Asset} from '@shared/models/asset.model';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {AssetService} from '@shared/services/asset.service';
-import {Space} from '@shared/models/space.model';
-import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
-import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/assets-select-dialog.model';
-import {selectSettings} from '@core/state/settings/settings.selectors';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { SchemaFieldAssets, SchemaFieldKind } from '@shared/models/schema.model';
+import { MatDialog } from '@angular/material/dialog';
+import { NotificationService } from '@shared/services/notification.service';
+import { Asset } from '@shared/models/asset.model';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
+import { AssetService } from '@shared/services/asset.service';
+import { Space } from '@shared/models/space.model';
+import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
+import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
+import { selectSettings } from '@core/state/settings/settings.selectors';
 
 @Component({
   selector: 'll-assets-select',
   templateUrl: './assets-select.component.html',
   styleUrls: ['./assets-select.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsSelectComponent implements OnInit, OnDestroy {
   @Input() form?: FormArray;
   @Input() component?: SchemaFieldAssets;
   @Input() space?: Space;
 
-
   @Output() assetsChange = new EventEmitter<string[]>();
 
-  assets: Asset[] = []
+  assets: Asset[] = [];
   // Subscriptions
   settings$ = this.store.select(selectSettings);
 
@@ -38,33 +37,31 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
-    private readonly assetService: AssetService,
-  ) {
-  }
+    private readonly assetService: AssetService
+  ) {}
 
   ngOnInit(): void {
     //console.group('AssetsSelectComponent:ngOnInit')
     //console.log(this.form)
-    this.loadData()
+    this.loadData();
     //console.groupEnd()
   }
 
   loadData(): void {
-    const ids: string[] | undefined = this.form?.controls.map(it => it.value.uri as string)
+    const ids: string[] | undefined = this.form?.controls.map(it => it.value.uri as string);
     if (ids && ids.length > 0) {
-      this.assetService.findByIds(this.space?.id!!, ids)
-        .subscribe({
-          next: (assets) => {
-            this.assets = assets
-            this.cd.markForCheck()
-          }
-        })
+      this.assetService.findByIds(this.space?.id!!, ids).subscribe({
+        next: assets => {
+          this.assets = assets;
+          this.cd.markForCheck();
+        },
+      });
     }
   }
 
   openAssetSelectDialog(): void {
-    this.dialog.open<AssetsSelectDialogComponent, AssetsSelectDialogModel, Asset[] | undefined>(
-      AssetsSelectDialogComponent, {
+    this.dialog
+      .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, Asset[] | undefined>(AssetsSelectDialogComponent, {
         minWidth: '900px',
         width: 'calc(100vw - 160px)',
         maxWidth: '1280px',
@@ -72,21 +69,21 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
         data: {
           spaceId: this.space?.id!!,
           multiple: true,
-          fileType: this.component?.fileTypes?.at(0)
-        }
+          fileType: this.component?.fileTypes?.at(0),
+        },
       })
       .afterClosed()
       .subscribe({
-        next: (selectedAssets) => {
+        next: selectedAssets => {
           if (selectedAssets) {
-            this.assets.push(...selectedAssets)
-            this.form?.clear()
-            this.assets.forEach(it => this.form?.push(this.assetToForm(it)))
-            this.assetsChange.next(this.assets.map(it => it.id))
+            this.assets.push(...selectedAssets);
+            this.form?.clear();
+            this.assets.forEach(it => this.form?.push(this.assetToForm(it)));
+            this.assetsChange.next(this.assets.map(it => it.id));
             //this.form?.root.updateValueAndValidity()
             //this.cd.markForCheck();
           }
-        }
+        },
       });
   }
 
@@ -94,18 +91,18 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
     return this.fb.group({
       uri: this.fb.control(asset.id),
       kind: this.fb.control(SchemaFieldKind.ASSET),
-    })
+    });
   }
 
   ngOnDestroy(): void {
-    this.assetsChange.complete()
+    this.assetsChange.complete();
     //console.log("AssetsSelectComponent:ngOnDestroy")
   }
 
   deleteAsset(idx: number) {
-    this.assets.splice(idx, 1)
-    this.form?.removeAt(idx)
-    this.assetsChange.next(this.assets.map(it => it.id))
+    this.assets.splice(idx, 1);
+    this.form?.removeAt(idx);
+    this.assetsChange.next(this.assets.map(it => it.id));
     //this.form?.root.updateValueAndValidity()
   }
 }

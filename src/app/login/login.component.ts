@@ -1,4 +1,4 @@
-import {Component, OnDestroy, Optional} from '@angular/core';
+import { Component, OnDestroy, Optional } from '@angular/core';
 import {
   Auth,
   authState,
@@ -9,23 +9,23 @@ import {
   signInWithPopup,
   signOut,
   User,
-  UserCredential
+  UserCredential,
 } from '@angular/fire/auth';
-import {Router} from '@angular/router';
-import {EMPTY, Observable, Subscription} from 'rxjs';
-import {traceUntilFirst} from '@angular/fire/performance';
-import {map, tap} from 'rxjs/operators';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {authLogin, authLogout} from '@core/core.module';
-import {environment} from '../../environments/environment';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {selectSettings} from '@core/state/settings/settings.selectors';
+import { Router } from '@angular/router';
+import { EMPTY, Observable, Subscription } from 'rxjs';
+import { traceUntilFirst } from '@angular/fire/performance';
+import { map, tap } from 'rxjs/operators';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
+import { authLogin, authLogout } from '@core/core.module';
+import { environment } from '../../environments/environment';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { selectSettings } from '@core/state/settings/settings.selectors';
 
 @Component({
   selector: 'll-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent implements OnDestroy {
   redirect = ['/features'];
@@ -60,12 +60,12 @@ export class LoginComponent implements OnDestroy {
       this.userDisposable = authState(this.auth)
         .pipe(
           traceUntilFirst('auth'),
-          tap((u) => {
+          tap(u => {
             this.parsedToken = u?.getIdTokenResult();
           }),
-          map((u) => !!u)
+          map(u => !!u)
         )
-        .subscribe((isLoggedIn) => {
+        .subscribe(isLoggedIn => {
           this.showLoginButton = !isLoggedIn;
           this.showLogoutButton = isLoggedIn;
         });
@@ -82,7 +82,7 @@ export class LoginComponent implements OnDestroy {
     const provider = new GoogleAuthProvider();
     if (environment.auth.customDomain) {
       provider.setCustomParameters({
-        hd: environment.auth.customDomain
+        hd: environment.auth.customDomain,
       });
     }
     const uc: UserCredential = await signInWithPopup(this.auth, provider);
@@ -94,7 +94,7 @@ export class LoginComponent implements OnDestroy {
     const provider = new OAuthProvider('microsoft.com');
     if (environment.auth.customDomain) {
       provider.setCustomParameters({
-        tenant: environment.auth.customDomain
+        tenant: environment.auth.customDomain,
       });
     }
     const uc: UserCredential = await signInWithPopup(this.auth, provider);

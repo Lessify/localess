@@ -1,14 +1,14 @@
-import {logger} from 'firebase-functions/v2';
-import {onDocumentDeleted} from 'firebase-functions/v2/firestore';
-import {bucket, firestoreService} from './config';
-import {Asset, AssetKind} from './models/asset.model';
-import {findAssetsByParentPath} from './services/asset.service';
+import { logger } from 'firebase-functions/v2';
+import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import { bucket, firestoreService } from './config';
+import { Asset, AssetKind } from './models/asset.model';
+import { findAssetsByParentPath } from './services/asset.service';
 
 // Firestore events
-const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', async (event) => {
+const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', async event => {
   logger.info(`[Asset::onDelete] eventId='${event.id}'`);
   logger.info(`[Asset::onDelete] params='${JSON.stringify(event.params)}'`);
-  const {spaceId, assetId} = event.params;
+  const { spaceId, assetId } = event.params;
   // No Data
   if (!event.data) return;
   const asset = event.data.data() as Asset;
@@ -22,10 +22,11 @@ const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', as
     // It will create recursion
     const batch = firestoreService.batch();
 
-    const assetsSnapshot = await findAssetsByParentPath(spaceId, asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`).get();
-    assetsSnapshot.docs
-      .filter((it) => it.exists)
-      .forEach((it) => batch.delete(it.ref));
+    const assetsSnapshot = await findAssetsByParentPath(
+      spaceId,
+      asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`
+    ).get();
+    assetsSnapshot.docs.filter(it => it.exists).forEach(it => batch.delete(it.ref));
     return batch.commit();
   }
   return;

@@ -1,25 +1,25 @@
-import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
-import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
-import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {SchemaFieldKind, SchemaFieldReference} from '@shared/models/schema.model';
-import {ContentDocument} from '@shared/models/content.model';
-import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
-import {debounceTime, Observable, of, startWith} from 'rxjs';
-import {map} from 'rxjs/operators';
-import {selectSettings} from '@core/state/settings/settings.selectors';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { SchemaFieldKind, SchemaFieldReference } from '@shared/models/schema.model';
+import { ContentDocument } from '@shared/models/content.model';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { debounceTime, Observable, of, startWith } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { selectSettings } from '@core/state/settings/settings.selectors';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
 
 @Component({
   selector: 'll-reference-select',
   templateUrl: './reference-select.component.html',
   styleUrls: ['./reference-select.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReferenceSelectComponent implements OnInit {
-  @Input({required: true}) form?: FormGroup;
-  @Input({required: true}) component?: SchemaFieldReference;
-  @Input({required: true}) documents: ContentDocument[] = []
+  @Input({ required: true }) form?: FormGroup;
+  @Input({ required: true }) component?: SchemaFieldReference;
+  @Input({ required: true }) documents: ContentDocument[] = [];
 
   // Search
   searchCtrl: FormControl = new FormControl();
@@ -31,36 +31,36 @@ export class ReferenceSelectComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    private readonly store: Store<AppState>,
-  ) {
-  }
+    private readonly store: Store<AppState>
+  ) {}
 
   ngOnInit(): void {
     // Data init in case everything is null
     if (this.form?.value.kind === null) {
-      this.form.patchValue({kind: SchemaFieldKind.REFERENCE})
+      this.form.patchValue({ kind: SchemaFieldKind.REFERENCE });
     }
     if (this.form?.value.uri !== null) {
-      this.searchCtrl.patchValue(this.documents.find(it => it.id === this.form?.value.uri))
+      this.searchCtrl.patchValue(this.documents.find(it => it.id === this.form?.value.uri));
     }
 
-    this.filteredContent = this.searchCtrl.valueChanges
-      .pipe(
-        startWith(''),
-        debounceTime(300),
-        map((search) => this.documents?.filter((it) => {
+    this.filteredContent = this.searchCtrl.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300),
+      map(
+        search =>
+          this.documents?.filter(it => {
             if (this.component && this.component.path) {
               if (it.parentSlug === this.component.path) {
-                return it.name.includes(search) || it.fullSlug.includes(search)
+                return it.name.includes(search) || it.fullSlug.includes(search);
               } else {
-                return false
+                return false;
               }
             } else {
-              return it.name.includes(search) || it.fullSlug.includes(search)
+              return it.name.includes(search) || it.fullSlug.includes(search);
             }
-          }
-        ) || [])
+          }) || []
       )
+    );
   }
 
   displayContent(content?: ContentDocument): string {

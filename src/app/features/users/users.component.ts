@@ -1,32 +1,32 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
-import {MatTableDataSource} from '@angular/material/table';
-import {MatDialog} from '@angular/material/dialog';
-import {MatSort} from '@angular/material/sort';
-import {MatPaginator} from '@angular/material/paginator';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {UserService} from '@shared/services/user.service';
-import {User} from '@shared/models/user.model';
-import {filter, switchMap, takeUntil} from 'rxjs/operators';
-import {UserDialogComponent} from './user-dialog/user-dialog.component';
-import {UserDialogModel} from './user-dialog/user-dialog.model';
-import {UserInviteDialogComponent} from './user-invite-dialog/user-invite-dialog.component';
-import {UserInviteDialogResponse} from './user-invite-dialog/user-invite-dialog.model';
-import {ConfirmationDialogComponent} from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import {ConfirmationDialogModel} from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import {NotificationService} from '@shared/services/notification.service';
-import {Subject} from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSort } from '@angular/material/sort';
+import { MatPaginator } from '@angular/material/paginator';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
+import { UserService } from '@shared/services/user.service';
+import { User } from '@shared/models/user.model';
+import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { UserDialogComponent } from './user-dialog/user-dialog.component';
+import { UserDialogModel } from './user-dialog/user-dialog.model';
+import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';
+import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialog.model';
+import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { NotificationService } from '@shared/services/notification.service';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'll-users',
   templateUrl: './users.component.html',
   styleUrls: ['./users.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UsersComponent implements OnInit, OnDestroy {
-  @ViewChild(MatSort, {static: false}) sort?: MatSort;
-  @ViewChild(MatPaginator, {static: false}) paginator?: MatPaginator;
+  @ViewChild(MatSort, { static: false }) sort?: MatSort;
+  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
   isLoading: boolean = true;
   isSyncLoading: boolean = false;
@@ -44,39 +44,34 @@ export class UsersComponent implements OnInit, OnDestroy {
     private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
     private readonly userService: UserService
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.loadData()
+    this.loadData();
   }
 
   loadData(): void {
-    this.userService.findAll()
-      .pipe(
-        takeUntil(this.destroy$),
-      )
+    this.userService
+      .findAll()
+      .pipe(takeUntil(this.destroy$))
       .subscribe(response => {
-          this.dataSource = new MatTableDataSource<User>(response);
-          this.dataSource.sort = this.sort || null;
-          this.dataSource.paginator = this.paginator || null;
-          this.isLoading = false;
-          this.cd.markForCheck();
-        }
-      )
+        this.dataSource = new MatTableDataSource<User>(response);
+        this.dataSource.sort = this.sort || null;
+        this.dataSource.paginator = this.paginator || null;
+        this.isLoading = false;
+        this.cd.markForCheck();
+      });
   }
 
   inviteDialog(): void {
-    this.dialog.open<UserInviteDialogComponent, void, UserInviteDialogResponse>(
-      UserInviteDialogComponent, {
+    this.dialog
+      .open<UserInviteDialogComponent, void, UserInviteDialogResponse>(UserInviteDialogComponent, {
         width: '500px',
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.userService.invite(it!)
-        )
+        switchMap(it => this.userService.invite(it!))
       )
       .subscribe({
         next: () => {
@@ -84,25 +79,23 @@ export class UsersComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.notificationService.error('User can not be invited.');
-        }
+        },
       });
   }
 
   editDialog(element: User): void {
-    this.dialog.open<UserDialogComponent, UserDialogModel, UserDialogModel>(
-      UserDialogComponent, {
+    this.dialog
+      .open<UserDialogComponent, UserDialogModel, UserDialogModel>(UserDialogComponent, {
         width: '500px',
         data: {
           role: element.role,
           permissions: element.permissions,
-        }
+        },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it =>
-          this.userService.update(element.id, it?.role, it?.permissions)
-        )
+        switchMap(it => this.userService.update(element.id, it?.role, it?.permissions))
       )
       .subscribe({
         next: () => {
@@ -110,24 +103,22 @@ export class UsersComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.notificationService.error('User can not be updated.');
-        }
+        },
       });
   }
 
   deleteDialog(element: User): void {
-    this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(
-      ConfirmationDialogComponent, {
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
           title: 'Delete User',
-          content: `Are you sure about deleting User with email '${element.email}'.`
-        }
+          content: `Are you sure about deleting User with email '${element.email}'.`,
+        },
       })
       .afterClosed()
       .pipe(
-        filter((it) => it || false),
-        switchMap(_ =>
-          this.userService.delete(element.id)
-        )
+        filter(it => it || false),
+        switchMap(_ => this.userService.delete(element.id))
       )
       .subscribe({
         next: () => {
@@ -135,31 +126,30 @@ export class UsersComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.notificationService.error(`User '${element.email}' can not be deleted.`);
-        }
+        },
       });
   }
 
   sync(): void {
     this.isSyncLoading = true;
-    this.userService.sync()
-      .subscribe({
-        next: () => {
-          this.notificationService.success(`Sync is in progress, it may take upt to few minutes.`);
-        },
-        error: () => {
-          this.notificationService.error(`Users can not be synced.`);
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.isSyncLoading = false
-            this.cd.markForCheck()
-          }, 1000)
-        }
-      })
+    this.userService.sync().subscribe({
+      next: () => {
+        this.notificationService.success(`Sync is in progress, it may take upt to few minutes.`);
+      },
+      error: () => {
+        this.notificationService.error(`Users can not be synced.`);
+      },
+      complete: () => {
+        setTimeout(() => {
+          this.isSyncLoading = false;
+          this.cd.markForCheck();
+        }, 1000);
+      },
+    });
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next(undefined)
-    this.destroy$.complete()
+    this.destroy$.next(undefined);
+    this.destroy$.complete();
   }
 }

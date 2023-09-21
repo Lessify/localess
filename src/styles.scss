@@ -15,18 +15,19 @@
 @import 'styles/mat-snack-bar';
 @import 'styles/mat-toolbar';
 
-
 $primary: mat.define-palette(mat.$blue-palette, 900);
 $accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
 
-$theme: mat.define-light-theme((
-  color: (
-    primary: $primary,
-    accent: $accent,
-  ),
-  typography: mat.define-typography-config(),
-  density: 0,
-));
+$theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $primary,
+      accent: $accent,
+    ),
+    typography: mat.define-typography-config(),
+    density: 0,
+  )
+);
 
 @include mat.all-component-themes($theme);
 
@@ -35,8 +36,14 @@ $theme: mat.define-light-theme((
 
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+}
 
 .spacer {
   flex: 1 1 auto;

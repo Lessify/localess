@@ -1,14 +1,14 @@
-import {logger} from 'firebase-functions/v2';
-import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firestore';
-import {FieldValue, UpdateData, WithFieldValue} from 'firebase-admin/firestore';
-import {Task, TaskExportMetadata, TaskKind, TaskStatus} from './models/task.model';
-import {BATCH_MAX, bucket, firestoreService} from './config';
-import {Asset, AssetExport, AssetFile, AssetFolder, AssetKind} from './models/asset.model';
-import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'fs';
-import {zip} from 'compressing';
-import {ErrorObject} from 'ajv';
-import {docAssetToExport, findAssetById, findAssets, findAssetsByStartFullSlug, validateAssetImport} from './services/asset.service';
-import {Content, ContentDocument, ContentExport, ContentFolder, ContentKind} from './models/content.model';
+import { logger } from 'firebase-functions/v2';
+import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
+import { Task, TaskExportMetadata, TaskKind, TaskStatus } from './models/task.model';
+import { BATCH_MAX, bucket, firestoreService } from './config';
+import { Asset, AssetExport, AssetFile, AssetFolder, AssetKind } from './models/asset.model';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { zip } from 'compressing';
+import { ErrorObject } from 'ajv';
+import { docAssetToExport, findAssetById, findAssets, findAssetsByStartFullSlug, validateAssetImport } from './services/asset.service';
+import { Content, ContentDocument, ContentExport, ContentFolder, ContentKind } from './models/content.model';
 import {
   docContentToExport,
   findContentByFullSlug,
@@ -17,10 +17,10 @@ import {
   findContentsByStartFullSlug,
   validateContentImport,
 } from './services/content.service';
-import {tmpdir} from 'os';
-import {Schema, SchemaExport} from './models/schema.model';
-import {findSchemaById, findSchemas, validateSchemaImport} from './services/schema.service';
-import {Translation, TranslationExport, TranslationType} from './models/translation.model';
+import { tmpdir } from 'os';
+import { Schema, SchemaExport } from './models/schema.model';
+import { findSchemaById, findSchemas, validateSchemaImport } from './services/schema.service';
+import { Translation, TranslationExport, TranslationType } from './models/translation.model';
 import {
   findTranslationById,
   findTranslations,
@@ -31,11 +31,11 @@ import {
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
 // Firestore events
-const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async (event) => {
+const onTaskCreate = onDocumentCreated('spaces/{spaceId}/tasks/{taskId}', async event => {
   logger.info(`[Task:onCreate] eventId='${event.id}'`);
   logger.info(`[Task:onCreate] params='${JSON.stringify(event.params)}'`);
   logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
-  const {spaceId, taskId} = event.params;
+  const { spaceId, taskId } = event.params;
   // No Data
   if (!event.data) return;
   const task = event.data.data() as Task;
@@ -166,7 +166,7 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
       if (rootAsset.kind === AssetKind.FOLDER) {
         const startParentPath = rootAsset.parentPath === '' ? rootAssetSnapshot.id : `${rootAsset.parentPath}/${rootAssetSnapshot.id}`;
         const assetsSnapshot = await findAssetsByStartFullSlug(spaceId, startParentPath).get();
-        assetsSnapshot.docs.forEach((doc) => {
+        assetsSnapshot.docs.forEach(doc => {
           const asset = doc.data() as Asset;
           exportAssets.push(docAssetToExport(doc.id, asset));
           logger.info(`[Task:onCreate:assetsExport] sub-folder id=${doc.id} name=${asset.name}`);
@@ -188,8 +188,9 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
   } else {
     // Export Everything
     const assetsSnapshot = await findAssets(spaceId).get();
-    assetsSnapshot.docs.filter((it) => it.exists)
-      .forEach((doc) => {
+    assetsSnapshot.docs
+      .filter(it => it.exists)
+      .forEach(doc => {
         const asset = doc.data() as Asset;
         exportAssets.push(docAssetToExport(doc.id, asset));
       });
@@ -214,24 +215,20 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
 
   await Promise.all(
     exportAssets
-      .map((it) => it!)
-      .filter((it) => it.kind === AssetKind.FILE)
-      .map((asset) =>
-        bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`)
-          .download({destination: `${assetsTmpFolder}/${asset.id}`})
+      .map(it => it!)
+      .filter(it => it.kind === AssetKind.FILE)
+      .map(asset =>
+        bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` })
       )
   );
 
-  await zip.compressDir(tmpTaskFolder, assetsExportZipFile, {ignoreBase: true});
+  await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
 
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
-    .save(
-      readFileSync(assetsExportZipFile),
-      (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(assetsExportZipFile), err => {
+    if (err) {
+      logger.error(err);
+    }
+  });
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -245,7 +242,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: zipPath});
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await zip.uncompress(zipPath, tmpTaskFolder);
   const assets = JSON.parse(readFileSync(`${tmpTaskFolder}/assets.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
@@ -341,7 +338,7 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
       // folder, all sub documents
       if (rootContent.kind === ContentKind.FOLDER) {
         const contentsSnapshot = await findContentsByStartFullSlug(spaceId, `${rootContent.fullSlug}/`).get();
-        contentsSnapshot.docs.forEach((doc) => {
+        contentsSnapshot.docs.forEach(doc => {
           const content = doc.data() as Content;
           exportContents.push(docContentToExport(doc.id, content));
           logger.info(`[Task:onCreate:contentsExport] sub-folder fullSlug=${content.fullSlug}`);
@@ -363,7 +360,7 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
             navigationSlug = `${navigationSlug}/${slug}`;
           }
           const contentsSnapshot = await findContentByFullSlug(spaceId, navigationSlug).get();
-          contentsSnapshot.docs.forEach((doc) => {
+          contentsSnapshot.docs.forEach(doc => {
             const content = doc.data() as Content;
             logger.info(`[Task:onCreate:contentsExport] path fullSlug=${content.fullSlug}`);
             exportContents.push(docContentToExport(doc.id, content));
@@ -376,8 +373,9 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
   } else {
     // Export Everything
     const contentsSnapshot = await findContents(spaceId).get();
-    contentsSnapshot.docs.filter((it) => it.exists)
-      .forEach((doc) => {
+    contentsSnapshot.docs
+      .filter(it => it.exists)
+      .forEach(doc => {
         const content = doc.data() as Content;
         exportContents.push(docContentToExport(doc.id, content));
       });
@@ -398,16 +396,13 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
   // Create assets folder
   const contentsExportZipFile = `${tmpdir()}/contents-${taskId}.zip`;
 
-  await zip.compressDir(tmpTaskFolder, contentsExportZipFile, {ignoreBase: true});
+  await zip.compressDir(tmpTaskFolder, contentsExportZipFile, { ignoreBase: true });
 
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
-    .save(
-      readFileSync(contentsExportZipFile),
-      (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(contentsExportZipFile), err => {
+    if (err) {
+      logger.error(err);
+    }
+  });
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -421,7 +416,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: zipPath});
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await zip.uncompress(zipPath, tmpTaskFolder);
   const contents = JSON.parse(readFileSync(`${tmpTaskFolder}/contents.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
@@ -518,8 +513,9 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
 async function schemasExport(spaceId: string, taskId: string, task: Task): Promise<any> {
   const exportSchemas: SchemaExport[] = [];
   const schemasSnapshot = await findSchemas(spaceId, task.fromDate).get();
-  schemasSnapshot.docs.filter((it) => it.exists)
-    .forEach((doc) => {
+  schemasSnapshot.docs
+    .filter(it => it.exists)
+    .forEach(doc => {
       const schema = doc.data() as Schema;
       exportSchemas.push({
         id: doc.id,
@@ -545,16 +541,13 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
   // Create assets folder
   const schemasExportZipFile = `${tmpdir()}/schemas-${taskId}.zip`;
 
-  await zip.compressDir(tmpTaskFolder, schemasExportZipFile, {ignoreBase: true});
+  await zip.compressDir(tmpTaskFolder, schemasExportZipFile, { ignoreBase: true });
 
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
-    .save(
-      readFileSync(schemasExportZipFile),
-      (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(schemasExportZipFile), err => {
+    if (err) {
+      logger.error(err);
+    }
+  });
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -569,7 +562,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: zipPath});
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await zip.uncompress(zipPath, tmpTaskFolder);
   const schemas = JSON.parse(readFileSync(`${tmpTaskFolder}/schemas.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
@@ -638,8 +631,9 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
 async function translationsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
   const exportTranslations: TranslationExport[] = [];
   const translationsSnapshot = await findTranslations(spaceId, task.fromDate).get();
-  translationsSnapshot.docs.filter((it) => it.exists)
-    .forEach((doc) => {
+  translationsSnapshot.docs
+    .filter(it => it.exists)
+    .forEach(doc => {
       const translation = doc.data() as Translation;
       const exportedTr: TranslationExport = {
         id: doc.id,
@@ -669,16 +663,13 @@ async function translationsExport(spaceId: string, taskId: string, task: Task): 
   // Create assets folder
   const translationsExportZipFile = `${tmpdir()}/translations-${taskId}.zip`;
 
-  await zip.compressDir(tmpTaskFolder, translationsExportZipFile, {ignoreBase: true});
+  await zip.compressDir(tmpTaskFolder, translationsExportZipFile, { ignoreBase: true });
 
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
-    .save(
-      readFileSync(translationsExportZipFile),
-      (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(translationsExportZipFile), err => {
+    if (err) {
+      logger.error(err);
+    }
+  });
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -692,8 +683,9 @@ async function translationsExport(spaceId: string, taskId: string, task: Task): 
 async function translationsExportJsonFlat(spaceId: string, taskId: string, task: Task): Promise<any> {
   const exportTranslations: Record<string, string> = {};
   const translationsSnapshot = await findTranslations(spaceId, task.fromDate).get();
-  translationsSnapshot.docs.filter((it) => it.exists)
-    .forEach((doc) => {
+  translationsSnapshot.docs
+    .filter(it => it.exists)
+    .forEach(doc => {
       const translation = doc.data() as Translation;
       if (task.locale) {
         const locale = translation.locales[task.locale];
@@ -702,14 +694,11 @@ async function translationsExportJsonFlat(spaceId: string, taskId: string, task:
         }
       }
     });
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`)
-    .save(
-      JSON.stringify(exportTranslations),
-      (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(JSON.stringify(exportTranslations), err => {
+    if (err) {
+      logger.error(err);
+    }
+  });
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -723,7 +712,7 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: zipPath});
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await zip.uncompress(zipPath, tmpTaskFolder);
   const translations = JSON.parse(readFileSync(`${tmpTaskFolder}/translations.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
@@ -786,11 +775,15 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function translationsImportJsonFlat(spaceId: string, taskId: string, task: Task): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+async function translationsImportJsonFlat(
+  spaceId: string,
+  taskId: string,
+  task: Task
+): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const jsonPath = `${tmpTaskFolder}/task.json`;
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({destination: jsonPath});
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: jsonPath });
   const translations: Record<string, string> = JSON.parse(readFileSync(jsonPath).toString());
   if (task.locale === undefined) return 'WRONG_METADATA';
   const errors = validateTranslationFlatImport(translations);
@@ -802,8 +795,9 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
   const origTransMap = new Map<string, Translation>();
   const origTransIdMap = new Map<string, string>();
   const translationsSnapshot = await findTranslations(spaceId).get();
-  translationsSnapshot.docs.filter((it) => it.exists)
-    .forEach((it) => {
+  translationsSnapshot.docs
+    .filter(it => it.exists)
+    .forEach(it => {
       const tr = it.data() as Translation;
       origTransMap.set(tr.name, tr);
       origTransIdMap.set(tr.name, it.id);
@@ -853,10 +847,10 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
   return undefined;
 }
 
-const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async (event) => {
+const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async event => {
   logger.info(`[Task:onDeleted] eventId='${event.id}'`);
   logger.info(`[Task:onDeleted] params='${JSON.stringify(event.params)}'`);
-  const {spaceId, taskId} = event.params;
+  const { spaceId, taskId } = event.params;
   return bucket.deleteFiles({
     prefix: `spaces/${spaceId}/tasks/${taskId}`,
   });

@@ -1,22 +1,22 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {FormBuilder} from '@angular/forms';
-import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {MatDialog} from '@angular/material/dialog';
-import {NotificationService} from '@shared/services/notification.service';
-import {Asset} from '@shared/models/asset.model';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
-import {AssetService} from '@shared/services/asset.service';
-import {Space} from '@shared/models/space.model';
-import {AssetsSelectDialogComponent} from '@shared/components/assets-select-dialog/assets-select-dialog.component';
-import {AssetsSelectDialogModel} from '@shared/components/assets-select-dialog/assets-select-dialog.model';
-import {AssetFileType} from '@shared/models/schema.model';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { MatDialog } from '@angular/material/dialog';
+import { NotificationService } from '@shared/services/notification.service';
+import { Asset } from '@shared/models/asset.model';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
+import { AssetService } from '@shared/services/asset.service';
+import { Space } from '@shared/models/space.model';
+import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
+import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
+import { AssetFileType } from '@shared/models/schema.model';
 
 @Component({
   selector: 'll-schema-asset-select',
   templateUrl: './asset-select.component.html',
   styleUrls: ['./asset-select.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetSelectComponent implements OnInit {
   @Input() space?: Space;
@@ -31,29 +31,27 @@ export class AssetSelectComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
-    private readonly assetService: AssetService,
-  ) {
-  }
+    private readonly assetService: AssetService
+  ) {}
 
   ngOnInit(): void {
-    this.loadData()
+    this.loadData();
   }
 
   loadData(): void {
     if (this.assetId) {
-      this.assetService.findById(this.space?.id!!, this.assetId)
-        .subscribe({
-          next: (asset) => {
-            this.asset = asset
-            this.cd.markForCheck()
-          }
-        })
+      this.assetService.findById(this.space?.id!!, this.assetId).subscribe({
+        next: asset => {
+          this.asset = asset;
+          this.cd.markForCheck();
+        },
+      });
     }
   }
 
   openAssetSelectDialog(): void {
-    this.dialog.open<AssetsSelectDialogComponent, AssetsSelectDialogModel, Asset[] | undefined>(
-      AssetsSelectDialogComponent, {
+    this.dialog
+      .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, Asset[] | undefined>(AssetsSelectDialogComponent, {
         minWidth: '900px',
         width: 'calc(100vw - 160px)',
         maxWidth: '1280px',
@@ -61,25 +59,25 @@ export class AssetSelectComponent implements OnInit {
         data: {
           spaceId: this.space?.id!!,
           multiple: false,
-          fileType: AssetFileType.IMAGE
-        }
+          fileType: AssetFileType.IMAGE,
+        },
       })
       .afterClosed()
       .subscribe({
-        next: (selectedAssets) => {
+        next: selectedAssets => {
           if (selectedAssets && selectedAssets.length > 0) {
-            this.asset = undefined
+            this.asset = undefined;
             this.cd.detectChanges();
-            this.asset = selectedAssets[0]
-            this.assetChange.emit(this.asset.id)
+            this.asset = selectedAssets[0];
+            this.assetChange.emit(this.asset.id);
             this.cd.markForCheck();
           }
-        }
+        },
       });
   }
 
   deleteAsset() {
     this.asset = undefined;
-    this.assetChange.emit(undefined)
+    this.assetChange.emit(undefined);
   }
 }

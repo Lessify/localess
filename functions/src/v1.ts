@@ -2,26 +2,26 @@ import express from 'express';
 import cors from 'cors';
 import os from 'os';
 import sharp from 'sharp';
-import {logger} from 'firebase-functions';
-import {HttpsError, onRequest} from 'firebase-functions/v2/https';
-import {Query} from 'firebase-admin/firestore';
-import {bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService} from './config';
-import {AssetFile} from './models/asset.model';
-import {Content, ContentKind, ContentLink} from './models/content.model';
-import {Space} from './models/space.model';
-import {findContentByFullSlug} from './services/content.service';
-import {findSpaceById} from './services/space.service';
-import {findTokenById, validateToken} from './services/token.service';
+import { logger } from 'firebase-functions';
+import { HttpsError, onRequest } from 'firebase-functions/v2/https';
+import { Query } from 'firebase-admin/firestore';
+import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService } from './config';
+import { AssetFile } from './models/asset.model';
+import { Content, ContentKind, ContentLink } from './models/content.model';
+import { Space } from './models/space.model';
+import { findContentByFullSlug } from './services/content.service';
+import { findSpaceById } from './services/space.service';
+import { findTokenById, validateToken } from './services/token.service';
 
 // API V1
 const expressApp = express();
-expressApp.use(cors({origin: true}));
+expressApp.use(cors({ origin: true }));
 
 expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) => {
   logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
   logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
-  const {spaceId, locale} = req.params;
-  const {cv} = req.query;
+  const { spaceId, locale } = req.params;
+  const { cv } = req.query;
 
   const cachePath = `spaces/${spaceId}/translations/cache.json`;
   const [exists] = await bucket.file(cachePath).exists();
@@ -42,26 +42,24 @@ expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) 
       }
       const space = spaceSnapshot.data() as Space;
       let actualLocale = locale;
-      if (!space.locales.some((it) => it.id === locale)) {
+      if (!space.locales.some(it => it.id === locale)) {
         actualLocale = space.localeFallback.id;
       }
-      bucket.file(`spaces/${spaceId}/translations/${actualLocale}.json`).download()
-        .then((content) => {
+      bucket
+        .file(`spaces/${spaceId}/translations/${actualLocale}.json`)
+        .download()
+        .then(content => {
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
             .contentType('application/json')
             .send(content.toString());
         })
         .catch(() => {
-          res
-            .status(404)
-            .send(new HttpsError('not-found', 'File not found, Publish first.'));
+          res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
         });
     }
   } else {
-    res
-      .status(404)
-      .send(new HttpsError('not-found', 'File not found, Publish first.'));
+    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -69,8 +67,8 @@ expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) 
 expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
-  const {spaceId} = req.params;
-  const {kind, startSlug, cv, token} = req.query;
+  const { spaceId } = req.params;
+  const { kind, startSlug, cv, token } = req.query;
   if (!validateToken(token)) {
     res
       .status(404)
@@ -118,14 +116,12 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
         contentsQuery = contentsQuery.where('kind', '==', kind);
       }
       if (startSlug) {
-        contentsQuery = contentsQuery
-          .where('fullSlug', '>=', startSlug)
-          .where('fullSlug', '<', `${startSlug}~`);
+        contentsQuery = contentsQuery.where('fullSlug', '>=', startSlug).where('fullSlug', '<', `${startSlug}~`);
       }
       const contentsSnapshot = await contentsQuery.get();
 
       const response: Record<string, ContentLink> = contentsSnapshot.docs
-        .map((contentSnapshot) => {
+        .map(contentSnapshot => {
           const content = contentSnapshot.data() as Content;
           const link: ContentLink = {
             id: contentSnapshot.id,
@@ -142,10 +138,13 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
           }
           return link;
         })
-        .reduce((acc, item) => {
-          acc[item.id] = item;
-          return acc;
-        }, ({} as Record<string, ContentLink>));
+        .reduce(
+          (acc, item) => {
+            acc[item.id] = item;
+            return acc;
+          },
+          {} as Record<string, ContentLink>
+        );
       res
         .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
         .contentType('application/json')
@@ -153,9 +152,7 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
       return;
     }
   } else {
-    res
-      .status(404)
-      .send(new HttpsError('not-found', 'File not found, Publish first.'));
+    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -163,8 +160,8 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
 expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content url: ' + req.url);
-  const {spaceId} = req.params;
-  const {cv, locale, version, token} = req.query;
+  const { spaceId } = req.params;
+  const { cv, locale, version, token } = req.query;
   const params: Record<string, string> = req.params;
   const fullSlug = params['0'];
   let contentId = '';
@@ -195,9 +192,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   logger.info('v1 spaces contents', contentsSnapshot.size);
   if (contentsSnapshot.empty) {
     // No records in database
-    res
-      .status(404)
-      .send(new HttpsError('not-found', 'Slug not found'));
+    res.status(404).send(new HttpsError('not-found', 'Slug not found'));
     return;
   } else {
     contentId = contentsSnapshot.docs[0].id;
@@ -229,30 +224,28 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
     } else {
       const space = spaceSnapshot.data() as Space;
       let actualLocale = locale;
-      if (!space.locales.some((it) => it.id === locale)) {
+      if (!space.locales.some(it => it.id === locale)) {
         actualLocale = space.localeFallback.id;
       }
       let filePath = `spaces/${spaceId}/contents/${contentId}/${actualLocale}.json`;
       if (version === 'draft') {
         filePath = `spaces/${spaceId}/contents/${contentId}/draft/${actualLocale}.json`;
       }
-      bucket.file(filePath).download()
-        .then((content) => {
+      bucket
+        .file(filePath)
+        .download()
+        .then(content => {
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
             .contentType('application/json')
             .send(content.toString());
         })
         .catch(() => {
-          res
-            .status(404)
-            .send(new HttpsError('not-found', 'File not found, Publish first.'));
+          res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
         });
     }
   } else {
-    res
-      .status(404)
-      .send(new HttpsError('not-found', 'File not found, Publish first.'));
+    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -260,8 +253,8 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
 expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
-  const {spaceId, contentId} = req.params;
-  const {cv, locale, version, token} = req.query;
+  const { spaceId, contentId } = req.params;
+  const { cv, locale, version, token } = req.query;
   if (!validateToken(token)) {
     logger.info('v1 spaces content Token Not Valid string: ' + token);
     res
@@ -313,30 +306,28 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
     } else {
       const space = spaceSnapshot.data() as Space;
       let actualLocale = locale;
-      if (!space.locales.some((it) => it.id === locale)) {
+      if (!space.locales.some(it => it.id === locale)) {
         actualLocale = space.localeFallback.id;
       }
       let filePath = `spaces/${spaceId}/contents/${contentId}/${actualLocale}.json`;
       if (version === 'draft') {
         filePath = `spaces/${spaceId}/contents/${contentId}/draft/${actualLocale}.json`;
       }
-      bucket.file(filePath).download()
-        .then((content) => {
+      bucket
+        .file(filePath)
+        .download()
+        .then(content => {
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
             .contentType('application/json')
             .send(content.toString());
         })
         .catch(() => {
-          res
-            .status(404)
-            .send(new HttpsError('not-found', 'File not found, Publish first.'));
+          res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
         });
     }
   } else {
-    res
-      .status(404)
-      .send(new HttpsError('not-found', 'File not found, Publish first.'));
+    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -344,8 +335,8 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
 expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info('v1 spaces asset params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces asset query: ' + JSON.stringify(req.query));
-  const {spaceId, assetId} = req.params;
-  const {w: width, download} = req.query;
+  const { spaceId, assetId } = req.params;
+  const { w: width, download } = req.query;
 
   const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
   const [exists] = await assetFile.exists();
@@ -361,7 +352,7 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       const [file] = await assetFile.download();
       await sharp(file).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
     } else {
-      await assetFile.download({destination: tempFilePath});
+      await assetFile.download({ destination: tempFilePath });
     }
     let disposition = `inline; filename="${filename}"`;
     if (download !== undefined) {
@@ -374,10 +365,7 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .sendFile(tempFilePath);
     return;
   } else {
-    res
-      .status(404)
-      .header('Cache-Control', 'no-cache')
-      .send(new HttpsError('not-found', 'Not found.'));
+    res.status(404).header('Cache-Control', 'no-cache').send(new HttpsError('not-found', 'Not found.'));
     return;
   }
 });

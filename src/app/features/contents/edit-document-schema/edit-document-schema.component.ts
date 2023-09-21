@@ -8,38 +8,37 @@ import {
   OnDestroy,
   OnInit,
   Output,
-  SimpleChanges
+  SimpleChanges,
 } from '@angular/core';
-import {FormArray, FormBuilder, FormRecord} from '@angular/forms';
-import {Schema, SchemaField, SchemaFieldKind} from '@shared/models/schema.model';
-import {FormErrorHandlerService} from '@core/error-handler/form-error-handler.service';
-import {AssetContent, ContentData, ContentDocument} from '@shared/models/content.model';
-import {takeUntil} from 'rxjs/operators';
-import {debounceTime, Subject} from 'rxjs';
-import {v4} from 'uuid';
-import {ContentHelperService} from '@shared/services/content-helper.service';
-import {Space} from '@shared/models/space.model';
-import {SchemaSelectChange} from './edit-document-schema.model';
-import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {selectSettings} from '@core/state/settings/settings.selectors';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/state/core.state';
+import { FormArray, FormBuilder, FormRecord } from '@angular/forms';
+import { Schema, SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AssetContent, ContentData, ContentDocument } from '@shared/models/content.model';
+import { takeUntil } from 'rxjs/operators';
+import { debounceTime, Subject } from 'rxjs';
+import { v4 } from 'uuid';
+import { ContentHelperService } from '@shared/services/content-helper.service';
+import { Space } from '@shared/models/space.model';
+import { SchemaSelectChange } from './edit-document-schema.model';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { selectSettings } from '@core/state/settings/settings.selectors';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/state/core.state';
 
 @Component({
   selector: 'll-content-document-schema-edit',
   templateUrl: './edit-document-schema.component.html',
   styleUrls: ['./edit-document-schema.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy {
-
   // Form
   form: FormRecord = this.fb.record({});
   // Subscriptions
   settings$ = this.store.select(selectSettings);
   private destroy$ = new Subject();
 
-  @Input() data: ContentData = {_id: '', schema: ''};
+  @Input() data: ContentData = { _id: '', schema: '' };
   @Input() schemas: Schema[] = [];
   @Input() documents: ContentDocument[] = [];
   @Input() locale: string = 'en';
@@ -59,9 +58,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     private readonly cd: ChangeDetectorRef,
     private readonly contentHelperService: ContentHelperService,
     readonly fe: FormErrorHandlerService,
-    private readonly store: Store<AppState>,
-  ) {
-  }
+    private readonly store: Store<AppState>
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     //console.group('EditDocumentSchemaComponent:ngOnChanges')
@@ -107,7 +105,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
 
     this.generateForm();
     if (this.data) {
-      this.formPatch()
+      this.formPatch();
       // this.form.reset()
       // this.form.patchValue(this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale));
     }
@@ -115,48 +113,42 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
 
   generateForm(): void {
     if (this.rootSchema) {
-      const isFallbackLocale = this.locale === this.localeFallback
-      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, isFallbackLocale)
+      const isFallbackLocale = this.locale === this.localeFallback;
+      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, isFallbackLocale);
 
-      this.form.valueChanges
-        .pipe(
-          takeUntil(this.destroy$),
-          debounceTime(500),
-        )
-        .subscribe({
-          next: (formValue) => {
-            //console.group('form')
-            //console.log(Object.getOwnPropertyNames(formValue))
-            //console.log('formValue', ObjectUtils.clone(formValue))
-            //console.log('Before data', ObjectUtils.clone(this.data))
+      this.form.valueChanges.pipe(takeUntil(this.destroy$), debounceTime(500)).subscribe({
+        next: formValue => {
+          //console.group('form')
+          //console.log(Object.getOwnPropertyNames(formValue))
+          //console.log('formValue', ObjectUtils.clone(formValue))
+          //console.log('Before data', ObjectUtils.clone(this.data))
 
-
-            for (const key of Object.getOwnPropertyNames(formValue)) {
-              //console.log('key', key)
-              const value = formValue[key]
-              //console.log('value', ObjectUtils.clone(value))
-              const schema = this.schemaFieldsMap.get(key)
-              if (value !== null) {
-                if (schema?.translatable) {
-                  this.data[`${key}_i18n_${this.locale}`] = value
-                } else {
-                  this.data[key] = value
-                }
+          for (const key of Object.getOwnPropertyNames(formValue)) {
+            //console.log('key', key)
+            const value = formValue[key];
+            //console.log('value', ObjectUtils.clone(value))
+            const schema = this.schemaFieldsMap.get(key);
+            if (value !== null) {
+              if (schema?.translatable) {
+                this.data[`${key}_i18n_${this.locale}`] = value;
+              } else {
+                this.data[key] = value;
               }
             }
-            //console.log('After data', ObjectUtils.clone(this.data))
-            //console.groupEnd()
-          },
-          error: (err) => console.log(err),
-          complete: () => console.log('completed')
-        })
+          }
+          //console.log('After data', ObjectUtils.clone(this.data))
+          //console.groupEnd()
+        },
+        error: err => console.log(err),
+        complete: () => console.log('completed'),
+      });
     }
   }
 
   clearForm(): void {
     //console.group('clearForm')
     for (const ctrlName in this.form.controls) {
-      this.form.removeControl(ctrlName)
+      this.form.removeControl(ctrlName);
     }
     //console.groupEnd()
   }
@@ -166,7 +158,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     this.isFormLoading = true;
     this.cd.detectChanges();
     this.generateForm();
-    this.formPatch()
+    this.formPatch();
     //this.form.reset();
     //this.form.patchValue(this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale));
     this.isFormLoading = false;
@@ -180,18 +172,17 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     let extractSchemaContent = this.contentHelperService.extractSchemaContent(this.data, this.rootSchema!, this.locale, false);
     //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
     this.form.patchValue(extractSchemaContent);
-    Object.getOwnPropertyNames(extractSchemaContent)
-      .forEach(fieldName => {
-        const content = extractSchemaContent[fieldName]
-        if (content instanceof Array) {
-          // Assets
-          if (content.some((it) => it.kind === SchemaFieldKind.ASSET)) {
-            const assets: AssetContent[] = content
-            const fa = this.form.controls[fieldName] as FormArray
-            assets.forEach((it) => fa.push(this.contentHelperService.assetContentToForm(it)))
-          }
+    Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
+      const content = extractSchemaContent[fieldName];
+      if (content instanceof Array) {
+        // Assets
+        if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
+          const assets: AssetContent[] = content;
+          const fa = this.form.controls[fieldName] as FormArray;
+          assets.forEach(it => fa.push(this.contentHelperService.assetContentToForm(it)));
         }
-      })
+      }
+    });
     //console.groupEnd()
   }
 
@@ -199,19 +190,19 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     if (ids) {
       const result: Schema[] = [];
       for (const id of ids) {
-        const r = this.schemaMapById.get(id)
+        const r = this.schemaMapById.get(id);
         if (r) {
-          result.push(r)
+          result.push(r);
         }
       }
       return result;
     }
-    return this.schemas
+    return this.schemas;
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next(undefined)
-    this.destroy$.complete()
+    this.destroy$.next(undefined);
+    this.destroy$.complete();
   }
 
   addSchemaOne(field: SchemaField, schema: Schema): void {
@@ -219,13 +210,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     if (sch) {
       this.data[field.name] = {
         _id: v4(),
-        schema: schema.name
-      }
+        schema: schema.name,
+      };
     } else {
       this.data[field.name] = {
         _id: v4(),
-        schema: schema.name
-      }
+        schema: schema.name,
+      };
     }
   }
 
@@ -233,30 +224,27 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     delete this.data[field.name];
   }
 
-
   addSchemaMany(field: SchemaField, schema: Schema): void {
     let sch: ContentData[] | undefined = this.data[field.name];
     if (sch) {
-      sch.push(
-        {
-          _id: v4(),
-          schema: schema.name
-        }
-      )
+      sch.push({
+        _id: v4(),
+        schema: schema.name,
+      });
     } else {
       this.data[field.name] = [
         {
           _id: v4(),
-          schema: schema.name
-        }
-      ]
+          schema: schema.name,
+        },
+      ];
     }
   }
 
   duplicateSchemaMany(event: MouseEvent, data: any[], item: ContentData, idx: number): void {
     event.preventDefault();
     event.stopImmediatePropagation();
-    const clone = this.contentHelperService.clone(item, true)
+    const clone = this.contentHelperService.clone(item, true);
     data.splice(idx + 1, 0, clone);
     //console.log(data)
   }
@@ -266,7 +254,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     if (sch) {
       let idx = sch.findIndex(it => it._id == schemaId);
       if (idx >= 0) {
-        sch.splice(idx, 1)
+        sch.splice(idx, 1);
       }
       if (sch.length == 0) {
         delete this.data[field.name];
@@ -275,12 +263,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   }
 
   navigationTo(contentId: string, fieldName: string, schemaName: string): void {
-    this.schemaChange.emit({contentId, fieldName, schemaName: schemaName})
+    this.schemaChange.emit({ contentId, fieldName, schemaName: schemaName });
   }
 
   onAssetsChange() {
-    this.form.updateValueAndValidity()
-    this.cd.markForCheck()
+    this.form.updateValueAndValidity();
+    this.cd.markForCheck();
   }
 
   schemaDropDrop(event: CdkDragDrop<string[], any>, data: any[]): void {
@@ -290,16 +278,15 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
 
   previewText(content: ContentData, schema: Schema, locale: string): string | undefined {
     if (schema.previewField) {
-      const field = schema.fields?.find((it) => it.name === schema.previewField)
+      const field = schema.fields?.find(it => it.name === schema.previewField);
       if (field) {
         if (field.translatable) {
-          return content[schema.previewField + '_i18n_' + locale]
+          return content[schema.previewField + '_i18n_' + locale];
         } else {
-          return content[schema.previewField]
+          return content[schema.previewField];
         }
       }
     }
-    return undefined
+    return undefined;
   }
-
 }

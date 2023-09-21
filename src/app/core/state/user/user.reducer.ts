@@ -1,6 +1,6 @@
-import {Action, ActionReducer, createReducer, on} from '@ngrx/store';
-import {UserState} from './user.model';
-import {actionUserChange, actionUserRoleChange} from './user.actions';
+import { Action, ActionReducer, createReducer, on } from '@ngrx/store';
+import { UserState } from './user.model';
+import { actionUserChange, actionUserRoleChange } from './user.actions';
 
 export const initialState: UserState = {
   id: '',
@@ -9,24 +9,24 @@ export const initialState: UserState = {
   emailVerified: false,
   role: undefined,
   photoURL: undefined,
-  permissions: undefined
+  permissions: undefined,
 };
 
 const reducer: ActionReducer<UserState, Action> = createReducer(
   initialState,
-  on(actionUserChange, (state, { id, displayName, email, emailVerified, role, permissions, photoURL}) => ({
+  on(actionUserChange, (state, { id, displayName, email, emailVerified, role, permissions, photoURL }) => ({
     id,
     displayName,
     email,
     emailVerified,
     role,
     permissions,
-    photoURL
+    photoURL,
   })),
   on(actionUserRoleChange, (state, { role, permissions }) => ({
     ...state,
     role,
-    permissions
+    permissions,
   }))
 );
 

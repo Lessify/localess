@@ -1,0 +1,12 @@
+# Ignore artifacts:
+build
+coverage
+.github
+api-docs
+.vscode
+firebase-export*
+node_modules
+dist
+package-lock.json
+
+src/app/shared/generated/
