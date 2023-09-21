@@ -3,7 +3,6 @@ import { setGlobalOptions } from 'firebase-functions/v2';
 setGlobalOptions({
   timeoutSeconds: 540,
   region: 'europe-west6',
-  invoker: 'public',
 });
 
 export { asset } from './assets';
