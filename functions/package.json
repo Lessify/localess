@@ -4,6 +4,8 @@
   "scripts": {
     "lint": "eslint --ext .js,.ts .",
     "lint:fix": "eslint --fix --ext .js,.ts .",
+    "prettier": "prettier --check ./src",
+    "prettier:fix": "prettier --write ./src",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
@@ -36,6 +38,10 @@
     "eslint": "^8.49.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.28.1",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.3",
+    "prettier-eslint": "^15.0.1",
     "firebase-functions-test": "^3.1.0",
     "typescript": "^5.2.2"
   },

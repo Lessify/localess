@@ -10,3 +10,5 @@ dist
 package-lock.json
 
 src/app/shared/generated/
+
+functions
