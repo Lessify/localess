@@ -159,6 +159,7 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
 
 expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
   logger.info('v1 spaces content url: ' + req.url);
   const { spaceId } = req.params;
   const { cv, locale, version, token } = req.query;
