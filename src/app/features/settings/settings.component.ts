@@ -29,7 +29,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
   // Loading
-  isLoading: boolean = true;
+  isLoading = true;
 
   spaceId: string;
   space?: Space;

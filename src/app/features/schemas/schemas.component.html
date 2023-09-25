@@ -31,9 +31,7 @@
         <mat-label>Locked By</mat-label>
         <mat-select formControlName="lockedBy">
           <mat-option [value]="undefined">None</mat-option>
-          <mat-option *ngFor="let item of lockedByList" [value]="item">
-            {{ item }}
-          </mat-option>
+          <mat-option *ngFor="let item of lockedByList" [value]="item"> {{ item }} </mat-option>
         </mat-select>
       </mat-form-field>
     </form>
@@ -69,8 +67,7 @@
     <ng-container matColumnDef="type">
       <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <mat-icon>{{ schemaTypeIcons[element.type] }}</mat-icon> &nbsp;
-        {{ element.type }}
+        <mat-icon>{{ schemaTypeIcons[element.type] }}</mat-icon> &nbsp; {{ element.type }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">

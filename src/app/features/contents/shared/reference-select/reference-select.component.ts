@@ -74,6 +74,6 @@ export class ReferenceSelectComponent implements OnInit {
 
   contentReset(): void {
     this.searchCtrl.setValue('');
-    this.form?.controls['uri'].setValue(null);
+    this.form?.controls['uri'].setValue(undefined);
   }
 }

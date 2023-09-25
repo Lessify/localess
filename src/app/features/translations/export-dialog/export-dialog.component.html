@@ -5,18 +5,14 @@
     <mat-form-field>
       <mat-label>Type</mat-label>
       <mat-select formControlName="kind" required>
-        <mat-option *ngFor="let kind of exportKinds" [value]="kind.key">
-          {{ kind.value }}
-        </mat-option>
+        <mat-option *ngFor="let kind of exportKinds" [value]="kind.key"> {{ kind.value }} </mat-option>
       </mat-select>
     </mat-form-field>
 
     <mat-form-field *ngIf="form.value.kind === 'FLAT'">
       <mat-label>Locale</mat-label>
       <mat-select formControlName="locale" required>
-        <mat-option *ngFor="let locale of data.locales" [value]="locale.id">
-          {{ locale.name }}
-        </mat-option>
+        <mat-option *ngFor="let locale of data.locales" [value]="locale.id"> {{ locale.name }} </mat-option>
       </mat-select>
     </mat-form-field>
 

@@ -3,8 +3,8 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{ entity?.displayName }}</span
-    >&nbsp;
+    <span>{{ entity?.displayName }}</span>
+    &nbsp;
     <span class="text-muted">#{{ entity?.name }}</span>
     <span class="spacer"></span>
 
@@ -33,7 +33,7 @@
             type="text"
             formControlName="name"
             required
-            minLength="3"
+            minlength="3"
             maxlength="50"
             [readonly]="nameReadonly"
             autocomplete="off" />
@@ -46,13 +46,13 @@
         </mat-form-field>
         <mat-form-field>
           <mat-label>Display Name</mat-label>
-          <input matInput type="text" formControlName="displayName" minLength="3" maxlength="50" autocomplete="off" />
+          <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
           <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
           <mat-error *ngIf="form.controls['displayName'].errors as errors">{{ fe.errors(errors) }}</mat-error>
         </mat-form-field>
         <mat-form-field>
           <mat-label>Preview Field</mat-label>
-          <input matInput type="text" formControlName="previewField" minLength="3" maxlength="50" autocomplete="off" />
+          <input matInput type="text" formControlName="previewField" minlength="3" maxlength="50" autocomplete="off" />
           <mat-hint align="end">{{ form.controls['previewField'].value?.length || 0 }}/50</mat-hint>
           <mat-error *ngIf="form.controls['previewField'].errors as errors">{{ fe.errors(errors) }}</mat-error>
         </mat-form-field>
@@ -79,9 +79,9 @@
             [class.invalid]="field.invalid">
             <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
             <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
-            <span matListItemTitle
-              >{{ field.value.displayName }} <span class="text-muted">#{{ field.value.name }}</span></span
-            >
+            <span matListItemTitle>
+              {{ field.value.displayName }} <span class="text-muted">#{{ field.value.name }}</span>
+            </span>
             <span matListItemLine>
               <span class="badge text-bg-secondary">{{ field.value.kind }}</span>
               <ng-container *ngIf="field.value.translatable">

@@ -47,8 +47,8 @@ export class EditComponent implements OnInit, OnDestroy {
   newFieldName = this.fb.control('', [...SchemaValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
 
   //Loadings
-  isLoading: boolean = true;
-  isSaveLoading: boolean = false;
+  isLoading = true;
+  isSaveLoading = false;
   // Subscriptions
   settings$ = this.store.select(selectSettings);
   private destroy$ = new Subject();
@@ -148,7 +148,7 @@ export class EditComponent implements OnInit, OnDestroy {
     this.fieldReservedNames.push(fieldName);
 
     const defaultKind = SchemaFieldKind.TEXT;
-    const fieldForm = this.fb.group<{}>({
+    const fieldForm = this.fb.group<NonNullable<unknown>>({
       // Base
       name: this.fb.control(fieldName, [...SchemaValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames, fieldName)]),
       kind: this.fb.control(element?.kind || defaultKind, SchemaValidator.FIELD_KIND),
@@ -230,7 +230,8 @@ export class EditComponent implements OnInit, OnDestroy {
         );
         break;
       }
-      case SchemaFieldKind.REFERENCE: {
+      case SchemaFieldKind.REFERENCE:
+      case SchemaFieldKind.REFERENCES: {
         fieldForm.addControl('path', this.fb.control<string | undefined>(element.path, SchemaValidator.FIELD_REFERENCE_PATH));
         break;
       }

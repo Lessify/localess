@@ -32,7 +32,7 @@ export class PluginsComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  isLoading: boolean = true;
+  isLoading = true;
   dataSource: MatTableDataSource<Plugin> = new MatTableDataSource<Plugin>([]);
   displayedColumns: string[] = ['id', 'name', 'owner', 'version', 'createdAt', 'updatedAt', 'actions'];
   availablePlugins: PluginDefinition[] = [];
@@ -104,7 +104,8 @@ export class PluginsComponent implements OnInit, OnDestroy {
             this.notificationService.warn(`Plugin can not be installed.`);
           }
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Plugin can not be installed.`);
         },
       });
@@ -121,7 +122,7 @@ export class PluginsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(_ => this.pluginService.updateVersion(this.selectedSpace!.id, element.id))
+        switchMap(() => this.pluginService.updateVersion(this.selectedSpace!.id, element.id))
       )
       .subscribe({
         next: value => {
@@ -131,7 +132,8 @@ export class PluginsComponent implements OnInit, OnDestroy {
             this.notificationService.warn(`Plugin '${element.name}' can not be updated.`);
           }
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Plugin '${element.name}' can not be updated.`);
         },
       });
@@ -154,7 +156,8 @@ export class PluginsComponent implements OnInit, OnDestroy {
         next: () => {
           this.notificationService.success(`Plugin '${element.name}' has been updated.`);
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Plugin '${element.name}' can not be updated.`);
         },
       });
@@ -171,13 +174,14 @@ export class PluginsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(it => this.pluginService.sendEvent(this.selectedSpace!.id, element.id, action.id))
+        switchMap(() => this.pluginService.sendEvent(this.selectedSpace!.id, element.id, action.id))
       )
       .subscribe({
         next: () => {
           this.notificationService.success(`Plugin '${element.name}' with Action '${action.name}' has been executed.`);
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Plugin '${element.name}' with Action '${action.name}' can not been executed.`);
         },
       });
@@ -194,13 +198,14 @@ export class PluginsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(_ => this.pluginService.uninstall(this.selectedSpace!.id, element.id))
+        switchMap(() => this.pluginService.uninstall(this.selectedSpace!.id, element.id))
       )
       .subscribe({
         next: () => {
           this.notificationService.success(`Plugin '${element.name}' has been uninstalled.`);
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Plugin '${element.name}' can not be uninstalled.`);
         },
       });

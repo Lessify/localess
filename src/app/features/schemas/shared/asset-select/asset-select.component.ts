@@ -40,7 +40,7 @@ export class AssetSelectComponent implements OnInit {
 
   loadData(): void {
     if (this.assetId) {
-      this.assetService.findById(this.space?.id!!, this.assetId).subscribe({
+      this.assetService.findById(this.space!.id, this.assetId).subscribe({
         next: asset => {
           this.asset = asset;
           this.cd.markForCheck();
@@ -57,7 +57,7 @@ export class AssetSelectComponent implements OnInit {
         maxWidth: '1280px',
         maxHeight: 'calc(100vh - 80px)',
         data: {
-          spaceId: this.space?.id!!,
+          spaceId: this.space!.id,
           multiple: false,
           fileType: AssetFileType.IMAGE,
         },

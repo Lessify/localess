@@ -248,11 +248,11 @@ export class TooltipDirective implements OnChanges, OnDestroy {
   }
 
   getProperties(changes: SimpleChanges) {
-    let directiveProperties: any = {};
+    const directiveProperties: any = {};
     let customProperties: any = {};
     let allProperties: any = {};
 
-    for (var prop in changes) {
+    for (const prop in changes) {
       if (prop !== 'options' && prop !== 'tooltipValue') {
         directiveProperties[prop] = changes[prop].currentValue;
       }
@@ -266,7 +266,7 @@ export class TooltipDirective implements OnChanges, OnDestroy {
   }
 
   renameProperties(options: any) {
-    for (var prop in options) {
+    for (const prop in options) {
       if (backwardCompatibilityOptions[prop]) {
         options[backwardCompatibilityOptions[prop]] = options[prop];
         delete options[prop];
@@ -415,8 +415,8 @@ export class TooltipDirective implements OnChanges, OnDestroy {
   }
 
   get isTouchScreen() {
-    var prefixes = ' -webkit- -moz- -o- -ms- '.split(' ');
-    var mq = function (query: any) {
+    const prefixes = ' -webkit- -moz- -o- -ms- '.split(' ');
+    const mq = function (query: any) {
       return window.matchMedia(query).matches;
     };
 
@@ -426,7 +426,7 @@ export class TooltipDirective implements OnChanges, OnDestroy {
 
     // include the 'heartz' as a way to have a non matching MQ to help terminate the join
     // https://git.io/vznFH
-    var query = ['(', prefixes.join('touch-enabled),('), 'heartz', ')'].join('');
+    const query = ['(', prefixes.join('touch-enabled),('), 'heartz', ')'].join('');
     return mq(query);
   }
 

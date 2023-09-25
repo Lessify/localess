@@ -50,7 +50,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
   loadData(): void {
     const ids: string[] | undefined = this.form?.controls.map(it => it.value.uri as string);
     if (ids && ids.length > 0) {
-      this.assetService.findByIds(this.space?.id!!, ids).subscribe({
+      this.assetService.findByIds(this.space!.id, ids).subscribe({
         next: assets => {
           this.assets = assets;
           this.cd.markForCheck();
@@ -67,7 +67,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
         maxWidth: '1280px',
         maxHeight: 'calc(100vh - 80px)',
         data: {
-          spaceId: this.space?.id!!,
+          spaceId: this.space!.id,
           multiple: true,
           fileType: this.component?.fileTypes?.at(0),
         },

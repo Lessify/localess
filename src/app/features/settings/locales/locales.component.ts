@@ -29,7 +29,7 @@ export class LocalesComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  isLoading: boolean = true;
+  isLoading = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Locale> = new MatTableDataSource<Locale>([]);
   displayedColumns: string[] = ['id', 'name', 'isLocaleTranslatable', 'fallback', 'actions'];
@@ -80,13 +80,14 @@ export class LocalesComponent implements OnInit, OnDestroy {
         .afterClosed()
         .pipe(
           filter(it => it !== undefined),
-          switchMap(it => this.localeService.create(spaceId, it?.locale!))
+          switchMap(it => this.localeService.create(spaceId, it!.locale))
         )
         .subscribe({
-          next: value => {
+          next: () => {
             this.notificationService.success('Locale has been added.');
           },
-          error: err => {
+          error: (err: unknown) => {
+            console.error(err);
             this.notificationService.error('Locale can not be added.');
           },
         });
@@ -106,7 +107,7 @@ export class LocalesComponent implements OnInit, OnDestroy {
         .afterClosed()
         .pipe(
           filter(it => it || false),
-          switchMap(_ => this.localeService.delete(spaceId, element))
+          switchMap(() => this.localeService.delete(spaceId, element))
         )
         .subscribe({
           next: () => {

@@ -48,7 +48,7 @@ export class SchemaService {
   }
 
   create(spaceId: string, entity: SchemaCreate): Observable<DocumentReference> {
-    let addEntity: SchemaCreateFS = {
+    const addEntity: SchemaCreateFS = {
       name: entity.name,
       displayName: entity.displayName,
       type: entity.type,

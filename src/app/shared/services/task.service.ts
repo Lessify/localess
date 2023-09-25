@@ -56,7 +56,7 @@ export class TaskService {
   }
 
   createAssetExportTask(spaceId: string, path?: string): Observable<DocumentReference> {
-    let addEntity: TaskAssetExportCreateFS = {
+    const addEntity: TaskAssetExportCreateFS = {
       kind: TaskKind.ASSET_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -70,7 +70,7 @@ export class TaskService {
 
   createAssetImportTask(spaceId: string, file: File): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    let addEntity: TaskAssetImportCreateFS = {
+    const addEntity: TaskAssetImportCreateFS = {
       kind: TaskKind.ASSET_IMPORT,
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
@@ -83,13 +83,13 @@ export class TaskService {
     };
 
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
-      switchMap(it => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
+      switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create')
     );
   }
 
   createContentExportTask(spaceId: string, path?: string): Observable<DocumentReference> {
-    let addEntity: TaskContentExportCreateFS = {
+    const addEntity: TaskContentExportCreateFS = {
       kind: TaskKind.CONTENT_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -103,7 +103,7 @@ export class TaskService {
 
   createContentImportTask(spaceId: string, file: File): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    let addEntity: TaskContentImportCreateFS = {
+    const addEntity: TaskContentImportCreateFS = {
       kind: TaskKind.CONTENT_IMPORT,
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
@@ -116,13 +116,13 @@ export class TaskService {
     };
 
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
-      switchMap(it => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
+      switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create')
     );
   }
 
   createSchemaExportTask(spaceId: string, fromDate?: number): Observable<DocumentReference> {
-    let addEntity: TaskSchemaExportCreateFS = {
+    const addEntity: TaskSchemaExportCreateFS = {
       kind: TaskKind.SCHEMA_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -136,7 +136,7 @@ export class TaskService {
 
   createSchemaImportTask(spaceId: string, file: File): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    let addEntity: TaskSchemaImportCreateFS = {
+    const addEntity: TaskSchemaImportCreateFS = {
       kind: TaskKind.SCHEMA_IMPORT,
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
@@ -149,13 +149,13 @@ export class TaskService {
     };
 
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
-      switchMap(it => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
+      switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create')
     );
   }
 
   createTranslationExportTask(spaceId: string, fromDate?: number, locale?: string): Observable<DocumentReference> {
-    let addEntity: TaskTranslationExportCreateFS = {
+    const addEntity: TaskTranslationExportCreateFS = {
       kind: TaskKind.TRANSLATION_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -172,7 +172,7 @@ export class TaskService {
 
   createTranslationImportTask(spaceId: string, file: File, locale?: string): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    let addEntity: TaskTranslationImportCreateFS = {
+    const addEntity: TaskTranslationImportCreateFS = {
       kind: TaskKind.TRANSLATION_IMPORT,
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
@@ -187,7 +187,7 @@ export class TaskService {
       addEntity.locale = locale;
     }
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
-      switchMap(it => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
+      switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create')
     );
   }

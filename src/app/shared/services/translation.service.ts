@@ -41,7 +41,7 @@ export class TranslationService {
   }
 
   create(spaceId: string, entity: TranslationCreate): Observable<DocumentReference> {
-    let addEntity: TranslationCreateFS = {
+    const addEntity: TranslationCreateFS = {
       name: entity.name,
       type: entity.type,
       locales: {},
@@ -101,7 +101,7 @@ export class TranslationService {
   }
 
   updateLocale(spaceId: string, id: string, locale: string, value: string): Observable<void> {
-    let update: any = {
+    const update: UpdateData<Translation> = {
       updatedAt: serverTimestamp(),
     };
     update[`locales.${locale}`] = value;

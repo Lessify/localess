@@ -11,9 +11,7 @@
     <mat-form-field *ngIf="false">
       <mat-label>Type</mat-label>
       <mat-select formControlName="type" required>
-        <mat-option *ngFor="let type of translationTypes" [value]="type">
-          {{ type }}
-        </mat-option>
+        <mat-option *ngFor="let type of translationTypes" [value]="type"> {{ type }} </mat-option>
       </mat-select>
       <mat-error *ngIf="form.controls['type'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>

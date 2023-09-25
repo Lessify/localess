@@ -15,9 +15,9 @@
       <mat-icon>clear</mat-icon>
     </button>
     <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-    <mat-hint *ngIf="component.path"
-      >Your content will be filtered by path : <b>{{ component.path }}</b></mat-hint
-    >
+    <mat-hint *ngIf="component.path">
+      Your content will be filtered by path : <b>{{ component.path }}</b>
+    </mat-hint>
     <mat-hint *ngIf="component.description">{{ component.description }}</mat-hint>
     <mat-error *ngIf="form.controls['uri'].errors as errors">{{ fe.errors(errors) }}</mat-error>
   </mat-form-field>

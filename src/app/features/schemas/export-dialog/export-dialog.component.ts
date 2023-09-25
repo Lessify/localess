@@ -1,7 +1,5 @@
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ExportDialogModel } from './export-dialog.model';
 import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 
 @Component({
@@ -17,10 +15,7 @@ export class ExportDialogComponent {
     fromDate: this.fb.control(undefined),
   });
 
-  constructor(
-    private readonly fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: ExportDialogModel
-  ) {}
+  constructor(private readonly fb: FormBuilder) {}
 
   dateChange(event: MatDatepickerInputEvent<unknown>): void {
     if (event.value instanceof Date) {

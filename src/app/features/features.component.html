@@ -13,9 +13,7 @@
       </button>
       <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
         <button mat-menu-item *ngFor="let space of spaces" (click)="onSpaceSelection(space)">
-          <span [class.fw-semibold]="space.id === selectedSpace.id">
-            {{ space.name }}
-          </span>
+          <span [class.fw-semibold]="space.id === selectedSpace.id"> {{ space.name }} </span>
         </button>
       </mat-menu>
     </ng-container>

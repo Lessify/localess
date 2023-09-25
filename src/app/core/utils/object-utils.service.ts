@@ -1,5 +1,5 @@
 export class ObjectUtils {
-  public static clone<T>(source: T, clean: boolean = false): T {
+  public static clone<T>(source: T, clean = false): T {
     if (source instanceof Array) {
       const target: any = Object.assign([], source);
       Object.getOwnPropertyNames(target).forEach(value => {

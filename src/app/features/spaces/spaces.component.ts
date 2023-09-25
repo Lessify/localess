@@ -26,7 +26,7 @@ export class SpacesComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  isLoading: boolean = true;
+  isLoading = true;
   dataSource: MatTableDataSource<Space> = new MatTableDataSource<Space>([]);
   displayedColumns: string[] = ['id', 'name', 'createdAt', 'updatedAt', 'actions'];
 
@@ -74,10 +74,11 @@ export class SpacesComponent implements OnInit, OnDestroy {
         switchMap(it => this.spaceService.create(it!))
       )
       .subscribe({
-        next: value => {
+        next: () => {
           this.notificationService.success('Space has been created.');
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error('Space can not be created.');
         },
       });
@@ -100,7 +101,8 @@ export class SpacesComponent implements OnInit, OnDestroy {
         next: () => {
           this.notificationService.success('Space has been updated.');
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error('Space can not be updated.');
         },
       });
@@ -117,13 +119,14 @@ export class SpacesComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(_ => this.spaceService.delete(element.id))
+        switchMap(() => this.spaceService.delete(element.id))
       )
       .subscribe({
         next: () => {
           this.notificationService.success(`Space '${element.name}' has been deleted.`);
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Space '${element.name}' can not be deleted.`);
         },
       });

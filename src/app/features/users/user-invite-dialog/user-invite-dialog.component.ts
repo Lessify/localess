@@ -1,7 +1,5 @@
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { UserInviteDialogModel } from './user-invite-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
@@ -28,7 +26,6 @@ export class UserInviteDialogComponent {
   constructor(
     private readonly store: Store<AppState>,
     private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: UserInviteDialogModel
+    readonly fe: FormErrorHandlerService
   ) {}
 }

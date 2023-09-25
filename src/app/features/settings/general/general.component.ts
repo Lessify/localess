@@ -20,7 +20,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GeneralComponent implements OnInit, OnDestroy {
-  isLoading: boolean = true;
+  isLoading = true;
   space?: Space;
 
   // Form
@@ -62,11 +62,12 @@ export class GeneralComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
-    this.spaceService.update(this.space?.id!, this.form.value).subscribe({
+    this.spaceService.update(this.space!.id, this.form.value).subscribe({
       next: () => {
         this.notificationService.success('Space has been updated.');
       },
-      error: err => {
+      error: (err: unknown) => {
+        console.error(err);
         this.notificationService.error('Space can not be updated.');
       },
     });

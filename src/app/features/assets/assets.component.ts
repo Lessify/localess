@@ -25,7 +25,7 @@ import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.
 import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
 import { EditFolderDialogModel } from './edit-folder-dialog/edit-folder-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { TaskService } from '@shared/services/task.service';
@@ -58,7 +58,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject();
 
   // Loading
-  isLoading: boolean = true;
+  isLoading = true;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -117,7 +117,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       if (target.files && target.files.length > 0) {
         for (let idx = 0; idx < target.files.length; idx++) {
           const file = target.files[idx];
-          this.assetService.createFile(this.selectedSpace?.id!, this.parentPath, file).subscribe({
+          this.assetService.createFile(this.selectedSpace!.id, this.parentPath, file).subscribe({
             next: () => {
               this.notificationService.success(`Asset '${file.name}' has been uploaded.`);
             },
@@ -196,7 +196,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(_ => this.assetService.delete(this.selectedSpace!.id, element.id))
+        switchMap(() => this.assetService.delete(this.selectedSpace!.id, element.id))
       )
       .subscribe({
         next: () => {
@@ -204,7 +204,8 @@ export class AssetsComponent implements OnInit, OnDestroy {
           this.cd.markForCheck();
           this.notificationService.success(`Asset '${element.name}' has been deleted.`);
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Asset '${element.name}' can not be deleted.`);
         },
       });
@@ -278,7 +279,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(ImportDialogComponent, {
+      .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
         width: '500px',
       })
       .afterClosed()
@@ -311,10 +312,10 @@ export class AssetsComponent implements OnInit, OnDestroy {
         switchMap(it => this.taskService.createAssetExportTask(this.selectedSpace!.id, it?.path))
       )
       .subscribe({
-        next: result => {
+        next: () => {
           this.notificationService.success('Assets Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
         },
-        error: err => {
+        error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Assets Export Task can not be created.');
         },

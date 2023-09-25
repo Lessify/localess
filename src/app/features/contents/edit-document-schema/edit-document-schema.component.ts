@@ -13,7 +13,7 @@ import {
 import { FormArray, FormBuilder, FormRecord } from '@angular/forms';
 import { Schema, SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AssetContent, ContentData, ContentDocument } from '@shared/models/content.model';
+import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
 import { takeUntil } from 'rxjs/operators';
 import { debounceTime, Subject } from 'rxjs';
 import { v4 } from 'uuid';
@@ -41,8 +41,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   @Input() data: ContentData = { _id: '', schema: '' };
   @Input() schemas: Schema[] = [];
   @Input() documents: ContentDocument[] = [];
-  @Input() locale: string = 'en';
-  @Input() localeFallback: string = 'en';
+  @Input() locale = 'en';
+  @Input() localeFallback = 'en';
   @Input() space?: Space;
   @Output() schemaChange = new EventEmitter<SchemaSelectChange>();
 
@@ -51,7 +51,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   schemaMapByName: Map<string, Schema> = new Map<string, Schema>();
   schemaFieldsMap: Map<string, SchemaField> = new Map<string, SchemaField>();
   //Loadings
-  isFormLoading: boolean = true;
+  isFormLoading = true;
 
   constructor(
     private readonly fb: FormBuilder,
@@ -116,7 +116,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
       const isFallbackLocale = this.locale === this.localeFallback;
       this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, isFallbackLocale);
 
-      this.form.valueChanges.pipe(takeUntil(this.destroy$), debounceTime(500)).subscribe({
+      this.form.valueChanges.pipe(debounceTime(500), takeUntil(this.destroy$)).subscribe({
         next: formValue => {
           //console.group('form')
           //console.log(Object.getOwnPropertyNames(formValue))
@@ -139,7 +139,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
           //console.log('After data', ObjectUtils.clone(this.data))
           //console.groupEnd()
         },
-        error: err => console.log(err),
+        error: (err: unknown) => console.error(err),
         complete: () => console.log('completed'),
       });
     }
@@ -169,7 +169,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   formPatch(): void {
     //console.group('formPatch')
     this.form.reset();
-    let extractSchemaContent = this.contentHelperService.extractSchemaContent(this.data, this.rootSchema!, this.locale, false);
+    const extractSchemaContent = this.contentHelperService.extractSchemaContent(this.data, this.rootSchema!, this.locale, false);
     //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
     this.form.patchValue(extractSchemaContent);
     Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
@@ -180,6 +180,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
           const assets: AssetContent[] = content;
           const fa = this.form.controls[fieldName] as FormArray;
           assets.forEach(it => fa.push(this.contentHelperService.assetContentToForm(it)));
+        }
+        // References
+        if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
+          const references: ReferenceContent[] = content;
+          const fa = this.form.controls[fieldName] as FormArray;
+          references.forEach(it => fa.push(this.contentHelperService.referenceContentToForm(it)));
         }
       }
     });
@@ -206,7 +212,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   }
 
   addSchemaOne(field: SchemaField, schema: Schema): void {
-    let sch: ContentData | undefined = this.data[field.name];
+    const sch: ContentData | undefined = this.data[field.name];
     if (sch) {
       this.data[field.name] = {
         _id: v4(),
@@ -225,7 +231,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   }
 
   addSchemaMany(field: SchemaField, schema: Schema): void {
-    let sch: ContentData[] | undefined = this.data[field.name];
+    const sch: ContentData[] | undefined = this.data[field.name];
     if (sch) {
       sch.push({
         _id: v4(),
@@ -250,9 +256,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   }
 
   removeSchemaMany(field: SchemaField, schemaId: string): void {
-    let sch: ContentData[] | undefined = this.data[field.name];
+    const sch: ContentData[] | undefined = this.data[field.name];
     if (sch) {
-      let idx = sch.findIndex(it => it._id == schemaId);
+      const idx = sch.findIndex(it => it._id == schemaId);
       if (idx >= 0) {
         sch.splice(idx, 1);
       }

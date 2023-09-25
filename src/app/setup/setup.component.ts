@@ -11,7 +11,7 @@ import { NotificationService } from '@shared/services/notification.service';
 })
 export class SetupComponent {
   redirect = ['/features'];
-  isLoading: boolean = false;
+  isLoading = false;
   backCounter = -1;
 
   //Form

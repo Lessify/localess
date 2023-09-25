@@ -7,9 +7,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationArrayViewComponent {
-  @Input() value: string = '';
-
-  constructor() {}
+  @Input() value = '';
 
   extract(): string[] {
     return JSON.parse(this.value || '[]');

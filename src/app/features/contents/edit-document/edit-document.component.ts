@@ -52,9 +52,9 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   editorEnabledCtr = this.fb.control<boolean>(false);
 
   //Loadings
-  isLoading: boolean = true;
-  isPublishLoading: boolean = false;
-  isSaveLoading: boolean = false;
+  isLoading = true;
+  isPublishLoading = false;
+  isSaveLoading = false;
 
   // Subscriptions
   settings$ = this.store.select(selectSettings);

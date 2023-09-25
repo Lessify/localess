@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Schema, SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
 import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
-import { AssetContent, ContentData, ContentError } from '@shared/models/content.model';
+import { AssetContent, ContentData, ContentError, ReferenceContent } from '@shared/models/content.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { v4 } from 'uuid';
 
@@ -23,7 +23,7 @@ export class ContentHelperService {
         const extractSchemaContent = this.extractSchemaContent(selectedContent, schema, locale, true);
         form.patchValue(extractSchemaContent);
 
-        // handle array like Asset Array
+        // handle array like Asset/Reference Array
         Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
           const content = extractSchemaContent[fieldName];
           console.log(fieldName, content);
@@ -33,6 +33,12 @@ export class ContentHelperService {
               const assets: AssetContent[] = content;
               const fa = form.controls[fieldName] as FormArray;
               assets.forEach(it => fa.push(this.assetContentToForm(it)));
+            }
+            // References
+            if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
+              const references: ReferenceContent[] = content;
+              const fa = form.controls[fieldName] as FormArray;
+              references.forEach(it => fa.push(this.referenceContentToForm(it)));
             }
           }
         });
@@ -111,7 +117,7 @@ export class ContentHelperService {
         schema.fields
           ?.filter(it => it.kind === SchemaFieldKind.SCHEMA)
           .forEach(field => {
-            const sch: ContentData | undefined = selectedContent![field.name];
+            const sch: ContentData | undefined = selectedContent && selectedContent[field.name];
             if (sch) {
               contentIteration.push(sch);
             }
@@ -153,7 +159,7 @@ export class ContentHelperService {
     return result;
   }
 
-  clone<T>(source: T, generateNewID: boolean = false): T {
+  clone<T>(source: T, generateNewID = false): T {
     if (source instanceof Array) {
       const target: any = Object.assign([], source);
       Object.getOwnPropertyNames(target).forEach(value => {
@@ -374,6 +380,13 @@ export class ContentHelperService {
           form.setControl(field.name, link);
           break;
         }
+        case SchemaFieldKind.REFERENCES: {
+          if (field.required) {
+            validators.push(CommonValidator.minLength(1));
+          }
+          form.setControl(field.name, this.fb.array([], validators));
+          break;
+        }
         case SchemaFieldKind.ASSET: {
           form.setControl(
             field.name,
@@ -431,6 +444,13 @@ export class ContentHelperService {
     return this.fb.group({
       uri: this.fb.control(asset.uri),
       kind: this.fb.control(asset.kind),
+    });
+  }
+
+  referenceContentToForm(reference: ReferenceContent): FormGroup {
+    return this.fb.group({
+      uri: this.fb.control(reference.uri),
+      kind: this.fb.control(reference.kind),
     });
   }
 

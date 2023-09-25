@@ -131,9 +131,7 @@
           <mat-label>{{ field.displayName || field.name }}</mat-label>
           <mat-select [formControlName]="field.name" [required]="field.required">
             <mat-option *ngIf="!field.required">-- None --</mat-option>
-            <mat-option *ngFor="let option of field.options" [value]="option.value">
-              {{ option.name }}
-            </mat-option>
+            <mat-option *ngFor="let option of field.options" [value]="option.value"> {{ option.name }} </mat-option>
           </mat-select>
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
@@ -145,9 +143,7 @@
         <mat-form-field>
           <mat-label>{{ field.displayName || field.name }}</mat-label>
           <mat-select [formControlName]="field.name" [required]="field.required" multiple>
-            <mat-option *ngFor="let option of field.options" [value]="option.value">
-              {{ option.name }}
-            </mat-option>
+            <mat-option *ngFor="let option of field.options" [value]="option.value"> {{ option.name }} </mat-option>
           </mat-select>
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
@@ -166,6 +162,14 @@
           [component]="field"
           [documents]="documents" />
       </ng-container>
+      <!--REFERENCE-->
+      <ng-container *ngSwitchCase="'REFERENCES'">
+        <ll-references-select
+          *ngIf="form.controls[field.name]"
+          [form]="form.controls[field.name]"
+          [component]="field"
+          [documents]="documents" />
+      </ng-container>
       <!--ASSET-->
       <ng-container *ngSwitchCase="'ASSET'">
         <ll-asset-select [component]="field" [form]="form.controls[field.name]" [space]="space" />
@@ -179,9 +183,7 @@
         <mat-card class="ll-not-shadow">
           <mat-card-header>
             <mat-card-title-group>
-              <mat-card-title>
-                {{ field.displayName || field.name }}
-              </mat-card-title>
+              <mat-card-title> {{ field.displayName || field.name }} </mat-card-title>
               <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema" [disabled]="data[field.name]">
                 <mat-icon>add_circle</mat-icon>
               </button>
@@ -219,9 +221,7 @@
                   {{ sch.displayName }} <span class="text-muted">#{{ sch.name }}</span>
                 </span>
                 <span matListItemLine *ngIf="schemaMapByName.get(item.schema) as sch">
-                  <ng-container *ngIf="sch.previewField">
-                    {{ previewText(item, sch, locale) }}
-                  </ng-container>
+                  <ng-container *ngIf="sch.previewField"> {{ previewText(item, sch, locale) }} </ng-container>
                 </span>
                 <mat-action-list matListItemMeta>
                   <button mat-icon-button (click)="removeSchemaOne(field)">
@@ -241,9 +241,7 @@
         <mat-card class="ll-not-shadow">
           <mat-card-header>
             <mat-card-title-group>
-              <mat-card-title>
-                {{ field.displayName || field.name }}
-              </mat-card-title>
+              <mat-card-title> {{ field.displayName || field.name }} </mat-card-title>
               <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema">
                 <mat-icon>add_circle</mat-icon>
               </button>
@@ -285,9 +283,7 @@
                   {{ sch.displayName }} <span class="text-muted">#{{ sch.name }}</span>
                 </span>
                 <span matListItemLine *ngIf="schemaMapByName.get(item.schema) as sch">
-                  <ng-container *ngIf="sch.previewField">
-                    {{ previewText(item, sch, locale) }}
-                  </ng-container>
+                  <ng-container *ngIf="sch.previewField"> {{ previewText(item, sch, locale) }} </ng-container>
                 </span>
                 <mat-action-list matListItemMeta>
                   <button mat-icon-button (click)="duplicateSchemaMany($event, data[field.name], item, idx)">

@@ -3,8 +3,8 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{ document?.name }}</span
-    >&nbsp;
+    <span>{{ document?.name }}</span>
+    &nbsp;
     <span class="text-muted">#{{ document?.slug }}</span>
     <span class="spacer"></span>
 
@@ -134,9 +134,7 @@
 
         <ll-breadcrumb>
           <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchemaBackwards(schemaPathItem)">
-            <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch">
-              {{ sch.displayName || sch.name }}
-            </ng-container>
+            <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch"> {{ sch.displayName || sch.name }} </ng-container>
           </ll-breadcrumb-item>
         </ll-breadcrumb>
 

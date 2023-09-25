@@ -32,7 +32,7 @@ import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { TaskService } from '@shared/services/task.service';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TokenService } from '@shared/services/token.service';
 
 @Component({
@@ -45,7 +45,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  isLoading: boolean = true;
+  isLoading = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
   displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'slug', 'schema', 'publishedAt', 'createdAt', 'updatedAt', 'actions'];
@@ -226,7 +226,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(_ => this.contentService.delete(this.selectedSpace!.id, element))
+        switchMap(() => this.contentService.delete(this.selectedSpace!.id, element))
       )
       .subscribe({
         next: () => {
@@ -234,7 +234,8 @@ export class ContentsComponent implements OnInit, OnDestroy {
           this.cd.markForCheck();
           this.notificationService.success(`Content '${element.name}' has been deleted.`);
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Content '${element.name}' can not be deleted.`);
         },
       });
@@ -311,7 +312,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(ImportDialogComponent, {
+      .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
         width: '500px',
       })
       .afterClosed()
@@ -344,10 +345,10 @@ export class ContentsComponent implements OnInit, OnDestroy {
         switchMap(it => this.taskService.createContentExportTask(this.selectedSpace!.id, it?.path))
       )
       .subscribe({
-        next: result => {
+        next: () => {
           this.notificationService.success('Content Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
         },
-        error: err => {
+        error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Content Export Task can not be created.');
         },

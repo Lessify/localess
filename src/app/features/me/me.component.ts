@@ -24,7 +24,7 @@ import { NotificationService } from '@shared/services/notification.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MeComponent implements OnInit {
-  isLoading: boolean = true;
+  isLoading = true;
   user?: UserState;
   authUser?: User | null;
   isPasswordProvider = false;
@@ -81,7 +81,8 @@ export class MeComponent implements OnInit {
           this.notificationService.success('User has been updated.');
           this.authUser?.reload();
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error('User can not be updated.');
         },
       });
@@ -95,14 +96,15 @@ export class MeComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updateEmail(this.authUser!, it?.newEmail!))
+        switchMap(it => this.meService.updateEmail(this.authUser!, it!.newEmail))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('User email has been updated.');
           this.authUser?.reload();
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error('User email can not be updated.');
         },
       });
@@ -116,13 +118,14 @@ export class MeComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updatePassword(this.authUser!, it?.newPassword!))
+        switchMap(it => this.meService.updatePassword(this.authUser!, it!.newPassword))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('User password has been updated.');
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error('User password can not be updated.');
         },
       });

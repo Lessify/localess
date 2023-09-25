@@ -27,9 +27,6 @@ describe('SettingsEffects', () => {
       routerState: {
         snapshot: {},
       },
-      events: {
-        pipe() {},
-      },
     };
     localStorageService = jasmine.createSpyObj('LocalStorageService', ['setItem']);
     overlayContainer = jasmine.createSpyObj('OverlayContainer', ['getContainerElement']);

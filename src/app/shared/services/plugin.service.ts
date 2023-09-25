@@ -98,7 +98,7 @@ export class PluginService {
       };
       return from(setDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), addEntity)).pipe(
         traceUntilFirst('Firestore:Plugins:create'),
-        map(it => true)
+        map(() => true)
       );
     }
     return of(false);
@@ -135,7 +135,7 @@ export class PluginService {
       };
       return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), update)).pipe(
         traceUntilFirst('Firestore:Plugins:updateVersion'),
-        map(it => true)
+        map(() => true)
       );
     }
     return of(false);

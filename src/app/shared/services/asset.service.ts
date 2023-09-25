@@ -90,7 +90,7 @@ export class AssetService {
     );
   }
 
-  findAllByName(spaceId: string, name: string, max: number = 20): Observable<Asset[]> {
+  findAllByName(spaceId: string, name: string, max = 20): Observable<Asset[]> {
     const queryConstrains: QueryConstraint[] = [where('name', '>=', name), where('name', '<=', `${name}~`), limit(max)];
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
@@ -117,7 +117,7 @@ export class AssetService {
 
   createFile(spaceId: string, parentPath: string, entity: File): Observable<DocumentReference> {
     const extIdx = entity.name.lastIndexOf('.');
-    let addEntity: AssetFileCreateFS = {
+    const addEntity: AssetFileCreateFS = {
       kind: AssetKind.FILE,
       inProgress: true,
       name: entity.name.substring(0, extIdx),
@@ -141,7 +141,7 @@ export class AssetService {
   }
 
   createFolder(spaceId: string, parentPath: string, entity: AssetFolderCreate): Observable<DocumentReference> {
-    let addEntity: AssetFolderCreateFS = {
+    const addEntity: AssetFolderCreateFS = {
       kind: AssetKind.FOLDER,
       name: entity.name,
       parentPath: parentPath,

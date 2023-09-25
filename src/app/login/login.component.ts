@@ -29,7 +29,7 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
 })
 export class LoginComponent implements OnDestroy {
   redirect = ['/features'];
-  isLoading: boolean = false;
+  isLoading = false;
 
   //Form
   form: FormGroup = this.fb.group({

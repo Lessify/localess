@@ -9,7 +9,7 @@ import { debounceTime } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationStringEditComponent implements OnInit, OnChanges {
-  @Input() value: string = '';
+  @Input() value = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
 
   form: FormGroup = this.fb.group({

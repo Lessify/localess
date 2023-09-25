@@ -34,7 +34,6 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { ReposService } from '@shared/generated/services/repos.service';
 import { Release } from '@shared/generated/models/release';
-import { ThemePalette } from '@angular/material/core';
 
 const ROLE_ADMIN = 'admin';
 

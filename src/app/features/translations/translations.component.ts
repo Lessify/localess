@@ -41,11 +41,11 @@ export class TranslationsComponent implements OnInit, OnDestroy {
 
   selectedSpace?: Space;
 
-  DEFAULT_LOCALE: string = 'en';
+  DEFAULT_LOCALE = 'en';
 
   //Search
   searchCtrl: FormControl = new FormControl();
-  searchValue: string = '';
+  searchValue = '';
 
   //Labels
   availableLabels: string[] = [];
@@ -57,18 +57,18 @@ export class TranslationsComponent implements OnInit, OnDestroy {
   selectedTranslationLocaleValue?: string;
   translateValue?: string;
 
-  selectedSearchLocale: string = '';
-  selectedSourceLocale: string = '';
-  selectedTargetLocale: string = '';
+  selectedSearchLocale = '';
+  selectedSourceLocale = '';
+  selectedTargetLocale = '';
 
   translations: Translation[] = [];
   locales: Locale[] = [];
 
   //Loadings
-  isLoading: boolean = true;
-  isPublishLoading: boolean = false;
-  isLocaleUpdateLoading: boolean = false;
-  isTranslateLoading: boolean = false;
+  isLoading = true;
+  isPublishLoading = false;
+  isLocaleUpdateLoading = false;
+  isTranslateLoading = false;
 
   // Subscriptions
   private destroy$ = new Subject();
@@ -94,7 +94,7 @@ export class TranslationsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData();
-    this.searchCtrl.valueChanges.pipe(takeUntil(this.destroy$), debounceTime(300)).subscribe({
+    this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntil(this.destroy$)).subscribe({
       next: value => {
         this.searchValue = value;
         this.cd.markForCheck();
@@ -273,7 +273,6 @@ export class TranslationsComponent implements OnInit, OnDestroy {
   }
 
   openExportDialog(): void {
-    let fileName = this.selectedSpace?.name || 'unknown';
     this.dialog
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
         width: '500px',
@@ -295,10 +294,10 @@ export class TranslationsComponent implements OnInit, OnDestroy {
         })
       )
       .subscribe({
-        next: result => {
+        next: () => {
           this.notificationService.success('Translation Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
         },
-        error: err => {
+        error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Translation Export Task can not be created.');
         },
@@ -388,7 +387,7 @@ export class TranslationsComponent implements OnInit, OnDestroy {
           this.translateValue = value;
           this.cd.markForCheck();
         },
-        error: err => {
+        error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Can not be translation.', [
             {

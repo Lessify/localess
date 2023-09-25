@@ -20,8 +20,8 @@ import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
-import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TaskService } from '@shared/services/task.service';
 import { FormBuilder } from '@angular/forms';
 
@@ -55,7 +55,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject();
 
   // Loading
-  isLoading: boolean = true;
+  isLoading = true;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -159,13 +159,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(_ => this.schemaService.delete(this.selectedSpace!.id, element.id))
+        switchMap(() => this.schemaService.delete(this.selectedSpace!.id, element.id))
       )
       .subscribe({
         next: () => {
           this.notificationService.success(`Schema '${element.name}' has been deleted.`);
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Schema '${element.name}' can not be deleted.`);
         },
       });
@@ -178,7 +179,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(ImportDialogComponent, {
+      .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
         width: '500px',
       })
       .afterClosed()
@@ -197,9 +198,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   openExportDialog() {
-    let fileName = this.selectedSpace?.name || 'unknown';
     this.dialog
-      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
+      .open<ExportDialogComponent, void, ExportDialogReturn>(ExportDialogComponent, {
         width: '500px',
       })
       .afterClosed()
@@ -208,10 +208,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
         switchMap(it => this.taskService.createSchemaExportTask(this.selectedSpace!.id, it?.fromDate))
       )
       .subscribe({
-        next: result => {
+        next: () => {
           this.notificationService.success('Schema Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
         },
-        error: err => {
+        error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Schema Export Task can not be created.');
         },

@@ -29,7 +29,7 @@ export class TasksComponent implements OnInit, OnDestroy {
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
   now = Date.now();
-  isLoading: boolean = true;
+  isLoading = true;
   dataSource: MatTableDataSource<Task> = new MatTableDataSource<Task>([]);
   displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdAt', 'updatedAt', 'actions'];
 
@@ -92,13 +92,14 @@ export class TasksComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(_ => this.taskService.delete(this.selectedSpace!.id, element.id))
+        switchMap(() => this.taskService.delete(this.selectedSpace!.id, element.id))
       )
       .subscribe({
         next: () => {
           this.notificationService.success(`Task '${element.id}' has been deleted.`);
         },
-        error: err => {
+        error: (err: unknown) => {
+          console.error(err);
           this.notificationService.error(`Task '${element.id}' can not be deleted.`);
         },
       });

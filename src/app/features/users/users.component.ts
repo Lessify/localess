@@ -28,8 +28,8 @@ export class UsersComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  isLoading: boolean = true;
-  isSyncLoading: boolean = false;
+  isLoading = true;
+  isSyncLoading = false;
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
   displayedColumns: string[] = ['avatar', 'email', 'name', 'role', 'createdAt', 'updatedAt', 'actions'];
 
@@ -118,7 +118,7 @@ export class UsersComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(_ => this.userService.delete(element.id))
+        switchMap(() => this.userService.delete(element.id))
       )
       .subscribe({
         next: () => {

@@ -6,9 +6,7 @@
       <mat-form-field>
         <mat-label>{{ config.displayName }}</mat-label>
         <mat-select *ngIf="config.options; else elseTextField" [formControlName]="config.name" [required]="config.required">
-          <mat-option *ngFor="let option of config.options" [value]="option.value">
-            {{ option.name }}
-          </mat-option>
+          <mat-option *ngFor="let option of config.options" [value]="option.value"> {{ option.name }} </mat-option>
         </mat-select>
         <ng-template #elseTextField>
           <input matInput type="text" [formControlName]="config.name" [required]="config.required" autocomplete="off" />

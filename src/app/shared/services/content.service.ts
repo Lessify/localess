@@ -64,7 +64,7 @@ export class ContentService {
     );
   }
 
-  findAllByName(spaceId: string, name: string, max: number = 20): Observable<Content[]> {
+  findAllByName(spaceId: string, name: string, max = 20): Observable<Content[]> {
     const queryConstrains: QueryConstraint[] = [where('name', '>=', name), where('name', '<=', `${name}~`), limit(max)];
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
@@ -73,7 +73,7 @@ export class ContentService {
     );
   }
 
-  findAllDocumentsByName(spaceId: string, name: string, max: number = 20): Observable<ContentDocument[]> {
+  findAllDocumentsByName(spaceId: string, name: string, max = 20): Observable<ContentDocument[]> {
     const queryConstrains: QueryConstraint[] = [
       where('kind', '==', ContentKind.DOCUMENT),
       where('name', '>=', name),
@@ -95,7 +95,7 @@ export class ContentService {
   }
 
   createDocument(spaceId: string, parentSlug: string, entity: ContentDocumentCreate): Observable<DocumentReference> {
-    let addEntity: ContentDocumentCreateFS = {
+    const addEntity: ContentDocumentCreateFS = {
       kind: ContentKind.DOCUMENT,
       name: entity.name,
       slug: entity.slug,
@@ -112,7 +112,7 @@ export class ContentService {
   }
 
   createFolder(spaceId: string, parentSlug: string, entity: ContentFolderCreate): Observable<DocumentReference> {
-    let addEntity: ContentFolderCreateFS = {
+    const addEntity: ContentFolderCreateFS = {
       kind: ContentKind.FOLDER,
       name: entity.name,
       slug: entity.slug,

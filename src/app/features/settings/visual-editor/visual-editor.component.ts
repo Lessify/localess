@@ -22,7 +22,7 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VisualEditorComponent implements OnInit, OnDestroy {
-  isLoading: boolean = true;
+  isLoading = true;
   space?: Space;
 
   // Form
@@ -82,11 +82,12 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
-    this.spaceService.updateEnvironments(this.space?.id!, this.form.value.environments).subscribe({
+    this.spaceService.updateEnvironments(this.space!.id, this.form.value.environments).subscribe({
       next: () => {
         this.notificationService.success('Space has been updated.');
       },
-      error: err => {
+      error: (err: unknown) => {
+        console.error(err);
         this.notificationService.error('Space can not be updated.');
       },
     });

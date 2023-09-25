@@ -17,9 +17,7 @@
     <mat-form-field>
       <mat-label>Schema</mat-label>
       <mat-select formControlName="schema" required>
-        <mat-option *ngFor="let schema of data.schemas" [value]="schema.id">
-          {{ schema.displayName || schema.name }}
-        </mat-option>
+        <mat-option *ngFor="let schema of data.schemas" [value]="schema.id"> {{ schema.displayName || schema.name }} </mat-option>
       </mat-select>
       <mat-error *ngIf="form.controls['schema'].errors as errors">{{ fe.errors(errors) }}</mat-error>
     </mat-form-field>

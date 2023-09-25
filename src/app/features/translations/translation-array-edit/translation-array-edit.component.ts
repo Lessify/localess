@@ -10,7 +10,7 @@ import { TranslationValidator } from '@shared/validators/translation.validator';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationArrayEditComponent implements OnInit, OnChanges {
-  @Input() value: string = '';
+  @Input() value = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
   form: FormGroup = this.fb.group({
     values: this.fb.array([]),

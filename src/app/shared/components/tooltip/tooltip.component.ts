@@ -7,7 +7,7 @@ import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, 
 })
 export class TooltipComponent implements OnInit {
   @HostBinding('class') class = 'tooltip';
-  _show: boolean = false;
+  _show = false;
   events = new EventEmitter();
 
   @Input() data: any;
@@ -113,7 +113,7 @@ export class TooltipComponent implements OnInit {
     this.renderer.addClass(this.elementRef.nativeElement, 'tooltip-' + placement);
   }
 
-  setHostStyle(placement: string, disableAutoPlacement: boolean = false): boolean {
+  setHostStyle(placement: string, disableAutoPlacement = false): boolean {
     const isSvg = this.element instanceof SVGElement;
     const tooltip = this.elementRef.nativeElement;
     const isCustomPosition = !this.elementPosition.right;

@@ -272,7 +272,8 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('path');
         break;
       }
-      case SchemaFieldKind.REFERENCE: {
+      case SchemaFieldKind.REFERENCE:
+      case SchemaFieldKind.REFERENCES: {
         // ADD
         this.form.addControl('path', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_REFERENCE_PATH));
         // REMOVE

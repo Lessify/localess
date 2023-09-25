@@ -46,9 +46,7 @@
       <mat-form-field>
         <mat-label>Search Locale</mat-label>
         <mat-select [(value)]="selectedSearchLocale">
-          <mat-option *ngFor="let locale of locales" [value]="locale.id">
-            {{ locale.name }}
-          </mat-option>
+          <mat-option *ngFor="let locale of locales" [value]="locale.id"> {{ locale.name }} </mat-option>
         </mat-select>
       </mat-form-field>
     </div>
@@ -75,9 +73,7 @@
             [matChipInputFor]="chipList" />
         </mat-chip-grid>
         <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectLabel($event)">
-          <mat-option *ngFor="let label of filteredLabels | async" [value]="label">
-            {{ label }}
-          </mat-option>
+          <mat-option *ngFor="let label of filteredLabels | async" [value]="label"> {{ label }} </mat-option>
         </mat-autocomplete>
       </mat-form-field>
     </div>
@@ -116,9 +112,7 @@
           <mat-form-field>
             <mat-label>Source Locale</mat-label>
             <mat-select [(value)]="selectedSourceLocale">
-              <mat-option *ngFor="let locale of locales" [value]="locale.id">
-                {{ locale.name }}
-              </mat-option>
+              <mat-option *ngFor="let locale of locales" [value]="locale.id"> {{ locale.name }} </mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -137,9 +131,7 @@
             <mat-form-field class="with-button">
               <mat-label>Target Locale</mat-label>
               <mat-select [(value)]="selectedTargetLocale" (selectionChange)="translateValue = undefined">
-                <mat-option *ngFor="let locale of locales" [value]="locale.id">
-                  {{ locale.name }}
-                </mat-option>
+                <mat-option *ngFor="let locale of locales" [value]="locale.id"> {{ locale.name }} </mat-option>
               </mat-select>
             </mat-form-field>
             <button

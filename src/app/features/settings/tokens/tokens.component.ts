@@ -29,7 +29,7 @@ export class TokensComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  isLoading: boolean = true;
+  isLoading = true;
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Token> = new MatTableDataSource<Token>([]);
   displayedColumns: string[] = ['id', 'name', 'createdAt', 'updatedAt', 'actions'];
@@ -78,13 +78,14 @@ export class TokensComponent implements OnInit, OnDestroy {
         .afterClosed()
         .pipe(
           filter(it => it !== undefined),
-          switchMap(it => this.tokenService.create(spaceId, it?.name!))
+          switchMap(it => this.tokenService.create(spaceId, it!.name))
         )
         .subscribe({
-          next: value => {
+          next: () => {
             this.notificationService.success('Token has been created.');
           },
-          error: err => {
+          error: (err: unknown) => {
+            console.error(err);
             this.notificationService.error('Token can not be created.');
           },
         });
@@ -104,7 +105,7 @@ export class TokensComponent implements OnInit, OnDestroy {
         .afterClosed()
         .pipe(
           filter(it => it || false),
-          switchMap(_ => this.tokenService.delete(spaceId, element.id))
+          switchMap(() => this.tokenService.delete(spaceId, element.id))
         )
         .subscribe({
           next: () => {

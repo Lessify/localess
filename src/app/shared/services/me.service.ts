@@ -6,8 +6,6 @@ import { traceUntilFirst } from '@angular/fire/performance';
 
 @Injectable()
 export class MeService {
-  constructor() {}
-
   updateProfile(user: User, model: MeUpdate): Observable<void> {
     return from(updateProfile(user, model)).pipe(traceUntilFirst('Firestore:Me:updateProfile'));
   }

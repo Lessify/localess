@@ -16,9 +16,7 @@ interface Plural {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationPluralViewComponent {
-  @Input() value: string = '';
-
-  constructor() {}
+  @Input() value = '';
 
   extract(): Plural {
     return JSON.parse(this.value || '{}');

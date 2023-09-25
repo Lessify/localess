@@ -106,15 +106,11 @@
     </ng-container>
     <ng-container matColumnDef="size">
       <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size </mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        {{ element.size | digitalStore }}
-      </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.size | digitalStore }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="type">
       <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type </mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        {{ element.type }}
-      </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.type }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>

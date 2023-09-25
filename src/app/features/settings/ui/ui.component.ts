@@ -23,7 +23,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 export class UiComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
-  isLoading: boolean = true;
+  isLoading = true;
   space?: Space;
 
   // Form
@@ -64,11 +64,12 @@ export class UiComponent implements OnInit {
   }
 
   save(): void {
-    this.spaceService.updateUi(this.space?.id!, this.form.value).subscribe({
+    this.spaceService.updateUi(this.space!.id, this.form.value).subscribe({
       next: () => {
         this.notificationService.success('Space UI has been updated.');
       },
-      error: err => {
+      error: (err: unknown) => {
+        console.error(err);
         this.notificationService.error('Space UI can not be updated.');
       },
     });

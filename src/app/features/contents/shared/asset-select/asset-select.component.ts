@@ -48,7 +48,7 @@ export class AssetSelectComponent implements OnInit {
   loadData(): void {
     const id: string | undefined = this.form?.value.uri;
     if (id) {
-      this.assetService.findById(this.space?.id!!, id).subscribe({
+      this.assetService.findById(this.space!.id, id).subscribe({
         next: asset => {
           this.asset = asset;
           this.cd.markForCheck();
@@ -65,7 +65,7 @@ export class AssetSelectComponent implements OnInit {
         maxWidth: '1280px',
         maxHeight: 'calc(100vh - 80px)',
         data: {
-          spaceId: this.space?.id!!,
+          spaceId: this.space!.id,
           multiple: false,
           fileType: this.component?.fileTypes?.at(0),
         },

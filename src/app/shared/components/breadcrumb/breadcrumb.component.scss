@@ -15,10 +15,8 @@ section {
 
 :host ::ng-deep ll-breadcrumb-item:last-child {
   pointer-events: none;
+
   span {
     color: $grey-color;
   }
 }
-//:last-child {
-//    border: 2px solid orange;
-//}

@@ -11,7 +11,7 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationPluralEditComponent implements OnInit, OnChanges {
-  @Input() value: string = '';
+  @Input() value = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
   form: FormGroup = this.fb.group({
     0: this.fb.control(null, TranslationValidator.PLURAL_VALUE),
