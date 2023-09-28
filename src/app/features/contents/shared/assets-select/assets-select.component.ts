@@ -12,6 +12,7 @@ import { Space } from '@shared/models/space.model';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
 import { selectSettings } from '@core/state/settings/settings.selectors';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'll-assets-select',
@@ -52,7 +53,12 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
     if (ids && ids.length > 0) {
       this.assetService.findByIds(this.space!.id, ids).subscribe({
         next: assets => {
-          this.assets = assets;
+          const byId = new Map<string, Asset>(assets.map(item => [item.id, item]));
+          // Make sure to have assets display in exactly the same order
+          this.assets = ids
+            .map(it => byId.get(it))
+            .filter(asset => asset)
+            .map(it => it!);
           this.cd.markForCheck();
         },
       });
@@ -104,5 +110,16 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
     this.form?.removeAt(idx);
     this.assetsChange.next(this.assets.map(it => it.id));
     //this.form?.root.updateValueAndValidity()
+  }
+
+  assetDropDrop(event: CdkDragDrop<string[]>) {
+    if (event.previousIndex === event.currentIndex) return;
+    const tmp = this.form?.at(event.previousIndex);
+    if (tmp) {
+      this.form?.removeAt(event.previousIndex);
+      this.form?.insert(event.currentIndex, tmp);
+      moveItemInArray(this.assets, event.previousIndex, event.currentIndex);
+      this.assetsChange.next(this.assets.map(it => it.id));
+    }
   }
 }

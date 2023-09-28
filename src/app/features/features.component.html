@@ -85,7 +85,7 @@
       <mat-list>
         <div mat-subheader>Settings</div>
         <mat-list-item *ngIf="isDebug">
-          <mat-slide-toggle [checked]="settings.debugEnabled" (change)="onDebugEnabledChangeState($event)">Enable Debug</mat-slide-toggle>
+          <mat-slide-toggle [checked]="settings.debugEnabled" (change)="onDebugEnabledChangeState()">Enable Debug</mat-slide-toggle>
         </mat-list-item>
       </mat-list>
     </mat-sidenav>

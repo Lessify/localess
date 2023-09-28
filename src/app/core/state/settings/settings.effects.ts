@@ -58,7 +58,7 @@ export class SettingsEffects {
           actionSettingsChangeDebugEnabled
         ),
         withLatestFrom(this.store.pipe(select(selectSettingsState))),
-        tap(([action, settings]) => this.localStorageService.setItem(SETTINGS_KEY, settings))
+        tap(([, settings]) => this.localStorageService.setItem(SETTINGS_KEY, settings))
       ),
     { dispatch: false }
   );
@@ -67,7 +67,7 @@ export class SettingsEffects {
     () =>
       merge(INIT, this.actions$.pipe(ofType(actionSettingsChangeAnimationsElements, actionSettingsChangeAnimationsPage))).pipe(
         withLatestFrom(combineLatest([this.store.pipe(select(selectPageAnimations)), this.store.pipe(select(selectElementsAnimations))])),
-        tap(([action, [pageAnimations, elementsAnimations]]) =>
+        tap(([, [pageAnimations, elementsAnimations]]) =>
           this.animationsService.updateRouteAnimationType(pageAnimations, elementsAnimations)
         )
       ),
@@ -78,7 +78,7 @@ export class SettingsEffects {
     () =>
       merge(INIT, this.actions$.pipe(ofType(actionSettingsChangeTheme))).pipe(
         withLatestFrom(this.store.pipe(select(selectEffectiveTheme))),
-        tap(([action, effectiveTheme]) => {
+        tap(([, effectiveTheme]) => {
           const classList = this.overlayContainer.getContainerElement().classList;
           const toRemove = Array.from(classList).filter((item: string) => item.includes('-theme'));
           if (toRemove.length) {

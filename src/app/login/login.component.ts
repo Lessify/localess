@@ -9,7 +9,6 @@ import {
   signInWithPopup,
   signOut,
   User,
-  UserCredential,
 } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { EMPTY, Observable, Subscription } from 'rxjs';
@@ -73,7 +72,7 @@ export class LoginComponent implements OnDestroy {
   }
 
   async loginWithEmailAndPassword(email: string, password: string): Promise<void> {
-    const uc: UserCredential = await signInWithEmailAndPassword(this.auth, email, password);
+    await signInWithEmailAndPassword(this.auth, email, password);
     this.store.dispatch(authLogin());
     await this.router.navigate(this.redirect);
   }
@@ -85,7 +84,7 @@ export class LoginComponent implements OnDestroy {
         hd: environment.auth.customDomain,
       });
     }
-    const uc: UserCredential = await signInWithPopup(this.auth, provider);
+    await signInWithPopup(this.auth, provider);
     this.store.dispatch(authLogin());
     await this.router.navigate(this.redirect);
   }
@@ -97,7 +96,7 @@ export class LoginComponent implements OnDestroy {
         tenant: environment.auth.customDomain,
       });
     }
-    const uc: UserCredential = await signInWithPopup(this.auth, provider);
+    await signInWithPopup(this.auth, provider);
     this.store.dispatch(authLogin());
     await this.router.navigate(this.redirect);
   }

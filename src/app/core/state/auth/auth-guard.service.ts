@@ -1,5 +1,5 @@
 import { inject, Injectable, Optional } from '@angular/core';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
+import { Router, UrlTree } from '@angular/router';
 import { Observable } from 'rxjs';
 import { Auth, authState } from '@angular/fire/auth';
 import { map } from 'rxjs/operators';
@@ -42,10 +42,7 @@ export class AuthGuardService {
   }
 }
 
-export function authGuard(
-  route: ActivatedRouteSnapshot,
-  state: RouterStateSnapshot
-): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+export function authGuard(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
   const auth = inject(Auth);
   const router = inject(Router);
   return authState(auth).pipe(

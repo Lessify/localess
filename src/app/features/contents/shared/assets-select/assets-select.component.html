@@ -6,15 +6,16 @@
           {{ component?.displayName || component?.name }}
           <mat-icon *ngIf="component?.translatable" matTooltip="The field is translatable">language</mat-icon>
         </mat-card-title>
-        <button mat-icon-button matTooltip="Add Asset" (click)="openAssetSelectDialog()">
-          <mat-icon>attach_file</mat-icon>
+        <button mat-icon-button matTooltip="Add Assets" (click)="openAssetSelectDialog()">
+          <mat-icon>attach_file_add</mat-icon>
         </button>
       </mat-card-title-group>
     </mat-card-header>
     <mat-divider></mat-divider>
     <mat-card-content>
-      <mat-list class="assets">
-        <mat-list-item *ngFor="let asset of assets; index as idx">
+      <mat-list cdkDropList class="assets" (cdkDropListDropped)="assetDropDrop($event)">
+        <mat-list-item cdkDrag cdkDragPreviewContainer="parent" *ngFor="let asset of assets; index as idx">
+          <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
           <img
             *ngIf="asset.type.startsWith('image/'); else noImage"
             matListItemAvatar
@@ -28,7 +29,7 @@
             <mat-icon matListItemIcon>file_present</mat-icon>
           </ng-template>
           <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
-          <div matListItemLine>{{ asset.alt }}</div>
+          <div matListItemLine>{{ asset.id }} | {{ asset.alt }}</div>
           <mat-action-list matListItemMeta>
             <button mat-icon-button (click)="deleteAsset(idx)">
               <mat-icon>delete</mat-icon>

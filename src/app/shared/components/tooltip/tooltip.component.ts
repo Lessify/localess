@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnInit, Renderer2 } from '@angular/core';
 
 @Component({

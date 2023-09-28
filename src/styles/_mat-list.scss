@@ -6,10 +6,9 @@ mat-nav-list.ll-mat-nav-list-gap {
   .cdk-drag-preview {
     box-sizing: border-box;
     border-radius: 4px;
-    box-shadow:
-      0 5px 5px -3px rgba(0, 0, 0, 0.2),
-      0 8px 10px 1px rgba(0, 0, 0, 0.14),
-      0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+    0 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0 3px 14px 2px rgba(0, 0, 0, 0.12);
   }
 
   .cdk-drag-placeholder {
@@ -52,23 +51,16 @@ mat-nav-list.ll-mat-nav-list-gap {
         height: 48px;
         padding-top: 12px;
         padding-left: 12px;
-        //margin-top: 8px !important;
-        //margin-bottom: 8px;
-        //margin-left: 16px;
-        //margin-right: 16px;
-        //width: 56px;
-        //height: 56px;
-        //font-size: 50px;
       }
 
       &.cdk-drag-handle {
-        margin-top: auto !important;
-        margin-bottom: auto;
-        margin-right: 6px;
-        margin-left: 6px;
+        margin: auto 0;
         cursor: grab;
+        width: unset;
+        height: unset;
       }
     }
+
     .mat-mdc-list-item-meta {
       margin-top: auto !important;
       margin-bottom: auto;
@@ -77,12 +69,37 @@ mat-nav-list.ll-mat-nav-list-gap {
 }
 
 mat-list.assets {
+  .cdk-drag-preview {
+    box-sizing: border-box;
+    border-radius: 4px;
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+    0 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  }
+
+  .cdk-drag-placeholder {
+    opacity: 0;
+  }
+
+  .cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+
   mat-list-item {
     border-width: 1px;
     border-color: $border-grey-color;
     border-style: solid;
     border-radius: 5px !important;
     margin-bottom: 8px;
+
+    .mat-mdc-list-item-icon {
+      &.cdk-drag-handle {
+        margin: auto 0;
+        cursor: grab;
+        width: unset;
+        height: unset;
+      }
+    }
 
     img.mat-mdc-list-item-avatar {
       border-radius: unset;

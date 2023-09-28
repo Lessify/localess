@@ -9,12 +9,12 @@ import { UserPermission } from '@shared/models/user.model';
 const ROLE_ADMIN = 'admin';
 const ROLE_CUSTOM = 'custom';
 
-const hasRoleAdmin = () => {
-  return pipe(
-    customClaims,
-    map(claims => claims.role === ROLE_ADMIN)
-  );
-};
+// const hasRoleAdmin = () => {
+//   return pipe(
+//     customClaims,
+//     map(claims => claims.role === ROLE_ADMIN)
+//   );
+// };
 
 const hasPermissionUserManagement = () => {
   return pipe(

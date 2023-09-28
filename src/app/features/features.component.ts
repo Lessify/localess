@@ -31,7 +31,6 @@ import { environment } from '../../environments/environment';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
 import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { selectSettings } from '@core/state/settings/settings.selectors';
-import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { ReposService } from '@shared/generated/services/repos.service';
 import { Release } from '@shared/generated/models/release';
 
@@ -239,7 +238,7 @@ export class FeaturesComponent implements OnInit {
 
   protected readonly DEFAULT_LOCALE = DEFAULT_LOCALE;
 
-  onDebugEnabledChangeState(event: MatSlideToggleChange) {
+  onDebugEnabledChangeState() {
     this.store.dispatch(actionSettingsChangeDebugEnabled());
   }
 }
