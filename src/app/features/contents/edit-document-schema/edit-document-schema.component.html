@@ -124,6 +124,7 @@
         <br />
         <mat-hint *ngIf="field.description" style="font-size: 12px; padding: 0 16px">{{ field.description }}</mat-hint>
         <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+        <br />
       </ng-container>
       <!--OPTION-->
       <ng-container *ngSwitchCase="'OPTION'">
