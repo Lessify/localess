@@ -6,4 +6,11 @@ export class NameUtils {
       .replace(' ', replace)
       .replace(/[^\w\d\s_-]/g, replace);
   }
+  public static slug(input: string): string {
+    return input
+      .toLowerCase()
+      .replace(/\s/g, '-')
+      .replace(/[!*'();:@&=+$,/?%#[\]]/g, '') // Reserved
+      .replace(/[.~]/g, ''); // no wish
+  }
 }

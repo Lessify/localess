@@ -62,5 +62,3 @@ functions
 /**/*.spec.ts
 src/test.ts
 src/environments/*
-src/app/core/utils/name-utils.service.ts
-
