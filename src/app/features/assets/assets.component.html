@@ -43,7 +43,7 @@
     </ll-breadcrumb-item>
   </ll-breadcrumb>
 
-  <mat-table [dataSource]="dataSource" matSort>
+  <mat-table [dataSource]="dataSource" matSort llFileDragDrop (filesChanges)="filesDragAndDrop($event)">
     <!-- Checkbox Column -->
     <ng-container matColumnDef="select">
       <mat-header-cell *matHeaderCellDef>

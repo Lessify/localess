@@ -46,6 +46,7 @@ import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { TooltipComponent, TooltipDirective } from '@shared/components/tooltip';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -85,6 +86,7 @@ const MATERIAL_MODULES: any[] = [
 ];
 
 const SHARED_PIPES: any[] = [CanUserPerformPipe, DigitalStorePipe, TimeDurationPipe, TranslationFilterPipe];
+const SHARED_DIRECTIVES: any[] = [FileDragAndDropDirective];
 
 const SHARED_COMPONENTS: any[] = [
   AssetsSelectDialogComponent,
@@ -99,8 +101,17 @@ const SHARED_COMPONENTS: any[] = [
 
 @NgModule({
   imports: [CommonModule, FormsModule, NgOptimizedImage, MATERIAL_MODULES, RouterLink],
-  declarations: [SHARED_COMPONENTS, SHARED_PIPES],
-  exports: [CommonModule, FormsModule, ReactiveFormsModule, NgOptimizedImage, MATERIAL_MODULES, SHARED_COMPONENTS, SHARED_PIPES],
+  declarations: [SHARED_COMPONENTS, SHARED_PIPES, SHARED_DIRECTIVES],
+  exports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    NgOptimizedImage,
+    MATERIAL_MODULES,
+    SHARED_COMPONENTS,
+    SHARED_PIPES,
+    SHARED_DIRECTIVES,
+  ],
   providers: [],
 })
 export class SharedModule {}

@@ -328,4 +328,19 @@ export class AssetsComponent implements OnInit, OnDestroy {
     event.stopImmediatePropagation();
     window.open(`/api/v1/spaces/${this.selectedSpace!.id}/assets/${element.id}?download`);
   }
+
+  filesDragAndDrop(event: File[]) {
+    console.log(event);
+    for (let idx = 0; idx < event.length; idx++) {
+      const file = event[idx];
+      this.assetService.createFile(this.selectedSpace!.id, this.parentPath, file).subscribe({
+        next: () => {
+          this.notificationService.success(`Asset '${file.name}' has been uploaded.`);
+        },
+        error: () => {
+          this.notificationService.error(`Asset '${file.name}' can not be uploaded.`);
+        },
+      });
+    }
+  }
 }

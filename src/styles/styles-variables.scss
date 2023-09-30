@@ -27,3 +27,7 @@ $grey-color: mat.get-color-from-palette(mat.$grey-palette, 600);
 // Borders
 $border-grey-color: mat.get-color-from-palette(mat.$grey-palette, 500);
 $border-hover-grey-color: mat.get-color-from-palette(mat.$grey-palette, 800);
+
+// Background
+$background-blue-color: mat.get-color-from-palette(mat.$blue-palette, 50);
+$border-blue-color: mat.get-color-from-palette(mat.$blue-palette, 900);
