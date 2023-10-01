@@ -359,7 +359,6 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     if (download !== undefined) {
       disposition = `form-data; filename="${encodeURI(filename)}"`;
     }
-    logger.info(`v1 spaces asset: Content-Disposition='${disposition}'`);
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
       .header('Content-Disposition', disposition)
