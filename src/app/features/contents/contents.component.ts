@@ -16,7 +16,14 @@ import { SchemaService } from '@shared/services/schema.service';
 import { combineLatest, Subject } from 'rxjs';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { Content, ContentDocumentCreate, ContentFolderCreate, ContentKind, ContentUpdate } from '@shared/models/content.model';
+import {
+  Content,
+  ContentDocument,
+  ContentDocumentCreate,
+  ContentFolderCreate,
+  ContentKind,
+  ContentUpdate,
+} from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
@@ -237,6 +244,35 @@ export class ContentsComponent implements OnInit, OnDestroy {
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error(`Content '${element.name}' can not be deleted.`);
+        },
+      });
+  }
+
+  openCloneDialog(event: Event, element: ContentDocument): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
+        data: {
+          title: 'Clone Content',
+          content: `Are you sure about clone Content with name: ${element.name}.`,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it || false),
+        switchMap(() => this.contentService.cloneDocument(this.selectedSpace!.id, element))
+      )
+      .subscribe({
+        next: () => {
+          this.selection.clear();
+          this.cd.markForCheck();
+          this.notificationService.success(`Content '${element.name}' has been cloned.`);
+        },
+        error: (err: unknown) => {
+          console.error(err);
+          this.notificationService.error(`Content '${element.name}' can not be cloned.`);
         },
       });
   }

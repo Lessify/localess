@@ -85,6 +85,7 @@ export interface ContentCreateFS {
 export interface ContentDocumentCreateFS extends ContentCreateFS {
   kind: ContentKind.DOCUMENT;
   schema: string;
+  data?: any;
 }
 
 export interface ContentFolderCreateFS extends ContentCreateFS {

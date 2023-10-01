@@ -162,29 +162,28 @@ export class ContentService {
     );
   }
 
+  cloneDocument(spaceId: string, entity: ContentDocument): Observable<DocumentReference> {
+    const addEntity: ContentDocumentCreateFS = {
+      kind: ContentKind.DOCUMENT,
+      name: `${entity.name}-clone`,
+      slug: `${entity.slug}-clone`,
+      parentSlug: entity.parentSlug,
+      fullSlug: entity.parentSlug ? `${entity.parentSlug}/${entity.slug}-clone` : `${entity.slug}-clone`,
+      schema: entity.schema,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    if (entity.data) {
+      addEntity.data = entity.data;
+    }
+
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
+      traceUntilFirst('Firestore:Contents:clone')
+    );
+  }
+
   delete(spaceId: string, element: Content): Observable<void> {
-    /*const batch = writeBatch(this.firestore)
-    batch.delete(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`))
-
-    return from(
-      // Query only id's
-      getDocs(
-        query(
-          collection(this.firestore, `spaces/${spaceId}/contents`),
-          where('parentSlug', '>=', element.fullSlug)
-        )
-      )
-    )
-    .pipe(
-      switchMap( it => {
-        it.docs.forEach( d => batch.delete(doc(this.firestore, `spaces/${spaceId}/contents/${d.id}`)))
-        return from(
-          batch.commit()
-        )
-      }),
-      traceUntilFirst('Firestore:Contents:delete'),
-    )*/
-
     return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`))).pipe(
       traceUntilFirst('Firestore:Contents:delete')
     );
