@@ -24,7 +24,9 @@ import { ref, Storage, uploadBytes } from '@angular/fire/storage';
 import { map, switchMap } from 'rxjs/operators';
 import {
   Asset,
+  AssetFile,
   AssetFileCreateFS,
+  AssetFileUpdate,
   AssetFolder,
   AssetFolderCreate,
   AssetFolderCreateFS,
@@ -152,12 +154,24 @@ export class AssetService {
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/assets`), addEntity)).pipe(traceUntilFirst('Firestore:Assets:create'));
   }
 
-  update(spaceId: string, id: string, entity: AssetFolderUpdate): Observable<void> {
+  updateFolder(spaceId: string, id: string, entity: AssetFolderUpdate): Observable<void> {
     const update: UpdateData<AssetFolder> = {
       name: entity.name,
       updatedAt: serverTimestamp(),
     };
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(traceUntilFirst('Firestore:Assets:update'));
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(
+      traceUntilFirst('Firestore:Assets:updateFolder')
+    );
+  }
+
+  updateFile(spaceId: string, id: string, entity: AssetFileUpdate): Observable<void> {
+    const update: UpdateData<AssetFile> = {
+      name: entity.name,
+      updatedAt: serverTimestamp(),
+    };
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(
+      traceUntilFirst('Firestore:Assets:updateFile')
+    );
   }
 
   delete(spaceId: string, id: string): Observable<void> {

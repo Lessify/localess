@@ -19,7 +19,7 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { PathItem } from '@core/state/space/space.model';
 import { actionSpaceAssetPathChange } from '@core/state/space/space.actions';
 import { AssetService } from '@shared/services/asset.service';
-import { Asset, AssetFile, AssetFolderCreate, AssetFolderUpdate, AssetKind } from '@shared/models/asset.model';
+import { Asset, AssetFile, AssetFileUpdate, AssetFolderCreate, AssetFolderUpdate, AssetKind } from '@shared/models/asset.model';
 import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
 import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
@@ -29,6 +29,8 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { TaskService } from '@shared/services/task.service';
+import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
+import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
 
 @Component({
   selector: 'll-assets',
@@ -153,6 +155,14 @@ export class AssetsComponent implements OnInit, OnDestroy {
       });
   }
 
+  openEditDialog(event: Event, element: Asset): void {
+    if (element.kind === AssetKind.FILE) {
+      this.openEditFileDialog(event, element);
+    } else if (element.kind === AssetKind.FOLDER) {
+      this.openEditFolderDialog(event, element);
+    }
+  }
+
   openEditFolderDialog(event: Event, element: Asset): void {
     // Prevent Default
     event.preventDefault();
@@ -168,7 +178,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.update(this.selectedSpace!.id, element.id, it!))
+        switchMap(it => this.assetService.updateFolder(this.selectedSpace!.id, element.id, it!))
       )
       .subscribe({
         next: () => {
@@ -178,6 +188,35 @@ export class AssetsComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.notificationService.error('Folder can not be updated.');
+        },
+      });
+  }
+
+  openEditFileDialog(event: Event, element: Asset): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.dialog
+      .open<EditFileDialogComponent, EditFileDialogModel, AssetFileUpdate>(EditFileDialogComponent, {
+        width: '500px',
+        data: {
+          reservedNames: this.assets.map(it => it.name),
+          asset: ObjectUtils.clone(element),
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.assetService.updateFile(this.selectedSpace!.id, element.id, it!))
+      )
+      .subscribe({
+        next: () => {
+          this.selection.clear();
+          this.cd.markForCheck();
+          this.notificationService.success('File has been updated.');
+        },
+        error: () => {
+          this.notificationService.error('File can not be updated.');
         },
       });
   }
@@ -245,6 +284,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
     //   return;
     // }
 
+    this.isLoading = true;
     if (element.kind === AssetKind.FOLDER) {
       this.selection.clear();
       const assetPath = ObjectUtils.clone(this.assetPath);
@@ -257,6 +297,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   navigateToSlug(pathItem: PathItem) {
+    this.isLoading = true;
     this.selection.clear();
     const assetPath = ObjectUtils.clone(this.assetPath);
     const idx = assetPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
@@ -330,7 +371,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   filesDragAndDrop(event: File[]) {
-    console.log(event);
     for (let idx = 0; idx < event.length; idx++) {
       const file = event[idx];
       this.assetService.createFile(this.selectedSpace!.id, this.parentPath, file).subscribe({

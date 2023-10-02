@@ -47,6 +47,7 @@ import { AssetsSelectDialogComponent } from '@shared/components/assets-select-di
 import { TooltipComponent, TooltipDirective } from '@shared/components/tooltip';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -83,6 +84,7 @@ const MATERIAL_MODULES: any[] = [
   MatExpansionModule,
   DragDropModule,
   MatButtonToggleModule,
+  MatProgressSpinnerModule,
 ];
 
 const SHARED_PIPES: any[] = [CanUserPerformPipe, DigitalStorePipe, TimeDurationPipe, TranslationFilterPipe];

@@ -78,6 +78,10 @@ export interface AssetFolderUpdate {
   name: string;
 }
 
+export interface AssetFileUpdate {
+  name: string;
+}
+
 export interface AssetFileCreate {
   name: string;
 }

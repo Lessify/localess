@@ -225,7 +225,6 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   openPublishedInNewTab(locale: string): void {
     this.tokenService.findFirst(this.selectedSpace!.id).subscribe({
       next: tokens => {
-        console.log(tokens);
         if (tokens.length === 1) {
           const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}`);
           url.searchParams.set('locale', locale);

@@ -62,7 +62,7 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="icon">
-      <mat-header-cell *matHeaderCellDef> Icon </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Icon</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container [ngSwitch]="element.kind">
           <ng-container *ngSwitchCase="'FILE'">
@@ -75,7 +75,7 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="preview">
-      <mat-header-cell *matHeaderCellDef> Preview </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Preview</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
           <ng-container *ngIf="element.inProgress; else elseUploaded">
@@ -83,7 +83,7 @@
           </ng-container>
           <ng-template #elseUploaded>
             <img
-              class="img-thumbnail"
+              class="border object-fit-contain rounded bg-body-secondary"
               width="115"
               height="115"
               loading="lazy"
@@ -94,7 +94,7 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div>
           <div>{{ element.name }}{{ element.extension }}</div>
@@ -105,19 +105,19 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="size">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.size | digitalStore }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="type">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.type }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.createdAt?.toDate() | date: 'medium' }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
@@ -133,8 +133,8 @@
         <button
           mat-icon-button
           *ngIf="'ASSET_UPDATE' | canUserPerform | async"
-          (click)="openEditFolderDialog($event, element)"
-          [disabled]="element.kind === 'FILE' || element.inProgress === true"
+          (click)="openEditDialog($event, element)"
+          [disabled]="element.inProgress === true"
           matTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
@@ -174,6 +174,21 @@
       *matRowDef="let row; columns: displayedColumns"
       (click)="onRowSelect(row)"
       [class.row-folder]="row.kind === 'FOLDER'"></mat-row>
+    <ng-container *ngIf="!isLoading">
+      <ng-container *matNoDataRow>
+        <div class="container-fluid text-center">
+          <div class="row">
+            <div class="col align-self-center align-middle">
+              <br />
+              <br />
+              Drag and Drop a file here or use the "Upload Asset" button
+              <br />
+              <br />
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
   </mat-table>
   <mat-paginator></mat-paginator>
 </div>
