@@ -50,7 +50,7 @@ export class ReferenceSelectComponent implements OnInit {
         search =>
           this.documents?.filter(it => {
             if (this.component && this.component.path) {
-              if (it.parentSlug === this.component.path) {
+              if (it.parentSlug.startsWith(this.component.path)) {
                 return it.name.includes(search) || it.fullSlug.includes(search);
               } else {
                 return false;
