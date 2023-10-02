@@ -1,15 +1,14 @@
 <h1 mat-dialog-title>Assets</h1>
-<mat-divider></mat-divider>
+<ll-breadcrumb>
+  <span style="padding-left: 1rem">&nbsp;</span>
+  <ll-breadcrumb-item *ngFor="let pathItem of assetPath" (click)="navigateToSlug(pathItem)">
+    <ng-container *ngIf="pathItem.fullSlug === ''">
+      <mat-icon>home</mat-icon>
+    </ng-container>
+    {{ pathItem.name }}
+  </ll-breadcrumb-item>
+</ll-breadcrumb>
 <mat-dialog-content>
-  <ll-breadcrumb>
-    <ll-breadcrumb-item *ngFor="let pathItem of assetPath" (click)="navigateToSlug(pathItem)">
-      <ng-container *ngIf="pathItem.fullSlug === ''">
-        <mat-icon>home</mat-icon>
-      </ng-container>
-      {{ pathItem.name }}
-    </ll-breadcrumb-item>
-  </ll-breadcrumb>
-  <mat-divider></mat-divider>
   <mat-table [dataSource]="dataSource" matSort>
     <!-- Checkbox Column -->
     <ng-container matColumnDef="select">

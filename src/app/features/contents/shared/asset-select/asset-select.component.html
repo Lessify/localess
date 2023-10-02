@@ -28,7 +28,10 @@
             <mat-icon matListItemIcon>file_present</mat-icon>
           </ng-template>
           <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
-          <div matListItemLine>{{ asset.alt }}</div>
+          <div matListItemLine>
+            {{ asset.size | digitalStore }}
+            <ng-container *ngIf="asset.metadata as metadata"> | W{{ metadata.width }} x H{{ metadata.height }} </ng-container>
+          </div>
           <mat-action-list matListItemMeta>
             <button mat-icon-button (click)="deleteAsset()">
               <mat-icon>delete</mat-icon>
