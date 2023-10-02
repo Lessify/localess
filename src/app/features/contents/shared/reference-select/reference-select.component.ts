@@ -46,17 +46,18 @@ export class ReferenceSelectComponent implements OnInit {
     this.filteredContent = this.searchCtrl.valueChanges.pipe(
       startWith(''),
       debounceTime(300),
+      map(it => it.toString().toLowerCase()),
       map(
         search =>
           this.documents?.filter(it => {
             if (this.component && this.component.path) {
               if (it.parentSlug.startsWith(this.component.path)) {
-                return it.name.includes(search) || it.fullSlug.includes(search);
+                return it.name.toLowerCase().includes(search) || it.fullSlug.toLowerCase().includes(search);
               } else {
                 return false;
               }
             } else {
-              return it.name.includes(search) || it.fullSlug.includes(search);
+              return it.name.toLowerCase().includes(search) || it.fullSlug.toLowerCase().includes(search);
             }
           }) || []
       )
