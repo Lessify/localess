@@ -41,7 +41,7 @@
       <mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.kind === 'FILE' && filePreview(element.type)">
           <img
-            class="img-thumbnail"
+            class="border object-fit-contain rounded bg-body-secondary"
             width="115"
             height="115"
             alt="thumbnail"

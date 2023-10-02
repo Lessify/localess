@@ -33,6 +33,7 @@ import {
 } from '@shared/models/content.model';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { ContentHelperService } from '@shared/services/content-helper.service';
+import { NameUtils } from '@core/utils/name-utils.service';
 
 @Injectable()
 export class ContentService {
@@ -163,12 +164,13 @@ export class ContentService {
   }
 
   cloneDocument(spaceId: string, entity: ContentDocument): Observable<DocumentReference> {
+    const nameSuffix = NameUtils.random(5);
     const addEntity: ContentDocumentCreateFS = {
       kind: ContentKind.DOCUMENT,
-      name: `${entity.name}-clone`,
-      slug: `${entity.slug}-clone`,
+      name: `${entity.name} ${nameSuffix}`,
+      slug: `${entity.slug}-${nameSuffix}`,
       parentSlug: entity.parentSlug,
-      fullSlug: entity.parentSlug ? `${entity.parentSlug}/${entity.slug}-clone` : `${entity.slug}-clone`,
+      fullSlug: entity.parentSlug ? `${entity.parentSlug}/${entity.slug}-${nameSuffix}` : `${entity.slug}-${nameSuffix}`,
       schema: entity.schema,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
