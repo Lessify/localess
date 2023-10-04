@@ -64,3 +64,13 @@ mat-cell {
     max-width: 180px;
   }
 }
+
+.file-progress-upload {
+  position: fixed;
+  bottom: 0;
+  right: 20px;
+
+  mat-progress-spinner {
+    height: 24px!important; width: 24px!important;
+  }
+}

@@ -191,4 +191,24 @@
     </ng-container>
   </mat-table>
   <mat-paginator></mat-paginator>
+  <div *ngIf="fileUploadQueue.length > 0" class="file-progress-upload">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>File Upload Progress</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-divider></mat-divider>
+        <mat-list role="list">
+          <mat-list-item role="listitem" *ngFor="let file of fileUploadQueue; index as idx">
+            {{ file.name.length < 30 ? file.name : file.name.slice(0, 27).concat('...') }}
+            <mat-progress-bar *ngIf="idx === 0" mode="indeterminate" />
+            <mat-progress-bar *ngIf="idx !== 0" mode="buffer" />
+            <mat-action-list matListItemMeta>
+              {{ file.size | digitalStore }}
+            </mat-action-list>
+          </mat-list-item>
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+  </div>
 </div>

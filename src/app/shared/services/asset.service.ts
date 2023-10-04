@@ -122,8 +122,8 @@ export class AssetService {
     const addEntity: AssetFileCreateFS = {
       kind: AssetKind.FILE,
       inProgress: true,
-      name: entity.name.substring(0, extIdx),
-      extension: entity.name.substring(extIdx),
+      name: extIdx > 0 ? entity.name.substring(0, extIdx) : entity.name,
+      extension: extIdx > 0 ? entity.name.substring(extIdx) : '',
       type: entity.type,
       size: entity.size,
       parentPath: parentPath,

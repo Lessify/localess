@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { concatMap, filter, switchMap, tap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
@@ -31,6 +31,7 @@ import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-di
 import { TaskService } from '@shared/services/task.service';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
 import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-assets',
@@ -38,16 +39,18 @@ import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
   styleUrls: ['./assets.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AssetsComponent implements OnInit, OnDestroy {
+export class AssetsComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
+  private destroyRef = inject(DestroyRef);
   selectedSpace?: Space;
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
   displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt', 'actions'];
   selection = new SelectionModel<Asset>(true, []);
   assets: Asset[] = [];
   assetPath: PathItem[] = [];
+  fileUploadQueue: File[] = [];
 
   get parentPath(): string {
     if (this.assetPath && this.assetPath.length > 0) {
@@ -57,7 +60,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   // Subscriptions
-  private destroy$ = new Subject();
+  private fileUploadQueue$ = new Subject<File>();
 
   // Loading
   isLoading = true;
@@ -76,6 +79,21 @@ export class AssetsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData();
+
+    this.fileUploadQueue$
+      .pipe(
+        tap(console.log),
+        concatMap(it => this.assetService.createFile(this.selectedSpace!.id, this.parentPath, it)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: () => {
+          this.fileUploadQueue.shift();
+        },
+        error: () => {
+          this.notificationService.error(`Asset can not be uploaded.`);
+        },
+      });
   }
 
   loadData(): void {
@@ -96,7 +114,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
           }
         }),
         switchMap(it => combineLatest([this.spaceService.findById(it.id), this.assetService.findAll(it.id, this.parentPath)])),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: ([space, assets]) => {
@@ -119,14 +137,8 @@ export class AssetsComponent implements OnInit, OnDestroy {
       if (target.files && target.files.length > 0) {
         for (let idx = 0; idx < target.files.length; idx++) {
           const file = target.files[idx];
-          this.assetService.createFile(this.selectedSpace!.id, this.parentPath, file).subscribe({
-            next: () => {
-              this.notificationService.success(`Asset '${file.name}' has been uploaded.`);
-            },
-            error: () => {
-              this.notificationService.error(`Asset '${file.name}' can not be uploaded.`);
-            },
-          });
+          this.fileUploadQueue.push(file);
+          this.fileUploadQueue$.next(file);
         }
       }
     }
@@ -222,6 +234,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   openDeleteDialog(event: Event, element: Asset): void {
+    console.log(element);
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -248,11 +261,6 @@ export class AssetsComponent implements OnInit, OnDestroy {
           this.notificationService.error(`Asset '${element.name}' can not be deleted.`);
         },
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 
   // TABLE
@@ -371,16 +379,9 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
 
   filesDragAndDrop(event: File[]) {
-    for (let idx = 0; idx < event.length; idx++) {
-      const file = event[idx];
-      this.assetService.createFile(this.selectedSpace!.id, this.parentPath, file).subscribe({
-        next: () => {
-          this.notificationService.success(`Asset '${file.name}' has been uploaded.`);
-        },
-        error: () => {
-          this.notificationService.error(`Asset '${file.name}' can not be uploaded.`);
-        },
-      });
-    }
+    event.forEach(file => {
+      this.fileUploadQueue.push(file);
+      this.fileUploadQueue$.next(file);
+    });
   }
 }
