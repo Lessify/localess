@@ -156,7 +156,7 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
   logger.info(`[Content::onWrite] eventId='${event.id}'`);
   logger.info(`[Content::onWrite] params='${JSON.stringify(event.params)}'`);
   const { spaceId } = event.params;
-  // Save Cache, to make sure LINKS are cached correctly with caceh version
+  // Save Cache, to make sure LINKS are cached correctly with cache version
   logger.info(`[Content::onWrite] Save file to spaces/${spaceId}/contents/cache.json`);
   await bucket.file(`spaces/${spaceId}/contents/cache.json`).save('');
   return;
