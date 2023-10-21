@@ -44,7 +44,7 @@ export class EditFieldComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.selectedFieldKind = this.schemaFieldKindDescriptions[this.form.value.kind];
+    this.selectedFieldKind = this.schemaFieldKindDescriptions[this.form.value.kind as SchemaFieldKind];
   }
 
   get options(): FormArray<FormGroup> | undefined {
@@ -67,7 +67,7 @@ export class EditFieldComponent implements OnInit {
   }
 
   selectFieldKind(event: MatSelectChange): void {
-    const value: string = event.value;
+    const value = event.value as SchemaFieldKind;
     this.selectedFieldKind = this.schemaFieldKindDescriptions[value];
     switch (value) {
       case SchemaFieldKind.TEXT:

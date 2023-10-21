@@ -1,6 +1,9 @@
 <mat-toolbar>
   <mat-toolbar-row>
     Translations
+    <a mat-icon-button target="_blank" href="https://github.com/Lessify/localess/wiki/Feature-Translation">
+      <mat-icon>help</mat-icon>
+    </a>
     <span class="spacer"></span>
     <button *ngIf="'TRANSLATION_CREATE' | canUserPerform | async" mat-raised-button color="primary" (click)="openAddDialog()">
       <mat-icon>add</mat-icon>

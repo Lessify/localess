@@ -15,7 +15,7 @@ import { SchemaService } from '@shared/services/schema.service';
 import { combineLatest, Subject } from 'rxjs';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { Schema, SchemaCreate } from '@shared/models/schema.model';
+import { Schema, SchemaCreate, SchemaType } from '@shared/models/schema.model';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
@@ -35,7 +35,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  schemaTypeIcons: Record<string, string> = {
+  schemaTypeIcons: Record<SchemaType, string> = {
     ROOT: 'margin',
     NODE: 'polyline',
   };

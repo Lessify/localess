@@ -66,7 +66,7 @@ export interface FieldKindDescription {
   icon: string;
 }
 
-export const schemaFieldKindDescriptions: Record<string, FieldKindDescription> = {
+export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescription> = {
   TEXT: { name: 'Text', icon: 'title' },
   TEXTAREA: { name: 'TextArea', icon: 'rtt' },
   MARKDOWN: { name: 'Markdown', icon: 'functions' },
