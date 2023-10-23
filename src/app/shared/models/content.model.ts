@@ -3,6 +3,7 @@ import { ValidationErrors } from '@angular/forms';
 
 export interface ContentError {
   contentId: string;
+  locale: string;
   schema: string;
   fieldName: string;
   fieldDisplayName?: string;

@@ -38,7 +38,7 @@ const contentPublish = onCall<PublishContentData>(async request => {
         publishedAt: new Date().toISOString(),
       };
       if (content.data) {
-        documentStorage.data = extractContent(content.data, schemas, locale.id, space.localeFallback.id);
+        documentStorage.data = extractContent(content.data, schemas, locale.id);
       }
       // Save generated JSON
       logger.info(`[contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/${locale.id}.json`);
@@ -68,7 +68,7 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
   logger.info(
     `[Content::onUpdate] eventId='${event.id}' id='${contentId}' slug before='${contentBefore.fullSlug}' after='${contentAfter.fullSlug}'`
   );
-  // Logic related to fullSlug change, in case a folder change a SLUG and it should be cascaded to all childs
+  // Logic related to fullSlug change, in case a folder change a SLUG, and it should be cascaded to all childs
   // First level check, check if the slug is different
   if (contentBefore.fullSlug === contentAfter.fullSlug) {
     logger.info(`[Content::onUpdate] eventId='${event.id}' id='${contentId}' has no changes in fullSlug`);
@@ -95,7 +95,7 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
           updatedAt: content.updatedAt.toDate().toISOString(),
         };
         if (content.data) {
-          documentStorage.data = extractContent(content.data, schemas, locale.id, space.localeFallback.id);
+          documentStorage.data = extractContent(content.data, schemas, locale.id);
         }
         // Save generated JSON
         logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);

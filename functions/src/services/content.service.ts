@@ -103,10 +103,9 @@ export function validateContentImport(data: unknown): ErrorObject[] | undefined 
  * @param {ContentData} content content
  * @param {Schema[]} schemas schema
  * @param {string} locale locale
- * @param {string} localeFallback fallback locale
  * @return {ContentData} content
  */
-export function extractContent(content: ContentData, schemas: Schema[], locale: string, localeFallback: string): ContentData {
+export function extractContent(content: ContentData, schemas: Schema[], locale: string): ContentData {
   const extractedContentData: ContentData = {
     _id: content._id,
     schema: content.schema,
@@ -116,18 +115,18 @@ export function extractContent(content: ContentData, schemas: Schema[], locale: 
     if (field.kind === SchemaFieldKind.SCHEMA) {
       const fieldContent: ContentData | undefined = content[field.name];
       if (fieldContent) {
-        extractedContentData[field.name] = extractContent(fieldContent, schemas, locale, localeFallback);
+        extractedContentData[field.name] = extractContent(fieldContent, schemas, locale);
       }
     } else if (field.kind === SchemaFieldKind.SCHEMAS) {
       const fieldContent: ContentData[] | undefined = content[field.name];
       if (fieldContent && Array.isArray(fieldContent)) {
-        extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale, localeFallback));
+        extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale));
       }
     } else {
       if (field.translatable) {
         let value = content[`${field.name}_i18n_${locale}`];
-        if (!value) {
-          value = content[`${field.name}_i18n_${localeFallback}`];
+        if (value === undefined) {
+          value = content[field.name];
         }
         extractedContentData[field.name] = value;
       } else {

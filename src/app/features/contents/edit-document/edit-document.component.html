@@ -9,8 +9,12 @@
     <span class="spacer"></span>
 
     <mat-button-toggle-group [formControl]="editorEnabledCtr">
-      <mat-button-toggle [value]="true"><mat-icon>design_services</mat-icon></mat-button-toggle>
-      <mat-button-toggle [value]="false"><mat-icon>edit_note</mat-icon></mat-button-toggle>
+      <mat-button-toggle [value]="true">
+        <mat-icon>design_services</mat-icon>
+      </mat-button-toggle>
+      <mat-button-toggle [value]="false">
+        <mat-icon>edit_note</mat-icon>
+      </mat-button-toggle>
     </mat-button-toggle-group>
 
     <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
@@ -22,22 +26,22 @@
       <button mat-menu-item *ngFor="let locale of availableLocales" (click)="onLocaleChanged(locale)">
         <span [class.fw-semibold]="locale.id === selectedLocale.id">
           {{ locale.name }}
-          <span *ngIf="locale.id === selectedSpace?.localeFallback.id"> (Fallback)</span>
         </span>
       </button>
     </mat-menu>
 
-    <button mat-icon-button *ngIf="contentErrors" [matMenuTriggerFor]="contentErrorsMenu">
-      <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline </mat-icon>
+    <button mat-icon-button *ngIf="contentErrors.length > 0" [matMenuTriggerFor]="contentErrorsMenu">
+      <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline</mat-icon>
     </button>
 
     <mat-menu class="mat-menu-error-messages" #contentErrorsMenu="matMenu" xPosition="before">
-      <mat-list>
-        <mat-list-item *ngFor="let error of contentErrors">
-          <mat-icon color="warn" matListItemIcon>warning</mat-icon>
-          In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }}
-        </mat-list-item>
-      </mat-list>
+      <div class="vstack gap-1">
+        <div class="p-2" *ngFor="let error of contentErrors">
+          <mat-icon color="accent">warning</mat-icon>
+          In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for Locale
+          {{ availableLocalesMap.get(error.locale) }}
+        </div>
+      </div>
     </mat-menu>
 
     <button
@@ -142,7 +146,6 @@
           [data]="selectedDocumentData"
           [schemas]="schemas"
           [locale]="selectedLocale.id"
-          [localeFallback]="selectedSpace.localeFallback.id"
           [documents]="documents"
           [space]="selectedSpace"
           (schemaChange)="onSchemaChange($event)" />

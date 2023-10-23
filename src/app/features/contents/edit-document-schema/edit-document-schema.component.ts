@@ -24,6 +24,8 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { selectSettings } from '@core/state/settings/settings.selectors';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
+import { DEFAULT_LOCALE } from '@shared/models/locale.model';
+import { ObjectUtils } from '@core/utils/object-utils.service';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -41,8 +43,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   @Input() data: ContentData = { _id: '', schema: '' };
   @Input() schemas: Schema[] = [];
   @Input() documents: ContentDocument[] = [];
-  @Input() locale = 'en';
-  @Input() localeFallback = 'en';
+  @Input({ required: true }) locale = 'en';
   @Input() space?: Space;
   @Output() schemaChange = new EventEmitter<SchemaSelectChange>();
 
@@ -113,31 +114,42 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
 
   generateForm(): void {
     if (this.rootSchema) {
-      const isFallbackLocale = this.locale === this.localeFallback;
-      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, isFallbackLocale);
+      // true - check all fields, false - all fields become optional
+      const isDefaultLocale = this.locale === DEFAULT_LOCALE.id;
+      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, isDefaultLocale);
 
       this.form.valueChanges.pipe(debounceTime(500), takeUntil(this.destroy$)).subscribe({
         next: formValue => {
-          //console.group('form')
-          //console.log(Object.getOwnPropertyNames(formValue))
-          //console.log('formValue', ObjectUtils.clone(formValue))
-          //console.log('Before data', ObjectUtils.clone(this.data))
+          console.group('form');
+          console.log(Object.getOwnPropertyNames(formValue));
+          console.log('formValue', ObjectUtils.clone(formValue));
+          console.log('Before data', ObjectUtils.clone(this.data));
 
-          for (const key of Object.getOwnPropertyNames(formValue)) {
-            //console.log('key', key)
-            const value = formValue[key];
-            //console.log('value', ObjectUtils.clone(value))
-            const schema = this.schemaFieldsMap.get(key);
-            if (value !== null) {
-              if (schema?.translatable) {
-                this.data[`${key}_i18n_${this.locale}`] = value;
+          //for (const key of Object.getOwnPropertyNames(formValue)) {
+          for (const field of this.rootSchema?.fields || []) {
+            console.log('name', field.name);
+            const value = formValue[field.name];
+            console.log('value', ObjectUtils.clone(value));
+            if (isDefaultLocale) {
+              // check everything
+              if (value === null) {
+                delete this.data[field.name];
               } else {
-                this.data[key] = value;
+                this.data[field.name] = value;
+              }
+            } else {
+              // check only locale
+              if (field.translatable) {
+                if (value === null) {
+                  delete this.data[`${field.name}_i18n_${this.locale}`];
+                } else {
+                  this.data[`${field.name}_i18n_${this.locale}`] = value;
+                }
               }
             }
           }
-          //console.log('After data', ObjectUtils.clone(this.data))
-          //console.groupEnd()
+          console.log('After data', ObjectUtils.clone(this.data));
+          console.groupEnd();
         },
         error: (err: unknown) => console.error(err),
         complete: () => console.log('completed'),
@@ -294,5 +306,16 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
       }
     }
     return undefined;
+  }
+
+  markItAvailable(field: SchemaField) {
+    console.log(field);
+    const formField = this.form.controls[field.name];
+    if (formField.enabled) {
+      formField.setValue(undefined);
+      formField.disable();
+    } else {
+      formField.enable();
+    }
   }
 }

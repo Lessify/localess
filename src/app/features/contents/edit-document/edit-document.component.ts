@@ -36,6 +36,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   selectedEnvironment?: SpaceEnvironment;
   iframeUrl?: SafeUrl;
   availableLocales: Locale[] = [];
+  availableLocalesMap: Map<string, string> = new Map<string, string>();
   entityId: string;
   document?: ContentDocument;
   documentData: ContentData = { _id: '', schema: '' };
@@ -45,7 +46,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   schemaMapByName?: Map<string, Schema>;
   schemaPath: SchemaPathItem[] = [];
   schemas: Schema[] = [];
-  contentErrors: ContentError[] | null = null;
+  contentErrors: ContentError[] = [];
   documents: ContentDocument[] = [];
 
   // Form
@@ -101,8 +102,9 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
       .subscribe({
         next: ([space, document, documents, schemas]) => {
           this.selectedSpace = space;
-          this.selectedLocale = space.localeFallback;
-          this.availableLocales = space.locales;
+          //this.selectedLocale = space.localeFallback;
+          this.availableLocales = [DEFAULT_LOCALE, ...space.locales];
+          this.availableLocalesMap = new Map<string, string>(this.availableLocales.map(it => [it.id, it.name]));
           this.documents = documents;
           //console.log(ObjectUtils.clone(document))
 
@@ -166,12 +168,15 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
 
     //console.log('documentData', this.documentData)
     //console.log('document', this.document)
-
-    this.contentErrors = this.contentHelperService.validateContent(this.documentData, this.schemas, this.selectedLocale.id);
+    this.contentErrors = [];
+    this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas, DEFAULT_LOCALE.id));
+    for (const locale of this.selectedSpace?.locales || []) {
+      this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas, locale.id));
+    }
 
     //console.log(this.contentErrors)
 
-    if (!this.contentErrors) {
+    if (this.contentErrors.length === 0) {
       if (this.document?.editorEnabled !== this.editorEnabledCtr.value) {
         this.contentService
           .updateDocumentEditorEnabled(this.selectedSpace!.id, this.entityId, this.editorEnabledCtr.value || false)

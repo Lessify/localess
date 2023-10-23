@@ -9,15 +9,21 @@
             matInput
             type="text"
             [formControlName]="field.name"
-            [required]="field.required"
             [attr.minlength]="field.minLength"
             [attr.maxlength]="field.maxLength"
             autocomplete="off" />
-          <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
+          <button
+            mat-icon-button
+            matSuffix
+            *ngIf="field.translatable && locale !== 'default'"
+            matTooltip="The field is translatable"
+            (click)="markItAvailable(field)">
+            <mat-icon>language</mat-icon>
+          </button>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-          <mat-hint align="end" *ngIf="field.maxLength"
-            >{{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint
-          >
+          <mat-hint align="end" *ngIf="field.maxLength">
+            {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}
+          </mat-hint>
           <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
         </mat-form-field>
       </ng-container>
@@ -29,15 +35,14 @@
             matInput
             rows="6"
             [formControlName]="field.name"
-            [required]="field.required"
             [attr.minLength]="field.minLength"
             [attr.maxlength]="field.maxLength"
             autocomplete="off"></textarea>
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-          <mat-hint align="end" *ngIf="field.maxLength"
-            >{{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint
-          >
+          <mat-hint align="end" *ngIf="field.maxLength">
+            {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}
+          </mat-hint>
           <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
         </mat-form-field>
       </ng-container>
@@ -49,15 +54,14 @@
             matInput
             rows="6"
             [formControlName]="field.name"
-            [required]="field.required"
             [attr.minLength]="field.minLength"
             [attr.maxlength]="field.maxLength"
             autocomplete="off"></textarea>
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-          <mat-hint align="end" *ngIf="field.maxLength"
-            >{{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint
-          >
+          <mat-hint align="end" *ngIf="field.maxLength">
+            {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}
+          </mat-hint>
           <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
         </mat-form-field>
       </ng-container>
@@ -69,7 +73,6 @@
             matInput
             type="number"
             [formControlName]="field.name"
-            [required]="field.required"
             [attr.min]="field.minValue"
             [attr.max]="field.maxValue"
             autocomplete="off" />
@@ -86,7 +89,6 @@
             matInput
             type="color"
             [formControlName]="field.name"
-            [required]="field.required"
             [attr.min]="field.minValue"
             [attr.max]="field.maxValue"
             autocomplete="off" />
@@ -99,7 +101,7 @@
       <ng-container *ngSwitchCase="'DATE'">
         <mat-form-field>
           <mat-label>{{ field.displayName || field.name }}</mat-label>
-          <input matInput type="date" [formControlName]="field.name" [required]="field.required" autocomplete="off" />
+          <input matInput type="date" [formControlName]="field.name" autocomplete="off" />
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
           <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
@@ -109,7 +111,7 @@
       <ng-container *ngSwitchCase="'DATETIME'">
         <mat-form-field>
           <mat-label>{{ field.displayName || field.name }}</mat-label>
-          <input matInput type="datetime-local" [formControlName]="field.name" [required]="field.required" autocomplete="off" />
+          <input matInput type="datetime-local" [formControlName]="field.name" autocomplete="off" />
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
           <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
@@ -130,7 +132,7 @@
       <ng-container *ngSwitchCase="'OPTION'">
         <mat-form-field>
           <mat-label>{{ field.displayName || field.name }}</mat-label>
-          <mat-select [formControlName]="field.name" [required]="field.required">
+          <mat-select [formControlName]="field.name">
             <mat-option *ngIf="!field.required">-- None --</mat-option>
             <mat-option *ngFor="let option of field.options" [value]="option.value"> {{ option.name }} </mat-option>
           </mat-select>
@@ -143,7 +145,7 @@
       <ng-container *ngSwitchCase="'OPTIONS'">
         <mat-form-field>
           <mat-label>{{ field.displayName || field.name }}</mat-label>
-          <mat-select [formControlName]="field.name" [required]="field.required" multiple>
+          <mat-select [formControlName]="field.name" multiple>
             <mat-option *ngFor="let option of field.options" [value]="option.value"> {{ option.name }} </mat-option>
           </mat-select>
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
@@ -303,7 +305,7 @@
         <mat-hint *ngIf="field.description" style="font-size: 75%; padding: 0 1em">{{ field.description }}</mat-hint>
       </ng-container>
       <!--DEFAULT-->
-      <ng-container *ngSwitchDefault> {{ field.kind }} is not implemented </ng-container>
+      <ng-container *ngSwitchDefault> {{ field.kind }} is not implemented</ng-container>
     </ng-container>
   </form>
 </ng-container>

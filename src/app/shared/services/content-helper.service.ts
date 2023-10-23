@@ -4,12 +4,15 @@ import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators 
 import { AssetContent, ContentData, ContentError, ReferenceContent } from '@shared/models/content.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { v4 } from 'uuid';
+import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 
 @Injectable()
 export class ContentHelperService {
   constructor(private readonly fb: FormBuilder) {}
 
-  validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] | null {
+  validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] {
+    console.group('validateContent');
+    const isDefaultLocale = DEFAULT_LOCALE.id === locale;
     const errors: ContentError[] = [];
     const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
     const contentIteration = [data];
@@ -19,7 +22,7 @@ export class ContentHelperService {
       const schema = schemasByName.get(selectedContent.schema);
       if (schema) {
         const schemaFieldsMap = new Map<string, SchemaField>(schema.fields?.map(it => [it.name, it]));
-        const form = this.generateSchemaForm(schema, true);
+        const form = this.generateSchemaForm(schema, isDefaultLocale);
         const extractSchemaContent = this.extractSchemaContent(selectedContent, schema, locale, true);
         form.patchValue(extractSchemaContent);
 
@@ -56,6 +59,7 @@ export class ContentHelperService {
                   case SchemaFieldKind.LINK: {
                     errors.push({
                       contentId: selectedContent._id,
+                      locale: locale,
                       schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
@@ -66,6 +70,7 @@ export class ContentHelperService {
                   case SchemaFieldKind.REFERENCE: {
                     errors.push({
                       contentId: selectedContent._id,
+                      locale: locale,
                       schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
@@ -76,6 +81,7 @@ export class ContentHelperService {
                   case SchemaFieldKind.ASSET: {
                     errors.push({
                       contentId: selectedContent._id,
+                      locale: locale,
                       schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
@@ -90,6 +96,7 @@ export class ContentHelperService {
               } else {
                 errors.push({
                   contentId: selectedContent._id,
+                  locale: locale,
                   schema: schema.displayName || schema.name,
                   fieldName: controlName,
                   fieldDisplayName: component?.displayName,
@@ -103,6 +110,7 @@ export class ContentHelperService {
                   if (control.length === 0) {
                     errors.push({
                       contentId: selectedContent._id,
+                      locale: locale,
                       schema: schema.displayName || schema.name,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
@@ -131,23 +139,26 @@ export class ContentHelperService {
       }
       selectedContent = contentIteration.pop();
     }
-    return errors.length > 0 ? errors : null;
+    console.log('errors', errors);
+    console.groupEnd();
+    return errors;
   }
 
   extractSchemaContent(data: ContentData, schema: Schema, locale: string, full: boolean): Record<string, any> {
     //console.group('extractSchemaContent')
     //console.log('data',data)
+    const isDefaultLocale = locale === DEFAULT_LOCALE.id;
     const result: Record<string, any> = {};
     schema.fields
       ?.filter(it => full || ![SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS].includes(it.kind))
       ?.forEach(field => {
         //console.log('field', field)
         let value;
-        if (field.translatable) {
+        if (field.translatable && !isDefaultLocale) {
           // Extract Locale specific values
           value = data[`${field.name}_i18n_${locale}`];
         } else {
-          // Extract not translatable values in fallback locale
+          // Extract not translatable values or Default Locale
           value = data[field.name];
         }
         if (value !== undefined) {
@@ -211,20 +222,21 @@ export class ContentHelperService {
     return null as unknown as T;
   }
 
-  generateSchemaForm(schema: Schema, isFallbackLocale: boolean): FormRecord {
+  generateSchemaForm(schema: Schema, isDefaultLocale: boolean): FormRecord {
     //console.group('ContentHelperService:generateSchemaForm')
     //console.log('schema', schema)
     const form: FormRecord = this.fb.record({});
     for (const field of schema.fields || []) {
       const validators: ValidatorFn[] = [];
-      if (field.required) {
+      // Mark required only in default locale
+      if (isDefaultLocale && field.required) {
         validators.push(Validators.required);
       }
-      // translatable + fallBackLocale => disabled = false
-      // translatable + !fallBackLocale => disabled = false
-      // !translatable + fallBackLocale => disabled = false
-      // !translatable + !fallBackLocale => disabled = true
-      const disabled = !(field.translatable === true || isFallbackLocale);
+      // translatable + isDefaultLocale => disabled = false
+      // translatable + !isDefaultLocale => disabled = false
+      // !translatable + isDefaultLocale => disabled = false
+      // !translatable + !isDefaultLocale => disabled = true
+      const disabled = !(field.translatable === true || isDefaultLocale);
       switch (field.kind) {
         case SchemaFieldKind.TEXT:
         case SchemaFieldKind.TEXTAREA:

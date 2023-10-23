@@ -3,4 +3,4 @@ export interface Locale {
   name: string;
 }
 
-export const DEFAULT_LOCALE: Locale = { id: 'en', name: 'English' };
+export const DEFAULT_LOCALE: Locale = { id: 'default', name: 'Default' };
