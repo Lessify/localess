@@ -26,6 +26,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -36,6 +37,8 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy {
   // Form
   form: FormRecord = this.fb.record({});
+
+  isDefaultLocale = true;
   // Subscriptions
   settings$ = this.store.select(selectSettings);
   private destroy$ = new Subject();
@@ -115,8 +118,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   generateForm(): void {
     if (this.rootSchema) {
       // true - check all fields, false - all fields become optional
-      const isDefaultLocale = this.locale === DEFAULT_LOCALE.id;
-      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, isDefaultLocale);
+      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, this.isDefaultLocale);
 
       this.form.valueChanges.pipe(debounceTime(500), takeUntil(this.destroy$)).subscribe({
         next: formValue => {
@@ -130,7 +132,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
             console.log('name', field.name);
             const value = formValue[field.name];
             console.log('value', ObjectUtils.clone(value));
-            if (isDefaultLocale) {
+            if (this.isDefaultLocale) {
               // check everything
               if (value === null) {
                 delete this.data[field.name];
@@ -140,7 +142,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
             } else {
               // check only locale
               if (field.translatable) {
-                if (value === null) {
+                if (value === null || value === '') {
                   delete this.data[`${field.name}_i18n_${this.locale}`];
                 } else {
                   this.data[`${field.name}_i18n_${this.locale}`] = value;
@@ -168,6 +170,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
   onChanged(): void {
     //console.group('onChanged')
     this.isFormLoading = true;
+    this.isDefaultLocale = this.locale === DEFAULT_LOCALE.id;
     this.cd.detectChanges();
     this.generateForm();
     this.formPatch();
@@ -308,14 +311,14 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     return undefined;
   }
 
-  markItAvailable(field: SchemaField) {
-    console.log(field);
+  markFiledAvailable(event: MatSlideToggleChange, field: SchemaField) {
+    console.log(event, field);
     const formField = this.form.controls[field.name];
-    if (formField.enabled) {
+    if (event.checked) {
+      formField.enable();
+    } else {
       formField.setValue(undefined);
       formField.disable();
-    } else {
-      formField.enable();
     }
   }
 }

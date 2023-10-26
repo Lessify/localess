@@ -3,7 +3,7 @@
     <ng-container *ngFor="let field of rootSchema.fields" [ngSwitch]="field.kind">
       <!--TEXT-->
       <ng-container *ngSwitchCase="'TEXT'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
           <input
             matInput
@@ -11,15 +11,12 @@
             [formControlName]="field.name"
             [attr.minlength]="field.minLength"
             [attr.maxlength]="field.maxLength"
+            [placeholder]="!isDefaultLocale && data[field.name]"
             autocomplete="off" />
-          <button
-            mat-icon-button
-            matSuffix
-            *ngIf="field.translatable && locale !== 'default'"
-            matTooltip="The field is translatable"
-            (click)="markItAvailable(field)">
-            <mat-icon>language</mat-icon>
-          </button>
+          <!--<span matTextPrefix *ngIf="field.translatable && !isDefaultLocale">
+            <mat-slide-toggle [checked]="form.controls[field.name].enabled" (change)="markFiledAvailable($event, field)" />
+          </span>-->
+          <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
           <mat-hint align="end" *ngIf="field.maxLength">
             {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}
@@ -29,7 +26,7 @@
       </ng-container>
       <!--TEXTAREA-->
       <ng-container *ngSwitchCase="'TEXTAREA'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
           <textarea
             matInput
@@ -37,6 +34,7 @@
             [formControlName]="field.name"
             [attr.minLength]="field.minLength"
             [attr.maxlength]="field.maxLength"
+            [placeholder]="!isDefaultLocale && data[field.name]"
             autocomplete="off"></textarea>
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
@@ -48,7 +46,7 @@
       </ng-container>
       <!--MARKDOWN-->
       <ng-container *ngSwitchCase="'MARKDOWN'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }} (Markdown)</mat-label>
           <textarea
             matInput
@@ -56,6 +54,7 @@
             [formControlName]="field.name"
             [attr.minLength]="field.minLength"
             [attr.maxlength]="field.maxLength"
+            [placeholder]="!isDefaultLocale && data[field.name]"
             autocomplete="off"></textarea>
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
@@ -67,7 +66,7 @@
       </ng-container>
       <!--NUMBER-->
       <ng-container *ngSwitchCase="'NUMBER'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
           <input
             matInput
@@ -75,6 +74,7 @@
             [formControlName]="field.name"
             [attr.min]="field.minValue"
             [attr.max]="field.maxValue"
+            [placeholder]="!isDefaultLocale && data[field.name]"
             autocomplete="off" />
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
@@ -83,7 +83,7 @@
       </ng-container>
       <!--COLOR-->
       <ng-container *ngSwitchCase="'COLOR'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
           <input
             matInput
@@ -91,6 +91,7 @@
             [formControlName]="field.name"
             [attr.min]="field.minValue"
             [attr.max]="field.maxValue"
+            [placeholder]="!isDefaultLocale && data[field.name]"
             autocomplete="off" />
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
@@ -99,9 +100,14 @@
       </ng-container>
       <!--DATE-->
       <ng-container *ngSwitchCase="'DATE'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
-          <input matInput type="date" [formControlName]="field.name" autocomplete="off" />
+          <input
+            matInput
+            type="date"
+            [formControlName]="field.name"
+            [placeholder]="!isDefaultLocale && data[field.name]"
+            autocomplete="off" />
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
           <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
@@ -109,9 +115,14 @@
       </ng-container>
       <!--DATE TIME-->
       <ng-container *ngSwitchCase="'DATETIME'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
-          <input matInput type="datetime-local" [formControlName]="field.name" autocomplete="off" />
+          <input
+            matInput
+            type="datetime-local"
+            [formControlName]="field.name"
+            [placeholder]="!isDefaultLocale && data[field.name]"
+            autocomplete="off" />
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
           <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
           <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
@@ -130,7 +141,7 @@
       </ng-container>
       <!--OPTION-->
       <ng-container *ngSwitchCase="'OPTION'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
           <mat-select [formControlName]="field.name">
             <mat-option *ngIf="!field.required">-- None --</mat-option>
@@ -143,7 +154,7 @@
       </ng-container>
       <!--OPTIONS-->
       <ng-container *ngSwitchCase="'OPTIONS'">
-        <mat-form-field>
+        <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
           <mat-select [formControlName]="field.name" multiple>
             <mat-option *ngFor="let option of field.options" [value]="option.value"> {{ option.name }} </mat-option>
@@ -316,6 +327,7 @@
       <mat-expansion-panel-header>
         <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
       </mat-expansion-panel-header>
+      <pre>isDefaultLocale = {{ isDefaultLocale }}</pre>
       <pre>{{ form.value | json }}</pre>
       <pre>{{ form.errors | json }}</pre>
     </mat-expansion-panel>
