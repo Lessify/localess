@@ -1,8 +1,10 @@
 <mat-toolbar>
   <mat-toolbar-row>
     Assets
+    <a mat-icon-button target="_blank" href="https://github.com/Lessify/localess/wiki/Assets" matTooltip="Help Article">
+      <mat-icon>help</mat-icon>
+    </a>
     <span class="spacer"></span>
-
     <ng-container *ngIf="'ASSET_CREATE' | canUserPerform | async">
       <button mat-raised-button color="primary" (click)="fileInput.click()">
         <mat-icon>upload_file</mat-icon>
