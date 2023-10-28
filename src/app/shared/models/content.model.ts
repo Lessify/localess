@@ -117,3 +117,15 @@ export interface ReferenceContent {
   kind: 'REFERENCE';
   uri: string;
 }
+
+export function isAssetContent(arg: any): arg is AssetContent {
+  return arg.kind === 'ASSET';
+}
+
+export function isLinkContent(arg: any): arg is LinkContent {
+  return arg.kind === 'LINK';
+}
+
+export function isReferenceContent(arg: any): arg is ReferenceContent {
+  return arg.kind === 'REFERENCE';
+}

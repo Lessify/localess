@@ -131,7 +131,8 @@
       <!--BOOLEAN-->
       <ng-container *ngSwitchCase="'BOOLEAN'">
         <br />
-        &nbsp;&nbsp;<mat-slide-toggle [formControlName]="field.name">{{ field.displayName || field.name }}</mat-slide-toggle>
+        &nbsp;&nbsp;
+        <mat-slide-toggle [formControlName]="field.name">{{ field.displayName || field.name }}</mat-slide-toggle>
         &nbsp;
         <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
         <br />
@@ -143,7 +144,7 @@
       <ng-container *ngSwitchCase="'OPTION'">
         <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
-          <mat-select [formControlName]="field.name">
+          <mat-select [formControlName]="field.name" [placeholder]="defaultOptionPlaceholder(field)">
             <mat-option *ngIf="!field.required">-- None --</mat-option>
             <mat-option *ngFor="let option of field.options" [value]="option.value"> {{ option.name }} </mat-option>
           </mat-select>
@@ -156,7 +157,7 @@
       <ng-container *ngSwitchCase="'OPTIONS'">
         <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
           <mat-label>{{ field.displayName || field.name }}</mat-label>
-          <mat-select [formControlName]="field.name" multiple>
+          <mat-select [formControlName]="field.name" [placeholder]="defaultOptionsPlaceholder(field)" multiple>
             <mat-option *ngFor="let option of field.options" [value]="option.value"> {{ option.name }} </mat-option>
           </mat-select>
           <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
@@ -166,7 +167,12 @@
       </ng-container>
       <!--LINK-->
       <ng-container *ngSwitchCase="'LINK'">
-        <ll-link-select *ngIf="form.controls[field.name]" [form]="form.controls[field.name]" [component]="field" [documents]="documents" />
+        <ll-link-select
+          *ngIf="form.controls[field.name]"
+          [form]="form.controls[field.name]"
+          [component]="field"
+          [documents]="documents"
+          [default]="!isDefaultLocale && data[field.name]" />
       </ng-container>
       <!--REFERENCE-->
       <ng-container *ngSwitchCase="'REFERENCE'">

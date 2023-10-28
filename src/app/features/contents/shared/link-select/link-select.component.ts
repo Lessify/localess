@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
-import { ContentDocument } from '@shared/models/content.model';
+import { ContentDocument, LinkContent } from '@shared/models/content.model';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { debounceTime, Observable, of, startWith } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -21,6 +21,7 @@ export class LinkSelectComponent implements OnInit {
   @Input({ required: true }) form?: FormGroup;
   @Input({ required: true }) component?: SchemaField;
   @Input({ required: true }) documents: ContentDocument[] = [];
+  @Input({ required: false }) default?: LinkContent;
 
   // Search
   searchCtrl: FormControl = new FormControl();

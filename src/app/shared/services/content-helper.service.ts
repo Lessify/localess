@@ -1,7 +1,15 @@
 import { Injectable } from '@angular/core';
 import { Schema, SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
 import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
-import { AssetContent, ContentData, ContentError, ReferenceContent } from '@shared/models/content.model';
+import {
+  AssetContent,
+  ContentData,
+  ContentError,
+  isAssetContent,
+  isLinkContent,
+  isReferenceContent,
+  ReferenceContent,
+} from '@shared/models/content.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { v4 } from 'uuid';
 import { DEFAULT_LOCALE } from '@shared/models/locale.model';
@@ -182,38 +190,25 @@ export class ContentHelperService {
     } else if (source instanceof Object) {
       const target: any = Object.assign({}, source);
       Object.getOwnPropertyNames(target).forEach(fieldName => {
+        const value = target[fieldName];
         if (target[fieldName] instanceof Object) {
           target[fieldName] = this.clone(target[fieldName], generateNewID);
           if (Object.getOwnPropertyNames(target[fieldName]).some(it => it === 'kind')) {
-            switch (target[fieldName]['kind']) {
-              case SchemaFieldKind.LINK: {
-                if (target[fieldName]['uri'] === undefined || target[fieldName]['uri'] === '') {
-                  delete target[fieldName];
-                }
-                break;
-              }
-              case SchemaFieldKind.REFERENCE: {
-                if (target[fieldName]['uri'] === undefined || target[fieldName]['uri'] === '') {
-                  delete target[fieldName];
-                }
-                break;
-              }
-              case SchemaFieldKind.ASSET: {
-                if (target[fieldName]['uri'] === undefined || target[fieldName]['uri'] === '') {
-                  delete target[fieldName];
-                }
-                break;
-              }
+            if (isLinkContent(value) && (value.uri === undefined || value.uri === '')) {
+              delete target[fieldName];
+            } else if (isReferenceContent(value) && (value.uri === undefined || value.uri === '')) {
+              delete target[fieldName];
+            } else if (isAssetContent(value) && (value.uri === undefined || value.uri === '')) {
+              delete target[fieldName];
             }
           }
         }
-        const value = target[fieldName];
         if (generateNewID && fieldName === '_id') {
           target[fieldName] = v4();
         }
         if (value == null) {
           delete target[fieldName];
-        } else if (value instanceof Array && value.length === 0) {
+        } else if (Array.isArray(value) && value.length === 0) {
           delete target[fieldName];
         }
       });

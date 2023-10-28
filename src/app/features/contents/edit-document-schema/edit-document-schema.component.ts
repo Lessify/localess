@@ -11,7 +11,7 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { FormArray, FormBuilder, FormRecord } from '@angular/forms';
-import { Schema, SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
+import { Schema, SchemaField, SchemaFieldKind, SchemaFieldOption, SchemaFieldOptions } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
 import { takeUntil } from 'rxjs/operators';
@@ -142,7 +142,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
             } else {
               // check only locale
               if (field.translatable) {
-                if (value === null || value === '') {
+                if (value === undefined || value === null || value === '') {
+                  delete this.data[`${field.name}_i18n_${this.locale}`];
+                } else if (Array.isArray(value) && value.length === 0) {
                   delete this.data[`${field.name}_i18n_${this.locale}`];
                 } else {
                   this.data[`${field.name}_i18n_${this.locale}`] = value;
@@ -301,7 +303,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
     if (schema.previewField) {
       const field = schema.fields?.find(it => it.name === schema.previewField);
       if (field) {
-        if (field.translatable) {
+        if (field.translatable && !this.isDefaultLocale) {
           return content[schema.previewField + '_i18n_' + locale];
         } else {
           return content[schema.previewField];
@@ -309,6 +311,23 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
       }
     }
     return undefined;
+  }
+
+  defaultOptionPlaceholder(field: SchemaFieldOption): string {
+    if (!this.isDefaultLocale) {
+      const value = this.data[field.name] as string;
+      return field.options.find(it => it.value === value)?.name || '';
+    }
+    return '';
+  }
+
+  defaultOptionsPlaceholder(field: SchemaFieldOptions): string {
+    if (!this.isDefaultLocale) {
+      const values = this.data[field.name] as string[];
+      const options = new Map(field.options.map(it => [it.value, it.name]));
+      return values.map(it => options.get(it)).join(',');
+    }
+    return '';
   }
 
   markFiledAvailable(event: MatSlideToggleChange, field: SchemaField) {

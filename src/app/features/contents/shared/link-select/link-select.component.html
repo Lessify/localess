@@ -1,5 +1,5 @@
 <form *ngIf="form" [formGroup]="form">
-  <mat-form-field>
+  <mat-form-field [floatLabel]="default ? 'always' : 'auto'">
     <mat-label>{{ component.displayName || component.name }}</mat-label>
     <button mat-icon-button matIconPrefix [matMenuTriggerFor]="linkMenu">
       <mat-icon>{{ form.value.type === 'content' ? 'link' : 'public' }}</mat-icon>
@@ -16,10 +16,21 @@
     </mat-menu>
     <ng-container [ngSwitch]="form.value.type">
       <ng-container *ngSwitchCase="'url'">
-        <input matInput type="url" formControlName="uri" [required]="component.required" autocomplete="off" />
+        <input
+          matInput
+          type="url"
+          formControlName="uri"
+          [required]="component.required"
+          [placeholder]="(default && default.uri) || ''"
+          autocomplete="off" />
       </ng-container>
       <ng-container *ngSwitchCase="'content'">
-        <input matInput [required]="component.required" [matAutocomplete]="auto" [formControl]="searchCtrl" />
+        <input
+          matInput
+          [required]="component.required"
+          [matAutocomplete]="auto"
+          [formControl]="searchCtrl"
+          [placeholder]="(default && default.uri) || ''" />
         <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
           <mat-option *ngFor="let link of filteredContent | async" [value]="link">
             <span>{{ link.name }}</span> |
@@ -42,9 +53,8 @@
     <mat-error *ngIf="form.controls['uri'].errors as errors">{{ fe.errors(errors) }}</mat-error>
   </mat-form-field>
 
-  &nbsp;&nbsp;<mat-slide-toggle [checked]="form.value.target === '_blank'" (change)="targetChange($event)"
-    >Open in a new window</mat-slide-toggle
-  >
+  &nbsp;&nbsp;
+  <mat-slide-toggle [checked]="form.value.target === '_blank'" (change)="targetChange($event)"> Open in a new window</mat-slide-toggle>
   <br />
   <br />
 </form>
