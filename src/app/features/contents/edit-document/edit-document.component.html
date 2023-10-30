@@ -9,10 +9,10 @@
     <span class="spacer"></span>
 
     <mat-button-toggle-group [formControl]="editorEnabledCtr">
-      <mat-button-toggle [value]="true">
+      <mat-button-toggle [value]="true" matTooltip="Design Mode">
         <mat-icon>design_services</mat-icon>
       </mat-button-toggle>
-      <mat-button-toggle [value]="false">
+      <mat-button-toggle [value]="false" matTooltip="Form Mode">
         <mat-icon>edit_note</mat-icon>
       </mat-button-toggle>
     </mat-button-toggle-group>

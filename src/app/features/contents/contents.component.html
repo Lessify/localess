@@ -1,6 +1,9 @@
 <mat-toolbar>
   <mat-toolbar-row>
     Content
+    <a mat-icon-button target="_blank" href="https://github.com/Lessify/localess/wiki/Content" matTooltip="Help Article">
+      <mat-icon>help</mat-icon>
+    </a>
     <span class="spacer"></span>
 
     <ng-container *ngIf="'CONTENT_CREATE' | canUserPerform | async">

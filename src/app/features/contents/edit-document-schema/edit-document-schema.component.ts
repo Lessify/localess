@@ -14,7 +14,7 @@ import { FormArray, FormBuilder, FormRecord } from '@angular/forms';
 import { Schema, SchemaField, SchemaFieldKind, SchemaFieldOption, SchemaFieldOptions } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 import { debounceTime, Subject } from 'rxjs';
 import { v4 } from 'uuid';
 import { ContentHelperService } from '@shared/services/content-helper.service';
@@ -120,44 +120,51 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
       // true - check all fields, false - all fields become optional
       this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, this.isDefaultLocale);
 
-      this.form.valueChanges.pipe(debounceTime(500), takeUntil(this.destroy$)).subscribe({
-        next: formValue => {
-          console.group('form');
-          console.log(Object.getOwnPropertyNames(formValue));
-          console.log('formValue', ObjectUtils.clone(formValue));
-          console.log('Before data', ObjectUtils.clone(this.data));
-
-          //for (const key of Object.getOwnPropertyNames(formValue)) {
-          for (const field of this.rootSchema?.fields || []) {
-            console.log('name', field.name);
-            const value = formValue[field.name];
-            console.log('value', ObjectUtils.clone(value));
-            if (this.isDefaultLocale) {
-              // check everything
-              if (value === null) {
-                delete this.data[field.name];
-              } else {
-                this.data[field.name] = value;
-              }
-            } else {
-              // check only locale
-              if (field.translatable) {
-                if (value === undefined || value === null || value === '') {
-                  delete this.data[`${field.name}_i18n_${this.locale}`];
-                } else if (Array.isArray(value) && value.length === 0) {
-                  delete this.data[`${field.name}_i18n_${this.locale}`];
+      this.form.valueChanges
+        .pipe(
+          debounceTime(500),
+          filter(it => Object.keys(it).length !== 0),
+          takeUntil(this.destroy$)
+        )
+        .subscribe({
+          next: formValue => {
+            console.group('form');
+            console.log(Object.getOwnPropertyNames(formValue));
+            console.log('formValue', ObjectUtils.clone(formValue));
+            console.log('Before data', ObjectUtils.clone(this.data));
+            //console.log('rootSchema', ObjectUtils.clone(this.rootSchema));
+            for (const field of this.rootSchema?.fields || []) {
+              console.log('field', field.name, field.kind);
+              if (field.kind === SchemaFieldKind.SCHEMAS) continue;
+              if (field.kind === SchemaFieldKind.SCHEMA) continue;
+              const value = formValue[field.name];
+              console.log('value', value);
+              if (this.isDefaultLocale) {
+                // check everything
+                if (value === null) {
+                  delete this.data[field.name];
                 } else {
-                  this.data[`${field.name}_i18n_${this.locale}`] = value;
+                  this.data[field.name] = value;
+                }
+              } else {
+                // check only locale
+                if (field.translatable) {
+                  if (value === undefined || value === null || value === '') {
+                    delete this.data[`${field.name}_i18n_${this.locale}`];
+                  } else if (Array.isArray(value) && value.length === 0) {
+                    delete this.data[`${field.name}_i18n_${this.locale}`];
+                  } else {
+                    this.data[`${field.name}_i18n_${this.locale}`] = value;
+                  }
                 }
               }
             }
-          }
-          console.log('After data', ObjectUtils.clone(this.data));
-          console.groupEnd();
-        },
-        error: (err: unknown) => console.error(err),
-        complete: () => console.log('completed'),
-      });
+            console.log('After data', ObjectUtils.clone(this.data));
+            console.groupEnd();
+          },
+          error: (err: unknown) => console.error(err),
+          complete: () => console.log('completed'),
+        });
     }
   }
 
