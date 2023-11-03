@@ -19,64 +19,102 @@ const ROLE_CUSTOM = 'custom';
 const hasPermissionUserManagement = () => {
   return pipe(
     customClaims,
-    map(
-      claims =>
-        claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.USER_MANAGEMENT)) || false
-    )
+    map(claims => {
+      if (Array.isArray(claims)) {
+        return false;
+      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
+        return true;
+      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
+        return claims['permissions']?.includes(UserPermission.USER_MANAGEMENT);
+      } else {
+        return false;
+      }
+    })
   );
 };
 
 const hasPermissionSpaceManagement = () => {
   return pipe(
     customClaims,
-    map(
-      claims =>
-        claims.role === ROLE_ADMIN ||
-        (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.SPACE_MANAGEMENT)) ||
-        false
-    )
+    map(claims => {
+      if (Array.isArray(claims)) {
+        return false;
+      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
+        return true;
+      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
+        return claims['permissions']?.includes(UserPermission.SPACE_MANAGEMENT);
+      } else {
+        return false;
+      }
+    })
   );
 };
 
 const hasPermissionTranslationRead = () => {
   return pipe(
     customClaims,
-    map(
-      claims =>
-        claims.role === ROLE_ADMIN ||
-        (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.TRANSLATION_READ)) ||
-        false
-    )
+    map(claims => {
+      if (Array.isArray(claims)) {
+        return false;
+      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
+        return true;
+      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
+        return claims['permissions']?.includes(UserPermission.TRANSLATION_READ);
+      } else {
+        return false;
+      }
+    })
   );
 };
 
 const hasPermissionSchemaRead = () => {
   return pipe(
     customClaims,
-    map(
-      claims =>
-        claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.SCHEMA_READ)) || false
-    )
+    map(claims => {
+      if (Array.isArray(claims)) {
+        return false;
+      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
+        return true;
+      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
+        return claims['permissions']?.includes(UserPermission.SCHEMA_READ);
+      } else {
+        return false;
+      }
+    })
   );
 };
 
 const hasPermissionContentRead = () => {
   return pipe(
     customClaims,
-    map(
-      claims =>
-        claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.CONTENT_READ)) || false
-    )
+    map(claims => {
+      if (Array.isArray(claims)) {
+        return false;
+      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
+        return true;
+      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
+        return claims['permissions']?.includes(UserPermission.CONTENT_READ);
+      } else {
+        return false;
+      }
+    })
   );
 };
 
 const hasPermissionAssetRead = () => {
   return pipe(
     customClaims,
-    map(
-      claims =>
-        claims.role === ROLE_ADMIN || (claims.role === ROLE_CUSTOM && claims.permissions?.includes(UserPermission.ASSET_READ)) || false
-    )
+    map(claims => {
+      if (Array.isArray(claims)) {
+        return false;
+      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
+        return true;
+      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
+        return claims['permissions']?.includes(UserPermission.ASSET_READ);
+      } else {
+        return false;
+      }
+    })
   );
 };
 

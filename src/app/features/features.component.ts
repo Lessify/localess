@@ -28,7 +28,7 @@ import { SpaceService } from '@shared/services/space.service';
 import { Space } from '@shared/models/space.model';
 import { selectSpace } from '@core/state/space/space.selector';
 import { environment } from '../../environments/environment';
-import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
+import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission, UserRole } from '@shared/models/user.model';
 import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { selectSettings } from '@core/state/settings/settings.selectors';
 import { ReposService } from '@shared/generated/services/repos.service';
@@ -126,7 +126,7 @@ export class FeaturesComponent implements OnInit {
         );
         from(user.getIdTokenResult()).subscribe(token => {
           if (token.claims['role'] || token.claims['permissions']) {
-            const role = token.claims['role'].toString();
+            const role = token.claims['role'] as UserRole | undefined;
             const permissions = token.claims['permissions'] as string[] | undefined;
             this.store.dispatch(actionUserRoleChange({ role, permissions }));
             if (role === ROLE_ADMIN) {

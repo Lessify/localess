@@ -16,7 +16,7 @@ import { PriceContentData, ProductContentData } from './model';
 const expressApp = express();
 expressApp.use(cors({ origin: true }));
 
-expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+expressApp.post('/api/stripe/2023-10-16/spaces/:spaceId/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   logger.info('stripe params : ' + JSON.stringify(req.params));
   logger.info('stripe query : ' + JSON.stringify(req.query));
   const sig = req.headers['stripe-signature']!;
@@ -32,7 +32,7 @@ expressApp.post('/api/stripe/2023-08-16/spaces/:spaceId/webhook', express.raw({ 
     res.status(404).send(new HttpsError('not-found', 'configuration not found'));
     return;
   }
-  const stripe = new Stripe(apiSecretKey, { apiVersion: '2023-08-16' });
+  const stripe = new Stripe(apiSecretKey, { apiVersion: '2023-10-16' });
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent((req as any).rawBody, sig, webhookSigningSecret);
@@ -124,7 +124,7 @@ const productSync = onCall<PluginActionData>(async request => {
   if (apiSecretKey === undefined) {
     throw new HttpsError('failed-precondition', 'API Secret Key not configured.');
   }
-  const stripe = new Stripe(apiSecretKey, { apiVersion: '2023-08-16' });
+  const stripe = new Stripe(apiSecretKey, { apiVersion: '2023-10-16' });
   const batch = firestoreService.batch();
   let count = 0;
   let active: boolean | undefined = true;
@@ -182,7 +182,7 @@ const priceSync = onCall<PluginActionData>(async request => {
   if (apiSecretKey === undefined) {
     throw new HttpsError('failed-precondition', 'API Secret Key not configured.');
   }
-  const stripe = new Stripe(apiSecretKey, { apiVersion: '2023-08-16' });
+  const stripe = new Stripe(apiSecretKey, { apiVersion: '2023-10-16' });
   const batch = firestoreService.batch();
   let count = 0;
   let active: boolean | undefined = true;
