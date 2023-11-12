@@ -1,5 +1,9 @@
 @use '@angular/material' as mat;
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import './styles/styles-variables';
 
 @import 'bootstrap/scss/bootstrap-reboot';
@@ -52,4 +56,10 @@ body {
 
 .allow-cr {
   white-space: pre-line;
+}
+
+// Workaround
+.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field
+.mdc-notched-outline__notch {
+  border-right-style: hidden;
 }
