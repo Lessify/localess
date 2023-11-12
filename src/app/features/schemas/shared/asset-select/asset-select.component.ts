@@ -3,7 +3,7 @@ import { FormBuilder } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { MatDialog } from '@angular/material/dialog';
 import { NotificationService } from '@shared/services/notification.service';
-import { Asset } from '@shared/models/asset.model';
+import { Asset, AssetFile, AssetKind } from '@shared/models/asset.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { AssetService } from '@shared/services/asset.service';
@@ -15,14 +15,14 @@ import { AssetFileType } from '@shared/models/schema.model';
 @Component({
   selector: 'll-schema-asset-select',
   templateUrl: './asset-select.component.html',
-  styleUrls: ['./asset-select.component.scss'],
+  styleUrl: './asset-select.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetSelectComponent implements OnInit {
-  @Input() space?: Space;
+  @Input({ required: true }) space?: Space;
   @Input() assetId?: string;
   @Output() assetChange = new EventEmitter<string | undefined>();
-  asset?: Asset;
+  asset?: AssetFile;
 
   constructor(
     private readonly fb: FormBuilder,
@@ -42,8 +42,10 @@ export class AssetSelectComponent implements OnInit {
     if (this.assetId) {
       this.assetService.findById(this.space!.id, this.assetId).subscribe({
         next: asset => {
-          this.asset = asset;
-          this.cd.markForCheck();
+          if (asset.kind === AssetKind.FILE) {
+            this.asset = asset;
+            this.cd.markForCheck();
+          }
         },
       });
     }
@@ -66,10 +68,13 @@ export class AssetSelectComponent implements OnInit {
       .subscribe({
         next: selectedAssets => {
           if (selectedAssets && selectedAssets.length > 0) {
+            const [selectedAsset] = selectedAssets;
             this.asset = undefined;
             this.cd.detectChanges();
-            this.asset = selectedAssets[0];
-            this.assetChange.emit(this.asset.id);
+            if (selectedAsset.kind === AssetKind.FILE) {
+              this.asset = selectedAsset;
+              this.assetChange.emit(this.asset.id);
+            }
             this.cd.markForCheck();
           }
         },

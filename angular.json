@@ -18,7 +18,7 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:browser-esbuild",
           "options": {
             "outputPath": "dist/localess",
             "index": "src/index.html",
@@ -65,7 +65,6 @@
             "development": {
               "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
@@ -77,10 +76,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "localess:build:production"
+              "buildTarget": "localess:build:production"
             },
             "development": {
-              "browserTarget": "localess:build:development"
+              "buildTarget": "localess:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -88,7 +87,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "localess:build"
+            "buildTarget": "localess:build"
           }
         },
         "test": {

@@ -170,7 +170,7 @@
                   mat-raised-button
                   color="primary"
                   [disabled]="isLocaleUpdateLoading || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue"
-                  (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue)">
+                  (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue!)">
                   <ll-icon [animate]="isLocaleUpdateLoading" start="save" end="sync" />
                   Save
                 </button>
@@ -181,7 +181,7 @@
       </div>
     </div>
     <div class="col-3 overlay text-break">
-      <div *ngIf="selectedTranslation !== undefined" class="d-flex flex-column">
+      <div *ngIf="selectedTranslation" class="d-flex flex-column">
         <div class="p-2 align-items-start">
           <button
             *ngIf="'TRANSLATION_UPDATE' | canUserPerform | async"
@@ -258,9 +258,9 @@
           <p>
             <small><strong>Labels</strong></small>
           </p>
-          <ng-container *ngIf="selectedTranslation?.labels?.length > 0; else elseLabelsContainer">
+          <ng-container *ngIf="selectedTranslation.labels && selectedTranslation.labels.length > 0; else elseLabelsContainer">
             <mat-chip-listbox>
-              <mat-chip-option *ngFor="let item of selectedTranslation?.labels">{{ item }}</mat-chip-option>
+              <mat-chip-option *ngFor="let item of selectedTranslation.labels">{{ item }}</mat-chip-option>
             </mat-chip-listbox>
           </ng-container>
           <ng-template #elseLabelsContainer>

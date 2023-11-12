@@ -27,7 +27,7 @@ export class EditFieldComponent implements OnInit {
   @Input() reservedNames: string[] = [];
   @Input() schemas: Schema[] = [];
 
-  fieldKinds = Object.keys(SchemaFieldKind);
+  fieldKinds = Object.values(SchemaFieldKind);
 
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
   selectedFieldKind = this.schemaFieldKindDescriptions[SchemaFieldKind.TEXT];
