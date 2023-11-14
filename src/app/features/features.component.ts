@@ -31,8 +31,8 @@ import { environment } from '../../environments/environment';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission, UserRole } from '@shared/models/user.model';
 import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { selectSettings } from '@core/state/settings/settings.selectors';
-import { ReposService } from '@shared/generated/services/repos.service';
-import { Release } from '@shared/generated/models/release';
+import { ReposService } from '@shared/generated/github/services/repos.service';
+import { Release } from '@shared/generated/github/models/release';
 
 const ROLE_ADMIN = 'admin';
 

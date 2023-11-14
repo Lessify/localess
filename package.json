@@ -19,7 +19,7 @@
     "prettier:fix": "prettier --write ./src/app",
     "build:stats": "ng build --configuration production --stats-json",
     "stats": "webpack-bundle-analyzer dist/localess/stats.json",
-    "generate:github": "ng-openapi-gen -i api-docs/api.github.com.2022-11-28.yaml -o src/app/shared/generated"
+    "generate:github": "ng-openapi-gen --includeTags repos -i api-docs/api.github.com.2022-11-28.yaml -o src/app/shared/generated/github"
   },
   "license": "MIT",
   "private": true,
