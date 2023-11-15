@@ -1,4 +1,4 @@
-<mat-toolbar class="border-bottom bg-transparent">
+<mat-toolbar class="border-b !bg-transparent">
   <mat-toolbar-row>
     User Interface
     <span class="spacer"></span>
@@ -10,7 +10,7 @@
 </mat-toolbar>
 
 <mat-progress-bar *ngIf="isLoading" mode="query" />
-<div *ngIf="space" class="container-fluid my-3">
+<div *ngIf="space" class="my-3">
   <form [formGroup]="form">
     <mat-form-field>
       <mat-label>Color</mat-label>

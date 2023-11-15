@@ -5,7 +5,7 @@
     </button>
     <span>{{ document?.name }}</span>
     &nbsp;
-    <span class="text-muted">#{{ document?.slug }}</span>
+    <span class="text-gray-500">#{{ document?.slug }}</span>
     <span class="spacer"></span>
 
     <mat-button-toggle-group [formControl]="editorEnabledCtr">
@@ -95,7 +95,7 @@
 </mat-toolbar>
 
 <mat-progress-bar *ngIf="isLoading" mode="query" />
-<div *ngIf="!isLoading" class="container-fluid">
+<div *ngIf="!isLoading" class="container-full-screen container-fluid">
   <mat-drawer-container autosize="true">
     <mat-drawer mode="side" [opened]="editorEnabledCtr.value === true">
       <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment; else noEnv">
@@ -122,20 +122,14 @@
         </mat-card-content>
       </mat-card>
       <ng-template #noEnv>
-        <div class="container text-center h-100">
-          <div class="row h-100">
-            <div class="col align-self-center">
-              No Configured Environments.<br />
-              You can configure them in Settings.
-            </div>
-          </div>
+        <div class="text-center">
+          No Configured Environments.<br />
+          You can configure them in Settings.
         </div>
       </ng-template>
     </mat-drawer>
     <mat-drawer-content>
-      <div *ngIf="rootSchema" class="container">
-        <br />
-
+      <div *ngIf="rootSchema" class="container-full-screen">
         <ll-breadcrumb>
           <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchemaBackwards(schemaPathItem)">
             <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch"> {{ sch.displayName || sch.name }} </ng-container>

@@ -27,7 +27,7 @@
   </mat-toolbar-row>
 </mat-toolbar>
 <mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
-<div class="container-fluid mt-3">
+<div class="container-full-screen">
   <div>
     <form [formGroup]="filter">
       <mat-form-field *ngIf="lockedByList && lockedByList.size > 0">
@@ -64,7 +64,7 @@
         <ng-container *ngIf="element.locked">
           <mat-icon [matTooltip]="element.lockedBy ? 'Locked By ' + element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
         </ng-container>
-        {{ element.displayName }} &nbsp;<span class="text-muted">#{{ element.name }}</span>
+        {{ element.displayName }} &nbsp;<span class="text-gray-500">#{{ element.name }}</span>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="type">

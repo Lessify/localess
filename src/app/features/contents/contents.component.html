@@ -46,7 +46,7 @@
   </mat-toolbar-row>
 </mat-toolbar>
 <mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
-<div class="container-fluid mt-3">
+<div class="container-full-screen">
   <ll-breadcrumb>
     <ll-breadcrumb-item *ngFor="let pathItem of contentPath" (click)="navigateToSlug(pathItem)">
       <ng-container *ngIf="pathItem.fullSlug === ''">

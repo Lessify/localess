@@ -5,7 +5,7 @@
     </button>
     <span>{{ entity?.displayName }}</span>
     &nbsp;
-    <span class="text-muted">#{{ entity?.name }}</span>
+    <span class="text-gray-500">#{{ entity?.name }}</span>
     <span class="spacer"></span>
 
     <button
@@ -22,10 +22,10 @@
 </mat-toolbar>
 
 <mat-progress-bar *ngIf="isLoading" mode="query" />
-<div *ngIf="!isLoading" class="container-fluid mt-3">
-  <form [formGroup]="form" class="step-container">
-    <div class="row">
-      <div class="col-4">
+<div *ngIf="!isLoading" class="px-2 mx-auto mt-3">
+  <form [formGroup]="form">
+    <div class="flex flex-row gap-4">
+      <div class="basis-1/3">
         <mat-form-field>
           <mat-label>Name</mat-label>
           <input
@@ -81,14 +81,12 @@
             <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
             <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
             <span matListItemTitle>
-              {{ field.value.displayName }} <span class="text-muted">#{{ field.value.name }}</span>
+              {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
             </span>
             <span matListItemLine>
-              <span class="badge text-bg-secondary">{{ field.value.kind }}</span>
-              <ng-container *ngIf="field.value.translatable">
-                &nbsp;<span class="badge text-bg-secondary">Translatable</span>
-              </ng-container>
-              <ng-container *ngIf="field.value.required"> &nbsp;<span class="badge text-bg-secondary">Required</span> </ng-container>
+              <span class="badge">{{ field.value.kind }}</span>
+              <ng-container *ngIf="field.value.translatable"> &nbsp;<span class="badge">Translatable</span> </ng-container>
+              <ng-container *ngIf="field.value.required"> &nbsp;<span class="badge">Required</span> </ng-container>
             </span>
             <mat-action-list matListItemMeta>
               <button mat-icon-button (click)="removeComponent($event, index)">
@@ -100,7 +98,7 @@
         </mat-nav-list>
       </div>
       <div
-        class="col-8"
+        class="basis-2/3"
         formArrayName="fields"
         *ngIf="fields.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx) as selectedComponent">
         <ll-schema-field-edit [form]="selectedComponent" [reservedNames]="fieldReservedNames" [schemas]="schemas" />

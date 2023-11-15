@@ -238,7 +238,7 @@
             <mat-nav-list class="ll-mat-nav-list-gap">
               <mat-list-item *ngIf="data[field.name] as item" (click)="navigationTo(item._id, field.name, item.schema)">
                 <span matListItemTitle *ngIf="schemaMapByName.get(item.schema) as sch">
-                  {{ sch.displayName }} <span class="text-muted">#{{ sch.name }}</span>
+                  {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
                 </span>
                 <span matListItemLine *ngIf="schemaMapByName.get(item.schema) as sch">
                   <ng-container *ngIf="sch.previewField"> {{ previewText(item, sch, locale) }} </ng-container>
@@ -300,7 +300,7 @@
                 (click)="navigationTo(item._id, field.name, item.schema)">
                 <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
                 <span matListItemTitle *ngIf="schemaMapByName.get(item.schema) as sch">
-                  {{ sch.displayName }} <span class="text-muted">#{{ sch.name }}</span>
+                  {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
                 </span>
                 <span matListItemLine *ngIf="schemaMapByName.get(item.schema) as sch">
                   <ng-container *ngIf="sch.previewField"> {{ previewText(item, sch, locale) }} </ng-container>

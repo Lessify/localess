@@ -1,4 +1,4 @@
-<mat-toolbar class="border-bottom bg-transparent">
+<mat-toolbar class="border-b !bg-transparent">
   <mat-toolbar-row>
     Tokens
     <span class="spacer"></span>
@@ -10,7 +10,7 @@
 </mat-toolbar>
 
 <mat-progress-bar *ngIf="isLoading" mode="query" />
-<div class="container-fluid my-3">
+<div class="my-3">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>

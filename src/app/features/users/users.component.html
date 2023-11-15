@@ -14,7 +14,7 @@
   </mat-toolbar-row>
 </mat-toolbar>
 <mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
-<div class="container-fluid mt-3">
+<div class="container-full-screen">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="avatar">
       <mat-header-cell *matHeaderCellDef> Avatar </mat-header-cell>

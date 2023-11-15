@@ -35,7 +35,7 @@
   </mat-toolbar-row>
 </mat-toolbar>
 <mat-progress-bar *ngIf="isLoading" mode="query" />
-<div class="container-fluid mt-3">
+<div class="container-full-screen">
   <ll-breadcrumb>
     <ll-breadcrumb-item *ngFor="let pathItem of assetPath" (click)="navigateToSlug(pathItem)">
       <ng-container *ngIf="pathItem.fullSlug === ''">
@@ -178,16 +178,12 @@
       [class.row-folder]="row.kind === 'FOLDER'"></mat-row>
     <ng-container *ngIf="!isLoading">
       <ng-container *matNoDataRow>
-        <div class="container-fluid text-center">
-          <div class="row">
-            <div class="col align-self-center align-middle">
-              <br />
-              <br />
-              Drag and Drop a file here or use the "Upload Asset" button
-              <br />
-              <br />
-            </div>
-          </div>
+        <div class="text-center align-middle">
+          <br />
+          <br />
+          Drag and Drop a file here or use the "Upload Asset" button
+          <br />
+          <br />
         </div>
       </ng-container>
     </ng-container>

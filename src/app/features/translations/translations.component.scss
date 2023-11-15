@@ -70,8 +70,9 @@ mat-list-item.odd {
     padding-right: 5px;
 
     .mat-icon {
-      margin-left: 5px;
-      margin-right: 5px;
+      //margin-left: 5px;
+      //margin-right: 5px;
+      margin: auto 5px;
 
       &.translated {
         color: mat.get-color-from-palette(mat.$green-palette, 400);

@@ -1,7 +1,7 @@
 <h1 mat-dialog-title>Translations Import</h1>
 <mat-dialog-content>
   <br />
-  <form [formGroup]="form" class="step-container">
+  <form [formGroup]="form">
     <mat-form-field>
       <mat-label>Type</mat-label>
       <mat-select formControlName="kind" required (selectionChange)="onKindSelectionChange($event)">

@@ -6,13 +6,8 @@
 
 @import './styles/styles-variables';
 
-@import 'bootstrap/scss/bootstrap-reboot';
-@import 'bootstrap/scss/bootstrap-grid';
-@import 'bootstrap/scss/bootstrap-utilities';
-@import 'bootstrap/scss/images';
-@import 'bootstrap/scss/badge';
-
 @import 'styles/background';
+@import 'styles/layout';
 @import 'styles/mat-card';
 @import 'styles/mat-grid-list';
 @import 'styles/mat-list';
@@ -58,8 +53,7 @@ body {
   white-space: pre-line;
 }
 
-// Workaround
-.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field
-.mdc-notched-outline__notch {
+// MDC + TailWindCSS Workaround
+.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field.mat-mdc-form-field .mdc-notched-outline__notch {
   border-right-style: hidden;
 }

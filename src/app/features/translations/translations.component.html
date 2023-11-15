@@ -43,9 +43,9 @@
   </mat-toolbar-row>
 </mat-toolbar>
 <mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
-<div class="container-fluid">
-  <div class="d-flex flex-row justify-content-between">
-    <div class="py-2 pe-2" style="width: 25%">
+<div class="container-full-screen">
+  <div class="flex flex-row gap-2">
+    <div class="basis-1/4">
       <mat-form-field>
         <mat-label>Search Locale</mat-label>
         <mat-select [(value)]="selectedSearchLocale">
@@ -53,14 +53,14 @@
         </mat-select>
       </mat-form-field>
     </div>
-    <div class="p-2" style="width: 25%">
+    <div class="basis-1/4">
       <mat-form-field>
         <mat-label>Search</mat-label>
         <input matInput [formControl]="searchCtrl" autocomplete="off" />
         <mat-icon matIconSuffix>search</mat-icon>
       </mat-form-field>
     </div>
-    <div class="p-2" style="width: 50%">
+    <div class="basis-1/2">
       <mat-form-field>
         <mat-chip-grid #chipList>
           <mat-chip-row *ngFor="let selectedLabel of selectedLabels" selectable removable (removed)="removeLabel(selectedLabel)">
@@ -81,11 +81,11 @@
       </mat-form-field>
     </div>
   </div>
-  <div *ngIf="translations.length > 0" class="display-columns-section">
-    <cdk-virtual-scroll-viewport [itemSize]="55" class="col-3 overlay container">
-      <mat-nav-list dense class="container1">
+
+  <div *ngIf="translations.length > 0" class="flex">
+    <cdk-virtual-scroll-viewport [itemSize]="55" class="basis-1/4 overlay container">
+      <mat-nav-list>
         <mat-list-item
-          class="container2"
           *cdkVirtualFor="let translation of translations | translationFilter: searchValue : selectedSearchLocale : selectedLabels"
           (click)="selectTranslation(translation)"
           [class.selected]="translation.id === selectedTranslation?.id">
@@ -109,9 +109,9 @@
         </mat-list-item>
       </mat-nav-list>
     </cdk-virtual-scroll-viewport>
-    <div class="col-6 overlay">
-      <div *ngIf="selectedTranslation" class="d-flex flex-column" style="height: 100%">
-        <div class="p-2 align-items-start">
+    <div class="basis-1/2 overlay">
+      <div *ngIf="selectedTranslation" class="flex flex-col h-full">
+        <div class="p-2">
           <mat-form-field>
             <mat-label>Source Locale</mat-label>
             <mat-select [(value)]="selectedSourceLocale">
@@ -120,7 +120,7 @@
           </mat-form-field>
         </div>
         <mat-divider></mat-divider>
-        <div class="p-2 align-items-start mb-auto">
+        <div class="p-2 mb-auto">
           <span [ngSwitch]="selectedTranslation.type">
             <ll-translation-string-view *ngSwitchCase="'STRING'" [value]="selectedTranslation.locales[selectedSourceLocale]" />
             <ll-translation-plural-view *ngSwitchCase="'PLURAL'" [value]="selectedTranslation.locales[selectedSourceLocale]" />
@@ -130,7 +130,7 @@
 
         <ng-container id="translation-locale-edit" *ngIf="'TRANSLATION_UPDATE' | canUserPerform | async">
           <mat-divider></mat-divider>
-          <div class="p-2 align-items-end">
+          <div class="p-2">
             <mat-form-field class="with-button">
               <mat-label>Target Locale</mat-label>
               <mat-select [(value)]="selectedTargetLocale" (selectionChange)="translateValue = undefined">
@@ -146,7 +146,7 @@
             </button>
           </div>
           <mat-divider></mat-divider>
-          <div class="p-2 align-items-end">
+          <div class="p-2">
             <span [ngSwitch]="selectedTranslation.type">
               <ll-translation-string-edit
                 *ngSwitchCase="'STRING'"
@@ -163,24 +163,20 @@
             </span>
           </div>
           <mat-divider></mat-divider>
-          <div class="p-2 align-items-end">
-            <div class="justify-content-between">
-              <div class="my-3 d-flex justify-content-end">
-                <button
-                  mat-raised-button
-                  color="primary"
-                  [disabled]="isLocaleUpdateLoading || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue"
-                  (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue!)">
-                  <ll-icon [animate]="isLocaleUpdateLoading" start="save" end="sync" />
-                  Save
-                </button>
-              </div>
-            </div>
+          <div class="p-2 flex flex-row-reverse">
+            <button
+              mat-raised-button
+              color="primary"
+              [disabled]="isLocaleUpdateLoading || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue"
+              (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue!)">
+              <ll-icon [animate]="isLocaleUpdateLoading" start="save" end="sync" />
+              Save
+            </button>
           </div>
         </ng-container>
       </div>
     </div>
-    <div class="col-3 overlay text-break">
+    <div class="basis-1/4 overlay break-all">
       <div *ngIf="selectedTranslation" class="d-flex flex-column">
         <div class="p-2 align-items-start">
           <button

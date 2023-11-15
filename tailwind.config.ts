@@ -4,7 +4,8 @@ import { PluginAPI } from 'tailwindcss/types/config';
 export default {
   content: ['./src/**/*.{html,scss,ts}'],
   theme: {
-    extend: {},
+    extend: {
+    },
   },
   plugins: [
     function ({addUtilities, theme}: PluginAPI) {
