@@ -1,0 +1,37 @@
+<div class="container-full-screen">
+  <div *ngIf="overview$ | async as overview">
+    <h3 class="text-base font-semibold leading-6 text-gray-900">Overview</h3>
+    <dl class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+        <dt class="truncate text-sm font-medium text-gray-500">Total Locales</dt>
+        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+          {{ overview[0]?.locales?.length }}
+        </dd>
+      </div>
+      <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+        <dt class="truncate text-sm font-medium text-gray-500">Total Translations</dt>
+        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+          {{ overview[1] }}
+        </dd>
+      </div>
+      <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+        <dt class="truncate text-sm font-medium text-gray-500">Total Assets</dt>
+        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+          {{ overview[2] }}
+        </dd>
+      </div>
+      <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+        <dt class="truncate text-sm font-medium text-gray-500">Total Contents</dt>
+        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+          {{ overview[3] }}
+        </dd>
+      </div>
+      <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+        <dt class="truncate text-sm font-medium text-gray-500">Total Schemas</dt>
+        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+          {{ overview[4] }}
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {
   addDoc,
   collection,
+  collectionCount,
   collectionData,
   deleteDoc,
   doc,
@@ -90,6 +91,10 @@ export class AssetService {
         }
       })
     );
+  }
+
+  countAll(spaceId: string): Observable<number> {
+    return collectionCount(collection(this.firestore, `spaces/${spaceId}/assets`)).pipe(traceUntilFirst('Firestore:Assets:countAll'));
   }
 
   findAllByName(spaceId: string, name: string, max = 20): Observable<Asset[]> {

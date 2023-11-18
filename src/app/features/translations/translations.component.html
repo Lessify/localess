@@ -83,7 +83,7 @@
   </div>
 
   <div *ngIf="translations.length > 0" class="flex">
-    <cdk-virtual-scroll-viewport [itemSize]="55" class="basis-1/4 overlay container">
+    <cdk-virtual-scroll-viewport [itemSize]="55" class="basis-1/4 overlay container break-all">
       <mat-nav-list>
         <mat-list-item
           *cdkVirtualFor="let translation of translations | translationFilter: searchValue : selectedSearchLocale : selectedLabels"

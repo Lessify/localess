@@ -121,8 +121,18 @@ const hasPermissionAssetRead = () => {
 const routes: Routes = [
   {
     path: '',
+    redirectTo: 'dashboard',
+    pathMatch: 'full',
+  },
+  {
+    path: '',
     component: FeaturesComponent,
     children: [
+      {
+        path: 'dashboard',
+        title: 'Dashboard',
+        loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule),
+      },
       {
         path: 'me',
         title: 'Me',

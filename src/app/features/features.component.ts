@@ -41,7 +41,7 @@ interface SideMenuItem {
   link: string;
   label: string;
   permission?: UserPermission | UserPermission[];
-  color?: 'primairy';
+  color?: 'primary';
 }
 
 @Component({
@@ -67,6 +67,7 @@ export class FeaturesComponent implements OnInit {
   release?: Release;
 
   userSideMenu: SideMenuItem[] = [
+    { link: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { link: 'translations', label: 'Translations', icon: 'translate', permission: UserPermission.TRANSLATION_READ },
     { link: 'contents', label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ },
     { link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ },
@@ -196,6 +197,7 @@ export class FeaturesComponent implements OnInit {
 
   generateUserSideMenu(spaceId: string): void {
     this.userSideMenu = [
+      { link: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
       { link: 'translations', label: 'Translations', icon: 'translate', permission: UserPermission.TRANSLATION_READ },
       { link: 'contents', label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ },
       { link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ },

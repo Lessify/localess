@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {
   addDoc,
   collection,
+  collectionCount,
   collectionData,
   deleteDoc,
   deleteField,
@@ -38,6 +39,10 @@ export class SchemaService {
       traceUntilFirst('Firestore:Schemas:findAll'),
       map(it => it as Schema[])
     );
+  }
+
+  countAll(spaceId: string): Observable<number> {
+    return collectionCount(collection(this.firestore, `spaces/${spaceId}/schemas`)).pipe(traceUntilFirst('Firestore:Schemas:countAll'));
   }
 
   findById(spaceId: string, id: string): Observable<Schema> {

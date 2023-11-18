@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {
   addDoc,
   collection,
+  collectionCount,
   collectionData,
   deleteDoc,
   doc,
@@ -30,6 +31,12 @@ export class TranslationService {
     return collectionData(collection(this.firestore, `spaces/${spaceId}/translations`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Translations:findAll'),
       map(it => it as Translation[])
+    );
+  }
+
+  countAll(spaceId: string): Observable<number> {
+    return collectionCount(collection(this.firestore, `spaces/${spaceId}/translations`)).pipe(
+      traceUntilFirst('Firestore:Translations:countAll')
     );
   }
 

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {
   addDoc,
   collection,
+  collectionCount,
   collectionData,
   deleteDoc,
   doc,
@@ -55,6 +56,10 @@ export class ContentService {
       traceUntilFirst('Firestore:Contents:findAll'),
       map(it => it as Content[])
     );
+  }
+
+  countAll(spaceId: string): Observable<number> {
+    return collectionCount(collection(this.firestore, `spaces/${spaceId}/contents`)).pipe(traceUntilFirst('Firestore:Contents:countAll'));
   }
 
   findAllDocuments(spaceId: string): Observable<ContentDocument[]> {
