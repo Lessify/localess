@@ -15,6 +15,8 @@ import { SchemaService } from '@shared/services/schema.service';
 import { AssetService } from '@shared/services/asset.service';
 import { ContentService } from '@shared/services/content.service';
 import { SpaceService } from '@shared/services/space.service';
+import { AssetKind } from '@shared/models/asset.model';
+import { ContentKind } from '@shared/models/content.model';
 
 @Component({
   selector: 'll-dashboard',
@@ -32,8 +34,8 @@ export class DashboardComponent {
       combineLatest([
         this.spaceService.findById(it.id),
         this.translationService.countAll(it.id),
-        this.assetService.countAll(it.id),
-        this.contentService.countAll(it.id),
+        this.assetService.countAll(it.id, AssetKind.FILE),
+        this.contentService.countAll(it.id, ContentKind.DOCUMENT),
         this.schemaService.countAll(it.id),
       ])
     ),

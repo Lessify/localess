@@ -58,8 +58,14 @@ export class ContentService {
     );
   }
 
-  countAll(spaceId: string): Observable<number> {
-    return collectionCount(collection(this.firestore, `spaces/${spaceId}/contents`)).pipe(traceUntilFirst('Firestore:Contents:countAll'));
+  countAll(spaceId: string, kind?: ContentKind): Observable<number> {
+    const queryConstrains: QueryConstraint[] = [];
+    if (kind) {
+      queryConstrains.push(where('kind', '==', kind));
+    }
+    return collectionCount(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains)).pipe(
+      traceUntilFirst('Firestore:Contents:countAll')
+    );
   }
 
   findAllDocuments(spaceId: string): Observable<ContentDocument[]> {

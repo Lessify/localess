@@ -93,8 +93,14 @@ export class AssetService {
     );
   }
 
-  countAll(spaceId: string): Observable<number> {
-    return collectionCount(collection(this.firestore, `spaces/${spaceId}/assets`)).pipe(traceUntilFirst('Firestore:Assets:countAll'));
+  countAll(spaceId: string, kind?: AssetKind): Observable<number> {
+    const queryConstrains: QueryConstraint[] = [];
+    if (kind) {
+      queryConstrains.push(where('kind', '==', kind));
+    }
+    return collectionCount(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains)).pipe(
+      traceUntilFirst('Firestore:Assets:countAll')
+    );
   }
 
   findAllByName(spaceId: string, name: string, max = 20): Observable<Asset[]> {
