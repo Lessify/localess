@@ -131,7 +131,10 @@
     <mat-drawer-content>
       <div *ngIf="rootSchema" class="container-full-screen">
         <ll-breadcrumb>
-          <ll-breadcrumb-item *ngFor="let schemaPathItem of schemaPath" (click)="navigateToSchemaBackwards(schemaPathItem)">
+          <ll-breadcrumb-item
+            *ngFor="let schemaPathItem of schemaPath; first as isFirst"
+            (click)="navigateToSchemaBackwards(schemaPathItem)"
+            [home]="isFirst">
             <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch"> {{ sch.displayName || sch.name }} </ng-container>
           </ll-breadcrumb-item>
         </ll-breadcrumb>

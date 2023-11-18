@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { booleanAttribute, ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 @Component({
   selector: 'll-breadcrumb-item',
@@ -6,4 +6,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   styleUrls: ['./breadcrumb-item.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BreadcrumbItemComponent {}
+export class BreadcrumbItemComponent {
+  @Input({ transform: booleanAttribute }) home: boolean = false;
+}

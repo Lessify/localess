@@ -48,10 +48,7 @@
 <mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
 <div class="container-full-screen">
   <ll-breadcrumb>
-    <ll-breadcrumb-item *ngFor="let pathItem of contentPath" (click)="navigateToSlug(pathItem)">
-      <ng-container *ngIf="pathItem.fullSlug === ''">
-        <mat-icon>home</mat-icon>
-      </ng-container>
+    <ll-breadcrumb-item *ngFor="let pathItem of contentPath; first as isFirst" (click)="navigateToSlug(pathItem)" [home]="isFirst">
       {{ pathItem.name }}
     </ll-breadcrumb-item>
   </ll-breadcrumb>

@@ -1,22 +1,5 @@
 @import '../../../../styles/styles-variables';
 
-section {
-  width: 100%;
-  //padding-top: 1rem;
-  padding-bottom: 1rem;
-  padding-left: 1rem;
-}
-
-:host ::ng-deep ll-breadcrumb-item:not(:last-child):after {
-  content: '>';
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
 :host ::ng-deep ll-breadcrumb-item:last-child {
   pointer-events: none;
-
-  span {
-    color: $grey-color;
-  }
 }
