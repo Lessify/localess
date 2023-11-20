@@ -41,7 +41,7 @@ export function findAssets(spaceId: string, kind?: AssetKind, fromDate?: number)
     assetsRef = assetsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
   }
   if (kind) {
-    assetsRef = assetsRef.where('kind', '>=', kind);
+    assetsRef = assetsRef.where('kind', '==', kind);
   }
   return assetsRef;
 }
