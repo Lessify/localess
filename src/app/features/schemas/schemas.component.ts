@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
@@ -12,7 +12,7 @@ import { Space } from '@shared/models/space.model';
 import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
-import { combineLatest, Subject } from 'rxjs';
+import { combineLatest } from 'rxjs';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { Schema, SchemaCreate, SchemaType } from '@shared/models/schema.model';
@@ -24,6 +24,7 @@ import { ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TaskService } from '@shared/services/task.service';
 import { FormBuilder } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-schemas',
@@ -31,7 +32,7 @@ import { FormBuilder } from '@angular/forms';
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SchemasComponent implements OnInit, OnDestroy {
+export class SchemasComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
@@ -51,8 +52,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     lockedBy: this.fb.control<string | undefined>(undefined),
   });
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   // Loading
   isLoading = true;
@@ -90,7 +90,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it => combineLatest([this.spaceService.findById(it.id), this.schemaService.findAll(it.id)])),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: ([space, schemas]) => {
@@ -170,11 +170,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
           this.notificationService.error(`Schema '${element.name}' can not be deleted.`);
         },
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 
   openImportDialog() {

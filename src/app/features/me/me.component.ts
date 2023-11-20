@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
@@ -16,6 +16,7 @@ import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.m
 import { MeEmailDialogComponent } from './me-email-dialog/me-email-dialog.component';
 import { MeEmailDialogModel } from './me-email-dialog/me-email-dialog.model';
 import { NotificationService } from '@shared/services/notification.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-me',
@@ -31,6 +32,7 @@ export class MeComponent implements OnInit {
   isGoogleProvider = false;
   isMicrosoftProvider = false;
   numberProviders = 0;
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -44,19 +46,24 @@ export class MeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.store.select(selectUser).subscribe(user => {
-      this.user = user;
-      this.isLoading = false;
-      this.cd.markForCheck();
-    });
-    user(this.auth).subscribe(authUser => {
-      this.authUser = authUser;
-      this.numberProviders = authUser?.providerData.length || 0;
-      this.isPasswordProvider = authUser?.providerData.some(it => it.providerId === 'password') || false;
-      this.isGoogleProvider = authUser?.providerData.some(it => it.providerId === 'google.com') || false;
-      this.isMicrosoftProvider = authUser?.providerData.some(it => it.providerId === 'microsoft.com') || false;
-      this.cd.markForCheck();
-    });
+    this.store
+      .select(selectUser)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(user => {
+        this.user = user;
+        this.isLoading = false;
+        this.cd.markForCheck();
+      });
+    user(this.auth)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(authUser => {
+        this.authUser = authUser;
+        this.numberProviders = authUser?.providerData.length || 0;
+        this.isPasswordProvider = authUser?.providerData.some(it => it.providerId === 'password') || false;
+        this.isGoogleProvider = authUser?.providerData.some(it => it.providerId === 'google.com') || false;
+        this.isMicrosoftProvider = authUser?.providerData.some(it => it.providerId === 'microsoft.com') || false;
+        this.cd.markForCheck();
+      });
   }
 
   openEditDialog(): void {

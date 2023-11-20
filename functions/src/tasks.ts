@@ -1,32 +1,52 @@
 import { logger } from 'firebase-functions/v2';
 import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
-import { Task, TaskExportMetadata, TaskKind, TaskStatus } from './models/task.model';
+import {
+  Asset,
+  AssetExport,
+  AssetFile,
+  AssetFolder,
+  AssetKind,
+  Content,
+  ContentDocument,
+  ContentExport,
+  ContentFolder,
+  ContentKind,
+  Schema,
+  SchemaExport,
+  Task,
+  TaskExportMetadata,
+  TaskKind,
+  TaskStatus,
+  Translation,
+  TranslationExport,
+  TranslationType,
+} from './models';
 import { BATCH_MAX, bucket, firestoreService } from './config';
-import { Asset, AssetExport, AssetFile, AssetFolder, AssetKind } from './models/asset.model';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { zip } from 'compressing';
 import { ErrorObject } from 'ajv';
-import { docAssetToExport, findAssetById, findAssets, findAssetsByStartFullSlug, validateAssetImport } from './services/asset.service';
-import { Content, ContentDocument, ContentExport, ContentFolder, ContentKind } from './models/content.model';
 import {
+  docAssetToExport,
   docContentToExport,
+  findAssetById,
+  findAssets,
+  findAssetsByStartFullSlug,
   findContentByFullSlug,
   findContentById,
   findContents,
   findContentsByStartFullSlug,
-  validateContentImport,
-} from './services/content.service';
-import { tmpdir } from 'os';
-import { Schema, SchemaExport } from './models/schema.model';
-import { findSchemaById, findSchemas, validateSchemaImport } from './services/schema.service';
-import { Translation, TranslationExport, TranslationType } from './models/translation.model';
-import {
+  findSchemaById,
+  findSchemas,
   findTranslationById,
   findTranslations,
+  validateAssetImport,
+  validateContentImport,
+  validateSchemaImport,
   validateTranslationFlatImport,
   validateTranslationImport,
-} from './services/translation.service';
+} from './services';
+import { tmpdir } from 'os';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
@@ -150,7 +170,8 @@ const onTaskCreate = onDocumentCreated(
     // Export Finished
     logger.info(`[Task:onCreate] update='${JSON.stringify(updateToFinished)}'`);
     await event.data.ref.update(updateToFinished);
-  });
+  }
+);
 
 /**
  * assetExport Job
@@ -223,13 +244,13 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
       .map(it => it!)
       .filter(it => it.kind === AssetKind.FILE)
       .map(asset =>
-        bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` }),
-      ),
+        bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` })
+      )
   );
 
   await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
 
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(assetsExportZipFile), err => {
+  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(assetsExportZipFile), err => {
     if (err) {
       logger.error(err);
     }
@@ -411,7 +432,7 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
 
   await zip.compressDir(tmpTaskFolder, contentsExportZipFile, { ignoreBase: true });
 
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(contentsExportZipFile), err => {
+  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(contentsExportZipFile), err => {
     if (err) {
       logger.error(err);
     }
@@ -556,7 +577,7 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
 
   await zip.compressDir(tmpTaskFolder, schemasExportZipFile, { ignoreBase: true });
 
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(schemasExportZipFile), err => {
+  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(schemasExportZipFile), err => {
     if (err) {
       logger.error(err);
     }
@@ -678,7 +699,7 @@ async function translationsExport(spaceId: string, taskId: string, task: Task): 
 
   await zip.compressDir(tmpTaskFolder, translationsExportZipFile, { ignoreBase: true });
 
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(translationsExportZipFile), err => {
+  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(translationsExportZipFile), err => {
     if (err) {
       logger.error(err);
     }
@@ -707,7 +728,7 @@ async function translationsExportJsonFlat(spaceId: string, taskId: string, task:
         }
       }
     });
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(JSON.stringify(exportTranslations), err => {
+  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(JSON.stringify(exportTranslations), err => {
     if (err) {
       logger.error(err);
     }
@@ -791,7 +812,7 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
 async function translationsImportJsonFlat(
   spaceId: string,
   taskId: string,
-  task: Task,
+  task: Task
 ): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);

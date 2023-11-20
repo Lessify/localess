@@ -2,9 +2,7 @@ import { logger } from 'firebase-functions/v2';
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
 import { firestoreService } from './config';
-import { Plugin, PluginContentDefinition, PluginSchemaDefinition } from './models/plugin.model';
-import { ContentFolder, ContentKind } from './models/content.model';
-import { Schema } from './models/schema.model';
+import { ContentFolder, ContentKind, Plugin, PluginContentDefinition, PluginSchemaDefinition, Schema } from './models';
 
 const onPluginCreate = onDocumentCreated('spaces/{spaceId}/plugins/{pluginId}', async event => {
   logger.info(`[Plugin:onCreate] eventId='${event.id}'`);

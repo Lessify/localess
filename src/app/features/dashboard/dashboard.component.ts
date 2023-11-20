@@ -1,22 +1,13 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Auth } from '@angular/fire/auth';
 
 import { AppState } from '@core/state/core.state';
-import { NotificationService } from '@shared/services/notification.service';
-import { TranslationService } from '@shared/services/translation.service';
 import { selectSpace } from '@core/state/space/space.selector';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, first, switchMap, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { combineLatest } from 'rxjs';
-import { SchemaService } from '@shared/services/schema.service';
-import { AssetService } from '@shared/services/asset.service';
-import { ContentService } from '@shared/services/content.service';
 import { SpaceService } from '@shared/services/space.service';
-import { AssetKind } from '@shared/models/asset.model';
-import { ContentKind } from '@shared/models/content.model';
+import { Timestamp } from '@angular/fire/firestore';
+import { NotificationService } from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-dashboard',
@@ -26,39 +17,41 @@ import { ContentKind } from '@shared/models/content.model';
 })
 export class DashboardComponent {
   isLoading = true;
+  now = Timestamp.now();
   private destroyRef = inject(DestroyRef);
 
-  overview$ = this.store.select(selectSpace).pipe(
+  space$ = this.store.select(selectSpace).pipe(
     filter(it => it.id !== ''), // Skip initial data
-    switchMap(it =>
-      combineLatest([
-        this.spaceService.findById(it.id),
-        this.translationService.countAll(it.id),
-        this.assetService.countAll(it.id, AssetKind.FILE),
-        this.contentService.countAll(it.id, ContentKind.DOCUMENT),
-        this.schemaService.countAll(it.id),
-      ])
-    ),
+    switchMap(it => this.spaceService.findById(it.id)),
+    tap(it => {
+      if (it.overview === undefined || (it.overview && this.now.seconds - it.overview.updatedAt.seconds > 86400)) {
+        this.spaceService.calculateOverview(it.id).subscribe({ next: () => console.log('Space Overview Updated') });
+      }
+    }),
     takeUntilDestroyed(this.destroyRef)
   );
-  // .subscribe({
-  //   next: ([space, translations, schemas, assets, contents]) => {
-  //     console.log(space.locales.length, translations, schemas, assets, contents);
-  //   },
-  // });
 
   constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
-    private readonly auth: Auth,
-    private readonly spaceService: SpaceService,
-    private readonly translationService: TranslationService,
-    private readonly schemaService: SchemaService,
-    private readonly assetService: AssetService,
-    private readonly contentService: ContentService
+    private readonly notificationService: NotificationService,
+    private readonly spaceService: SpaceService
   ) {}
+
+  calculateOverview() {
+    console.log('calculateOverview');
+    this.space$
+      .pipe(
+        first(),
+        switchMap(it => this.spaceService.calculateOverview(it.id))
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`Space overview is recalculated.`);
+        },
+        error: (err: unknown) => {
+          console.error(err);
+          this.notificationService.error(`Space overview can not be recalculated.`);
+        },
+      });
+  }
 }

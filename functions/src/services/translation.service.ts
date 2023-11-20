@@ -20,11 +20,11 @@ export function findTranslationById(spaceId: string, id: string): DocumentRefere
  * @return {Query} collection
  */
 export function findTranslations(spaceId: string, fromDate?: number): Query {
-  let assetsRef: Query = firestoreService.collection(`spaces/${spaceId}/translations`);
+  let translationsRef: Query = firestoreService.collection(`spaces/${spaceId}/translations`);
   if (fromDate) {
-    assetsRef = assetsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
+    translationsRef = translationsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
   }
-  return assetsRef;
+  return translationsRef;
 }
 
 /**

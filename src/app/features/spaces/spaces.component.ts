@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
 import { SpaceDialogModel } from './space-dialog/space-dialog.model';
 import { MatSort } from '@angular/material/sort';
@@ -14,7 +14,7 @@ import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/
 import { SpaceService } from '@shared/services/space.service';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { Subject } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-spaces',
@@ -22,7 +22,7 @@ import { Subject } from 'rxjs';
   styleUrls: ['./spaces.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SpacesComponent implements OnInit, OnDestroy {
+export class SpacesComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
@@ -30,8 +30,7 @@ export class SpacesComponent implements OnInit, OnDestroy {
   dataSource: MatTableDataSource<Space> = new MatTableDataSource<Space>([]);
   displayedColumns: string[] = ['id', 'name', 'createdAt', 'updatedAt', 'actions'];
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -50,7 +49,7 @@ export class SpacesComponent implements OnInit, OnDestroy {
   loadData(): void {
     this.spaceService
       .findAll()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(response => {
         this.dataSource = new MatTableDataSource<Space>(response);
         this.dataSource.sort = this.sort || null;
@@ -130,10 +129,5 @@ export class SpacesComponent implements OnInit, OnDestroy {
           this.notificationService.error(`Space '${element.name}' can not be deleted.`);
         },
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 }

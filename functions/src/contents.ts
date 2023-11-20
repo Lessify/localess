@@ -4,18 +4,13 @@ import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten } from 'firebas
 import { FieldValue, UpdateData } from 'firebase-admin/firestore';
 import { canPerform } from './utils/security-utils';
 import { bucket, firestoreService } from './config';
-import { Space } from './models/space.model';
-import { Content, ContentDocument, ContentDocumentStorage, ContentKind, PublishContentData } from './models/content.model';
-import { Schema } from './models/schema.model';
-import { UserPermission } from './models/user.model';
-import { extractContent, findContentByFullSlug, findContentById } from './services/content.service';
-import { findSpaceById } from './services/space.service';
-import { findSchemas } from './services/schema.service';
+import { Content, ContentDocument, ContentDocumentStorage, ContentKind, PublishContentData, Schema, Space, UserPermission } from './models';
+import { extractContent, findContentByFullSlug, findContentById, findSchemas, findSpaceById } from './services';
 
 // Publish
 const contentPublish = onCall<PublishContentData>(async request => {
-  logger.info('[contentPublish] data: ' + JSON.stringify(request.data));
-  logger.info('[contentPublish] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[Content::contentPublish] data: ' + JSON.stringify(request.data));
+  logger.info('[Content::contentPublish] context.auth: ' + JSON.stringify(request.auth));
   if (!canPerform(UserPermission.CONTENT_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId, contentId } = request.data;
   const spaceSnapshot = await findSpaceById(spaceId).get();
@@ -41,17 +36,17 @@ const contentPublish = onCall<PublishContentData>(async request => {
         documentStorage.data = extractContent(content.data, schemas, locale.id);
       }
       // Save generated JSON
-      logger.info(`[contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/${locale.id}.json`);
+      logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/${locale.id}.json`);
       await bucket.file(`spaces/${spaceId}/contents/${contentId}/${locale.id}.json`).save(JSON.stringify(documentStorage));
     }
     // Save Cache
-    logger.info(`[contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/cache.json`);
+    logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/cache.json`);
     await bucket.file(`spaces/${spaceId}/contents/${contentId}/cache.json`).save('');
     // Update publishedAt
     await contentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
     return;
   } else {
-    logger.info(`[contentPublish] Content ${contentId} does not exist.`);
+    logger.info(`[Content::contentPublish] Content ${contentId} does not exist.`);
     throw new HttpsError('not-found', 'Content not found');
   }
 });

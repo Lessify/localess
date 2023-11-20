@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { combineLatest, debounceTime, EMPTY, Observable, startWith, Subject } from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
+import { combineLatest, debounceTime, EMPTY, Observable, startWith } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
-import { filter, map, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, map, switchMap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { MatAutocomplete, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -28,6 +28,7 @@ import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-translations',
@@ -35,7 +36,7 @@ import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-di
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TranslationsComponent implements OnInit, OnDestroy {
+export class TranslationsComponent implements OnInit {
   @ViewChild('labelsInput') labelsInput!: ElementRef<HTMLInputElement>;
   @ViewChild('auto') matAutocomplete!: MatAutocomplete;
 
@@ -70,8 +71,7 @@ export class TranslationsComponent implements OnInit, OnDestroy {
   isLocaleUpdateLoading = false;
   isTranslateLoading = false;
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly translationService: TranslationService,
@@ -94,7 +94,7 @@ export class TranslationsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData();
-    this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntil(this.destroy$)).subscribe({
+    this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: value => {
         this.searchValue = value;
         this.cd.markForCheck();
@@ -108,7 +108,7 @@ export class TranslationsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it => combineLatest([this.spaceService.findById(it.id), this.translationService.findAll(it.id)])),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: ([space, translations]) => {
@@ -439,10 +439,5 @@ export class TranslationsComponent implements OnInit, OnDestroy {
       case TranslationStatus.UNTRANSLATED:
         return 'untranslated';
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 }

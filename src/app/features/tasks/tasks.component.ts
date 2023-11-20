@@ -1,15 +1,15 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { combineLatest, Subject } from 'rxjs';
+import { combineLatest } from 'rxjs';
 import { TaskService } from '@shared/services/task.service';
 import { Task } from '@shared/models/task.model';
 import { selectSpace } from '@core/state/space/space.selector';
@@ -17,6 +17,7 @@ import { ConfirmationDialogComponent } from '@shared/components/confirmation-dia
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { SpaceService } from '@shared/services/space.service';
 import { saveAs } from 'file-saver-es';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-tasks',
@@ -24,7 +25,7 @@ import { saveAs } from 'file-saver-es';
   styleUrls: ['./tasks.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TasksComponent implements OnInit, OnDestroy {
+export class TasksComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
@@ -35,8 +36,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   selectedSpace?: Space;
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -59,7 +59,7 @@ export class TasksComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it => combineLatest([this.spaceService.findById(it.id), this.taskService.findAll(it.id)])),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: ([space, tasks]) => {
@@ -103,10 +103,5 @@ export class TasksComponent implements OnInit, OnDestroy {
           this.notificationService.error(`Task '${element.id}' can not be deleted.`);
         },
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 }

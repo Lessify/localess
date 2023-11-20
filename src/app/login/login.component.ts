@@ -1,4 +1,4 @@
-import { Component, OnDestroy, Optional } from '@angular/core';
+import { Component, DestroyRef, inject, Optional } from '@angular/core';
 import {
   Auth,
   authState,
@@ -20,13 +20,14 @@ import { authLogin, authLogout } from '@core/core.module';
 import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { selectSettings } from '@core/state/settings/settings.selectors';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent implements OnDestroy {
+export class LoginComponent {
   redirect = ['/features'];
   isLoading = false;
 
@@ -48,6 +49,8 @@ export class LoginComponent implements OnDestroy {
   settings$ = this.store.select(selectSettings);
   private readonly userDisposable: Subscription | undefined;
 
+  private destroyRef = inject(DestroyRef);
+
   constructor(
     private readonly store: Store<AppState>,
     @Optional() public readonly auth: Auth,
@@ -56,13 +59,14 @@ export class LoginComponent implements OnDestroy {
   ) {
     if (this.auth) {
       this.user = authState(this.auth);
-      this.userDisposable = authState(this.auth)
+      authState(this.auth)
         .pipe(
           traceUntilFirst('auth'),
           tap(u => {
             this.parsedToken = u?.getIdTokenResult();
           }),
-          map(u => !!u)
+          map(u => !!u),
+          takeUntilDestroyed(this.destroyRef)
         )
         .subscribe(isLoggedIn => {
           this.showLoginButton = !isLoggedIn;
@@ -104,11 +108,5 @@ export class LoginComponent implements OnDestroy {
   async logout(): Promise<void> {
     this.store.dispatch(authLogout());
     return await signOut(this.auth);
-  }
-
-  ngOnDestroy(): void {
-    if (this.userDisposable) {
-      this.userDisposable.unsubscribe();
-    }
   }
 }

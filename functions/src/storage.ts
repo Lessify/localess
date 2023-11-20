@@ -3,7 +3,7 @@ import { onObjectFinalized } from 'firebase-functions/v2/storage';
 import { FieldValue, UpdateData } from 'firebase-admin/firestore';
 import sharp from 'sharp';
 import { bucket, firestoreService } from './config';
-import { AssetFile } from './models/asset.model';
+import { AssetFile } from './models';
 
 const onFileUpload = onObjectFinalized(async event => {
   logger.info(`[Storage::onFileUpload] name : ${event.data.name}`);
@@ -13,7 +13,7 @@ const onFileUpload = onObjectFinalized(async event => {
   // spaces/eo42RwNL8XHD7Cdvd8eO/assets/RpMDPKkmDM66Vc1jgDpo/original
   if (name && name.startsWith('spaces/') && name.includes('assets') && name.endsWith('/original')) {
     const assetPath = name.slice(0, -9); // remove '/original'
-    const assetSnapshot = await firestoreService.doc(assetPath).get();
+    const assetRef = firestoreService.doc(assetPath);
     const update: UpdateData<AssetFile> = {
       inProgress: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -32,7 +32,7 @@ const onFileUpload = onObjectFinalized(async event => {
         };
       }
     }
-    await assetSnapshot.ref.update(update);
+    await assetRef.update(update);
   }
   return;
 });

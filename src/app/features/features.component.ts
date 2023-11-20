@@ -1,5 +1,5 @@
 import browser from 'browser-detect';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, Optional } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, Optional } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
 import { select, Store } from '@ngrx/store';
 import { combineLatest, from, Observable } from 'rxjs';
@@ -33,6 +33,7 @@ import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { selectSettings } from '@core/state/settings/settings.selectors';
 import { ReposService } from '@shared/generated/github/services/repos.service';
 import { Release } from '@shared/generated/github/models/release';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 const ROLE_ADMIN = 'admin';
 
@@ -93,6 +94,8 @@ export class FeaturesComponent implements OnInit {
   language$: Observable<string> | undefined;
   settings$ = this.store.select(selectSettings);
 
+  private destroyRef = inject(DestroyRef);
+
   constructor(
     private readonly spaceService: SpaceService,
     private readonly store: Store<AppState>,
@@ -103,45 +106,50 @@ export class FeaturesComponent implements OnInit {
     private readonly reposService: ReposService,
     @Optional() private auth: Auth
   ) {
-    reposService.reposGetLatestRelease({ owner: 'Lessify', repo: 'localess' }).subscribe({
-      next: value => {
-        //console.log(value)
-        this.release = value;
-      },
-    });
-    user(this.auth).subscribe(user => {
-      // Sign-in
-      if (user) {
-        // console.log(user);
-        // const tokenResult = await user.getIdTokenResult()
-        this.store.dispatch(
-          actionUserChange({
-            id: user.uid,
-            displayName: user.displayName,
-            email: user.email,
-            emailVerified: user.emailVerified,
-            role: undefined,
-            photoURL: user.photoURL,
-            permissions: undefined,
-          })
-        );
-        from(user.getIdTokenResult()).subscribe(token => {
-          if (token.claims['role'] || token.claims['permissions']) {
-            const role = token.claims['role'] as UserRole | undefined;
-            const permissions = token.claims['permissions'] as string[] | undefined;
-            this.store.dispatch(actionUserRoleChange({ role, permissions }));
-            if (role === ROLE_ADMIN) {
-              this.isRoleAdmin = true;
+    reposService
+      .reposGetLatestRelease({ owner: 'Lessify', repo: 'localess' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: value => {
+          //console.log(value)
+          this.release = value;
+        },
+      });
+    user(this.auth)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(user => {
+        // Sign-in
+        if (user) {
+          // console.log(user);
+          // const tokenResult = await user.getIdTokenResult()
+          this.store.dispatch(
+            actionUserChange({
+              id: user.uid,
+              displayName: user.displayName,
+              email: user.email,
+              emailVerified: user.emailVerified,
+              role: undefined,
+              photoURL: user.photoURL,
+              permissions: undefined,
+            })
+          );
+          from(user.getIdTokenResult()).subscribe(token => {
+            if (token.claims['role'] || token.claims['permissions']) {
+              const role = token.claims['role'] as UserRole | undefined;
+              const permissions = token.claims['permissions'] as string[] | undefined;
+              this.store.dispatch(actionUserRoleChange({ role, permissions }));
+              if (role === ROLE_ADMIN) {
+                this.isRoleAdmin = true;
+              }
+            } else {
+              this.isRoleNone = true;
             }
-          } else {
-            this.isRoleNone = true;
-          }
-          this.cd.markForCheck();
-        });
-      } else {
-        this.store.dispatch(authLogout());
-      }
-    });
+            this.cd.markForCheck();
+          });
+        } else {
+          this.store.dispatch(authLogout());
+        }
+      });
   }
 
   private static isIEorEdgeOrSafari(): boolean {
@@ -158,41 +166,43 @@ export class FeaturesComponent implements OnInit {
       );
     }
 
-    this.isAuthenticated$ = this.store.pipe(select(selectIsAuthenticated));
-    this.stickyHeader$ = this.store.pipe(select(selectSettingsStickyHeader));
-    this.language$ = this.store.pipe(select(selectSettingsLanguage));
+    this.isAuthenticated$ = this.store.pipe(select(selectIsAuthenticated)).pipe(takeUntilDestroyed(this.destroyRef));
+    this.stickyHeader$ = this.store.pipe(select(selectSettingsStickyHeader)).pipe(takeUntilDestroyed(this.destroyRef));
+    this.language$ = this.store.pipe(select(selectSettingsLanguage)).pipe(takeUntilDestroyed(this.destroyRef));
 
     this.loadData();
   }
 
   loadData(): void {
-    combineLatest([this.spaceService.findAll(), this.store.select(selectSpace)]).subscribe({
-      next: ([spaces, space]) => {
-        if (spaces.length === 0) {
-          this.selectedSpace = undefined;
-        }
-        //Spaces change
-        /*        if (this.spaces.length !== spaces.length) {
+    combineLatest([this.spaceService.findAll(), this.store.select(selectSpace)])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ([spaces, space]) => {
+          if (spaces.length === 0) {
+            this.selectedSpace = undefined;
+          }
+          //Spaces change
+          /*        if (this.spaces.length !== spaces.length) {
                     if (this.spaces.length > spaces.length) {
                       this.selectedSpace = undefined
                     }
                   }*/
-        //Selected Space change
-        if (space.id !== this.selectedSpace?.id) {
-          let selected = spaces.find(it => it.id === space.id);
-          if (selected == null && spaces.length > 0) {
-            selected = spaces[0];
+          //Selected Space change
+          if (space.id !== this.selectedSpace?.id) {
+            let selected = spaces.find(it => it.id === space.id);
+            if (selected == null && spaces.length > 0) {
+              selected = spaces[0];
+            }
+            if (selected) {
+              this.selectedSpace = selected;
+              this.store.dispatch(actionSpaceChange(selected));
+            }
           }
-          if (selected) {
-            this.selectedSpace = selected;
-            this.store.dispatch(actionSpaceChange(selected));
-          }
-        }
-        this.generateUserSideMenu(this.selectedSpace!.id);
-        this.spaces = spaces;
-        this.cd.markForCheck();
-      },
-    });
+          this.generateUserSideMenu(this.selectedSpace!.id);
+          this.spaces = spaces;
+          this.cd.markForCheck();
+        },
+      });
   }
 
   generateUserSideMenu(spaceId: string): void {

@@ -1,8 +1,8 @@
 import { logger } from 'firebase-functions/v2';
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import { bucket, firestoreService } from './config';
-import { Asset, AssetKind } from './models/asset.model';
-import { findAssetsByParentPath } from './services/asset.service';
+import { Asset, AssetKind } from './models';
+import { findAssetsByParentPath } from './services';
 
 // Firestore events
 const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', async event => {

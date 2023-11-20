@@ -1,11 +1,11 @@
 import { auth, logger } from 'firebase-functions';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
 import { authService } from './config';
 import { canPerform } from './utils/security-utils';
-import { User, UserInvite, UserPermission } from './models/user.model';
-import { findUserById } from './services/user.service';
+import { User, UserInvite, UserPermission } from './models';
+import { findUserById } from './services';
 
 const onAuthUserCreate = auth.user().onCreate((user, context) => {
   logger.info(`[AuthUser::onCreate] id='${user.uid}' eventId='${context.eventId}'`);

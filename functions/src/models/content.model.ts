@@ -101,7 +101,7 @@ export interface ContentDocumentExport extends Omit<ContentDocument, 'createdAt'
 
 export type ContentExport = ContentDocumentExport | ContentFolderExport;
 
-export const assetExportArraySchema: JSONSchemaType<ContentExport[]> = {
+export const contentExportArraySchema: JSONSchemaType<ContentExport[]> = {
   type: 'array',
   items: {
     type: 'object',

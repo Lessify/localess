@@ -4,7 +4,7 @@ import { Firestore, getFirestore } from 'firebase-admin/firestore';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import { Auth, getAuth } from 'firebase-admin/auth';
 import { TranslationServiceClient } from '@google-cloud/translate';
-import { FIREBASE_CONFIG, FirebaseConfig } from './models/firebase.model';
+import { FIREBASE_CONFIG, FirebaseConfig } from './models';
 
 // BATCH OPERATION
 export const BATCH_MAX = 500;

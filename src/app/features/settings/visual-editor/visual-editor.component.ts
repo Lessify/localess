@@ -1,19 +1,19 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { SpaceService } from '@shared/services/space.service';
 import { Space, SpaceEnvironment } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { Subject } from 'rxjs';
 import { selectSpace } from '@core/state/space/space.selector';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { selectSettings } from '@core/state/settings/settings.selectors';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-space-settings-visual-editor',
@@ -21,7 +21,7 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
   styleUrls: ['./visual-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VisualEditorComponent implements OnInit, OnDestroy {
+export class VisualEditorComponent implements OnInit {
   isLoading = true;
   space?: Space;
 
@@ -32,7 +32,7 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
 
   // Subscriptions
   settings$ = this.store.select(selectSettings);
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly fb: FormBuilder,
@@ -52,7 +52,7 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it.id !== ''),
         switchMap(it => this.spaceService.findById(it.id)),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: space => {
@@ -91,11 +91,6 @@ export class VisualEditorComponent implements OnInit, OnDestroy {
         this.notificationService.error('Space can not be updated.');
       },
     });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 
   environmentDropDrop(event: CdkDragDrop<string[]>): void {

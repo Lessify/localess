@@ -10,7 +10,7 @@ export class CanUserPerformPipe implements PipeTransform {
   constructor(private readonly store: Store<AppState>) {}
 
   transform(permission?: string | string[]): Observable<boolean> {
-    console.log('canUserPerform : ' + permission);
+    // console.log('canUserPerform : ' + permission);
     if (permission === undefined) return of(true);
     if (typeof permission === 'string') {
       return this.store.select(selectUser).pipe(

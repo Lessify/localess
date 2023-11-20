@@ -1,10 +1,9 @@
 import { logger } from 'firebase-functions/v2';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { protos } from '@google-cloud/translate';
 import { canPerform } from './utils/security-utils';
 import { firebaseConfig, SUPPORT_LOCALES, translationService } from './config';
-import { TranslateData } from './models/translate.model';
-import { UserPermission } from './models/user.model';
+import { TranslateData, UserPermission } from './models';
 
 export const translate = onCall<TranslateData>(async request => {
   logger.info('[translate] data: ' + JSON.stringify(request.data));

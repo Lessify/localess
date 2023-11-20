@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
@@ -13,11 +13,12 @@ import { SpaceService } from '@shared/services/space.service';
 import { Space } from '@shared/models/space.model';
 import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
-import { combineLatest, Subject } from 'rxjs';
+import { combineLatest } from 'rxjs';
 import { TokenDialogComponent } from './token-dialog/token-dialog.component';
 import { TokenDialogModel } from './token-dialog/token-dialog.model';
 import { Token } from '@shared/models/token.model';
 import { TokenService } from '@shared/services/token.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-space-settings-tokens',
@@ -25,7 +26,7 @@ import { TokenService } from '@shared/services/token.service';
   styleUrls: ['./tokens.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TokensComponent implements OnInit, OnDestroy {
+export class TokensComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
@@ -34,8 +35,7 @@ export class TokensComponent implements OnInit, OnDestroy {
   dataSource: MatTableDataSource<Token> = new MatTableDataSource<Token>([]);
   displayedColumns: string[] = ['id', 'name', 'createdAt', 'updatedAt', 'actions'];
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -54,7 +54,7 @@ export class TokensComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it => combineLatest([this.spaceService.findById(it.id), this.tokenService.findAll(it.id)])),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: ([space, tokens]) => {
@@ -116,10 +116,5 @@ export class TokensComponent implements OnInit, OnDestroy {
           },
         });
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 }

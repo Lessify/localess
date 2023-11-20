@@ -2,15 +2,16 @@ import { firestoreService } from '../config';
 import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
 import Ajv, { ErrorObject } from 'ajv';
 import {
-  assetExportArraySchema,
   Content,
   ContentData,
   ContentDocumentExport,
   ContentExport,
+  contentExportArraySchema,
   ContentFolderExport,
   ContentKind,
-} from '../models/content.model';
-import { Schema, SchemaFieldKind } from '../models/schema.model';
+  Schema,
+  SchemaFieldKind,
+} from '../models';
 import { logger } from 'firebase-functions/v2';
 
 /**
@@ -72,15 +73,19 @@ export function findContentById(spaceId: string, id: string): DocumentReference 
 /**
  * find Contents
  * @param {string} spaceId Space identifier
+ * @param {ContentKind} kind Content kind : FOLDER or DOCUMENT
  * @param {number} fromDate Space identifier
  * @return {Query} collection
  */
-export function findContents(spaceId: string, fromDate?: number): Query {
-  let assetsRef: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
+export function findContents(spaceId: string, kind?: ContentKind, fromDate?: number): Query {
+  let contentsRef: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
   if (fromDate) {
-    assetsRef = assetsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
+    contentsRef = contentsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
   }
-  return assetsRef;
+  if (kind) {
+    contentsRef = contentsRef.where('kind', '==', kind);
+  }
+  return contentsRef;
 }
 
 /**
@@ -90,7 +95,7 @@ export function findContents(spaceId: string, fromDate?: number): Query {
  */
 export function validateContentImport(data: unknown): ErrorObject[] | undefined | null {
   const ajv = new Ajv({ discriminator: true });
-  const validate = ajv.compile(assetExportArraySchema);
+  const validate = ajv.compile(contentExportArraySchema);
   if (validate(data)) {
     return undefined;
   } else {

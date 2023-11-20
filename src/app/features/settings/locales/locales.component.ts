@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
 import { MatSort } from '@angular/material/sort';
@@ -17,7 +17,7 @@ import { Space } from '@shared/models/space.model';
 import { Locale } from '@shared/models/locale.model';
 import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
-import { Subject } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-space-settings-locales',
@@ -25,7 +25,7 @@ import { Subject } from 'rxjs';
   styleUrls: ['./locales.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LocalesComponent implements OnInit, OnDestroy {
+export class LocalesComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
@@ -34,8 +34,7 @@ export class LocalesComponent implements OnInit, OnDestroy {
   dataSource: MatTableDataSource<Locale> = new MatTableDataSource<Locale>([]);
   displayedColumns: string[] = ['id', 'name', 'isLocaleTranslatable', 'fallback', 'actions'];
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -54,7 +53,7 @@ export class LocalesComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
         switchMap(it => this.spaceService.findById(it.id)),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: space => {
@@ -140,10 +139,5 @@ export class LocalesComponent implements OnInit, OnDestroy {
 
   isSupport(locale: string): boolean {
     return this.localeService.isLocaleTranslatable(locale);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 }

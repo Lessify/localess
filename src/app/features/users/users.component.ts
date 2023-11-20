@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,7 +8,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { UserService } from '@shared/services/user.service';
 import { User } from '@shared/models/user.model';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogModel } from './user-dialog/user-dialog.model';
 import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';
@@ -16,7 +16,7 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { Subject } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-users',
@@ -24,7 +24,7 @@ import { Subject } from 'rxjs';
   styleUrls: ['./users.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UsersComponent implements OnInit, OnDestroy {
+export class UsersComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
@@ -33,8 +33,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
   displayedColumns: string[] = ['avatar', 'email', 'name', 'role', 'createdAt', 'updatedAt', 'actions'];
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -53,7 +52,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   loadData(): void {
     this.userService
       .findAll()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(response => {
         this.dataSource = new MatTableDataSource<User>(response);
         this.dataSource.sort = this.sort || null;
@@ -146,10 +145,5 @@ export class UsersComponent implements OnInit, OnDestroy {
         }, 1000);
       },
     });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 }

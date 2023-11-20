@@ -12,6 +12,8 @@ export interface Space {
   environments?: SpaceEnvironment[];
   // UI
   ui?: SpaceUi;
+  // overview
+  overview?: SpaceOverview;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -44,4 +46,15 @@ export interface SpaceUpdate {
 
 export interface SpaceUiUpdate {
   color?: ThemePalette;
+}
+
+export interface SpaceOverview {
+  translationsCount: number;
+  translationSize: number;
+  assetsCount: number;
+  assetsSize: number;
+  contentsCount: number;
+  contentSize: number;
+  schemasCount: number;
+  updatedAt: Timestamp;
 }

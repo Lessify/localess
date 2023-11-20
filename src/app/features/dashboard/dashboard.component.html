@@ -1,35 +1,50 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    Dashboard
+    <span class="spacer"></span>
+    <button mat-icon-button *ngIf="'SPACE_MANAGEMENT' | canUserPerform | async" (click)="calculateOverview()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
 <div class="container-full-screen">
-  <div *ngIf="overview$ | async as overview">
+  <div *ngIf="space$ | async as space">
     <h3 class="text-base font-semibold leading-6 text-gray-900">Overview</h3>
     <dl class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-        <dt class="truncate text-sm font-medium text-gray-500">Total Locales</dt>
-        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-          {{ overview[0]?.locales?.length }}
+        <dt class="truncate text-sm font-medium text-gray-500">Locales</dt>
+        <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
+          {{ space.locales.length }}
         </dd>
       </div>
       <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-        <dt class="truncate text-sm font-medium text-gray-500">Total Translations</dt>
-        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-          {{ overview[1] }}
+        <dt class="truncate text-sm font-medium text-gray-500">Translations</dt>
+        <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
+          {{ space?.overview?.translationsCount || 0 }}
+          <br />
+          {{ space?.overview?.translationSize || 0 | digitalStore }}
         </dd>
       </div>
       <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-        <dt class="truncate text-sm font-medium text-gray-500">Total Assets</dt>
-        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-          {{ overview[2] }}
+        <dt class="truncate text-sm font-medium text-gray-500">Asset Files</dt>
+        <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
+          {{ space?.overview?.assetsCount || 0 }}
+          <br />
+          {{ space?.overview?.assetsSize || 0 | digitalStore }}
         </dd>
       </div>
       <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-        <dt class="truncate text-sm font-medium text-gray-500">Total Contents</dt>
-        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-          {{ overview[3] }}
+        <dt class="truncate text-sm font-medium text-gray-500">Content Documents</dt>
+        <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
+          {{ space?.overview?.contentsCount || 0 }}
+          <br />
+          {{ space?.overview?.contentSize || 0 | digitalStore }}
         </dd>
       </div>
       <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-        <dt class="truncate text-sm font-medium text-gray-500">Total Schemas</dt>
-        <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-          {{ overview[4] }}
+        <dt class="truncate text-sm font-medium text-gray-500">Schemas</dt>
+        <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
+          {{ space?.overview?.schemasCount || 0 }}
         </dd>
       </div>
     </dl>

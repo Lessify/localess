@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { takeUntil } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
@@ -9,8 +8,8 @@ import { AppState } from '@core/state/core.state';
 import { SpaceService } from '@shared/services/space.service';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { Subject } from 'rxjs';
 import { activate } from '@angular/fire/remote-config';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface TabItem {
   icon: string;
@@ -24,7 +23,7 @@ interface TabItem {
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SettingsComponent implements OnInit, OnDestroy {
+export class SettingsComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
@@ -42,8 +41,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     { icon: 'badge', label: 'Access Tokens', link: 'tokens' },
   ];
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -67,7 +65,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   loadData(): void {
     this.spaceService
       .findById(this.spaceId)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: space => {
           this.space = space;
@@ -75,11 +73,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
           this.cd.markForCheck();
         },
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 
   protected readonly activate = activate;

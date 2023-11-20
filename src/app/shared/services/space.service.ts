@@ -21,10 +21,14 @@ import { map } from 'rxjs/operators';
 import { Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUiUpdate, SpaceUpdate } from '../models/space.model';
 import { Locale } from '../models/locale.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { Functions, httpsCallableData } from '@angular/fire/functions';
 
 @Injectable()
 export class SpaceService {
-  constructor(private firestore: Firestore) {}
+  constructor(
+    private firestore: Firestore,
+    private readonly functions: Functions
+  ) {}
 
   findAll(): Observable<Space[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')];
@@ -79,5 +83,10 @@ export class SpaceService {
 
   delete(id: string): Observable<void> {
     return from(deleteDoc(doc(this.firestore, `spaces/${id}`))).pipe(traceUntilFirst('Firestore:Spaces:delete'));
+  }
+
+  calculateOverview(spaceId: string): Observable<void> {
+    const calculateoverview = httpsCallableData<{ spaceId: string }, void>(this.functions, 'space-calculateoverview');
+    return calculateoverview({ spaceId }).pipe(traceUntilFirst('Functions:Spaces:calculateOverview'));
   }
 }

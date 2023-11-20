@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
@@ -15,8 +15,8 @@ import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaService } from '@shared/services/schema.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { selectSpace } from '@core/state/space/space.selector';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
-import { combineLatest, Subject } from 'rxjs';
+import { filter, switchMap } from 'rxjs/operators';
+import { combineLatest } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { SpaceService } from '@shared/services/space.service';
@@ -24,6 +24,7 @@ import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { selectSettings } from '@core/state/settings/settings.selectors';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-schema-edit',
@@ -31,7 +32,7 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
   styleUrls: ['./edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditComponent implements OnInit, OnDestroy {
+export class EditComponent implements OnInit {
   selectedSpace?: Space;
   entityId: string;
   entity?: Schema;
@@ -51,7 +52,7 @@ export class EditComponent implements OnInit, OnDestroy {
   isSaveLoading = false;
   // Subscriptions
   settings$ = this.store.select(selectSettings);
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   form: FormRecord = this.fb.record({
     name: this.fb.control('', SchemaValidator.NAME),
@@ -79,11 +80,6 @@ export class EditComponent implements OnInit, OnDestroy {
     this.loadData(this.entityId);
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
-  }
-
   loadData(entityId: string): void {
     this.store
       .select(selectSpace)
@@ -96,7 +92,7 @@ export class EditComponent implements OnInit, OnDestroy {
             this.schemaService.findById(it.id, entityId),
           ])
         ),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: ([space, schemas, schema]) => {

@@ -1,15 +1,12 @@
 import { logger } from 'firebase-functions/v2';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
 import { protos } from '@google-cloud/translate';
 import { canPerform } from './utils/security-utils';
 import { bucket, firebaseConfig, SUPPORT_LOCALES, translationService } from './config';
-import { Space } from './models/space.model';
-import { PublishTranslationsData, Translation } from './models/translation.model';
-import { UserPermission } from './models/user.model';
-import { findSpaceById } from './services/space.service';
-import { findTranslations } from './services/translation.service';
+import { PublishTranslationsData, Space, Translation, UserPermission } from './models';
+import { findSpaceById, findTranslations } from './services';
 
 // Publish
 const translationsPublish = onCall<PublishTranslationsData>(async request => {

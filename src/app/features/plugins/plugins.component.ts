@@ -1,15 +1,15 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { combineLatest, Subject } from 'rxjs';
+import { combineLatest } from 'rxjs';
 import { selectSpace } from '@core/state/space/space.selector';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -21,6 +21,7 @@ import { InstallDialogModel } from './install-dialog/install-dialog.model';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
 import { ConfigDialogModel } from './config-dialog/config-dialog.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-plugins',
@@ -28,7 +29,7 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
   styleUrls: ['./plugins.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PluginsComponent implements OnInit, OnDestroy {
+export class PluginsComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
@@ -39,8 +40,7 @@ export class PluginsComponent implements OnInit, OnDestroy {
 
   selectedSpace?: Space;
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -65,7 +65,7 @@ export class PluginsComponent implements OnInit, OnDestroy {
         switchMap(it =>
           combineLatest([this.spaceService.findById(it.id), this.pluginService.findAll(it.id), this.pluginService.findAllAvailable(it.id)])
         ),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: ([space, plugins, availablePlugins]) => {
@@ -209,10 +209,5 @@ export class PluginsComponent implements OnInit, OnDestroy {
           this.notificationService.error(`Plugin '${element.name}' can not be uninstalled.`);
         },
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 }

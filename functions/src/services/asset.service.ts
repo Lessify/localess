@@ -1,7 +1,7 @@
 import { firestoreService } from '../config';
 import { Timestamp, DocumentReference, Query } from 'firebase-admin/firestore';
 import Ajv, { ErrorObject } from 'ajv';
-import { Asset, AssetExport, assetExportArraySchema, AssetFileExport, AssetFolderExport, AssetKind } from '../models/asset.model';
+import { Asset, AssetExport, assetExportArraySchema, AssetFileExport, AssetFolderExport, AssetKind } from '../models';
 import { logger } from 'firebase-functions/v2';
 
 /**
@@ -31,13 +31,17 @@ export function findAssetsByStartFullSlug(spaceId: string, startParentPath: stri
 /**
  * find Assets
  * @param {string} spaceId Space identifier
+ * @param {AssetKind} kind Asser Kind : FOLDER or FILE
  * @param {number} fromDate Space identifier
  * @return {Query} document reference to the space
  */
-export function findAssets(spaceId: string, fromDate?: number): Query {
+export function findAssets(spaceId: string, kind?: AssetKind, fromDate?: number): Query {
   let assetsRef: Query = firestoreService.collection(`spaces/${spaceId}/assets`);
   if (fromDate) {
     assetsRef = assetsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
+  }
+  if (kind) {
+    assetsRef = assetsRef.where('kind', '>=', kind);
   }
   return assetsRef;
 }
