@@ -250,11 +250,7 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
 
   await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
 
-  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(assetsExportZipFile), err => {
-    if (err) {
-      logger.error(err);
-    }
-  });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(assetsExportZipFile));
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -432,11 +428,7 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
 
   await zip.compressDir(tmpTaskFolder, contentsExportZipFile, { ignoreBase: true });
 
-  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(contentsExportZipFile), err => {
-    if (err) {
-      logger.error(err);
-    }
-  });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(contentsExportZipFile));
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -577,11 +569,7 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
 
   await zip.compressDir(tmpTaskFolder, schemasExportZipFile, { ignoreBase: true });
 
-  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(schemasExportZipFile), err => {
-    if (err) {
-      logger.error(err);
-    }
-  });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(schemasExportZipFile));
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -699,11 +687,7 @@ async function translationsExport(spaceId: string, taskId: string, task: Task): 
 
   await zip.compressDir(tmpTaskFolder, translationsExportZipFile, { ignoreBase: true });
 
-  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(translationsExportZipFile), err => {
-    if (err) {
-      logger.error(err);
-    }
-  });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(translationsExportZipFile));
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -728,11 +712,7 @@ async function translationsExportJsonFlat(spaceId: string, taskId: string, task:
         }
       }
     });
-  bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(JSON.stringify(exportTranslations), err => {
-    if (err) {
-      logger.error(err);
-    }
-  });
+  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(JSON.stringify(exportTranslations));
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
