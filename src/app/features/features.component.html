@@ -64,23 +64,24 @@
           <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
           <div matListItemTitle *ngIf="settings.mainMenuExpended">{{ item.label }}</div>
         </mat-list-item>
+        <ng-container *ngIf="settings.mainMenuExpended">
+          <mat-divider />
+          <mat-list-item>
+            Version : {{ version }}
+            <mat-action-list
+              matListItemMeta
+              *ngIf="release && release.tag_name > version"
+              [matTooltip]="'A new version is available : ' + release.name">
+              <mat-icon>info</mat-icon>
+            </mat-action-list>
+          </mat-list-item>
+          <mat-divider />
+          <mat-list-item>
+            Developed by <a href="https://lessify.io" class="font-semibold leading-6 text-blue-800" target="_blank">Lessify</a>
+          </mat-list-item>
+        </ng-container>
       </mat-nav-list>
       <mat-divider />
-      <mat-list *ngIf="settings.mainMenuExpended">
-        <mat-list-item>
-          Version : {{ version }}
-          <mat-action-list
-            matListItemMeta
-            *ngIf="release && release.tag_name > version"
-            [matTooltip]="'A new version is available : ' + release.name">
-            <mat-icon>info</mat-icon>
-          </mat-action-list>
-        </mat-list-item>
-        <mat-divider />
-        <mat-list-item>
-          Developed by <a href="https://lessify.io" class="font-semibold leading-6 text-blue-800" target="_blank">Lessify</a>
-        </mat-list-item>
-      </mat-list>
     </mat-sidenav>
 
     <mat-sidenav mode="over" [opened]="isSettingsMenuExpended" position="end" (openedChange)="isSettingsMenuExpended = $event">
