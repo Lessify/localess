@@ -1,4 +1,4 @@
-import { ContentData, ReferenceContent } from '../../models/content.model';
+import { ContentData, ReferenceContent } from '../../models';
 import { Stripe } from 'stripe';
 
 export interface ProductContentData

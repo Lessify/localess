@@ -9,4 +9,5 @@ export * from './task.model';
 export * from './token.model';
 export * from './translate.model';
 export * from './translation.model';
+export * from './translation-history.model';
 export * from './user.model';

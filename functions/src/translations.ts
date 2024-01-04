@@ -1,12 +1,12 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, WithFieldValue } from 'firebase-admin/firestore';
 import { protos } from '@google-cloud/translate';
 import { canPerform } from './utils/security-utils';
 import { bucket, firebaseConfig, SUPPORT_LOCALES, translationService } from './config';
-import { PublishTranslationsData, Space, Translation, UserPermission } from './models';
-import { findSpaceById, findTranslations } from './services';
+import { PublishTranslationsData, Space, Translation, TranslationHistory, TranslationHistoryType, UserPermission } from './models';
+import { findSpaceById, findTranslations, findTranslationsHistory } from './services';
 
 // Publish
 const translationsPublish = onCall<PublishTranslationsData>(async request => {
@@ -44,6 +44,11 @@ const translationsPublish = onCall<PublishTranslationsData>(async request => {
     // Save Cache
     logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/cache.json`);
     await bucket.file(`spaces/${spaceId}/translations/cache.json`).save('');
+    const addHistory: WithFieldValue<TranslationHistory> = {
+      type: TranslationHistoryType.PUBLISHED,
+      createdAt: FieldValue.serverTimestamp(),
+    };
+    await findTranslationsHistory(spaceId).add(addHistory);
     return;
   } else {
     logger.info(`[translationsPublish] Space ${spaceId} does not exist or no translations.`);

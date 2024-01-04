@@ -29,6 +29,8 @@ import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-di
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslationHistory } from '@shared/models/translation-history.model';
+import { TranslationHistoryService } from '@shared/services/translation-history.service';
 
 @Component({
   selector: 'll-translations',
@@ -41,6 +43,7 @@ export class TranslationsComponent implements OnInit {
   @ViewChild('auto') matAutocomplete!: MatAutocomplete;
 
   selectedSpace?: Space;
+  showHistory = false;
 
   DEFAULT_LOCALE = 'en';
 
@@ -63,6 +66,7 @@ export class TranslationsComponent implements OnInit {
   selectedTargetLocale = '';
 
   translations: Translation[] = [];
+  history: TranslationHistory[] = [];
   locales: Locale[] = [];
 
   //Loadings
@@ -75,6 +79,7 @@ export class TranslationsComponent implements OnInit {
 
   constructor(
     private readonly translationService: TranslationService,
+    private readonly translateHistoryService: TranslationHistoryService,
     readonly localeService: LocaleService,
     private readonly spaceService: SpaceService,
     private readonly taskService: TaskService,
@@ -107,14 +112,21 @@ export class TranslationsComponent implements OnInit {
       .select(selectSpace)
       .pipe(
         filter(it => it.id !== ''), // Skip initial data
-        switchMap(it => combineLatest([this.spaceService.findById(it.id), this.translationService.findAll(it.id)])),
+        switchMap(it =>
+          combineLatest([
+            this.spaceService.findById(it.id),
+            this.translationService.findAll(it.id),
+            this.translateHistoryService.findAll(it.id),
+          ])
+        ),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: ([space, translations]) => {
+        next: ([space, translations, history]) => {
           this.selectedSpace = space;
           this.locales = space.locales;
           this.translations = translations;
+          this.history = history;
           if (translations.length > 0) {
             if (this.selectedTranslation) {
               const tr = translations.find(it => it.id === this.selectedTranslation?.id);

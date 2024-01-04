@@ -17,6 +17,7 @@ import { LocaleService } from '@shared/services/locale.service';
 import { TaskService } from '@shared/services/task.service';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
+import { TranslationHistoryService } from '@shared/services/translation-history.service';
 
 @NgModule({
   declarations: [
@@ -33,6 +34,6 @@ import { ImportDialogComponent } from './import-dialog/import-dialog.component';
     ImportDialogComponent,
   ],
   imports: [SharedModule, TranslationsRoutingModule],
-  providers: [TranslationService, TranslateService, LocaleService, TaskService],
+  providers: [TranslationService, TranslationHistoryService, TranslateService, LocaleService, TaskService],
 })
 export class TranslationsModule {}

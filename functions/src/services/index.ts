@@ -6,4 +6,5 @@ export * from './space.service';
 export * from './task.service';
 export * from './token.service';
 export * from './translation.service';
+export * from './translation-history.service';
 export * from './user.service';

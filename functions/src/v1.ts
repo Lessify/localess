@@ -6,12 +6,8 @@ import { logger } from 'firebase-functions';
 import { HttpsError, onRequest } from 'firebase-functions/v2/https';
 import { Query } from 'firebase-admin/firestore';
 import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService } from './config';
-import { AssetFile } from './models/asset.model';
-import { Content, ContentKind, ContentLink } from './models/content.model';
-import { Space } from './models/space.model';
-import { findContentByFullSlug } from './services/content.service';
-import { findSpaceById } from './services/space.service';
-import { findTokenById, validateToken } from './services/token.service';
+import { AssetFile, Content, ContentKind, ContentLink, Space } from './models';
+import { findContentByFullSlug, findSpaceById, findTokenById, validateToken } from './services';
 
 // API V1
 const expressApp = express();
