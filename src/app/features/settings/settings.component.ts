@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSort } from '@angular/material/sort';
@@ -30,7 +30,9 @@ export class SettingsComponent implements OnInit {
   // Loading
   isLoading = true;
 
-  spaceId: string;
+  @Input({ required: true })
+  spaceId!: string;
+
   space?: Space;
   activeTab = 'general';
   tabItems: TabItem[] = [
@@ -52,8 +54,6 @@ export class SettingsComponent implements OnInit {
     private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>
   ) {
-    const { spaceId } = route.snapshot.params;
-    this.spaceId = spaceId;
     const idx = router.url.lastIndexOf('/');
     this.activeTab = router.url.substring(idx + 1);
   }

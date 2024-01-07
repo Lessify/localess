@@ -1,19 +1,18 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { SpaceService } from '@shared/services/space.service';
-import { Space } from '@shared/models/space.model';
 import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
 import { Schema, SchemaType } from '@shared/models/schema.model';
 import { SchemaService } from '@shared/services/schema.service';
-import { combineLatest, Subject } from 'rxjs';
+import { combineLatest } from 'rxjs';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {
@@ -41,6 +40,7 @@ import { TaskService } from '@shared/services/task.service';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TokenService } from '@shared/services/token.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-contents',
@@ -48,12 +48,14 @@ import { TokenService } from '@shared/services/token.service';
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContentsComponent implements OnInit, OnDestroy {
+export class ContentsComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
+  @Input({ required: true })
+  spaceId!: string;
+
   isLoading = true;
-  selectedSpace?: Space;
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
   displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'slug', 'schema', 'publishedAt', 'createdAt', 'updatedAt', 'actions'];
   selection = new SelectionModel<Content>(true, []);
@@ -70,8 +72,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  // Subscriptions
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -88,10 +89,10 @@ export class ContentsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadData();
+    this.loadData(this.spaceId);
   }
 
-  loadData(): void {
+  loadData(spaceId: string): void {
     this.store
       .select(selectSpace)
       .pipe(
@@ -108,28 +109,16 @@ export class ContentsComponent implements OnInit, OnDestroy {
             ];
           }
         }),
-        switchMap(it =>
-          combineLatest([
-            this.spaceService.findById(it.id),
-            this.schemasService.findAll(it.id, SchemaType.ROOT),
-            this.contentService.findAll(it.id, this.parentPath),
-          ])
+        switchMap(() =>
+          combineLatest([this.schemasService.findAll(spaceId, SchemaType.ROOT), this.contentService.findAll(spaceId, this.parentPath)])
         ),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: ([space, schemas, contents]) => {
-          this.selectedSpace = space;
+        next: ([schemas, contents]) => {
           this.schemas = schemas;
           this.schemasMap = schemas.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schema>());
           this.contents = contents;
-          // if (this.contentPath.length == 0) {
-          //   this.contentPath.push({
-          //     name: 'Root',
-          //     fullSlug: ''
-          //   })
-          // }
-
           this.dataSource = new MatTableDataSource<Content>(contents);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
@@ -153,7 +142,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.createDocument(this.selectedSpace!.id, this.parentPath, it!))
+        switchMap(it => this.contentService.createDocument(this.spaceId, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -177,7 +166,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.createFolder(this.selectedSpace!.id, this.parentPath, it!))
+        switchMap(it => this.contentService.createFolder(this.spaceId, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -205,7 +194,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.update(this.selectedSpace!.id, element.id, this.parentPath, it!))
+        switchMap(it => this.contentService.update(this.spaceId, element.id, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -233,7 +222,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.contentService.delete(this.selectedSpace!.id, element))
+        switchMap(() => this.contentService.delete(this.spaceId, element))
       )
       .subscribe({
         next: () => {
@@ -262,7 +251,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.contentService.cloneDocument(this.selectedSpace!.id, element))
+        switchMap(() => this.contentService.cloneDocument(this.spaceId, element))
       )
       .subscribe({
         next: () => {
@@ -275,11 +264,6 @@ export class ContentsComponent implements OnInit, OnDestroy {
           this.notificationService.error(`Content '${element.name}' can not be cloned.`);
         },
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 
   // TABLE
@@ -305,7 +289,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
     if (element.kind === ContentKind.DOCUMENT) {
       element.publishedAt;
       if (this.schemasMap.has(element.schema)) {
-        this.router.navigate(['features', 'contents', element.id]);
+        this.router.navigate(['features', 'spaces', this.spaceId, 'contents', element.id]);
       } else {
         this.notificationService.warn(`Content Schema can not be found.`);
       }
@@ -333,10 +317,10 @@ export class ContentsComponent implements OnInit, OnDestroy {
   }
 
   openLinksInNewTab() {
-    this.tokenService.findFirst(this.selectedSpace!.id).subscribe({
+    this.tokenService.findFirst(this.spaceId).subscribe({
       next: tokens => {
         if (tokens.length === 1) {
-          const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/links`);
+          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId}/links`);
           url.searchParams.set('token', tokens[0].id);
           window.open(url, '_blank');
         } else {
@@ -355,7 +339,7 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .pipe(
         filter(it => it !== undefined),
         tap(console.log),
-        switchMap(it => this.taskService.createContentImportTask(this.selectedSpace!.id, it!.file))
+        switchMap(it => this.taskService.createContentImportTask(this.spaceId, it!.file))
       )
       .subscribe({
         next: () => {
@@ -372,13 +356,13 @@ export class ContentsComponent implements OnInit, OnDestroy {
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
         width: '500px',
         data: {
-          spaceId: this.selectedSpace!.id,
+          spaceId: this.spaceId,
         },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createContentExportTask(this.selectedSpace!.id, it?.path))
+        switchMap(it => this.taskService.createContentExportTask(this.spaceId, it?.path))
       )
       .subscribe({
         next: () => {

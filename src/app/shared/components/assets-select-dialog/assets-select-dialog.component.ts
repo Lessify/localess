@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  inject,
+  Inject,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { AssetsSelectDialogModel } from './assets-select-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -6,13 +16,14 @@ import { PathItem } from '@core/state/space/space.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Asset, AssetKind } from '@shared/models/asset.model';
-import { switchMap, takeUntil } from 'rxjs/operators';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { BehaviorSubject } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
 import { AssetService } from '@shared/services/asset.service';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { SpaceService } from '@shared/services/space.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-assets-select-dialog',
@@ -38,13 +49,14 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
   }
 
   // Subscriptions
-  private destroy$ = new Subject();
   path$ = new BehaviorSubject<PathItem[]>([
     {
       name: 'Root',
       fullSlug: '',
     },
   ]);
+
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly assetService: AssetService,
@@ -67,7 +79,7 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
           this.assetPath = path;
           return this.assetService.findAll(this.data.spaceId, this.parentPath, this.data.fileType);
         }),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: assets => {
@@ -117,8 +129,6 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
     this.path$.complete();
   }
 }

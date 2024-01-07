@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
@@ -14,13 +14,10 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaService } from '@shared/services/schema.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { selectSpace } from '@core/state/space/space.selector';
-import { filter, switchMap } from 'rxjs/operators';
 import { combineLatest } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { SpaceService } from '@shared/services/space.service';
-import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { selectSettings } from '@core/state/settings/settings.selectors';
@@ -33,7 +30,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditComponent implements OnInit {
-  selectedSpace?: Space;
+  @Input({ required: true })
+  spaceId!: string;
+
   entityId: string;
   entity?: Schema;
   reservedNames: string[] = [];
@@ -77,26 +76,14 @@ export class EditComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadData(this.entityId);
+    this.loadData(this.spaceId, this.entityId);
   }
 
-  loadData(entityId: string): void {
-    this.store
-      .select(selectSpace)
-      .pipe(
-        filter(it => it.id !== ''), // Skip initial data
-        switchMap(it =>
-          combineLatest([
-            this.spaceService.findById(it.id),
-            this.schemaService.findAll(it.id),
-            this.schemaService.findById(it.id, entityId),
-          ])
-        ),
-        takeUntilDestroyed(this.destroyRef)
-      )
+  loadData(spaceId: string, entityId: string): void {
+    combineLatest([this.schemaService.findAll(spaceId), this.schemaService.findById(spaceId, entityId)])
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ([space, schemas, schema]) => {
-          this.selectedSpace = space;
+        next: ([schemas, schema]) => {
           this.reservedNames = schemas.map(it => it.name);
           this.schemas = schemas;
           this.entity = schema;
@@ -314,7 +301,7 @@ export class EditComponent implements OnInit {
     //console.group('save')
     this.isSaveLoading = true;
 
-    this.schemaService.update(this.selectedSpace!.id, this.entityId, this.form.value as SchemaUpdate).subscribe({
+    this.schemaService.update(this.spaceId, this.entityId, this.form.value as SchemaUpdate).subscribe({
       next: () => {
         this.notificationService.success('Schema has been updated.');
       },
@@ -333,7 +320,7 @@ export class EditComponent implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['features', 'schemas']);
+    this.router.navigate(['features', 'spaces', this.spaceId, 'schemas']);
   }
 
   fieldDropDrop(event: CdkDragDrop<string[]>): void {

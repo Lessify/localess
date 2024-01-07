@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  Input,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { combineLatest, debounceTime, EMPTY, Observable, startWith } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { filter, map, switchMap } from 'rxjs/operators';
@@ -11,7 +21,6 @@ import { SpaceService } from '@shared/services/space.service';
 import { AppState } from '@core/state/core.state';
 import { Locale } from '@shared/models/locale.model';
 import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
-import { selectSpace } from '@core/state/space/space.selector';
 import { Space } from '@shared/models/space.model';
 import { TranslationAddDialogComponent } from './translation-add-dialog/translation-add-dialog.component';
 import { TranslationAddDialogModel } from './translation-add-dialog/translation-add-dialog.model';
@@ -41,6 +50,9 @@ import { TranslationHistoryService } from '@shared/services/translation-history.
 export class TranslationsComponent implements OnInit {
   @ViewChild('labelsInput') labelsInput!: ElementRef<HTMLInputElement>;
   @ViewChild('auto') matAutocomplete!: MatAutocomplete;
+
+  @Input({ required: true })
+  spaceId!: string;
 
   selectedSpace?: Space;
   showHistory = false;
@@ -98,7 +110,7 @@ export class TranslationsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadData();
+    this.loadData(this.spaceId);
     this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: value => {
         this.searchValue = value;
@@ -107,20 +119,13 @@ export class TranslationsComponent implements OnInit {
     });
   }
 
-  loadData(): void {
-    this.store
-      .select(selectSpace)
-      .pipe(
-        filter(it => it.id !== ''), // Skip initial data
-        switchMap(it =>
-          combineLatest([
-            this.spaceService.findById(it.id),
-            this.translationService.findAll(it.id),
-            this.translateHistoryService.findAll(it.id),
-          ])
-        ),
-        takeUntilDestroyed(this.destroyRef)
-      )
+  loadData(spaceId: string): void {
+    combineLatest([
+      this.spaceService.findById(spaceId),
+      this.translationService.findAll(spaceId),
+      this.translateHistoryService.findAll(spaceId),
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([space, translations, history]) => {
           this.selectedSpace = space;
@@ -157,7 +162,7 @@ export class TranslationsComponent implements OnInit {
 
   publish(): void {
     this.isPublishLoading = true;
-    this.translationService.publish(this.selectedSpace!.id).subscribe({
+    this.translationService.publish(this.spaceId).subscribe({
       next: () => {
         this.notificationService.success('Translations has been published.');
       },
@@ -191,7 +196,7 @@ export class TranslationsComponent implements OnInit {
             description: it?.description,
             autoTranslate: it?.autoTranslate,
           };
-          return this.translationService.create(this.selectedSpace!.id, tc);
+          return this.translationService.create(this.spaceId, tc);
         })
       )
       .subscribe({
@@ -218,7 +223,7 @@ export class TranslationsComponent implements OnInit {
             labels: it!.labels,
             description: it!.description,
           };
-          return this.translationService.update(this.selectedSpace!.id, translation.id, tu);
+          return this.translationService.update(this.spaceId, translation.id, tu);
         })
       )
       .subscribe({
@@ -242,7 +247,7 @@ export class TranslationsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it),
-        switchMap(() => this.translationService.delete(this.selectedSpace!.id, element.id))
+        switchMap(() => this.translationService.delete(this.spaceId, element.id))
       )
       .subscribe({
         next: () => {
@@ -267,9 +272,9 @@ export class TranslationsComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it => {
           if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationImportTask(this.selectedSpace!.id, it.file, it.locale);
+            return this.taskService.createTranslationImportTask(this.spaceId, it.file, it.locale);
           } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationImportTask(this.selectedSpace!.id, it.file);
+            return this.taskService.createTranslationImportTask(this.spaceId, it.file);
           }
           return EMPTY;
         })
@@ -298,9 +303,9 @@ export class TranslationsComponent implements OnInit {
         switchMap(it => {
           console.log(it);
           if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationExportTask(this.selectedSpace!.id, it.fromDate, it.locale);
+            return this.taskService.createTranslationExportTask(this.spaceId, it.fromDate, it.locale);
           } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationExportTask(this.selectedSpace!.id, it.fromDate);
+            return this.taskService.createTranslationExportTask(this.spaceId, it.fromDate);
           }
           return EMPTY;
         })
@@ -323,7 +328,7 @@ export class TranslationsComponent implements OnInit {
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
     this.isLocaleUpdateLoading = true;
-    this.translationService.updateLocale(this.selectedSpace!.id, transaction.id, locale, value).subscribe({
+    this.translationService.updateLocale(this.spaceId, transaction.id, locale, value).subscribe({
       next: () => {
         this.notificationService.success('Translation has been updated.');
       },
@@ -378,7 +383,7 @@ export class TranslationsComponent implements OnInit {
   }
 
   openPublishedInNewTab(locale: string): void {
-    const url = `${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/translations/${locale}`;
+    const url = `${location.origin}/api/v1/spaces/${this.spaceId}/translations/${locale}`;
     window.open(url, '_blank');
   }
 

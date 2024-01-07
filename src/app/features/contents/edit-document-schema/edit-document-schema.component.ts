@@ -2,10 +2,11 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   EventEmitter,
+  inject,
   Input,
   OnChanges,
-  OnDestroy,
   OnInit,
   Output,
   SimpleChanges,
@@ -14,8 +15,8 @@ import { FormArray, FormBuilder, FormRecord } from '@angular/forms';
 import { Schema, SchemaField, SchemaFieldKind, SchemaFieldOption, SchemaFieldOptions } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
-import { filter, takeUntil } from 'rxjs/operators';
-import { debounceTime, Subject } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { debounceTime } from 'rxjs';
 import { v4 } from 'uuid';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { Space } from '@shared/models/space.model';
@@ -27,6 +28,7 @@ import { AppState } from '@core/state/core.state';
 import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -34,14 +36,14 @@ import { MatSlideToggleChange } from '@angular/material/slide-toggle';
   styleUrls: ['./edit-document-schema.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy {
+export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   // Form
   form: FormRecord = this.fb.record({});
 
   isDefaultLocale = true;
   // Subscriptions
   settings$ = this.store.select(selectSettings);
-  private destroy$ = new Subject();
+  private destroyRef = inject(DestroyRef);
 
   @Input() data: ContentData = { _id: '', schema: '' };
   @Input() schemas: Schema[] = [];
@@ -124,7 +126,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
         .pipe(
           debounceTime(500),
           filter(it => Object.keys(it).length !== 0),
-          takeUntil(this.destroy$)
+          takeUntilDestroyed(this.destroyRef)
         )
         .subscribe({
           next: formValue => {
@@ -228,11 +230,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges, OnDestroy
       return result;
     }
     return this.schemas;
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 
   addSchemaOne(field: SchemaField, schema: Schema): void {

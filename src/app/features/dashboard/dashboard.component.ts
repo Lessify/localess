@@ -1,13 +1,14 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 
 import { AppState } from '@core/state/core.state';
-import { selectSpace } from '@core/state/space/space.selector';
-import { filter, first, switchMap, tap } from 'rxjs/operators';
+import { first, switchMap, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SpaceService } from '@shared/services/space.service';
 import { Timestamp } from '@angular/fire/firestore';
 import { NotificationService } from '@shared/services/notification.service';
+import { Observable } from 'rxjs';
+import { Space } from '@shared/models/space.model';
 
 @Component({
   selector: 'll-dashboard',
@@ -15,32 +16,38 @@ import { NotificationService } from '@shared/services/notification.service';
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
+  @Input({ required: true })
+  spaceId!: string;
+
   isLoading = true;
   now = Timestamp.now();
   private destroyRef = inject(DestroyRef);
 
-  space$ = this.store.select(selectSpace).pipe(
-    filter(it => it.id !== ''), // Skip initial data
-    switchMap(it => this.spaceService.findById(it.id)),
-    tap(it => {
-      if (it.overview === undefined || (it.overview && this.now.seconds - it.overview.updatedAt.seconds > 86400)) {
-        this.spaceService.calculateOverview(it.id).subscribe({ next: () => console.log('Space Overview Updated') });
-      }
-    }),
-    takeUntilDestroyed(this.destroyRef)
-  );
+  space$?: Observable<Space>;
 
   constructor(
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
     private readonly spaceService: SpaceService
-  ) {}
+  ) {
+    console.log('constructor', this.spaceId);
+  }
+
+  ngOnInit(): void {
+    this.space$ = this.spaceService.findById(this.spaceId).pipe(
+      tap(it => {
+        if (it.overview === undefined || (it.overview && this.now.seconds - it.overview.updatedAt.seconds > 86400)) {
+          this.spaceService.calculateOverview(it.id).subscribe({ next: () => console.log('Space Overview Updated') });
+        }
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    );
+  }
 
   calculateOverview() {
-    console.log('calculateOverview');
     this.space$
-      .pipe(
+      ?.pipe(
         first(),
         switchMap(it => this.spaceService.calculateOverview(it.id))
       )

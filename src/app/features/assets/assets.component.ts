@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,10 +8,9 @@ import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { SpaceService } from '@shared/services/space.service';
-import { Space } from '@shared/models/space.model';
 import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
-import { combineLatest, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
@@ -43,8 +42,10 @@ export class AssetsComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
+  @Input({ required: true })
+  spaceId!: string;
+
   private destroyRef = inject(DestroyRef);
-  selectedSpace?: Space;
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
   displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt', 'actions'];
   selection = new SelectionModel<Asset>(true, []);
@@ -78,12 +79,12 @@ export class AssetsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadData();
+    this.loadData(this.spaceId);
 
     this.fileUploadQueue$
       .pipe(
         tap(console.log),
-        concatMap(it => this.assetService.createFile(this.selectedSpace!.id, this.parentPath, it)),
+        concatMap(it => this.assetService.createFile(this.spaceId, this.parentPath, it)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
@@ -96,7 +97,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  loadData(): void {
+  loadData(spaceId: string): void {
     this.store
       .select(selectSpace)
       .pipe(
@@ -113,12 +114,11 @@ export class AssetsComponent implements OnInit {
             ];
           }
         }),
-        switchMap(it => combineLatest([this.spaceService.findById(it.id), this.assetService.findAll(it.id, this.parentPath)])),
+        switchMap(() => this.assetService.findAll(spaceId, this.parentPath)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: ([space, assets]) => {
-          this.selectedSpace = space;
+        next: assets => {
           this.assets = assets;
 
           this.dataSource = new MatTableDataSource<Asset>(assets);
@@ -155,7 +155,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.createFolder(this.selectedSpace!.id, this.parentPath, it!))
+        switchMap(it => this.assetService.createFolder(this.spaceId, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -190,7 +190,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFolder(this.selectedSpace!.id, element.id, it!))
+        switchMap(it => this.assetService.updateFolder(this.spaceId, element.id, it!))
       )
       .subscribe({
         next: () => {
@@ -219,7 +219,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFile(this.selectedSpace!.id, element.id, it!))
+        switchMap(it => this.assetService.updateFile(this.spaceId, element.id, it!))
       )
       .subscribe({
         next: () => {
@@ -248,7 +248,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.assetService.delete(this.selectedSpace!.id, element.id))
+        switchMap(() => this.assetService.delete(this.spaceId, element.id))
       )
       .subscribe({
         next: () => {
@@ -335,7 +335,7 @@ export class AssetsComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         tap(console.log),
-        switchMap(it => this.taskService.createAssetImportTask(this.selectedSpace!.id, it!.file))
+        switchMap(it => this.taskService.createAssetImportTask(this.spaceId, it!.file))
       )
       .subscribe({
         next: () => {
@@ -352,13 +352,13 @@ export class AssetsComponent implements OnInit {
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
         width: '500px',
         data: {
-          spaceId: this.selectedSpace!.id,
+          spaceId: this.spaceId,
         },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createAssetExportTask(this.selectedSpace!.id, it?.path))
+        switchMap(it => this.taskService.createAssetExportTask(this.spaceId, it?.path))
       )
       .subscribe({
         next: () => {
@@ -375,7 +375,7 @@ export class AssetsComponent implements OnInit {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    window.open(`/api/v1/spaces/${this.selectedSpace!.id}/assets/${element.id}?download`);
+    window.open(`/api/v1/spaces/${this.spaceId}/assets/${element.id}?download`);
   }
 
   filesDragAndDrop(event: File[]) {

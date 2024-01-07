@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, HostListener, inject, Input, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Schema, SchemaFieldKind } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -10,8 +10,8 @@ import { ContentData, ContentDocument, ContentError, ContentKind, EditorEvent } 
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { selectSpace } from '@core/state/space/space.selector';
-import { distinctUntilChanged, filter, switchMap, takeUntil } from 'rxjs/operators';
-import { combineLatest, Subject } from 'rxjs';
+import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
+import { combineLatest } from 'rxjs';
 import { SpaceService } from '@shared/services/space.service';
 import { Space, SpaceEnvironment } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -23,6 +23,7 @@ import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema
 import { selectSettings } from '@core/state/settings/settings.selectors';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { TokenService } from '@shared/services/token.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -30,7 +31,10 @@ import { TokenService } from '@shared/services/token.service';
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditDocumentComponent implements OnInit, OnDestroy {
+export class EditDocumentComponent implements OnInit {
+  @Input({ required: true })
+  spaceId!: string;
+
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
   selectedEnvironment?: SpaceEnvironment;
@@ -59,7 +63,8 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
 
   // Subscriptions
   settings$ = this.store.select(selectSettings);
-  private destroy$ = new Subject();
+
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly fb: FormBuilder,
@@ -97,7 +102,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
             this.schemaService.findAll(it.id),
           ])
         ),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: ([space, document, documents, schemas]) => {
@@ -208,7 +213,7 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
   }
 
   back(): void {
-    this.router.navigate(['features', 'contents']);
+    this.router.navigate(['features', 'spaces', this.spaceId, 'contents']);
   }
 
   openDraftInNewTab(locale: string): void {
@@ -240,11 +245,6 @@ export class EditDocumentComponent implements OnInit, OnDestroy {
         }
       },
     });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next(undefined);
-    this.destroy$.complete();
   }
 
   onLocaleChanged(locale: Locale): void {

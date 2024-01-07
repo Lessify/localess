@@ -67,15 +67,7 @@ export class FeaturesComponent implements OnInit {
   version = environment.version;
   release?: Release;
 
-  userSideMenu: SideMenuItem[] = [
-    { link: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { link: 'translations', label: 'Translations', icon: 'translate', permission: UserPermission.TRANSLATION_READ },
-    { link: 'contents', label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ },
-    { link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ },
-    { link: 'schemas', label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ },
-    { link: 'tasks', label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT },
-    // { link: 'plugins', label: 'Plugins', icon: 'extension', permission: UserPermission.SPACE_MANAGEMENT },
-  ];
+  userSideMenu: SideMenuItem[] = [];
 
   adminSideMenu: SideMenuItem[] = [
     { link: 'users', label: 'Users', icon: 'people', permission: UserPermission.USER_MANAGEMENT },
@@ -207,12 +199,12 @@ export class FeaturesComponent implements OnInit {
 
   generateUserSideMenu(spaceId: string): void {
     this.userSideMenu = [
-      { link: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-      { link: 'translations', label: 'Translations', icon: 'translate', permission: UserPermission.TRANSLATION_READ },
-      { link: 'contents', label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ },
-      { link: 'assets', label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ },
-      { link: 'schemas', label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ },
-      { link: 'tasks', label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT },
+      { link: `spaces/${spaceId}/dashboard`, label: 'Dashboard', icon: 'dashboard' },
+      { link: `spaces/${spaceId}/translations`, label: 'Translations', icon: 'translate', permission: UserPermission.TRANSLATION_READ },
+      { link: `spaces/${spaceId}/contents`, label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ },
+      { link: `spaces/${spaceId}/assets`, label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ },
+      { link: `spaces/${spaceId}/schemas`, label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ },
+      { link: `spaces/${spaceId}/tasks`, label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT },
       // { link: 'plugins', label: 'Plugins', icon: 'extension', permission: UserPermission.SPACE_MANAGEMENT },
       { link: `spaces/${spaceId}/settings`, label: 'Settings', icon: 'settings', permission: UserPermission.SPACE_MANAGEMENT },
     ];
@@ -220,7 +212,7 @@ export class FeaturesComponent implements OnInit {
 
   onSpaceSelection(element: Space): void {
     this.store.dispatch(actionSpaceChange(element));
-    this.router.navigate(['features']);
+    this.router.navigate(['features', 'spaces', element.id, 'dashboard']);
   }
 
   onLoginClick(): void {

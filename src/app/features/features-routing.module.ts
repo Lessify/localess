@@ -129,14 +129,68 @@ const routes: Routes = [
     component: FeaturesComponent,
     children: [
       {
-        path: 'dashboard',
+        path: 'me',
+        title: 'Me',
+        loadChildren: () => import('./me/me.module').then(m => m.MeModule),
+      },
+      {
+        path: 'spaces/:spaceId/dashboard',
         title: 'Dashboard',
         loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule),
       },
       {
-        path: 'me',
-        title: 'Me',
-        loadChildren: () => import('./me/me.module').then(m => m.MeModule),
+        path: 'spaces/:spaceId/translations',
+        title: 'Translations',
+        loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionTranslationRead,
+        },
+      },
+      {
+        path: 'spaces/:spaceId/contents',
+        title: 'Contents',
+        loadChildren: () => import('./contents/contents.module').then(m => m.ContentsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionContentRead,
+        },
+      },
+      {
+        path: 'spaces/:spaceId/assets',
+        title: 'Assets',
+        loadChildren: () => import('./assets/assets.module').then(m => m.AssetsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionAssetRead,
+        },
+      },
+      {
+        path: 'spaces/:spaceId/schemas',
+        title: 'Schemas',
+        loadChildren: () => import('./schemas/schemas.module').then(m => m.SchemasModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionSchemaRead,
+        },
+      },
+      {
+        path: 'spaces/:spaceId/tasks',
+        title: 'Tasks',
+        loadChildren: () => import('./tasks/tasks.module').then(m => m.TasksModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionTranslationRead,
+        },
+      },
+      {
+        path: 'spaces/:spaceId/settings',
+        title: 'Settings',
+        loadChildren: () => import('./settings/settings.module').then(m => m.SettingsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionSpaceManagement,
+        },
       },
       {
         path: 'users',
@@ -157,66 +211,12 @@ const routes: Routes = [
         },
       },
       {
-        path: 'spaces/:spaceId/settings',
-        title: 'Settings',
-        loadChildren: () => import('./settings/settings.module').then(m => m.SettingsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionSpaceManagement,
-        },
-      },
-      {
         path: 'plugins',
         title: 'Plugins',
         loadChildren: () => import('./plugins/plugins.module').then(m => m.PluginsModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSpaceManagement,
-        },
-      },
-      {
-        path: 'translations',
-        title: 'Translations',
-        loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionTranslationRead,
-        },
-      },
-      {
-        path: 'tasks',
-        title: 'Tasks',
-        loadChildren: () => import('./tasks/tasks.module').then(m => m.TasksModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionTranslationRead,
-        },
-      },
-      {
-        path: 'schemas',
-        title: 'Schemas',
-        loadChildren: () => import('./schemas/schemas.module').then(m => m.SchemasModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionSchemaRead,
-        },
-      },
-      {
-        path: 'contents',
-        title: 'Contents',
-        loadChildren: () => import('./contents/contents.module').then(m => m.ContentsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionContentRead,
-        },
-      },
-      {
-        path: 'assets',
-        title: 'Assets',
-        loadChildren: () => import('./assets/assets.module').then(m => m.AssetsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionAssetRead,
         },
       },
     ],
