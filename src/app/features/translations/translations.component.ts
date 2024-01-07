@@ -7,11 +7,12 @@ import {
   inject,
   Input,
   OnInit,
+  signal,
   ViewChild,
 } from '@angular/core';
-import { combineLatest, debounceTime, EMPTY, Observable, startWith } from 'rxjs';
+import { debounceTime, EMPTY, Observable, startWith } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
-import { filter, map, switchMap } from 'rxjs/operators';
+import { filter, map, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { MatAutocomplete, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -77,15 +78,18 @@ export class TranslationsComponent implements OnInit {
   selectedSourceLocale = '';
   selectedTargetLocale = '';
 
-  translations: Translation[] = [];
-  history: TranslationHistory[] = [];
+  //translations: Translation[] = [];
   locales: Locale[] = [];
+  // Subscriptions
+  history$?: Observable<TranslationHistory[]>;
+  space$?: Observable<Space>;
+  translations$?: Observable<Translation[]>;
 
   //Loadings
-  isLoading = true;
-  isPublishLoading = false;
-  isLocaleUpdateLoading = false;
-  isTranslateLoading = false;
+  isLoading = signal(true);
+  isPublishLoading = signal(false);
+  isLocaleUpdateLoading = signal(false);
+  isTranslateLoading = signal(false);
 
   private destroyRef = inject(DestroyRef);
 
@@ -105,63 +109,55 @@ export class TranslationsComponent implements OnInit {
   ) {
     this.filteredLabels = this.labelCtrl.valueChanges.pipe(
       startWith(null),
-      map((label: string | null) => (label ? this._filter(label) : this.availableLabels.slice()))
+      map((label: string | null) => (label ? this._filter(label) : this.availableLabels.slice())),
+      takeUntilDestroyed(this.destroyRef)
     );
   }
 
   ngOnInit(): void {
-    this.loadData(this.spaceId);
     this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: value => {
         this.searchValue = value;
         this.cd.markForCheck();
       },
     });
-  }
-
-  loadData(spaceId: string): void {
-    combineLatest([
-      this.spaceService.findById(spaceId),
-      this.translationService.findAll(spaceId),
-      this.translateHistoryService.findAll(spaceId),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ([space, translations, history]) => {
-          this.selectedSpace = space;
-          this.locales = space.locales;
-          this.translations = translations;
-          this.history = history;
-          if (translations.length > 0) {
-            if (this.selectedTranslation) {
-              const tr = translations.find(it => it.id === this.selectedTranslation?.id);
-              if (tr) {
-                this.selectTranslation(tr);
-              } else {
-                this.selectTranslation(translations[0]);
-              }
+    this.space$ = this.spaceService.findById(this.spaceId).pipe(
+      tap(space => {
+        this.locales = space.locales;
+        if (this.selectedSearchLocale === '') {
+          this.selectedSearchLocale = space.localeFallback.id;
+        }
+        if (this.selectedSourceLocale === '') {
+          this.selectedSourceLocale = space.localeFallback.id;
+        }
+        if (this.selectedTargetLocale === '') {
+          this.selectedTargetLocale = space.localeFallback.id;
+        }
+      })
+    );
+    this.translations$ = this.translationService.findAll(this.spaceId).pipe(
+      tap(translations => {
+        if (translations.length > 0) {
+          if (this.selectedTranslation) {
+            const tr = translations.find(it => it.id === this.selectedTranslation?.id);
+            if (tr) {
+              this.selectTranslation(tr);
             } else {
               this.selectTranslation(translations[0]);
             }
+          } else {
+            this.selectTranslation(translations[0]);
           }
-          if (this.selectedSearchLocale === '') {
-            this.selectedSearchLocale = space.localeFallback.id;
-          }
-          if (this.selectedSourceLocale === '') {
-            this.selectedSourceLocale = space.localeFallback.id;
-          }
-          if (this.selectedTargetLocale === '') {
-            this.selectedTargetLocale = space.localeFallback.id;
-          }
-          this.groupAvailableLabels(translations);
-          this.isLoading = false;
-          this.cd.markForCheck();
-        },
-      });
+        }
+        this.groupAvailableLabels(translations);
+        this.isLoading.set(false);
+      })
+    );
+    this.history$ = this.translateHistoryService.findAll(this.spaceId);
   }
 
   publish(): void {
-    this.isPublishLoading = true;
+    this.isPublishLoading.set(true);
     this.translationService.publish(this.spaceId).subscribe({
       next: () => {
         this.notificationService.success('Translations has been published.');
@@ -171,7 +167,7 @@ export class TranslationsComponent implements OnInit {
       },
       complete: () => {
         setTimeout(() => {
-          this.isPublishLoading = false;
+          this.isPublishLoading.set(false);
           this.cd.markForCheck();
         }, 1000);
       },
@@ -327,7 +323,7 @@ export class TranslationsComponent implements OnInit {
   }
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
-    this.isLocaleUpdateLoading = true;
+    this.isLocaleUpdateLoading.set(true);
     this.translationService.updateLocale(this.spaceId, transaction.id, locale, value).subscribe({
       next: () => {
         this.notificationService.success('Translation has been updated.');
@@ -337,7 +333,7 @@ export class TranslationsComponent implements OnInit {
       },
       complete: () => {
         setTimeout(() => {
-          this.isLocaleUpdateLoading = false;
+          this.isLocaleUpdateLoading.set(false);
           this.cd.markForCheck();
         }, 1000);
       },
@@ -388,7 +384,7 @@ export class TranslationsComponent implements OnInit {
   }
 
   translate(): void {
-    this.isTranslateLoading = true;
+    this.isTranslateLoading.set(true);
     this.translateService
       .translate({
         content: this.selectedTranslation?.locales[this.selectedSourceLocale] || '',
@@ -415,7 +411,7 @@ export class TranslationsComponent implements OnInit {
         },
         complete: () => {
           setTimeout(() => {
-            this.isTranslateLoading = false;
+            this.isTranslateLoading.set(false);
             this.cd.markForCheck();
           }, 1000);
         },

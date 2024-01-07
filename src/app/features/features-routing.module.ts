@@ -193,7 +193,7 @@ const routes: Routes = [
         },
       },
       {
-        path: 'users',
+        path: 'a/users',
         title: 'Users',
         loadChildren: () => import('./users/users.module').then(m => m.UsersModule),
         canActivate: [AuthGuard],
@@ -202,7 +202,7 @@ const routes: Routes = [
         },
       },
       {
-        path: 'spaces',
+        path: 'a/spaces',
         title: 'Spaces',
         loadChildren: () => import('./spaces/spaces.module').then(m => m.SpacesModule),
         canActivate: [AuthGuard],

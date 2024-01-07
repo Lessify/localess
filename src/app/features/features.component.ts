@@ -70,8 +70,8 @@ export class FeaturesComponent implements OnInit {
   userSideMenu: SideMenuItem[] = [];
 
   adminSideMenu: SideMenuItem[] = [
-    { link: 'users', label: 'Users', icon: 'people', permission: UserPermission.USER_MANAGEMENT },
-    { link: 'spaces', label: 'Spaces', icon: 'space_dashboard', permission: UserPermission.SPACE_MANAGEMENT },
+    { link: 'a/users', label: 'Users', icon: 'people', permission: UserPermission.USER_MANAGEMENT },
+    { link: 'a/spaces', label: 'Spaces', icon: 'space_dashboard', permission: UserPermission.SPACE_MANAGEMENT },
   ];
 
   communitySideMenu: SideMenuItem[] = [
