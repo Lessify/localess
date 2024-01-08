@@ -11,15 +11,12 @@ import {
   ViewChild,
 } from '@angular/core';
 import { debounceTime, EMPTY, Observable, startWith } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
 import { filter, map, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
-import { FormBuilder, FormControl } from '@angular/forms';
+import { FormControl } from '@angular/forms';
 import { MatAutocomplete, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { Store } from '@ngrx/store';
 import { TranslationService } from '@shared/services/translation.service';
 import { SpaceService } from '@shared/services/space.service';
-import { AppState } from '@core/state/core.state';
 import { Locale } from '@shared/models/locale.model';
 import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { Space } from '@shared/models/space.model';
@@ -78,8 +75,6 @@ export class TranslationsComponent implements OnInit {
   selectedSourceLocale = '';
   selectedTargetLocale = '';
 
-  //translations: Translation[] = [];
-  locales: Locale[] = [];
   // Subscriptions
   history$?: Observable<TranslationHistory[]>;
   space$?: Observable<Space>;
@@ -96,14 +91,11 @@ export class TranslationsComponent implements OnInit {
   constructor(
     private readonly translationService: TranslationService,
     private readonly translateHistoryService: TranslationHistoryService,
-    readonly localeService: LocaleService,
+    private readonly localeService: LocaleService,
     private readonly spaceService: SpaceService,
     private readonly taskService: TaskService,
     private readonly notificationService: NotificationService,
-    private readonly route: ActivatedRoute,
-    private readonly fb: FormBuilder,
     private readonly dialog: MatDialog,
-    private readonly store: Store<AppState>,
     private readonly cd: ChangeDetectorRef,
     private readonly translateService: TranslateService
   ) {
@@ -123,7 +115,7 @@ export class TranslationsComponent implements OnInit {
     });
     this.space$ = this.spaceService.findById(this.spaceId).pipe(
       tap(space => {
-        this.locales = space.locales;
+        //this.locales = space.locales;
         if (this.selectedSearchLocale === '') {
           this.selectedSearchLocale = space.localeFallback.id;
         }
@@ -255,12 +247,12 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  openImportDialog(): void {
+  openImportDialog(locales: Locale[]): void {
     this.dialog
       .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(ImportDialogComponent, {
         width: '500px',
         data: {
-          locales: this.locales,
+          locales: locales,
         },
       })
       .afterClosed()
@@ -285,12 +277,12 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  openExportDialog(): void {
+  openExportDialog(locales: Locale[]): void {
     this.dialog
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
         width: '500px',
         data: {
-          locales: this.locales,
+          locales: locales,
         },
       })
       .afterClosed()
