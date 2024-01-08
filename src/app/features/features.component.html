@@ -1,101 +1,121 @@
-<div class="wrapper" *ngIf="settings$ | async as settings">
-  <mat-toolbar [color]="selectedSpace?.ui?.color || 'primary'">
-    <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
-      <mat-icon>{{ settings.mainMenuExpended ? 'menu_open' : 'menu' }}</mat-icon>
-    </button>
-    <span class="name">Localess</span>
-    <span class="spacer"></span>
-
-    <ng-container *ngIf="selectedSpace; else elseNoSpace">
-      <button mat-flat-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
-        {{ selectedSpace.name }}
-        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+@if (settings$ | async; as settings) {
+  <div class="wrapper">
+    <mat-toolbar [color]="selectedSpace?.ui?.color || 'primary'">
+      <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
+        <mat-icon>{{ settings.mainMenuExpended ? 'menu_open' : 'menu' }}</mat-icon>
       </button>
-      <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
-        <button mat-menu-item *ngFor="let space of spaces" (click)="onSpaceSelection(space)">
-          <span [class.fw-semibold]="space.id === selectedSpace.id"> {{ space.name }} </span>
+      <span class="name">Localess</span>
+      <span class="spacer"></span>
+
+      @if (selectedSpace) {
+        <button mat-flat-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
+          {{ selectedSpace.name }}
+          <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
         </button>
-      </mat-menu>
-    </ng-container>
+        <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
+          @for (space of spaces; track space.id) {
+            <button mat-menu-item (click)="onSpaceSelection(space)">
+              <span [class.fw-semibold]="space.id === selectedSpace.id"> {{ space.name }} </span>
+            </button>
+          }
+        </mat-menu>
+      } @else {
+        <button mat-raised-button color="warn" routerLink="/features/spaces">No Spaces. Click here to create one.</button>
+      }
 
-    <ng-template #elseNoSpace>
-      <button mat-raised-button color="warn" routerLink="/features/spaces">No Spaces. Click here to create one.</button>
-    </ng-template>
+      <span class="spacer"></span>
+      <button mat-icon-button (click)="onSettingsMenuExpendedChangeState()" matTooltip="Settings">
+        <mat-icon>settings</mat-icon>
+      </button>
+      <button mat-icon-button routerLink="/features/me" matTooltip="My Profile">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <button mat-icon-button (click)="onLogoutClick()" matTooltip="LogOut">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-toolbar>
 
-    <span class="spacer"></span>
-    <button mat-icon-button (click)="onSettingsMenuExpendedChangeState()" matTooltip="Settings">
-      <mat-icon>settings</mat-icon>
-    </button>
-    <button mat-icon-button routerLink="/features/me" matTooltip="My Profile">
-      <mat-icon>account_circle</mat-icon>
-    </button>
-    <button mat-icon-button (click)="onLogoutClick()" matTooltip="LogOut">
-      <mat-icon>logout</mat-icon>
-    </button>
-  </mat-toolbar>
+    <mat-sidenav-container autosize="true">
+      <mat-sidenav mode="side" opened="true" position="start" [class.collapsed]="!settings.mainMenuExpended">
+        <mat-nav-list>
+          @if (selectedSpace) {
+            @for (item of userSideMenu; track item.label) {
+              @if (item.permission | canUserPerform | async) {
+                <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
+                  <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
+                  @if (settings.mainMenuExpended) {
+                    <div matListItemTitle>{{ item.label }}</div>
+                  }
+                </mat-list-item>
+              }
+            }
+          }
 
-  <mat-sidenav-container autosize="true">
-    <mat-sidenav mode="side" opened="true" position="start" [class.collapsed]="!settings.mainMenuExpended">
-      <mat-nav-list>
-        <ng-container *ngIf="selectedSpace">
-          <ng-container *ngFor="let item of userSideMenu">
-            <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
-              <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
-              <div matListItemTitle *ngIf="settings.mainMenuExpended">{{ item.label }}</div>
-            </mat-list-item>
-          </ng-container>
-        </ng-container>
+          @if ((userPermission.USER_MANAGEMENT | canUserPerform | async) || (userPermission.SPACE_MANAGEMENT | canUserPerform | async)) {
+            <mat-divider />
+            @if (settings.mainMenuExpended) {
+              <div mat-subheader>Admin</div>
+            }
+            @for (item of adminSideMenu; track item.label) {
+              @if (item.permission | canUserPerform | async) {
+                <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
+                  <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
+                  @if (settings.mainMenuExpended) {
+                    <div matListItemTitle>{{ item.label }}</div>
+                  }
+                </mat-list-item>
+              }
+            }
+          }
 
-        <ng-container
-          *ngIf="(userPermission.USER_MANAGEMENT | canUserPerform | async) || (userPermission.SPACE_MANAGEMENT | canUserPerform | async)">
           <mat-divider />
-          <div mat-subheader *ngIf="settings.mainMenuExpended">Admin</div>
-          <ng-container *ngFor="let item of adminSideMenu">
-            <mat-list-item *ngIf="item.permission | canUserPerform | async" [routerLink]="[item.link]" routerLinkActive="active">
+          @if (settings.mainMenuExpended) {
+            <div mat-subheader>Community and Support</div>
+          }
+          @for (item of communitySideMenu; track item.label) {
+            <mat-list-item (click)="openNewTab(item.link)">
               <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
-              <div matListItemTitle *ngIf="settings.mainMenuExpended">{{ item.label }}</div>
+              @if (settings.mainMenuExpended) {
+                <div matListItemTitle>{{ item.label }}</div>
+              }
             </mat-list-item>
-          </ng-container>
-        </ng-container>
-
+          }
+          @if (settings.mainMenuExpended) {
+            <mat-divider />
+            <mat-list-item>
+              Version : {{ version }}
+              @if (release && release.tag_name > version) {
+                <mat-action-list matListItemMeta [matTooltip]="'A new version is available : ' + release.name">
+                  <mat-icon>info</mat-icon>
+                </mat-action-list>
+              }
+            </mat-list-item>
+            <mat-divider />
+            <mat-list-item>
+              Developed by <a href="https://lessify.io" class="font-semibold leading-6 text-blue-800" target="_blank">Lessify</a>
+            </mat-list-item>
+          }
+        </mat-nav-list>
         <mat-divider />
-        <div mat-subheader *ngIf="settings.mainMenuExpended">Community and Support</div>
-        <mat-list-item *ngFor="let item of communitySideMenu" (click)="openNewTab(item.link)">
-          <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
-          <div matListItemTitle *ngIf="settings.mainMenuExpended">{{ item.label }}</div>
-        </mat-list-item>
-        <ng-container *ngIf="settings.mainMenuExpended">
-          <mat-divider />
-          <mat-list-item>
-            Version : {{ version }}
-            <mat-action-list
-              matListItemMeta
-              *ngIf="release && release.tag_name > version"
-              [matTooltip]="'A new version is available : ' + release.name">
-              <mat-icon>info</mat-icon>
-            </mat-action-list>
-          </mat-list-item>
-          <mat-divider />
-          <mat-list-item>
-            Developed by <a href="https://lessify.io" class="font-semibold leading-6 text-blue-800" target="_blank">Lessify</a>
-          </mat-list-item>
-        </ng-container>
-      </mat-nav-list>
-      <mat-divider />
-    </mat-sidenav>
+      </mat-sidenav>
 
-    <mat-sidenav mode="over" [opened]="isSettingsMenuExpended" position="end" (openedChange)="isSettingsMenuExpended = $event">
-      <mat-list>
-        <div mat-subheader>Settings</div>
-        <mat-list-item *ngIf="isDebug">
-          <mat-slide-toggle [checked]="settings.debugEnabled" (change)="onDebugEnabledChangeState()">Enable Debug</mat-slide-toggle>
-        </mat-list-item>
-      </mat-list>
-    </mat-sidenav>
+      <mat-sidenav mode="over" [opened]="isSettingsMenuExpended" position="end" (openedChange)="isSettingsMenuExpended = $event">
+        <mat-list>
+          <div mat-subheader>Settings</div>
+          @if (isDebug) {
+            <mat-list-item>
+              <mat-slide-toggle [checked]="settings.debugEnabled" (change)="onDebugEnabledChangeState()">Enable Debug</mat-slide-toggle>
+            </mat-list-item>
+          }
+        </mat-list>
+      </mat-sidenav>
 
-    <mat-sidenav-content>
-      <ng-container *ngIf="isRoleNone"> Please contact your administrator to grant you access to resources. </ng-container>
-      <router-outlet></router-outlet>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
-</div>
+      <mat-sidenav-content>
+        @if (isRoleNone) {
+          Please contact your administrator to grant you access to resources.
+        }
+        <router-outlet></router-outlet>
+      </mat-sidenav-content>
+    </mat-sidenav-container>
+  </div>
+}
