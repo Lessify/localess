@@ -23,15 +23,13 @@
           Publish
         </button>
       }
+      <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
+        <mat-icon>history</mat-icon>
+      </button>
       <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
         <mat-icon>more_vert</mat-icon>
       </button>
       <mat-menu #importMenu="matMenu">
-        <button mat-menu-item (click)="showHistory = !showHistory">
-          <mat-icon>history</mat-icon>
-          <span>History</span>
-        </button>
-        <mat-divider></mat-divider>
         @for (locale of space.locales; track locale.id) {
           <button mat-menu-item (click)="openPublishedInNewTab(locale.id)">
             <mat-icon>public</mat-icon>
