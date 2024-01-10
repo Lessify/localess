@@ -8,5 +8,7 @@ export interface TranslationHistory {
   id: string;
   type: TranslationHistoryType;
   description?: string;
+  name?: string;
+  email?: string;
   createdAt: Timestamp;
 }

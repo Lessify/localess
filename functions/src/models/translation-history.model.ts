@@ -7,5 +7,7 @@ export enum TranslationHistoryType {
 export interface TranslationHistory {
   type: TranslationHistoryType;
   description?: string;
+  name?: string;
+  email?: string;
   createdAt: Timestamp;
 }

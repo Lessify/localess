@@ -345,10 +345,15 @@
                       </div>
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
-                          <p class="text-sm text-gray-500">Published</p>
+                          <p class="text-sm text-gray-500">
+                            Published by
+                            <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                              {{ item.name || 'Unknown' }}
+                            </span>
+                          </p>
                         </div>
                         <div class="whitespace-nowrap text-right text-sm text-gray-500">
-                          <time datetime="2020-09-20">{{ item.createdAt?.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          <time>{{ item.createdAt?.toDate() | date: 'MMM dd, HH:mm' }}</time>
                         </div>
                       </div>
                     }

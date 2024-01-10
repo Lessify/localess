@@ -12,7 +12,8 @@ import { findSpaceById, findTranslations, findTranslationsHistory } from './serv
 const translationsPublish = onCall<PublishTranslationsData>(async request => {
   logger.info('[translationsPublish] data: ' + JSON.stringify(request.data));
   logger.info('[translationsPublish] context.auth: ' + JSON.stringify(request.auth));
-  const { spaceId } = request.data;
+  const {auth, data } = request
+  const { spaceId } = data;
   if (!canPerform(UserPermission.TRANSLATION_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await findSpaceById(spaceId).get();
   const translationsSnapshot = await findTranslations(spaceId).get();
@@ -46,6 +47,8 @@ const translationsPublish = onCall<PublishTranslationsData>(async request => {
     await bucket.file(`spaces/${spaceId}/translations/cache.json`).save('');
     const addHistory: WithFieldValue<TranslationHistory> = {
       type: TranslationHistoryType.PUBLISHED,
+      name: auth?.token['name'] || FieldValue.delete(),
+      email: auth?.token.email || FieldValue.delete(),
       createdAt: FieldValue.serverTimestamp(),
     };
     await findTranslationsHistory(spaceId).add(addHistory);
