@@ -115,6 +115,7 @@ export class TranslationsComponent implements OnInit {
     });
     this.space$ = this.spaceService.findById(this.spaceId).pipe(
       tap(space => {
+        this.selectedSpace = space;
         //this.locales = space.locales;
         if (this.selectedSearchLocale === '') {
           this.selectedSearchLocale = space.localeFallback.id;
