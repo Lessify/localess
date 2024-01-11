@@ -11,7 +11,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { selectSpace } from '@core/state/space/space.selector';
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
-import { combineLatest } from 'rxjs';
+import { combineLatest, Observable } from 'rxjs';
 import { SpaceService } from '@shared/services/space.service';
 import { Space, SpaceEnvironment } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -24,6 +24,8 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { TokenService } from '@shared/services/token.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ContentHistory } from '@shared/models/content-history.model';
+import { ContentHistoryService } from '@shared/services/content-history.service';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -34,6 +36,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 export class EditDocumentComponent implements OnInit {
   @Input({ required: true })
   spaceId!: string;
+  @Input({ required: true })
+  contentId!: string;
+
+  showHistory = false;
 
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
@@ -63,6 +69,7 @@ export class EditDocumentComponent implements OnInit {
 
   // Subscriptions
   settings$ = this.store.select(selectSettings);
+  history$?: Observable<ContentHistory[]>;
 
   private destroyRef = inject(DestroyRef);
 
@@ -74,6 +81,7 @@ export class EditDocumentComponent implements OnInit {
     private readonly spaceService: SpaceService,
     private readonly schemaService: SchemaService,
     private readonly contentService: ContentService,
+    private readonly contentHistoryService: ContentHistoryService,
     private readonly tokenService: TokenService,
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
@@ -86,6 +94,7 @@ export class EditDocumentComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData(this.entityId);
+    this.history$ = this.contentHistoryService.findAll(this.spaceId, this.contentId);
   }
 
   loadData(contentId: string): void {

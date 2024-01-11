@@ -22,6 +22,7 @@ import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { ReferenceSelectComponent } from './shared/reference-select/reference-select.component';
 import { ReferencesSelectComponent } from './shared/references-select/references-select.component';
+import { ContentHistoryService } from '@shared/services/content-history.service';
 
 @NgModule({
   declarations: [
@@ -40,6 +41,15 @@ import { ReferencesSelectComponent } from './shared/references-select/references
     ImportDialogComponent,
   ],
   imports: [SharedModule, ContentsRoutingModule],
-  providers: [SpaceService, SchemaService, ContentService, ContentHelperService, AssetService, TaskService, TokenService],
+  providers: [
+    SpaceService,
+    SchemaService,
+    ContentService,
+    ContentHistoryService,
+    ContentHelperService,
+    AssetService,
+    TaskService,
+    TokenService,
+  ],
 })
 export class ContentsModule {}

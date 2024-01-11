@@ -1,5 +1,6 @@
 export * from './asset.model';
 export * from './content.model';
+export * from './content-history.model';
 export * from './firebase.model';
 export * from './locale.model';
 export * from './plugin.model';

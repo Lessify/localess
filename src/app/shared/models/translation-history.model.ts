@@ -7,12 +7,30 @@ export enum TranslationHistoryType {
   DELETE = 'DELETE',
 }
 
-export interface TranslationHistory {
-  id: string;
+export type TranslationHistory = TranslationHistoryPublish | TranslationHistoryCreate | TranslationHistoryUpdate | TranslationHistoryDelete;
+
+export interface TranslationHistoryBase {
   type: TranslationHistoryType;
-  description?: string;
-  key?: string;
+  createdAt: Timestamp;
+}
+
+export interface TranslationHistoryPublish extends TranslationHistoryBase {
+  type: TranslationHistoryType.PUBLISHED;
   name?: string;
   email?: string;
-  createdAt: Timestamp;
+}
+
+export interface TranslationHistoryCreate extends TranslationHistoryBase {
+  type: TranslationHistoryType.CREATE;
+  key: string;
+}
+
+export interface TranslationHistoryUpdate extends TranslationHistoryBase {
+  type: TranslationHistoryType.UPDATE;
+  key: string;
+}
+
+export interface TranslationHistoryDelete extends TranslationHistoryBase {
+  type: TranslationHistoryType.DELETE;
+  key: string;
 }

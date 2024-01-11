@@ -44,37 +44,36 @@
       </div>
     </mat-menu>
 
-    <button
-      *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
-      mat-raised-button
-      color="primary"
-      matTooltip="Save the page"
-      [disabled]="isSaveLoading || isPublishLoading"
-      (click)="save()">
-      <ll-icon [animate]="isSaveLoading" start="save" end="sync" />
-      Save
-    </button>
+    @if ('CONTENT_UPDATE' | canUserPerform | async) {
+      <button mat-raised-button color="primary" matTooltip="Save the page" [disabled]="isSaveLoading || isPublishLoading" (click)="save()">
+        <ll-icon [animate]="isSaveLoading" start="save" end="sync" />
+        Save
+      </button>
+    }
 
-    <button
-      *ngIf="'CONTENT_PUBLISH' | canUserPerform | async"
-      mat-raised-button
-      color="accent"
-      matTooltip="Publish to be available via API call"
-      [disabled]="isPublishLoading || isSaveLoading"
-      (click)="publish()">
-      <ll-icon [animate]="isPublishLoading" start="publish" end="sync" />
-      Publish
-    </button>
+    @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+      <button
+        mat-raised-button
+        color="accent"
+        matTooltip="Publish to be available via API call"
+        [disabled]="isPublishLoading || isSaveLoading"
+        (click)="publish()">
+        <ll-icon [animate]="isPublishLoading" start="publish" end="sync" />
+        Publish
+      </button>
+    }
 
-    <ng-container *ngIf="document?.publishedAt === undefined">
+    @if (document?.publishedAt === undefined) {
       <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
-    </ng-container>
-    <ng-container *ngIf="document?.publishedAt?.seconds > document?.updatedAt?.seconds">
+    } @else if (document?.publishedAt?.seconds > document?.updatedAt?.seconds) {
       <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
-    </ng-container>
-    <ng-container *ngIf="document?.publishedAt && document?.publishedAt?.seconds < document?.updatedAt?.seconds">
+    } @else if (document?.publishedAt && document?.publishedAt?.seconds < document?.updatedAt?.seconds) {
       <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
-    </ng-container>
+    }
+
+    <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
+      <mat-icon>history</mat-icon>
+    </button>
 
     <button mat-icon-button [matMenuTriggerFor]="importMenu">
       <mat-icon>more_vert</mat-icon>
@@ -94,70 +93,182 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-<mat-progress-bar *ngIf="isLoading" mode="query" />
-<div *ngIf="!isLoading" class="container-full-screen container-fluid">
-  <mat-drawer-container autosize="true">
-    <mat-drawer mode="side" [opened]="editorEnabledCtr.value === true">
-      <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment; else noEnv">
-        <mat-card-header>
-          <mat-card-title>{{ selectedEnvironment?.name }}</mat-card-title>
-          <mat-card-subtitle>{{ selectedEnvironment?.url }}</mat-card-subtitle>
-          <span class="spacer"></span>
-          <button mat-icon-button [matMenuTriggerFor]="envMenu">
-            <mat-icon>arrow_drop_down</mat-icon>
-          </button>
-          <mat-menu #envMenu="matMenu">
-            <button
-              mat-menu-item
-              *ngFor="let env of selectedSpace?.environments"
-              (click)="changeEnvironment(env)"
-              [disabled]="env === selectedEnvironment">
-              {{ env.name }} | {{ env.url }}
-            </button>
-          </mat-menu>
-        </mat-card-header>
-        <mat-divider />
-        <mat-card-content>
-          <iframe id="preview" [src]="iframeUrl"></iframe>
-        </mat-card-content>
-      </mat-card>
-      <ng-template #noEnv>
-        <div class="text-center">
-          No Configured Environments.<br />
-          You can configure them in Settings.
-        </div>
-      </ng-template>
-    </mat-drawer>
-    <mat-drawer-content>
-      <div *ngIf="rootSchema" class="container-full-screen">
-        <ll-breadcrumb>
-          <ll-breadcrumb-item
-            *ngFor="let schemaPathItem of schemaPath; first as isFirst"
-            (click)="navigateToSchemaBackwards(schemaPathItem)"
-            [home]="isFirst">
-            <ng-container *ngIf="schemaMapByName.get(schemaPathItem.schemaName) as sch"> {{ sch.displayName || sch.name }} </ng-container>
-          </ll-breadcrumb-item>
-        </ll-breadcrumb>
+@if (isLoading) {
+  <mat-progress-bar mode="query" />
+}
 
-        <ll-content-document-schema-edit
-          [data]="selectedDocumentData"
-          [schemas]="schemas"
-          [locale]="selectedLocale.id"
-          [documents]="documents"
-          [space]="selectedSpace"
-          (schemaChange)="onSchemaChange($event)" />
-      </div>
-    </mat-drawer-content>
-  </mat-drawer-container>
+<mat-sidenav-container>
+  <mat-sidenav-content>
+    <div class="container-full-screen container-fluid">
+      <mat-drawer-container autosize="true">
+        <mat-drawer mode="side" [opened]="editorEnabledCtr.value === true">
+          <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment; else noEnv">
+            <mat-card-header>
+              <mat-card-title>{{ selectedEnvironment?.name }}</mat-card-title>
+              <mat-card-subtitle>{{ selectedEnvironment?.url }}</mat-card-subtitle>
+              <span class="spacer"></span>
+              <button mat-icon-button [matMenuTriggerFor]="envMenu">
+                <mat-icon>arrow_drop_down</mat-icon>
+              </button>
+              <mat-menu #envMenu="matMenu">
+                <button
+                  mat-menu-item
+                  *ngFor="let env of selectedSpace?.environments"
+                  (click)="changeEnvironment(env)"
+                  [disabled]="env === selectedEnvironment">
+                  {{ env.name }} | {{ env.url }}
+                </button>
+              </mat-menu>
+            </mat-card-header>
+            <mat-divider />
+            <mat-card-content>
+              <iframe id="preview" [src]="iframeUrl"></iframe>
+            </mat-card-content>
+          </mat-card>
+          <ng-template #noEnv>
+            <div class="text-center">
+              No Configured Environments.<br />
+              You can configure them in Settings.
+            </div>
+          </ng-template>
+        </mat-drawer>
+        <mat-drawer-content>
+          <div *ngIf="rootSchema" class="container-full-screen">
+            <ll-breadcrumb>
+              <ll-breadcrumb-item
+                *ngFor="let schemaPathItem of schemaPath; first as isFirst"
+                (click)="navigateToSchemaBackwards(schemaPathItem)"
+                [home]="isFirst">
+                @if (schemaMapByName.get(schemaPathItem.schemaName); as sch) {
+                  {{ sch.displayName || sch.name }}
+                }
+              </ll-breadcrumb-item>
+            </ll-breadcrumb>
 
-  <ng-container *ngIf="settings$ | async as settings">
-    <mat-accordion *ngIf="settings.debugEnabled">
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
-        </mat-expansion-panel-header>
-        <pre>{{ documentData | json }}</pre>
-      </mat-expansion-panel>
-    </mat-accordion>
-  </ng-container>
-</div>
+            <ll-content-document-schema-edit
+              [data]="selectedDocumentData"
+              [schemas]="schemas"
+              [locale]="selectedLocale.id"
+              [documents]="documents"
+              [space]="selectedSpace"
+              (schemaChange)="onSchemaChange($event)" />
+          </div>
+        </mat-drawer-content>
+      </mat-drawer-container>
+
+      <ng-container *ngIf="settings$ | async as settings">
+        <mat-accordion *ngIf="settings.debugEnabled">
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
+            </mat-expansion-panel-header>
+            <pre>{{ documentData | json }}</pre>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </ng-container>
+    </div>
+  </mat-sidenav-content>
+  <mat-sidenav position="end" [opened]="showHistory" (openedChange)="showHistory = $event">
+    <div class="flow-root m-4">
+      <ul role="list" class="-mb-8">
+        @for (item of history$ | async; track item.id; let isLast = $last) {
+          <li>
+            <div class="relative pb-5">
+              @if (!isLast) {
+                <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+              }
+              <div class="relative flex space-x-3">
+                @switch (item.type) {
+                  @case ('PUBLISHED') {
+                    <div>
+                      <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <mat-icon>publish</mat-icon>
+                      </span>
+                    </div>
+                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      <div>
+                        <p class="text-sm text-gray-500">
+                          Published by
+                          <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                            {{ item.name || 'Unknown' }}
+                          </span>
+                        </p>
+                      </div>
+                      <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                      </div>
+                    </div>
+                  }
+                  @case ('CREATE') {
+                    <div>
+                      <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <mat-icon>add</mat-icon>
+                      </span>
+                    </div>
+                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      <div>
+                        <p class="text-sm text-gray-500">
+                          Created with name <span class="font-medium text-gray-900 break-all">{{ item.cName }}</span> and slug
+                          <span class="font-medium text-gray-900 break-all">{{ item.cSlug }}</span>
+                        </p>
+                      </div>
+                      <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                      </div>
+                    </div>
+                  }
+                  @case ('UPDATE') {
+                    <div>
+                      <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <mat-icon>edit</mat-icon>
+                      </span>
+                    </div>
+                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      <div>
+                        <p class="text-sm text-gray-500">
+                          Updated with
+                          @if (item.cName) {
+                            name <span class="font-medium text-gray-900 break-all">{{ item.cName }}</span>
+                          }
+                          @if (item.cSlug) {
+                            @if (item.cName) {
+                              and
+                            }
+                            slug <span class="font-medium text-gray-900 break-all">{{ item.cSlug }}</span>
+                          }
+                          @if (item.cData) {
+                            content
+                          }
+                        </p>
+                      </div>
+                      <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                      </div>
+                    </div>
+                  }
+                  @default {
+                    <div>
+                      <span class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <mat-icon>question_mark</mat-icon>
+                      </span>
+                    </div>
+                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      <div>
+                        <p class="text-sm text-gray-500">Unknown</p>
+                      </div>
+                      <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          </li>
+        } @empty {
+          No Records found
+        }
+      </ul>
+    </div>
+  </mat-sidenav>
+</mat-sidenav-container>

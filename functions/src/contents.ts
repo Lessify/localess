@@ -1,18 +1,30 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten } from 'firebase-functions/v2/firestore';
-import { FieldValue, UpdateData } from 'firebase-admin/firestore';
+import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
 import { canPerform } from './utils/security-utils';
 import { bucket, firestoreService } from './config';
-import { Content, ContentDocument, ContentDocumentStorage, ContentKind, PublishContentData, Schema, Space, UserPermission } from './models';
-import { extractContent, findContentByFullSlug, findContentById, findSchemas, findSpaceById } from './services';
+import {
+  Content,
+  ContentDocument,
+  ContentDocumentStorage,
+  ContentHistory,
+  ContentHistoryType,
+  ContentKind,
+  PublishContentData,
+  Schema,
+  Space,
+  UserPermission,
+} from './models';
+import { extractContent, findContentByFullSlug, findContentById, findContentsHistory, findSchemas, findSpaceById } from './services';
 
 // Publish
-const contentPublish = onCall<PublishContentData>(async request => {
+const publish = onCall<PublishContentData>(async request => {
   logger.info('[Content::contentPublish] data: ' + JSON.stringify(request.data));
   logger.info('[Content::contentPublish] context.auth: ' + JSON.stringify(request.auth));
-  if (!canPerform(UserPermission.CONTENT_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
-  const { spaceId, contentId } = request.data;
+  const { auth, data } = request;
+  if (!canPerform(UserPermission.CONTENT_PUBLISH, auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { spaceId, contentId } = data;
   const spaceSnapshot = await findSpaceById(spaceId).get();
   const contentSnapshot = await findContentById(spaceId, contentId).get();
   const schemasSnapshot = await findSchemas(spaceId).get();
@@ -44,6 +56,13 @@ const contentPublish = onCall<PublishContentData>(async request => {
     await bucket.file(`spaces/${spaceId}/contents/${contentId}/cache.json`).save('');
     // Update publishedAt
     await contentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
+    const addHistory: WithFieldValue<ContentHistory> = {
+      type: ContentHistoryType.PUBLISHED,
+      name: auth?.token['name'] || FieldValue.delete(),
+      email: auth?.token.email || FieldValue.delete(),
+      createdAt: FieldValue.serverTimestamp(),
+    };
+    await findContentsHistory(spaceId, contentId).add(addHistory);
     return;
   } else {
     logger.info(`[Content::contentPublish] Content ${contentId} does not exist.`);
@@ -129,17 +148,21 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
   const { spaceId, contentId } = event.params;
   // No Data
   if (!event.data) return;
+  // TODO add 500 LIMIT
+  const batch = firestoreService.batch();
+  const contentsHistorySnapshot = await findContentsHistory(spaceId, contentId).get();
+  contentsHistorySnapshot.docs.forEach(it => batch.delete(it.ref));
   const content = event.data.data() as Content;
   logger.info(`[Content::onDelete] eventId='${event.id}' id='${event.data.id}' fullSlug='${content.fullSlug}'`);
   // Logic related to delete, in case a folder is deleted it should be cascaded to all childs
   if (content.kind === ContentKind.DOCUMENT) {
-    return bucket.deleteFiles({
+    await bucket.deleteFiles({
       prefix: `spaces/${spaceId}/contents/${contentId}`,
     });
+    return batch.commit();
   } else if (content.kind === ContentKind.FOLDER) {
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
-    const batch = firestoreService.batch();
     const contentsSnapshot = await findContentByFullSlug(spaceId, content.fullSlug).get();
     contentsSnapshot.docs.filter(it => it.exists).forEach(it => batch.delete(it.ref));
     return batch.commit();
@@ -150,15 +173,58 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
 const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}', async event => {
   logger.info(`[Content::onWrite] eventId='${event.id}'`);
   logger.info(`[Content::onWrite] params='${JSON.stringify(event.params)}'`);
-  const { spaceId } = event.params;
+  const { spaceId, contentId } = event.params;
   // Save Cache, to make sure LINKS are cached correctly with cache version
   logger.info(`[Content::onWrite] Save file to spaces/${spaceId}/contents/cache.json`);
   await bucket.file(`spaces/${spaceId}/contents/cache.json`).save('');
+  // History
+  // No Data
+  if (!event.data) return;
+  const { before, after } = event.data;
+  const beforeData = before.data() as Content | undefined;
+  const afterData = after.data() as Content | undefined;
+  let addHistory: WithFieldValue<ContentHistory> = {
+    type: ContentHistoryType.PUBLISHED,
+    createdAt: FieldValue.serverTimestamp(),
+  };
+  if (beforeData && afterData) {
+    // change
+    if (beforeData.kind === ContentKind.DOCUMENT && afterData.kind === ContentKind.DOCUMENT) {
+      if (beforeData.publishedAt?.nanoseconds !== afterData.publishedAt?.nanoseconds) {
+        // SKIP Publish event
+        return;
+      }
+    }
+    addHistory = {
+      type: ContentHistoryType.UPDATE,
+      createdAt: FieldValue.serverTimestamp(),
+    };
+    if (beforeData.name !== afterData.name) {
+      addHistory.cName = afterData.name;
+    }
+    if (beforeData.slug !== afterData.slug) {
+      addHistory.cSlug = afterData.slug;
+    }
+    if (beforeData.kind === ContentKind.DOCUMENT && afterData.kind === ContentKind.DOCUMENT) {
+      if (JSON.stringify(beforeData.data) !== JSON.stringify(afterData.data)) {
+        addHistory.cData = true;
+      }
+    }
+  } else if (afterData) {
+    // create
+    addHistory = {
+      type: ContentHistoryType.CREATE,
+      cName: afterData.name,
+      cSlug: afterData.slug,
+      createdAt: FieldValue.serverTimestamp(),
+    };
+  }
+  await findContentsHistory(spaceId, contentId).add(addHistory);
   return;
 });
 
 export const content = {
-  publish: contentPublish,
+  publish: publish,
   onupdate: onContentUpdate,
   ondelete: onContentDelete,
   onwrite: onContentWrite,

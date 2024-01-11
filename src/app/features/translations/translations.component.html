@@ -419,7 +419,7 @@
                           <p class="text-sm text-gray-500">Unknown</p>
                         </div>
                         <div class="whitespace-nowrap text-right text-sm text-gray-500">
-                          <time datetime="2020-09-20">{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                         </div>
                       </div>
                     }
@@ -427,6 +427,8 @@
                 </div>
               </div>
             </li>
+          } @empty {
+            No Records found
           }
         </ul>
       </div>

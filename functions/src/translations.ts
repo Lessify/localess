@@ -9,12 +9,12 @@ import { PublishTranslationsData, Space, Translation, TranslationHistory, Transl
 import { findSpaceById, findTranslations, findTranslationsHistory } from './services';
 
 // Publish
-const translationsPublish = onCall<PublishTranslationsData>(async request => {
+const publish = onCall<PublishTranslationsData>(async request => {
   logger.info('[translationsPublish] data: ' + JSON.stringify(request.data));
   logger.info('[translationsPublish] context.auth: ' + JSON.stringify(request.auth));
   const { auth, data } = request;
+  if (!canPerform(UserPermission.TRANSLATION_PUBLISH, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId } = data;
-  if (!canPerform(UserPermission.TRANSLATION_PUBLISH, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const spaceSnapshot = await findSpaceById(spaceId).get();
   const translationsSnapshot = await findTranslations(spaceId).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {
@@ -59,7 +59,7 @@ const translationsPublish = onCall<PublishTranslationsData>(async request => {
   }
 });
 
-const onTranslationCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async event => {
+const onCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async event => {
   logger.info(`[Translation:onCreate] eventId='${event.id}'`);
   logger.info(`[Translation:onCreate] params='${JSON.stringify(event.params)}'`);
   const { spaceId } = event.params;
@@ -121,7 +121,7 @@ const onTranslationCreate = onDocumentCreated('spaces/{spaceId}/translations/{tr
   return;
 });
 
-const onTranslationWrite = onDocumentWritten('spaces/{spaceId}/translations/{translationId}', async event => {
+const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{translationId}', async event => {
   logger.info(`[Translation:onWrite] eventId='${event.id}'`);
   logger.info(`[Translation:onWrite] params='${JSON.stringify(event.params)}'`);
   const { spaceId } = event.params;
@@ -131,29 +131,38 @@ const onTranslationWrite = onDocumentWritten('spaces/{spaceId}/translations/{tra
   const { before, after } = event.data;
   const beforeData = before.data() as Translation | undefined;
   const afterData = after.data() as Translation | undefined;
-  const addHistory: WithFieldValue<TranslationHistory> = {
-    type: TranslationHistoryType.CREATE,
+  let addHistory: WithFieldValue<TranslationHistory> = {
+    type: TranslationHistoryType.PUBLISHED,
     createdAt: FieldValue.serverTimestamp(),
   };
   if (beforeData && afterData) {
     // change
-    addHistory.type = TranslationHistoryType.UPDATE;
-    addHistory.key = afterData.name;
+    addHistory = {
+      type: TranslationHistoryType.UPDATE,
+      key: afterData.name,
+      createdAt: FieldValue.serverTimestamp(),
+    };
   } else if (beforeData) {
     // delete
-    addHistory.type = TranslationHistoryType.DELETE;
-    addHistory.key = beforeData.name;
+    addHistory = {
+      type: TranslationHistoryType.DELETE,
+      key: beforeData.name,
+      createdAt: FieldValue.serverTimestamp(),
+    };
   } else if (afterData) {
     // create
-    addHistory.type = TranslationHistoryType.CREATE;
-    addHistory.key = afterData.name;
+    addHistory = {
+      type: TranslationHistoryType.CREATE,
+      key: afterData.name,
+      createdAt: FieldValue.serverTimestamp(),
+    };
   }
   await findTranslationsHistory(spaceId).add(addHistory);
   return;
 });
 
 export const translation = {
-  publish: translationsPublish,
-  oncreate: onTranslationCreate,
-  onwrite: onTranslationWrite,
+  publish: publish,
+  oncreate: onCreate,
+  onwritetohistory: onWriteToHistory,
 };

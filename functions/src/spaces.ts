@@ -14,6 +14,15 @@ const onSpaceDelete = onDocumentDeleted('spaces/{spaceId}', event => {
   return bucket.deleteFiles({
     prefix: `spaces/${spaceId}/`,
   });
+  // TODO delete all sub collections
+  // assets
+  // contents
+  // plugins
+  // schemas
+  // tasks
+  // tokens
+  // translations
+  // translations_history
 });
 
 const calculateOverview = onCall<SpaceOverviewData>(async request => {
