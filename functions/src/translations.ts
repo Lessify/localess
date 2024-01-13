@@ -149,6 +149,11 @@ const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{trans
       key: beforeData.name,
       createdAt: FieldValue.serverTimestamp(),
     };
+    const spaceSnapshot = await findSpaceById(spaceId).get();
+    // Skip History in case Space is deleted
+    if (!spaceSnapshot.exists) {
+      return;
+    }
   } else if (afterData) {
     // create
     addHistory = {

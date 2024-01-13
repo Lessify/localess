@@ -134,22 +134,22 @@ const onUserUpdate = onDocumentUpdated('users/{userId}', async event => {
     logger.info(
       `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' from='${permissionsBefore}' to='${permissionsAfter}'`
     );
-    const userRecord = await authService.getUser(userId);
+    const { customClaims } = await authService.getUser(userId);
     // check if role update already in Auth
-    if (userRecord.customClaims?.['role'] !== roleAfter || userRecord.customClaims?.['permissions'] !== permissionsAfter) {
+    if (customClaims?.['role'] !== roleAfter || customClaims?.['permissions'] !== permissionsAfter) {
       logger.debug(
-        `[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update required.`
+        `[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${customClaims?.['role']}' db='${roleAfter}', auth update required.`
       );
       logger.debug(
-        `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update required.`
+        `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${customClaims?.['permissions']}' db='${permissionsAfter}', auth update required.`
       );
       return await authService.setCustomUserClaims(userId, { role: roleAfter, permissions: permissionsAfter });
     } else {
       logger.debug(
-        `[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['role']}' db='${roleAfter}', auth update not required.`
+        `[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${customClaims?.['role']}' db='${roleAfter}', auth update not required.`
       );
       logger.debug(
-        `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${userRecord.customClaims?.['permissions']}' db='${permissionsAfter}', auth update not required.`
+        `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${customClaims?.['permissions']}' db='${permissionsAfter}', auth update not required.`
       );
     }
     return true;

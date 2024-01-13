@@ -3,11 +3,11 @@ import { CollectionReference, DocumentReference } from 'firebase-admin/firestore
 
 /**
  * find Space by ID
- * @param {string} spaceId Space identifier
+ * @param {string} id Space identifier
  * @return {DocumentReference} document reference to the space
  */
-export function findSpaceById(spaceId: string): DocumentReference {
-  return firestoreService.doc(`spaces/${spaceId}`);
+export function findSpaceById(id: string): DocumentReference {
+  return firestoreService.doc(`spaces/${id}`);
 }
 
 /**

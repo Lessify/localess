@@ -9,6 +9,11 @@ import {
 } from './model';
 import { v4 } from 'uuid';
 
+/**
+ * Convert Product to Content Data
+ * @param {Stripe.Product} data Stripe Product
+ * @return {ProductContentData} content data
+ */
 export function productToContentData(data: Stripe.Product): ProductContentData {
   const result: ProductContentData = {
     _id: data.id,
@@ -36,6 +41,11 @@ export function productToContentData(data: Stripe.Product): ProductContentData {
   return result;
 }
 
+/**
+ * Convert Price to Content Data
+ * @param {Stripe.Price} data Stripe Price
+ * @return {PriceContentData} content data
+ */
 export function priceToContentData(data: Stripe.Price): PriceContentData {
   const result: PriceContentData = {
     _id: data.id,
@@ -73,6 +83,11 @@ export function priceToContentData(data: Stripe.Price): PriceContentData {
   return result;
 }
 
+/**
+ * Convert Price Recurring to Content Data
+ * @param {Stripe.Price.Recurring} data Stripe Price Recurring
+ * @return {PriceRecurringContentData} content data
+ */
 export function recurringToContentData(data: Stripe.Price.Recurring): PriceRecurringContentData {
   const result: PriceRecurringContentData = {
     _id: v4(),
@@ -85,6 +100,11 @@ export function recurringToContentData(data: Stripe.Price.Recurring): PriceRecur
   return result;
 }
 
+/**
+ * Convert Price Tier to Content Data
+ * @param {Stripe.Price.Tier} data Stripe Price Tier
+ * @return {PriceTireContentData} content data
+ */
 export function tireToContentData(data: Stripe.Price.Tier): PriceTireContentData {
   const result: PriceTireContentData = {
     _id: v4(),
@@ -98,6 +118,11 @@ export function tireToContentData(data: Stripe.Price.Tier): PriceTireContentData
   return result;
 }
 
+/**
+ * Convert Price Product PackageDimensions to Content Data
+ * @param {Stripe.Product.PackageDimensions} data Stripe Product PackageDimensions
+ * @return {PackageDimensionRecurringContentData} content data
+ */
 export function packageDimensionsToContentData(data: Stripe.Product.PackageDimensions): PackageDimensionRecurringContentData {
   const result: PackageDimensionRecurringContentData = {
     _id: v4(),
@@ -110,6 +135,11 @@ export function packageDimensionsToContentData(data: Stripe.Product.PackageDimen
   return result;
 }
 
+/**
+ * Convert Price CustomUnitAmount to Content Data
+ * @param {Stripe.Price.CustomUnitAmount} data Stripe Price CustomUnitAmount
+ * @return {PriceCustomUnitAmountContentData} content data
+ */
 export function priceCustomUnitAmountToContentData(data: Stripe.Price.CustomUnitAmount): PriceCustomUnitAmountContentData {
   const result: PriceCustomUnitAmountContentData = {
     _id: v4(),
@@ -121,6 +151,12 @@ export function priceCustomUnitAmountToContentData(data: Stripe.Price.CustomUnit
   return result;
 }
 
+/**
+ * Convert Price CustomUnitAmount to Content Data
+ * @param {Stripe} stripe Stripe
+ * @param {Stripe.Product} product Stripe Product
+ * @return {ProductContentData} content data
+ */
 export async function generateProductWithPricesData(stripe: Stripe, product: Stripe.Product): Promise<ProductContentData> {
   const productData: ProductContentData = productToContentData(product);
   const prices = await stripe.prices.list({ product: product.id, expand: ['data.tiers'] }).autoPagingToArray({ limit: 100 });

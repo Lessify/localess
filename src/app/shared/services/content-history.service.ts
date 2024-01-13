@@ -3,7 +3,6 @@ import { collection, collectionData, Firestore, orderBy, query, QueryConstraint 
 import { Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { map } from 'rxjs/operators';
-import { TranslationHistory } from '@shared/models/translation-history.model';
 import { limit } from '@firebase/firestore';
 import { ContentHistory } from '@shared/models/content-history.model';
 
