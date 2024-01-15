@@ -58,7 +58,7 @@
         </mat-form-field>
 
         <ll-schema-asset-select
-          [space]="selectedSpace"
+          [spaceId]="spaceId"
           [assetId]="form.controls['previewImage'].value"
           (assetChange)="form.controls['previewImage'].setValue($event)" />
 

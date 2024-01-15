@@ -19,7 +19,7 @@ import { AssetFileType } from '@shared/models/schema.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetSelectComponent implements OnInit {
-  @Input({ required: true }) space?: Space;
+  @Input({ required: true }) spaceId!: string;
   @Input() assetId?: string;
   @Output() assetChange = new EventEmitter<string | undefined>();
   asset?: AssetFile;
@@ -40,7 +40,7 @@ export class AssetSelectComponent implements OnInit {
 
   loadData(): void {
     if (this.assetId) {
-      this.assetService.findById(this.space!.id, this.assetId).subscribe({
+      this.assetService.findById(this.spaceId, this.assetId).subscribe({
         next: asset => {
           if (asset.kind === AssetKind.FILE) {
             this.asset = asset;
@@ -59,7 +59,7 @@ export class AssetSelectComponent implements OnInit {
         maxWidth: '1280px',
         maxHeight: 'calc(100vh - 80px)',
         data: {
-          spaceId: this.space!.id,
+          spaceId: this.spaceId,
           multiple: false,
           fileType: AssetFileType.IMAGE,
         },
