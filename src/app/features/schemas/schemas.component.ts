@@ -178,7 +178,12 @@ export class SchemasComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Schema Import Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
+          this.notificationService.success('Schema Import Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId}/tasks`,
+            },
+          ]);
         },
         error: () => {
           this.notificationService.error('Schema Import Task can not be created.');
@@ -198,7 +203,12 @@ export class SchemasComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Schema Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
+          this.notificationService.success('Schema Export Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId}/tasks`,
+            },
+          ]);
         },
         error: (err: unknown) => {
           console.error(err);

@@ -7,7 +7,6 @@ import { Asset, AssetFile, AssetKind } from '@shared/models/asset.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { AssetService } from '@shared/services/asset.service';
-import { Space } from '@shared/models/space.model';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
 import { AssetFileType } from '@shared/models/schema.model';

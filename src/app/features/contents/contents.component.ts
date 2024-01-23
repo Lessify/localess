@@ -343,7 +343,12 @@ export class ContentsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Content Import Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
+          this.notificationService.success('Content Import Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId}/tasks`,
+            },
+          ]);
         },
         error: () => {
           this.notificationService.error('Content Import Task can not be created.');
@@ -366,7 +371,12 @@ export class ContentsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Content Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
+          this.notificationService.success('Content Export Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId}/tasks`,
+            },
+          ]);
         },
         error: (err: unknown) => {
           console.error(err);

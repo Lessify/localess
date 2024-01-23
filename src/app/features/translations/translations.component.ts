@@ -270,7 +270,12 @@ export class TranslationsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Translation Import Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
+          this.notificationService.success('Translation Import Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId}/tasks`,
+            },
+          ]);
         },
         error: () => {
           this.notificationService.error('Translation Import Task can not be created.');
@@ -301,7 +306,12 @@ export class TranslationsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Translation Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
+          this.notificationService.success('Translation Export Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId}/tasks`,
+            },
+          ]);
         },
         error: (err: unknown) => {
           console.error(err);

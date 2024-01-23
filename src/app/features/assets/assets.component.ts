@@ -339,7 +339,12 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Assets Import Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
+          this.notificationService.success('Assets Import Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId}/tasks`,
+            },
+          ]);
         },
         error: () => {
           this.notificationService.error('Assets Import Task can not be created.');
@@ -362,7 +367,12 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Assets Export Task has been created.', [{ label: 'To Tasks', link: '/features/tasks' }]);
+          this.notificationService.success('Assets Export Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId}/tasks`,
+            },
+          ]);
         },
         error: (err: unknown) => {
           console.error(err);
