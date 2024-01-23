@@ -1,18 +1,16 @@
-import { firestoreService } from '../config';
 import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
-import Ajv, { ErrorObject } from 'ajv';
+import { logger } from 'firebase-functions/v2';
+import { firestoreService } from '../config';
 import {
   Content,
   ContentData,
   ContentDocumentExport,
   ContentExport,
-  contentExportArraySchema,
   ContentFolderExport,
   ContentKind,
   Schema,
   SchemaFieldKind,
 } from '../models';
-import { logger } from 'firebase-functions/v2';
 
 /**
  * find Content by Full Slug
@@ -86,21 +84,6 @@ export function findContents(spaceId: string, kind?: ContentKind, fromDate?: num
     contentsRef = contentsRef.where('kind', '==', kind);
   }
   return contentsRef;
-}
-
-/**
- * validate imported JSON
- * @param {unknown} data Imported JSON
- * @return {ErrorObject[]} errors in case they exist
- */
-export function validateContentImport(data: unknown): ErrorObject[] | undefined | null {
-  const ajv = new Ajv({ discriminator: true });
-  const validate = ajv.compile(contentExportArraySchema);
-  if (validate(data)) {
-    return undefined;
-  } else {
-    return validate.errors;
-  }
 }
 
 /**

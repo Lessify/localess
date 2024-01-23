@@ -21,11 +21,15 @@ import {
   Translation,
   TranslationExport,
   TranslationType,
+  zAssetExportArraySchema,
+  zContentExportArraySchema,
+  zSchemaExportArraySchema,
+  zTranslationExportArraySchema,
+  zTranslationFlatExportSchema,
 } from './models';
 import { BATCH_MAX, bucket, firestoreService } from './config';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { zip } from 'compressing';
-import { ErrorObject } from 'ajv';
 import {
   docAssetToExport,
   docContentToExport,
@@ -40,13 +44,9 @@ import {
   findSchemas,
   findTranslationById,
   findTranslations,
-  validateAssetImport,
-  validateContentImport,
-  validateSchemaImport,
-  validateTranslationFlatImport,
-  validateTranslationImport,
 } from './services';
 import { tmpdir } from 'os';
+import { ZodError } from 'zod/lib/ZodError';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task`;
 
@@ -260,7 +260,7 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
  * @param {string} spaceId original task
  * @param {string} taskId original task
  */
-async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+async function assetsImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
@@ -269,10 +269,10 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ErrorObjec
   const assets = JSON.parse(readFileSync(`${tmpTaskFolder}/assets.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'ASSET') return 'WRONG_METADATA';
-  const errors = validateAssetImport(assets);
-  if (errors) {
-    logger.warn(`[Task:onCreate:assetsImport] invalid=${JSON.stringify(errors)}`);
-    return errors;
+  const parse = zAssetExportArraySchema.safeParse(assets);
+  if (!parse.success) {
+    logger.warn(`[Task:onCreate:assetsImport] invalid=${JSON.stringify(parse.error)}`);
+    return parse.error;
   }
   logger.info(`[Task:onCreate:assetsImport] valid=${assets.length}`);
   let totalChanges = 0;
@@ -438,7 +438,7 @@ async function contentsExport(spaceId: string, taskId: string, task: Task): Prom
  * @param {string} spaceId original task
  * @param {string} taskId original task
  */
-async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+async function contentsImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
@@ -447,10 +447,10 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ErrorObj
   const contents = JSON.parse(readFileSync(`${tmpTaskFolder}/contents.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'CONTENT') return 'WRONG_METADATA';
-  const errors = validateContentImport(contents);
-  if (errors) {
-    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
-    return errors;
+  const parse = zContentExportArraySchema.safeParse(contents);
+  if (!parse.success) {
+    logger.warn(`[Task:onCreate:contentsImport] invalid=${JSON.stringify(parse.error)}`);
+    return parse.error;
   }
   logger.info(`[Task:onCreate] valid=${contents.length}`);
   let totalChanges = 0;
@@ -579,8 +579,8 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
  * @param {string} spaceId original task
  * @param {string} taskId original task
  */
-async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
-  logger.info('[Task:onCreate:SCHEMA:IMPORT] Started');
+async function schemasImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
+  logger.info('[Task:onCreate:schemasImport] Started');
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
@@ -589,13 +589,12 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
   const schemas = JSON.parse(readFileSync(`${tmpTaskFolder}/schemas.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'SCHEMA') return 'WRONG_METADATA';
-  logger.info(`[Task:onCreate:SCHEMA:IMPORT] schemas=${JSON.stringify(schemas)}`);
-  const errors = validateSchemaImport(schemas);
-  if (errors) {
-    logger.warn(`[Task:onCreate:SCHEMA:IMPORT] invalid=${JSON.stringify(errors)}`);
-    return errors;
+  const parse = zSchemaExportArraySchema.safeParse(schemas);
+  if (!parse.success) {
+    logger.warn(`[Task:onCreate:schemasImport] invalid=${JSON.stringify(parse.error)}`);
+    return parse.error;
   }
-  logger.info(`[Task:onCreate:SCHEMA:IMPORT] valid=${schemas.length}`);
+  logger.info(`[Task:onCreate:schemasImport] valid=${schemas.length}`);
   let totalChanges = 0;
   let count = 0;
   let batch = firestoreService.batch();
@@ -629,18 +628,18 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ErrorObje
     totalChanges++;
     count++;
     if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate:SCHEMA:IMPORT] batch.commit() : ' + totalChanges);
+      logger.info('[Task:onCreate:schemasImport] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
     }
   }
-  logger.info('[Task:onCreate:SCHEMA:IMPORT] end remaining: ' + count);
+  logger.info('[Task:onCreate:schemasImport] end remaining: ' + count);
   if (count > 0) {
-    logger.info('[Task:onCreate:SCHEMA:IMPORT] batch.commit() : ' + totalChanges);
+    logger.info('[Task:onCreate:schemasImport] batch.commit() : ' + totalChanges);
     await batch.commit();
   }
-  logger.info('[Task:onCreate:SCHEMA:IMPORT] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate:schemasImport] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -722,7 +721,7 @@ async function translationsExportJsonFlat(spaceId: string, taskId: string, task:
  * @param {string} spaceId original task
  * @param {string} taskId original task
  */
-async function translationsImport(spaceId: string, taskId: string): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+async function translationsImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
@@ -731,12 +730,12 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
   const translations = JSON.parse(readFileSync(`${tmpTaskFolder}/translations.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'TRANSLATION') return 'WRONG_METADATA';
-  const errors = validateTranslationImport(translations);
-  if (errors) {
-    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
-    return errors;
+  const parse = zTranslationExportArraySchema.safeParse(translations);
+  if (!parse.success) {
+    logger.warn(`[Task:onCreate:translationsImport] invalid=${JSON.stringify(parse.error)}`);
+    return parse.error;
   }
-  logger.info(`[Task:onCreate] valid=${translations.length}`);
+  logger.info(`[Task:onCreate:translationsImport] valid=${translations.length}`);
   let totalChanges = 0;
   let count = 0;
   let batch = firestoreService.batch();
@@ -768,18 +767,18 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
     totalChanges++;
     count++;
     if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+      logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
     }
   }
-  logger.info('[Task:onCreate] end remaining: ' + count);
+  logger.info('[Task:onCreate:translationsImport] end remaining: ' + count);
   if (count > 0) {
-    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+    logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
     await batch.commit();
   }
-  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate:translationsImport] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -789,21 +788,17 @@ async function translationsImport(spaceId: string, taskId: string): Promise<Erro
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function translationsImportJsonFlat(
-  spaceId: string,
-  taskId: string,
-  task: Task
-): Promise<ErrorObject[] | undefined | 'WRONG_METADATA'> {
+async function translationsImportJsonFlat(spaceId: string, taskId: string, task: Task): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const jsonPath = `${tmpTaskFolder}/task.json`;
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: jsonPath });
   const translations: Record<string, string> = JSON.parse(readFileSync(jsonPath).toString());
   if (task.locale === undefined) return 'WRONG_METADATA';
-  const errors = validateTranslationFlatImport(translations);
-  if (errors) {
-    logger.warn(`[Task:onCreate] invalid=${JSON.stringify(errors)}`);
-    return errors;
+  const parse = zTranslationFlatExportSchema.safeParse(translations);
+  if (!parse.success) {
+    logger.warn(`[Task:onCreate:translationsImportJsonFlat] invalid=${JSON.stringify(parse.error)}`);
+    return parse.error;
   }
   logger.info(`[Task:onCreate] valid=${Object.getOwnPropertyNames(translations).length}`);
   const origTransMap = new Map<string, Translation>();

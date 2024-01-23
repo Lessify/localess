@@ -1,5 +1,4 @@
 import { Timestamp } from 'firebase-admin/firestore';
-import { JSONSchemaType } from 'ajv';
 
 export enum SchemaType {
   ROOT = 'ROOT',
@@ -37,6 +36,7 @@ export type SchemaField =
   | SchemaFieldOptions
   | SchemaFieldLink
   | SchemaFieldReference
+  | SchemaFieldReferences
   | SchemaFieldAsset
   | SchemaFieldAssets;
 
@@ -53,6 +53,7 @@ export enum SchemaFieldKind {
   OPTIONS = 'OPTIONS',
   LINK = 'LINK',
   REFERENCE = 'REFERENCE',
+  REFERENCES = 'REFERENCES',
   ASSET = 'ASSET',
   ASSETS = 'ASSETS',
   SCHEMA = 'SCHEMA',
@@ -145,6 +146,11 @@ export interface SchemaFieldReference extends SchemaFieldBase {
   path?: string;
 }
 
+export interface SchemaFieldReferences extends SchemaFieldBase {
+  kind: SchemaFieldKind.REFERENCES;
+  path?: string;
+}
+
 export interface SchemaFieldAsset extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSET;
 }
@@ -157,40 +163,3 @@ export interface SchemaFieldAssets extends SchemaFieldBase {
 export interface SchemaExport extends Omit<Schema, 'createdAt' | 'updatedAt'> {
   id: string;
 }
-
-export const schemaExportArraySchema: JSONSchemaType<SchemaExport[]> = {
-  type: 'array',
-  items: {
-    type: 'object',
-    properties: {
-      id: { type: 'string', nullable: false },
-      name: { type: 'string', nullable: false },
-      type: { type: 'string', enum: Object.values(SchemaType), nullable: false },
-      displayName: { type: 'string', nullable: true },
-      previewField: { type: 'string', nullable: true },
-      previewImage: { type: 'string', nullable: true },
-      locked: { type: 'boolean', nullable: true },
-      lockedBy: { type: 'string', nullable: true },
-      fields: {
-        type: 'array',
-        nullable: true,
-        items: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', nullable: false },
-            kind: { type: 'string', /*enum: Object.values(SchemaFieldKind),*/ nullable: false },
-            displayName: { type: 'string', nullable: true },
-            required: { type: 'boolean', nullable: true },
-            description: { type: 'string', nullable: true },
-            defaultValue: { type: 'string', nullable: true },
-            translatable: { type: 'boolean', nullable: true },
-          },
-          required: ['name', 'kind'],
-          additionalProperties: true,
-        },
-      },
-    },
-    required: ['id', 'name', 'type'],
-    additionalProperties: false,
-  },
-};

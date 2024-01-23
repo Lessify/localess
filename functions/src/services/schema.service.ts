@@ -1,7 +1,5 @@
 import { firestoreService } from '../config';
 import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
-import Ajv, { ErrorObject } from 'ajv';
-import { schemaExportArraySchema } from '../models/schema.model';
 
 /**
  * find Schema by ID
@@ -25,19 +23,4 @@ export function findSchemas(spaceId: string, fromDate?: number): Query {
     assetsRef = assetsRef.where('updatedAt', '>=', Timestamp.fromMillis(fromDate));
   }
   return assetsRef;
-}
-
-/**
- * validate imported JSON
- * @param {unknown} data Imported JSON
- * @return {ErrorObject[]} errors in case they exist
- */
-export function validateSchemaImport(data: unknown): ErrorObject[] | undefined | null {
-  const ajv = new Ajv();
-  const validate = ajv.compile(schemaExportArraySchema);
-  if (validate(data)) {
-    return undefined;
-  } else {
-    return validate.errors;
-  }
 }

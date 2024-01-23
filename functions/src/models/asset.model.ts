@@ -1,5 +1,4 @@
 import { Timestamp } from 'firebase-admin/firestore';
-import { JSONSchemaType } from 'ajv';
 
 export type Asset = AssetFile | AssetFolder;
 
@@ -47,47 +46,3 @@ export interface AssetFileExport extends Omit<AssetFile, 'createdAt' | 'updatedA
 }
 
 export type AssetExport = AssetFileExport | AssetFolderExport;
-
-export const assetExportArraySchema: JSONSchemaType<AssetExport[]> = {
-  type: 'array',
-  items: {
-    type: 'object',
-    discriminator: { propertyName: 'kind' },
-    required: ['kind', 'id', 'name', 'parentPath'],
-    oneOf: [
-      {
-        properties: {
-          id: { type: 'string', nullable: false },
-          kind: { const: 'FOLDER' },
-          name: { type: 'string', nullable: false },
-          parentPath: { type: 'string', nullable: false },
-        },
-        // required: ['id', 'name', 'parentPath'],
-        additionalProperties: false,
-      },
-      {
-        properties: {
-          id: { type: 'string', nullable: false },
-          kind: { const: 'FILE' },
-          name: { type: 'string', nullable: false },
-          parentPath: { type: 'string', nullable: false },
-          extension: { type: 'string', nullable: false },
-          type: { type: 'string', nullable: false },
-          size: { type: 'integer', nullable: false },
-          alt: { type: 'string' },
-          metadata: {
-            type: 'object',
-            properties: {
-              format: { type: 'string' },
-              width: { type: 'integer' },
-              height: { type: 'integer' },
-            },
-            additionalProperties: false,
-          },
-          // required: ['id', 'name', 'parentPath'],
-        },
-        additionalProperties: false,
-      },
-    ],
-  },
-};

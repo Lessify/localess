@@ -1,8 +1,7 @@
-import { firestoreService } from '../config';
-import { Timestamp, DocumentReference, Query } from 'firebase-admin/firestore';
-import Ajv, { ErrorObject } from 'ajv';
-import { Asset, AssetExport, assetExportArraySchema, AssetFileExport, AssetFolderExport, AssetKind } from '../models';
+import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
+import { firestoreService } from '../config';
+import { Asset, AssetExport, AssetFileExport, AssetFolderExport, AssetKind } from '../models';
 
 /**
  * find Content by Full Slug
@@ -54,21 +53,6 @@ export function findAssets(spaceId: string, kind?: AssetKind, fromDate?: number)
  */
 export function findAssetById(spaceId: string, id: string): DocumentReference {
   return firestoreService.doc(`spaces/${spaceId}/assets/${id}`);
-}
-
-/**
- * validate imported JSON
- * @param {unknown} data Imported JSON
- * @return {ErrorObject[]} errors in case they exist
- */
-export function validateAssetImport(data: unknown): ErrorObject[] | undefined | null {
-  const ajv = new Ajv({ discriminator: true });
-  const validate = ajv.compile(assetExportArraySchema);
-  if (validate(data)) {
-    return undefined;
-  } else {
-    return validate.errors;
-  }
 }
 
 /**

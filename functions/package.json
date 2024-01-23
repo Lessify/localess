@@ -19,26 +19,26 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@google-cloud/translate": "^8.0.2",
-    "ajv": "^8.12.0",
+    "@google-cloud/translate": "^8.0.3",
     "compressing": "^1.10.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "firebase-admin": "^11.11.1",
     "firebase-functions": "^4.6.0",
-    "sharp": "^0.33.1",
-    "stripe": "^14.10.0",
-    "uuid": "^9.0.1"
+    "sharp": "^0.33.2",
+    "stripe": "^14.13.0",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/uuid": "^9.0.7",
-    "@typescript-eslint/eslint-plugin": "^6.17.0",
-    "@typescript-eslint/parser": "^6.17.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
     "eslint": "^8.56.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.29.1",
-    "firebase-functions-test": "^3.1.0",
+    "firebase-functions-test": "^3.1.1",
     "typescript": "^5.2.2"
   },
   "private": true
