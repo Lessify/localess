@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,8 +26,8 @@ export class TasksComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  @Input({ required: true })
-  spaceId!: string;
+  // Input
+  spaceId = input.required<string>();
 
   now = Date.now();
   isLoading = true;
@@ -48,7 +48,7 @@ export class TasksComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadData(this.spaceId);
+    this.loadData(this.spaceId());
   }
 
   loadData(spaceId: string): void {
@@ -67,7 +67,7 @@ export class TasksComponent implements OnInit {
   }
 
   onDownload(element: Task): void {
-    this.taskService.downloadUrl(this.spaceId, element.id).subscribe({
+    this.taskService.downloadUrl(this.spaceId(), element.id).subscribe({
       next: url => {
         saveAs(url, element.file?.name || 'unknown');
       },
@@ -85,7 +85,7 @@ export class TasksComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.taskService.delete(this.spaceId, element.id))
+        switchMap(() => this.taskService.delete(this.spaceId(), element.id))
       )
       .subscribe({
         next: () => {

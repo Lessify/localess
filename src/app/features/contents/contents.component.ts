@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, Input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -52,8 +52,8 @@ export class ContentsComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  @Input({ required: true })
-  spaceId!: string;
+  // Input
+  spaceId = input.required<string>();
 
   isLoading = true;
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
@@ -89,7 +89,7 @@ export class ContentsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadData(this.spaceId);
+    this.loadData(this.spaceId());
   }
 
   loadData(spaceId: string): void {
@@ -142,7 +142,7 @@ export class ContentsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.createDocument(this.spaceId, this.parentPath, it!))
+        switchMap(it => this.contentService.createDocument(this.spaceId(), this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -166,7 +166,7 @@ export class ContentsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.createFolder(this.spaceId, this.parentPath, it!))
+        switchMap(it => this.contentService.createFolder(this.spaceId(), this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -194,7 +194,7 @@ export class ContentsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.update(this.spaceId, element.id, this.parentPath, it!))
+        switchMap(it => this.contentService.update(this.spaceId(), element.id, this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -222,7 +222,7 @@ export class ContentsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.contentService.delete(this.spaceId, element))
+        switchMap(() => this.contentService.delete(this.spaceId(), element))
       )
       .subscribe({
         next: () => {
@@ -251,7 +251,7 @@ export class ContentsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.contentService.cloneDocument(this.spaceId, element))
+        switchMap(() => this.contentService.cloneDocument(this.spaceId(), element))
       )
       .subscribe({
         next: () => {
@@ -289,7 +289,7 @@ export class ContentsComponent implements OnInit {
     if (element.kind === ContentKind.DOCUMENT) {
       element.publishedAt;
       if (this.schemasMap.has(element.schema)) {
-        this.router.navigate(['features', 'spaces', this.spaceId, 'contents', element.id]);
+        this.router.navigate(['features', 'spaces', this.spaceId(), 'contents', element.id]);
       } else {
         this.notificationService.warn(`Content Schema can not be found.`);
       }
@@ -317,10 +317,10 @@ export class ContentsComponent implements OnInit {
   }
 
   openLinksInNewTab() {
-    this.tokenService.findFirst(this.spaceId).subscribe({
+    this.tokenService.findFirst(this.spaceId()).subscribe({
       next: tokens => {
         if (tokens.length === 1) {
-          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId}/links`);
+          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/links`);
           url.searchParams.set('token', tokens[0].id);
           window.open(url, '_blank');
         } else {
@@ -339,14 +339,14 @@ export class ContentsComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         tap(console.log),
-        switchMap(it => this.taskService.createContentImportTask(this.spaceId, it!.file))
+        switchMap(it => this.taskService.createContentImportTask(this.spaceId(), it!.file))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('Content Import Task has been created.', [
             {
               label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId}/tasks`,
+              link: `/features/spaces/${this.spaceId()}/tasks`,
             },
           ]);
         },
@@ -361,20 +361,20 @@ export class ContentsComponent implements OnInit {
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
         width: '500px',
         data: {
-          spaceId: this.spaceId,
+          spaceId: this.spaceId(),
         },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createContentExportTask(this.spaceId, it?.path))
+        switchMap(it => this.taskService.createContentExportTask(this.spaceId(), it?.path))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('Content Export Task has been created.', [
             {
               label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId}/tasks`,
+              link: `/features/spaces/${this.spaceId()}/tasks`,
             },
           ]);
         },

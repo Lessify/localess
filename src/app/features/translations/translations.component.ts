@@ -5,7 +5,7 @@ import {
   DestroyRef,
   ElementRef,
   inject,
-  Input,
+  input,
   OnInit,
   signal,
   ViewChild,
@@ -49,8 +49,8 @@ export class TranslationsComponent implements OnInit {
   @ViewChild('labelsInput') labelsInput!: ElementRef<HTMLInputElement>;
   @ViewChild('auto') matAutocomplete!: MatAutocomplete;
 
-  @Input({ required: true })
-  spaceId!: string;
+  // Input
+  spaceId = input.required<string>();
 
   selectedSpace?: Space;
   showHistory = false;
@@ -113,7 +113,7 @@ export class TranslationsComponent implements OnInit {
         this.cd.markForCheck();
       },
     });
-    this.space$ = this.spaceService.findById(this.spaceId).pipe(
+    this.space$ = this.spaceService.findById(this.spaceId()).pipe(
       tap(space => {
         this.selectedSpace = space;
         //this.locales = space.locales;
@@ -128,7 +128,7 @@ export class TranslationsComponent implements OnInit {
         }
       })
     );
-    this.translations$ = this.translationService.findAll(this.spaceId).pipe(
+    this.translations$ = this.translationService.findAll(this.spaceId()).pipe(
       tap(translations => {
         if (translations.length > 0) {
           if (this.selectedTranslation) {
@@ -146,12 +146,12 @@ export class TranslationsComponent implements OnInit {
         this.isLoading.set(false);
       })
     );
-    this.history$ = this.translateHistoryService.findAll(this.spaceId);
+    this.history$ = this.translateHistoryService.findAll(this.spaceId());
   }
 
   publish(): void {
     this.isPublishLoading.set(true);
-    this.translationService.publish(this.spaceId).subscribe({
+    this.translationService.publish(this.spaceId()).subscribe({
       next: () => {
         this.notificationService.success('Translations has been published.');
       },
@@ -185,7 +185,7 @@ export class TranslationsComponent implements OnInit {
             description: it?.description,
             autoTranslate: it?.autoTranslate,
           };
-          return this.translationService.create(this.spaceId, tc);
+          return this.translationService.create(this.spaceId(), tc);
         })
       )
       .subscribe({
@@ -212,7 +212,7 @@ export class TranslationsComponent implements OnInit {
             labels: it!.labels,
             description: it!.description,
           };
-          return this.translationService.update(this.spaceId, translation.id, tu);
+          return this.translationService.update(this.spaceId(), translation.id, tu);
         })
       )
       .subscribe({
@@ -236,7 +236,7 @@ export class TranslationsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it),
-        switchMap(() => this.translationService.delete(this.spaceId, element.id))
+        switchMap(() => this.translationService.delete(this.spaceId(), element.id))
       )
       .subscribe({
         next: () => {
@@ -261,9 +261,9 @@ export class TranslationsComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it => {
           if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationImportTask(this.spaceId, it.file, it.locale);
+            return this.taskService.createTranslationImportTask(this.spaceId(), it.file, it.locale);
           } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationImportTask(this.spaceId, it.file);
+            return this.taskService.createTranslationImportTask(this.spaceId(), it.file);
           }
           return EMPTY;
         })
@@ -273,7 +273,7 @@ export class TranslationsComponent implements OnInit {
           this.notificationService.success('Translation Import Task has been created.', [
             {
               label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId}/tasks`,
+              link: `/features/spaces/${this.spaceId()}/tasks`,
             },
           ]);
         },
@@ -297,9 +297,9 @@ export class TranslationsComponent implements OnInit {
         switchMap(it => {
           console.log(it);
           if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationExportTask(this.spaceId, it.fromDate, it.locale);
+            return this.taskService.createTranslationExportTask(this.spaceId(), it.fromDate, it.locale);
           } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationExportTask(this.spaceId, it.fromDate);
+            return this.taskService.createTranslationExportTask(this.spaceId(), it.fromDate);
           }
           return EMPTY;
         })
@@ -309,7 +309,7 @@ export class TranslationsComponent implements OnInit {
           this.notificationService.success('Translation Export Task has been created.', [
             {
               label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId}/tasks`,
+              link: `/features/spaces/${this.spaceId()}/tasks`,
             },
           ]);
         },
@@ -327,7 +327,7 @@ export class TranslationsComponent implements OnInit {
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
     this.isLocaleUpdateLoading.set(true);
-    this.translationService.updateLocale(this.spaceId, transaction.id, locale, value).subscribe({
+    this.translationService.updateLocale(this.spaceId(), transaction.id, locale, value).subscribe({
       next: () => {
         this.notificationService.success('Translation has been updated.');
       },
@@ -382,7 +382,7 @@ export class TranslationsComponent implements OnInit {
   }
 
   openPublishedInNewTab(locale: string): void {
-    const url = `${location.origin}/api/v1/spaces/${this.spaceId}/translations/${locale}`;
+    const url = `${location.origin}/api/v1/spaces/${this.spaceId()}/translations/${locale}`;
     window.open(url, '_blank');
   }
 

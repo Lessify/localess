@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, Input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSort } from '@angular/material/sort';
@@ -30,8 +30,8 @@ export class SettingsComponent implements OnInit {
   // Loading
   isLoading = true;
 
-  @Input({ required: true })
-  spaceId!: string;
+  // Input
+  spaceId = input.required<string>();
 
   space?: Space;
   activeTab = 'general';
@@ -64,7 +64,7 @@ export class SettingsComponent implements OnInit {
 
   loadData(): void {
     this.spaceService
-      .findById(this.spaceId)
+      .findById(this.spaceId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: space => {

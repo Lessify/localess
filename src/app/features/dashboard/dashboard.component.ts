@@ -1,14 +1,14 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 
+import { Timestamp } from '@angular/fire/firestore';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AppState } from '@core/state/core.state';
 import { first, switchMap, tap } from 'rxjs/operators';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpaceService } from '@shared/services/space.service';
-import { Timestamp } from '@angular/fire/firestore';
-import { NotificationService } from '@shared/services/notification.service';
 import { Observable } from 'rxjs';
+import { SpaceService } from '@shared/services/space.service';
 import { Space } from '@shared/models/space.model';
+import { NotificationService } from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-dashboard',
@@ -17,8 +17,8 @@ import { Space } from '@shared/models/space.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent implements OnInit {
-  @Input({ required: true })
-  spaceId!: string;
+  // Input
+  spaceId = input.required<string>();
 
   isLoading = true;
   now = Timestamp.now();
@@ -30,12 +30,10 @@ export class DashboardComponent implements OnInit {
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
     private readonly spaceService: SpaceService
-  ) {
-    console.log('constructor', this.spaceId);
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.space$ = this.spaceService.findById(this.spaceId).pipe(
+    this.space$ = this.spaceService.findById(this.spaceId()).pipe(
       tap(it => {
         if (it.overview === undefined || (it.overview && this.now.seconds - it.overview.updatedAt.seconds > 86400)) {
           this.spaceService.calculateOverview(it.id).subscribe({ next: () => console.log('Space Overview Updated') });

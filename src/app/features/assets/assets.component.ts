@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -42,8 +42,8 @@ export class AssetsComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  @Input({ required: true })
-  spaceId!: string;
+  // Input
+  spaceId = input.required<string>();
 
   private destroyRef = inject(DestroyRef);
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
@@ -79,12 +79,12 @@ export class AssetsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadData(this.spaceId);
+    this.loadData(this.spaceId());
 
     this.fileUploadQueue$
       .pipe(
         tap(console.log),
-        concatMap(it => this.assetService.createFile(this.spaceId, this.parentPath, it)),
+        concatMap(it => this.assetService.createFile(this.spaceId(), this.parentPath, it)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
@@ -155,7 +155,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.createFolder(this.spaceId, this.parentPath, it!))
+        switchMap(it => this.assetService.createFolder(this.spaceId(), this.parentPath, it!))
       )
       .subscribe({
         next: () => {
@@ -190,7 +190,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFolder(this.spaceId, element.id, it!))
+        switchMap(it => this.assetService.updateFolder(this.spaceId(), element.id, it!))
       )
       .subscribe({
         next: () => {
@@ -219,7 +219,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFile(this.spaceId, element.id, it!))
+        switchMap(it => this.assetService.updateFile(this.spaceId(), element.id, it!))
       )
       .subscribe({
         next: () => {
@@ -248,7 +248,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.assetService.delete(this.spaceId, element.id))
+        switchMap(() => this.assetService.delete(this.spaceId(), element.id))
       )
       .subscribe({
         next: () => {
@@ -335,14 +335,14 @@ export class AssetsComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         tap(console.log),
-        switchMap(it => this.taskService.createAssetImportTask(this.spaceId, it!.file))
+        switchMap(it => this.taskService.createAssetImportTask(this.spaceId(), it!.file))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('Assets Import Task has been created.', [
             {
               label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId}/tasks`,
+              link: `/features/spaces/${this.spaceId()}/tasks`,
             },
           ]);
         },
@@ -357,20 +357,20 @@ export class AssetsComponent implements OnInit {
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
         width: '500px',
         data: {
-          spaceId: this.spaceId,
+          spaceId: this.spaceId(),
         },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createAssetExportTask(this.spaceId, it?.path))
+        switchMap(it => this.taskService.createAssetExportTask(this.spaceId(), it?.path))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('Assets Export Task has been created.', [
             {
               label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId}/tasks`,
+              link: `/features/spaces/${this.spaceId()}/tasks`,
             },
           ]);
         },
@@ -385,7 +385,7 @@ export class AssetsComponent implements OnInit {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    window.open(`/api/v1/spaces/${this.spaceId}/assets/${element.id}?download`);
+    window.open(`/api/v1/spaces/${this.spaceId()}/assets/${element.id}?download`);
   }
 
   filesDragAndDrop(event: File[]) {

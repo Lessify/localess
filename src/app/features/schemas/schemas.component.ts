@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -33,8 +33,8 @@ export class SchemasComponent implements OnInit {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
-  @Input({ required: true })
-  spaceId!: string;
+  // Inputs
+  spaceId = input.required<string>();
 
   schemaTypeIcons: Record<SchemaType, string> = {
     ROOT: 'margin',
@@ -70,7 +70,7 @@ export class SchemasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadData(this.spaceId);
+    this.loadData(this.spaceId());
     this.filter.valueChanges.subscribe({
       next: value => {
         console.log(value);
@@ -124,7 +124,7 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.schemaService.create(this.spaceId, it!))
+        switchMap(it => this.schemaService.create(this.spaceId(), it!))
       )
       .subscribe({
         next: () => {
@@ -137,7 +137,7 @@ export class SchemasComponent implements OnInit {
   }
 
   openEditDialog(element: Schema): void {
-    this.router.navigate(['features', 'spaces', this.spaceId, 'schemas', element.id]);
+    this.router.navigate(['features', 'spaces', this.spaceId(), 'schemas', element.id]);
   }
 
   openDeleteDialog(event: MouseEvent, element: Schema): void {
@@ -153,7 +153,7 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.schemaService.delete(this.spaceId, element.id))
+        switchMap(() => this.schemaService.delete(this.spaceId(), element.id))
       )
       .subscribe({
         next: () => {
@@ -174,14 +174,14 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createSchemaImportTask(this.spaceId, it!.file))
+        switchMap(it => this.taskService.createSchemaImportTask(this.spaceId(), it!.file))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('Schema Import Task has been created.', [
             {
               label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId}/tasks`,
+              link: `/features/spaces/${this.spaceId()}/tasks`,
             },
           ]);
         },
@@ -199,14 +199,14 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createSchemaExportTask(this.spaceId, it?.fromDate))
+        switchMap(it => this.taskService.createSchemaExportTask(this.spaceId(), it?.fromDate))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('Schema Export Task has been created.', [
             {
               label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId}/tasks`,
+              link: `/features/spaces/${this.spaceId()}/tasks`,
             },
           ]);
         },

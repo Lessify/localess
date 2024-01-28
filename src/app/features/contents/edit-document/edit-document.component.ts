@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, HostListener, inject, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, HostListener, inject, input, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Schema, SchemaFieldKind } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -34,10 +34,9 @@ import { ContentHistoryService } from '@shared/services/content-history.service'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditDocumentComponent implements OnInit {
-  @Input({ required: true })
-  spaceId!: string;
-  @Input({ required: true })
-  contentId!: string;
+  // Input
+  spaceId = input.required<string>();
+  contentId = input.required<string>();
 
   showHistory = false;
 
@@ -47,7 +46,6 @@ export class EditDocumentComponent implements OnInit {
   iframeUrl?: SafeUrl;
   availableLocales: Locale[] = [];
   availableLocalesMap: Map<string, string> = new Map<string, string>();
-  entityId: string;
   document?: ContentDocument;
   documentData: ContentData = { _id: '', schema: '' };
   selectedDocumentData: ContentData = { _id: '', schema: '' };
@@ -88,13 +86,11 @@ export class EditDocumentComponent implements OnInit {
     private readonly contentHelperService: ContentHelperService,
     private readonly sanitizer: DomSanitizer,
     readonly fe: FormErrorHandlerService
-  ) {
-    this.entityId = this.activatedRoute.snapshot.paramMap.get('contentId') || '';
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.loadData(this.entityId);
-    this.history$ = this.contentHistoryService.findAll(this.spaceId, this.contentId);
+    this.loadData(this.contentId());
+    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId());
   }
 
   loadData(contentId: string): void {
@@ -160,7 +156,7 @@ export class EditDocumentComponent implements OnInit {
 
   publish(): void {
     this.isPublishLoading = true;
-    this.contentService.publish(this.selectedSpace!.id, this.entityId).subscribe({
+    this.contentService.publish(this.spaceId(), this.contentId()).subscribe({
       next: () => {
         this.notificationService.success('Content has been published.');
       },
@@ -192,15 +188,13 @@ export class EditDocumentComponent implements OnInit {
 
     if (this.contentErrors.length === 0) {
       if (this.document?.editorEnabled !== this.editorEnabledCtr.value) {
-        this.contentService
-          .updateDocumentEditorEnabled(this.selectedSpace!.id, this.entityId, this.editorEnabledCtr.value || false)
-          .subscribe({
-            next: () => {
-              console.log('updateDocumentEditorEnabled updated');
-            },
-          });
+        this.contentService.updateDocumentEditorEnabled(this.spaceId(), this.contentId(), this.editorEnabledCtr.value || false).subscribe({
+          next: () => {
+            console.log('updateDocumentEditorEnabled updated');
+          },
+        });
       }
-      this.contentService.updateDocumentData(this.selectedSpace!.id, this.entityId, this.documentData).subscribe({
+      this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData).subscribe({
         next: () => {
           this.notificationService.success('Content has been updated.');
         },
@@ -222,14 +216,14 @@ export class EditDocumentComponent implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['features', 'spaces', this.spaceId, 'contents']);
+    this.router.navigate(['features', 'spaces', this.spaceId(), 'contents']);
   }
 
   openDraftInNewTab(locale: string): void {
-    this.tokenService.findFirst(this.selectedSpace!.id).subscribe({
+    this.tokenService.findFirst(this.spaceId()).subscribe({
       next: tokens => {
         if (tokens.length === 1) {
-          const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}`);
+          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/contents/${this.contentId()}`);
           url.searchParams.set('locale', locale);
           url.searchParams.set('version', 'draft');
           url.searchParams.set('token', tokens[0].id);
@@ -242,10 +236,10 @@ export class EditDocumentComponent implements OnInit {
   }
 
   openPublishedInNewTab(locale: string): void {
-    this.tokenService.findFirst(this.selectedSpace!.id).subscribe({
+    this.tokenService.findFirst(this.spaceId()).subscribe({
       next: tokens => {
         if (tokens.length === 1) {
-          const url = new URL(`${location.origin}/api/v1/spaces/${this.selectedSpace?.id}/contents/${this.entityId}`);
+          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/contents/${this.contentId()}`);
           url.searchParams.set('locale', locale);
           url.searchParams.set('token', tokens[0].id);
           window.open(url, '_blank');
