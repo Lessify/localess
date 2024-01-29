@@ -8,113 +8,125 @@
     <span class="text-gray-500">#{{ entity?.name }}</span>
     <span class="spacer"></span>
 
-    <button
-      *ngIf="'SCHEMA_UPDATE' | canUserPerform | async"
-      mat-raised-button
-      color="primary"
-      matTooltip="Save the schema"
-      [disabled]="!form.valid || isSaveLoading"
-      (click)="save()">
-      <ll-icon [animate]="isSaveLoading" start="save" end="sync" />
-      Save
-    </button>
+    @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+      <button mat-raised-button color="primary" matTooltip="Save the schema" [disabled]="!form.valid || isSaveLoading" (click)="save()">
+        <ll-icon [animate]="isSaveLoading" start="save" end="sync" />
+        Save
+      </button>
+    }
   </mat-toolbar-row>
 </mat-toolbar>
 
-<mat-progress-bar *ngIf="isLoading" mode="query" />
-<div *ngIf="!isLoading" class="px-2 mx-auto mt-3">
-  <form [formGroup]="form">
-    <div class="flex flex-row gap-4">
-      <div class="basis-1/3">
-        <mat-form-field>
-          <mat-label>Name</mat-label>
-          <input
-            matInput
-            type="text"
-            formControlName="name"
-            required
-            minlength="3"
-            maxlength="50"
-            [readonly]="nameReadonly"
-            autocomplete="off" />
-          <button mat-icon-button matIconSuffix (click)="nameReadonly = !nameReadonly" [attr.aria-pressed]="true">
-            <mat-icon>{{ nameReadonly ? 'edit_off' : 'edit' }}</mat-icon>
-          </button>
-          <mat-hint>Will be used in JSON structure.</mat-hint>
-          <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/50</mat-hint>
-          <mat-error *ngIf="form.controls['name'].errors as errors">{{ fe.errors(errors) }}</mat-error>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>Display Name</mat-label>
-          <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
-          <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
-          <mat-error *ngIf="form.controls['displayName'].errors as errors">{{ fe.errors(errors) }}</mat-error>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>Preview Field</mat-label>
-          <input matInput type="text" formControlName="previewField" minlength="3" maxlength="50" autocomplete="off" />
-          <mat-hint align="end">{{ form.controls['previewField'].value?.length || 0 }}/50</mat-hint>
-          <mat-error *ngIf="form.controls['previewField'].errors as errors">{{ fe.errors(errors) }}</mat-error>
-        </mat-form-field>
-
-        <ll-schema-asset-select
-          [spaceId]="spaceId"
-          [assetId]="form.controls['previewImage'].value"
-          (assetChange)="form.controls['previewImage'].setValue($event)" />
-
-        <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="fieldDropDrop($event)">
-          <mat-divider></mat-divider>
-          <div mat-subheader>Fields</div>
+@if (isLoading) {
+  <mat-progress-bar mode="query" />
+} @else {
+  <div class="px-2 mx-auto mt-3">
+    <form [formGroup]="form">
+      <div class="flex flex-row gap-4">
+        <div class="basis-1/3">
           <mat-form-field>
             <mat-label>Name</mat-label>
-            <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
-            <button mat-raised-button matTextSuffix color="accent" (click)="addField()" [disabled]="!newFieldName.valid">Add</button>
-            <mat-error *ngIf="newFieldName.errors as errors">{{ fe.errors(errors) }}</mat-error>
+            <input
+              matInput
+              type="text"
+              formControlName="name"
+              required
+              minlength="3"
+              maxlength="50"
+              [readonly]="nameReadonly"
+              autocomplete="off" />
+            <button mat-icon-button matIconSuffix (click)="nameReadonly = !nameReadonly" [attr.aria-pressed]="true">
+              <mat-icon>{{ nameReadonly ? 'edit_off' : 'edit' }}</mat-icon>
+            </button>
+            <mat-hint>Will be used in JSON structure.</mat-hint>
+            <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/50</mat-hint>
+            @if (form.controls['name'].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
-          <mat-list-item
-            cdkDrag
-            cdkDragPreviewContainer="parent"
-            *ngFor="let field of fields.controls; let index = index"
-            (click)="selectComponent(index)"
-            [class.active]="index === selectedFieldIdx"
-            [class.invalid]="field.invalid">
-            <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
-            <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
-            <span matListItemTitle>
-              {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
-            </span>
-            <span matListItemLine>
-              <span class="badge">{{ field.value.kind }}</span>
-              <ng-container *ngIf="field.value.translatable"> &nbsp;<span class="badge">Translatable</span> </ng-container>
-              <ng-container *ngIf="field.value.required"> &nbsp;<span class="badge">Required</span> </ng-container>
-            </span>
-            <mat-action-list matListItemMeta>
-              <button mat-icon-button (click)="removeComponent($event, index)">
-                <mat-icon>delete</mat-icon>
-              </button>
-              <mat-icon>arrow_right</mat-icon>
-            </mat-action-list>
-          </mat-list-item>
-        </mat-nav-list>
-      </div>
-      <div
-        class="basis-2/3"
-        formArrayName="fields"
-        *ngIf="fields.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx) as selectedComponent">
-        <ll-schema-field-edit [form]="selectedComponent" [reservedNames]="fieldReservedNames" [schemas]="schemas" />
-      </div>
-    </div>
-  </form>
-</div>
+          <mat-form-field>
+            <mat-label>Display Name</mat-label>
+            <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
+            <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
+            @if (form.controls['displayName'].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Preview Field</mat-label>
+            <input matInput type="text" formControlName="previewField" minlength="3" maxlength="50" autocomplete="off" />
+            <mat-hint align="end">{{ form.controls['previewField'].value?.length || 0 }}/50</mat-hint>
+            @if (form.controls['previewField'].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
+          </mat-form-field>
 
-<ng-container *ngIf="settings$ | async as settings">
-  <mat-accordion [multi]="true" *ngIf="settings.debugEnabled">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Form : {{ form?.valid }} </mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>{{ form.value | json }}</pre>
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
-</ng-container>
+          <ll-schema-asset-select
+            [spaceId]="spaceId"
+            [assetId]="form.controls['previewImage'].value"
+            (assetChange)="form.controls['previewImage'].setValue($event)" />
+
+          <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="fieldDropDrop($event)">
+            <mat-divider></mat-divider>
+            <div mat-subheader>Fields</div>
+            <mat-form-field>
+              <mat-label>Name</mat-label>
+              <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
+              <button mat-raised-button matTextSuffix color="accent" (click)="addField()" [disabled]="!newFieldName.valid">Add</button>
+              @if (newFieldName.errors; as errors) {
+                <mat-error>{{ fe.errors(errors) }}</mat-error>
+              }
+            </mat-form-field>
+            <mat-list-item
+              cdkDrag
+              cdkDragPreviewContainer="parent"
+              *ngFor="let field of fields.controls; let index = index"
+              (click)="selectComponent(index)"
+              [class.active]="index === selectedFieldIdx"
+              [class.invalid]="field.invalid">
+              <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
+              <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
+              <span matListItemTitle>
+                {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
+              </span>
+              <span matListItemLine>
+                <span class="badge">{{ field.value.kind }}</span>
+                @if (field.value.translatable) {
+                  &nbsp;<span class="badge">Translatable</span>
+                }
+                @if (field.value.required) {
+                  &nbsp;<span class="badge">Required</span>
+                }
+              </span>
+              <mat-action-list matListItemMeta>
+                <button mat-icon-button (click)="removeComponent($event, index)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+                <mat-icon>arrow_right</mat-icon>
+              </mat-action-list>
+            </mat-list-item>
+          </mat-nav-list>
+        </div>
+        @if (fields.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
+          <div class="basis-2/3" formArrayName="fields">
+            <ll-schema-field-edit [form]="selectedComponent" [reservedNames]="fieldReservedNames" [schemas]="schemas" />
+          </div>
+        }
+      </div>
+    </form>
+  </div>
+}
+
+@if (settings$ | async; as settings) {
+  @if (settings.debugEnabled) {
+    <mat-accordion [multi]="true">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Form : {{ form?.valid }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>{{ form.value | json }}</pre>
+        <pre>{{ form.errors | json }}</pre>
+      </mat-expansion-panel>
+    </mat-accordion>
+  }
+}
