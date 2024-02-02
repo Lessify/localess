@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   DestroyRef,
   EventEmitter,
   inject,
+  input,
   Input,
   OnChanges,
   OnInit,
@@ -12,7 +14,16 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { FormArray, FormBuilder, FormRecord } from '@angular/forms';
-import { Schema, SchemaField, SchemaFieldKind, SchemaFieldOption, SchemaFieldOptions } from '@shared/models/schema.model';
+import {
+  Schema,
+  SchemaComponent,
+  SchemaEnum,
+  SchemaField,
+  SchemaFieldKind,
+  SchemaFieldOption,
+  SchemaFieldOptions,
+  SchemaType,
+} from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
 import { filter } from 'rxjs/operators';
@@ -45,16 +56,27 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   settings$ = this.store.select(selectSettings);
   private destroyRef = inject(DestroyRef);
 
-  @Input() data: ContentData = { _id: '', schema: '' };
-  @Input() schemas: Schema[] = [];
+  // Inputs
   @Input() documents: ContentDocument[] = [];
   @Input({ required: true }) locale = 'en';
   @Input() space?: Space;
+  @Input() data: ContentData = { _id: '', schema: '' };
+  //data = input.required<ContentData>();
+  schemas = input.required<Schema[]>();
   @Output() schemaChange = new EventEmitter<SchemaSelectChange>();
 
-  rootSchema?: Schema;
-  schemaMapById: Map<string, Schema> = new Map<string, Schema>();
-  schemaMapByName: Map<string, Schema> = new Map<string, Schema>();
+  rootSchema?: SchemaComponent;
+  schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
+  schemaMapByName = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.name, it])));
+  schemaEnumMapById = computed(
+    () =>
+      new Map<string, SchemaEnum>(
+        this.schemas()
+          .filter(it => it.type === SchemaType.ENUM)
+          .map(it => it as SchemaEnum)
+          .map(it => [it.id, it])
+      )
+  );
   schemaFieldsMap: Map<string, SchemaField> = new Map<string, SchemaField>();
   //Loadings
   isFormLoading = true;
@@ -71,22 +93,22 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     //console.group('EditDocumentSchemaComponent:ngOnChanges')
     //console.log(changes)
 
-    const schemasChange = changes['schemas'];
-    if (schemasChange) {
-      this.schemaMapById = new Map<string, Schema>(this.schemas.map(it => [it.id, it]));
-      this.schemaMapByName = new Map<string, Schema>(this.schemas.map(it => [it.name, it]));
-    }
-
     const dataChange = changes['data'];
     if (dataChange) {
       if (dataChange.isFirstChange()) {
-        this.rootSchema = this.schemas.find(it => it.name == this.data.schema);
+        this.rootSchema = this.schemas()
+          .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
+          .map(it => it as SchemaComponent)
+          .find(it => it.name == this.data.schema);
         this.schemaFieldsMap = new Map<string, SchemaField>(this.rootSchema?.fields?.map(it => [it.name, it]));
       } else {
         // Update only when content is different
         if (dataChange.currentValue._id != dataChange.previousValue._id) {
           // Find new root schema and regenerate the form
-          this.rootSchema = this.schemas.find(it => it.name == this.data.schema);
+          this.rootSchema = this.schemas()
+            .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
+            .map(it => it as SchemaComponent)
+            .find(it => it.name == this.data.schema);
           this.schemaFieldsMap = new Map<string, SchemaField>(this.rootSchema?.fields?.map(it => [it.name, it]));
           this.clearForm();
           this.onChanged();
@@ -118,7 +140,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   generateForm(): void {
-    if (this.rootSchema) {
+    if (this.rootSchema && (this.rootSchema.type === SchemaType.ROOT || this.rootSchema.type === SchemaType.NODE)) {
       // true - check all fields, false - all fields become optional
       this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, this.isDefaultLocale);
 
@@ -222,14 +244,14 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     if (ids) {
       const result: Schema[] = [];
       for (const id of ids) {
-        const r = this.schemaMapById.get(id);
+        const r = this.schemaMapById().get(id);
         if (r) {
           result.push(r);
         }
       }
       return result;
     }
-    return this.schemas;
+    return this.schemas();
   }
 
   addSchemaOne(field: SchemaField, schema: Schema): void {
@@ -303,7 +325,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     moveItemInArray(data, event.previousIndex, event.currentIndex);
   }
 
-  previewText(content: ContentData, schema: Schema, locale: string): string | undefined {
+  previewText(content: ContentData, schema: SchemaComponent, locale: string): string | undefined {
     if (schema.previewField) {
       const field = schema.fields?.find(it => it.name === schema.previewField);
       if (field) {
@@ -320,7 +342,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   defaultOptionPlaceholder(field: SchemaFieldOption): string {
     if (!this.isDefaultLocale) {
       const value = this.data[field.name] as string;
-      return field.options.find(it => it.value === value)?.name || '';
+      return field.options?.find(it => it.value === value)?.name || '';
     }
     return '';
   }
@@ -328,7 +350,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   defaultOptionsPlaceholder(field: SchemaFieldOptions): string {
     if (!this.isDefaultLocale) {
       const values = this.data[field.name] as string[];
-      const options = new Map(field.options.map(it => [it.value, it.name]));
+      const options = new Map(field.options?.map(it => [it.value, it.name]));
       return values.map(it => options.get(it)).join(',');
     }
     return '';

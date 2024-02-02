@@ -1,7 +1,19 @@
 import { z } from 'zod';
-import { SchemaFieldKind, SchemaType } from './schema.model';
+import { AssetFileType, SchemaFieldKind, SchemaType } from './schema.model';
 
 export const schemaTypeSchema = z.nativeEnum(SchemaType);
+
+export const schemaBaseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: schemaTypeSchema,
+  displayName: z.string().optional(),
+});
+
+export const schemaEnumValueSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+});
 
 export const schemaFieldKindSchema = z.nativeEnum(SchemaFieldKind);
 
@@ -72,12 +84,14 @@ export const schemaFieldOptionSelectableSchema = z.object({
 
 export const schemaFieldOptionSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTION),
-  options: z.array(schemaFieldOptionSelectableSchema),
+  source: z.union([z.string(), z.literal('self')]),
+  options: z.array(schemaFieldOptionSelectableSchema).optional(),
 });
 
 export const schemaFieldOptionsSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTIONS),
-  options: z.array(schemaFieldOptionSelectableSchema),
+  source: z.union([z.string(), z.literal('self')]),
+  options: z.array(schemaFieldOptionSelectableSchema).optional(),
   minValues: z.number().optional(),
   maxValues: z.number().optional(),
 });
@@ -96,12 +110,21 @@ export const schemaFieldReferencesSchema = schemaFieldBaseSchema.extend({
   path: z.string().optional(),
 });
 
+export const assetFileTypeSchema = z.nativeEnum(AssetFileType);
+
+export const schemaEnumSchema = schemaBaseSchema.extend({
+  type: z.literal(SchemaType.ENUM),
+  values: z.array(schemaEnumValueSchema).optional(),
+});
+
 export const schemaFieldAssetSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.ASSET),
+  fileTypes: z.array(assetFileTypeSchema).optional(),
 });
 
 export const schemaFieldAssetsSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.ASSETS),
+  fileTypes: z.array(assetFileTypeSchema).optional(),
 });
 
 export const schemaFieldSchema = z.union([
@@ -124,14 +147,13 @@ export const schemaFieldSchema = z.union([
   schemaFieldAssetsSchema,
 ]);
 
-export const schemaSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  type: schemaTypeSchema,
-  displayName: z.string().optional(),
+export const schemaComponentSchema = schemaBaseSchema.extend({
+  type: z.union([z.literal(SchemaType.ROOT), z.literal(SchemaType.NODE)]),
   previewField: z.string().optional(),
   previewImage: z.string().optional(),
   fields: z.array(schemaFieldSchema).optional(),
 });
+
+export const schemaSchema = z.union([schemaComponentSchema, schemaEnumSchema]);
 
 export const zSchemaExportArraySchema = z.array(schemaSchema);

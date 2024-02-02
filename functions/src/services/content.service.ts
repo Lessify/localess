@@ -10,6 +10,7 @@ import {
   ContentKind,
   Schema,
   SchemaFieldKind,
+  SchemaType,
 } from '../models';
 
 /**
@@ -99,26 +100,28 @@ export function extractContent(content: ContentData, schemas: Schema[], locale: 
     schema: content.schema,
   };
   const schema = schemas.find(it => it.name == content.schema);
-  for (const field of schema?.fields || []) {
-    if (field.kind === SchemaFieldKind.SCHEMA) {
-      const fieldContent: ContentData | undefined = content[field.name];
-      if (fieldContent) {
-        extractedContentData[field.name] = extractContent(fieldContent, schemas, locale);
-      }
-    } else if (field.kind === SchemaFieldKind.SCHEMAS) {
-      const fieldContent: ContentData[] | undefined = content[field.name];
-      if (fieldContent && Array.isArray(fieldContent)) {
-        extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale));
-      }
-    } else {
-      if (field.translatable) {
-        let value = content[`${field.name}_i18n_${locale}`];
-        if (value === undefined) {
-          value = content[field.name];
+  if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
+    for (const field of schema?.fields || []) {
+      if (field.kind === SchemaFieldKind.SCHEMA) {
+        const fieldContent: ContentData | undefined = content[field.name];
+        if (fieldContent) {
+          extractedContentData[field.name] = extractContent(fieldContent, schemas, locale);
         }
-        extractedContentData[field.name] = value;
+      } else if (field.kind === SchemaFieldKind.SCHEMAS) {
+        const fieldContent: ContentData[] | undefined = content[field.name];
+        if (fieldContent && Array.isArray(fieldContent)) {
+          extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale));
+        }
       } else {
-        extractedContentData[field.name] = content[field.name];
+        if (field.translatable) {
+          let value = content[`${field.name}_i18n_${locale}`];
+          if (value === undefined) {
+            value = content[field.name];
+          }
+          extractedContentData[field.name] = value;
+        } else {
+          extractedContentData[field.name] = content[field.name];
+        }
       }
     }
   }

@@ -1,0 +1,118 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    <button mat-icon-button (click)="back()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>{{ entity?.displayName }}</span>
+    &nbsp;
+    <span class="text-gray-500">#{{ entity?.name }}</span>
+    <span class="spacer"></span>
+
+    @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+      <button mat-raised-button color="primary" matTooltip="Save the schema" [disabled]="!form.valid || isSaveLoading" (click)="save()">
+        <ll-icon [animate]="isSaveLoading" start="save" end="sync" />
+        Save
+      </button>
+    }
+  </mat-toolbar-row>
+</mat-toolbar>
+
+@if (isLoading) {
+  <mat-progress-bar mode="query" />
+} @else {
+  <div class="px-2 mx-auto mt-3">
+    <form [formGroup]="form">
+      <div class="flex flex-row gap-4">
+        <div class="basis-1/3">
+          <mat-form-field>
+            <mat-label>Name</mat-label>
+            <input
+              matInput
+              type="text"
+              formControlName="name"
+              required
+              minlength="3"
+              maxlength="50"
+              [readonly]="nameReadonly"
+              autocomplete="off" />
+            <button mat-icon-button matIconSuffix (click)="nameReadonly = !nameReadonly" [attr.aria-pressed]="true">
+              <mat-icon>{{ nameReadonly ? 'edit_off' : 'edit' }}</mat-icon>
+            </button>
+            <mat-hint>Will be used in JSON structure.</mat-hint>
+            <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/50</mat-hint>
+            @if (form.controls['name'].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Display Name</mat-label>
+            <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
+            <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
+            @if (form.controls['displayName'].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="basis-2/3">
+          <h3>Values</h3>
+          <mat-divider></mat-divider>
+          <br />
+          <mat-accordion cdkDropList multi formArrayName="values" (cdkDropListDropped)="valueDropDrop($event)">
+            <mat-expansion-panel
+              cdkDrag
+              *ngFor="let control of values.controls; index as idx"
+              [formGroupName]="idx"
+              expanded
+              [class.invalid]="control.invalid">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                  Option {{ idx + 1 }}
+                  <button mat-icon-button (click)="removeOptionForm(idx)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+
+              <mat-form-field style="width: 50%; padding-right: 10px">
+                <mat-label>Name</mat-label>
+                <input matInput type="text" formControlName="name" autocomplete="off" />
+                <mat-hint align="end">{{ control.value.name?.length || 0 }}/30</mat-hint>
+                @if (control.controls['name']?.errors; as errors) {
+                  <mat-error>{{ fe.errors(errors) }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field style="width: 50%">
+                <mat-label>Value</mat-label>
+                <input matInput type="text" formControlName="value" autocomplete="off" />
+                <mat-hint align="end">{{ control.value.value?.length || 0 }}/30</mat-hint>
+                @if (control.controls['value']?.errors; as errors) {
+                  <mat-error>{{ fe.errors(errors) }}</mat-error>
+                }
+              </mat-form-field>
+            </mat-expansion-panel>
+            <mat-action-row>
+              <button mat-icon-button (click)="addValueForm()">
+                <mat-icon>add</mat-icon>
+              </button>
+            </mat-action-row>
+          </mat-accordion>
+        </div>
+      </div>
+    </form>
+  </div>
+}
+
+@if (settings$ | async; as settings) {
+  @if (settings.debugEnabled) {
+    <mat-accordion [multi]="true">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Form : {{ form?.valid }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>{{ form.value | json }}</pre>
+        <pre>{{ form.errors | json }}</pre>
+      </mat-expansion-panel>
+    </mat-accordion>
+  }
+}

@@ -1,25 +1,38 @@
-import { FieldValue, Timestamp } from '@angular/fire/firestore';
+import { Timestamp } from '@angular/fire/firestore';
 
 export enum SchemaType {
   ROOT = 'ROOT',
   NODE = 'NODE',
+  ENUM = 'ENUM',
 }
 
-export interface Schema {
+export type Schema = SchemaComponent | SchemaEnum;
+
+export interface SchemaBase {
   id: string;
   name: string;
   type: SchemaType;
   displayName?: string;
-  previewField?: string;
-  previewImage?: string;
-  fields?: SchemaField[];
-
-  //Lock
-  locked?: boolean;
-  lockedBy?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface SchemaComponent extends SchemaBase {
+  type: SchemaType.ROOT | SchemaType.NODE;
+  previewField?: string;
+  previewImage?: string;
+  fields?: SchemaField[];
+}
+
+export interface SchemaEnum extends SchemaBase {
+  type: SchemaType.ENUM;
+  values?: SchemaEnumValue[];
+}
+
+export interface SchemaEnumValue {
+  name: string;
+  value: string;
 }
 
 export type SchemaField =
@@ -153,12 +166,14 @@ export interface SchemaFieldOptionSelectable {
 
 export interface SchemaFieldOption extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTION;
-  options: SchemaFieldOptionSelectable[];
+  source: string | 'self';
+  options?: SchemaFieldOptionSelectable[];
 }
 
 export interface SchemaFieldOptions extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTIONS;
-  options: SchemaFieldOptionSelectable[];
+  source: string | 'self';
+  options?: SchemaFieldOptionSelectable[];
   minValues?: number;
   maxValues?: number;
 }
@@ -197,25 +212,11 @@ export enum AssetFileType {
 }
 
 // Service
-export interface SchemaCreate {
-  name: string;
-  displayName?: string;
-  type: SchemaType;
-}
+export interface SchemaCreate extends Omit<Schema, 'id' | 'createdAt' | 'updatedAt'> {}
 
-export interface SchemaUpdate {
-  name: string;
-  displayName?: string;
-  previewField?: string;
-  previewImage?: string;
-  fields?: SchemaField[];
-}
+export interface SchemaComponentUpdate extends Omit<SchemaComponent, 'id' | 'type' | 'createdAt' | 'updatedAt'> {}
+
+export interface SchemaEnumUpdate extends Omit<SchemaEnum, 'id' | 'type' | 'createdAt' | 'updatedAt'> {}
 
 // Firestore
-export interface SchemaCreateFS {
-  name: string;
-  displayName?: string;
-  type: SchemaType;
-  createdAt: FieldValue;
-  updatedAt: FieldValue;
-}
+export interface SchemaCreateFS extends Omit<Schema, 'id'> {}

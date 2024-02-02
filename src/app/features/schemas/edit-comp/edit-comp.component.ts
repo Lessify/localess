@@ -1,14 +1,15 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
   AssetFileType,
   Schema,
+  SchemaComponentUpdate,
   SchemaField,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
   SchemaFieldOptionSelectable,
-  SchemaUpdate,
+  SchemaType,
 } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CommonValidator } from '@shared/validators/common.validator';
@@ -24,16 +25,16 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
-  selector: 'll-schema-edit',
-  templateUrl: './edit.component.html',
-  styleUrls: ['./edit.component.scss'],
+  selector: 'll-schema-edit-comp',
+  templateUrl: './edit-comp.component.html',
+  styleUrl: './edit-comp.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditComponent implements OnInit {
-  @Input({ required: true })
-  spaceId!: string;
+export class EditCompComponent implements OnInit {
+  // Input
+  spaceId = input.required<string>();
+  schemaId = input.required<string>();
 
-  entityId: string;
   entity?: Schema;
   reservedNames: string[] = [];
   schemas: Schema[] = [];
@@ -71,12 +72,10 @@ export class EditComponent implements OnInit {
     private readonly schemaService: SchemaService,
     private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService
-  ) {
-    this.entityId = this.activatedRoute.snapshot.paramMap.get('schemaId') || '';
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.loadData(this.spaceId, this.entityId);
+    this.loadData(this.spaceId(), this.schemaId());
   }
 
   loadData(spaceId: string, entityId: string): void {
@@ -95,10 +94,12 @@ export class EditComponent implements OnInit {
           ]);
           this.form.patchValue(schema);
 
-          this.fields.clear();
-          schema.fields?.forEach(it => this.addField(it));
-          if (this.selectedFieldIdx === undefined) {
-            this.selectComponent(this.fields.length - 1);
+          if (schema.type === SchemaType.NODE || schema.type === SchemaType.ROOT) {
+            this.fields.clear();
+            schema.fields?.forEach(it => this.addField(it));
+            if (this.selectedFieldIdx === undefined) {
+              this.selectComponent(this.fields.length - 1);
+            }
           }
 
           this.isLoading = false;
@@ -189,9 +190,9 @@ export class EditComponent implements OnInit {
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
         );
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        element.options.forEach(it => options.push(this.generateOptionForm(it)));
+        element.options?.forEach(it => options.push(this.generateOptionForm(it)));
         fieldForm.addControl('options', options);
-
+        fieldForm.addControl('source', this.fb.control<string>(element.source, SchemaValidator.FIELD_OPTION_SOURCE));
         break;
       }
       case SchemaFieldKind.OPTIONS: {
@@ -199,9 +200,11 @@ export class EditComponent implements OnInit {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
         );
+        fieldForm.addControl('source', this.fb.control<string>(element.source, SchemaValidator.FIELD_OPTION_SOURCE));
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        element.options.forEach(it => options.push(this.generateOptionForm(it)));
+        element.options?.forEach(it => options.push(this.generateOptionForm(it)));
         fieldForm.addControl('options', options);
+
         fieldForm.addControl('minValues', this.fb.control<number | undefined>(element.minValues, SchemaValidator.FIELD_MIN_VALUES));
         fieldForm.addControl('maxValues', this.fb.control<number | undefined>(element.maxValues, SchemaValidator.FIELD_MAX_VALUES));
         break;
@@ -301,7 +304,7 @@ export class EditComponent implements OnInit {
     //console.group('save')
     this.isSaveLoading = true;
 
-    this.schemaService.update(this.spaceId, this.entityId, this.form.value as SchemaUpdate).subscribe({
+    this.schemaService.updateComponent(this.spaceId(), this.schemaId(), this.form.value as SchemaComponentUpdate).subscribe({
       next: () => {
         this.notificationService.success('Schema has been updated.');
       },
@@ -320,7 +323,7 @@ export class EditComponent implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['features', 'spaces', this.spaceId, 'schemas']);
+    this.router.navigate(['features', 'spaces', this.spaceId(), 'schemas']);
   }
 
   fieldDropDrop(event: CdkDragDrop<string[]>): void {

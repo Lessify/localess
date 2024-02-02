@@ -39,17 +39,12 @@ export class SchemasComponent implements OnInit {
   schemaTypeIcons: Record<SchemaType, string> = {
     ROOT: 'margin',
     NODE: 'polyline',
+    ENUM: 'list',
   };
 
   dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
   displayedColumns: string[] = ['type', /*'previewImage',*/ 'name', 'createdAt', 'updatedAt', 'actions'];
   schemas: Schema[] = [];
-  lockedByList?: Set<string>;
-
-  // Form
-  filter = this.fb.group({
-    lockedBy: this.fb.control<string | undefined>(undefined),
-  });
 
   private destroyRef = inject(DestroyRef);
 
@@ -71,16 +66,6 @@ export class SchemasComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData(this.spaceId());
-    this.filter.valueChanges.subscribe({
-      next: value => {
-        console.log(value);
-        if (value.lockedBy) {
-          this.dataSource.filter = JSON.stringify(value);
-        } else {
-          this.dataSource.filter = '';
-        }
-      },
-    });
   }
 
   loadData(spaceId: string): void {
@@ -90,21 +75,7 @@ export class SchemasComponent implements OnInit {
       .subscribe({
         next: schemas => {
           this.schemas = schemas;
-          // this.lockedByList = schemas.reduce((acc, item) => {
-          //   if (item.lockedBy) {
-          //     acc.add(item.lockedBy);
-          //   }
-          //   return acc;
-          // }, new Set<string>());
           this.dataSource = new MatTableDataSource<Schema>(schemas);
-          this.dataSource.filterPredicate = (data, filter) => {
-            if (filter === '') return true;
-            const filterValue = JSON.parse(filter);
-            if (filterValue.lockedBy) {
-              return data.lockedBy === filterValue.lockedBy;
-            }
-            return true;
-          };
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
           this.isLoading = false;
@@ -137,7 +108,11 @@ export class SchemasComponent implements OnInit {
   }
 
   openEditDialog(element: Schema): void {
-    this.router.navigate(['features', 'spaces', this.spaceId(), 'schemas', element.id]);
+    if (element.type === SchemaType.ROOT || element.type === SchemaType.NODE) {
+      this.router.navigate(['features', 'spaces', this.spaceId(), 'schemas', 'comp', element.id]);
+    } else if (element.type === SchemaType.ENUM) {
+      this.router.navigate(['features', 'spaces', this.spaceId(), 'schemas', 'enum', element.id]);
+    }
   }
 
   openDeleteDialog(event: MouseEvent, element: Schema): void {

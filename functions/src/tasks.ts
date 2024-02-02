@@ -13,7 +13,10 @@ import {
   ContentFolder,
   ContentKind,
   Schema,
+  SchemaComponent,
+  SchemaEnum,
   SchemaExport,
+  SchemaType,
   Task,
   TaskExportMetadata,
   TaskKind,
@@ -543,15 +546,25 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
     .filter(it => it.exists)
     .forEach(doc => {
       const schema = doc.data() as Schema;
-      exportSchemas.push({
-        id: doc.id,
-        name: schema.name,
-        type: schema.type,
-        displayName: schema.displayName,
-        previewField: schema.previewField,
-        previewImage: schema.previewImage,
-        fields: schema.fields,
-      });
+      if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
+        exportSchemas.push({
+          id: doc.id,
+          name: schema.name,
+          type: schema.type,
+          displayName: schema.displayName,
+          previewField: schema.previewField,
+          previewImage: schema.previewImage,
+          fields: schema.fields,
+        });
+      } else if (schema.type === SchemaType.ENUM) {
+        exportSchemas.push({
+          id: doc.id,
+          name: schema.name,
+          type: schema.type,
+          displayName: schema.displayName,
+          values: schema.values,
+        });
+      }
     });
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
@@ -602,28 +615,51 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
     const schemaRef = findSchemaById(spaceId, schema.id);
     const schemaSnapshot = await schemaRef.get();
     if (schemaSnapshot.exists) {
-      const update: UpdateData<Schema> = {
-        name: schema.name,
-        type: schema.type,
-        displayName: schema.displayName || FieldValue.delete(),
-        previewField: schema.previewField || FieldValue.delete(),
-        previewImage: schema.previewImage || FieldValue.delete(),
-        fields: schema.fields || FieldValue.delete(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      batch.update(schemaRef, update);
+      if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
+        const update: UpdateData<SchemaComponent> = {
+          name: schema.name,
+          type: schema.type,
+          displayName: schema.displayName || FieldValue.delete(),
+          previewField: schema.previewField || FieldValue.delete(),
+          previewImage: schema.previewImage || FieldValue.delete(),
+          fields: schema.fields || FieldValue.delete(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        batch.update(schemaRef, update);
+      } else if (schema.type === SchemaType.ENUM) {
+        const update: UpdateData<SchemaEnum> = {
+          name: schema.name,
+          type: schema.type,
+          displayName: schema.displayName || FieldValue.delete(),
+          values: schema.values || FieldValue.delete(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        batch.update(schemaRef, update);
+      }
     } else {
-      const add: WithFieldValue<Schema> = {
-        name: schema.name,
-        type: schema.type,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      if (schema.displayName) add.displayName = schema.displayName;
-      if (schema.previewField) add.previewField = schema.previewField;
-      if (schema.previewImage) add.previewImage = schema.previewImage;
-      if (schema.fields) add.fields = schema.fields;
-      batch.set(schemaRef, add);
+      if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
+        const add: WithFieldValue<SchemaComponent> = {
+          name: schema.name,
+          type: schema.type,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        if (schema.displayName) add.displayName = schema.displayName;
+        if (schema.previewField) add.previewField = schema.previewField;
+        if (schema.previewImage) add.previewImage = schema.previewImage;
+        if (schema.fields) add.fields = schema.fields;
+        batch.set(schemaRef, add);
+      } else if (schema.type === SchemaType.ENUM) {
+        const add: WithFieldValue<SchemaEnum> = {
+          name: schema.name,
+          type: schema.type,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        if (schema.displayName) add.displayName = schema.displayName;
+        if (schema.values) add.values = schema.values;
+        batch.set(schemaRef, add);
+      }
     }
     totalChanges++;
     count++;

@@ -1,7 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { SchemasComponent } from './schemas.component';
-import { EditComponent } from './edit/edit.component';
+import { EditEnumComponent } from './edit-enum/edit-enum.component';
+import { EditCompComponent } from './edit-comp/edit-comp.component';
 
 const routes: Routes = [
   {
@@ -9,8 +10,12 @@ const routes: Routes = [
     component: SchemasComponent,
   },
   {
-    path: ':schemaId',
-    component: EditComponent,
+    path: 'comp/:schemaId',
+    component: EditCompComponent,
+  },
+  {
+    path: 'enum/:schemaId',
+    component: EditEnumComponent,
   },
 ];
 

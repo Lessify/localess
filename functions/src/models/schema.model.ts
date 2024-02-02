@@ -3,22 +3,35 @@ import { Timestamp } from 'firebase-admin/firestore';
 export enum SchemaType {
   ROOT = 'ROOT',
   NODE = 'NODE',
+  ENUM = 'ENUM',
 }
 
-export interface Schema {
+export type Schema = SchemaComponent | SchemaEnum;
+
+export interface SchemaBase {
   name: string;
   type: SchemaType;
   displayName?: string;
-  previewField?: string;
-  previewImage?: string;
-  fields?: SchemaField[];
-
-  // Lock
-  locked?: boolean;
-  lockedBy?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface SchemaComponent extends SchemaBase {
+  type: SchemaType.ROOT | SchemaType.NODE;
+  previewField?: string;
+  previewImage?: string;
+  fields?: SchemaField[];
+}
+
+export interface SchemaEnum extends SchemaBase {
+  type: SchemaType.ENUM;
+  values?: SchemaEnumValue[];
+}
+
+export interface SchemaEnumValue {
+  name: string;
+  value: string;
 }
 
 export type SchemaField =
@@ -127,12 +140,14 @@ export interface SchemaFieldOptionSelectable {
 
 export interface SchemaFieldOption extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTION;
-  options: SchemaFieldOptionSelectable[];
+  source: string | 'self';
+  options?: SchemaFieldOptionSelectable[];
 }
 
 export interface SchemaFieldOptions extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTIONS;
-  options: SchemaFieldOptionSelectable[];
+  source: string | 'self';
+  options?: SchemaFieldOptionSelectable[];
   minValues?: number;
   maxValues?: number;
 }
@@ -153,13 +168,29 @@ export interface SchemaFieldReferences extends SchemaFieldBase {
 
 export interface SchemaFieldAsset extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSET;
+  fileTypes?: AssetFileType[];
 }
 
 export interface SchemaFieldAssets extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSETS;
+  fileTypes?: AssetFileType[];
+}
+
+export enum AssetFileType {
+  ANY = 'ANY',
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  TEXT = 'TEXT',
+  AUDIO = 'AUDIO',
+  APPLICATION = 'APPLICATION',
 }
 
 // Export and Import
-export interface SchemaExport extends Omit<Schema, 'createdAt' | 'updatedAt'> {
+export type SchemaExport = SchemaComponentExport | SchemaEnumExport;
+export interface SchemaComponentExport extends Omit<SchemaComponent, 'createdAt' | 'updatedAt'> {
+  id: string;
+}
+
+export interface SchemaEnumExport extends Omit<SchemaEnum, 'createdAt' | 'updatedAt'> {
   id: string;
 }

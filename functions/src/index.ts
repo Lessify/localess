@@ -9,7 +9,7 @@ export { asset } from './assets';
 
 export { content } from './contents';
 
-export { plugin } from './plugins';
+// export { plugin } from './plugins';
 
 export { setup } from './setup';
 

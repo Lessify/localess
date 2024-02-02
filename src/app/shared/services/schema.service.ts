@@ -21,8 +21,18 @@ import {
 import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { map } from 'rxjs/operators';
-import { Schema, SchemaCreate, SchemaCreateFS, SchemaType, SchemaUpdate } from '@shared/models/schema.model';
+import {
+  Schema,
+  SchemaComponent,
+  SchemaComponentUpdate,
+  SchemaCreate,
+  SchemaCreateFS,
+  SchemaEnum,
+  SchemaEnumUpdate,
+  SchemaType,
+} from '@shared/models/schema.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { WithFieldValue } from '@firebase/firestore';
 
 @Injectable()
 export class SchemaService {
@@ -53,27 +63,39 @@ export class SchemaService {
   }
 
   create(spaceId: string, entity: SchemaCreate): Observable<DocumentReference> {
-    const addEntity: SchemaCreateFS = {
+    const addEntity: WithFieldValue<SchemaCreateFS> = {
       name: entity.name,
       displayName: entity.displayName,
       type: entity.type,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/schemas`), addEntity)).pipe(
       traceUntilFirst('Firestore:Schemas:create')
     );
   }
 
-  update(spaceId: string, id: string, entity: SchemaUpdate): Observable<void> {
+  updateComponent(spaceId: string, id: string, entity: SchemaComponentUpdate): Observable<void> {
     ObjectUtils.clean(entity);
-    const update: UpdateData<Schema> = {
+    const update: UpdateData<SchemaComponent> = {
       name: entity.name,
       displayName: entity.displayName || deleteField(),
       previewField: entity.previewField || deleteField(),
       previewImage: entity.previewImage || deleteField(),
       fields: entity.fields || deleteField(),
+      updatedAt: serverTimestamp(),
+    };
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), update)).pipe(
+      traceUntilFirst('Firestore:Schemas:update')
+    );
+  }
+
+  updateEnum(spaceId: string, id: string, entity: SchemaEnumUpdate): Observable<void> {
+    ObjectUtils.clean(entity);
+    const update: UpdateData<SchemaEnum> = {
+      name: entity.name,
+      displayName: entity.displayName || deleteField(),
+      values: entity.values || deleteField(),
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), update)).pipe(

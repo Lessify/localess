@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, input, Input, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
@@ -7,6 +7,7 @@ import {
   SchemaFieldKind,
   schemaFieldKindDescriptions,
   SchemaFieldOptionSelectable,
+  SchemaType,
 } from '@shared/models/schema.model';
 import { MatSelectChange } from '@angular/material/select';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -23,15 +24,19 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditFieldComponent implements OnInit {
+  // Input
   @Input() form: FormGroup = this.fb.group({});
   @Input() reservedNames: string[] = [];
-  @Input() schemas: Schema[] = [];
+  schemas = input.required<Schema[]>();
 
   fieldKinds = Object.values(SchemaFieldKind);
 
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
   selectedFieldKind = this.schemaFieldKindDescriptions[SchemaFieldKind.TEXT];
   nameReadonly = true;
+  // Schemas
+  nodeSchemas = computed(() => this.schemas().filter(it => it.type === SchemaType.NODE));
+  enumSchemas = computed(() => this.schemas().filter(it => it.type === SchemaType.ENUM));
 
   // Subscriptions
   settings$ = this.store.select(selectSettings);
@@ -82,6 +87,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -103,6 +109,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -125,6 +132,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -148,6 +156,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -170,6 +179,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -192,6 +202,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -209,6 +220,7 @@ export class EditFieldComponent implements OnInit {
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
         options.push(this.generateOptionForm());
         this.form.addControl('options', options);
+        this.form.addControl('source', this.fb.control<string>('self', SchemaValidator.FIELD_OPTION_SOURCE));
         // REMOVE
         // Text & TextArea
         this.form.removeControl('minLength');
@@ -233,6 +245,7 @@ export class EditFieldComponent implements OnInit {
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
         options.push(this.generateOptionForm());
         this.form.addControl('options', options);
+        this.form.addControl('source', this.fb.control<string>('self', SchemaValidator.FIELD_OPTION_SOURCE));
         this.form.addControl('minValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUES));
         this.form.addControl('maxValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUES));
         // REMOVE
@@ -261,6 +274,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -285,6 +299,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -309,6 +324,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -333,6 +349,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -354,6 +371,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
@@ -375,6 +393,7 @@ export class EditFieldComponent implements OnInit {
         this.form.removeControl('minValue');
         this.form.removeControl('maxValue');
         // Option & Options
+        this.form.removeControl('source');
         this.form.removeControl('options');
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');

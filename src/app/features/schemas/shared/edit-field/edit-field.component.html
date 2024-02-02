@@ -102,67 +102,93 @@
       </ng-container>
 
       <!--Option and Options-->
-      <ng-container *ngIf="['OPTION', 'OPTIONS'].includes(form.value.kind)">
-        <ng-container *ngIf="['OPTIONS'].includes(form.value.kind)">
+      @if (['OPTION', 'OPTIONS'].includes(form.value.kind)) {
+        @if (['OPTIONS'].includes(form.value.kind)) {
           <mat-form-field>
             <mat-label>Min Values</mat-label>
             <input matInput type="number" formControlName="minValues" autocomplete="off" />
-            <mat-error *ngIf="form.controls['minValues']?.errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (form.controls['minValues']?.errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
           <mat-form-field>
             <mat-label>Max Values</mat-label>
             <input matInput type="number" formControlName="maxValues" autocomplete="off" />
-            <mat-error *ngIf="form.controls['maxValues']?.errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (form.controls['maxValues']?.errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
-        </ng-container>
+        }
+        <mat-form-field>
+          <mat-label>Source</mat-label>
+          <mat-select formControlName="source">
+            <mat-option value="self">Self - <i>values will be defined here</i></mat-option>
+            @for (schema of enumSchemas(); track schema.id) {
+              <mat-option [value]="schema.id">
+                {{ schema.name }}
+                @if (schema.displayName) {
+                  <span> ({{ schema.displayName }})</span>
+                }
+              </mat-option>
+            }
+          </mat-select>
+          @if (form.controls['source']?.errors; as errors) {
+            <mat-error>{{ fe.errors(errors) }}</mat-error>
+          }
+        </mat-form-field>
+        @if (form.value.source === 'self') {
+          <h3>Options</h3>
+          <mat-divider></mat-divider>
+          <br />
+          <mat-accordion cdkDropList multi formArrayName="options" (cdkDropListDropped)="optionDropDrop($event)">
+            <mat-expansion-panel
+              cdkDrag
+              *ngFor="let option of options?.controls; index as idx"
+              [formGroupName]="idx"
+              expanded
+              [class.invalid]="option.invalid">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                  Option {{ idx + 1 }}
+                  <button mat-icon-button (click)="removeOptionForm(idx)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
 
-        <h3>Options</h3>
-        <mat-divider></mat-divider>
-        <br />
-        <mat-accordion cdkDropList multi formArrayName="options" (cdkDropListDropped)="optionDropDrop($event)">
-          <mat-expansion-panel
-            cdkDrag
-            *ngFor="let option of options?.controls; index as idx"
-            [formGroupName]="idx"
-            expanded
-            [class.invalid]="option.invalid">
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                Option {{ idx + 1 }}
-                <button mat-icon-button (click)="removeOptionForm(idx)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-
-            <mat-form-field style="width: 50%; padding-right: 10px">
-              <mat-label>Name</mat-label>
-              <input matInput type="text" formControlName="name" autocomplete="off" />
-              <mat-hint align="end">{{ option.value.name?.length || 0 }}/30</mat-hint>
-              <mat-error *ngIf="option.controls['name']?.errors as errors">{{ fe.errors(errors) }}</mat-error>
-            </mat-form-field>
-            <mat-form-field style="width: 50%">
-              <mat-label>Value</mat-label>
-              <input matInput type="text" formControlName="value" autocomplete="off" />
-              <mat-hint align="end">{{ option.value.value?.length || 0 }}/30</mat-hint>
-              <mat-error *ngIf="option.controls['value']?.errors as errors">{{ fe.errors(errors) }}</mat-error>
-            </mat-form-field>
-          </mat-expansion-panel>
-          <mat-action-row>
-            <button mat-icon-button (click)="addOptionForm()">
-              <mat-icon>add</mat-icon>
-            </button>
-          </mat-action-row>
-        </mat-accordion>
-      </ng-container>
+              <mat-form-field style="width: 50%; padding-right: 10px">
+                <mat-label>Name</mat-label>
+                <input matInput type="text" formControlName="name" autocomplete="off" />
+                <mat-hint align="end">{{ option.value.name?.length || 0 }}/30</mat-hint>
+                @if (form.controls['name']?.errors; as errors) {
+                  <mat-error>{{ fe.errors(errors) }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field style="width: 50%">
+                <mat-label>Value</mat-label>
+                <input matInput type="text" formControlName="value" autocomplete="off" />
+                <mat-hint align="end">{{ option.value.value?.length || 0 }}/30</mat-hint>
+                @if (form.controls['value']?.errors; as errors) {
+                  <mat-error>{{ fe.errors(errors) }}</mat-error>
+                }
+              </mat-form-field>
+            </mat-expansion-panel>
+            <mat-action-row>
+              <button mat-icon-button (click)="addOptionForm()">
+                <mat-icon>add</mat-icon>
+              </button>
+            </mat-action-row>
+          </mat-accordion>
+        }
+      }
 
       <!--SCHEMA and SCHEMAS-->
       <ng-container *ngIf="['SCHEMA', 'SCHEMAS'].includes(form.value.kind)">
         <mat-form-field>
           <mat-label>Schema</mat-label>
           <mat-select formControlName="schemas" multiple>
-            <mat-option *ngFor="let schema of schemas" [value]="schema.id">
+            <mat-option *ngFor="let schema of nodeSchemas()" [value]="schema.id">
               {{ schema.name }}
               <span *ngIf="schema.displayName"> ({{ schema.displayName }})</span>
             </mat-option>
@@ -226,7 +252,7 @@
   <mat-accordion [multi]="true" *ngIf="settings.debugEnabled">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Form : {{ form?.valid }} </mat-panel-title>
+        <mat-panel-title>Form : {{ form?.valid }}</mat-panel-title>
       </mat-expansion-panel-header>
       <pre>{{ form.value | json }}</pre>
       <pre>{{ form.errors | json }}</pre>

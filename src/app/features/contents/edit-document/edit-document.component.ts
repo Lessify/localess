@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, HostListener, inject, input, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
-import { Schema, SchemaFieldKind } from '@shared/models/schema.model';
+import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -315,7 +315,7 @@ export class EditDocumentComponent implements OnInit {
     while (node) {
       this.documentIdsTree.set(node.data._id, node.path);
       const schema = this.schemaMapByName?.get(node.data.schema);
-      if (schema) {
+      if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         for (const field of schema.fields || []) {
           if (field.kind === SchemaFieldKind.SCHEMA) {
             const cData: ContentData | undefined = node.data[field.name];
@@ -371,7 +371,7 @@ export class EditDocumentComponent implements OnInit {
       while (selectedContentId) {
         console.log('child', selectedContentId);
         const schema = this.schemaMapByName?.get(this.selectedDocumentData.schema);
-        if (schema) {
+        if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
           schemaFieldsLoop: for (const field of schema.fields || []) {
             if (field.kind === SchemaFieldKind.SCHEMA) {
               const cData: ContentData | undefined = this.selectedDocumentData[field.name];

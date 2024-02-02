@@ -49,7 +49,9 @@ export class SchemaValidator {
 
   public static FIELD_MAX_LENGTH: ValidatorFn[] = [];
 
-  public static FIELD_OPTIONS: ValidatorFn[] = [Validators.required];
+  public static FIELD_OPTIONS: ValidatorFn[] = [];
+
+  public static FIELD_OPTION_SOURCE: ValidatorFn[] = [Validators.required];
 
   public static FIELD_OPTION_NAME: ValidatorFn[] = [
     Validators.required,

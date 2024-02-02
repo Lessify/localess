@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Schema, SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
+import { Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
 import {
   AssetContent,
@@ -28,7 +28,7 @@ export class ContentHelperService {
     let selectedContent = contentIteration.pop();
     while (selectedContent) {
       const schema = schemasByName.get(selectedContent.schema);
-      if (schema) {
+      if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         const schemaFieldsMap = new Map<string, SchemaField>(schema.fields?.map(it => [it.name, it]));
         const form = this.generateSchemaForm(schema, isDefaultLocale);
         const extractSchemaContent = this.extractSchemaContent(selectedContent, schema, locale, true);
@@ -152,7 +152,7 @@ export class ContentHelperService {
     return errors;
   }
 
-  extractSchemaContent(data: ContentData, schema: Schema, locale: string, full: boolean): Record<string, any> {
+  extractSchemaContent(data: ContentData, schema: SchemaComponent, locale: string, full: boolean): Record<string, any> {
     //console.group('extractSchemaContent')
     //console.log('data',data)
     const isDefaultLocale = locale === DEFAULT_LOCALE.id;
@@ -217,7 +217,7 @@ export class ContentHelperService {
     return null as unknown as T;
   }
 
-  generateSchemaForm(schema: Schema, isDefaultLocale: boolean): FormRecord {
+  generateSchemaForm(schema: SchemaComponent, isDefaultLocale: boolean): FormRecord {
     //console.group('ContentHelperService:generateSchemaForm')
     //console.log('schema', schema)
     const form: FormRecord = this.fb.record({});
