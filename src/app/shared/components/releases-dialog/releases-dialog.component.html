@@ -1,0 +1,28 @@
+<h1 mat-dialog-title>Releases Log</h1>
+<mat-dialog-content>
+  @for (release of data.releases; track release.id) {
+    <section [id]="release.id" class="md:flex">
+      <h2 id="{{ release.id }}-heading" class="pl-7 text-sm leading-6 text-slate-500 md:pl-0 md:pr-12 md:text-right">
+        {{ release.published_at | date }}
+      </h2>
+      <div class="relative pl-7 pt-2 md:w-3/4 md:pl-12 md:pt-0 pb-16">
+        <div class="absolute bottom-0 left-0 w-px bg-slate-200 -top-3 md:top-2.5"></div>
+        <div
+          class="absolute -left-1 -top-[1.0625rem] h-[0.5625rem] w-[0.5625rem] rounded-full border-2 border-slate-300 bg-white md:top-[0.4375rem]"></div>
+        <div
+          class="max-w-none prose-h3:mb-4 prose-h3:text-base prose-h3:leading-6 prose-sm prose prose-slate prose-a:font-semibold prose-a:text-sky-500 hover:prose-a:text-sky-600">
+          <h3>
+            {{ release.name }}
+            @if (release.tag_name === data.version) {
+              <b>( Your Current Version )</b>
+            }
+          </h3>
+          <pre>{{ release.body }}</pre>
+        </div>
+      </div>
+    </section>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button cdkFocusInitial color="primary" [mat-dialog-close]="undefined">OK</button>
+</mat-dialog-actions>

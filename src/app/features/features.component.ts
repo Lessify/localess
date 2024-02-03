@@ -29,11 +29,14 @@ import { Space } from '@shared/models/space.model';
 import { selectSpace } from '@core/state/space/space.selector';
 import { environment } from '../../environments/environment';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission, UserRole } from '@shared/models/user.model';
-import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { selectSettings } from '@core/state/settings/settings.selectors';
 import { ReposService } from '@shared/generated/github/services/repos.service';
 import { Release } from '@shared/generated/github/models/release';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NotificationService } from '@shared/services/notification.service';
+import { MatDialog } from '@angular/material/dialog';
+import { ReleasesDialogComponent } from '@shared/components/releases-dialog/releases-dialog.component';
+import { ReleasesDialogModel } from '@shared/components/releases-dialog/releases-dialog.model';
 
 const ROLE_ADMIN = 'admin';
 
@@ -48,7 +51,7 @@ interface SideMenuItem {
 @Component({
   selector: 'll-features',
   templateUrl: './features.component.html',
-  styleUrls: ['./features.component.scss'],
+  styleUrl: './features.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [routeAnimations],
 })
@@ -65,7 +68,7 @@ export class FeaturesComponent implements OnInit {
   selectedSpace?: Space;
   logo = 'assets/logo.png';
   version = environment.version;
-  release?: Release;
+  releases: Release[] = [];
 
   userSideMenu: SideMenuItem[] = [];
 
@@ -96,15 +99,16 @@ export class FeaturesComponent implements OnInit {
     private readonly router: Router,
     private readonly activatedRoute: ActivatedRoute,
     private readonly reposService: ReposService,
+    private readonly notificationService: NotificationService,
+    private readonly dialog: MatDialog,
     @Optional() private auth: Auth
   ) {
     reposService
-      .reposGetLatestRelease({ owner: 'Lessify', repo: 'localess' })
+      .reposListReleases({ owner: 'Lessify', repo: 'localess' })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: value => {
-          //console.log(value)
-          this.release = value;
+          this.releases = value;
         },
       });
     user(this.auth)
@@ -240,9 +244,16 @@ export class FeaturesComponent implements OnInit {
     window.open(link);
   }
 
-  protected readonly DEFAULT_LOCALE = DEFAULT_LOCALE;
-
   onDebugEnabledChangeState() {
     this.store.dispatch(actionSettingsChangeDebugEnabled());
+  }
+
+  showReleases() {
+    this.dialog.open<ReleasesDialogComponent, ReleasesDialogModel, void>(ReleasesDialogComponent, {
+      data: {
+        version: this.version,
+        releases: this.releases,
+      },
+    });
   }
 }
