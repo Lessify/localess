@@ -204,28 +204,21 @@
         }
         <!--LINK-->
         @case ('LINK') {
-          <ll-link-select
-            *ngIf="form.controls[field.name]"
-            [form]="form.controls[field.name]"
-            [component]="field"
-            [documents]="documents"
-            [default]="!isDefaultLocale && data[field.name]" />
+          @if (form.controls[field.name]; as control) {
+            <ll-link-select [form]="control" [component]="field" [documents]="documents" [default]="!isDefaultLocale && data[field.name]" />
+          }
         }
         <!--REFERENCE-->
         @case ('REFERENCE') {
-          <ll-reference-select
-            *ngIf="form.controls[field.name]"
-            [form]="form.controls[field.name]"
-            [component]="field"
-            [documents]="documents" />
+          @if (form.controls[field.name]; as control) {
+            <ll-reference-select [form]="control" [component]="field" [documents]="documents" />
+          }
         }
         <!--REFERENCE-->
         @case ('REFERENCES') {
-          <ll-references-select
-            *ngIf="form.controls[field.name]"
-            [form]="form.controls[field.name]"
-            [component]="field"
-            [documents]="documents" />
+          @if (form.controls[field.name]; as control) {
+            <ll-references-select [form]="control" [component]="field" [documents]="documents" />
+          }
         }
         <!--ASSET-->
         @case ('ASSET') {

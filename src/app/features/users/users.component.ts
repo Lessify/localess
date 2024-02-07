@@ -1,11 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
 import { UserService } from '@shared/services/user.service';
 import { User } from '@shared/models/user.model';
 import { filter, switchMap } from 'rxjs/operators';
@@ -36,12 +33,9 @@ export class UsersComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>,
     private readonly userService: UserService
   ) {}
 

@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, input, OnDestroy, OnInit, Output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldAssets, SchemaFieldKind } from '@shared/models/schema.model';
 import { MatDialog } from '@angular/material/dialog';
-import { NotificationService } from '@shared/services/notification.service';
 import { Asset } from '@shared/models/asset.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
@@ -21,9 +20,10 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsSelectComponent implements OnInit, OnDestroy {
-  @Input() form?: FormArray;
-  @Input() component?: SchemaFieldAssets;
-  @Input() space?: Space;
+  // Input
+  form = input.required<FormArray>();
+  component = input.required<SchemaFieldAssets>();
+  space = input.required<Space>();
 
   @Output() assetsChange = new EventEmitter<string[]>();
 
@@ -36,7 +36,6 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
     readonly fe: FormErrorHandlerService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
     private readonly assetService: AssetService
   ) {}
@@ -49,9 +48,9 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
   }
 
   loadData(): void {
-    const ids: string[] | undefined = this.form?.controls.map(it => it.value.uri as string);
+    const ids: string[] | undefined = this.form().controls.map(it => it.value.uri as string);
     if (ids && ids.length > 0) {
-      this.assetService.findByIds(this.space!.id, ids).subscribe({
+      this.assetService.findByIds(this.space().id, ids).subscribe({
         next: assets => {
           const byId = new Map<string, Asset>(assets.map(item => [item.id, item]));
           // Make sure to have assets display in exactly the same order
@@ -73,9 +72,9 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
         maxWidth: '1280px',
         maxHeight: 'calc(100vh - 80px)',
         data: {
-          spaceId: this.space!.id,
+          spaceId: this.space().id,
           multiple: true,
-          fileType: this.component?.fileTypes?.at(0),
+          fileType: this.component().fileTypes?.at(0),
         },
       })
       .afterClosed()
@@ -83,8 +82,8 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
         next: selectedAssets => {
           if (selectedAssets) {
             this.assets.push(...selectedAssets);
-            this.form?.clear();
-            this.assets.forEach(it => this.form?.push(this.assetToForm(it)));
+            this.form().clear();
+            this.assets.forEach(it => this.form().push(this.assetToForm(it)));
             this.assetsChange.next(this.assets.map(it => it.id));
             //this.form?.root.updateValueAndValidity()
             //this.cd.markForCheck();
@@ -107,17 +106,17 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
 
   deleteAsset(idx: number) {
     this.assets.splice(idx, 1);
-    this.form?.removeAt(idx);
+    this.form().removeAt(idx);
     this.assetsChange.next(this.assets.map(it => it.id));
     //this.form?.root.updateValueAndValidity()
   }
 
   assetDropDrop(event: CdkDragDrop<string[]>) {
     if (event.previousIndex === event.currentIndex) return;
-    const tmp = this.form?.at(event.previousIndex);
+    const tmp = this.form().at(event.previousIndex);
     if (tmp) {
-      this.form?.removeAt(event.previousIndex);
-      this.form?.insert(event.currentIndex, tmp);
+      this.form().removeAt(event.previousIndex);
+      this.form().insert(event.currentIndex, tmp);
       moveItemInArray(this.assets, event.previousIndex, event.currentIndex);
       this.assetsChange.next(this.assets.map(it => it.id));
     }

@@ -31,22 +31,30 @@
         </div>
       </form>
 
-      <div *ngIf="isGoogleAuthEnabled || isMicrosoftAuthEnabled">
-        <div class="relative mt-10">
-          <div class="absolute inset-0 flex items-center" aria-hidden="true">
-            <div class="w-full border-t border-gray-200"></div>
+      @if (isGoogleAuthEnabled || isMicrosoftAuthEnabled) {
+        <div>
+          <div class="relative mt-10">
+            <div class="absolute inset-0 flex items-center" aria-hidden="true">
+              <div class="w-full border-t border-gray-200"></div>
+            </div>
+            <div class="relative flex justify-center text-sm font-medium leading-6">
+              <span class="bg-white px-6 text-gray-900">Or continue with</span>
+            </div>
           </div>
-          <div class="relative flex justify-center text-sm font-medium leading-6">
-            <span class="bg-white px-6 text-gray-900">Or continue with</span>
+
+          <div class="mt-6 grid grid-cols-2 gap-4">
+            @if (isGoogleAuthEnabled) {
+              <button mat-raised-button color="warn" (click)="loginWithGoogle()">Google</button>
+            }
+            @if (isMicrosoftAuthEnabled) {
+              <button mat-raised-button color="warn" (click)="loginWithMicrosoft()"> Microsoft</button>
+            }
           </div>
         </div>
+      }
 
-        <div class="mt-6 grid grid-cols-2 gap-4">
-          <button *ngIf="isGoogleAuthEnabled" mat-raised-button color="warn" (click)="loginWithGoogle()">Google</button>
-          <button *ngIf="isMicrosoftAuthEnabled" mat-raised-button color="warn" (click)="loginWithMicrosoft()"> Microsoft </button>
-        </div>
-
-        <div class="mt-6" *ngIf="settings$ | async as settings">
+      @if (settings$ | async; as settings) {
+        <div class="mt-6">
           <p *ngIf="settings.debugEnabled">
             <b>showLogoutButton</b> = {{ showLogoutButton }} <br />
             <b>showLoginButton</b> = {{ showLoginButton }} <br />
@@ -60,7 +68,7 @@
             <b>auth</b> = {{ auth | json }} <br />
           </p>
         </div>
-      </div>
+      }
     </div>
   </div>
 </div>

@@ -86,7 +86,7 @@
               Version : {{ version }}
               @if (releases.length > 1 && releases[0] && releases[0].tag_name > version) {
                 <mat-action-list matListItemMeta [matTooltip]="'A new version is available : ' + releases[0].name">
-                  <mat-icon>info</mat-icon>
+                  <mat-icon color="warn">hotel_class</mat-icon>
                 </mat-action-list>
               }
             </mat-list-item>

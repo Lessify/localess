@@ -1,13 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
-import { SpaceService } from '@shared/services/space.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
@@ -20,7 +17,6 @@ import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TaskService } from '@shared/services/task.service';
-import { FormBuilder } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -52,16 +48,12 @@ export class SchemasComponent implements OnInit {
   isLoading = true;
 
   constructor(
-    private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly schemaService: SchemaService,
     private readonly taskService: TaskService,
-    private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    private readonly fb: FormBuilder,
-    private readonly store: Store<AppState>
+    private readonly notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {

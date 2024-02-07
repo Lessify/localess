@@ -1,8 +1,8 @@
-<form *ngIf="form" [formGroup]="form">
+<form [formGroup]="form()">
   <mat-form-field [floatLabel]="default ? 'always' : 'auto'">
-    <mat-label>{{ component.displayName || component.name }}</mat-label>
+    <mat-label>{{ component().displayName || component().name }}</mat-label>
     <button mat-icon-button matIconPrefix [matMenuTriggerFor]="linkMenu">
-      <mat-icon>{{ form.value.type === 'content' ? 'link' : 'public' }}</mat-icon>
+      <mat-icon>{{ form().value.type === 'content' ? 'link' : 'public' }}</mat-icon>
     </button>
     <mat-menu #linkMenu="matMenu">
       <button mat-menu-item (click)="onTypeChange('url')">
@@ -14,58 +14,64 @@
         <span>Internal URL</span>
       </button>
     </mat-menu>
-    <ng-container [ngSwitch]="form.value.type">
-      <ng-container *ngSwitchCase="'url'">
+    @switch (form().value.type) {
+      @case ('url') {
         <input
           matInput
           type="url"
           formControlName="uri"
-          [required]="component.required"
+          [required]="component().required"
           [placeholder]="(default && default.uri) || ''"
           autocomplete="off" />
-      </ng-container>
-      <ng-container *ngSwitchCase="'content'">
+      }
+      @case ('content') {
         <input
           matInput
-          [required]="component.required"
+          [required]="component().required"
           [matAutocomplete]="auto"
           [formControl]="searchCtrl"
           [placeholder]="(default && default.uri) || ''" />
         <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
-          <mat-option *ngFor="let link of filteredContent | async" [value]="link">
-            <span>{{ link.name }}</span> |
-            <small>{{ link.fullSlug }}</small>
-          </mat-option>
+          @for (link of filteredContent | async; track link.id) {
+            <mat-option [value]="link">
+              <span>{{ link.name }}</span> |
+              <small>{{ link.fullSlug }}</small>
+            </mat-option>
+          }
         </mat-autocomplete>
-      </ng-container>
-    </ng-container>
-
-    <button
-      *ngIf="form.value.type === 'content'"
-      mat-icon-button
-      matTextSuffix
-      (click)="contentReset()"
-      [disabled]="searchCtrl.value === ''">
-      <mat-icon>clear</mat-icon>
-    </button>
-    <mat-icon matIconSuffix *ngIf="component.translatable" matTooltip="The field is translatable">language</mat-icon>
-    <mat-hint *ngIf="component.description">{{ component.description }}</mat-hint>
-    <mat-error *ngIf="form.controls['uri'].errors as errors">{{ fe.errors(errors) }}</mat-error>
+      }
+    }
+    @if (form().value.type === 'content') {
+      <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
+        <mat-icon>clear</mat-icon>
+      </button>
+    }
+    @if (component().translatable) {
+      <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+    }
+    @if (component().description; as description) {
+      <mat-hint>{{ description }}</mat-hint>
+    }
+    @if (form().controls['uri'].errors; as errors) {
+      <mat-error>{{ fe.errors(errors) }}</mat-error>
+    }
   </mat-form-field>
 
   &nbsp;&nbsp;
-  <mat-slide-toggle [checked]="form.value.target === '_blank'" (change)="targetChange($event)"> Open in a new window</mat-slide-toggle>
+  <mat-slide-toggle [checked]="form().value.target === '_blank'" (change)="targetChange($event)"> Open in a new window</mat-slide-toggle>
   <br />
   <br />
 </form>
-<ng-container *ngIf="settings$ | async as settings">
-  <mat-accordion *ngIf="settings.debugEnabled">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Form => {{ form?.valid }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>{{ form.value | json }}</pre>
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
-</ng-container>
+@if (settings$ | async; as settings) {
+  @if (settings.debugEnabled) {
+    <mat-accordion>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Form => {{ form().valid }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>{{ form().value | json }}</pre>
+        <pre>{{ form().errors | json }}</pre>
+      </mat-expansion-panel>
+    </mat-accordion>
+  }
+}

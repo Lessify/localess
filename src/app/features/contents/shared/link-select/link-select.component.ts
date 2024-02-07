@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, Input, OnInit } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
 import { ContentDocument, LinkContent } from '@shared/models/content.model';
@@ -18,9 +18,10 @@ import { AppState } from '@core/state/core.state';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LinkSelectComponent implements OnInit {
-  @Input({ required: true }) form?: FormGroup;
-  @Input({ required: true }) component?: SchemaField;
-  @Input({ required: true }) documents: ContentDocument[] = [];
+  // Input
+  form = input.required<FormGroup>();
+  component = input.required<SchemaField>();
+  documents = input.required<ContentDocument[]>();
   @Input({ required: false }) default?: LinkContent;
 
   // Search
@@ -31,29 +32,28 @@ export class LinkSelectComponent implements OnInit {
   settings$ = this.store.select(selectSettings);
 
   constructor(
-    private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
     private readonly store: Store<AppState>
   ) {}
 
   ngOnInit(): void {
     // Data init in case everything is null
-    if (this.form?.value.kind === null || this.form?.value.type === null) {
-      this.form.patchValue({ kind: SchemaFieldKind.LINK, type: 'url', target: '_self' });
+    if (this.form().value.kind === null || this.form().value.type === null) {
+      this.form().patchValue({ kind: SchemaFieldKind.LINK, type: 'url', target: '_self' });
     }
-    if (this.form?.value.type === 'content' && this.form?.value.uri !== null) {
-      this.searchCtrl.patchValue(this.documents.find(it => it.id === this.form?.value.uri));
+    if (this.form().value.type === 'content' && this.form().value.uri !== null) {
+      this.searchCtrl.patchValue(this.documents().find(it => it.id === this.form().value.uri));
     }
 
     this.filteredContent = this.searchCtrl.valueChanges.pipe(
       startWith(''),
       debounceTime(300),
-      map(search => this.documents?.filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || [])
+      map(search => this.documents().filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || [])
     );
   }
 
   onTypeChange(type: string): void {
-    this.form?.patchValue({ uri: null, type });
+    this.form().patchValue({ uri: null, type });
     this.searchCtrl.reset();
   }
 
@@ -63,19 +63,19 @@ export class LinkSelectComponent implements OnInit {
 
   contentSelected(event: MatAutocompleteSelectedEvent): void {
     const content = event.option.value as ContentDocument;
-    this.form?.controls['uri'].setValue(content.id);
+    this.form().controls['uri'].setValue(content.id);
   }
 
   contentReset(): void {
     this.searchCtrl.setValue('');
-    this.form?.controls['uri'].setValue(null);
+    this.form().controls['uri'].setValue(null);
   }
 
   targetChange(event: MatSlideToggleChange): void {
     if (event.checked) {
-      this.form?.controls['target'].setValue('_blank');
+      this.form().controls['target'].setValue('_blank');
     } else {
-      this.form?.controls['target'].setValue('_self');
+      this.form().controls['target'].setValue('_self');
     }
   }
 }

@@ -3,7 +3,7 @@ import { FormBuilder } from '@angular/forms';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { SchemaService } from '@shared/services/schema.service';
 import { ContentService } from '@shared/services/content.service';
 import { ContentData, ContentDocument, ContentError, ContentKind, EditorEvent } from '@shared/models/content.model';
@@ -74,7 +74,6 @@ export class EditDocumentComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
     private readonly cd: ChangeDetectorRef,
     private readonly spaceService: SpaceService,
     private readonly schemaService: SchemaService,

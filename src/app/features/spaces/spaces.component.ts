@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
@@ -7,8 +6,6 @@ import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
 import { SpaceDialogModel } from './space-dialog/space-dialog.model';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { SpaceService } from '@shared/services/space.service';
@@ -33,13 +30,10 @@ export class SpacesComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>
+    private readonly notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap, tap } from 'rxjs/operators';
@@ -7,7 +7,6 @@ import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
-import { SpaceService } from '@shared/services/space.service';
 import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
 import { Schema, SchemaType } from '@shared/models/schema.model';
@@ -75,12 +74,10 @@ export class ContentsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   constructor(
-    private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly schemasService: SchemaService,
     private readonly contentService: ContentService,
     private readonly tokenService: TokenService,
-    private readonly spaceService: SpaceService,
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,

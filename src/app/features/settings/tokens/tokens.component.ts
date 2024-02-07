@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
@@ -38,8 +37,6 @@ export class TokensComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
     private readonly tokenService: TokenService,
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,

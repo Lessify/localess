@@ -1,6 +1,4 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
@@ -37,10 +35,7 @@ export class VisualEditorComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
     private readonly spaceService: SpaceService,
-    private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>

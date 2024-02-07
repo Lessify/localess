@@ -1,8 +1,8 @@
-<form *ngIf="form">
+<form>
   <mat-card class="ll-not-shadow">
     <mat-card-header>
       <mat-card-title-group>
-        <mat-card-title> {{ component?.displayName || component?.name }} </mat-card-title>
+        <mat-card-title> {{ component().displayName || component().name }}</mat-card-title>
         <button mat-icon-button matTooltip="Add Reference" (click)="addReference()">
           <mat-icon>add_link</mat-icon>
         </button>
@@ -11,30 +11,38 @@
     <mat-divider></mat-divider>
     <mat-card-content>
       <mat-list class="assets">
-        <mat-list-item *ngFor="let item of form.controls || []; index as idx" style="height: auto">
-          <br />
-          <ll-reference-select [form]="item" [component]="component" [documents]="documents" />
-          <mat-action-list matListItemMeta>
-            <button mat-icon-button (click)="deleteReference(idx)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </mat-action-list>
-        </mat-list-item>
+        @for (item of form().controls; track item; let idx = $index) {
+          <mat-list-item style="height: auto">
+            <br />
+            <ll-reference-select [form]="item" [component]="component()" [documents]="documents()" />
+            <mat-action-list matListItemMeta>
+              <button mat-icon-button (click)="deleteReference(idx)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-action-list>
+          </mat-list-item>
+        }
       </mat-list>
-      <mat-hint *ngIf="component?.description">{{ component.description }}</mat-hint>
-      <mat-error *ngIf="form.errors as errors">{{ fe.errors(errors) }}</mat-error>
+      @if (component().description; as description) {
+        <mat-hint>{{ description }}</mat-hint>
+      }
+      @if (form().errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
     </mat-card-content>
   </mat-card>
 </form>
 
-<ng-container *ngIf="settings$ | async as settings">
-  <mat-accordion *ngIf="settings.debugEnabled">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Form => {{ form?.valid }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>{{ form.value | json }}</pre>
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
-</ng-container>
+@if (settings$ | async; as settings) {
+  @if (settings.debugEnabled) {
+    <mat-accordion>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Form => {{ form().valid }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>{{ form().value | json }}</pre>
+        <pre>{{ form().errors | json }}</pre>
+      </mat-expansion-panel>
+    </mat-accordion>
+  }
+}

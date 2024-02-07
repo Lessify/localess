@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { concatMap, filter, switchMap, tap } from 'rxjs/operators';
@@ -7,7 +6,6 @@ import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
-import { SpaceService } from '@shared/services/space.service';
 import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
 import { Subject } from 'rxjs';
@@ -67,10 +65,7 @@ export class AssetsComponent implements OnInit {
   isLoading = true;
 
   constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
     private readonly assetService: AssetService,
-    private readonly spaceService: SpaceService,
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,

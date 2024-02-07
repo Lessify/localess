@@ -1,9 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
-import { Store } from '@ngrx/store';
 
 import { Timestamp } from '@angular/fire/firestore';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AppState } from '@core/state/core.state';
 import { first, switchMap, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { SpaceService } from '@shared/services/space.service';
@@ -27,7 +25,6 @@ export class DashboardComponent implements OnInit {
   space$?: Observable<Space>;
 
   constructor(
-    private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
     private readonly spaceService: SpaceService
   ) {}

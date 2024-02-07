@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, input, OnInit } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldAsset, SchemaFieldKind } from '@shared/models/schema.model';
 import { MatDialog } from '@angular/material/dialog';
-import { NotificationService } from '@shared/services/notification.service';
 import { Asset } from '@shared/models/asset.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
@@ -20,35 +19,34 @@ import { selectSettings } from '@core/state/settings/settings.selectors';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetSelectComponent implements OnInit {
-  @Input() form?: FormGroup;
-  @Input() component?: SchemaFieldAsset;
-  @Input() space?: Space;
+  // Input
+  form = input.required<FormGroup>();
+  component = input.required<SchemaFieldAsset>();
+  space = input.required<Space>();
   asset?: Asset;
 
   //Subscriptions
   settings$ = this.store.select(selectSettings);
 
   constructor(
-    private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
     private readonly store: Store<AppState>,
     private readonly assetService: AssetService
   ) {}
 
   ngOnInit(): void {
-    if (this.form?.value.kind === null) {
-      this.form.patchValue({ kind: SchemaFieldKind.ASSET });
+    if (this.form().value.kind === null) {
+      this.form().patchValue({ kind: SchemaFieldKind.ASSET });
     }
     this.loadData();
   }
 
   loadData(): void {
-    const id: string | undefined = this.form?.value.uri;
+    const id: string | undefined = this.form().value.uri;
     if (id) {
-      this.assetService.findById(this.space!.id, id).subscribe({
+      this.assetService.findById(this.space().id, id).subscribe({
         next: asset => {
           this.asset = asset;
           this.cd.markForCheck();
@@ -65,9 +63,9 @@ export class AssetSelectComponent implements OnInit {
         maxWidth: '1280px',
         maxHeight: 'calc(100vh - 80px)',
         data: {
-          spaceId: this.space!.id,
+          spaceId: this.space().id,
           multiple: false,
-          fileType: this.component?.fileTypes?.at(0),
+          fileType: this.component().fileTypes?.at(0),
         },
       })
       .afterClosed()
@@ -77,7 +75,7 @@ export class AssetSelectComponent implements OnInit {
             this.asset = undefined;
             this.cd.detectChanges();
             this.asset = selectedAssets[0];
-            this.form?.patchValue({
+            this.form().patchValue({
               uri: this.asset.id,
               kind: SchemaFieldKind.ASSET,
             });
@@ -88,16 +86,9 @@ export class AssetSelectComponent implements OnInit {
       });
   }
 
-  assetToForm(asset: Asset): FormGroup {
-    return this.fb.group({
-      uri: this.fb.control(asset.id),
-      kind: this.fb.control(SchemaFieldKind.ASSET),
-    });
-  }
-
   deleteAsset() {
     this.asset = undefined;
-    this.form?.controls['uri'].setValue(null);
+    this.form().controls['uri'].setValue(null);
     //this.form?.reset();
   }
 }

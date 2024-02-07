@@ -3,8 +3,10 @@
     <mat-card-header>
       <mat-card-title-group>
         <mat-card-title>
-          {{ component?.displayName || component?.name }}
-          <mat-icon *ngIf="component?.translatable" matTooltip="The field is translatable">language</mat-icon>
+          {{ component().displayName || component().name }}
+          @if (component().translatable) {
+            <mat-icon matTooltip="The field is translatable">language</mat-icon>
+          }
         </mat-card-title>
         <button mat-icon-button matTooltip="Add Assets" (click)="openAssetSelectDialog()">
           <mat-icon>attach_file_add</mat-icon>
@@ -14,52 +16,62 @@
     <mat-divider></mat-divider>
     <mat-card-content>
       <mat-list cdkDropList class="assets" (cdkDropListDropped)="assetDropDrop($event)">
-        <mat-list-item cdkDrag cdkDragPreviewContainer="parent" *ngFor="let asset of assets; index as idx">
-          <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
-          <img
-            *ngIf="asset.type.startsWith('image/'); else noImage"
-            matListItemAvatar
-            class="img-fluid border object-fit-contain bg-body-secondary"
-            width="290"
-            height="200"
-            alt="thumbnail"
-            loading="lazy"
-            ngSrc="/api/v1/spaces/{{ space.id }}/assets/{{ asset.id }}" />
-          <ng-template #noImage>
-            <mat-icon matListItemIcon>file_present</mat-icon>
-          </ng-template>
-          <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
-          <div matListItemLine>
-            {{ asset.size | digitalStore }}
-            <ng-container *ngIf="asset.metadata as metadata"> | W{{ metadata.width }} x H{{ metadata.height }} </ng-container>
-          </div>
-          <mat-action-list matListItemMeta>
-            <button mat-icon-button (click)="deleteAsset(idx)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </mat-action-list>
-        </mat-list-item>
+        @for (asset of assets; track asset.id; let idx = $index) {
+          <mat-list-item cdkDrag cdkDragPreviewContainer="parent">
+            <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
+            @if (asset.type.startsWith('image/')) {
+              <img
+                matListItemAvatar
+                class="img-fluid border object-fit-contain bg-body-secondary"
+                width="290"
+                height="200"
+                alt="thumbnail"
+                loading="lazy"
+                ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
+            } @else {
+              <mat-icon matListItemIcon>file_present</mat-icon>
+            }
+            <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
+            <div matListItemLine>
+              {{ asset.size | digitalStore }}
+              @if (asset.metadata; as metadata) {
+                | W{{ metadata.width }} x H{{ metadata.height }}
+              }
+            </div>
+            <mat-action-list matListItemMeta>
+              <button mat-icon-button (click)="deleteAsset(idx)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-action-list>
+          </mat-list-item>
+        }
       </mat-list>
-      <mat-hint *ngIf="component?.description">{{ component.description }}</mat-hint>
-      <mat-error *ngIf="form.errors as errors">{{ fe.errors(errors) }}</mat-error>
+      @if (component().description; as description) {
+        <mat-hint>{{ description }}</mat-hint>
+      }
+      @if (form().errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
     </mat-card-content>
   </mat-card>
 </form>
 
-<ng-container *ngIf="settings$ | async as settings">
-  <mat-accordion [multi]="true" *ngIf="settings.debugEnabled">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Form : {{ form?.valid }} : {{ form?.length }} {{ form.updateValueAndValidity() }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>{{ form.value | json }}</pre>
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Assets => {{ assets.length }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>{{ assets | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
-</ng-container>
+@if (settings$ | async; as settings) {
+  @if (settings.debugEnabled) {
+    <mat-accordion [multi]="true">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Form : {{ form().valid }} : {{ form().length }} {{ form().updateValueAndValidity() }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>{{ form().value | json }}</pre>
+        <pre>{{ form().errors | json }}</pre>
+      </mat-expansion-panel>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Assets => {{ assets.length }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>{{ assets | json }}</pre>
+      </mat-expansion-panel>
+    </mat-accordion>
+  }
+}

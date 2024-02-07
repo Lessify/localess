@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormArray, FormBuilder, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldKind, SchemaFieldReferences } from '@shared/models/schema.model';
@@ -14,9 +14,10 @@ import { AppState } from '@core/state/core.state';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReferencesSelectComponent {
-  @Input({ required: true }) form?: FormArray;
-  @Input({ required: true }) component?: SchemaFieldReferences;
-  @Input({ required: true }) documents: ContentDocument[] = [];
+  // Input
+  form = input.required<FormArray>();
+  component = input.required<SchemaFieldReferences>();
+  documents = input.required<ContentDocument[]>();
 
   // Subscriptions
   settings$ = this.store.select(selectSettings);
@@ -28,7 +29,7 @@ export class ReferencesSelectComponent {
   ) {}
 
   addReference() {
-    this.form?.push(
+    this.form().push(
       this.fb.group({
         kind: this.fb.control(SchemaFieldKind.REFERENCE, Validators.required),
         uri: this.fb.control<string | undefined>(
@@ -43,6 +44,6 @@ export class ReferencesSelectComponent {
   }
 
   deleteReference(idx: number) {
-    this.form?.removeAt(idx);
+    this.form().removeAt(idx);
   }
 }

@@ -6,11 +6,13 @@
       <mat-label>Content</mat-label>
       <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl" />
       <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
-        <mat-option *ngFor="let link of filteredContent | async" [value]="link">
-          <mat-icon>{{ link.kind === 'FOLDER' ? 'folder' : 'article' }}</mat-icon>
-          <span>{{ link.name }}</span> |
-          <small>{{ link.fullSlug }}</small>
-        </mat-option>
+        @for (link of filteredContent | async; track link.id) {
+          <mat-option [value]="link">
+            <mat-icon>{{ link.kind === 'FOLDER' ? 'folder' : 'article' }}</mat-icon>
+            <span>{{ link.name }}</span> |
+            <small>{{ link.fullSlug }}</small>
+          </mat-option>
+        }
       </mat-autocomplete>
 
       <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { Auth, user, User } from '@angular/fire/auth';
@@ -35,8 +34,6 @@ export class MeComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,

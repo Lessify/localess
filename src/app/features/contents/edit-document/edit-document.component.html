@@ -23,24 +23,30 @@
     </button>
 
     <mat-menu #localesMenu="matMenu">
-      <button mat-menu-item *ngFor="let locale of availableLocales" (click)="onLocaleChanged(locale)">
-        <span [class.fw-semibold]="locale.id === selectedLocale.id">
-          {{ locale.name }}
-        </span>
-      </button>
+      @for (locale of availableLocales; track locale.id) {
+        <button mat-menu-item (click)="onLocaleChanged(locale)">
+          <span [class.fw-semibold]="locale.id === selectedLocale.id">
+            {{ locale.name }}
+          </span>
+        </button>
+      }
     </mat-menu>
 
-    <button mat-icon-button *ngIf="contentErrors.length > 0" [matMenuTriggerFor]="contentErrorsMenu">
-      <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline</mat-icon>
-    </button>
+    @if (contentErrors.length > 0) {
+      <button mat-icon-button [matMenuTriggerFor]="contentErrorsMenu">
+        <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline</mat-icon>
+      </button>
+    }
 
     <mat-menu class="mat-menu-error-messages" #contentErrorsMenu="matMenu" xPosition="before">
       <div class="vstack gap-1">
-        <div class="p-2" *ngFor="let error of contentErrors">
-          <mat-icon color="accent">warning</mat-icon>
-          In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for Locale
-          {{ availableLocalesMap.get(error.locale) }}
-        </div>
+        @for (error of contentErrors; track error.contentId) {
+          <div class="p-2">
+            <mat-icon color="accent">warning</mat-icon>
+            In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for Locale
+            {{ availableLocalesMap.get(error.locale) }}
+          </div>
+        }
       </div>
     </mat-menu>
 
@@ -80,15 +86,19 @@
     </button>
 
     <mat-menu #importMenu="matMenu">
-      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="openDraftInNewTab(locale.id)">
-        <mat-icon>mode_edit</mat-icon>
-        <span>Draft {{ locale.name }} JSON</span>
-      </button>
+      @for (locale of selectedSpace?.locales; track locale.id) {
+        <button mat-menu-item (click)="openDraftInNewTab(locale.id)">
+          <mat-icon>mode_edit</mat-icon>
+          <span>Draft {{ locale.name }} JSON</span>
+        </button>
+      }
       <mat-divider />
-      <button mat-menu-item *ngFor="let locale of selectedSpace?.locales" (click)="openPublishedInNewTab(locale.id)">
-        <mat-icon>public</mat-icon>
-        <span>Published {{ locale.name }} JSON</span>
-      </button>
+      @for (locale of selectedSpace?.locales; track locale.id) {
+        <button mat-menu-item (click)="openPublishedInNewTab(locale.id)">
+          <mat-icon>public</mat-icon>
+          <span>Published {{ locale.name }} JSON</span>
+        </button>
+      }
     </mat-menu>
   </mat-toolbar-row>
 </mat-toolbar>
@@ -102,70 +112,72 @@
     <div class="container-full-screen container-fluid">
       <mat-drawer-container autosize="true">
         <mat-drawer mode="side" [opened]="editorEnabledCtr.value === true">
-          <mat-card appearance="outlined" class="browser" *ngIf="selectedEnvironment; else noEnv">
-            <mat-card-header>
-              <mat-card-title>{{ selectedEnvironment?.name }}</mat-card-title>
-              <mat-card-subtitle>{{ selectedEnvironment?.url }}</mat-card-subtitle>
-              <span class="spacer"></span>
-              <button mat-icon-button [matMenuTriggerFor]="envMenu">
-                <mat-icon>arrow_drop_down</mat-icon>
-              </button>
-              <mat-menu #envMenu="matMenu">
-                <button
-                  mat-menu-item
-                  *ngFor="let env of selectedSpace?.environments"
-                  (click)="changeEnvironment(env)"
-                  [disabled]="env === selectedEnvironment">
-                  {{ env.name }} | {{ env.url }}
+          @if (selectedEnvironment) {
+            <mat-card appearance="outlined" class="browser">
+              <mat-card-header>
+                <mat-card-title>{{ selectedEnvironment?.name }}</mat-card-title>
+                <mat-card-subtitle>{{ selectedEnvironment?.url }}</mat-card-subtitle>
+                <span class="spacer"></span>
+                <button mat-icon-button [matMenuTriggerFor]="envMenu">
+                  <mat-icon>arrow_drop_down</mat-icon>
                 </button>
-              </mat-menu>
-            </mat-card-header>
-            <mat-divider />
-            <mat-card-content>
-              <iframe id="preview" [src]="iframeUrl"></iframe>
-            </mat-card-content>
-          </mat-card>
-          <ng-template #noEnv>
+                <mat-menu #envMenu="matMenu">
+                  @for (env of selectedSpace?.environments; track env.name) {
+                    <button mat-menu-item (click)="changeEnvironment(env)" [disabled]="env === selectedEnvironment">
+                      {{ env.name }} | {{ env.url }}
+                    </button>
+                  }
+                </mat-menu>
+              </mat-card-header>
+              <mat-divider />
+              <mat-card-content>
+                <iframe id="preview" [src]="iframeUrl"></iframe>
+              </mat-card-content>
+            </mat-card>
+          } @else {
             <div class="text-center">
               No Configured Environments.<br />
               You can configure them in Settings.
             </div>
-          </ng-template>
+          }
         </mat-drawer>
         <mat-drawer-content>
-          <div *ngIf="rootSchema" class="container-full-screen">
-            <ll-breadcrumb>
-              <ll-breadcrumb-item
-                *ngFor="let schemaPathItem of schemaPath; first as isFirst"
-                (click)="navigateToSchemaBackwards(schemaPathItem)"
-                [home]="isFirst">
-                @if (schemaMapByName.get(schemaPathItem.schemaName); as sch) {
-                  {{ sch.displayName || sch.name }}
+          @if (rootSchema) {
+            <div class="container-full-screen">
+              <ll-breadcrumb>
+                @for (schemaPathItem of schemaPath; track schemaPathItem.contentId; let isFirst = $first) {
+                  <ll-breadcrumb-item (click)="navigateToSchemaBackwards(schemaPathItem)" [home]="isFirst">
+                    @if (schemaMapByName?.get(schemaPathItem.schemaName); as sch) {
+                      {{ sch.displayName || sch.name }}
+                    }
+                  </ll-breadcrumb-item>
                 }
-              </ll-breadcrumb-item>
-            </ll-breadcrumb>
+              </ll-breadcrumb>
 
-            <ll-content-document-schema-edit
-              [data]="selectedDocumentData"
-              [schemas]="schemas"
-              [locale]="selectedLocale.id"
-              [documents]="documents"
-              [space]="selectedSpace"
-              (schemaChange)="onSchemaChange($event)" />
-          </div>
+              <ll-content-document-schema-edit
+                [data]="selectedDocumentData"
+                [schemas]="schemas"
+                [locale]="selectedLocale.id"
+                [documents]="documents"
+                [space]="selectedSpace"
+                (schemaChange)="onSchemaChange($event)" />
+            </div>
+          }
         </mat-drawer-content>
       </mat-drawer-container>
 
-      <ng-container *ngIf="settings$ | async as settings">
-        <mat-accordion *ngIf="settings.debugEnabled">
-          <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
-            </mat-expansion-panel-header>
-            <pre>{{ documentData | json }}</pre>
-          </mat-expansion-panel>
-        </mat-accordion>
-      </ng-container>
+      @if (settings$ | async; as settings) {
+        @if (settings.debugEnabled) {
+          <mat-accordion>
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
+              </mat-expansion-panel-header>
+              <pre>{{ documentData | json }}</pre>
+            </mat-expansion-panel>
+          </mat-accordion>
+        }
+      }
     </div>
   </mat-sidenav-content>
   <mat-sidenav position="end" [opened]="showHistory" (openedChange)="showHistory = $event">
