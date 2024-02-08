@@ -9,7 +9,10 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-<mat-progress-bar *ngIf="isLoading" mode="query" />
+@if (isLoading) {
+  <mat-progress-bar mode="query" />
+}
+
 <div class="my-3">
   <mat-toolbar style="background: transparent">
     <mat-toolbar-row>
@@ -24,46 +27,49 @@
 
   <form [formGroup]="form">
     <mat-accordion cdkDropList multi formArrayName="environments" (cdkDropListDropped)="environmentDropDrop($event)">
-      <mat-expansion-panel
-        cdkDrag
-        *ngFor="let option of environments?.controls; index as idx"
-        [formGroupName]="idx"
-        expanded
-        [class.invalid]="option.invalid">
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-            Environment {{ idx + 1 }}
-            <button mat-icon-button (click)="removeEnvironment(idx)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </mat-panel-title>
-        </mat-expansion-panel-header>
+      @for (option of environments?.controls; track option; let idx = $index) {
+        <mat-expansion-panel cdkDrag [formGroupName]="idx" expanded [class.invalid]="option.invalid">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+              Environment {{ idx + 1 }}
+              <button mat-icon-button (click)="removeEnvironment(idx)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
 
-        <mat-form-field style="padding-right: 10px">
-          <mat-label>Name</mat-label>
-          <input matInput type="text" formControlName="name" autocomplete="off" placeholder="Production/Testing/Development" />
-          <mat-hint align="end">{{ option.value.name?.length || 0 }}/30</mat-hint>
-          <mat-error *ngIf="option.controls['name']?.errors as errors">{{ fe.errors(errors) }}</mat-error>
-        </mat-form-field>
-        <mat-form-field style="width: calc(100% - 360px)">
-          <mat-label>URL</mat-label>
-          <input matInput type="text" formControlName="url" autocomplete="off" placeholder="https://localess.io/api/url" />
-          <mat-hint align="end">{{ option.value.url?.length || 0 }}/250</mat-hint>
-          <mat-error *ngIf="option.controls['url']?.errors as errors">{{ fe.errors(errors) }}</mat-error>
-        </mat-form-field>
-      </mat-expansion-panel>
+          <mat-form-field style="padding-right: 10px">
+            <mat-label>Name</mat-label>
+            <input matInput type="text" formControlName="name" autocomplete="off" placeholder="Production/Testing/Development" />
+            <mat-hint align="end">{{ option.value.name?.length || 0 }}/30</mat-hint>
+            @if (option.controls['name']?.errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field style="width: calc(100% - 360px)">
+            <mat-label>URL</mat-label>
+            <input matInput type="text" formControlName="url" autocomplete="off" placeholder="https://localess.io/api/url" />
+            <mat-hint align="end">{{ option.value.url?.length || 0 }}/250</mat-hint>
+            @if (option.controls['url']?.errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
+          </mat-form-field>
+        </mat-expansion-panel>
+      }
     </mat-accordion>
   </form>
 </div>
-<ng-container *ngIf="settings$ | async as settings">
-  <mat-accordion [multi]="true" *ngIf="settings.debugEnabled">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Form : {{ form?.valid }} </mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>{{ form.value | json }}</pre>
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
-</ng-container>
+@if (settings$ | async; as settings) {
+  @if (settings.debugEnabled) {
+    <mat-accordion [multi]="true">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Form : {{ form?.valid }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>{{ form.value | json }}</pre>
+        <pre>{{ form.errors | json }}</pre>
+      </mat-expansion-panel>
+    </mat-accordion>
+  }
+}

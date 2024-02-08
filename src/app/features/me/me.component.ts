@@ -1,12 +1,11 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { Auth, user, User } from '@angular/fire/auth';
 
 import { AppState } from '@core/state/core.state';
 import { selectUser } from '@core/state/user/user.selector';
-import { UserState } from '@core/state/user/user.model';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, tap } from 'rxjs/operators';
 import { MeDialogComponent } from './me-dialog/me-dialog.component';
 import { MeDialogModel } from './me-dialog/me-dialog.model';
 import { MeService } from '@shared/services/me.service';
@@ -24,8 +23,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MeComponent implements OnInit {
-  isLoading = true;
-  user?: UserState;
+  isLoading = signal(true);
+  user$ = this.store.select(selectUser).pipe(tap(() => this.isLoading.set(false)));
   authUser?: User | null;
   isPasswordProvider = false;
   isGoogleProvider = false;
@@ -43,14 +42,6 @@ export class MeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.store
-      .select(selectUser)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(user => {
-        this.user = user;
-        this.isLoading = false;
-        this.cd.markForCheck();
-      });
     user(this.auth)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(authUser => {

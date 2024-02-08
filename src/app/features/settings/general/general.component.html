@@ -8,22 +8,27 @@
     </button>
   </mat-toolbar-row>
 </mat-toolbar>
-
-<mat-progress-bar *ngIf="isLoading" mode="query" />
-<div *ngIf="space" class="my-3">
-  <mat-form-field>
-    <mat-label>Space ID</mat-label>
-    <input matInput type="text" [value]="space.id" readonly />
-    <button mat-icon-button matSuffix [cdkCopyToClipboard]="space.id" matTooltip="Copy Id">
-      <mat-icon>content_copy</mat-icon>
-    </button>
-  </mat-form-field>
-  <form [formGroup]="form">
+@if (isLoading) {
+  <mat-progress-bar mode="query" />
+}
+@if (space) {
+  <div class="my-3">
     <mat-form-field>
-      <mat-label>Space Name</mat-label>
-      <input matInput type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
-      <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/30</mat-hint>
-      <mat-error *ngIf="form.controls['name'].errors as errors">{{ fe.errors(errors) }}</mat-error>
+      <mat-label>Space ID</mat-label>
+      <input matInput type="text" [value]="space.id" readonly />
+      <button mat-icon-button matSuffix [cdkCopyToClipboard]="space.id" matTooltip="Copy Id">
+        <mat-icon>content_copy</mat-icon>
+      </button>
     </mat-form-field>
-  </form>
-</div>
+    <form [formGroup]="form">
+      <mat-form-field>
+        <mat-label>Space Name</mat-label>
+        <input matInput type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
+        <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/30</mat-hint>
+        @if (form.controls['name'].errors; as errors) {
+          <mat-error>{{ fe.errors(errors) }}</mat-error>
+        }
+      </mat-form-field>
+    </form>
+  </div>
+}

@@ -119,11 +119,17 @@
                   </mat-icon>
                   <span matListItemTitle>{{ translation.name }}</span>
                   <span matListItemLine>
-                    <span [ngSwitch]="translation.type">
-                      <ll-translation-string-view *ngSwitchCase="'STRING'" [value]="translation.locales[selectedSearchLocale]" />
-                      <ll-translation-plural-view *ngSwitchCase="'PLURAL'" [value]="translation.locales[selectedSearchLocale]" />
-                      <ll-translation-array-view *ngSwitchCase="'ARRAY'" [value]="translation.locales[selectedSearchLocale]" />
-                    </span>
+                    @switch (translation.type) {
+                      @case ('STRING') {
+                        <ll-translation-string-view [value]="translation.locales[selectedSearchLocale]" />
+                      }
+                      @case ('PLURAL') {
+                        <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale]" />
+                      }
+                      @case ('ARRAY') {
+                        <ll-translation-array-view [value]="translation.locales[selectedSearchLocale]" />
+                      }
+                    }
                   </span>
 
                   <mat-divider></mat-divider>

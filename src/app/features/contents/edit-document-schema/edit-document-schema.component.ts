@@ -68,6 +68,29 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   rootSchema?: SchemaComponent;
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
   schemaMapByName = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.name, it])));
+  schemaCompNodeList = computed(() =>
+    this.schemas()
+      .filter(it => it.type === SchemaType.NODE)
+      .map(it => it as SchemaComponent)
+  );
+  schemaCompNodeById = computed(
+    () =>
+      new Map<string, SchemaComponent>(
+        this.schemas()
+          .filter(it => it.type === SchemaType.NODE)
+          .map(it => it as SchemaComponent)
+          .map(it => [it.id, it])
+      )
+  );
+  schemaCompNodeByName = computed(
+    () =>
+      new Map<string, SchemaComponent>(
+        this.schemas()
+          .filter(it => it.type === SchemaType.NODE)
+          .map(it => it as SchemaComponent)
+          .map(it => [it.name, it])
+      )
+  );
   schemaEnumMapById = computed(
     () =>
       new Map<string, SchemaEnum>(
@@ -240,18 +263,18 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     //console.groupEnd()
   }
 
-  filterSchema(ids?: string[]): Schema[] {
+  filterSchema(ids?: string[]): SchemaComponent[] {
     if (ids) {
-      const result: Schema[] = [];
+      const result: SchemaComponent[] = [];
       for (const id of ids) {
-        const r = this.schemaMapById().get(id);
+        const r = this.schemaCompNodeById().get(id);
         if (r) {
           result.push(r);
         }
       }
       return result;
     }
-    return this.schemas();
+    return this.schemaCompNodeList();
   }
 
   addSchemaOne(field: SchemaField, schema: Schema): void {

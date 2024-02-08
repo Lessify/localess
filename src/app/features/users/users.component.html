@@ -13,42 +13,45 @@
     </button>
   </mat-toolbar-row>
 </mat-toolbar>
-<mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
+@if (isLoading) {
+  <mat-progress-bar mode="query" />
+}
+
 <div class="container-full-screen">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="avatar">
-      <mat-header-cell *matHeaderCellDef> Avatar </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Avatar</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <img [ngSrc]="element.photoURL || '/assets/account_circle.svg'" width="40" height="40" mat-card-avatar alt="circle" />
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="email">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="email"> Email </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.email }} </mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="email"> Email</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.email }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.displayName }} </mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.displayName }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="role">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="role"> Role </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="role"> Role</mat-header-cell>
       <mat-cell *matCellDef="let element">
         {{ element.role || 'none' | uppercase }}
-        <ng-container *ngIf="element.role === 'custom'">
+        @if (element.role === 'custom') {
           &nbsp;<mat-icon [matTooltip]="element.permissions?.join('&#10;')" matTooltipPosition="after">info</mat-icon>
-        </ng-container>
+        }
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.createdAt?.toDate() | date: 'medium' }} </mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.createdAt?.toDate() | date: 'medium' }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }} </mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
-      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
+      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <button mat-icon-button (click)="editDialog(element)" matTooltip="Update">
           <mat-icon>edit</mat-icon>

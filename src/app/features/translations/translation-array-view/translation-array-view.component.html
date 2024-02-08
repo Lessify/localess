@@ -1,3 +1,5 @@
 <ul>
-  <li *ngFor="let item of extract()">{{ item }}</li>
+  @for (item of extract(); track item) {
+    <li>{{ item }}</li>
+  }
 </ul>

@@ -9,17 +9,24 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-<mat-progress-bar *ngIf="isLoading" mode="query" />
-<div *ngIf="space" class="my-3">
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Color</mat-label>
-      <mat-select formControlName="color">
-        <mat-option value="primary">Primary</mat-option>
-        <mat-option value="accent">Accent</mat-option>
-        <mat-option value="warn">Warn</mat-option>
-      </mat-select>
-      <mat-error *ngIf="form.controls['color'].errors as errors">{{ fe.errors(errors) }}</mat-error>
-    </mat-form-field>
-  </form>
-</div>
+@if (isLoading) {
+  <mat-progress-bar mode="query" />
+}
+
+@if (space) {
+  <div class="my-3">
+    <form [formGroup]="form">
+      <mat-form-field>
+        <mat-label>Color</mat-label>
+        <mat-select formControlName="color">
+          <mat-option value="primary">Primary</mat-option>
+          <mat-option value="accent">Accent</mat-option>
+          <mat-option value="warn">Warn</mat-option>
+        </mat-select>
+        @if (form.controls['color'].errors; as errors) {
+          <mat-error>{{ fe.errors(errors) }}</mat-error>
+        }
+      </mat-form-field>
+    </form>
+  </div>
+}

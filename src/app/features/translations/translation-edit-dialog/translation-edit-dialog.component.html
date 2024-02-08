@@ -6,14 +6,18 @@
       <mat-label>Description</mat-label>
       <textarea matInput #description maxlength="250" class="cdk-textarea-autosize" formControlName="description"></textarea>
       <mat-hint align="end">{{ description.value?.length || 0 }}/250</mat-hint>
-      <mat-error *ngIf="form.controls['description'].errors as errors">{{ fe.errors(errors) }}</mat-error>
+      @if (form.controls['description'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
     </mat-form-field>
     <mat-form-field>
       <mat-chip-grid #chipList attr.aria-label="Select Label">
-        <mat-chip-row *ngFor="let label of form.controls['labels'].value" selectable removable (removed)="removeLabel(label)">
-          {{ label }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip-row>
+        @for (label of form.controls['labels'].value; track label) {
+          <mat-chip-row selectable removable (removed)="removeLabel(label)">
+            {{ label }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip-row>
+        }
         <input
           matInput
           placeholder="Add Label..."

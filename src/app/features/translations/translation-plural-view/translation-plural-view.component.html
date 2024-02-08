@@ -1,5 +1,7 @@
 <ul>
-  <li *ngFor="let item of extract() | keyvalue">
-    <strong>{{ toPlural(item.key) }}</strong> : {{ item.value }}
-  </li>
+  @for (item of extract() | keyvalue; track item.key) {
+    <li>
+      <strong>{{ toPlural(item.key) }}</strong> : {{ item.value }}
+    </li>
+  }
 </ul>

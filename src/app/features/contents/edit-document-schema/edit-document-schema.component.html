@@ -1,6 +1,6 @@
 @if (rootSchema) {
   <form [formGroup]="form" *ngIf="!isFormLoading">
-    <ng-container *ngFor="let field of rootSchema.fields">
+    @for (field of rootSchema.fields; track field.name) {
       @switch (field.kind) {
         <!--TEXT-->
         @case ('TEXT') {
@@ -17,12 +17,18 @@
             <!--<span matTextPrefix *ngIf="field.translatable && !isDefaultLocale">
               <mat-slide-toggle [checked]="form.controls[field.name].enabled" (change)="markFiledAvailable($event, field)" />
             </span>-->
-            <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
-            <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-            <mat-hint align="end" *ngIf="field.maxLength">
-              {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}
-            </mat-hint>
-            <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (field.translatable) {
+              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+            }
+            @if (field.description) {
+              <mat-hint>{{ field.description }}</mat-hint>
+            }
+            @if (field.maxLength) {
+              <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
+            }
+            @if (form.controls[field.name].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
         }
         <!--TEXTAREA-->
@@ -37,12 +43,18 @@
               [attr.maxlength]="field.maxLength"
               [placeholder]="!isDefaultLocale && data[field.name]"
               autocomplete="off"></textarea>
-            <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
-            <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-            <mat-hint align="end" *ngIf="field.maxLength">
-              {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}
-            </mat-hint>
-            <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (field.translatable) {
+              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+            }
+            @if (field.description) {
+              <mat-hint>{{ field.description }}</mat-hint>
+            }
+            @if (field.maxLength) {
+              <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
+            }
+            @if (form.controls[field.name].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
         }
         <!--MARKDOWN-->
@@ -57,12 +69,18 @@
               [attr.maxlength]="field.maxLength"
               [placeholder]="!isDefaultLocale && data[field.name]"
               autocomplete="off"></textarea>
-            <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
-            <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-            <mat-hint align="end" *ngIf="field.maxLength">
-              {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}
-            </mat-hint>
-            <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (field.translatable) {
+              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+            }
+            @if (field.description) {
+              <mat-hint>{{ field.description }}</mat-hint>
+            }
+            @if (field.maxLength) {
+              <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
+            }
+            @if (form.controls[field.name].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
         }
         <!--NUMBER-->
@@ -77,9 +95,15 @@
               [attr.max]="field.maxValue"
               [placeholder]="!isDefaultLocale && data[field.name]"
               autocomplete="off" />
-            <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
-            <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-            <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (field.translatable) {
+              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+            }
+            @if (field.description) {
+              <mat-hint>{{ field.description }}</mat-hint>
+            }
+            @if (form.controls[field.name].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
         }
         <!--COLOR-->
@@ -94,9 +118,15 @@
               [attr.max]="field.maxValue"
               [placeholder]="!isDefaultLocale && data[field.name]"
               autocomplete="off" />
-            <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
-            <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-            <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (field.translatable) {
+              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+            }
+            @if (field.description) {
+              <mat-hint>{{ field.description }}</mat-hint>
+            }
+            @if (form.controls[field.name].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
         }
         <!--DATE-->
@@ -109,9 +139,15 @@
               [formControlName]="field.name"
               [placeholder]="!isDefaultLocale && data[field.name]"
               autocomplete="off" />
-            <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
-            <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-            <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (field.translatable) {
+              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+            }
+            @if (field.description) {
+              <mat-hint>{{ field.description }}</mat-hint>
+            }
+            @if (form.controls[field.name].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
         }
         <!--DATE TIME-->
@@ -124,9 +160,15 @@
               [formControlName]="field.name"
               [placeholder]="!isDefaultLocale && data[field.name]"
               autocomplete="off" />
-            <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
-            <mat-hint *ngIf="field.description">{{ field.description }}</mat-hint>
-            <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+            @if (field.translatable) {
+              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+            }
+            @if (field.description) {
+              <mat-hint>{{ field.description }}</mat-hint>
+            }
+            @if (form.controls[field.name].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
         }
         <!--BOOLEAN-->
@@ -135,10 +177,16 @@
           &nbsp;&nbsp;
           <mat-slide-toggle [formControlName]="field.name">{{ field.displayName || field.name }}</mat-slide-toggle>
           &nbsp;
-          <mat-icon matIconSuffix *ngIf="field.translatable" matTooltip="The field is translatable">language</mat-icon>
+          @if (field.translatable) {
+            <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          }
           <br />
-          <mat-hint *ngIf="field.description" style="font-size: 12px; padding: 0 16px">{{ field.description }}</mat-hint>
-          <mat-error *ngIf="form.controls[field.name].errors as errors">{{ fe.errors(errors) }}</mat-error>
+          @if (field.description) {
+            <mat-hint style="font-size: 12px; padding: 0 16px">{{ field.description }}</mat-hint>
+          }
+          @if (form.controls[field.name].errors; as errors) {
+            <mat-error>{{ fe.errors(errors) }}</mat-error>
+          }
           <br />
         }
         <!--OPTION-->
@@ -238,53 +286,62 @@
                   <mat-icon>add_circle</mat-icon>
                 </button>
                 <mat-menu #schemasMenu="matMenu">
-                  <button
-                    mat-menu-item
-                    *ngFor="let sch of filterSchema(field.schemas)"
-                    (click)="addSchemaOne(field, sch)"
-                    [llTooltip]="imagePreview"
-                    contentType="template"
-                    [display]="sch.previewImage !== undefined"
-                    placement="left"
-                    [showDelay]="600"
-                    theme="light">
-                    {{ sch.displayName || sch.name }}
-                    <ng-template #imagePreview>
-                      <img
-                        *ngIf="sch.previewImage as previewImage"
-                        class="rounded"
-                        width="180"
-                        height="180"
-                        loading="lazy"
-                        alt="thumbnail"
-                        ngSrc="/api/v1/spaces/{{ space.id }}/assets/{{ previewImage }}" />
-                    </ng-template>
-                  </button>
+                  @for (sch of filterSchema(field.schemas); track sch.id) {
+                    <button
+                      mat-menu-item
+                      (click)="addSchemaOne(field, sch)"
+                      [llTooltip]="imagePreview"
+                      contentType="template"
+                      [display]="sch.previewImage !== undefined"
+                      placement="left"
+                      [showDelay]="600"
+                      theme="light">
+                      {{ sch.displayName || sch.name }}
+                      <ng-template #imagePreview>
+                        @if (sch.previewImage; as previewImage) {
+                          <img
+                            class="rounded"
+                            width="180"
+                            height="180"
+                            loading="lazy"
+                            alt="thumbnail"
+                            ngSrc="/api/v1/spaces/{{ space.id }}/assets/{{ previewImage }}" />
+                        }
+                      </ng-template>
+                    </button>
+                  }
                 </mat-menu>
               </mat-card-title-group>
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
               <mat-nav-list class="ll-mat-nav-list-gap">
-                <mat-list-item *ngIf="data[field.name] as item" (click)="navigationTo(item._id, field.name, item.schema)">
-                  <span matListItemTitle *ngIf="schemaMapByName().get(item.schema) as sch">
-                    {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
-                  </span>
-                  <span matListItemLine *ngIf="schemaMapByName().get(item.schema) as sch">
-                    <ng-container *ngIf="sch.previewField"> {{ previewText(item, sch, locale) }} </ng-container>
-                  </span>
-                  <mat-action-list matListItemMeta>
-                    <button mat-icon-button (click)="removeSchemaOne(field)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                    <mat-icon>navigate_next</mat-icon>
-                  </mat-action-list>
-                </mat-list-item>
+                @if (data[field.name]; as item) {
+                  <mat-list-item (click)="navigationTo(item._id, field.name, item.schema)">
+                    @if (schemaCompNodeByName().get(item.schema); as sch) {
+                      <span matListItemTitle>
+                        {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
+                      </span>
+                      <span matListItemLine>
+                        @if (sch.previewField) {
+                          {{ previewText(item, sch, locale) }}
+                        }
+                      </span>
+                    }
+                    <mat-action-list matListItemMeta>
+                      <button mat-icon-button (click)="removeSchemaOne(field)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                      <mat-icon>navigate_next</mat-icon>
+                    </mat-action-list>
+                  </mat-list-item>
+                }
               </mat-nav-list>
             </mat-card-content>
           </mat-card>
-
-          <mat-hint *ngIf="field.description" style="font-size: 75%; padding: 0 1em">{{ field.description }}</mat-hint>
+          @if (field.description) {
+            <mat-hint style="font-size: 75%; padding: 0 1em">{{ field.description }}</mat-hint>
+          }
         }
         <!--SCHEMAS-->
         @case ('SCHEMAS') {
@@ -296,78 +353,86 @@
                   <mat-icon>add_circle</mat-icon>
                 </button>
                 <mat-menu #schemasMenu="matMenu">
-                  <button
-                    mat-menu-item
-                    *ngFor="let sch of filterSchema(field.schemas)"
-                    (click)="addSchemaMany(field, sch)"
-                    [llTooltip]="imagePreview"
-                    contentType="template"
-                    [display]="sch.previewImage !== undefined"
-                    placement="left"
-                    [showDelay]="600"
-                    theme="light">
-                    {{ sch.displayName || sch.name }}
-                    <ng-template #imagePreview>
-                      <img
-                        *ngIf="sch.previewImage as previewImage"
-                        class="rounded"
-                        width="180"
-                        height="180"
-                        loading="lazy"
-                        alt="thumbnail"
-                        ngSrc="/api/v1/spaces/{{ space.id }}/assets/{{ previewImage }}" />
-                    </ng-template>
-                  </button>
+                  @for (sch of filterSchema(field.schemas); track sch.id) {
+                    <button
+                      mat-menu-item
+                      (click)="addSchemaMany(field, sch)"
+                      [llTooltip]="imagePreview"
+                      contentType="template"
+                      [display]="sch.previewImage !== undefined"
+                      placement="left"
+                      [showDelay]="600"
+                      theme="light">
+                      {{ sch.displayName || sch.name }}
+                      <ng-template #imagePreview>
+                        @if (sch.previewImage; as previewImage) {
+                          <img
+                            class="rounded"
+                            width="180"
+                            height="180"
+                            loading="lazy"
+                            alt="thumbnail"
+                            ngSrc="/api/v1/spaces/{{ space.id }}/assets/{{ previewImage }}" />
+                        }
+                      </ng-template>
+                    </button>
+                  }
                 </mat-menu>
               </mat-card-title-group>
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
               <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
-                <mat-list-item
-                  cdkDrag
-                  *ngFor="let item of data[field.name]; let idx = index"
-                  (click)="navigationTo(item._id, field.name, item.schema)">
-                  <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
-                  <span matListItemTitle *ngIf="schemaMapByName().get(item.schema) as sch">
-                    {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
-                  </span>
-                  <span matListItemLine *ngIf="schemaMapByName().get(item.schema) as sch">
-                    <ng-container *ngIf="sch.previewField"> {{ previewText(item, sch, locale) }} </ng-container>
-                  </span>
-                  <mat-action-list matListItemMeta>
-                    <button mat-icon-button (click)="duplicateSchemaMany($event, data[field.name], item, idx)">
-                      <mat-icon>content_copy</mat-icon>
-                    </button>
-                    <button mat-icon-button (click)="removeSchemaMany(field, item._id)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                    <mat-icon>navigate_next</mat-icon>
-                  </mat-action-list>
-                </mat-list-item>
+                @for (item of data[field.name]; track item; let idx = $index) {
+                  <mat-list-item cdkDrag (click)="navigationTo(item._id, field.name, item.schema)">
+                    <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
+                    @if (schemaCompNodeByName().get(item.schema); as sch) {
+                      <span matListItemTitle>
+                        {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
+                      </span>
+                      <span matListItemLine>
+                        @if (sch.previewField) {
+                          {{ previewText(item, sch, locale) }}
+                        }
+                      </span>
+                    }
+                    <mat-action-list matListItemMeta>
+                      <button mat-icon-button (click)="duplicateSchemaMany($event, data[field.name], item, idx)">
+                        <mat-icon>content_copy</mat-icon>
+                      </button>
+                      <button mat-icon-button (click)="removeSchemaMany(field, item._id)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                      <mat-icon>navigate_next</mat-icon>
+                    </mat-action-list>
+                  </mat-list-item>
+                }
               </mat-nav-list>
             </mat-card-content>
           </mat-card>
 
-          <mat-hint *ngIf="field.description" style="font-size: 75%; padding: 0 1em">{{ field.description }}</mat-hint>
+          @if (field.description) {
+            <mat-hint style="font-size: 75%; padding: 0 1em">{{ field.description }}</mat-hint>
+          }
         }
         @default {
           {{ field.kind }} is not implemented
         }
       }
-    </ng-container>
+    }
   </form>
 }
-
-<ng-container *ngIf="settings$ | async as settings">
-  <mat-accordion *ngIf="settings.debugEnabled">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>isDefaultLocale = {{ isDefaultLocale }}</pre>
-      <pre>{{ form.value | json }}</pre>
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
-</ng-container>
+@if (settings$ | async; as settings) {
+  @if (settings.debugEnabled) {
+    <mat-accordion>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <pre>isDefaultLocale = {{ isDefaultLocale }}</pre>
+        <pre>{{ form.value | json }}</pre>
+        <pre>{{ form.errors | json }}</pre>
+      </mat-expansion-panel>
+    </mat-accordion>
+  }
+}

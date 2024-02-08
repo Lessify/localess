@@ -3,7 +3,7 @@ import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldAssets, SchemaFieldKind } from '@shared/models/schema.model';
 import { MatDialog } from '@angular/material/dialog';
-import { Asset } from '@shared/models/asset.model';
+import { Asset, AssetFile, AssetKind } from '@shared/models/asset.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/state/core.state';
 import { AssetService } from '@shared/services/asset.service';
@@ -27,7 +27,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
 
   @Output() assetsChange = new EventEmitter<string[]>();
 
-  assets: Asset[] = [];
+  assets: AssetFile[] = [];
   // Subscriptions
   settings$ = this.store.select(selectSettings);
 
@@ -56,8 +56,8 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
           // Make sure to have assets display in exactly the same order
           this.assets = ids
             .map(it => byId.get(it))
-            .filter(asset => asset)
-            .map(it => it!);
+            .filter(asset => asset?.kind === AssetKind.FILE)
+            .map(it => it as AssetFile);
           this.cd.markForCheck();
         },
       });
@@ -66,7 +66,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
 
   openAssetSelectDialog(): void {
     this.dialog
-      .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, Asset[] | undefined>(AssetsSelectDialogComponent, {
+      .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, AssetFile[] | undefined>(AssetsSelectDialogComponent, {
         minWidth: '900px',
         width: 'calc(100vw - 160px)',
         maxWidth: '1280px',

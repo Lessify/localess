@@ -6,7 +6,7 @@
     </a>
     <span class="spacer"></span>
 
-    <ng-container *ngIf="'CONTENT_CREATE' | canUserPerform | async">
+    @if ('CONTENT_CREATE' | canUserPerform | async) {
       <button mat-raised-button color="primary" [matMenuTriggerFor]="contentCreateMenu">
         <mat-icon>add</mat-icon>
         Add Content
@@ -21,7 +21,7 @@
           <span>Folder</span>
         </button>
       </mat-menu>
-    </ng-container>
+    }
 
     <button mat-icon-button [matMenuTriggerFor]="extraMenu">
       <mat-icon>more_vert</mat-icon>
@@ -34,23 +34,32 @@
       </button>
 
       <mat-divider></mat-divider>
-      <button *ngIf="'CONTENT_IMPORT' | canUserPerform | async" mat-menu-item (click)="openImportDialog()">
-        <mat-icon>cloud_upload</mat-icon>
-        <span>Import</span>
-      </button>
-      <button *ngIf="'CONTENT_EXPORT' | canUserPerform | async" mat-menu-item (click)="openExportDialog()">
-        <mat-icon>cloud_download</mat-icon>
-        <span>Export</span>
-      </button>
+      @if ('CONTENT_IMPORT' | canUserPerform | async) {
+        <button mat-menu-item (click)="openImportDialog()">
+          <mat-icon>cloud_upload</mat-icon>
+          <span>Import</span>
+        </button>
+      }
+      @if ('CONTENT_EXPORT' | canUserPerform | async) {
+        <button mat-menu-item (click)="openExportDialog()">
+          <mat-icon>cloud_download</mat-icon>
+          <span>Export</span>
+        </button>
+      }
     </mat-menu>
   </mat-toolbar-row>
 </mat-toolbar>
-<mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
+@if (isLoading) {
+  <mat-progress-bar mode="query" />
+}
+
 <div class="container-full-screen">
   <ll-breadcrumb>
-    <ll-breadcrumb-item *ngFor="let pathItem of contentPath; first as isFirst" (click)="navigateToSlug(pathItem)" [home]="isFirst">
-      {{ pathItem.name }}
-    </ll-breadcrumb-item>
+    @for (pathItem of contentPath; track pathItem.fullSlug; let isFirst = $first) {
+      <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">
+        {{ pathItem.name }}
+      </ll-breadcrumb-item>
+    }
   </ll-breadcrumb>
 
   <mat-table [dataSource]="dataSource" matSort>
@@ -72,89 +81,80 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="status">
-      <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Status</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <ng-container [ngSwitch]="element.kind">
-          <ng-container *ngSwitchCase="'DOCUMENT'">
-            <ng-container *ngIf="element?.publishedAt === undefined">
+        @switch (element.kind) {
+          @case ('DOCUMENT') {
+            @if (element?.publishedAt === undefined) {
               <mat-icon class="not-published" matTooltip="Not published">adjust</mat-icon>
-            </ng-container>
-            <ng-container *ngIf="element?.publishedAt?.seconds > element?.updatedAt?.seconds">
+            } @else if (element?.publishedAt?.seconds > element?.updatedAt?.seconds) {
               <mat-icon class="published" matTooltip="Published">adjust</mat-icon>
-            </ng-container>
-            <ng-container *ngIf="element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds">
+            } @else if (element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds) {
               <mat-icon class="draft" matTooltip="Draft">adjust</mat-icon>
-            </ng-container>
-          </ng-container>
-          <ng-container *ngSwitchCase="'FOLDER'">
+            }
+          }
+          @case ('FOLDER') {
             <mat-icon>folder</mat-icon>
-          </ng-container>
-        </ng-container>
+          }
+        }
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <ng-container *ngIf="element.locked">
+        @if (element.locked) {
           <mat-icon [matTooltip]="element.lockedBy ? 'Locked By ' + element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
-        </ng-container>
+        }
         {{ element.name }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="slug">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.slug }} </mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.slug }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="schema">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <ng-container *ngIf="element.kind === 'DOCUMENT'">
-          <ng-container *ngIf="schemasMap.get(element.schema) as schema; else unknownSchema">
+        @if (element.kind === 'DOCUMENT') {
+          @if (schemasMap.get(element.schema); as schema) {
             {{ schema.displayName || schema.name }}
-          </ng-container>
-          <ng-template #unknownSchema> unknown... </ng-template>
-        </ng-container>
+          } @else {
+            unknown...
+          }
+        }
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="publishedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="publishedAt"> Published At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.publishedAt?.toDate() | date: 'medium' }} </mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="publishedAt"> Published At</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.publishedAt?.toDate() | date: 'medium' }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.createdAt?.toDate() | date: 'medium' }} </mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.createdAt?.toDate() | date: 'medium' }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }} </mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }}</mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button
-          mat-icon-button
-          *ngIf="'CONTENT_UPDATE' | canUserPerform | async"
-          (click)="openEditDialog($event, element)"
-          [disabled]="element.locked"
-          matTooltip="Edit">
-          <mat-icon>edit</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          *ngIf="'CONTENT_CREATE' | canUserPerform | async"
-          (click)="openCloneDialog($event, element)"
-          [disabled]="element.kind === 'FOLDER'"
-          matTooltip="Clone">
-          <mat-icon>content_copy</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          *ngIf="'CONTENT_DELETE' | canUserPerform | async"
-          (click)="openDeleteDialog($event, element)"
-          matTooltip="Delete">
-          <mat-icon>delete</mat-icon>
-        </button>
+        @if ('CONTENT_UPDATE' | canUserPerform | async) {
+          <button mat-icon-button (click)="openEditDialog($event, element)" [disabled]="element.locked" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+        }
+        @if ('CONTENT_CREATE' | canUserPerform | async) {
+          <button mat-icon-button (click)="openCloneDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Clone">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        }
+        @if ('CONTENT_DELETE' | canUserPerform | async) {
+          <button mat-icon-button (click)="openDeleteDialog($event, element)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
       </mat-cell>
     </ng-container>
 

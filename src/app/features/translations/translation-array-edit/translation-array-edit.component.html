@@ -1,14 +1,16 @@
 <div class="container edit-array">
   <form [formGroup]="form">
     <ng-container formArrayName="values">
-      <mat-form-field *ngFor="let control of values.controls; index as i">
-        <mat-label>Item {{ i }}</mat-label>
-        <input matInput [formControlName]="i" maxlength="150" />
-        <button mat-icon-button matSuffix (click)="removeItem(i)">
-          <mat-icon>clear</mat-icon>
-        </button>
-        <mat-hint align="end">{{ control.value?.length || 0 }}/150</mat-hint>
-      </mat-form-field>
+      @for (control of values.controls; track control; let i = $index) {
+        <mat-form-field>
+          <mat-label>Item {{ i }}</mat-label>
+          <input matInput [formControlName]="i" maxlength="150" />
+          <button mat-icon-button matSuffix (click)="removeItem(i)">
+            <mat-icon>clear</mat-icon>
+          </button>
+          <mat-hint align="end">{{ control.value?.length || 0 }}/150</mat-hint>
+        </mat-form-field>
+      }
     </ng-container>
   </form>
   <div class="justify-content-between">

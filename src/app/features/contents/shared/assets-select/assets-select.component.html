@@ -1,60 +1,58 @@
-<form *ngIf="form">
-  <mat-card class="ll-not-shadow">
-    <mat-card-header>
-      <mat-card-title-group>
-        <mat-card-title>
-          {{ component().displayName || component().name }}
-          @if (component().translatable) {
-            <mat-icon matTooltip="The field is translatable">language</mat-icon>
-          }
-        </mat-card-title>
-        <button mat-icon-button matTooltip="Add Assets" (click)="openAssetSelectDialog()">
-          <mat-icon>attach_file_add</mat-icon>
-        </button>
-      </mat-card-title-group>
-    </mat-card-header>
-    <mat-divider></mat-divider>
-    <mat-card-content>
-      <mat-list cdkDropList class="assets" (cdkDropListDropped)="assetDropDrop($event)">
-        @for (asset of assets; track asset.id; let idx = $index) {
-          <mat-list-item cdkDrag cdkDragPreviewContainer="parent">
-            <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
-            @if (asset.type.startsWith('image/')) {
-              <img
-                matListItemAvatar
-                class="img-fluid border object-fit-contain bg-body-secondary"
-                width="290"
-                height="200"
-                alt="thumbnail"
-                loading="lazy"
-                ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
-            } @else {
-              <mat-icon matListItemIcon>file_present</mat-icon>
-            }
-            <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
-            <div matListItemLine>
-              {{ asset.size | digitalStore }}
-              @if (asset.metadata; as metadata) {
-                | W{{ metadata.width }} x H{{ metadata.height }}
-              }
-            </div>
-            <mat-action-list matListItemMeta>
-              <button mat-icon-button (click)="deleteAsset(idx)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </mat-action-list>
-          </mat-list-item>
+<mat-card class="ll-not-shadow">
+  <mat-card-header>
+    <mat-card-title-group>
+      <mat-card-title>
+        {{ component().displayName || component().name }}
+        @if (component().translatable) {
+          <mat-icon matTooltip="The field is translatable">language</mat-icon>
         }
-      </mat-list>
-      @if (component().description; as description) {
-        <mat-hint>{{ description }}</mat-hint>
+      </mat-card-title>
+      <button mat-icon-button matTooltip="Add Assets" (click)="openAssetSelectDialog()">
+        <mat-icon>attach_file_add</mat-icon>
+      </button>
+    </mat-card-title-group>
+  </mat-card-header>
+  <mat-divider></mat-divider>
+  <mat-card-content>
+    <mat-list cdkDropList class="assets" (cdkDropListDropped)="assetDropDrop($event)">
+      @for (asset of assets; track asset.id; let idx = $index) {
+        <mat-list-item cdkDrag cdkDragPreviewContainer="parent">
+          <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
+          @if (asset.type.startsWith('image/')) {
+            <img
+              matListItemAvatar
+              class="img-fluid border object-fit-contain bg-body-secondary"
+              width="290"
+              height="200"
+              alt="thumbnail"
+              loading="lazy"
+              ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
+          } @else {
+            <mat-icon matListItemIcon>file_present</mat-icon>
+          }
+          <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
+          <div matListItemLine>
+            {{ asset.size | digitalStore }}
+            @if (asset.metadata; as metadata) {
+              | W{{ metadata.width }} x H{{ metadata.height }}
+            }
+          </div>
+          <mat-action-list matListItemMeta>
+            <button mat-icon-button (click)="deleteAsset(idx)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-action-list>
+        </mat-list-item>
       }
-      @if (form().errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
-      }
-    </mat-card-content>
-  </mat-card>
-</form>
+    </mat-list>
+    @if (component().description; as description) {
+      <mat-hint>{{ description }}</mat-hint>
+    }
+    @if (form().errors; as errors) {
+      <mat-error>{{ fe.errors(errors) }}</mat-error>
+    }
+  </mat-card-content>
+</mat-card>
 
 @if (settings$ | async; as settings) {
   @if (settings.debugEnabled) {

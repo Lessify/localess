@@ -9,10 +9,12 @@
         <mat-option [value]="'custom'">Custom</mat-option>
         <mat-option [value]="'admin'">Admin</mat-option>
       </mat-select>
-      <mat-error *ngIf="form.controls['role'].errors as errors">{{ fe.errors(errors) }}</mat-error>
+      @if (form.controls['role'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
     </mat-form-field>
 
-    <ng-container *ngIf="form.value.role === 'custom'">
+    @if (form.value.role === 'custom') {
       <b>Permissions</b>
       <mat-selection-list formControlName="permissions">
         <div mat-subheader>Administration</div>
@@ -141,7 +143,7 @@
           <span matListItemLine>Import Asset.</span>
         </mat-list-option>
       </mat-selection-list>
-    </ng-container>
+    }
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
@@ -149,6 +151,8 @@
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>
 
-<ng-container *ngIf="settings$ | async as settings">
-  <pre *ngIf="settings.debugEnabled">{{ form.value | json }}</pre>
-</ng-container>
+@if (settings$ | async; as settings) {
+  @if (settings.debugEnabled) {
+    <pre>{{ form.value | json }}</pre>
+  }
+}

@@ -178,7 +178,7 @@
       *matRowDef="let row; columns: displayedColumns"
       (click)="onRowSelect(row)"
       [class.row-folder]="row.kind === 'FOLDER'"></mat-row>
-    <ng-container *ngIf="!isLoading">
+    @if (!isLoading) {
       <ng-container *matNoDataRow>
         <div class="text-center align-middle">
           <br />
@@ -188,7 +188,7 @@
           <br />
         </div>
       </ng-container>
-    </ng-container>
+    }
   </mat-table>
   <mat-paginator></mat-paginator>
   @if (fileUploadQueue.length > 0) {

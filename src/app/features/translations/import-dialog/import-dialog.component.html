@@ -5,16 +5,22 @@
     <mat-form-field>
       <mat-label>Type</mat-label>
       <mat-select formControlName="kind" required (selectionChange)="onKindSelectionChange($event)">
-        <mat-option *ngFor="let kind of exportKinds" [value]="kind.key"> {{ kind.value }} </mat-option>
+        @for (kind of exportKinds; track kind.key) {
+          <mat-option [value]="kind.key"> {{ kind.value }}</mat-option>
+        }
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field *ngIf="form.value.kind === 'FLAT'">
-      <mat-label>Type</mat-label>
-      <mat-select formControlName="locale" required>
-        <mat-option *ngFor="let locale of data.locales" [value]="locale.id"> {{ locale.name }} </mat-option>
-      </mat-select>
-    </mat-form-field>
+    @if (form.value.kind === 'FLAT') {
+      <mat-form-field>
+        <mat-label>Type</mat-label>
+        <mat-select formControlName="locale" required>
+          @for (locale of data.locales; track locale.id) {
+            <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
 
     <button mat-stroked-button (click)="fileInput.click()">
       <mat-icon>upload_file</mat-icon>
@@ -23,7 +29,9 @@
     <br />
     {{ fileName }}
   </form>
-  <mat-error *ngIf="fileWrong">The selected file does not comply with import extension (*{{ fileAccept }}).</mat-error>
+  @if (fileWrong) {
+    <mat-error>The selected file does not comply with import extension (*{{ fileAccept }}).</mat-error>
+  }
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="undefined">Cancel</button>

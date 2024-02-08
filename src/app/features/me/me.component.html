@@ -5,37 +5,40 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-<mat-progress-bar *ngIf="isLoading" mode="query"></mat-progress-bar>
-<div class="container-full-screen">
-  <div class="row" *ngIf="user">
-    <div class="col"></div>
-    <div class="col-6">
-      <mat-card appearance="outlined">
-        <mat-card-header>
-          <img [src]="user.photoURL || '/assets/account_circle.svg'" mat-card-avatar alt="circle" />
-          <mat-card-title>{{ user.displayName }}</mat-card-title>
-        </mat-card-header>
-        <mat-divider></mat-divider>
-        <mat-card-content>
-          <br />
-          <div><b>Email : </b>{{ user.email }}</div>
-          <div><b>Email Verified: </b>{{ user.emailVerified ? 'Yes' : 'Not' }}</div>
-          <div><b>Role : </b>{{ user.role | uppercase }}</div>
-        </mat-card-content>
-        <mat-divider></mat-divider>
-        <mat-card-actions>
-          <ng-container *ngIf="isPasswordProvider && numberProviders === 1; else externalAuthProviderMessage">
-            <button mat-raised-button color="primary" (click)="openEditDialog()">Edit</button>
-            <button mat-raised-button (click)="openUpdateEmailDialog()">Update Email</button>
-            <button mat-raised-button (click)="openUpdatePasswordDialog()">Update Password</button>
-          </ng-container>
-          <ng-template #externalAuthProviderMessage>
-            Your account is linked to an external authentication provider.<br />
-            You can't manage your personal data and password here.
-          </ng-template>
-        </mat-card-actions>
-      </mat-card>
+@if (isLoading()) {
+  <mat-progress-bar mode="query" />
+}
+@if (user$ | async; as user) {
+  <div class="container-full-screen">
+    <div class="row">
+      <div class="col"></div>
+      <div class="col-6">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <img [src]="user.photoURL || '/assets/account_circle.svg'" mat-card-avatar alt="circle" />
+            <mat-card-title>{{ user.displayName }}</mat-card-title>
+          </mat-card-header>
+          <mat-divider></mat-divider>
+          <mat-card-content>
+            <br />
+            <div><b>Email : </b>{{ user.email }}</div>
+            <div><b>Email Verified: </b>{{ user.emailVerified ? 'Yes' : 'Not' }}</div>
+            <div><b>Role : </b>{{ user.role | uppercase }}</div>
+          </mat-card-content>
+          <mat-divider></mat-divider>
+          <mat-card-actions>
+            @if (isPasswordProvider && numberProviders === 1) {
+              <button mat-raised-button color="primary" (click)="openEditDialog()">Edit</button>
+              <button mat-raised-button (click)="openUpdateEmailDialog()">Update Email</button>
+              <button mat-raised-button (click)="openUpdatePasswordDialog()">Update Password</button>
+            } @else {
+              Your account is linked to an external authentication provider.<br />
+              You can't manage your personal data and password here.
+            }
+          </mat-card-actions>
+        </mat-card>
+      </div>
+      <div class="col"></div>
     </div>
-    <div class="col"></div>
   </div>
-</div>
+}

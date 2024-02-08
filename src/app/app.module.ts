@@ -85,7 +85,7 @@ import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
       provide: IMAGE_LOADER,
       useValue: (config: ImageLoaderConfig) => {
         // optimize image for API assets
-        if (config.src.startsWith('/api/')) {
+        if (config.src.startsWith('/api/') && config.width) {
           return `${config.src}?w=${config.width}`;
         } else {
           return config.src;

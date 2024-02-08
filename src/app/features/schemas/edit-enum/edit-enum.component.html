@@ -58,39 +58,36 @@
           <mat-divider></mat-divider>
           <br />
           <mat-accordion cdkDropList multi formArrayName="values" (cdkDropListDropped)="valueDropDrop($event)">
-            <mat-expansion-panel
-              cdkDrag
-              *ngFor="let control of values.controls; index as idx"
-              [formGroupName]="idx"
-              expanded
-              [class.invalid]="control.invalid">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                  Option {{ idx + 1 }}
-                  <button mat-icon-button (click)="removeOptionForm(idx)">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
+            @for (control of values.controls; track control; let idx = $index) {
+              <mat-expansion-panel cdkDrag [formGroupName]="idx" expanded [class.invalid]="control.invalid">
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                    Option {{ idx + 1 }}
+                    <button mat-icon-button (click)="removeOptionForm(idx)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
 
-              <mat-form-field style="width: 50%; padding-right: 10px">
-                <mat-label>Name</mat-label>
-                <input matInput type="text" formControlName="name" autocomplete="off" />
-                <mat-hint align="end">{{ control.value.name?.length || 0 }}/30</mat-hint>
-                @if (control.controls['name']?.errors; as errors) {
-                  <mat-error>{{ fe.errors(errors) }}</mat-error>
-                }
-              </mat-form-field>
-              <mat-form-field style="width: 50%">
-                <mat-label>Value</mat-label>
-                <input matInput type="text" formControlName="value" autocomplete="off" />
-                <mat-hint align="end">{{ control.value.value?.length || 0 }}/30</mat-hint>
-                @if (control.controls['value']?.errors; as errors) {
-                  <mat-error>{{ fe.errors(errors) }}</mat-error>
-                }
-              </mat-form-field>
-            </mat-expansion-panel>
+                <mat-form-field style="width: 50%; padding-right: 10px">
+                  <mat-label>Name</mat-label>
+                  <input matInput type="text" formControlName="name" autocomplete="off" />
+                  <mat-hint align="end">{{ control.value.name?.length || 0 }}/30</mat-hint>
+                  @if (control.controls['name']?.errors; as errors) {
+                    <mat-error>{{ fe.errors(errors) }}</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field style="width: 50%">
+                  <mat-label>Value</mat-label>
+                  <input matInput type="text" formControlName="value" autocomplete="off" />
+                  <mat-hint align="end">{{ control.value.value?.length || 0 }}/30</mat-hint>
+                  @if (control.controls['value']?.errors; as errors) {
+                    <mat-error>{{ fe.errors(errors) }}</mat-error>
+                  }
+                </mat-form-field>
+              </mat-expansion-panel>
+            }
             <mat-action-row>
               <button mat-icon-button (click)="addValueForm()">
                 <mat-icon>add</mat-icon>

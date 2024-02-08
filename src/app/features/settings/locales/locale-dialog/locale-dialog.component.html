@@ -3,12 +3,16 @@
   <br />
   <form [formGroup]="form">
     <mat-form-field>
-      <mat-label> Locale </mat-label>
+      <mat-label> Locale</mat-label>
       <input matInput type="text" formControlName="locale" required [matAutocomplete]="auto" />
       <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayLocale">
-        <mat-option *ngFor="let locale of filteredLocales | async" [value]="locale"> {{ locale.name }} ({{ locale.id }}) </mat-option>
+        @for (locale of filteredLocales | async; track locale.id) {
+          <mat-option [value]="locale"> {{ locale.name }} ({{ locale.id }})</mat-option>
+        }
       </mat-autocomplete>
-      <mat-error *ngIf="form.controls['locale'].errors as errors">{{ fe.errors(errors) }}</mat-error>
+      @if (form.controls['locale'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
     </mat-form-field>
   </form>
 </mat-dialog-content>

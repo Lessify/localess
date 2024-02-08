@@ -55,18 +55,20 @@
 
       @if (settings$ | async; as settings) {
         <div class="mt-6">
-          <p *ngIf="settings.debugEnabled">
-            <b>showLogoutButton</b> = {{ showLogoutButton }} <br />
-            <b>showLoginButton</b> = {{ showLoginButton }} <br />
-            <b>isGoogleAuthEnabled</b> = {{ isGoogleAuthEnabled }} <br />
-            <b>isMicrosoftAuthEnabled</b> = {{ isMicrosoftAuthEnabled }} <br />
-            <!--user = {{ user | async | json}} <br/>-->
-            <b>userId</b> = {{ (user | async)?.uid }} <br />
-            <b>userDisplayName</b> = {{ (user | async)?.displayName }} <br />
-            <b>userEmail</b> = {{ (user | async)?.email }} <br />
-            <b>parsedToken</b> = {{ parsedToken | async | json }} <br />
-            <b>auth</b> = {{ auth | json }} <br />
-          </p>
+          @if (settings.debugEnabled) {
+            <p>
+              <b>showLogoutButton</b> = {{ showLogoutButton }} <br />
+              <b>showLoginButton</b> = {{ showLoginButton }} <br />
+              <b>isGoogleAuthEnabled</b> = {{ isGoogleAuthEnabled }} <br />
+              <b>isMicrosoftAuthEnabled</b> = {{ isMicrosoftAuthEnabled }} <br />
+              <!--user = {{ user | async | json}} <br/>-->
+              <b>userId</b> = {{ (user | async)?.uid }} <br />
+              <b>userDisplayName</b> = {{ (user | async)?.displayName }} <br />
+              <b>userEmail</b> = {{ (user | async)?.email }} <br />
+              <b>parsedToken</b> = {{ parsedToken | async | json }} <br />
+              <b>auth</b> = {{ auth | json }} <br />
+            </p>
+          }
         </div>
       }
     </div>
