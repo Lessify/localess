@@ -146,7 +146,7 @@
           </button>
         }
         @if ('ASSET_DELETE' | canUserPerform | async) {
-          <button mat-icon-button (click)="openDeleteDialog($event, element)" [disabled]="element.inProgress === true || now - element.createdAt.toMillis() < 600000" matTooltip="Delete">
+          <button mat-icon-button (click)="openDeleteDialog($event, element)" [disabled]="element.inProgress === true && now - element.createdAt.toMillis() < 600000" matTooltip="Delete">
             <mat-icon>delete</mat-icon>
           </button>
         }
