@@ -50,6 +50,7 @@ export class AssetsComponent implements OnInit {
   assets: Asset[] = [];
   assetPath: PathItem[] = [];
   fileUploadQueue: File[] = [];
+  now = Date.now();
 
   get parentPath(): string {
     if (this.assetPath && this.assetPath.length > 0) {
