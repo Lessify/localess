@@ -78,7 +78,7 @@
         <button
           mat-icon-button
           (click)="openDeleteDialog(element)"
-          [disabled]="element.status !== 'FINISHED' && now - element.createdAt.toMillis() < 600000"
+          [disabled]="element.status !== 'FINISHED' && now - (element.createdAt?.toMillis() || 0) < 600000"
           matTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
