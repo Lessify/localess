@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'll-icon',
@@ -7,7 +7,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IconComponent {
-  @Input() start = '';
-  @Input() end = '';
-  @Input() animate = false;
+  // Input
+  start = input.required<string>();
+  end = input.required<string>();
+  animate = input.required<boolean>();
 }
