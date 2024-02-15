@@ -19,7 +19,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@google-cloud/translate": "^8.0.3",
+    "@google-cloud/translate": "^8.1.0",
     "compressing": "^1.10.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
@@ -33,13 +33,13 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/uuid": "^9.0.8",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
     "eslint": "^8.56.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.29.1",
     "firebase-functions-test": "^3.1.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   },
   "private": true
 }
