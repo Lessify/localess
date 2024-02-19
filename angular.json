@@ -37,8 +37,13 @@
               "src/assets",
               "src/scripts"
             ],
-            "styles": ["src/styles.scss"],
-            "scripts": []
+            "styles": [
+              "src/styles.scss",
+              "node_modules/@stoplight/elements/styles.min.css"
+            ],
+            "scripts": [
+              "node_modules/@stoplight/elements/web-components.min.js"
+            ]
           },
           "configurations": {
             "production": {

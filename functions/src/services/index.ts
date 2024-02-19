@@ -1,6 +1,7 @@
 export * from './asset.service';
 export * from './content.service';
 export * from './content-history.service';
+export * from './open-api.service';
 export * from './plugin.service';
 export * from './schema.service';
 export * from './space.service';

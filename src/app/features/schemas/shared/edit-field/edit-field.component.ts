@@ -218,7 +218,7 @@ export class EditFieldComponent implements OnInit {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        options.push(this.generateOptionForm());
+        //options.push(this.generateOptionForm());
         this.form.addControl('options', options);
         this.form.addControl('source', this.fb.control<string>('self', SchemaValidator.FIELD_OPTION_SOURCE));
         // REMOVE
@@ -243,7 +243,7 @@ export class EditFieldComponent implements OnInit {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        options.push(this.generateOptionForm());
+        //options.push(this.generateOptionForm());
         this.form.addControl('options', options);
         this.form.addControl('source', this.fb.control<string>('self', SchemaValidator.FIELD_OPTION_SOURCE));
         this.form.addControl('minValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUES));

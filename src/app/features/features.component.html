@@ -24,6 +24,17 @@
       }
 
       <span class="spacer"></span>
+      <button mat-icon-button [matMenuTriggerFor]="supportMenu" matTooltip="Community and Support">
+        <mat-icon>help_center</mat-icon>
+      </button>
+      <mat-menu #supportMenu="matMenu">
+        @for (item of communitySideMenu; track item.label) {
+          <button mat-menu-item (click)="openNewTab(item.link)">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span>{{ item.label }}</span>
+          </button>
+        }
+      </mat-menu>
       <button mat-icon-button (click)="onSettingsMenuExpendedChangeState()" matTooltip="Settings">
         <mat-icon>settings</mat-icon>
       </button>
@@ -70,10 +81,10 @@
 
           <mat-divider />
           @if (settings.mainMenuExpended) {
-            <div mat-subheader>Community and Support</div>
+            <div mat-subheader>Developer</div>
           }
-          @for (item of communitySideMenu; track item.label) {
-            <mat-list-item (click)="openNewTab(item.link)">
+          @for (item of developerMenu; track item.label) {
+            <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
               <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
               @if (settings.mainMenuExpended) {
                 <div matListItemTitle>{{ item.label }}</div>

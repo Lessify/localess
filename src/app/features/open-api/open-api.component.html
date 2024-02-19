@@ -1,0 +1,5 @@
+@if (openApiDocument$ | async; as openApiDocument) {
+  <elements-api apiDescriptionDocument="{{ openApiDocument }}" router="memory" layout="sidebar" />
+} @else {
+  <mat-progress-bar mode="query" />
+}

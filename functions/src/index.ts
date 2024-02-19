@@ -9,6 +9,8 @@ export { asset } from './assets';
 
 export { content } from './contents';
 
+export { openapi } from './open-api';
+
 // export { plugin } from './plugins';
 
 export { setup } from './setup';

@@ -78,11 +78,13 @@ export class FeaturesComponent implements OnInit {
   ];
 
   communitySideMenu: SideMenuItem[] = [
-    { link: 'https://github.com/sponsors/Lessify', label: 'Sponsor', icon: 'volunteer_activism' },
+    { link: 'https://github.com/Lessify/localess/wiki', label: 'Help', icon: 'help' },
+    { link: 'https://github.com/sponsors/Lessify', label: 'Sponsor Us', icon: 'volunteer_activism' },
     { link: 'https://github.com/Lessify/localess', label: 'Code', icon: 'code' },
     { link: 'https://github.com/Lessify/localess/issues', label: 'Feedback', icon: 'forum' },
-    { link: 'https://github.com/Lessify/localess/wiki', label: 'Help', icon: 'help' },
   ];
+
+  developerMenu: SideMenuItem[] = [];
 
   isAuthenticated$: Observable<boolean> | undefined;
   stickyHeader$: Observable<boolean> | undefined;
@@ -195,6 +197,7 @@ export class FeaturesComponent implements OnInit {
             }
           }
           this.generateUserSideMenu(this.selectedSpace!.id);
+          this.generateDeveloperSideMenu(this.selectedSpace!.id);
           this.spaces = spaces;
           this.cd.markForCheck();
         },
@@ -212,6 +215,10 @@ export class FeaturesComponent implements OnInit {
       // { link: 'plugins', label: 'Plugins', icon: 'extension', permission: UserPermission.SPACE_MANAGEMENT },
       { link: `spaces/${spaceId}/settings`, label: 'Settings', icon: 'settings', permission: UserPermission.SPACE_MANAGEMENT },
     ];
+  }
+
+  generateDeveloperSideMenu(spaceId: string): void {
+    this.developerMenu = [{ link: `spaces/${spaceId}/open-api`, label: 'Open API', icon: 'api' }];
   }
 
   onSpaceSelection(element: Space): void {

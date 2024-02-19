@@ -184,6 +184,12 @@ const routes: Routes = [
         },
       },
       {
+        path: 'spaces/:spaceId/open-api',
+        title: 'Open API',
+        loadChildren: () => import('./open-api/open-api.module').then(m => m.OpenApiModule),
+      },
+
+      {
         path: 'spaces/:spaceId/settings',
         title: 'Settings',
         loadChildren: () => import('./settings/settings.module').then(m => m.SettingsModule),

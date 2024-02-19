@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 
 import { FeaturesRoutingModule } from './features-routing.module';
 import { FeaturesComponent } from './features.component';
@@ -9,5 +9,6 @@ import { SpaceService } from '@shared/services/space.service';
   declarations: [FeaturesComponent],
   imports: [SharedModule, FeaturesRoutingModule],
   providers: [SpaceService],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class FeaturesModule {}

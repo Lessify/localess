@@ -5,6 +5,7 @@ export * from './content.zod';
 export * from './content-history.model';
 export * from './firebase.model';
 export * from './locale.model';
+export * from './open-api.model';
 export * from './plugin.model';
 export * from './schema.model';
 export * from './schema.zod';
