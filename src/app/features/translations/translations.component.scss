@@ -1,12 +1,3 @@
-@use '@angular/material' as mat;
-
-.display-columns-section {
-  display: flex;
-  flex-wrap: wrap;
-  //margin-right: -25px;
-  //margin-left: -24px;
-}
-
 .search-buttons {
   width: 10em;
 }
@@ -44,65 +35,6 @@ mat-form-field.with-button {
   border: 1px solid #efefef;
 }
 
-//::-webkit-scrollbar {
-//  width: 0;
-//  background: transparent; /* make scrollbar transparent */
-//}
-
-mat-list-item.selected {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-/*TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version.*/
-mat-list-item.odd {
-  background: rgba(127, 127, 127, 0.3);
-}
-
 :host ::ng-deep .cdk-virtual-scroll-content-wrapper {
   max-width: 100%;
-
-  .mat-mdc-list-base {
-    padding: 0;
-  }
-
-  .mat-mdc-list-item {
-    height: auto;
-    padding-right: 5px;
-
-    .mat-icon {
-      //margin-left: 5px;
-      //margin-right: 5px;
-      margin: auto 5px;
-
-      &.translated {
-        color: mat.get-color-from-palette(mat.$green-palette, 400);
-      }
-
-      &.partially-translated {
-        color: mat.get-color-from-palette(mat.$amber-palette, 400);
-      }
-
-      &.untranslated {
-        color: mat.get-color-from-palette(mat.$red-palette, 400);
-      }
-    }
-
-    .mdc-list-item__content {
-      white-space: inherit !important;
-      word-wrap: break-word !important;
-      word-break: break-word !important;
-
-      .mat-mdc-list-item-title {
-        white-space: inherit !important;
-        word-wrap: break-word !important;
-        word-break: break-word !important;
-      }
-
-      .mat-mdc-list-item-line {
-        white-space: inherit !important;
-        word-wrap: break-word !important;
-        word-break: break-word !important;
-      }
-    }
-  }
 }

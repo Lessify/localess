@@ -105,36 +105,55 @@
         @if (translations$ | async; as translations) {
           <div class="flex">
             <cdk-virtual-scroll-viewport [itemSize]="55" class="basis-1/4 overlay container break-all">
-              <mat-nav-list>
-                <mat-list-item
+              <ul role="list" class="divide-y divide-gray-300">
+                <li
+                  role="listitem"
+                  class="flex justify-between py-2 cursor-pointer"
                   *cdkVirtualFor="let translation of translations | translationFilter: searchValue : selectedSearchLocale : selectedLabels"
                   (click)="selectTranslation(translation)"
-                  [class.selected]="translation.id === selectedTranslation?.id">
-                  <mat-icon
-                    matListItemIcon
-                    [class]="identifyStatusColor(translation)"
-                    matTooltipClass="allow-cr"
-                    matTooltip="Green - translated. &#10; Amber - partially-translated. &#10; Red - untranslated.">
-                    adjust
-                  </mat-icon>
-                  <span matListItemTitle>{{ translation.name }}</span>
-                  <span matListItemLine>
-                    @switch (translation.type) {
-                      @case ('STRING') {
-                        <ll-translation-string-view [value]="translation.locales[selectedSearchLocale]" />
+                  (keyup.enter)="selectTranslation(translation)"
+                  [class.bg-gray-100]="translation.id === selectedTranslation?.id">
+                  <div class="flex min-w-0 gap-x-2">
+                    <div class="self-center">
+                      @switch (identifyStatus(translation)) {
+                        @case ('TRANSLATED') {
+                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-emerald-500/20 p-1" matTooltip="Translated">
+                            <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
+                          </div>
+                        }
+                        @case ('PARTIALLY_TRANSLATED') {
+                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-amber-500/20 p-1" matTooltip="Partially Translated">
+                            <div class="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
+                          </div>
+                        }
+                        @case ('UNTRANSLATED') {
+                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-red-500/20 p-1" matTooltip="Untranslated">
+                            <div class="h-1.5 w-1.5 rounded-full bg-red-500"></div>
+                          </div>
+                        }
                       }
-                      @case ('PLURAL') {
-                        <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale]" />
-                      }
-                      @case ('ARRAY') {
-                        <ll-translation-array-view [value]="translation.locales[selectedSearchLocale]" />
-                      }
-                    }
-                  </span>
-
-                  <mat-divider></mat-divider>
-                </mat-list-item>
-              </mat-nav-list>
+                    </div>
+                    <div class="min-w-0 flex-auto">
+                      <div class="text-sm font-semibold leading-6 text-gray-900">
+                        {{ translation.name }}
+                      </div>
+                      <div class="mt-1 text-xs leading-5 text-gray-500">
+                        @switch (translation.type) {
+                          @case ('STRING') {
+                            <ll-translation-string-view [value]="translation.locales[selectedSearchLocale]" />
+                          }
+                          @case ('PLURAL') {
+                            <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale]" />
+                          }
+                          @case ('ARRAY') {
+                            <ll-translation-array-view [value]="translation.locales[selectedSearchLocale]" />
+                          }
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              </ul>
             </cdk-virtual-scroll-viewport>
             <div class="basis-1/2 overlay">
               @if (selectedTranslation) {

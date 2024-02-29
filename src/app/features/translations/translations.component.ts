@@ -431,29 +431,18 @@ export class TranslationsComponent implements OnInit {
   identifyStatus(translate: Translation): TranslationStatus {
     const locales = this.selectedSpace?.locales || [];
     if (Object.getOwnPropertyNames(translate.locales).length === 0) return TranslationStatus.UNTRANSLATED;
-
     let translateCount = 0;
     for (const locale of locales) {
       if (locale.id in translate.locales && translate.locales[locale.id] !== '') {
         translateCount++;
       }
     }
-
     if (locales.length === translateCount) {
       return TranslationStatus.TRANSLATED;
     }
-
-    return TranslationStatus.PARTIALLY_TRANSLATED;
-  }
-
-  identifyStatusColor(translate: Translation): string {
-    switch (this.identifyStatus(translate)) {
-      case TranslationStatus.TRANSLATED:
-        return 'translated';
-      case TranslationStatus.PARTIALLY_TRANSLATED:
-        return 'partially-translated';
-      case TranslationStatus.UNTRANSLATED:
-        return 'untranslated';
+    if (translateCount === 0) {
+      return TranslationStatus.UNTRANSLATED;
     }
+    return TranslationStatus.PARTIALLY_TRANSLATED;
   }
 }
