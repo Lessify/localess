@@ -282,6 +282,9 @@
             <mat-card-header>
               <mat-card-title-group>
                 <mat-card-title> {{ field.displayName || field.name }}</mat-card-title>
+                @if (field.description) {
+                  <mat-card-subtitle>{{ field.description }}</mat-card-subtitle>
+                }
                 <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema" [disabled]="data[field.name]">
                   <mat-icon>add_circle</mat-icon>
                 </button>
@@ -322,11 +325,11 @@
                       <span matListItemTitle>
                         {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
                       </span>
-                      <span matListItemLine>
-                        @if (sch.previewField) {
+                      @if (sch.previewField) {
+                        <span matListItemLine>
                           {{ previewText(item, sch, locale) }}
-                        }
-                      </span>
+                        </span>
+                      }
                     }
                     <mat-action-list matListItemMeta>
                       <button mat-icon-button (click)="removeSchemaOne(field)">
@@ -339,9 +342,6 @@
               </mat-nav-list>
             </mat-card-content>
           </mat-card>
-          @if (field.description) {
-            <mat-hint style="font-size: 75%; padding: 0 1em">{{ field.description }}</mat-hint>
-          }
         }
         <!--SCHEMAS-->
         @case ('SCHEMAS') {
@@ -349,6 +349,9 @@
             <mat-card-header>
               <mat-card-title-group>
                 <mat-card-title> {{ field.displayName || field.name }}</mat-card-title>
+                @if (field.description) {
+                  <mat-card-subtitle>{{ field.description }}</mat-card-subtitle>
+                }
                 <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema">
                   <mat-icon>add_circle</mat-icon>
                 </button>
@@ -390,11 +393,11 @@
                       <span matListItemTitle>
                         {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
                       </span>
-                      <span matListItemLine>
-                        @if (sch.previewField) {
+                      @if (sch.previewField) {
+                        <span matListItemLine>
                           {{ previewText(item, sch, locale) }}
-                        }
-                      </span>
+                        </span>
+                      }
                     }
                     <mat-action-list matListItemMeta>
                       <button mat-icon-button (click)="duplicateSchemaMany($event, data[field.name], item, idx)">
@@ -410,10 +413,6 @@
               </mat-nav-list>
             </mat-card-content>
           </mat-card>
-
-          @if (field.description) {
-            <mat-hint style="font-size: 75%; padding: 0 1em">{{ field.description }}</mat-hint>
-          }
         }
         @default {
           {{ field.kind }} is not implemented

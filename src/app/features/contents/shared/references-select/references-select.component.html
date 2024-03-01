@@ -3,6 +3,9 @@
     <mat-card-header>
       <mat-card-title-group>
         <mat-card-title> {{ component().displayName || component().name }}</mat-card-title>
+        @if (component().description; as description) {
+          <mat-card-subtitle>{{ description }}</mat-card-subtitle>
+        }
         <button mat-icon-button matTooltip="Add Reference" (click)="addReference()">
           <mat-icon>add_link</mat-icon>
         </button>
@@ -23,9 +26,6 @@
           </mat-list-item>
         }
       </mat-list>
-      @if (component().description; as description) {
-        <mat-hint>{{ description }}</mat-hint>
-      }
       @if (form().errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>
       }

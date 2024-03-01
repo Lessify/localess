@@ -8,6 +8,9 @@
             <mat-icon matTooltip="The field is translatable">language</mat-icon>
           }
         </mat-card-title>
+        @if (component().description; as description) {
+          <mat-card-subtitle>{{ description }}</mat-card-subtitle>
+        }
         <button mat-icon-button matTooltip="Add Asset" (click)="openAssetSelectDialog()">
           <mat-icon>attach_file_add</mat-icon>
         </button>
@@ -44,9 +47,6 @@
             </mat-action-list>
           </mat-list-item>
         </mat-list>
-      }
-      @if (component().description; as description) {
-        <mat-hint>{{ description }}</mat-hint>
       }
       @if (form().controls['uri'].errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>
