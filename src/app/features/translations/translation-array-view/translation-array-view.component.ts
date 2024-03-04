@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, Input } from '@angular/core';
 
 @Component({
   selector: 'll-translation-array-view',
@@ -7,9 +7,9 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationArrayViewComponent {
-  @Input() value = '';
+  value = input.required<string>();
 
   extract(): string[] {
-    return JSON.parse(this.value || '[]');
+    return JSON.parse(this.value() || '[]');
   }
 }

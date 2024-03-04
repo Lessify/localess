@@ -106,21 +106,6 @@
           <div class="flex">
             <cdk-virtual-scroll-viewport [itemSize]="55" class="basis-1/4 overlay container">
               <ul role="list" class="divide-y divide-gray-300">
-                <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                  <div class="min-w-0 flex-auto">
-                    <div class="flex items-center gap-x-3">
-                      <div class="h-3.5 w-3.5 flex-none rounded-full bg-emerald-500/20 p-1" matTooltip="Translated">
-                        <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-                      </div>
-                      <div class="text-sm font-semibold leading-6 text-gray-900 break-all">
-                        dashboard.suspendSimDashboard.blockOrUnblockSim
-                      </div>
-                    </div>
-                    <div class="mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400">
-                      New company logo and application design as part of the ongoing evolution of our company's brand.
-                    </div>
-                  </div>
-                </li>
                 <li
                   role="listitem"
                   class="flex p-2 cursor-pointer relative items-center"
@@ -151,7 +136,7 @@
                         {{ translation.name }}
                       </div>
                     </div>
-                    <div class="mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400 break-words">
+                    <div class="flex items-center gap-x-2.5 text-xs leading-5 text-gray-400 break-words">
                       @switch (translation.type) {
                         @case ('STRING') {
                           <ll-translation-string-view [value]="translation.locales[selectedSearchLocale]" />
@@ -268,95 +253,96 @@
                     }
                   </div>
                   <mat-divider></mat-divider>
-
-                  <div class="p-2 align-items-start">
-                    <p>
-                      <small><strong>ID</strong></small>
-                    </p>
-                    <p>
-                      <small>{{ selectedTranslation.id }}</small>
-                      <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.id" matTooltip="Copy Id">
-                        <mat-icon>content_copy</mat-icon>
-                      </button>
-                    </p>
-                  </div>
-                  <mat-divider></mat-divider>
-                  <div class="p-2 align-items-start">
-                    <p>
-                      <small><strong>Name</strong></small>
-                    </p>
-                    <p>
-                      <small>{{ selectedTranslation.name }}</small>
-                      <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.name" matTooltip="Copy Name">
-                        <mat-icon>content_copy</mat-icon>
-                      </button>
-                    </p>
-                  </div>
-                  <mat-divider></mat-divider>
-                  <div class="p-2 align-items-start">
-                    <p>
-                      <small><strong>Status</strong></small>
-                    </p>
-                    <p>
-                      <small>{{ identifyStatus(selectedTranslation) }}</small>
-                    </p>
-                  </div>
-                  <mat-divider></mat-divider>
-                  <!--        <div class="p-2 align-items-start">-->
-                  <!--          <p><small><strong>Type</strong></small></p>-->
-                  <!--          <p><small>{{selectedTranslation.type}}</small></p>-->
-                  <!--        </div>-->
-                  <!--        <mat-divider></mat-divider>-->
-                  <div class="p-2 align-items-start">
-                    <p>
-                      <small><strong>Description</strong></small>
-                    </p>
-                    @if (selectedTranslation.description) {
-                      <p>
-                        <small>{{ selectedTranslation.description }}</small>
-                      </p>
-                    } @else {
-                      <p>
-                        <small><em>No description available.</em></small>
-                      </p>
-                    }
-                  </div>
-                  <mat-divider></mat-divider>
-                  <div class="p-2 align-items-start">
-                    <p>
-                      <small><strong>Labels</strong></small>
-                    </p>
-                    @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
-                      <mat-chip-listbox>
-                        @for (item of selectedTranslation.labels; track item) {
-                          <mat-chip-option>{{ item }}</mat-chip-option>
-                        }
-                      </mat-chip-listbox>
-                    } @else {
-                      <p>
-                        <small><em>No label available.</em></small>
-                      </p>
-                    }
-                  </div>
-                  <mat-divider></mat-divider>
-                  <div class="p-2 align-items-start">
-                    <p>
-                      <small><strong>Created At</strong></small>
-                    </p>
-                    <p>
-                      <small>{{ selectedTranslation.createdAt?.toMillis() | date: 'medium' }}</small>
-                    </p>
-                  </div>
-                  <mat-divider></mat-divider>
-                  <div class="p-2 align-items-start">
-                    <p>
-                      <small><strong>Updated At</strong></small>
-                    </p>
-                    <p>
-                      <small>{{ selectedTranslation.updatedAt?.toMillis() | date: 'medium' }}</small>
-                    </p>
-                  </div>
-                  <mat-divider></mat-divider>
+                  <ul role="list" class="divide-y divide-gray-300">
+                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                      <div class="min-w-0 flex-auto">
+                        <div class="flex items-center gap-x-3">
+                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> ID </div>
+                        </div>
+                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                          {{ selectedTranslation.id }}
+                          <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.id" matTooltip="Copy Id">
+                            <mat-icon>content_copy</mat-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                      <div class="min-w-0 flex-auto">
+                        <div class="flex items-center gap-x-3">
+                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Name </div>
+                        </div>
+                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                          {{ selectedTranslation.name }}
+                          <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.name" matTooltip="Copy Name">
+                            <mat-icon>content_copy</mat-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                      <div class="min-w-0 flex-auto">
+                        <div class="flex items-center gap-x-3">
+                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Status </div>
+                        </div>
+                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                          {{ identifyStatus(selectedTranslation) }}
+                        </div>
+                      </div>
+                    </li>
+                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                      <div class="min-w-0 flex-auto">
+                        <div class="flex items-center gap-x-3">
+                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Description </div>
+                        </div>
+                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                          @if (selectedTranslation.description) {
+                            {{ selectedTranslation.description }}
+                          } @else {
+                            No description available.
+                          }
+                        </div>
+                      </div>
+                    </li>
+                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                      <div class="min-w-0 flex-auto">
+                        <div class="flex items-center gap-x-3">
+                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Labels </div>
+                        </div>
+                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                          @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
+                            <mat-chip-listbox>
+                              @for (item of selectedTranslation.labels; track item) {
+                                <mat-chip-option>{{ item }}</mat-chip-option>
+                              }
+                            </mat-chip-listbox>
+                          } @else {
+                            No label available.
+                          }
+                        </div>
+                      </div>
+                    </li>
+                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                      <div class="min-w-0 flex-auto">
+                        <div class="flex items-center gap-x-3">
+                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Created At </div>
+                        </div>
+                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                          {{ selectedTranslation.createdAt?.toMillis() | date: 'medium' }}
+                        </div>
+                      </div>
+                    </li>
+                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                      <div class="min-w-0 flex-auto">
+                        <div class="flex items-center gap-x-3">
+                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Updated At </div>
+                        </div>
+                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                          {{ selectedTranslation.updatedAt?.toMillis() | date: 'medium' }}
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
               }
             </div>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, Input } from '@angular/core';
 
 interface Plural {
   0: string;
@@ -16,10 +16,10 @@ interface Plural {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationPluralViewComponent {
-  @Input() value = '';
+  value = input.required<string>();
 
   extract(): Plural {
-    return JSON.parse(this.value || '{}');
+    return JSON.parse(this.value() || '{}');
   }
 
   toPlural(key: string): string {
