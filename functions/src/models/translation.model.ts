@@ -6,16 +6,20 @@ export enum TranslationType {
   ARRAY = 'ARRAY',
 }
 
-export interface Translation {
+export type Translation = {
   name: string;
   type: TranslationType;
   locales: Record<string, string>;
   labels?: string[];
   autoTranslate?: boolean;
   description?: string;
+  updatedBy?: {
+    name?: string;
+    email?: string;
+  };
   createdAt: Timestamp;
   updatedAt: Timestamp;
-}
+};
 
 export interface PublishTranslationsData {
   spaceId: string;

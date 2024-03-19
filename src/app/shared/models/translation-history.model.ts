@@ -10,14 +10,15 @@ export enum TranslationHistoryType {
 export type TranslationHistory = TranslationHistoryPublish | TranslationHistoryCreate | TranslationHistoryUpdate | TranslationHistoryDelete;
 
 export interface TranslationHistoryBase {
+  id: string;
   type: TranslationHistoryType;
   createdAt: Timestamp;
+  name?: string;
+  email?: string;
 }
 
 export interface TranslationHistoryPublish extends TranslationHistoryBase {
   type: TranslationHistoryType.PUBLISHED;
-  name?: string;
-  email?: string;
 }
 
 export interface TranslationHistoryCreate extends TranslationHistoryBase {

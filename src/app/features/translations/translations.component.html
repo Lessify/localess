@@ -342,6 +342,18 @@
                         </div>
                       </div>
                     </li>
+                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                      <div class="min-w-0 flex-auto">
+                        <div class="flex items-center gap-x-3">
+                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Updated By </div>
+                        </div>
+                        <div
+                          class="flex items-center gap-x-2.5 text-xs leading-5 break-words"
+                          [matTooltip]="selectedTranslation.updatedBy?.email || 'Unknown'">
+                          {{ selectedTranslation.updatedBy?.name || 'Unknown' }}
+                        </div>
+                      </div>
+                    </li>
                   </ul>
                 </div>
               }
@@ -390,7 +402,10 @@
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
                           <p class="text-sm text-gray-500">
-                            Add <span class="font-medium text-gray-900 break-all">{{ item.key }}</span>
+                            Add <span class="font-medium text-gray-900 break-all">{{ item.key }}</span> by
+                            <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                              {{ item.name || 'Unknown' }}
+                            </span>
                           </p>
                         </div>
                         <div class="whitespace-nowrap text-right text-sm text-gray-500">
@@ -407,7 +422,10 @@
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
                           <p class="text-sm text-gray-500">
-                            Edit <span class="font-medium text-gray-900 break-all">{{ item.key }}</span>
+                            Edit <span class="font-medium text-gray-900 break-all">{{ item.key }}</span> by
+                            <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                              {{ item.name || 'Unknown' }}
+                            </span>
                           </p>
                         </div>
                         <div class="whitespace-nowrap text-right text-sm text-gray-500">

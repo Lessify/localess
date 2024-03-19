@@ -12,6 +12,7 @@
     "prebuild:prod": "ng g @lessify/angular-tools:set-env --prefix LOCALESS",
     "watch": "ng build --watch --configuration development",
     "emulator": "firebase emulators:start --import=./firebase-export --export-on-exit=./firebase-export",
+    "emulator:debug": "firebase emulators:start --debug --import=./firebase-export --export-on-exit=./firebase-export",
     "test": "ng test",
     "lint": "ng lint",
     "lint:fix": "ng lint --fix",

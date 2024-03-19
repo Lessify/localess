@@ -141,6 +141,8 @@ const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{trans
       type: TranslationHistoryType.UPDATE,
       key: afterData.name,
       createdAt: FieldValue.serverTimestamp(),
+      email: afterData.updatedBy?.email,
+      name: afterData.updatedBy?.name,
     };
   } else if (beforeData) {
     // delete
@@ -160,6 +162,8 @@ const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{trans
       type: TranslationHistoryType.CREATE,
       key: afterData.name,
       createdAt: FieldValue.serverTimestamp(),
+      email: afterData.updatedBy?.email,
+      name: afterData.updatedBy?.name,
     };
   }
   await findTranslationsHistory(spaceId).add(addHistory);

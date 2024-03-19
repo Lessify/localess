@@ -13,18 +13,20 @@ import {
   UpdateData,
   updateDoc,
 } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
+import { from, Observable, switchMap } from 'rxjs';
 import { Translation, TranslationCreate, TranslationCreateFS, TranslationType, TranslationUpdate } from '../models/translation.model';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { map } from 'rxjs/operators';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { deleteField } from '@firebase/firestore';
+import { Auth, user } from '@angular/fire/auth';
 
 @Injectable()
 export class TranslationService {
   constructor(
     private readonly firestore: Firestore,
-    private readonly functions: Functions
+    private readonly functions: Functions,
+    private readonly auth: Auth
   ) {}
 
   findAll(spaceId: string): Observable<Translation[]> {
@@ -81,7 +83,16 @@ export class TranslationService {
       }
     }
 
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/translations`), addEntity)).pipe(
+    return user(this.auth).pipe(
+      switchMap(it => {
+        if (it && it.displayName && it.email) {
+          addEntity.updatedBy = {
+            name: it.displayName,
+            email: it.email,
+          };
+        }
+        return from(addDoc(collection(this.firestore, `spaces/${spaceId}/translations`), addEntity));
+      }),
       traceUntilFirst('Firestore:Translations:create')
     );
   }
@@ -102,7 +113,16 @@ export class TranslationService {
       update.description = deleteField();
     }
 
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
+    return user(this.auth).pipe(
+      switchMap(it => {
+        if (it && it.displayName && it.email) {
+          update.updatedBy = {
+            name: it.displayName,
+            email: it.email,
+          };
+        }
+        return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update));
+      }),
       traceUntilFirst('Firestore:Translations:update')
     );
   }
@@ -112,7 +132,16 @@ export class TranslationService {
       updatedAt: serverTimestamp(),
     };
     update[`locales.${locale}`] = value;
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
+    return user(this.auth).pipe(
+      switchMap(it => {
+        if (it && it.displayName && it.email) {
+          update.updatedBy = {
+            name: it.displayName,
+            email: it.email,
+          };
+        }
+        return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update));
+      }),
       traceUntilFirst('Firestore:Translations:updateLocale')
     );
   }
