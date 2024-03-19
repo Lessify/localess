@@ -35,12 +35,14 @@ import {
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NameUtils } from '@core/utils/name-utils.service';
+import { Auth } from '@angular/fire/auth';
 
 @Injectable()
 export class ContentService {
   constructor(
     private readonly firestore: Firestore,
     private readonly functions: Functions,
+    private readonly auth: Auth,
     private readonly contentHelperService: ContentHelperService
   ) {}
 
@@ -117,7 +119,12 @@ export class ContentService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-
+    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
+      addEntity.updatedBy = {
+        name: this.auth.currentUser.displayName,
+        email: this.auth.currentUser.email,
+      };
+    }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
       traceUntilFirst('Firestore:Contents:create')
     );
@@ -133,7 +140,12 @@ export class ContentService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-
+    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
+      addEntity.updatedBy = {
+        name: this.auth.currentUser.displayName,
+        email: this.auth.currentUser.email,
+      };
+    }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
       traceUntilFirst('Firestore:Contents:create')
     );
@@ -147,6 +159,12 @@ export class ContentService {
       fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
       updatedAt: serverTimestamp(),
     };
+    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
+      update.updatedBy = {
+        name: this.auth.currentUser.displayName,
+        email: this.auth.currentUser.email,
+      };
+    }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
       traceUntilFirst('Firestore:Contents:update')
     );
@@ -157,7 +175,12 @@ export class ContentService {
       data: this.contentHelperService.clone(data),
       updatedAt: serverTimestamp(),
     };
-
+    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
+      update.updatedBy = {
+        name: this.auth.currentUser.displayName,
+        email: this.auth.currentUser.email,
+      };
+    }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
       traceUntilFirst('Firestore:Contents:update')
     );
@@ -190,7 +213,12 @@ export class ContentService {
     if (entity.data) {
       addEntity.data = entity.data;
     }
-
+    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
+      addEntity.updatedBy = {
+        name: this.auth.currentUser.displayName,
+        email: this.auth.currentUser.email,
+      };
+    }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
       traceUntilFirst('Firestore:Contents:clone')
     );

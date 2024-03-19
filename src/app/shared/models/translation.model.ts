@@ -12,7 +12,7 @@ export enum TranslationStatus {
   UNTRANSLATED = 'UNTRANSLATED',
 }
 
-export type Translation = {
+export interface Translation {
   id: string;
   name: string;
   type: TranslationType;
@@ -21,12 +21,12 @@ export type Translation = {
   description?: string;
   autoTranslate?: boolean;
   updatedBy?: {
-    name?: string;
-    email?: string;
+    name: string;
+    email: string;
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;
-};
+}
 
 export interface TranslationCreate {
   name: string;
@@ -38,7 +38,7 @@ export interface TranslationCreate {
   autoTranslate?: boolean;
 }
 
-export type TranslationCreateFS = {
+export interface TranslationCreateFS {
   name: string;
   type: TranslationType;
   locales: Record<string, string>;
@@ -46,12 +46,12 @@ export type TranslationCreateFS = {
   description?: string;
   autoTranslate?: boolean;
   updatedBy?: {
-    name?: string;
-    email?: string;
+    name: string;
+    email: string;
   };
   createdAt: FieldValue;
   updatedAt: FieldValue;
-};
+}
 
 export interface TranslationUpdate {
   labels: string[];

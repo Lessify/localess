@@ -31,6 +31,11 @@ export interface ContentBase {
   locked?: boolean;
   lockedBy?: string;
 
+  updatedBy?: {
+    name: string;
+    email: string;
+  };
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -78,6 +83,11 @@ export interface ContentCreateFS {
   slug: string;
   parentSlug: string;
   fullSlug: string;
+
+  updatedBy?: {
+    name: string;
+    email: string;
+  };
 
   createdAt: FieldValue;
   updatedAt: FieldValue;

@@ -19,7 +19,7 @@ export class ContentHelperService {
   constructor(private readonly fb: FormBuilder) {}
 
   validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] {
-    console.group('validateContent');
+    //console.group('validateContent');
     const isDefaultLocale = DEFAULT_LOCALE.id === locale;
     const errors: ContentError[] = [];
     const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
@@ -37,7 +37,7 @@ export class ContentHelperService {
         // handle array like Asset/Reference Array
         Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
           const content = extractSchemaContent[fieldName];
-          console.log(fieldName, content);
+          //console.log(fieldName, content);
           if (content instanceof Array) {
             // Assets
             if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
@@ -54,8 +54,8 @@ export class ContentHelperService {
           }
         });
 
-        console.log(extractSchemaContent);
-        console.log(form.value);
+        //console.log(extractSchemaContent);
+        //console.log(form.value);
 
         if (form.invalid) {
           for (const controlName in form.controls) {
@@ -147,8 +147,8 @@ export class ContentHelperService {
       }
       selectedContent = contentIteration.pop();
     }
-    console.log('errors', errors);
-    console.groupEnd();
+    //console.log('errors', errors);
+    //console.groupEnd();
     return errors;
   }
 

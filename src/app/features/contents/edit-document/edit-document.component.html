@@ -51,20 +51,24 @@
     </mat-menu>
 
     @if ('CONTENT_UPDATE' | canUserPerform | async) {
-      <button mat-raised-button color="primary" matTooltip="Save the page" [disabled]="isSaveLoading || isPublishLoading" (click)="save()">
-        <ll-icon [animate]="isSaveLoading" start="save" end="sync" />
+      <button
+        mat-raised-button
+        color="primary"
+        matTooltip="Save the page"
+        [disabled]="isSaveLoading() || isPublishLoading()"
+        (click)="save()">
+        <ll-icon [animate]="isSaveLoading()" start="save" end="sync" />
         Save
       </button>
     }
-
     @if ('CONTENT_PUBLISH' | canUserPerform | async) {
       <button
         mat-raised-button
         color="accent"
         matTooltip="Publish to be available via API call"
-        [disabled]="isPublishLoading || isSaveLoading"
+        [disabled]="isPublishLoading() || isSaveLoading()"
         (click)="publish()">
-        <ll-icon [animate]="isPublishLoading" start="publish" end="sync" />
+        <ll-icon [animate]="isPublishLoading()" start="publish" end="sync" />
         Publish
       </button>
     }
@@ -109,7 +113,7 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-@if (isLoading) {
+@if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
 
@@ -227,7 +231,10 @@
                       <div>
                         <p class="text-sm text-gray-500">
                           Created with name <span class="font-medium text-gray-900 break-all">{{ item.cName }}</span> and slug
-                          <span class="font-medium text-gray-900 break-all">{{ item.cSlug }}</span>
+                          <span class="font-medium text-gray-900 break-all">{{ item.cSlug }}</span> by
+                          <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                            {{ item.name || 'Unknown' }}
+                          </span>
                         </p>
                       </div>
                       <div class="whitespace-nowrap text-right text-sm text-gray-500">
@@ -259,6 +266,10 @@
                           } @else {
                             nothing
                           }
+                          by
+                          <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                            {{ item.name || 'Unknown' }}
+                          </span>
                         </p>
                       </div>
                       <div class="whitespace-nowrap text-right text-sm text-gray-500">
@@ -274,7 +285,10 @@
                     </div>
                     <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                       <div>
-                        <p class="text-sm text-gray-500">Unknown</p>
+                        <p class="text-sm text-gray-500">Unknown</p> by
+                        <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                          {{ item.name || 'Unknown' }}
+                        </span>
                       </div>
                       <div class="whitespace-nowrap text-right text-sm text-gray-500">
                         <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>

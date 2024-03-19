@@ -12,12 +12,12 @@ export type ContentHistory = ContentHistoryPublish | ContentHistoryCreate | Cont
 export interface ContentHistoryBase {
   type: ContentHistoryType;
   createdAt: Timestamp;
+  name?: string;
+  email?: string;
 }
 
 export interface ContentHistoryPublish extends ContentHistoryBase {
   type: ContentHistoryType.PUBLISHED;
-  name?: string;
-  email?: string;
 }
 
 export interface ContentHistoryCreate extends ContentHistoryBase {

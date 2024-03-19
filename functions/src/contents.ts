@@ -240,6 +240,11 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
     // delete : skip history
     return;
   }
+  if (afterData?.updatedBy) {
+    addHistory.email = afterData.updatedBy.email;
+    addHistory.name = afterData.updatedBy.name;
+  }
+
   await findContentsHistory(spaceId, contentId).add(addHistory);
   return;
 });

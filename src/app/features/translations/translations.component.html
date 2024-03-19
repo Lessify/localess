@@ -442,7 +442,10 @@
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
                           <p class="text-sm text-gray-500">
-                            Delete <span class="font-medium text-gray-900 break-all">{{ item.key }}</span>
+                            Delete <span class="font-medium text-gray-900 break-all">{{ item.key }}</span> by
+                            <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                              {{ item.name || 'Unknown' }}
+                            </span>
                           </p>
                         </div>
                         <div class="whitespace-nowrap text-right text-sm text-gray-500">

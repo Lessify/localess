@@ -15,6 +15,11 @@ export interface ContentBase {
   locked?: boolean;
   lockedBy?: string;
 
+  updatedBy?: {
+    name: string;
+    email: string;
+  };
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

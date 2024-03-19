@@ -6,7 +6,7 @@ export enum TranslationType {
   ARRAY = 'ARRAY',
 }
 
-export type Translation = {
+export interface Translation {
   name: string;
   type: TranslationType;
   locales: Record<string, string>;
@@ -14,12 +14,12 @@ export type Translation = {
   autoTranslate?: boolean;
   description?: string;
   updatedBy?: {
-    name?: string;
-    email?: string;
+    name: string;
+    email: string;
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;
-};
+}
 
 export interface PublishTranslationsData {
   spaceId: string;

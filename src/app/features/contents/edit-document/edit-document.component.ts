@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, HostListener, inject, input, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  HostListener,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -61,9 +71,9 @@ export class EditDocumentComponent implements OnInit {
   editorEnabledCtr = this.fb.control<boolean>(false);
 
   //Loadings
-  isLoading = true;
-  isPublishLoading = false;
-  isSaveLoading = false;
+  isLoading = signal(true);
+  isPublishLoading = signal(false);
+  isSaveLoading = signal(false);
 
   // Subscriptions
   settings$ = this.store.select(selectSettings);
@@ -147,14 +157,14 @@ export class EditDocumentComponent implements OnInit {
           this.schemas = schemas;
           this.schemaMapByName = new Map<string, Schema>(this.schemas?.map(it => [it.name, it]));
           this.generateDocumentIdsTree();
-          this.isLoading = false;
+          this.isLoading.set(false);
           this.cd.markForCheck();
         },
       });
   }
 
   publish(): void {
-    this.isPublishLoading = true;
+    this.isPublishLoading.set(true);
     this.contentService.publish(this.spaceId(), this.contentId()).subscribe({
       next: () => {
         this.notificationService.success('Content has been published.');
@@ -164,7 +174,7 @@ export class EditDocumentComponent implements OnInit {
       },
       complete: () => {
         setTimeout(() => {
-          this.isPublishLoading = false;
+          this.isPublishLoading.set(false);
           this.cd.markForCheck();
         }, 1000);
       },
@@ -173,7 +183,7 @@ export class EditDocumentComponent implements OnInit {
 
   save(): void {
     //console.group('save')
-    this.isSaveLoading = true;
+    this.isSaveLoading.set(true);
 
     //console.log('documentData', this.documentData)
     //console.log('document', this.document)
@@ -202,14 +212,14 @@ export class EditDocumentComponent implements OnInit {
         },
         complete: () => {
           setTimeout(() => {
-            this.isSaveLoading = false;
+            this.isSaveLoading.set(false);
             this.cd.markForCheck();
           }, 1000);
         },
       });
     } else {
       this.notificationService.warn('Content is not valid. Please check all fields are filled correctly.');
-      this.isSaveLoading = false;
+      this.isSaveLoading.set(false);
     }
     //console.groupEnd()
   }
