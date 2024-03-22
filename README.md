@@ -69,24 +69,29 @@ Thank you for considering sponsoring us on GitHub!
 
 ```mermaid
 flowchart LR
-  adminUI["Localess Admin UI<br/>(Browser)"]
-  subgraph Firebase
+  subgraph Google Cloud Platform
     direction LR
-    auth["Authentication"]
-    storage["Storage"]
-    firestore["Firestore"]
-    functions["Functions"]
-    host["Host"]
+    cdn["Content Delivery Network (CDN) <br/> Cache Requests"]
+    subgraph Firebase
+      direction LR
+      auth["Authentication"]
+      storage["Storage"]
+      firestore["Firestore"]
+      functions["Functions"]
+      host["Host"]
+    end
+    cdn -->|API| Firebase
+  end
+  subgraph Global Internet
+    adminUI["Localess Admin UI<br/>(Browser)"]
+    mobileApp["Mobile App<br/>(iOS, Android)"]
+    webApp["Web App<br/>(Browser)"]
+    serverApp["Server App<br/>(NodeJS, Java/Kotlin, <br/>Python, Rust, Go)"]
   end
   adminUI -->|Manage Data| Firebase
-  mobileApp["Mobile App<br/>(iOS, Android)"]
-  webApp["Web App<br/>(Browser)"]
-  serverApp["Server App<br/>(NodeJS, Java/Kotlin, <br/>Python, Rust, Go)"]
-  cdn["Google CDN"]
-  mobileApp -->|Access Data| cdn
-  webApp -->|Access Data| cdn
-  serverApp -->|Access Data| cdn
-  cdn -->|Cache| Firebase
+  mobileApp -->|Access Data via API| cdn
+  webApp -->|Access Data via API| cdn
+  serverApp -->|Access Data via API| cdn
 ```
 
 Lessify UI is design to manage data in firestore, authentication and storage via Firebase SDK.
