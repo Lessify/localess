@@ -23,7 +23,7 @@ import { Locale } from '../models/locale.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class SpaceService {
   constructor(
     private firestore: Firestore,
