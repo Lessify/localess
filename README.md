@@ -67,7 +67,27 @@ Thank you for considering sponsoring us on GitHub!
 
 **Localess** is using Firebase products to run the application.
 
-![System Design](https://github.com/Lessify/localess/wiki/img/system-design.png)
+```mermaid
+flowchart LR
+  adminUI["Localess Admin UI<br/>(Browser)"]
+  subgraph Firebase
+    direction LR
+    auth["Authentication"]
+    storage["Storage"]
+    firestore["Firestore"]
+    functions["Functions"]
+    host["Host"]
+  end
+  adminUI -->|Manage Data| Firebase
+  mobileApp["Mobile App<br/>(iOS, Android)"]
+  webApp["Web App<br/>(Browser)"]
+  serverApp["Server App<br/>(NodeJS, Java/Kotlin, <br/>Python, Rust, Go)"]
+  cdn["Google CDN"]
+  mobileApp -->|Access Data| cdn
+  webApp -->|Access Data| cdn
+  serverApp -->|Access Data| cdn
+  cdn -->|Cache| Firebase
+```
 
 Lessify UI is design to manage data in firestore, authentication and storage via Firebase SDK.
 Generated data used by exposed API's is store in Storage to make it even faster to access and GCP CDN will cache it for even faster response.
