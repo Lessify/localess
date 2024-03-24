@@ -1,11 +1,6 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { Store } from '@ngrx/store';
-import { Auth, user, User } from '@angular/fire/auth';
-
-import { AppState } from '@core/state/core.state';
-import { selectUser } from '@core/state/user/user.selector';
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { MeDialogComponent } from './me-dialog/me-dialog.component';
 import { MeDialogModel } from './me-dialog/me-dialog.model';
 import { MeService } from '@shared/services/me.service';
@@ -14,7 +9,7 @@ import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.m
 import { MeEmailDialogComponent } from './me-email-dialog/me-email-dialog.component';
 import { MeEmailDialogModel } from './me-email-dialog/me-email-dialog.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { UserStore } from '@shared/store/user.store';
 
 @Component({
   selector: 'll-me',
@@ -22,45 +17,23 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrls: ['./me.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MeComponent implements OnInit {
-  isLoading = signal(true);
-  user$ = this.store.select(selectUser).pipe(tap(() => this.isLoading.set(false)));
-  authUser?: User | null;
-  isPasswordProvider = false;
-  isGoogleProvider = false;
-  isMicrosoftProvider = false;
-  numberProviders = 0;
-  private destroyRef = inject(DestroyRef);
+export class MeComponent {
+  userStore = inject(UserStore);
 
   constructor(
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>,
-    private readonly auth: Auth,
     private readonly meService: MeService
   ) {}
-
-  ngOnInit(): void {
-    user(this.auth)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(authUser => {
-        this.authUser = authUser;
-        this.numberProviders = authUser?.providerData.length || 0;
-        this.isPasswordProvider = authUser?.providerData.some(it => it.providerId === 'password') || false;
-        this.isGoogleProvider = authUser?.providerData.some(it => it.providerId === 'google.com') || false;
-        this.isMicrosoftProvider = authUser?.providerData.some(it => it.providerId === 'microsoft.com') || false;
-        this.cd.markForCheck();
-      });
-  }
 
   openEditDialog(): void {
     this.dialog
       .open<MeDialogComponent, MeDialogModel, MeDialogModel>(MeDialogComponent, {
         width: '500px',
         data: {
-          displayName: this.authUser?.displayName || undefined,
-          photoURL: this.authUser?.photoURL || undefined,
+          displayName: this.userStore.displayName() || undefined,
+          photoURL: this.userStore.photoURL() || undefined,
         },
       })
       .afterClosed()
@@ -68,13 +41,12 @@ export class MeComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it =>
           //TODO handle firestore update
-          this.meService.updateProfile(this.authUser!, it!)
+          this.meService.updateProfile(it!)
         )
       )
       .subscribe({
         next: () => {
           this.notificationService.success('User has been updated.');
-          this.authUser?.reload();
         },
         error: (err: unknown) => {
           console.error(err);
@@ -91,12 +63,11 @@ export class MeComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updateEmail(this.authUser!, it!.newEmail))
+        switchMap(it => this.meService.updateEmail(it!.newEmail))
       )
       .subscribe({
         next: () => {
           this.notificationService.success('User email has been updated.');
-          this.authUser?.reload();
         },
         error: (err: unknown) => {
           console.error(err);
@@ -113,7 +84,7 @@ export class MeComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updatePassword(this.authUser!, it!.newPassword))
+        switchMap(it => this.meService.updatePassword(it!.newPassword))
       )
       .subscribe({
         next: () => {

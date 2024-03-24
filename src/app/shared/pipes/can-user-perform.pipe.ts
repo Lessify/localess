@@ -1,24 +1,25 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { inject, Pipe, PipeTransform } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
-import { selectUser } from '@core/state/user/user.selector';
+import { UserStore } from '@shared/store/user.store';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 @Pipe({ name: 'canUserPerform' })
 export class CanUserPerformPipe implements PipeTransform {
-  constructor(private readonly store: Store<AppState>) {}
+  userStore = inject(UserStore);
+  role$ = toObservable(this.userStore.role);
 
   transform(permission?: string | string[]): Observable<boolean> {
     // console.log('canUserPerform : ' + permission);
     if (permission === undefined) return of(true);
     if (typeof permission === 'string') {
-      return this.store.select(selectUser).pipe(
-        map(user => {
-          if (user.role) {
-            if (user.role === 'admin') return true;
-            if (user.role === 'custom' && user.permissions) {
-              return user.permissions.includes(permission);
+      return this.role$.pipe(
+        map(role => {
+          if (role) {
+            if (role === 'admin') return true;
+            const userPermissions = this.userStore.permissions();
+            if (role === 'custom' && userPermissions) {
+              return userPermissions.includes(permission);
             }
           }
           return false;
@@ -26,12 +27,13 @@ export class CanUserPerformPipe implements PipeTransform {
       );
     }
     if (Array.isArray(permission)) {
-      return this.store.select(selectUser).pipe(
-        map(user => {
-          if (user.role) {
-            if (user.role === 'admin') return true;
-            if (user.role === 'custom' && user.permissions) {
-              return permission.some(it => user.permissions?.includes(it));
+      return this.role$.pipe(
+        map(role => {
+          if (role) {
+            if (role === 'admin') return true;
+            const userPermissions = this.userStore.permissions();
+            if (role === 'custom' && userPermissions) {
+              return permission.some(it => userPermissions.includes(it));
             }
           }
           return false;

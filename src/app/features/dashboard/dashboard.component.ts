@@ -1,12 +1,10 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input } from '@angular/core';
 
 import { Timestamp } from '@angular/fire/firestore';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { first, switchMap, tap } from 'rxjs/operators';
-import { Observable } from 'rxjs';
 import { SpaceService } from '@shared/services/space.service';
-import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
+import { SpaceStore } from '@shared/store/space.store';
 
 @Component({
   selector: 'll-dashboard',
@@ -14,38 +12,36 @@ import { NotificationService } from '@shared/services/notification.service';
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   // Input
   spaceId = input.required<string>();
 
-  isLoading = true;
   now = Timestamp.now();
   private destroyRef = inject(DestroyRef);
 
-  space$?: Observable<Space>;
+  spaceStore = inject(SpaceStore);
+  space = this.spaceStore.selectedSpace;
 
   constructor(
     private readonly notificationService: NotificationService,
     private readonly spaceService: SpaceService
-  ) {}
-
-  ngOnInit(): void {
-    this.space$ = this.spaceService.findById(this.spaceId()).pipe(
-      tap(it => {
-        if (it.overview === undefined || (it.overview && this.now.seconds - it.overview.updatedAt.seconds > 86400)) {
-          this.spaceService.calculateOverview(it.id).subscribe({ next: () => console.log('Space Overview Updated') });
+  ) {
+    effect(() => {
+      const selectedSpace = this.spaceStore.selectedSpace();
+      if (selectedSpace) {
+        const { overview } = selectedSpace;
+        if (overview === undefined || (overview && this.now.seconds - overview.updatedAt.seconds > 86400)) {
+          console.log('Recalculate Overview: Out of date or not existent.');
+          this.calculateOverview();
         }
-      }),
-      takeUntilDestroyed(this.destroyRef)
-    );
+      }
+    });
   }
 
   calculateOverview() {
-    this.space$
-      ?.pipe(
-        first(),
-        switchMap(it => this.spaceService.calculateOverview(it.id))
-      )
+    this.spaceService
+      .calculateOverview(this.spaceId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.notificationService.success(`Space overview is recalculated.`);

@@ -186,17 +186,6 @@ export class ContentService {
     );
   }
 
-  updateDocumentEditorEnabled(spaceId: string, id: string, enabled: boolean): Observable<void> {
-    const update: UpdateData<ContentDocument> = {
-      editorEnabled: enabled,
-      updatedAt: serverTimestamp(),
-    };
-
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Contents:updateEditorEnabled')
-    );
-  }
-
   cloneDocument(spaceId: string, entity: ContentDocument): Observable<DocumentReference> {
     const nameSuffix = NameUtils.random(5);
     const addEntity: ContentDocumentCreateFS = {

@@ -1,17 +1,25 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, input, OnDestroy, OnInit, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  inject,
+  input,
+  OnDestroy,
+  OnInit,
+  Output,
+} from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldAssets, SchemaFieldKind } from '@shared/models/schema.model';
 import { MatDialog } from '@angular/material/dialog';
 import { Asset, AssetFile, AssetKind } from '@shared/models/asset.model';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
 import { AssetService } from '@shared/services/asset.service';
 import { Space } from '@shared/models/space.model';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
-import { selectSettings } from '@core/state/settings/settings.selectors';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-assets-select',
@@ -29,14 +37,13 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
 
   assets: AssetFile[] = [];
   // Subscriptions
-  settings$ = this.store.select(selectSettings);
+  settingsStore = inject(SettingsStore);
 
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly store: Store<AppState>,
     private readonly assetService: AssetService
   ) {}
 

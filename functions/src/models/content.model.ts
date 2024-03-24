@@ -29,7 +29,6 @@ export interface ContentDocument<T extends ContentData = ContentData> extends Co
   schema: string;
   data?: T;
   publishedAt?: Timestamp;
-  editorEnabled?: boolean;
 }
 
 export interface ContentFolder extends ContentBase {
@@ -99,7 +98,7 @@ export interface ContentFolderExport extends Omit<ContentFolder, 'createdAt' | '
   id: string;
 }
 
-export interface ContentDocumentExport extends Omit<ContentDocument, 'createdAt' | 'updatedAt' | 'publishedAt' | 'editorEnabled'> {
+export interface ContentDocumentExport extends Omit<ContentDocument, 'createdAt' | 'updatedAt' | 'publishedAt'> {
   id: string;
 }
 

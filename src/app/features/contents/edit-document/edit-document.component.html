@@ -8,7 +8,9 @@
     <span class="text-gray-500">#{{ document?.slug }}</span>
     <span class="spacer"></span>
 
-    <mat-button-toggle-group [formControl]="editorEnabledCtr">
+    <mat-button-toggle-group
+      (change)="settingsStore.setEditorEnabled(!settingsStore.editorEnabled())"
+      [value]="settingsStore.editorEnabled()">
       <mat-button-toggle [value]="true" matTooltip="Design Mode">
         <mat-icon>design_services</mat-icon>
       </mat-button-toggle>
@@ -121,7 +123,7 @@
   <mat-sidenav-content>
     <div class="container-full-screen container-fluid">
       <mat-drawer-container autosize="true">
-        <mat-drawer mode="side" [opened]="editorEnabledCtr.value === true">
+        <mat-drawer mode="side" [opened]="settingsStore.editorEnabled()">
           @if (selectedEnvironment) {
             <mat-card appearance="outlined" class="browser">
               <mat-card-header>
@@ -176,17 +178,15 @@
         </mat-drawer-content>
       </mat-drawer-container>
 
-      @if (settings$ | async; as settings) {
-        @if (settings.debugEnabled) {
-          <mat-accordion>
-            <mat-expansion-panel>
-              <mat-expansion-panel-header>
-                <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
-              </mat-expansion-panel-header>
-              <pre>{{ documentData | json }}</pre>
-            </mat-expansion-panel>
-          </mat-accordion>
-        }
+      @if (settingsStore.debugEnabled()) {
+        <mat-accordion>
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
+            </mat-expansion-panel-header>
+            <pre>{{ documentData | json }}</pre>
+          </mat-expansion-panel>
+        </mat-accordion>
       }
     </div>
   </mat-sidenav-content>

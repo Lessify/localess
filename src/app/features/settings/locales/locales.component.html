@@ -8,7 +8,7 @@
     </button>
   </mat-toolbar-row>
 </mat-toolbar>
-@if (isLoading) {
+@if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
 <div class="my-3">
@@ -30,7 +30,7 @@
     <ng-container matColumnDef="fallback">
       <mat-header-cell *matHeaderCellDef> Fallback</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @if (selectedSpace?.localeFallback?.id === element.id) {
+        @if (spaceStore.selectedSpace()?.localeFallback?.id === element.id) {
           <button mat-icon-button disabled>
             <mat-icon color="accent" matTooltip="Fallback">check_circle</mat-icon>
           </button>
@@ -48,7 +48,7 @@
           mat-icon-button
           (click)="openDeleteDialog(element)"
           matTooltip="Delete"
-          [disabled]="selectedSpace?.localeFallback?.id === element.id">
+          [disabled]="spaceStore.selectedSpace()?.localeFallback?.id === element.id">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>

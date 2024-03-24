@@ -45,7 +45,6 @@ export interface ContentDocument<T extends ContentData = ContentData> extends Co
   schema: string;
   data?: T;
   publishedAt?: Timestamp;
-  editorEnabled?: boolean;
 }
 
 export interface ContentFolder extends ContentBase {

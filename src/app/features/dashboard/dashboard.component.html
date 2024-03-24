@@ -10,7 +10,7 @@
   </mat-toolbar-row>
 </mat-toolbar>
 <div class="container-full-screen">
-  @if (space$ | async; as space) {
+  @if (space(); as space) {
     <div class="grid grid-rows-1 gap-4">
       <div>
         <h3 class="text-base font-semibold leading-6 text-gray-900">Overview</h3>
@@ -24,25 +24,25 @@
           <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt class="truncate text-sm font-medium text-gray-500">Translations</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-              {{ space?.overview?.translationsCount || 0 }}
+              {{ space.overview?.translationsCount || 0 }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt class="truncate text-sm font-medium text-gray-500">Asset Files</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-              {{ space?.overview?.assetsCount || 0 }}
+              {{ space.overview?.assetsCount || 0 }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt class="truncate text-sm font-medium text-gray-500">Content Documents</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-              {{ space?.overview?.contentsCount || 0 }}
+              {{ space.overview?.contentsCount || 0 }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt class="truncate text-sm font-medium text-gray-500">Schemas</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-              {{ space?.overview?.schemasCount || 0 }}
+              {{ space.overview?.schemasCount || 0 }}
             </dd>
           </div>
         </dl>
@@ -53,25 +53,25 @@
           <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt class="truncate text-sm font-medium text-gray-500">Total</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-              {{ space?.overview?.translationSize + space?.overview?.assetsSize + space?.overview?.contentSize | digitalStore }}
+              {{ space.overview?.translationSize + space?.overview?.assetsSize + space?.overview?.contentSize | digitalStore }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt class="truncate text-sm font-medium text-gray-500">Translations</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-              {{ space?.overview?.translationSize || 0 | digitalStore }}
+              {{ space.overview?.translationSize || 0 | digitalStore }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt class="truncate text-sm font-medium text-gray-500">Asset Files</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-              {{ space?.overview?.assetsSize || 0 | digitalStore }}
+              {{ space.overview?.assetsSize || 0 | digitalStore }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt class="truncate text-sm font-medium text-gray-500">Content Documents</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-              {{ space?.overview?.contentSize || 0 | digitalStore }}
+              {{ space.overview?.contentSize || 0 | digitalStore }}
             </dd>
           </div>
         </dl>

@@ -1,17 +1,15 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { filter, switchMap } from 'rxjs/operators';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
+import { filter } from 'rxjs/operators';
 import { SpaceService } from '@shared/services/space.service';
-import { Space, SpaceEnvironment } from '@shared/models/space.model';
+import { SpaceEnvironment } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { selectSpace } from '@core/state/space/space.selector';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { selectSettings } from '@core/state/settings/settings.selectors';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { SpaceStore } from '@shared/store/space.store';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-space-settings-visual-editor',
@@ -19,9 +17,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrls: ['./visual-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VisualEditorComponent implements OnInit {
-  isLoading = true;
-  space?: Space;
+export class VisualEditorComponent {
+  isLoading = signal(true);
+  spaceStore = inject(SpaceStore);
 
   // Form
   form: FormGroup = this.fb.group({
@@ -29,7 +27,7 @@ export class VisualEditorComponent implements OnInit {
   });
 
   // Subscriptions
-  settings$ = this.store.select(selectSettings);
+  settingsStore = inject(SettingsStore);
   private destroyRef = inject(DestroyRef);
 
   constructor(
@@ -37,24 +35,18 @@ export class VisualEditorComponent implements OnInit {
     readonly fe: FormErrorHandlerService,
     private readonly spaceService: SpaceService,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>
-  ) {}
-
-  ngOnInit(): void {
-    this.store
-      .select(selectSpace)
+    private readonly notificationService: NotificationService
+  ) {
+    toObservable(this.spaceStore.selectedSpace)
       .pipe(
-        filter(it => it.id !== ''),
-        switchMap(it => this.spaceService.findById(it.id)),
+        filter(it => it !== undefined),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: space => {
-          this.space = space;
           this.environments.clear();
-          space.environments?.forEach(env => this.addEnvironment(env));
-          this.isLoading = false;
+          space?.environments?.forEach(env => this.addEnvironment(env));
+          this.isLoading.set(false);
           this.cd.markForCheck();
         },
       });
@@ -77,7 +69,7 @@ export class VisualEditorComponent implements OnInit {
   }
 
   save(): void {
-    this.spaceService.updateEnvironments(this.space!.id, this.form.value.environments).subscribe({
+    this.spaceService.updateEnvironments(this.spaceStore.selectedSpaceId()!, this.form.value.environments).subscribe({
       next: () => {
         this.notificationService.success('Space has been updated.');
       },

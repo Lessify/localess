@@ -1,15 +1,12 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { filter, switchMap } from 'rxjs/operators';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
+import { filter } from 'rxjs/operators';
 import { SpaceService } from '@shared/services/space.service';
-import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { selectSpace } from '@core/state/space/space.selector';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { SpaceStore } from '@shared/store/space.store';
 
 @Component({
   selector: 'll-space-settings-general',
@@ -17,9 +14,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrls: ['./general.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GeneralComponent implements OnInit {
-  isLoading = true;
-  space?: Space;
+export class GeneralComponent {
+  isLoading = signal(true);
+  spaceStore = inject(SpaceStore);
 
   // Form
   form: FormGroup = this.fb.group({
@@ -33,30 +30,24 @@ export class GeneralComponent implements OnInit {
     readonly fe: FormErrorHandlerService,
     private readonly spaceService: SpaceService,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>
-  ) {}
-
-  ngOnInit(): void {
-    this.store
-      .select(selectSpace)
+    private readonly notificationService: NotificationService
+  ) {
+    toObservable(this.spaceStore.selectedSpace)
       .pipe(
-        filter(it => it.id !== ''),
-        switchMap(it => this.spaceService.findById(it.id)),
+        filter(it => it !== undefined), // Skip initial data
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: space => {
-          this.space = space;
-          this.form.patchValue(space);
-          this.isLoading = false;
+          this.form.patchValue(space!);
+          this.isLoading.set(false);
           this.cd.markForCheck();
         },
       });
   }
 
   save(): void {
-    this.spaceService.update(this.space!.id, this.form.value).subscribe({
+    this.spaceService.update(this.spaceStore.selectedSpaceId()!, this.form.value).subscribe({
       next: () => {
         this.notificationService.success('Space has been updated.');
       },

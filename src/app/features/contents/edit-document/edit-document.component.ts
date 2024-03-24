@@ -17,9 +17,6 @@ import { Router } from '@angular/router';
 import { SchemaService } from '@shared/services/schema.service';
 import { ContentService } from '@shared/services/content.service';
 import { ContentData, ContentDocument, ContentError, ContentKind, EditorEvent } from '@shared/models/content.model';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
-import { selectSpace } from '@core/state/space/space.selector';
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
 import { combineLatest, Observable } from 'rxjs';
 import { SpaceService } from '@shared/services/space.service';
@@ -30,12 +27,13 @@ import { v4 } from 'uuid';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { SchemaPathItem } from './edit-document.model';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
-import { selectSettings } from '@core/state/settings/settings.selectors';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { TokenService } from '@shared/services/token.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ContentHistory } from '@shared/models/content-history.model';
 import { ContentHistoryService } from '@shared/services/content-history.service';
+import { SpaceStore } from '@shared/store/space.store';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -74,9 +72,10 @@ export class EditDocumentComponent implements OnInit {
   isLoading = signal(true);
   isPublishLoading = signal(false);
   isSaveLoading = signal(false);
+  spaceStore = inject(SpaceStore);
 
   // Subscriptions
-  settings$ = this.store.select(selectSettings);
+  settingsStore = inject(SettingsStore);
   history$?: Observable<ContentHistory[]>;
 
   private destroyRef = inject(DestroyRef);
@@ -90,30 +89,21 @@ export class EditDocumentComponent implements OnInit {
     private readonly contentService: ContentService,
     private readonly contentHistoryService: ContentHistoryService,
     private readonly tokenService: TokenService,
-    private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService,
     private readonly contentHelperService: ContentHelperService,
     private readonly sanitizer: DomSanitizer,
     readonly fe: FormErrorHandlerService
-  ) {}
-
-  ngOnInit(): void {
-    this.loadData(this.contentId());
-    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId());
-  }
-
-  loadData(contentId: string): void {
-    this.store
-      .select(selectSpace)
+  ) {
+    toObservable(this.spaceStore.selectedSpaceId)
       .pipe(
         distinctUntilChanged(),
-        filter(it => it.id !== ''), // Skip initial data
+        filter(it => it !== undefined), // Skip initial data
         switchMap(it =>
           combineLatest([
-            this.spaceService.findById(it.id),
-            this.contentService.findById(it.id, contentId),
-            this.contentService.findAllDocuments(it.id),
-            this.schemaService.findAll(it.id),
+            this.spaceService.findById(it!),
+            this.contentService.findById(it!, this.contentId()),
+            this.contentService.findAllDocuments(it!),
+            this.schemaService.findAll(it!),
           ])
         ),
         takeUntilDestroyed(this.destroyRef)
@@ -134,7 +124,6 @@ export class EditDocumentComponent implements OnInit {
               _id: v4(),
               schema: this.rootSchema?.name || '',
             };
-            this.editorEnabledCtr.setValue(document.editorEnabled === true);
           }
 
           // Generate initial path only once
@@ -161,6 +150,10 @@ export class EditDocumentComponent implements OnInit {
           this.cd.markForCheck();
         },
       });
+  }
+
+  ngOnInit(): void {
+    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId());
   }
 
   publish(): void {
@@ -196,13 +189,6 @@ export class EditDocumentComponent implements OnInit {
     //console.log(this.contentErrors)
 
     if (this.contentErrors.length === 0) {
-      if (this.document?.editorEnabled !== this.editorEnabledCtr.value) {
-        this.contentService.updateDocumentEditorEnabled(this.spaceId(), this.contentId(), this.editorEnabledCtr.value || false).subscribe({
-          next: () => {
-            console.log('updateDocumentEditorEnabled updated');
-          },
-        });
-      }
       this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData).subscribe({
         next: () => {
           this.notificationService.success('Content has been updated.');

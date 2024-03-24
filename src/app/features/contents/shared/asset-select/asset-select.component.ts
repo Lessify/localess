@@ -1,16 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldAsset, SchemaFieldKind } from '@shared/models/schema.model';
 import { MatDialog } from '@angular/material/dialog';
 import { Asset } from '@shared/models/asset.model';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
 import { AssetService } from '@shared/services/asset.service';
 import { Space } from '@shared/models/space.model';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
-import { selectSettings } from '@core/state/settings/settings.selectors';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-asset-select',
@@ -26,13 +24,12 @@ export class AssetSelectComponent implements OnInit {
   asset?: Asset;
 
   //Subscriptions
-  settings$ = this.store.select(selectSettings);
+  settingsStore = inject(SettingsStore);
 
   constructor(
     readonly fe: FormErrorHandlerService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly store: Store<AppState>,
     private readonly assetService: AssetService
   ) {}
 

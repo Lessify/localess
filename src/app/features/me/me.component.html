@@ -5,29 +5,26 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-@if (isLoading()) {
-  <mat-progress-bar mode="query" />
-}
-@if (user$ | async; as user) {
+@if (userStore; as user) {
   <div class="container-full-screen">
     <div class="row">
       <div class="col"></div>
       <div class="col-6">
         <mat-card appearance="outlined">
           <mat-card-header>
-            <img [src]="user.photoURL || '/assets/account_circle.svg'" mat-card-avatar alt="circle" />
-            <mat-card-title>{{ user.displayName }}</mat-card-title>
+            <img [src]="user.photoURL() || '/assets/account_circle.svg'" mat-card-avatar alt="circle" />
+            <mat-card-title>{{ user.displayName() }}</mat-card-title>
           </mat-card-header>
           <mat-divider></mat-divider>
           <mat-card-content>
             <br />
-            <div><b>Email : </b>{{ user.email }}</div>
-            <div><b>Email Verified: </b>{{ user.emailVerified ? 'Yes' : 'Not' }}</div>
-            <div><b>Role : </b>{{ user.role | uppercase }}</div>
+            <div><b>Email : </b>{{ user.email() }}</div>
+            <div><b>Email Verified: </b>{{ user.emailVerified() ? 'Yes' : 'Not' }}</div>
+            <div><b>Role : </b>{{ user.role() | uppercase }}</div>
           </mat-card-content>
           <mat-divider></mat-divider>
           <mat-card-actions>
-            @if (isPasswordProvider && numberProviders === 1) {
+            @if (user.isPasswordProvider() && user.numberProviders() === 1) {
               <button mat-raised-button color="primary" (click)="openEditDialog()">Edit</button>
               <button mat-raised-button (click)="openUpdateEmailDialog()">Update Email</button>
               <button mat-raised-button (click)="openUpdatePasswordDialog()">Update Password</button>

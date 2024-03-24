@@ -2,8 +2,6 @@ import { Component, Optional } from '@angular/core';
 import { Auth, sendPasswordResetEmail, User } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
@@ -22,7 +20,6 @@ export class ResetComponent {
   public readonly user: Observable<User | null> = EMPTY;
 
   constructor(
-    private readonly store: Store<AppState>,
     @Optional() public readonly auth: Auth,
     private readonly router: Router,
     private readonly fb: FormBuilder

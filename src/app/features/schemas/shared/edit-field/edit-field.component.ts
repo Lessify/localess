@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, input, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, Input, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
@@ -13,9 +13,7 @@ import { MatSelectChange } from '@angular/material/select';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { MatSelectionListChange } from '@angular/material/list';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
-import { selectSettings } from '@core/state/settings/settings.selectors';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-schema-field-edit',
@@ -38,11 +36,9 @@ export class EditFieldComponent implements OnInit {
   nodeSchemas = computed(() => this.schemas().filter(it => it.type === SchemaType.NODE));
   enumSchemas = computed(() => this.schemas().filter(it => it.type === SchemaType.ENUM));
 
-  // Subscriptions
-  settings$ = this.store.select(selectSettings);
+  settingsStore = inject(SettingsStore);
 
   constructor(
-    private readonly store: Store<AppState>,
     readonly fe: FormErrorHandlerService,
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef

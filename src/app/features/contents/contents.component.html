@@ -49,13 +49,13 @@
     </mat-menu>
   </mat-toolbar-row>
 </mat-toolbar>
-@if (isLoading) {
+@if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
 
 <div class="container-full-screen">
   <ll-breadcrumb>
-    @for (pathItem of contentPath; track pathItem.fullSlug; let isFirst = $first) {
+    @for (pathItem of spaceStore.contentPath(); track pathItem.fullSlug; let isFirst = $first) {
       <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">
         {{ pathItem.name }}
       </ll-breadcrumb-item>

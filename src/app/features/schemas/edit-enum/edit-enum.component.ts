@@ -7,13 +7,11 @@ import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaService } from '@shared/services/schema.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
 import { SpaceService } from '@shared/services/space.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { selectSettings } from '@core/state/settings/settings.selectors';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-schema-edit-enum',
@@ -34,8 +32,8 @@ export class EditEnumComponent implements OnInit {
   isLoading = true;
   isSaveLoading = false;
   // Subscriptions
-  settings$ = this.store.select(selectSettings);
   private destroyRef = inject(DestroyRef);
+  settingsStore = inject(SettingsStore);
 
   form: FormRecord = this.fb.record({
     name: this.fb.control('', SchemaValidator.NAME),
@@ -51,7 +49,6 @@ export class EditEnumComponent implements OnInit {
     private readonly activatedRoute: ActivatedRoute,
     private readonly spaceService: SpaceService,
     private readonly schemaService: SchemaService,
-    private readonly store: Store<AppState>,
     private readonly notificationService: NotificationService
   ) {}
 

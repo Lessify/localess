@@ -38,12 +38,12 @@
     </mat-menu>
   </mat-toolbar-row>
 </mat-toolbar>
-@if (isLoading) {
+@if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
 <div class="container-full-screen">
   <ll-breadcrumb>
-    @for (pathItem of assetPath; track pathItem.fullSlug; let isFirst = $first) {
+    @for (pathItem of spaceStore.assetPath(); track pathItem.fullSlug; let isFirst = $first) {
       <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">
         {{ pathItem.name }}
       </ll-breadcrumb-item>
@@ -182,7 +182,7 @@
       *matRowDef="let row; columns: displayedColumns"
       (click)="onRowSelect(row)"
       [class.row-folder]="row.kind === 'FOLDER'"></mat-row>
-    @if (!isLoading) {
+    @if (!isLoading()) {
       <ng-container *matNoDataRow>
         <div class="text-center align-middle">
           <br />

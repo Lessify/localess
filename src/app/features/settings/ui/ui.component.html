@@ -9,11 +9,11 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-@if (isLoading) {
+@if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
 
-@if (space) {
+@if (spaceStore.selectedSpace(); as space) {
   <div class="my-3">
     <form [formGroup]="form">
       <mat-form-field>

@@ -4,9 +4,6 @@
     <span class="spacer"></span>
   </mat-toolbar-row>
 </mat-toolbar>
-@if (isLoading) {
-  <mat-progress-bar mode="query" />
-}
 <div class="container-full-screen">
   <nav mat-tab-nav-bar [tabPanel]="tabPanel" mat-stretch-tabs="false" mat-align-tabs="center">
     @for (tabItem of tabItems; track tabItem.label) {

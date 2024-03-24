@@ -12,7 +12,6 @@ import {
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { AssetsSelectDialogModel } from './assets-select-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { PathItem } from '@core/state/space/space.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Asset, AssetKind } from '@shared/models/asset.model';
@@ -24,6 +23,7 @@ import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { SpaceService } from '@shared/services/space.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { PathItem } from '@shared/store/space.store';
 
 @Component({
   selector: 'll-assets-select-dialog',

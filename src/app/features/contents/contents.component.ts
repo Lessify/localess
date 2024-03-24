@@ -1,13 +1,10 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
-import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
 import { Schema, SchemaType } from '@shared/models/schema.model';
 import { SchemaService } from '@shared/services/schema.service';
@@ -25,8 +22,6 @@ import {
 import { ContentService } from '@shared/services/content.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
-import { PathItem } from '@core/state/space/space.model';
-import { actionSpaceContentPathChange } from '@core/state/space/space.actions';
 import { AddDocumentDialogComponent } from './add-document-dialog/add-document-dialog.component';
 import { AddDocumentDialogModel } from './add-document-dialog/add-document-dialog.model';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
@@ -39,7 +34,8 @@ import { TaskService } from '@shared/services/task.service';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TokenService } from '@shared/services/token.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { PathItem, SpaceStore } from '@shared/store/space.store';
 
 @Component({
   selector: 'll-contents',
@@ -47,14 +43,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContentsComponent implements OnInit {
+export class ContentsComponent {
   @ViewChild(MatSort, { static: false }) sort?: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
   // Input
   spaceId = input.required<string>();
 
-  isLoading = true;
+  spaceStore = inject(SpaceStore);
+
+  isLoading = signal(true);
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
   displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'slug', 'schema', 'publishedAt', 'createdAt', 'updatedAt', 'actions'];
   selection = new SelectionModel<Content>(true, []);
@@ -62,11 +60,11 @@ export class ContentsComponent implements OnInit {
   schemas: Schema[] = [];
   schemasMap: Map<string, Schema> = new Map<string, Schema>();
   contents: Content[] = [];
-  contentPath: PathItem[] = [];
 
   get parentPath(): string {
-    if (this.contentPath && this.contentPath.length > 0) {
-      return this.contentPath[this.contentPath.length - 1].fullSlug;
+    const contentPath = this.spaceStore.contentPath();
+    if (contentPath.length > 0) {
+      return contentPath[contentPath.length - 1].fullSlug;
     }
     return '';
   }
@@ -81,33 +79,16 @@ export class ContentsComponent implements OnInit {
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>
-  ) {}
-
-  ngOnInit(): void {
-    this.loadData(this.spaceId());
-  }
-
-  loadData(spaceId: string): void {
-    this.store
-      .select(selectSpace)
+    private readonly notificationService: NotificationService
+  ) {
+    toObservable(this.spaceStore.contentPath)
       .pipe(
-        filter(it => it.id !== ''), // Skip initial data
-        tap(it => {
-          if (it.contentPath && it.contentPath.length > 0) {
-            this.contentPath = it.contentPath;
-          } else {
-            this.contentPath = [
-              {
-                name: 'Root',
-                fullSlug: '',
-              },
-            ];
-          }
-        }),
+        filter(it => it !== undefined), // Skip initial data
         switchMap(() =>
-          combineLatest([this.schemasService.findAll(spaceId, SchemaType.ROOT), this.contentService.findAll(spaceId, this.parentPath)])
+          combineLatest([
+            this.schemasService.findAll(this.spaceId(), SchemaType.ROOT),
+            this.contentService.findAll(this.spaceId(), this.parentPath),
+          ])
         ),
         takeUntilDestroyed(this.destroyRef)
       )
@@ -119,7 +100,7 @@ export class ContentsComponent implements OnInit {
           this.dataSource = new MatTableDataSource<Content>(contents);
           this.dataSource.sort = this.sort || null;
           this.dataSource.paginator = this.paginator || null;
-          this.isLoading = false;
+          this.isLoading.set(false);
           this.selection.clear();
           this.cd.markForCheck();
         },
@@ -282,7 +263,7 @@ export class ContentsComponent implements OnInit {
   }
 
   onRowSelect(element: Content): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {
       element.publishedAt;
       if (this.schemasMap.has(element.schema)) {
@@ -295,22 +276,22 @@ export class ContentsComponent implements OnInit {
 
     if (element.kind === ContentKind.FOLDER) {
       this.selection.clear();
-      const contentPath = ObjectUtils.clone(this.contentPath);
+      const contentPath = ObjectUtils.clone(this.spaceStore.contentPath() || []);
       contentPath.push({
         name: element.name,
         fullSlug: element.fullSlug,
       });
-      this.store.dispatch(actionSpaceContentPathChange({ contentPath }));
+      this.spaceStore.changeContentPath(contentPath);
     }
   }
 
   navigateToSlug(pathItem: PathItem) {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.selection.clear();
-    const contentPath = ObjectUtils.clone(this.contentPath);
+    const contentPath = ObjectUtils.clone(this.spaceStore.contentPath() || []);
     const idx = contentPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     contentPath.splice(idx + 1);
-    this.store.dispatch(actionSpaceContentPathChange({ contentPath }));
+    this.spaceStore.changeContentPath(contentPath);
   }
 
   openLinksInNewTab() {

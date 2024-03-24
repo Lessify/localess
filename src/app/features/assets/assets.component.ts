@@ -1,20 +1,15 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, ViewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { concatMap, filter, switchMap, tap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
-import { selectSpace } from '@core/state/space/space.selector';
 import { NotificationService } from '@shared/services/notification.service';
 import { Subject } from 'rxjs';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
-import { PathItem } from '@core/state/space/space.model';
-import { actionSpaceAssetPathChange } from '@core/state/space/space.actions';
 import { AssetService } from '@shared/services/asset.service';
 import { Asset, AssetFile, AssetFileUpdate, AssetFolderCreate, AssetFolderUpdate, AssetKind } from '@shared/models/asset.model';
 import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
@@ -28,7 +23,8 @@ import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-di
 import { TaskService } from '@shared/services/task.service';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
 import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { PathItem, SpaceStore } from '@shared/store/space.store';
 
 @Component({
   selector: 'll-assets',
@@ -43,18 +39,20 @@ export class AssetsComponent implements OnInit {
   // Input
   spaceId = input.required<string>();
 
+  spaceStore = inject(SpaceStore);
+
   private destroyRef = inject(DestroyRef);
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
   displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt', 'actions'];
   selection = new SelectionModel<Asset>(true, []);
   assets: Asset[] = [];
-  assetPath: PathItem[] = [];
   fileUploadQueue: File[] = [];
   now = Date.now();
 
   get parentPath(): string {
-    if (this.assetPath && this.assetPath.length > 0) {
-      return this.assetPath[this.assetPath.length - 1].fullSlug;
+    const assetPath = this.spaceStore.assetPath();
+    if (assetPath.length > 0) {
+      return assetPath[assetPath.length - 1].fullSlug;
     }
     return '';
   }
@@ -63,20 +61,35 @@ export class AssetsComponent implements OnInit {
   private fileUploadQueue$ = new Subject<File>();
 
   // Loading
-  isLoading = true;
+  isLoading = signal(true);
 
   constructor(
     private readonly assetService: AssetService,
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    private readonly store: Store<AppState>
-  ) {}
+    private readonly notificationService: NotificationService
+  ) {
+    toObservable(this.spaceStore.assetPath)
+      .pipe(
+        filter(it => it !== undefined), // Skip initial data
+        switchMap(() => this.assetService.findAll(this.spaceId(), this.parentPath)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: assets => {
+          this.assets = assets;
+          this.dataSource = new MatTableDataSource<Asset>(assets);
+          this.dataSource.sort = this.sort || null;
+          this.dataSource.paginator = this.paginator || null;
+          this.isLoading.set(false);
+          this.selection.clear();
+          this.cd.markForCheck();
+        },
+      });
+  }
 
   ngOnInit(): void {
-    this.loadData(this.spaceId());
-
     this.fileUploadQueue$
       .pipe(
         tap(console.log),
@@ -89,40 +102,6 @@ export class AssetsComponent implements OnInit {
         },
         error: () => {
           this.notificationService.error(`Asset can not be uploaded.`);
-        },
-      });
-  }
-
-  loadData(spaceId: string): void {
-    this.store
-      .select(selectSpace)
-      .pipe(
-        filter(it => it.id !== ''), // Skip initial data
-        tap(it => {
-          if (it.assetPath && it.assetPath.length > 0) {
-            this.assetPath = it.assetPath;
-          } else {
-            this.assetPath = [
-              {
-                name: 'Root',
-                fullSlug: '',
-              },
-            ];
-          }
-        }),
-        switchMap(() => this.assetService.findAll(spaceId, this.parentPath)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe({
-        next: assets => {
-          this.assets = assets;
-
-          this.dataSource = new MatTableDataSource<Asset>(assets);
-          this.dataSource.sort = this.sort || null;
-          this.dataSource.paginator = this.paginator || null;
-          this.isLoading = false;
-          this.selection.clear();
-          this.cd.markForCheck();
         },
       });
   }
@@ -288,25 +267,25 @@ export class AssetsComponent implements OnInit {
     //   return;
     // }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
     if (element.kind === AssetKind.FOLDER) {
       this.selection.clear();
-      const assetPath = ObjectUtils.clone(this.assetPath);
+      const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
       assetPath.push({
         name: element.name,
         fullSlug: element.parentPath ? `${element.parentPath}/${element.id}` : element.id,
       });
-      this.store.dispatch(actionSpaceAssetPathChange({ assetPath }));
+      this.spaceStore.changeAssetPath(assetPath);
     }
   }
 
   navigateToSlug(pathItem: PathItem) {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.selection.clear();
-    const assetPath = ObjectUtils.clone(this.assetPath);
+    const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
     const idx = assetPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     assetPath.splice(idx + 1);
-    this.store.dispatch(actionSpaceAssetPathChange({ assetPath }));
+    this.spaceStore.changeAssetPath(assetPath);
   }
 
   fileIcon(type: string): string {

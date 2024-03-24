@@ -421,17 +421,15 @@
     }
   </form>
 }
-@if (settings$ | async; as settings) {
-  @if (settings.debugEnabled) {
-    <mat-accordion>
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
-        </mat-expansion-panel-header>
-        <pre>isDefaultLocale = {{ isDefaultLocale }}</pre>
-        <pre>{{ form.value | json }}</pre>
-        <pre>{{ form.errors | json }}</pre>
-      </mat-expansion-panel>
-    </mat-accordion>
-  }
+@if (settingsStore.debugEnabled()) {
+  <mat-accordion>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
+      </mat-expansion-panel-header>
+      <pre>isDefaultLocale = {{ isDefaultLocale }}</pre>
+      <pre>{{ form.value | json }}</pre>
+      <pre>{{ form.errors | json }}</pre>
+    </mat-expansion-panel>
+  </mat-accordion>
 }

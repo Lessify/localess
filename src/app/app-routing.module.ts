@@ -1,6 +1,17 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { authGuard } from '@core/state/auth/auth-guard.service';
+import { inject, NgModule } from '@angular/core';
+import { Router, RouterModule, Routes, UrlTree } from '@angular/router';
+import { Observable } from 'rxjs';
+import { UserStore } from '@shared/store/user.store';
+
+export function authGuard(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+  const userStore = inject(UserStore);
+  const router = inject(Router);
+  if (userStore.isAuthenticated()) {
+    return true;
+  } else {
+    return router.createUrlTree(['/login']);
+  }
+}
 
 const routes: Routes = [
   {

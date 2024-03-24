@@ -54,23 +54,20 @@
     </mat-card-content>
   </mat-card>
 </form>
-@if (settings$ | async; as settings) {
-  @if (settings.debugEnabled) {
-    <mat-accordion>
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>Form => {{ form().valid }}</mat-panel-title>
-        </mat-expansion-panel-header>
-        <pre>{{ form().value | json }}</pre>
-      </mat-expansion-panel>
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>Asset</mat-panel-title>
-        </mat-expansion-panel-header>
-        <pre>{{ asset | json }}</pre>
-      </mat-expansion-panel>
-    </mat-accordion>
-  }
-
+@if (settingsStore.debugEnabled()) {
+  <mat-accordion>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Form => {{ form().valid }}</mat-panel-title>
+      </mat-expansion-panel-header>
+      <pre>{{ form().value | json }}</pre>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Asset</mat-panel-title>
+      </mat-expansion-panel-header>
+      <pre>{{ asset | json }}</pre>
+    </mat-expansion-panel>
+  </mat-accordion>
   <br />
 }

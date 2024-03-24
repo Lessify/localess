@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldKind, SchemaFieldReference, SchemaFieldReferences } from '@shared/models/schema.model';
@@ -6,9 +6,7 @@ import { ContentDocument } from '@shared/models/content.model';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { debounceTime, Observable, of, startWith } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { selectSettings } from '@core/state/settings/settings.selectors';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-reference-select',
@@ -27,12 +25,9 @@ export class ReferenceSelectComponent implements OnInit {
   filteredContent: Observable<ContentDocument[]> = of([]);
 
   // Subscriptions
-  settings$ = this.store.select(selectSettings);
+  settingsStore = inject(SettingsStore);
 
-  constructor(
-    readonly fe: FormErrorHandlerService,
-    private readonly store: Store<AppState>
-  ) {}
+  constructor(readonly fe: FormErrorHandlerService) {}
 
   ngOnInit(): void {
     // Data init in case everything is null

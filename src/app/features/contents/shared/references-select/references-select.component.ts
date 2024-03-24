@@ -1,11 +1,9 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { FormArray, FormBuilder, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldKind, SchemaFieldReferences } from '@shared/models/schema.model';
 import { ContentDocument } from '@shared/models/content.model';
-import { selectSettings } from '@core/state/settings/settings.selectors';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-references-select',
@@ -20,12 +18,11 @@ export class ReferencesSelectComponent {
   documents = input.required<ContentDocument[]>();
 
   // Subscriptions
-  settings$ = this.store.select(selectSettings);
+  settingsStore = inject(SettingsStore);
 
   constructor(
     private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    private readonly store: Store<AppState>
+    readonly fe: FormErrorHandlerService
   ) {}
 
   addReference() {

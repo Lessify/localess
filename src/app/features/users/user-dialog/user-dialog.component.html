@@ -151,8 +151,6 @@
   <button mat-raised-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>
 
-@if (settings$ | async; as settings) {
-  @if (settings.debugEnabled) {
-    <pre>{{ form.value | json }}</pre>
-  }
+@if (settingsStore.debugEnabled()) {
+  <pre>{{ form.value | json }}</pre>
 }

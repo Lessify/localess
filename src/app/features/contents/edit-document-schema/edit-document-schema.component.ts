@@ -33,13 +33,10 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { Space } from '@shared/models/space.model';
 import { SchemaSelectChange } from './edit-document-schema.model';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { selectSettings } from '@core/state/settings/settings.selectors';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/state/core.state';
 import { DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { ObjectUtils } from '@core/utils/object-utils.service';
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SettingsStore } from '@shared/store/settings.store';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -53,7 +50,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   isDefaultLocale = true;
   // Subscriptions
-  settings$ = this.store.select(selectSettings);
+  settingsStore = inject(SettingsStore);
+
   private destroyRef = inject(DestroyRef);
 
   // Inputs
@@ -108,8 +106,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
     private readonly contentHelperService: ContentHelperService,
-    readonly fe: FormErrorHandlerService,
-    private readonly store: Store<AppState>
+    readonly fe: FormErrorHandlerService
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -175,17 +172,17 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         )
         .subscribe({
           next: formValue => {
-            console.group('form');
-            console.log(Object.getOwnPropertyNames(formValue));
-            console.log('formValue', ObjectUtils.clone(formValue));
-            console.log('Before data', ObjectUtils.clone(this.data));
+            //console.group('form');
+            //console.log(Object.getOwnPropertyNames(formValue));
+            //console.log('formValue', ObjectUtils.clone(formValue));
+            //console.log('Before data', ObjectUtils.clone(this.data));
             //console.log('rootSchema', ObjectUtils.clone(this.rootSchema));
             for (const field of this.rootSchema?.fields || []) {
-              console.log('field', field.name, field.kind);
+              //console.log('field', field.name, field.kind);
               if (field.kind === SchemaFieldKind.SCHEMAS) continue;
               if (field.kind === SchemaFieldKind.SCHEMA) continue;
               const value = formValue[field.name];
-              console.log('value', value);
+              //console.log('value', value);
               if (this.isDefaultLocale) {
                 // check everything
                 if (value === null) {
@@ -206,8 +203,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                 }
               }
             }
-            console.log('After data', ObjectUtils.clone(this.data));
-            console.groupEnd();
+            //console.log('After data', ObjectUtils.clone(this.data));
+            //console.groupEnd();
           },
           error: (err: unknown) => console.error(err),
           complete: () => console.log('completed'),
