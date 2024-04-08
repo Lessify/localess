@@ -40,17 +40,17 @@ export const initialState: UserState = {
   isAuthenticated: false,
 };
 
-const initialStateFactory = () => {
+const initialStateFactory = (): UserState => {
   const state = localStorage.getItem(LS_KEY);
   if (state) {
-    return { ...initialState, ...JSON.parse(state) } as UserState;
+    return { ...initialState, ...JSON.parse(state) };
   }
-  return { ...initialState } as UserState;
+  return { ...initialState };
 };
 
 export const UserStore = signalStore(
   { providedIn: 'root' },
-  withState(initialStateFactory),
+  withState<UserState>(initialStateFactory),
   withMethods(state => {
     const auth = inject(Auth);
     return {

@@ -28,17 +28,17 @@ const initialState: SpaceState = {
   assetPath: [ROOT_PATH],
 };
 
-const initialStateFactory = () => {
+const initialStateFactory = (): SpaceState => {
   const state = localStorage.getItem(LS_KEY);
   if (state) {
-    return { ...initialState, ...JSON.parse(state) } as SpaceState;
+    return { ...initialState, ...JSON.parse(state) };
   }
-  return { ...initialState } as SpaceState;
+  return { ...initialState };
 };
 
 export const SpaceStore = signalStore(
   { providedIn: 'root' },
-  withState(initialStateFactory),
+  withState<SpaceState>(initialStateFactory),
   withMethods(state => {
     const spaceService = inject(SpaceService);
     return {
@@ -90,7 +90,9 @@ export const SpaceStore = signalStore(
   }),
   withComputed(state => {
     return {
-      // spaces: computed(() => state.spaces()),
+      spaces: computed(() => state.spaces()),
+      contentPath: computed(() => state.contentPath()),
+      assetPath: computed(() => state.assetPath()),
       selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),
     };
   }),

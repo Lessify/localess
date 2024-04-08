@@ -1,4 +1,5 @@
-import { getState, patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { getState, patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { computed } from '@angular/core';
 
 const LS_KEY = 'LL-SETTINGS-STATE';
 
@@ -14,17 +15,17 @@ export const initialState: SettingsState = {
   editorEnabled: false,
 };
 
-const initialStateFactory = () => {
+const initialStateFactory = (): SettingsState => {
   const state = localStorage.getItem(LS_KEY);
   if (state) {
-    return { ...initialState, ...JSON.parse(state) } as SettingsState;
+    return { ...initialState, ...JSON.parse(state) };
   }
-  return { ...initialState } as SettingsState;
+  return { ...initialState };
 };
 
 export const SettingsStore = signalStore(
   { providedIn: 'root' },
-  withState(initialStateFactory),
+  withState<SettingsState>(initialStateFactory),
   withMethods(state => {
     return {
       setDebug: (debugEnabled: boolean): void => {
@@ -39,6 +40,13 @@ export const SettingsStore = signalStore(
         patchState(state, { editorEnabled });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(state), editorEnabled }));
       },
+    };
+  }),
+  withComputed(state => {
+    return {
+      debugEnabled: computed(() => state.debugEnabled()),
+      mainMenuExpended: computed(() => state.mainMenuExpended()),
+      editorEnabled: computed(() => state.editorEnabled()),
     };
   })
 );

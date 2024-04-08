@@ -65,17 +65,14 @@ export class EditDocumentComponent implements OnInit {
   contentErrors: ContentError[] = [];
   documents: ContentDocument[] = [];
 
-  // Form
-  editorEnabledCtr = this.fb.control<boolean>(false);
-
   //Loadings
   isLoading = signal(true);
   isPublishLoading = signal(false);
   isSaveLoading = signal(false);
+  //Store
   spaceStore = inject(SpaceStore);
-
-  // Subscriptions
   settingsStore = inject(SettingsStore);
+  // Subscriptions
   history$?: Observable<ContentHistory[]>;
 
   private destroyRef = inject(DestroyRef);

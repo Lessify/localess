@@ -4,7 +4,7 @@ import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, 
 @Component({
   selector: 'll-tooltip',
   templateUrl: './tooltip.component.html',
-  styleUrls: ['./tooltip.component.sass'],
+  styleUrl: './tooltip.component.scss',
 })
 export class TooltipComponent implements OnInit {
   @HostBinding('class') class = 'tooltip';
@@ -39,6 +39,7 @@ export class TooltipComponent implements OnInit {
     }
     this._show = this.hostClassShow = value;
   }
+
   get show(): boolean {
     return this._show;
   }
