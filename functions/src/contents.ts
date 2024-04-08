@@ -16,7 +16,15 @@ import {
   Space,
   UserPermission,
 } from './models';
-import { extractContent, findContentByFullSlug, findContentById, findContentsHistory, findSchemas, findSpaceById } from './services';
+import {
+  extractContent,
+  findContentByFullSlug,
+  findContentById,
+  findContentByParentSlug,
+  findContentsHistory,
+  findSchemas,
+  findSpaceById,
+} from './services';
 
 // Publish
 const publish = onCall<PublishContentData>(async request => {
@@ -161,6 +169,11 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
       count = 0;
     }
   }
+  // Clean history batch
+  if (count > 0) {
+    await batch.commit();
+  }
+
   const content = event.data.data() as Content;
   logger.info(`[Content::onDelete] eventId='${event.id}' id='${event.data.id}' fullSlug='${content.fullSlug}'`);
   // Logic related to delete, in case a folder is deleted it should be cascaded to all childs
@@ -169,9 +182,10 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
       prefix: `spaces/${spaceId}/contents/${contentId}`,
     });
   } else if (content.kind === ContentKind.FOLDER) {
+    batch = firestoreService.batch();
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
-    const contentsSnapshot = await findContentByFullSlug(spaceId, content.fullSlug).get();
+    const contentsSnapshot = await findContentByParentSlug(spaceId, content.fullSlug).get();
     for (const item of contentsSnapshot.docs) {
       batch.delete(item.ref);
       count++;
@@ -181,9 +195,10 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
         count = 0;
       }
     }
-  }
-  if (count > 0) {
-    await batch.commit();
+    // Clean sub content batch
+    if (count > 0) {
+      await batch.commit();
+    }
   }
   return;
 });

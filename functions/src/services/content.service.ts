@@ -31,6 +31,7 @@ export function findContentByFullSlug(spaceId: string, fullSlug: string): Query 
  * @return {DocumentReference} document reference to the space
  */
 export function findContentByParentSlug(spaceId: string, parentSlug: string): Query {
+  logger.info(`[findContentByParentSlug] spaceId=${spaceId} parentSlug=${parentSlug}`);
   return firestoreService.collection(`spaces/${spaceId}/contents`).where('parentSlug', '==', parentSlug).limit(1);
 }
 
