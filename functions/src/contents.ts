@@ -16,15 +16,7 @@ import {
   Space,
   UserPermission,
 } from './models';
-import {
-  extractContent,
-  findContentByFullSlug,
-  findContentById,
-  findContentByParentSlug,
-  findContentsHistory,
-  findSchemas,
-  findSpaceById,
-} from './services';
+import { extractContent, findAllContentsByParentSlug, findContentById, findContentsHistory, findSchemas, findSpaceById } from './services';
 
 // Publish
 const publish = onCall<PublishContentData>(async request => {
@@ -132,20 +124,29 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
     if (contentAfter.kind === ContentKind.DOCUMENT) return;
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
-    const batch = firestoreService.batch();
-    const contentsSnapshot = await findContentByFullSlug(spaceId, contentBefore.fullSlug).get();
-    contentsSnapshot.docs
-      .filter(it => it.exists)
-      .forEach(it => {
-        const content = it.data() as Content;
-        const update: UpdateData<Content> = {
-          parentSlug: contentAfter.fullSlug,
-          fullSlug: `${contentAfter.fullSlug}/${content.slug}`,
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        batch.update(it.ref, update);
-      });
-    return batch.commit();
+    let count = 0;
+    let batch = firestoreService.batch();
+    const contentsSnapshot = await findAllContentsByParentSlug(spaceId, contentBefore.fullSlug).get();
+    for (const item of contentsSnapshot.docs) {
+      const content = item.data() as Content;
+      const update: UpdateData<Content> = {
+        parentSlug: contentAfter.fullSlug,
+        fullSlug: `${contentAfter.fullSlug}/${content.slug}`,
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      batch.update(item.ref, update);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    // Clean history batch
+    if (count > 0) {
+      await batch.commit();
+    }
+    return;
   }
   return;
 });
@@ -172,6 +173,7 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
   // Clean history batch
   if (count > 0) {
     await batch.commit();
+    count = 0;
   }
 
   const content = event.data.data() as Content;
@@ -185,7 +187,7 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
     batch = firestoreService.batch();
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
-    const contentsSnapshot = await findContentByParentSlug(spaceId, content.fullSlug).get();
+    const contentsSnapshot = await findAllContentsByParentSlug(spaceId, content.fullSlug).get();
     for (const item of contentsSnapshot.docs) {
       batch.delete(item.ref);
       count++;
@@ -237,6 +239,9 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
     }
     if (beforeData.slug !== afterData.slug) {
       addHistory.cSlug = afterData.slug;
+    }
+    if (beforeData.parentSlug !== afterData.parentSlug) {
+      addHistory.cParentSlug = afterData.parentSlug;
     }
     if (beforeData.kind === ContentKind.DOCUMENT && afterData.kind === ContentKind.DOCUMENT) {
       if (JSON.stringify(beforeData.data) !== JSON.stringify(afterData.data)) {

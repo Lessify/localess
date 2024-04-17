@@ -1,8 +1,8 @@
 import { logger } from 'firebase-functions/v2';
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
-import { bucket, firestoreService } from './config';
+import { BATCH_MAX, bucket, firestoreService } from './config';
 import { Asset, AssetKind } from './models';
-import { findAssetsByParentPath } from './services';
+import { findAllAssetsByParentPath } from './services';
 
 // Firestore events
 const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', async event => {
@@ -20,14 +20,24 @@ const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', as
   } else if (asset.kind === AssetKind.FOLDER) {
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
-    const batch = firestoreService.batch();
-
-    const assetsSnapshot = await findAssetsByParentPath(
-      spaceId,
-      asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`
-    ).get();
-    assetsSnapshot.docs.filter(it => it.exists).forEach(it => batch.delete(it.ref));
-    return batch.commit();
+    let batch = firestoreService.batch();
+    let count = 0;
+    const parentPath = asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`;
+    const assetsSnapshot = await findAllAssetsByParentPath(spaceId, parentPath).get();
+    for (const item of assetsSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    // Clean history batch
+    if (count > 0) {
+      await batch.commit();
+    }
+    return;
   }
   return;
 });

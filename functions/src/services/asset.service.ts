@@ -9,7 +9,7 @@ import { Asset, AssetExport, AssetFileExport, AssetFolderExport, AssetKind } fro
  * @param {string} parentPath Full Slug path
  * @return {Query} document reference to the space
  */
-export function findAssetsByParentPath(spaceId: string, parentPath: string): Query {
+export function findAllAssetsByParentPath(spaceId: string, parentPath: string): Query {
   return firestoreService.collection(`spaces/${spaceId}/assets`).where('parentPath', '==', parentPath);
 }
 

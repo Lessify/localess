@@ -29,6 +29,7 @@ export interface ContentHistoryCreate extends ContentHistoryBase {
 export interface ContentHistoryUpdate extends ContentHistoryBase {
   type: ContentHistoryType.UPDATE;
   cName?: string;
+  cParentSlug?: string;
   cSlug?: string;
   cData?: boolean;
 }

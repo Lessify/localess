@@ -261,7 +261,9 @@
                             }
                             slug <span class="font-medium text-gray-900 break-all">{{ item.cSlug }}</span>
                           }
-                          @if (item.cData) {
+                          @if (item.cParentSlug) {
+                            parent slug <span class="font-medium text-gray-900 break-all">{{ item.cParentSlug }}</span>
+                          } @else if (item.cData) {
                             content
                           } @else {
                             nothing

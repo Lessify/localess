@@ -25,6 +25,17 @@ export function findContentByFullSlug(spaceId: string, fullSlug: string): Query 
 }
 
 /**
+ * find all Contents by Parent Slug
+ * @param {string} spaceId Space identifier
+ * @param {string} parentSlug Parent Slug path
+ * @return {DocumentReference} document reference to the space
+ */
+export function findAllContentsByParentSlug(spaceId: string, parentSlug: string): Query {
+  logger.info(`[findAllContentsByParentSlug] spaceId=${spaceId} parentSlug=${parentSlug}`);
+  return firestoreService.collection(`spaces/${spaceId}/contents`).where('parentSlug', '==', parentSlug);
+}
+
+/**
  * find Content by Parent Slug
  * @param {string} spaceId Space identifier
  * @param {string} parentSlug Parent Slug path
