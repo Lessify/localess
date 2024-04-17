@@ -28,6 +28,7 @@ export function productToContentData(data: Stripe.Product): ProductContentData {
     shippable: data.shippable,
     type: data.type,
     unit_label: data.unit_label,
+    marketing_features: [],
   };
   if (data.default_price && typeof data.default_price === 'string') {
     result.default_price = {
