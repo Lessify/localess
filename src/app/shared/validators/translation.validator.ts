@@ -1,10 +1,11 @@
 import { ValidatorFn, Validators } from '@angular/forms';
-import { CommonValidator } from './common.validator';
+import { CommonPattern, CommonValidator } from './common.validator';
 
 export class TranslationValidator {
   public static ID: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
+    Validators.pattern(CommonPattern.ID),
     CommonValidator.reservedName(['..', '.', '__.*__']),
     Validators.minLength(2),
     Validators.maxLength(150),

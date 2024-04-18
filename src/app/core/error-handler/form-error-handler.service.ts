@@ -30,7 +30,8 @@ export class FormErrorHandlerService {
             return `Should start with a-z, and continue with a-z, A-Z, 0-9, and underscore (_).`;
           case `^${CommonPattern.URL_SLUG}$`:
             return `Should contain only a-z, A-Z, 0-9, - and underscore (_).`;
-          //case `^${CommonPattern.URL}$`: return `Should be a valid URL.`
+          case `^${CommonPattern.ID}$`:
+            return `Should contain only a-z, A-Z, 0-9, hyphen (-), dot (.) and underscore (_).`;
           default:
             return `Doesn't match the pattern ${errors['pattern'].requiredPattern}`;
         }
