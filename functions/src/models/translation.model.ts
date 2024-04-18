@@ -7,7 +7,6 @@ export enum TranslationType {
 }
 
 export interface Translation {
-  name: string;
   type: TranslationType;
   locales: Record<string, string>;
   labels?: string[];

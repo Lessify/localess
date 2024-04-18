@@ -1,15 +1,14 @@
 import { Injectable } from '@angular/core';
 import {
-  addDoc,
   collection,
   collectionCount,
   collectionData,
   deleteDoc,
   doc,
   docData,
-  DocumentReference,
   Firestore,
   serverTimestamp,
+  setDoc,
   UpdateData,
   updateDoc,
 } from '@angular/fire/firestore';
@@ -49,9 +48,8 @@ export class TranslationService {
     );
   }
 
-  create(spaceId: string, entity: TranslationCreate): Observable<DocumentReference> {
+  create(spaceId: string, entity: TranslationCreate): Observable<void> {
     const addEntity: TranslationCreateFS = {
-      name: entity.name,
       type: entity.type,
       locales: {},
       createdAt: serverTimestamp(),
@@ -89,7 +87,7 @@ export class TranslationService {
       };
     }
 
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/translations`), addEntity)).pipe(
+    return from(setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`), addEntity)).pipe(
       traceUntilFirst('Firestore:Translations:create')
     );
   }

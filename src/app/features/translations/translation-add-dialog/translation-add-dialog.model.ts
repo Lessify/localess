@@ -1,7 +1,7 @@
 import { TranslationType } from '@shared/models/translation.model';
 
 export interface TranslationAddDialogModel {
-  name: string;
+  id: string;
   type: TranslationType;
   value: string;
   labels: string[];

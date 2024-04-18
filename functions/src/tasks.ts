@@ -694,7 +694,6 @@ async function translationsExport(spaceId: string, taskId: string, task: Task): 
       const translation = doc.data() as Translation;
       const exportedTr: TranslationExport = {
         id: doc.id,
-        name: translation.name,
         type: translation.type,
         locales: translation.locales,
       };
@@ -743,7 +742,7 @@ async function translationsExportJsonFlat(spaceId: string, taskId: string, task:
       if (task.locale) {
         const locale = translation.locales[task.locale];
         if (locale) {
-          exportTranslations[translation.name] = locale;
+          exportTranslations[doc.id] = locale;
         }
       }
     });
@@ -780,7 +779,6 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
     const translationSnapshot = await translationRef.get();
     if (translationSnapshot.exists) {
       const update: UpdateData<Translation> = {
-        name: translation.name,
         type: translation.type,
         locales: translation.locales,
         description: translation.description || FieldValue.delete(),
@@ -790,7 +788,6 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
       batch.update(translationRef, update);
     } else {
       const add: WithFieldValue<Translation> = {
-        name: translation.name,
         type: translation.type,
         locales: translation.locales,
         createdAt: FieldValue.serverTimestamp(),
@@ -838,41 +835,37 @@ async function translationsImportJsonFlat(spaceId: string, taskId: string, task:
   }
   logger.info(`[Task:onCreate] valid=${Object.getOwnPropertyNames(translations).length}`);
   const origTransMap = new Map<string, Translation>();
-  const origTransIdMap = new Map<string, string>();
   const translationsSnapshot = await findTranslations(spaceId).get();
   translationsSnapshot.docs
     .filter(it => it.exists)
     .forEach(it => {
       const tr = it.data() as Translation;
-      origTransMap.set(tr.name, tr);
-      origTransIdMap.set(tr.name, it.id);
+      origTransMap.set(it.id, tr);
     });
   let totalChanges = 0;
   let count = 0;
   let batch = firestoreService.batch();
-  for (const name of Object.getOwnPropertyNames(translations)) {
-    const ot = origTransMap.get(name);
-    const oid = origTransIdMap.get(name);
-    if (ot && oid) {
+  for (const id of Object.getOwnPropertyNames(translations)) {
+    const ot = origTransMap.get(id);
+    if (ot) {
       // update
-      if (ot.locales[task.locale] !== translations[name]) {
+      if (ot.locales[task.locale] !== translations[id]) {
         const update: UpdateData<Translation> = {
           updatedAt: FieldValue.serverTimestamp(),
         };
-        update[`locales.${task.locale}`] = translations[name];
-        batch.update(findTranslationById(spaceId, oid), update);
+        update[`locales.${task.locale}`] = translations[id];
+        batch.update(findTranslationById(spaceId, id), update);
         totalChanges++;
       }
     } else {
       const add: any = {
-        name: name,
         type: TranslationType.STRING,
         locales: {},
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       };
-      add.locales[task.locale] = translations[name];
-      batch.set(firestoreService.collection(`spaces/${spaceId}/translations`).doc(), add);
+      add.locales[task.locale] = translations[id];
+      batch.set(firestoreService.doc(`spaces/${spaceId}/translations/${id}`), add);
       totalChanges++;
     }
     count++;

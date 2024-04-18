@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 export const translationSchema = z.object({
   id: z.string(),
-  name: z.string(),
   type: z.nativeEnum(TranslationType),
   locales: z.record(z.string(), z.string()),
   labels: z.array(z.string()).optional(),

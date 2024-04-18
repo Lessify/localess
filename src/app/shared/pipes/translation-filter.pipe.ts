@@ -9,7 +9,7 @@ export class TranslationFilterPipe implements PipeTransform {
     }
     return items.filter(it => {
       const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.every(label => it.labels?.includes(label)));
-      if (it.name.indexOf(filter) !== -1 && matchByLabel) {
+      if (it.id.indexOf(filter) !== -1 && matchByLabel) {
         return true;
       } else {
         if (it.locales[locale]) {

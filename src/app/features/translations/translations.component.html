@@ -133,7 +133,7 @@
                         }
                       }
                       <div class="text-sm font-semibold leading-6 text-gray-900 break-all">
-                        {{ translation.name }}
+                        {{ translation.id }}
                       </div>
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 text-gray-400 break-words">
@@ -262,19 +262,6 @@
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ selectedTranslation.id }}
                           <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.id" matTooltip="Copy Id">
-                            <mat-icon>content_copy</mat-icon>
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                      <div class="min-w-0 flex-auto">
-                        <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Name </div>
-                        </div>
-                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                          {{ selectedTranslation.name }}
-                          <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.name" matTooltip="Copy Name">
                             <mat-icon>content_copy</mat-icon>
                           </button>
                         </div>

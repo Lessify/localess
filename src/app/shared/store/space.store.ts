@@ -8,7 +8,7 @@ import { pipe, switchMap } from 'rxjs';
 
 const LS_KEY = 'LL-SPACE-STATE';
 const ROOT_PATH: PathItem = { name: 'Root', fullSlug: '' };
-
+const DEFAULT_PATH = [ROOT_PATH];
 export type SpaceState = {
   spaces: Space[];
   selectedSpaceId: string | undefined;
@@ -24,8 +24,8 @@ export type PathItem = {
 const initialState: SpaceState = {
   spaces: [],
   selectedSpaceId: undefined,
-  contentPath: [ROOT_PATH],
-  assetPath: [ROOT_PATH],
+  contentPath: DEFAULT_PATH,
+  assetPath: DEFAULT_PATH,
 };
 
 const initialStateFactory = (): SpaceState => {
@@ -49,7 +49,7 @@ export const SpaceStore = signalStore(
             next: response => {
               console.log('Loaded spaces', response);
               if (response.length === 0) {
-                patchState(state, { spaces: [], selectedSpaceId: undefined, assetPath: undefined, contentPath: undefined });
+                patchState(state, { spaces: [], selectedSpaceId: undefined, assetPath: DEFAULT_PATH, contentPath: DEFAULT_PATH });
               } else {
                 const selectedSpaceId = state.selectedSpaceId();
                 if (selectedSpaceId) {
@@ -57,10 +57,20 @@ export const SpaceStore = signalStore(
                   if (foundSpace) {
                     patchState(state, { spaces: response, selectedSpaceId: selectedSpaceId });
                   } else {
-                    patchState(state, { spaces: response, selectedSpaceId: response[0].id, assetPath: undefined, contentPath: undefined });
+                    patchState(state, {
+                      spaces: response,
+                      selectedSpaceId: response[0].id,
+                      assetPath: DEFAULT_PATH,
+                      contentPath: DEFAULT_PATH,
+                    });
                   }
                 } else {
-                  patchState(state, { spaces: response, selectedSpaceId: response[0].id, assetPath: undefined, contentPath: undefined });
+                  patchState(state, {
+                    spaces: response,
+                    selectedSpaceId: response[0].id,
+                    assetPath: DEFAULT_PATH,
+                    contentPath: DEFAULT_PATH,
+                  });
                 }
               }
             },
@@ -72,18 +82,21 @@ export const SpaceStore = signalStore(
       ),
       spaceById: (id: string) => computed(() => state.spaces().find(space => space.id === id)),
       changeSpace: (space: Space) => {
+        console.log('changeSpace', space);
         const foundSpace = state.spaces().find(it => it.id === space.id);
         if (foundSpace) {
-          patchState(state, { selectedSpaceId: space.id, assetPath: undefined, contentPath: undefined });
+          patchState(state, { selectedSpaceId: space.id, assetPath: DEFAULT_PATH, contentPath: DEFAULT_PATH });
         } else {
-          patchState(state, { selectedSpaceId: state.spaces()[0].id, assetPath: undefined, contentPath: undefined });
+          patchState(state, { selectedSpaceId: state.spaces()[0].id, assetPath: DEFAULT_PATH, contentPath: DEFAULT_PATH });
         }
         localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: space.id }));
       },
       changeContentPath: (contentPath: PathItem[]) => {
+        console.log('changeContentPath', contentPath);
         patchState(state, { contentPath });
       },
       changeAssetPath: (assetPath: PathItem[]) => {
+        console.log('changeContentPath', assetPath);
         patchState(state, { assetPath });
       },
     };

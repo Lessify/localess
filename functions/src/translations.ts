@@ -19,11 +19,11 @@ const publish = onCall<PublishTranslationsData>(async request => {
   const translationsSnapshot = await findTranslations(spaceId).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {
     const space: Space = spaceSnapshot.data() as Space;
-    const translations = translationsSnapshot.docs.filter(it => it.exists).map(it => it.data() as Translation);
 
     for (const locale of space.locales) {
       const localeStorage: Record<string, string> = {};
-      for (const tr of translations) {
+      for (const translation of translationsSnapshot.docs) {
+        const tr = translation.data() as Translation;
         let value = tr.locales[locale.id];
         if (value) {
           // check the value is not empty string
@@ -31,7 +31,7 @@ const publish = onCall<PublishTranslationsData>(async request => {
         } else {
           value = tr.locales[space.localeFallback.id];
         }
-        localeStorage[tr.name] = value;
+        localeStorage[translation.id] = value;
       }
       // Save generated JSON
       logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
@@ -124,7 +124,7 @@ const onCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId
 const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{translationId}', async event => {
   logger.info(`[Translation:onWrite] eventId='${event.id}'`);
   logger.info(`[Translation:onWrite] params='${JSON.stringify(event.params)}'`);
-  const { spaceId } = event.params;
+  const { spaceId, translationId } = event.params;
 
   // No Data
   if (!event.data) return;
@@ -139,14 +139,14 @@ const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{trans
     // change
     addHistory = {
       type: TranslationHistoryType.UPDATE,
-      key: afterData.name,
+      key: translationId,
       createdAt: FieldValue.serverTimestamp(),
     };
   } else if (beforeData) {
     // delete
     addHistory = {
       type: TranslationHistoryType.DELETE,
-      key: beforeData.name,
+      key: translationId,
       createdAt: FieldValue.serverTimestamp(),
     };
     const spaceSnapshot = await findSpaceById(spaceId).get();
@@ -158,7 +158,7 @@ const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{trans
     // create
     addHistory = {
       type: TranslationHistoryType.CREATE,
-      key: afterData.name,
+      key: translationId,
       createdAt: FieldValue.serverTimestamp(),
     };
   }

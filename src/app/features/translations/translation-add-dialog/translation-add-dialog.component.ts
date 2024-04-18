@@ -15,7 +15,7 @@ export class TranslationAddDialogComponent {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
   translationTypes: string[] = ['STRING', 'PLURAL', 'ARRAY'];
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', TranslationValidator.NAME),
+    id: this.fb.control('', TranslationValidator.ID),
     type: this.fb.control('STRING', TranslationValidator.TYPE),
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),

@@ -177,7 +177,7 @@ export class TranslationsComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it => {
           const tc: TranslationCreate = {
-            name: it!.name,
+            id: it!.id,
             type: it!.type,
             locale: this.selectedSpace!.localeFallback.id,
             value: it!.value,
@@ -230,7 +230,7 @@ export class TranslationsComponent implements OnInit {
       .open<ConfirmationDialogComponent, ConfirmationDialogModel>(ConfirmationDialogComponent, {
         data: {
           title: 'Delete Translation',
-          content: `Are you sure about deleting Translation with name '${element.name}'.`,
+          content: `Are you sure about deleting Translation with ID '${element.id}'.`,
         },
       })
       .afterClosed()
