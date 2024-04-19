@@ -7,7 +7,15 @@ import { HttpsError, onRequest } from 'firebase-functions/v2/https';
 import { Query } from 'firebase-admin/firestore';
 import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService } from './config';
 import { AssetFile, Content, ContentKind, ContentLink, Space } from './models';
-import { findContentByFullSlug, findSpaceById, findTokenById, validateToken } from './services';
+import {
+  contentCachePath,
+  contentLocaleCachePath,
+  findContentByFullSlug,
+  findSpaceById,
+  findTokenById,
+  identifySpaceLocale,
+  validateToken
+} from './services';
 
 // API V1
 const expressApp = express();
@@ -186,7 +194,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
     return;
   }
   const contentsSnapshot = await findContentByFullSlug(spaceId, fullSlug).get();
-  logger.info('v1 spaces contents', contentsSnapshot.size);
+  // logger.info('v1 spaces contents', contentsSnapshot.size);
   if (contentsSnapshot.empty) {
     // No records in database
     res.status(404).send(new HttpsError('not-found', 'Slug not found'));
@@ -194,16 +202,12 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
   } else {
     contentId = contentsSnapshot.docs[0].id;
   }
-
-  let cachePath = `spaces/${spaceId}/contents/${contentId}/cache.json`;
-  if (version === 'draft') {
-    cachePath = `spaces/${spaceId}/contents/${contentId}/draft/cache.json`;
-  }
+  const cachePath = contentCachePath(spaceId, contentId, version as string | undefined);
   logger.info('v1 spaces content cachePath: ' + cachePath);
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
-    logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
+    // logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?cv=${metadata.generation}`;
       if (locale) {
@@ -220,14 +224,9 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
       return;
     } else {
       const space = spaceSnapshot.data() as Space;
-      let actualLocale = locale;
-      if (!space.locales.some(it => it.id === locale)) {
-        actualLocale = space.localeFallback.id;
-      }
-      let filePath = `spaces/${spaceId}/contents/${contentId}/${actualLocale}.json`;
-      if (version === 'draft') {
-        filePath = `spaces/${spaceId}/contents/${contentId}/draft/${actualLocale}.json`;
-      }
+      const actualLocale = identifySpaceLocale(space, locale as string | undefined);
+      logger.info(`v1 spaces content slug locale identified as => ${actualLocale}`);
+      const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
       bucket
         .file(filePath)
         .download()
@@ -278,14 +277,11 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
       .send(new HttpsError('not-found', 'Not found'));
     return;
   }
-  let cachePath = `spaces/${spaceId}/contents/${contentId}/cache.json`;
-  if (version === 'draft') {
-    cachePath = `spaces/${spaceId}/contents/${contentId}/draft/cache.json`;
-  }
+  const cachePath = contentCachePath(spaceId, contentId, version as string | undefined);
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
-    logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
+    // logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?cv=${metadata.generation}`;
       if (locale) {
@@ -302,14 +298,9 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
       return;
     } else {
       const space = spaceSnapshot.data() as Space;
-      let actualLocale = locale;
-      if (!space.locales.some(it => it.id === locale)) {
-        actualLocale = space.localeFallback.id;
-      }
-      let filePath = `spaces/${spaceId}/contents/${contentId}/${actualLocale}.json`;
-      if (version === 'draft') {
-        filePath = `spaces/${spaceId}/contents/${contentId}/draft/${actualLocale}.json`;
-      }
+      const actualLocale = identifySpaceLocale(space, locale as string | undefined);
+      logger.info(`v1 spaces content id locale identified as => ${actualLocale}`);
+      const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
       bucket
         .file(filePath)
         .download()

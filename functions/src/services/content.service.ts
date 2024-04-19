@@ -100,6 +100,37 @@ export function findContents(spaceId: string, kind?: ContentKind, fromDate?: num
 }
 
 /**
+ * construct content locale cache path, will return url to the generated content JSON file
+ * @param {string} spaceId
+ * @param {string} contentId
+ * @param {string} locale
+ * @param {string} version
+ * @return {string} path
+ */
+export function contentLocaleCachePath(spaceId: string, contentId: string, locale: string, version: string | 'draft' | undefined): string {
+  if (version === 'draft') {
+    return `spaces/${spaceId}/contents/${contentId}/draft/${locale}.json`;
+  } else {
+    return `spaces/${spaceId}/contents/${contentId}/${locale}.json`;
+  }
+}
+
+/**
+ * construct content cache path, will return url to the cache file for cache version identifier
+ * @param {string} spaceId
+ * @param {string} contentId
+ * @param {string} version
+ * @return {string} path
+ */
+export function contentCachePath(spaceId: string, contentId: string, version: string | 'draft' | undefined): string {
+  if (version === 'draft') {
+    return `spaces/${spaceId}/contents/${contentId}/draft/cache.json`;
+  } else {
+    return `spaces/${spaceId}/contents/${contentId}/cache.json`;
+  }
+}
+
+/**
  * extract Locale Content
  * @param {ContentData} content content
  * @param {Schema[]} schemas schema
