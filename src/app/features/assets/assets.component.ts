@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { concatMap, filter, switchMap, tap } from 'rxjs/operators';
@@ -33,8 +33,8 @@ import { PathItem, SpaceStore } from '@shared/store/space.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsComponent implements OnInit {
-  @ViewChild(MatSort, { static: false }) sort?: MatSort;
-  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
+  sort = viewChild.required(MatSort);
+  paginator = viewChild.required(MatPaginator);
 
   // Input
   spaceId = input.required<string>();
@@ -80,8 +80,8 @@ export class AssetsComponent implements OnInit {
         next: assets => {
           this.assets = assets;
           this.dataSource = new MatTableDataSource<Asset>(assets);
-          this.dataSource.sort = this.sort || null;
-          this.dataSource.paginator = this.paginator || null;
+          this.dataSource.sort = this.sort();
+          this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
           this.selection.clear();
           this.cd.markForCheck();

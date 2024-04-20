@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -25,8 +25,8 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PluginsComponent implements OnInit {
-  @ViewChild(MatSort, { static: false }) sort?: MatSort;
-  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
+  sort = viewChild.required(MatSort);
+  paginator = viewChild.required(MatPaginator);
 
   isLoading = true;
   dataSource: MatTableDataSource<Plugin> = new MatTableDataSource<Plugin>([]);

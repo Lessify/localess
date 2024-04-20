@@ -34,6 +34,7 @@ export interface Task {
   };
   // Error Message
   message?: string;
+  trace?: string;
   // Dates
   createdAt: Timestamp;
   updatedAt: Timestamp;

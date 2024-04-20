@@ -7,7 +7,7 @@ import {
   Inject,
   OnDestroy,
   OnInit,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { AssetsSelectDialogModel } from './assets-select-dialog.model';
@@ -32,8 +32,8 @@ import { PathItem } from '@shared/store/space.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
-  @ViewChild(MatSort, { static: false }) sort?: MatSort;
-  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
+  sort = viewChild.required(MatSort);
+  paginator = viewChild.required(MatPaginator);
 
   assets: Asset[] = [];
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
@@ -86,8 +86,8 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
           this.assets = assets;
 
           this.dataSource = new MatTableDataSource<Asset>(assets);
-          this.dataSource.sort = this.sort || null;
-          this.dataSource.paginator = this.paginator || null;
+          this.dataSource.sort = this.sort();
+          this.dataSource.paginator = this.paginator();
           this.cd.markForCheck();
         },
       });

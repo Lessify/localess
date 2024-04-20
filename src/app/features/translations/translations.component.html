@@ -242,12 +242,12 @@
                 <div class="d-flex flex-column">
                   <div class="p-2 align-items-start">
                     @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-                      <button mat-stroked-button matTooltip="Edit" (click)="openEditDialog(selectedTranslation)">
+                      <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(selectedTranslation)">
                         <mat-icon>edit</mat-icon>
                       </button>
                     }
                     @if ('TRANSLATION_DELETE' | canUserPerform | async) {
-                      <button mat-stroked-button matTooltip="Delete" (click)="openDeleteDialog(selectedTranslation)">
+                      <button mat-icon-button matTooltip="Delete" (click)="openDeleteDialog(selectedTranslation)">
                         <mat-icon>delete</mat-icon>
                       </button>
                     }

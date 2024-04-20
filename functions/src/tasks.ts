@@ -104,8 +104,9 @@ const onTaskCreate = onDocumentCreated(
         updateToFinished.status = TaskStatus.ERROR;
         if (errors === 'WRONG_METADATA') {
           updateToFinished.message = 'It is not a Asset Export file.';
-        } else if (Array.isArray(errors)) {
+        } else {
           updateToFinished.message = 'Asset data is invalid.';
+          updateToFinished.trace = JSON.stringify(errors.format());
         }
       }
     } else if (task.kind === TaskKind.CONTENT_EXPORT) {
@@ -120,8 +121,9 @@ const onTaskCreate = onDocumentCreated(
         updateToFinished.status = TaskStatus.ERROR;
         if (errors === 'WRONG_METADATA') {
           updateToFinished.message = 'It is not a Content Export file.';
-        } else if (Array.isArray(errors)) {
+        } else {
           updateToFinished.message = 'Content data is invalid.';
+          updateToFinished.trace = JSON.stringify(errors.format());
         }
       }
     } else if (task.kind === TaskKind.SCHEMA_EXPORT) {
@@ -136,8 +138,9 @@ const onTaskCreate = onDocumentCreated(
         updateToFinished.status = TaskStatus.ERROR;
         if (errors === 'WRONG_METADATA') {
           updateToFinished.message = 'It is not a Schema Export file.';
-        } else if (Array.isArray(errors)) {
+        } else {
           updateToFinished.message = 'Schema data is invalid.';
+          updateToFinished.trace = JSON.stringify(errors.format());
         }
       }
     } else if (task.kind === TaskKind.TRANSLATION_EXPORT) {
@@ -165,8 +168,9 @@ const onTaskCreate = onDocumentCreated(
         updateToFinished.status = TaskStatus.ERROR;
         if (errors === 'WRONG_METADATA') {
           updateToFinished.message = 'It is not a Translation Export file.';
-        } else if (Array.isArray(errors)) {
+        } else {
           updateToFinished.message = 'Translation data is invalid.';
+          updateToFinished.trace = JSON.stringify(errors.format());
         }
       }
     }

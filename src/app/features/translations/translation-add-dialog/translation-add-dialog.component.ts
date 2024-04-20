@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { TranslationValidator } from '@shared/validators/translation.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { TranslationAddDialogModel } from './translation-add-dialog.model';
+import { CommonValidator } from '@shared/validators/common.validator';
 
 @Component({
   selector: 'll-translation-add-dialog',
@@ -15,7 +18,7 @@ export class TranslationAddDialogComponent {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
   translationTypes: string[] = ['STRING', 'PLURAL', 'ARRAY'];
   form: FormGroup = this.fb.group({
-    id: this.fb.control('', TranslationValidator.ID),
+    id: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.data.reservedNames)]),
     type: this.fb.control('STRING', TranslationValidator.TYPE),
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
@@ -25,7 +28,8 @@ export class TranslationAddDialogComponent {
 
   constructor(
     private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService
+    readonly fe: FormErrorHandlerService,
+    @Inject(MAT_DIALOG_DATA) public data: TranslationAddDialogModel
   ) {
     this.form.valueChanges.subscribe(it => console.log(it));
   }

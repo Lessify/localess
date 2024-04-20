@@ -56,7 +56,7 @@
             <div> Duration : {{ element.updatedAt.seconds - element.createdAt.seconds | timeDuration }}</div>
           }
           @if (element.message; as message) {
-            <div>Message : {{ message }}</div>
+            <div [matTooltip]="element.trace">Message : {{ message }}</div>
           }
         </div>
       </mat-cell>

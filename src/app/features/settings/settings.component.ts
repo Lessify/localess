@@ -1,7 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, input, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatSort } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
 import { Space } from '@shared/models/space.model';
 import { activate } from '@angular/fire/remote-config';
 
@@ -18,9 +16,6 @@ interface TabItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent {
-  @ViewChild(MatSort, { static: false }) sort?: MatSort;
-  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
-
   // Input
   spaceId = input.required<string>();
 

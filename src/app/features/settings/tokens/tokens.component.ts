@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
@@ -21,8 +21,8 @@ import { SpaceStore } from '@shared/store/space.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TokensComponent {
-  @ViewChild(MatSort, { static: false }) sort?: MatSort;
-  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
+  sort = viewChild.required(MatSort);
+  paginator = viewChild.required(MatPaginator);
 
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
@@ -47,8 +47,8 @@ export class TokensComponent {
       .subscribe({
         next: tokens => {
           this.dataSource = new MatTableDataSource<Token>(tokens);
-          this.dataSource.sort = this.sort || null;
-          this.dataSource.paginator = this.paginator || null;
+          this.dataSource.sort = this.sort();
+          this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
           this.cd.markForCheck();
         },

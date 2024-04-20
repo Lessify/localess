@@ -38,6 +38,7 @@ export interface Task {
   locale?: string;
 
   message?: string;
+  trace?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;

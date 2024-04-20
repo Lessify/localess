@@ -2,26 +2,27 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
   input,
   OnInit,
   signal,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
 import { debounceTime, EMPTY, Observable, startWith } from 'rxjs';
 import { filter, map, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { FormControl } from '@angular/forms';
-import { MatAutocomplete, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { TranslationService } from '@shared/services/translation.service';
 import { SpaceService } from '@shared/services/space.service';
 import { Locale } from '@shared/models/locale.model';
 import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { Space } from '@shared/models/space.model';
 import { TranslationAddDialogComponent } from './translation-add-dialog/translation-add-dialog.component';
-import { TranslationAddDialogModel } from './translation-add-dialog/translation-add-dialog.model';
+import { TranslationAddDialogModel, TranslationAddDialogReturnModel } from './translation-add-dialog/translation-add-dialog.model';
 import { TranslationEditDialogModel } from './translation-edit-dialog/translation-edit-dialog.model';
 import { TranslationEditDialogComponent } from './translation-edit-dialog/translation-edit-dialog.component';
 import { ObjectUtils } from '@core/utils/object-utils.service';
@@ -46,9 +47,7 @@ import { TranslationHistoryService } from '@shared/services/translation-history.
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationsComponent implements OnInit {
-  @ViewChild('labelsInput') labelsInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('auto') matAutocomplete!: MatAutocomplete;
-
+  labelsInput = viewChild.required<ElementRef<HTMLInputElement>>('labelsInput');
   // Input
   spaceId = input.required<string>();
 
@@ -85,6 +84,9 @@ export class TranslationsComponent implements OnInit {
   isPublishLoading = signal(false);
   isLocaleUpdateLoading = signal(false);
   isTranslateLoading = signal(false);
+
+  translations = signal<Translation[]>([]);
+  translationIds = computed(() => this.translations().map(it => it.id));
 
   private destroyRef = inject(DestroyRef);
 
@@ -130,6 +132,7 @@ export class TranslationsComponent implements OnInit {
     );
     this.translations$ = this.translationService.findAll(this.spaceId()).pipe(
       tap(translations => {
+        this.translations.set(translations);
         if (translations.length > 0) {
           if (this.selectedTranslation) {
             const tr = translations.find(it => it.id === this.selectedTranslation?.id);
@@ -169,8 +172,11 @@ export class TranslationsComponent implements OnInit {
 
   openAddDialog(): void {
     this.dialog
-      .open<TranslationAddDialogComponent, void, TranslationAddDialogModel>(TranslationAddDialogComponent, {
+      .open<TranslationAddDialogComponent, TranslationAddDialogModel, TranslationAddDialogReturnModel>(TranslationAddDialogComponent, {
         width: '500px',
+        data: {
+          reservedNames: this.translationIds(),
+        },
       })
       .afterClosed()
       .pipe(
@@ -346,7 +352,7 @@ export class TranslationsComponent implements OnInit {
   // Labels
   selectLabel(event: MatAutocompleteSelectedEvent): void {
     this.selectedLabels = [...this.selectedLabels, event.option.viewValue];
-    this.labelsInput.nativeElement.value = '';
+    this.labelsInput().nativeElement.value = '';
     this.selectedTranslation = undefined;
     this.labelCtrl.setValue(null);
   }

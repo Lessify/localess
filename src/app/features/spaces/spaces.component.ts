@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
@@ -20,8 +20,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpacesComponent implements OnInit {
-  @ViewChild(MatSort, { static: false }) sort?: MatSort;
-  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
+  sort = viewChild.required(MatSort);
+  paginator = viewChild.required(MatPaginator);
 
   isLoading = true;
   dataSource: MatTableDataSource<Space> = new MatTableDataSource<Space>([]);
@@ -46,8 +46,8 @@ export class SpacesComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(response => {
         this.dataSource = new MatTableDataSource<Space>(response);
-        this.dataSource.sort = this.sort || null;
-        this.dataSource.paginator = this.paginator || null;
+        this.dataSource.sort = this.sort();
+        this.dataSource.paginator = this.paginator();
         this.isLoading = false;
         this.cd.markForCheck();
       });

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -44,8 +44,8 @@ import { PathItem, SpaceStore } from '@shared/store/space.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContentsComponent {
-  @ViewChild(MatSort, { static: false }) sort?: MatSort;
-  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
+  sort = viewChild.required(MatSort);
+  paginator = viewChild.required(MatPaginator);
 
   // Input
   spaceId = input.required<string>();
@@ -98,8 +98,8 @@ export class ContentsComponent {
           this.schemasMap = schemas.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schema>());
           this.contents = contents;
           this.dataSource = new MatTableDataSource<Content>(contents);
-          this.dataSource.sort = this.sort || null;
-          this.dataSource.paginator = this.paginator || null;
+          this.dataSource.sort = this.sort();
+          this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
           this.selection.clear();
           this.cd.markForCheck();

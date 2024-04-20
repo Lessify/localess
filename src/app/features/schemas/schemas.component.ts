@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,8 +26,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SchemasComponent implements OnInit {
-  @ViewChild(MatSort, { static: false }) sort?: MatSort;
-  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
+  sort = viewChild.required(MatSort);
+  paginator = viewChild.required(MatPaginator);
 
   // Inputs
   spaceId = input.required<string>();
@@ -68,8 +68,8 @@ export class SchemasComponent implements OnInit {
         next: schemas => {
           this.schemas = schemas;
           this.dataSource = new MatTableDataSource<Schema>(schemas);
-          this.dataSource.sort = this.sort || null;
-          this.dataSource.paginator = this.paginator || null;
+          this.dataSource.sort = this.sort();
+          this.dataSource.paginator = this.paginator();
           this.isLoading = false;
           this.cd.markForCheck();
         },

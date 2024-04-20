@@ -1,7 +1,7 @@
 import { TranslationType } from './translation.model';
 import { z } from 'zod';
 
-const ID_PATTERN = /^[a-zA-Z]+[a-zA-Z0-9-_.]*[a-zA-Z]+$/;
+const ID_PATTERN = /^[a-zA-Z]+[a-zA-Z0-9-_.]*[a-zA-Z0-9]+$/;
 
 export const translationSchema = z.object({
   id: z.string().regex(ID_PATTERN),
