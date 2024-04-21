@@ -6,7 +6,6 @@ export class TranslationValidator {
     Validators.required,
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.ID),
-    CommonValidator.reservedName(['..', '.', '__.*__']),
     Validators.minLength(2),
     Validators.maxLength(150),
   ];
