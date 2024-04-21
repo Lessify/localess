@@ -194,11 +194,11 @@ export class ContentHelperService {
         if (target[fieldName] instanceof Object) {
           target[fieldName] = this.clone(target[fieldName], generateNewID);
           if (Object.getOwnPropertyNames(target[fieldName]).some(it => it === 'kind')) {
-            if (isLinkContent(value) && (value.uri === undefined || value.uri === '')) {
+            if (isLinkContent(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
               delete target[fieldName];
-            } else if (isReferenceContent(value) && (value.uri === undefined || value.uri === '')) {
+            } else if (isReferenceContent(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
               delete target[fieldName];
-            } else if (isAssetContent(value) && (value.uri === undefined || value.uri === '')) {
+            } else if (isAssetContent(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
               delete target[fieldName];
             }
           }
