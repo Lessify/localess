@@ -36,6 +36,7 @@ const publish = onCall<PublishContentData>(async request => {
       const documentStorage: ContentDocumentStorage = {
         id: contentSnapshot.id,
         name: content.name,
+        kind: content.kind,
         locale: locale.id,
         slug: content.slug,
         fullSlug: content.fullSlug,
@@ -101,6 +102,7 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
         const documentStorage: ContentDocumentStorage = {
           id: event.data.after.id,
           name: content.name,
+          kind: content.kind,
           locale: locale.id,
           slug: content.slug,
           fullSlug: content.fullSlug,

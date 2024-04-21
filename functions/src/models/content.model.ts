@@ -49,6 +49,7 @@ export interface PublishContentData {
 export interface ContentDocumentStorage {
   id: string;
   name: string;
+  kind: ContentKind;
   slug: string;
   locale: string;
   parentSlug: string;
