@@ -185,10 +185,9 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
     },
   };
   const rootSchemas: string[] = [];
-  for (const item of schemasById.values()) {
+  for (const [key, item] of schemasById.entries()) {
     if (item.type === SchemaType.ROOT) {
-      const { name } = item;
-      const pascalName = name[0].toUpperCase() + name.slice(1);
+      const pascalName = key[0].toUpperCase() + key.slice(1);
       rootSchemas.push(pascalName);
     }
   }
@@ -203,8 +202,9 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       propertyName: 'schema',
     },
   };
-  for (const item of schemasById.values()) {
-    const [name, schema] = schemaToOpenApiSchemaDefinition(item, schemasById);
+
+  for (const [id, item] of schemasById.entries()) {
+    const [name, schema] = schemaToOpenApiSchemaDefinition(id, item);
     schemasDefinition[name] = schema;
   }
 
@@ -617,13 +617,12 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
 
 /**
  * Schema
+ * @param {string} id - result
  * @param {Schema} schema - result
- * @param {Map<string, Schema>} schemasById - zzz
  * @return {OpenApiSchemaDefinition} asfdasf
  */
-export function schemaToOpenApiSchemaDefinition(schema: Schema, schemasById: Map<string, Schema>): [string, OpenApiSchemaDefinition] {
-  const { name } = schema;
-  const pascalName = name[0].toUpperCase() + name.slice(1);
+export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [string, OpenApiSchemaDefinition] {
+  const pascalName = id[0].toUpperCase() + id.slice(1);
   if (schema.type === SchemaType.ENUM) {
     return [
       pascalName,
@@ -645,12 +644,12 @@ export function schemaToOpenApiSchemaDefinition(schema: Schema, schemasById: Map
       },
       schema: {
         type: 'string',
-        enum: [name],
+        enum: [id],
         description: 'Schema name',
       },
     };
     for (const item of schema.fields || []) {
-      const [name, schema] = fieldToOpenApiSchemaDefinition(item, schemasById);
+      const [name, schema] = fieldToOpenApiSchemaDefinition(item);
       schemasDefinition[name] = schema;
     }
     return [
@@ -673,10 +672,9 @@ export function schemaToOpenApiSchemaDefinition(schema: Schema, schemasById: Map
 /**
  * Convert from Internal to OpenAPI
  * @param {SchemaField} field
- * @param {Map<string, Schema>} schemasById
  * @return {OpenApiSchema} OpenApiSchema
  */
-export function fieldToOpenApiSchemaDefinition(field: SchemaField, schemasById: Map<string, Schema>): [string, OpenApiSchemaDefinition] {
+export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, OpenApiSchemaDefinition] {
   if (field.kind === SchemaFieldKind.TEXT || field.kind === SchemaFieldKind.TEXTAREA || field.kind === SchemaFieldKind.MARKDOWN) {
     return [
       field.name,
@@ -749,8 +747,7 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField, schemasById: 
         },
       ];
     } else {
-      const ref = schemasById.get(field.source);
-      const name = ref?.name || 'unknown';
+      const name = field.source || 'unknown';
       const pascalName = name[0].toUpperCase() + name.slice(1);
       return [
         field.name,
@@ -777,8 +774,7 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField, schemasById: 
         },
       ];
     } else {
-      const ref = schemasById.get(field.source);
-      const name = ref?.name || 'unknown';
+      const name = field.source;
       const pascalName = name[0].toUpperCase() + name.slice(1);
       return [
         field.name,
@@ -852,8 +848,7 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField, schemasById: 
         description: field.description,
         oneOf:
           field.schemas?.map(it => {
-            const ref = schemasById.get(it);
-            const name = ref?.name || 'unknown';
+            const name = it;
             const pascalName = name[0].toUpperCase() + name.slice(1);
             return {
               $ref: `#/components/schemas/${pascalName}`,
@@ -874,8 +869,7 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField, schemasById: 
         items: {
           oneOf:
             field.schemas?.map(it => {
-              const ref = schemasById.get(it);
-              const name = ref?.name || 'unknown';
+              const name = it;
               const pascalName = name[0].toUpperCase() + name.slice(1);
               return {
                 $ref: `#/components/schemas/${pascalName}`,

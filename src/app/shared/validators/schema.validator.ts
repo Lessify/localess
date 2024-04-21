@@ -2,10 +2,10 @@ import { ValidatorFn, Validators } from '@angular/forms';
 import { CommonPattern, CommonValidator } from './common.validator';
 
 export class SchemaValidator {
-  public static NAME: ValidatorFn[] = [
+  public static ID: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
-    //Validators.pattern(CommonPattern.JSON_NAME),
+    Validators.pattern(CommonPattern.JSON_NAME),
     Validators.minLength(3),
     Validators.maxLength(30),
   ];

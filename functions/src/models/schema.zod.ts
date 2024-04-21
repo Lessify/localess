@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { AssetFileType, SchemaFieldKind, SchemaType } from './schema.model';
 
+const ID_PATTERN = /^[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+$/;
+
 export const schemaTypeSchema = z.nativeEnum(SchemaType);
 
 export const schemaBaseSchema = z.object({
-  id: z.string(),
-  name: z.string(),
+  id: z.string().regex(ID_PATTERN),
   type: schemaTypeSchema,
   displayName: z.string().optional(),
 });
@@ -151,7 +152,7 @@ export const schemaComponentSchema = schemaBaseSchema.extend({
   type: z.union([z.literal(SchemaType.ROOT), z.literal(SchemaType.NODE)]),
   previewField: z.string().optional(),
   previewImage: z.string().optional(),
-  fields: z.array(schemaFieldSchema).optional(),
+  // fields: z.array(schemaFieldSchema).optional(),
 });
 
 export const schemaSchema = z.union([schemaComponentSchema, schemaEnumSchema]);

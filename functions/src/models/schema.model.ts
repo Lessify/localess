@@ -9,7 +9,6 @@ export enum SchemaType {
 export type Schema = SchemaComponent | SchemaEnum;
 
 export interface SchemaBase {
-  name: string;
   type: SchemaType;
   displayName?: string;
 

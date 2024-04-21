@@ -299,7 +299,7 @@
                       placement="left"
                       [showDelay]="600"
                       theme="light">
-                      {{ sch.displayName || sch.name }}
+                      {{ sch.displayName || sch.id }}
                       <ng-template #imagePreview>
                         @if (sch.previewImage; as previewImage) {
                           <img
@@ -321,9 +321,9 @@
               <mat-nav-list class="ll-mat-nav-list-gap">
                 @if (data[field.name]; as item) {
                   <mat-list-item (click)="navigationTo(item._id, field.name, item.schema)">
-                    @if (schemaCompNodeByName().get(item.schema); as sch) {
+                    @if (schemaCompNodeById().get(item.schema); as sch) {
                       <span matListItemTitle>
-                        {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
+                        {{ sch.displayName }} <span class="text-gray-500">#{{ sch.id }}</span>
                       </span>
                       @if (sch.previewField) {
                         <span matListItemLine>
@@ -366,7 +366,7 @@
                       placement="left"
                       [showDelay]="600"
                       theme="light">
-                      {{ sch.displayName || sch.name }}
+                      {{ sch.displayName || sch.id }}
                       <ng-template #imagePreview>
                         @if (sch.previewImage; as previewImage) {
                           <img
@@ -389,9 +389,9 @@
                 @for (item of data[field.name]; track item; let idx = $index) {
                   <mat-list-item cdkDrag (click)="navigationTo(item._id, field.name, item.schema)">
                     <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
-                    @if (schemaCompNodeByName().get(item.schema); as sch) {
+                    @if (schemaCompNodeById().get(item.schema); as sch) {
                       <span matListItemTitle>
-                        {{ sch.displayName }} <span class="text-gray-500">#{{ sch.name }}</span>
+                        {{ sch.displayName }} <span class="text-gray-500">#{{ sch.id }}</span>
                       </span>
                       @if (sch.previewField) {
                         <span matListItemLine>

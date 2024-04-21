@@ -65,7 +65,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   rootSchema?: SchemaComponent;
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
-  schemaMapByName = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.name, it])));
   schemaCompNodeList = computed(() =>
     this.schemas()
       .filter(it => it.type === SchemaType.NODE)
@@ -78,15 +77,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
           .filter(it => it.type === SchemaType.NODE)
           .map(it => it as SchemaComponent)
           .map(it => [it.id, it])
-      )
-  );
-  schemaCompNodeByName = computed(
-    () =>
-      new Map<string, SchemaComponent>(
-        this.schemas()
-          .filter(it => it.type === SchemaType.NODE)
-          .map(it => it as SchemaComponent)
-          .map(it => [it.name, it])
       )
   );
   schemaEnumMapById = computed(
@@ -119,7 +109,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         this.rootSchema = this.schemas()
           .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
           .map(it => it as SchemaComponent)
-          .find(it => it.name == this.data.schema);
+          .find(it => it.id == this.data.schema);
         this.schemaFieldsMap = new Map<string, SchemaField>(this.rootSchema?.fields?.map(it => [it.name, it]));
       } else {
         // Update only when content is different
@@ -128,7 +118,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
           this.rootSchema = this.schemas()
             .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
             .map(it => it as SchemaComponent)
-            .find(it => it.name == this.data.schema);
+            .find(it => it.id == this.data.schema);
           this.schemaFieldsMap = new Map<string, SchemaField>(this.rootSchema?.fields?.map(it => [it.name, it]));
           this.clearForm();
           this.onChanged();
@@ -279,12 +269,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     if (sch) {
       this.data[field.name] = {
         _id: v4(),
-        schema: schema.name,
+        schema: schema.id,
       };
     } else {
       this.data[field.name] = {
         _id: v4(),
-        schema: schema.name,
+        schema: schema.id,
       };
     }
   }
@@ -298,13 +288,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     if (sch) {
       sch.push({
         _id: v4(),
-        schema: schema.name,
+        schema: schema.id,
       });
     } else {
       this.data[field.name] = [
         {
           _id: v4(),
-          schema: schema.name,
+          schema: schema.id,
         },
       ];
     }

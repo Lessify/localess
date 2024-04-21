@@ -14,7 +14,7 @@ import {
   findSpaceById,
   findTokenById,
   identifySpaceLocale,
-  validateToken
+  validateToken,
 } from './services';
 
 // API V1

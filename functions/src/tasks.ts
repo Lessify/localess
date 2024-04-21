@@ -553,7 +553,6 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
       if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
         exportSchemas.push({
           id: doc.id,
-          name: schema.name,
           type: schema.type,
           displayName: schema.displayName,
           previewField: schema.previewField,
@@ -563,7 +562,6 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
       } else if (schema.type === SchemaType.ENUM) {
         exportSchemas.push({
           id: doc.id,
-          name: schema.name,
           type: schema.type,
           displayName: schema.displayName,
           values: schema.values,
@@ -621,7 +619,6 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
     if (schemaSnapshot.exists) {
       if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
         const update: UpdateData<SchemaComponent> = {
-          name: schema.name,
           type: schema.type,
           displayName: schema.displayName || FieldValue.delete(),
           previewField: schema.previewField || FieldValue.delete(),
@@ -632,7 +629,6 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
         batch.update(schemaRef, update);
       } else if (schema.type === SchemaType.ENUM) {
         const update: UpdateData<SchemaEnum> = {
-          name: schema.name,
           type: schema.type,
           displayName: schema.displayName || FieldValue.delete(),
           values: schema.values || FieldValue.delete(),
@@ -643,7 +639,6 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
     } else {
       if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
         const add: WithFieldValue<SchemaComponent> = {
-          name: schema.name,
           type: schema.type,
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
@@ -655,7 +650,6 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
         batch.set(schemaRef, add);
       } else if (schema.type === SchemaType.ENUM) {
         const add: WithFieldValue<SchemaEnum> = {
-          name: schema.name,
           type: schema.type,
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),

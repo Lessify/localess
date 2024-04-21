@@ -58,7 +58,7 @@ export class ContentsComponent {
   selection = new SelectionModel<Content>(true, []);
 
   schemas: Schema[] = [];
-  schemasMap: Map<string, Schema> = new Map<string, Schema>();
+  schemasMapById: Map<string, Schema> = new Map<string, Schema>();
   contents: Content[] = [];
 
   get parentPath(): string {
@@ -95,7 +95,7 @@ export class ContentsComponent {
       .subscribe({
         next: ([schemas, contents]) => {
           this.schemas = schemas;
-          this.schemasMap = schemas.reduce((acc, value) => acc.set(value.id, value), new Map<string, Schema>());
+          this.schemasMapById = new Map(schemas.map(it => [it.id, it]));
           this.contents = contents;
           this.dataSource = new MatTableDataSource<Content>(contents);
           this.dataSource.sort = this.sort();
@@ -266,7 +266,7 @@ export class ContentsComponent {
     this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {
       element.publishedAt;
-      if (this.schemasMap.has(element.schema)) {
+      if (this.schemasMapById.has(element.schema)) {
         this.router.navigate(['features', 'spaces', this.spaceId(), 'contents', element.id]);
       } else {
         this.notificationService.warn(`Content Schema can not be found.`);

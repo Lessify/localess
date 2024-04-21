@@ -145,7 +145,7 @@
             <mat-option value="self">Self - <i>values will be defined here</i></mat-option>
             @for (schema of enumSchemas(); track schema.id) {
               <mat-option [value]="schema.id">
-                {{ schema.name }}
+                {{ schema.id }}
                 @if (schema.displayName) {
                   <span> ({{ schema.displayName }})</span>
                 }
@@ -207,7 +207,7 @@
           <mat-select formControlName="schemas" multiple>
             @for (schema of nodeSchemas(); track schema.id) {
               <mat-option [value]="schema.id">
-                {{ schema.name }}
+                {{ schema.id }}
                 @if (schema.displayName; as displayName) {
                   <span> ({{ displayName }})</span>
                 }

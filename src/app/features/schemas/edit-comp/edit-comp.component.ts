@@ -34,10 +34,8 @@ export class EditCompComponent implements OnInit {
   schemaId = input.required<string>();
 
   entity?: Schema;
-  reservedNames: string[] = [];
   schemas: Schema[] = [];
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
-  nameReadonly = true;
   fieldNameReadonly = true;
 
   selectedFieldIdx?: number;
@@ -53,7 +51,6 @@ export class EditCompComponent implements OnInit {
   settingsStore = inject(SettingsStore);
 
   form: FormRecord = this.fb.record({
-    name: this.fb.control('', SchemaValidator.NAME),
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     previewField: this.fb.control<string | undefined>(undefined, SchemaValidator.PREVIEW_FIELD),
     previewImage: this.fb.control<string | undefined>(undefined),
@@ -80,15 +77,9 @@ export class EditCompComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([schemas, schema]) => {
-          this.reservedNames = schemas.map(it => it.name);
           this.schemas = schemas;
           this.entity = schema;
 
-          // Form
-          this.form.controls['name'].setValidators([
-            ...SchemaValidator.NAME,
-            CommonValidator.reservedName(this.reservedNames, this.entity?.name),
-          ]);
           this.form.patchValue(schema);
 
           if (schema.type === SchemaType.NODE || schema.type === SchemaType.ROOT) {

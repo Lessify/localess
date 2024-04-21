@@ -22,12 +22,12 @@ export class ContentHelperService {
     //console.group('validateContent');
     const isDefaultLocale = DEFAULT_LOCALE.id === locale;
     const errors: ContentError[] = [];
-    const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
+    const schemasById = new Map<string, Schema>(schemas.map(it => [it.id, it]));
     const contentIteration = [data];
     // Iterative traversing content and validating fields.
     let selectedContent = contentIteration.pop();
     while (selectedContent) {
-      const schema = schemasByName.get(selectedContent.schema);
+      const schema = schemasById.get(selectedContent.schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         const schemaFieldsMap = new Map<string, SchemaField>(schema.fields?.map(it => [it.name, it]));
         const form = this.generateSchemaForm(schema, isDefaultLocale);
@@ -68,7 +68,7 @@ export class ContentHelperService {
                     errors.push({
                       contentId: selectedContent._id,
                       locale: locale,
-                      schema: schema.displayName || schema.name,
+                      schema: schema.displayName || schema.id,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
                       errors: control.controls['uri'].errors,
@@ -79,7 +79,7 @@ export class ContentHelperService {
                     errors.push({
                       contentId: selectedContent._id,
                       locale: locale,
-                      schema: schema.displayName || schema.name,
+                      schema: schema.displayName || schema.id,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
                       errors: control.controls['uri'].errors,
@@ -90,7 +90,7 @@ export class ContentHelperService {
                     errors.push({
                       contentId: selectedContent._id,
                       locale: locale,
-                      schema: schema.displayName || schema.name,
+                      schema: schema.displayName || schema.id,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
                       errors: control.controls['uri'].errors,
@@ -105,7 +105,7 @@ export class ContentHelperService {
                 errors.push({
                   contentId: selectedContent._id,
                   locale: locale,
-                  schema: schema.displayName || schema.name,
+                  schema: schema.displayName || schema.id,
                   fieldName: controlName,
                   fieldDisplayName: component?.displayName,
                   errors: control.errors,
@@ -119,7 +119,7 @@ export class ContentHelperService {
                     errors.push({
                       contentId: selectedContent._id,
                       locale: locale,
-                      schema: schema.displayName || schema.name,
+                      schema: schema.displayName || schema.id,
                       fieldName: controlName,
                       fieldDisplayName: component?.displayName,
                       errors: { required: true },

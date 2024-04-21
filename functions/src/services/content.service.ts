@@ -137,12 +137,12 @@ export function contentCachePath(spaceId: string, contentId: string, version: st
  * @param {string} locale locale
  * @return {ContentData} content
  */
-export function extractContent(content: ContentData, schemas: Schema[], locale: string): ContentData {
+export function extractContent(content: ContentData, schemas: Map<string, Schema>, locale: string): ContentData {
   const extractedContentData: ContentData = {
     _id: content._id,
     schema: content.schema,
   };
-  const schema = schemas.find(it => it.name == content.schema);
+  const schema = schemas.get(content.schema);
   if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
     for (const field of schema?.fields || []) {
       if (field.kind === SchemaFieldKind.SCHEMA) {

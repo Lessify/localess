@@ -3,7 +3,6 @@ import { FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaService } from '@shared/services/schema.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
@@ -25,9 +24,7 @@ export class EditEnumComponent implements OnInit {
   schemaId = input.required<string>();
 
   entity?: Schema;
-  reservedNames: string[] = [];
   schemas: Schema[] = [];
-  nameReadonly = true;
   //Loadings
   isLoading = true;
   isSaveLoading = false;
@@ -36,7 +33,6 @@ export class EditEnumComponent implements OnInit {
   settingsStore = inject(SettingsStore);
 
   form: FormRecord = this.fb.record({
-    name: this.fb.control('', SchemaValidator.NAME),
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     values: this.fb.array<SchemaEnumValue>([]),
   });
@@ -61,15 +57,9 @@ export class EditEnumComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([schemas, schema]) => {
-          this.reservedNames = schemas.map(it => it.name);
           this.schemas = schemas;
           this.entity = schema;
 
-          // Form
-          this.form.controls['name'].setValidators([
-            ...SchemaValidator.NAME,
-            CommonValidator.reservedName(this.reservedNames, this.entity?.name),
-          ]);
           this.form.patchValue(schema);
           if (schema.type === SchemaType.ENUM) {
             this.values.clear();

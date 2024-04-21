@@ -31,7 +31,7 @@ const publish = onCall<PublishContentData>(async request => {
   if (spaceSnapshot.exists && contentSnapshot.exists) {
     const space: Space = spaceSnapshot.data() as Space;
     const content: ContentDocument = contentSnapshot.data() as ContentDocument;
-    const schemas = schemasSnapshot.docs.filter(it => it.exists).map(it => it.data() as Schema);
+    const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
     for (const locale of space.locales) {
       const documentStorage: ContentDocumentStorage = {
         id: contentSnapshot.id,
@@ -96,7 +96,7 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
       const schemasSnapshot = await findSchemas(spaceId).get();
       const space: Space = spaceSnapshot.data() as Space;
       const content: ContentDocument = contentAfter;
-      const schemas = schemasSnapshot.docs.filter(it => it.exists).map(it => it.data() as Schema);
+      const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
       for (const locale of space.locales) {
         const documentStorage: ContentDocumentStorage = {
           id: event.data.after.id,

@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import {
-  addDoc,
   collection,
   collectionCount,
   collectionData,
@@ -8,12 +7,11 @@ import {
   deleteField,
   doc,
   docData,
-  DocumentReference,
   Firestore,
-  orderBy,
   query,
   QueryConstraint,
   serverTimestamp,
+  setDoc,
   UpdateData,
   updateDoc,
   where,
@@ -39,7 +37,7 @@ export class SchemaService {
   constructor(private readonly firestore: Firestore) {}
 
   findAll(spaceId: string, type?: SchemaType): Observable<Schema[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')];
+    const queryConstrains: QueryConstraint[] = [];
 
     if (type) {
       queryConstrains.push(where('type', '==', type));
@@ -62,15 +60,14 @@ export class SchemaService {
     );
   }
 
-  create(spaceId: string, entity: SchemaCreate): Observable<DocumentReference> {
+  create(spaceId: string, entity: SchemaCreate): Observable<void> {
     const addEntity: WithFieldValue<SchemaCreateFS> = {
-      name: entity.name,
       displayName: entity.displayName,
       type: entity.type,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/schemas`), addEntity)).pipe(
+    return from(setDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${entity.id}`), addEntity)).pipe(
       traceUntilFirst('Firestore:Schemas:create')
     );
   }
@@ -78,7 +75,6 @@ export class SchemaService {
   updateComponent(spaceId: string, id: string, entity: SchemaComponentUpdate): Observable<void> {
     ObjectUtils.clean(entity);
     const update: UpdateData<SchemaComponent> = {
-      name: entity.name,
       displayName: entity.displayName || deleteField(),
       previewField: entity.previewField || deleteField(),
       previewImage: entity.previewImage || deleteField(),
@@ -93,7 +89,6 @@ export class SchemaService {
   updateEnum(spaceId: string, id: string, entity: SchemaEnumUpdate): Observable<void> {
     ObjectUtils.clean(entity);
     const update: UpdateData<SchemaEnum> = {
-      name: entity.name,
       displayName: entity.displayName || deleteField(),
       values: entity.values || deleteField(),
       updatedAt: serverTimestamp(),

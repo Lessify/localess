@@ -59,7 +59,7 @@ export class EditDocumentComponent implements OnInit {
   selectedDocumentData: ContentData = { _id: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
   rootSchema?: Schema;
-  schemaMapByName?: Map<string, Schema>;
+  schemaMapById: Map<string, Schema> = new Map<string, Schema>();
   schemaPath: SchemaPathItem[] = [];
   schemas: Schema[] = [];
   contentErrors: ContentError[] = [];
@@ -119,7 +119,7 @@ export class EditDocumentComponent implements OnInit {
             this.rootSchema = schemas.find(it => it.id === document.schema);
             this.documentData = document.data || {
               _id: v4(),
-              schema: this.rootSchema?.name || '',
+              schema: this.rootSchema?.id || '',
             };
           }
 
@@ -141,7 +141,7 @@ export class EditDocumentComponent implements OnInit {
             this.changeEnvironment(space.environments[0]);
           }
           this.schemas = schemas;
-          this.schemaMapByName = new Map<string, Schema>(this.schemas?.map(it => [it.name, it]));
+          this.schemaMapById = new Map<string, Schema>(this.schemas?.map(it => [it.id, it]));
           this.generateDocumentIdsTree();
           this.isLoading.set(false);
           this.cd.markForCheck();
@@ -306,7 +306,7 @@ export class EditDocumentComponent implements OnInit {
     let node = nodeIterator.shift();
     while (node) {
       this.documentIdsTree.set(node.data._id, node.path);
-      const schema = this.schemaMapByName?.get(node.data.schema);
+      const schema = this.schemaMapById.get(node.data.schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         for (const field of schema.fields || []) {
           if (field.kind === SchemaFieldKind.SCHEMA) {
@@ -343,7 +343,7 @@ export class EditDocumentComponent implements OnInit {
       // check Root Schema
       if (this.documentData._id === selectedContentId) {
         console.log('root', selectedContentId);
-        const schema = this.schemaMapByName?.get(this.documentData.schema);
+        const schema = this.schemaMapById.get(this.documentData.schema);
         if (schema) {
           this.navigateToSchemaBackwards({
             contentId: this.documentData._id,
@@ -362,7 +362,7 @@ export class EditDocumentComponent implements OnInit {
       // Navigate to child
       while (selectedContentId) {
         console.log('child', selectedContentId);
-        const schema = this.schemaMapByName?.get(this.selectedDocumentData.schema);
+        const schema = this.schemaMapById.get(this.selectedDocumentData.schema);
         if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
           schemaFieldsLoop: for (const field of schema.fields || []) {
             if (field.kind === SchemaFieldKind.SCHEMA) {

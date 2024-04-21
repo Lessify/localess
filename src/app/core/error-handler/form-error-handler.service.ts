@@ -27,7 +27,7 @@ export class FormErrorHandlerService {
         // ^$
         switch (errors['pattern'].requiredPattern) {
           case `^${CommonPattern.JSON_NAME}$`:
-            return `Should start with a-z, and continue with a-z, A-Z, 0-9, and underscore (_).`;
+            return `Should contain with a-z, A-Z, 0-9, and underscore (_). Should start with a-z and end with a-z or A-Z or 0-9.`;
           case `^${CommonPattern.URL_SLUG}$`:
             return `Should contain only a-z, A-Z, 0-9, - and underscore (_).`;
           case `^${CommonPattern.ID}$`:

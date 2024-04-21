@@ -122,8 +122,8 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @if (element.kind === 'DOCUMENT') {
-          @if (schemasMap.get(element.schema); as schema) {
-            {{ schema.displayName || schema.name }}
+          @if (schemasMapById.get(element.schema); as schema) {
+            {{ schema.displayName || schema.id }}
           } @else {
             unknown...
           }

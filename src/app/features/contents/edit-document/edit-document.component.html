@@ -159,8 +159,8 @@
               <ll-breadcrumb>
                 @for (schemaPathItem of schemaPath; track schemaPathItem.contentId; let isFirst = $first) {
                   <ll-breadcrumb-item (click)="navigateToSchemaBackwards(schemaPathItem)" [home]="isFirst">
-                    @if (schemaMapByName?.get(schemaPathItem.schemaName); as sch) {
-                      {{ sch.displayName || sch.name }}
+                    @if (schemaMapById.get(schemaPathItem.schemaName); as sch) {
+                      {{ sch.displayName || sch.id }}
                     }
                   </ll-breadcrumb-item>
                 }

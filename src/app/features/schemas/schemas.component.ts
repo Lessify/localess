@@ -81,7 +81,7 @@ export class SchemasComponent implements OnInit {
       .open<AddDialogComponent, AddDialogModel, SchemaCreate>(AddDialogComponent, {
         width: '500px',
         data: {
-          reservedNames: this.schemas.map(it => it.name),
+          reservedNames: this.schemas.map(it => it.id),
         },
       })
       .afterClosed()
@@ -114,7 +114,7 @@ export class SchemasComponent implements OnInit {
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
           title: 'Delete Schema',
-          content: `Are you sure about deleting Schema with name '${element.name}'.`,
+          content: `Are you sure about deleting Schema with name '${element.id}'.`,
         },
       })
       .afterClosed()
@@ -124,11 +124,11 @@ export class SchemasComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success(`Schema '${element.name}' has been deleted.`);
+          this.notificationService.success(`Schema '${element.id}' has been deleted.`);
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error(`Schema '${element.name}' can not be deleted.`);
+          this.notificationService.error(`Schema '${element.id}' can not be deleted.`);
         },
       });
   }

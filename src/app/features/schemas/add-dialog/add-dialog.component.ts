@@ -17,7 +17,7 @@ export class AddDialogComponent {
   types: string[] = Object.keys(SchemaType);
 
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', [...SchemaValidator.NAME, CommonValidator.reservedName(this.data.reservedNames)]),
+    id: this.fb.control('', [...SchemaValidator.ID, CommonValidator.reservedName(this.data.reservedNames)]),
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     type: this.fb.control(SchemaType.NODE, SchemaValidator.TYPE),
   });

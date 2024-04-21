@@ -10,7 +10,6 @@ export type Schema = SchemaComponent | SchemaEnum;
 
 export interface SchemaBase {
   id: string;
-  name: string;
   type: SchemaType;
   displayName?: string;
 
@@ -212,7 +211,7 @@ export enum AssetFileType {
 }
 
 // Service
-export interface SchemaCreate extends Omit<Schema, 'id' | 'createdAt' | 'updatedAt'> {}
+export interface SchemaCreate extends Omit<Schema, 'createdAt' | 'updatedAt'> {}
 
 export interface SchemaComponentUpdate extends Omit<SchemaComponent, 'id' | 'type' | 'createdAt' | 'updatedAt'> {}
 
