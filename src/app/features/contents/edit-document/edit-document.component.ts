@@ -297,7 +297,7 @@ export class EditDocumentComponent implements OnInit {
 
   changeEnvironment(env: SpaceEnvironment): void {
     this.selectedEnvironment = env;
-    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url);
+    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document?.fullSlug || '');
   }
 
   generateDocumentIdsTree() {
