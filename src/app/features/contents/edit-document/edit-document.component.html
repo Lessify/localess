@@ -130,6 +130,9 @@
                 <mat-card-title>{{ selectedEnvironment?.name }}</mat-card-title>
                 <mat-card-subtitle>{{ selectedEnvironment?.url }}</mat-card-subtitle>
                 <span class="spacer"></span>
+                <button mat-icon-button matTooltip="Reload" (click)="changeEnvironment(selectedEnvironment)">
+                  <mat-icon>refresh</mat-icon>
+                </button>
                 <button mat-icon-button [matMenuTriggerFor]="envMenu">
                   <mat-icon>arrow_drop_down</mat-icon>
                 </button>
@@ -143,7 +146,7 @@
               </mat-card-header>
               <mat-divider />
               <mat-card-content>
-                <iframe id="preview" [src]="iframeUrl"></iframe>
+                <iframe id="preview" #preview [src]="iframeUrl"></iframe>
               </mat-card-content>
             </mat-card>
           } @else {
