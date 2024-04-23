@@ -34,8 +34,7 @@
               "src/favicon-16x16.png",
               "src/favicon-32x32.png",
               "src/site.webmanifest",
-              "src/assets",
-              "src/scripts"
+              "src/assets"
             ],
             "styles": [
               "src/styles.scss",
