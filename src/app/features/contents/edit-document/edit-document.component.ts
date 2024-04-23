@@ -3,11 +3,13 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  ElementRef,
   HostListener,
   inject,
   input,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
@@ -16,7 +18,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { SchemaService } from '@shared/services/schema.service';
 import { ContentService } from '@shared/services/content.service';
-import { ContentData, ContentDocument, ContentError, ContentKind, EditorEvent } from '@shared/models/content.model';
+import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
 import { combineLatest, Observable } from 'rxjs';
 import { SpaceService } from '@shared/services/space.service';
@@ -25,7 +27,7 @@ import { NotificationService } from '@shared/services/notification.service';
 import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { v4 } from 'uuid';
 import { ContentHelperService } from '@shared/services/content-helper.service';
-import { SchemaPathItem } from './edit-document.model';
+import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { TokenService } from '@shared/services/token.service';
@@ -45,6 +47,8 @@ export class EditDocumentComponent implements OnInit {
   // Input
   spaceId = input.required<string>();
   contentId = input.required<string>();
+
+  preview = viewChild<ElementRef<HTMLIFrameElement>>('preview');
 
   showHistory = false;
 
@@ -247,6 +251,7 @@ export class EditDocumentComponent implements OnInit {
   }
 
   onSchemaChange(event: SchemaSelectChange): void {
+    console.log('onSchemaChange', event);
     this.navigateToSchemaForwards({
       contentId: event.contentId,
       schemaName: event.schemaName,
@@ -332,7 +337,7 @@ export class EditDocumentComponent implements OnInit {
   }
 
   @HostListener('window:message', ['$event'])
-  contentIdLink(event: MessageEvent<EditorEvent>): void {
+  contentIdLink(event: MessageEvent<EventToEditor>): void {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       console.log('MessageEvent');
       console.log(event);
@@ -397,6 +402,19 @@ export class EditDocumentComponent implements OnInit {
         }
       }
       console.log(`id ${selectedContentId} not-found`);
+    }
+  }
+
+  onFormChange(event: string) {
+    console.log('onFormChange', event);
+    this.sendEventToApp({ type: 'input', data: this.documentData });
+  }
+
+  sendEventToApp(event: EventToApp) {
+    const contentWindow = this.preview()?.nativeElement.contentWindow;
+    if (contentWindow && this.selectedEnvironment) {
+      const url = new URL(this.selectedEnvironment.url);
+      contentWindow.postMessage(event, url.origin);
     }
   }
 }

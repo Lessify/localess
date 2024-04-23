@@ -8,6 +8,11 @@
   }
 
   if (isInIframe()) {
+    interface EventToEditor {
+      owner: string;
+      id: string;
+    }
+
     document.querySelectorAll<HTMLElement>('[data-ll-id]').forEach(element => {
       element.style.outline = '#003DFF dashed 1px';
       element.style.position = 'relative';
@@ -19,25 +24,45 @@
           sendEditorData({
             owner: 'LOCALESS',
             id: id,
-          });
+          } satisfies EventToEditor);
         }
       });
     });
 
-    type EventType = 'input' | 'change';
-    type EventCallback = (event: Event) => void;
-    type Event = {type: EventType};
+    type EventType = 'input' | 'save' | 'publish';
+    type EventCallback = (event: EventToApp) => void;
+    type EventToApp = { type: 'input'; data: any } | { type: 'save' } | { type: 'publish' };
 
     class Sync {
       version = 'v1';
       events: Record<EventType, EventCallback[]> = {
         input: [],
-        change: [],
+        save: [],
+        publish: [],
       };
 
-      constructor() {}
+      constructor() {
+        // Receive message from
+        window.addEventListener('message', event => {
+          if (event.origin === location.ancestorOrigins.item(0)) {
+            console.log('event:', event);
+            const data = event.data as EventToApp;
+            switch (data.type) {
+              case 'input':
+                this.emit(data);
+                break;
+              case 'save':
+                this.emit(data);
+                break;
+              case 'publish':
+                this.emit(data);
+                break;
+            }
+          }
+        });
+      }
 
-      emit(event: Event) {
+      emit(event: EventToApp) {
         const cbList = this.events[event.type];
         for (const cb of cbList) {
           cb.apply(this, [event]);

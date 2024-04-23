@@ -4,7 +4,7 @@
     "module": "commonjs",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "outDir": "./dist/localess/scripts",
+    "outDir": "./src/scripts",
     "sourceMap": false,
     "strict": true,
     "target": "ES2020",

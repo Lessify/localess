@@ -4,13 +4,12 @@ import {
   Component,
   computed,
   DestroyRef,
-  EventEmitter,
   inject,
   input,
   Input,
   OnChanges,
   OnInit,
-  Output,
+  output,
   SimpleChanges,
 } from '@angular/core';
 import { FormArray, FormBuilder, FormRecord } from '@angular/forms';
@@ -61,7 +60,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   @Input() data: ContentData = { _id: '', schema: '' };
   //data = input.required<ContentData>();
   schemas = input.required<Schema[]>();
-  @Output() schemaChange = new EventEmitter<SchemaSelectChange>();
+  // Outputs
+  onSchemaChange = output<SchemaSelectChange>();
+  onFormChange = output<string>();
 
   rootSchema?: SchemaComponent;
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
@@ -162,6 +163,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         )
         .subscribe({
           next: formValue => {
+            this.onFormChange.emit(JSON.stringify(formValue));
             //console.group('form');
             //console.log(Object.getOwnPropertyNames(formValue));
             //console.log('formValue', ObjectUtils.clone(formValue));
@@ -322,7 +324,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   navigationTo(contentId: string, fieldName: string, schemaName: string): void {
-    this.schemaChange.emit({ contentId, fieldName, schemaName: schemaName });
+    this.onSchemaChange.emit({ contentId, fieldName, schemaName: schemaName });
   }
 
   onAssetsChange() {

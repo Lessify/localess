@@ -102,12 +102,6 @@ export interface ContentFolderCreateFS extends ContentCreateFS {
   kind: ContentKind.FOLDER;
 }
 
-// Events
-export interface EditorEvent {
-  owner: string;
-  id: string;
-}
-
 // Special Types
 
 export interface AssetContent {

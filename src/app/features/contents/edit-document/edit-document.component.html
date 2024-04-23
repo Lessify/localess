@@ -146,7 +146,7 @@
               </mat-card-header>
               <mat-divider />
               <mat-card-content>
-                <iframe id="preview" #preview [src]="iframeUrl"></iframe>
+                <iframe id="previewId" #preview [src]="iframeUrl"></iframe>
               </mat-card-content>
             </mat-card>
           } @else {
@@ -175,7 +175,8 @@
                 [locale]="selectedLocale.id"
                 [documents]="documents"
                 [space]="selectedSpace"
-                (schemaChange)="onSchemaChange($event)" />
+                (onSchemaChange)="onSchemaChange($event)"
+                (onFormChange)="onFormChange($event)" />
             </div>
           }
         </mat-drawer-content>
