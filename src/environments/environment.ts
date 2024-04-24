@@ -1,7 +1,6 @@
 // This file can be replaced during build by using the `fileReplacements` array.
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
-import packageInfo from '../../package.json';
 
 export const environment = {
   appName: 'Localess [Dev]',
@@ -22,7 +21,7 @@ export const environment = {
   test: true,
   debug: true,
   useEmulators: true,
-  version: packageInfo.version,
+  version: '2.0.0',
 };
 
 /*

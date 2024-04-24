@@ -1,14 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  inject,
-  input,
-  OnDestroy,
-  OnInit,
-  Output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldAssets, SchemaFieldKind } from '@shared/models/schema.model';
@@ -27,13 +17,14 @@ import { SettingsStore } from '@shared/store/settings.store';
   styleUrls: ['./assets-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AssetsSelectComponent implements OnInit, OnDestroy {
-  // Input
+export class AssetsSelectComponent implements OnInit {
+  // Inputs
   form = input.required<FormArray>();
   component = input.required<SchemaFieldAssets>();
   space = input.required<Space>();
 
-  @Output() assetsChange = new EventEmitter<string[]>();
+  // Outputs
+  onAssetsChange = output<string[]>();
 
   assets: AssetFile[] = [];
   // Subscriptions
@@ -91,7 +82,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
             this.assets.push(...selectedAssets);
             this.form().clear();
             this.assets.forEach(it => this.form().push(this.assetToForm(it)));
-            this.assetsChange.next(this.assets.map(it => it.id));
+            this.onAssetsChange.emit(this.assets.map(it => it.id));
             //this.form?.root.updateValueAndValidity()
             //this.cd.markForCheck();
           }
@@ -106,15 +97,10 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    this.assetsChange.complete();
-    //console.log("AssetsSelectComponent:ngOnDestroy")
-  }
-
   deleteAsset(idx: number) {
     this.assets.splice(idx, 1);
     this.form().removeAt(idx);
-    this.assetsChange.next(this.assets.map(it => it.id));
+    this.onAssetsChange.emit(this.assets.map(it => it.id));
     //this.form?.root.updateValueAndValidity()
   }
 
@@ -125,7 +111,7 @@ export class AssetsSelectComponent implements OnInit, OnDestroy {
       this.form().removeAt(event.previousIndex);
       this.form().insert(event.currentIndex, tmp);
       moveItemInArray(this.assets, event.previousIndex, event.currentIndex);
-      this.assetsChange.next(this.assets.map(it => it.id));
+      this.onAssetsChange.emit(this.assets.map(it => it.id));
     }
   }
 }

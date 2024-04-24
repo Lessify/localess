@@ -274,7 +274,7 @@
         }
         <!--ASSETS-->
         @case ('ASSETS') {
-          <ll-assets-select [component]="field" [form]="form.controls[field.name]" [space]="space" (assetsChange)="onAssetsChange()" />
+          <ll-assets-select [component]="field" [form]="form.controls[field.name]" [space]="space" (onAssetsChange)="onAssetsChange()" />
         }
         <!--SCHEMA-->
         @case ('SCHEMA') {

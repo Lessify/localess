@@ -12,5 +12,5 @@
     "resolveJsonModule": true
   },
   "compileOnSave": true,
-  "include": ["scripts/v1.ts"]
+  "include": ["scripts/sync-v1.ts"]
 }
