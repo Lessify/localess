@@ -163,7 +163,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         )
         .subscribe({
           next: formValue => {
-            this.onFormChange.emit(JSON.stringify(formValue));
             //console.group('form');
             //console.log(Object.getOwnPropertyNames(formValue));
             //console.log('formValue', ObjectUtils.clone(formValue));
@@ -195,6 +194,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                 }
               }
             }
+            this.onFormChange.emit(JSON.stringify(formValue));
             //console.log('After data', ObjectUtils.clone(this.data));
             //console.groupEnd();
           },

@@ -30,10 +30,10 @@
                     save: [],
                     publish: [],
                 };
+                console.log(`%c🚀🚀🚀LOCALESS: Sync version ${this.version} initialized🚀🚀🚀`, 'background: #222; color: #0063EB; font-size: 2rem;');
                 // Receive message from
-                window.addEventListener('message', event => {
+                addEventListener('message', event => {
                     if (event.origin === location.ancestorOrigins.item(0)) {
-                        console.log('event:', event);
                         const data = event.data;
                         switch (data.type) {
                             case 'input':

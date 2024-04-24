@@ -11,6 +11,7 @@
     "build:prod": "ng build --configuration production",
     "prebuild:prod": "ng g @lessify/angular-tools:set-env --prefix LOCALESS",
     "build:script": "tsc --project tsconfig.script.json",
+    "build:script:watch": "tsc --watch --project tsconfig.script.json",
     "watch": "ng build --watch --configuration development",
     "emulator": "firebase emulators:start --import=./firebase-export --export-on-exit=./firebase-export",
     "emulator:debug": "firebase emulators:start --debug --import=./firebase-export --export-on-exit=./firebase-export",
