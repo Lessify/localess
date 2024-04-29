@@ -66,10 +66,10 @@
               [class.invalid]="field.invalid">
               <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
               <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
-              <span matListItemTitle>
+              <div matListItemTitle>
                 {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
-              </span>
-              <span matListItemLine>
+              </div>
+              <div matListItemLine>
                 <span class="badge">{{ field.value.kind }}</span>
                 @if (field.value.translatable) {
                   &nbsp;<span class="badge">Translatable</span>
@@ -77,7 +77,7 @@
                 @if (field.value.required) {
                   &nbsp;<span class="badge">Required</span>
                 }
-              </span>
+              </div>
               <mat-action-list matListItemMeta>
                 <button mat-icon-button (click)="removeComponent($event, index)">
                   <mat-icon>delete</mat-icon>

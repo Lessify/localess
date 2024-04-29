@@ -124,7 +124,7 @@ export function contentLocaleCachePath(spaceId: string, contentId: string, local
  */
 export function contentCachePath(spaceId: string, contentId: string, version: string | 'draft' | undefined): string {
   if (version === 'draft') {
-    return `spaces/${spaceId}/contents/${contentId}/draft/cache.json`;
+    return `spaces/${spaceId}/contents/${contentId}/${version}/cache.json`;
   } else {
     return `spaces/${spaceId}/contents/${contentId}/cache.json`;
   }
