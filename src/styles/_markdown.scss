@@ -1,8 +1,19 @@
 markdown {
   blockquote {
-    border-left: 3px solid rgba(0,0,0,0.21);
+    border-left: 3px solid rgba(0, 0, 0, 0.21);
     padding-left: 12px;
-    color: rgba(0,0,0,0.54);
+    color: rgba(0, 0, 0, 0.54);
+  }
+
+  ol, ul {
+    margin: unset;
+    padding: revert;
+  }
+  ul {
+    list-style: revert;
+  }
+  ol {
+    list-style: revert;
   }
 }
 
