@@ -23,7 +23,7 @@ import { TokenService } from '@shared/services/token.service';
 import { ReferenceSelectComponent } from './shared/reference-select/reference-select.component';
 import { ReferencesSelectComponent } from './shared/references-select/references-select.component';
 import { ContentHistoryService } from '@shared/services/content-history.service';
-import { MarkdownComponent, MarkdownModule } from 'ngx-markdown';
+import { MarkdownModule } from 'ngx-markdown';
 
 @NgModule({
   declarations: [
