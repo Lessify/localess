@@ -23,6 +23,7 @@ import { TokenService } from '@shared/services/token.service';
 import { ReferenceSelectComponent } from './shared/reference-select/reference-select.component';
 import { ReferencesSelectComponent } from './shared/references-select/references-select.component';
 import { ContentHistoryService } from '@shared/services/content-history.service';
+import { MarkdownComponent, MarkdownModule } from 'ngx-markdown';
 
 @NgModule({
   declarations: [
@@ -40,7 +41,7 @@ import { ContentHistoryService } from '@shared/services/content-history.service'
     ExportDialogComponent,
     ImportDialogComponent,
   ],
-  imports: [SharedModule, ContentsRoutingModule],
+  imports: [SharedModule, ContentsRoutingModule, MarkdownModule.forChild()],
   providers: [
     SpaceService,
     SchemaService,

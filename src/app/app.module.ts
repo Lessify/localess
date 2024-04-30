@@ -24,6 +24,7 @@ import { connectFunctionsEmulator, getFunctions, provideFunctions } from '@angul
 import { getPerformance, providePerformance } from '@angular/fire/performance';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
+import { MarkdownModule } from 'ngx-markdown';
 
 @NgModule({
   declarations: [AppComponent],
@@ -32,7 +33,7 @@ import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
-
+    MarkdownModule.forRoot(),
     //Core
     CoreModule,
 

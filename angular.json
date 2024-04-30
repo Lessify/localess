@@ -39,10 +39,12 @@
             ],
             "styles": [
               "src/styles.scss",
-              "node_modules/@stoplight/elements/styles.min.css"
+              "node_modules/@stoplight/elements/styles.min.css",
+              "node_modules/prismjs/themes/prism-okaidia.css"
             ],
             "scripts": [
-              "node_modules/@stoplight/elements/web-components.min.js"
+              "node_modules/@stoplight/elements/web-components.min.js",
+              "node_modules/prismjs/prism.js"
             ]
           },
           "configurations": {
