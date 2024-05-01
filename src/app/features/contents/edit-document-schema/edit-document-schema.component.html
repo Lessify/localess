@@ -69,29 +69,29 @@
                   #mdText
                   matInput
                   rows="6"
-                  style="height: {{ mdText.scrollHeight }}px"
+                  style="height: {{ mdText.scrollHeight > 144 ? mdText.scrollHeight : 144 }}px"
                   [formControlName]="field.name"
                   [attr.minLength]="field.minLength"
                   [attr.maxlength]="field.maxLength"
                   [placeholder]="!isDefaultLocale && data[field.name]"
                   autocomplete="off"></textarea>
-                @if (field.translatable) {
-                  <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
-                }
-                @if (field.description) {
-                  <mat-hint>{{ field.description }}</mat-hint>
-                }
-                @if (field.maxLength) {
-                  <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
-                }
-                @if (form.controls[field.name].errors; as errors) {
-                  <mat-error>{{ fe.errors(errors) }}</mat-error>
-                }
               </mat-tab>
               <mat-tab label="Preview">
                 <markdown [data]="mdText.value || 'Preview content will render here.'"></markdown>
               </mat-tab>
             </mat-tab-group>
+            @if (field.translatable) {
+              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+            }
+            @if (field.description) {
+              <mat-hint>{{ field.description }}</mat-hint>
+            }
+            @if (field.maxLength) {
+              <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
+            }
+            @if (form.controls[field.name].errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
           </mat-form-field>
         }
         <!--NUMBER-->

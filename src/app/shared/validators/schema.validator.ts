@@ -1,5 +1,5 @@
 import { ValidatorFn, Validators } from '@angular/forms';
-import { CommonPattern, CommonValidator } from './common.validator';
+import { CommonPattern, CommonValidator, RESERVED_NAMES } from './common.validator';
 
 export class SchemaValidator {
   public static ID: ValidatorFn[] = [
@@ -20,6 +20,7 @@ export class SchemaValidator {
   public static FIELD_NAME: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
+    CommonValidator.reservedName(RESERVED_NAMES),
     Validators.pattern(CommonPattern.JSON_NAME),
     Validators.minLength(2),
     Validators.maxLength(30),

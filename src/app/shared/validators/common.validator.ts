@@ -57,6 +57,7 @@ export class CommonValidator {
     return null;
   }
 
+  // TODO Review SLUG pattern
   static reservedName(names: string[], ownSkip?: string): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       if (isEmptyInputValue(control.value)) {
@@ -64,9 +65,6 @@ export class CommonValidator {
       }
       if (ownSkip && ownSkip === control.value) {
         return null;
-      }
-      if (['_id', 'schema', 'kind'].some(it => it === control.value)) {
-        return { reservedName: true };
       }
       if (names.some(it => it === control.value)) {
         return { reservedName: true };
@@ -82,6 +80,8 @@ export class CommonValidator {
     };
   }
 }
+
+export const RESERVED_NAMES = ['_id', 'schema', 'kind'];
 
 export enum CommonPattern {
   JSON_NAME = '[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+',

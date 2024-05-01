@@ -23,7 +23,9 @@ export class AddFolderDialogComponent {
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: AddFolderDialogModel
-  ) {}
+  ) {
+    console.log(data);
+  }
 
   normalizeSlug() {
     if (this.form.value.slug) {
