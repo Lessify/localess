@@ -27,11 +27,13 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       properties: {
         kind: {
           type: 'string',
+          description: 'Define the type of Asset',
           enum: ['ASSET'],
         },
         uri: {
           type: 'string',
           format: 'uri',
+          description: 'Unique identifier for the asset.',
           example: 'WLWc4vOACzG1QjK9AEo9',
         },
       },
@@ -43,21 +45,24 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       properties: {
         kind: {
           type: 'string',
+          description: 'Define the type of Link',
           enum: ['LINK'],
         },
         type: {
           type: 'string',
+          description: 'Define the type of Link. URL for external links and Content for internal links.',
           enum: ['url', 'content'],
         },
         target: {
           type: 'string',
+          description: 'Define the target of the link. _blank for new tab and _self for same tab.',
           enum: ['_blank', '_self'],
         },
         uri: {
           type: 'string',
           format: 'uri',
           example: 'WLWc4vOACzG1QjK9AEo9',
-          description: 'content id or URL',
+          description: 'If type is content, then it will be Content ID. Otherwise it will be URL.',
         },
       },
     },
@@ -68,11 +73,13 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       properties: {
         kind: {
           type: 'string',
+          description: 'Define the type of REFERENCE',
           enum: ['REFERENCE'],
         },
         uri: {
           type: 'string',
           format: 'uri',
+          description: 'Unique identifier for the Content Document.',
           example: 'WLWc4vOACzG1QjK9AEo9',
         },
       },
@@ -85,42 +92,51 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
         id: {
           type: 'string',
           format: 'uri',
+          description: 'Unique identifier for the object.',
           example: 'WLWc4vOACzG1QjK9AEo9',
         },
         kind: {
           type: 'string',
+          description: 'Define the type of Content, whether it is a FOLDER or DOCUMENT.',
           enum: ['FOLDER', 'DOCUMENT'],
           example: 'DOCUMENT',
         },
         name: {
           type: 'string',
+          description: 'Name of the Content',
           example: 'Privacy Policy',
         },
         slug: {
           type: 'string',
+          description: 'SLUG of the Content',
           example: 'privacy-policy',
         },
         parentSlug: {
           type: 'string',
+          description: 'Parent SLUG of the Content',
           example: 'legal',
         },
         fullSlug: {
           type: 'string',
+          description: 'Combination of SLUG and Parent SLUG of the Content',
           example: 'legal/privacy-policy',
         },
         createdAt: {
           type: 'string',
           format: 'date-time',
+          description: 'Date and Time at which the Content was created.',
           example: '2023-08-23T21:08:17.551Z',
         },
         updatedAt: {
           type: 'string',
           format: 'date-time',
+          description: 'Date and Time at which the Content was updated.',
           example: '2024-01-23T14:10:37.852Z',
         },
         publishedAt: {
           type: 'string',
           format: 'date-time',
+          description: 'Date and Time at which the Content was published.',
           example: '2023-08-23T21:09:15.191Z',
         },
         data: {
@@ -136,42 +152,51 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
         id: {
           type: 'string',
           format: 'uri',
+          description: 'Unique identifier for the object.',
           example: 'WLWc4vOACzG1QjK9AEo9',
         },
         kind: {
           type: 'string',
+          description: 'Define the type of Content, whether it is a FOLDER or DOCUMENT.',
           enum: ['FOLDER', 'DOCUMENT'],
           example: 'DOCUMENT',
         },
         name: {
           type: 'string',
+          description: 'Name of the Content',
           example: 'Privacy Policy',
         },
         slug: {
           type: 'string',
+          description: 'SLUG of the Content',
           example: 'privacy-policy',
         },
         parentSlug: {
           type: 'string',
+          description: 'Parent SLUG of the Content',
           example: 'legal',
         },
         fullSlug: {
           type: 'string',
+          description: 'Combination of SLUG and Parent SLUG of the Content',
           example: 'legal/privacy-policy',
         },
         createdAt: {
           type: 'string',
           format: 'date-time',
+          description: 'Date and Time at which the Content was created.',
           example: '2023-08-23T21:08:17.551Z',
         },
         updatedAt: {
           type: 'string',
           format: 'date-time',
+          description: 'Date and Time at which the Content was updated.',
           example: '2024-01-23T14:10:37.852Z',
         },
         publishedAt: {
           type: 'string',
           format: 'date-time',
+          description: 'Date and Time at which the Content was published.',
           example: '2023-08-23T21:09:15.191Z',
         },
       },
