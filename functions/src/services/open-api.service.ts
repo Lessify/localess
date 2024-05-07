@@ -257,7 +257,11 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       '/api/v1/spaces/{spaceId}/translations/{locale}': {
         get: {
           tags: ['Translations'],
-          summary: 'Retrieve Translations by Locale',
+          summary: 'Retrieve all Translations by Locale',
+          description:
+            'The endpoint allows you to retrieve all translations by locale. ' +
+            'In case Locale is not present in the Localess, it will return the default locale translations. ' +
+            'In case cache version is not present, it will redirect to the latest version.',
           operationId: 'getTranslationsByLocale',
           parameters: [
             {
@@ -309,6 +313,9 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
         get: {
           tags: ['Contents'],
           summary: 'Retrieve Links to all Contents',
+          description:
+            'The endpoint allows you to retrieve all Content summery metadata mainly used to recreate content tree. ' +
+            'In case cache version is not present, it will redirect to the latest version.',
           operationId: 'getContentLinks',
           parameters: [
             {
@@ -386,6 +393,9 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
         get: {
           tags: ['Contents'],
           summary: 'Retrieve Content by Slug',
+          description:
+            'The endpoint allows you to retrieve a specific Content by the content full slug. ' +
+            'In case cache version is not present, it will redirect to the latest version.',
           operationId: 'getContentBySlug',
           parameters: [
             {
@@ -473,6 +483,9 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
         get: {
           tags: ['Contents'],
           summary: 'Retrieve Content By ID',
+          description:
+            'The endpoint allows you to retrieve a specific Content by Unique identifier for the Content object. ' +
+            'In case cache version is not present, it will redirect to the latest version.',
           operationId: 'getContentById',
           parameters: [
             {
@@ -560,6 +573,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
         get: {
           tags: ['Assets'],
           summary: 'Retrieve Asset By ID',
+          description: 'The endpoint allows you to retrieve a specific Asset by Unique identifier for the Asset object.',
           operationId: 'getAssetById',
           parameters: [
             {
