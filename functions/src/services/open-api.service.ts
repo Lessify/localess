@@ -257,13 +257,13 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       '/api/v1/spaces/{spaceId}/translations/{locale}': {
         get: {
           tags: ['Translations'],
-          summary: 'Get Translations by Locale',
+          summary: 'Retrieve Translations by Locale',
           operationId: 'getTranslationsByLocale',
           parameters: [
             {
               name: 'spaceId',
               in: 'path',
-              description: 'Space ID',
+              description: 'Unique identifier for the Space object.',
               required: true,
               schema: {
                 type: 'string',
@@ -273,7 +273,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'locale',
               in: 'path',
-              description: 'Translation Locale',
+              description: 'Locale unique identifier (ISO 639-1).',
               required: true,
               schema: {
                 type: 'string',
@@ -283,7 +283,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'cv',
               in: 'query',
-              description: 'Cache version',
+              description: 'Cache version.',
               required: false,
               schema: {
                 type: 'string',
@@ -293,7 +293,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           ],
           responses: {
             '200': {
-              description: 'success operation',
+              description: 'Return the Translations Object if the request succeeded.',
               content: {
                 'application/json': {
                   schema: {
@@ -308,13 +308,13 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       '/api/v1/spaces/{spaceId}/links': {
         get: {
           tags: ['Contents'],
-          summary: 'Get Links to all Contents',
+          summary: 'Retrieve Links to all Contents',
           operationId: 'getContentLinks',
           parameters: [
             {
               name: 'spaceId',
               in: 'path',
-              description: 'Space ID',
+              description: 'Unique identifier for the Space object.',
               required: true,
               schema: {
                 type: 'string',
@@ -324,7 +324,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'kind',
               in: 'query',
-              description: 'Content Kind',
+              description: 'Content Kind. FOLDER or DOCUMENT. If not provided, it will return all.',
               required: false,
               schema: {
                 type: 'string',
@@ -335,7 +335,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'startSlug',
               in: 'query',
-              description: 'Content start slug',
+              description: 'Content start slug.',
               required: false,
               schema: {
                 type: 'string',
@@ -345,7 +345,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'cv',
               in: 'query',
-              description: 'Cache version',
+              description: 'Cache version.',
               required: false,
               schema: {
                 type: 'string',
@@ -355,7 +355,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'token',
               in: 'query',
-              description: 'Authentication Token',
+              description: 'Authentication Token.',
               required: true,
               schema: {
                 type: 'string',
@@ -365,7 +365,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           ],
           responses: {
             '200': {
-              description: 'success operation',
+              description: 'Return the Links Object if the request succeeded.',
               content: {
                 'application/json': {
                   schema: {
@@ -385,13 +385,13 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       '/api/v1/spaces/{spaceId}/contents/slugs/{contentSlug}': {
         get: {
           tags: ['Contents'],
-          summary: 'Get Content by Slug',
+          summary: 'Retrieve Content by Slug',
           operationId: 'getContentBySlug',
           parameters: [
             {
               name: 'spaceId',
               in: 'path',
-              description: 'Space ID',
+              description: 'Unique identifier for the Space object.',
               required: true,
               schema: {
                 type: 'string',
@@ -401,7 +401,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'contentSlug',
               in: 'path',
-              description: 'Content full slug',
+              description: 'Content full slug.',
               required: true,
               schema: {
                 type: 'string',
@@ -411,7 +411,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'cv',
               in: 'query',
-              description: 'Cache version',
+              description: 'Cache version.',
               required: false,
               schema: {
                 type: 'string',
@@ -421,7 +421,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'locale',
               in: 'query',
-              description: 'Locale',
+              description: 'Locale unique identifier (ISO 639-1).',
               required: false,
               schema: {
                 type: 'string',
@@ -431,7 +431,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'version',
               in: 'query',
-              description: 'Content version',
+              description: 'Content version.',
               required: false,
               schema: {
                 type: 'string',
@@ -442,7 +442,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'token',
               in: 'query',
-              description: 'Authentication Token',
+              description: 'Authentication Token.',
               required: true,
               schema: {
                 type: 'string',
@@ -452,7 +452,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           ],
           responses: {
             '200': {
-              description: 'success operation',
+              description: 'Return the Content Object if the request succeeded.',
               content: {
                 'application/json': {
                   schema: {
@@ -472,13 +472,13 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       '/api/v1/spaces/{spaceId}/contents/{contentId}': {
         get: {
           tags: ['Contents'],
-          summary: 'Get Content By ID',
+          summary: 'Retrieve Content By ID',
           operationId: 'getContentById',
           parameters: [
             {
               name: 'spaceId',
               in: 'path',
-              description: 'Space ID',
+              description: 'Unique identifier for the Space object.',
               required: true,
               schema: {
                 type: 'string',
@@ -488,7 +488,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'contentId',
               in: 'path',
-              description: 'Content ID',
+              description: 'Unique identifier for the Content object.',
               required: true,
               schema: {
                 type: 'string',
@@ -498,7 +498,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'cv',
               in: 'query',
-              description: 'Cache version',
+              description: 'Cache version.',
               required: false,
               schema: {
                 type: 'string',
@@ -508,7 +508,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'locale',
               in: 'query',
-              description: 'Locale',
+              description: 'Locale unique identifier (ISO 639-1).',
               required: false,
               schema: {
                 type: 'string',
@@ -518,7 +518,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'version',
               in: 'query',
-              description: 'Content version',
+              description: 'Content version.',
               required: false,
               schema: {
                 type: 'string',
@@ -529,7 +529,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'token',
               in: 'query',
-              description: 'Authentication Token',
+              description: 'Authentication Token.',
               required: true,
               schema: {
                 type: 'string',
@@ -539,7 +539,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           ],
           responses: {
             '200': {
-              description: 'success operation',
+              description: 'Return the Content Object if the request succeeded.',
               content: {
                 'application/json': {
                   schema: {
@@ -559,13 +559,13 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       '/api/v1/spaces/{spaceId}/assets/{assetId}': {
         get: {
           tags: ['Assets'],
-          summary: 'Get Asset By ID',
+          summary: 'Retrieve Asset By ID',
           operationId: 'getAssetById',
           parameters: [
             {
               name: 'spaceId',
               in: 'path',
-              description: 'Space ID',
+              description: 'Unique identifier for the Space object.',
               required: true,
               schema: {
                 type: 'string',
@@ -575,7 +575,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'assetId',
               in: 'path',
-              description: 'Asset ID',
+              description: 'Unique identifier for the Asset object.',
               required: true,
               schema: {
                 type: 'string',
@@ -595,7 +595,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
             {
               name: 'download',
               in: 'query',
-              description: 'In case you wish to download the asset',
+              description: 'In case you wish to download the asset.',
               required: false,
               schema: {
                 type: 'boolean',
@@ -605,7 +605,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           ],
           responses: {
             '200': {
-              description: 'Returns Asset file',
+              description: 'Returns Asset file.',
               content: {
                 'image/*': {
                   schema: {
