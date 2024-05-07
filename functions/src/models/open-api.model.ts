@@ -116,6 +116,7 @@ export type OpenApiSchemaDefinition =
       description?: string;
       properties: Record<string, OpenApiSchemaDefinition>;
       required?: string[];
+      example?: Record<string, string | object>;
     }
   | {
       type: 'object';
@@ -123,7 +124,7 @@ export type OpenApiSchemaDefinition =
       description?: string;
       additionalProperties: OpenApiSchemaDefinition;
       required?: string[];
-      example?: Record<string, string>;
+      example?: Record<string, string | object>;
     }
   | {
       type: 'string';

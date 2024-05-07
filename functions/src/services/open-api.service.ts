@@ -16,8 +16,10 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
         example: 'Email',
       },
       example: {
-        'login.email': 'Email',
-        'login.password': 'Password',
+        'login.form.email': 'Email',
+        'login.form.password': 'Password',
+        'login.form.login': 'Login',
+        'login.form.cancel': 'Cancel',
       },
     },
     ContentAsset: {
@@ -36,6 +38,10 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           description: 'Unique identifier for the asset.',
           example: 'WLWc4vOACzG1QjK9AEo9',
         },
+      },
+      example: {
+        kind: 'ASSET',
+        uri: 'WLWc4vOACzG1QjK9AEo9',
       },
     },
     ContentLink: {
@@ -65,6 +71,12 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           description: 'If type is content, then it will be Content ID. Otherwise it will be URL.',
         },
       },
+      example: {
+        kind: 'LINK',
+        type: 'content',
+        target: '_self',
+        uri: 'WLWc4vOACzG1QjK9AEo9',
+      },
     },
     ContentReference: {
       type: 'object',
@@ -82,6 +94,10 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           description: 'Unique identifier for the Content Document.',
           example: 'WLWc4vOACzG1QjK9AEo9',
         },
+      },
+      example: {
+        kind: 'REFERENCE',
+        uri: 'WLWc4vOACzG1QjK9AEo9',
       },
     },
     Content: {
@@ -148,6 +164,22 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           $ref: '#/components/schemas/ContentData',
         },
       },
+      example: {
+        id: 'WLWc4vOACzG1QjK9AEo9',
+        kind: 'DOCUMENT',
+        name: 'Privacy Policy',
+        locale: 'en',
+        slug: 'privacy-policy',
+        parentSlug: 'legal',
+        fullSlug: 'legal/privacy-policy',
+        createdAt: '2023-08-23T21:08:17.551Z',
+        updatedAt: '2024-01-23T14:10:37.852Z',
+        publishedAt: '2023-08-23T21:09:15.191Z',
+        data: {
+          _id: 'a8ca3ed3-6613-4fb6-ae4e-5b846eb5775c',
+          schema: 'docArticle',
+        },
+      },
     },
     ContentMetadata: {
       type: 'object',
@@ -205,12 +237,36 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           example: '2023-08-23T21:09:15.191Z',
         },
       },
+      example: {
+        id: 'WLWc4vOACzG1QjK9AEo9',
+        kind: 'DOCUMENT',
+        name: 'Privacy Policy',
+        slug: 'privacy-policy',
+        parentSlug: 'legal',
+        fullSlug: 'legal/privacy-policy',
+        createdAt: '2023-08-23T21:08:17.551Z',
+        updatedAt: '2024-01-23T14:10:37.852Z',
+        publishedAt: '2023-08-23T21:09:15.191Z',
+      },
     },
     Links: {
       description: 'Key-Value Object. Where Key is Unique identifier for the Content object and Value is Content Metadata.',
       type: 'object',
       additionalProperties: {
         $ref: '#/components/schemas/ContentMetadata',
+      },
+      example: {
+        WLWc4vOACzG1QjK9AEo9: {
+          id: 'WLWc4vOACzG1QjK9AEo9',
+          kind: 'DOCUMENT',
+          name: 'Privacy Policy',
+          slug: 'privacy-policy',
+          parentSlug: 'legal',
+          fullSlug: 'legal/privacy-policy',
+          createdAt: '2023-08-23T21:08:17.551Z',
+          updatedAt: '2024-01-23T14:10:37.852Z',
+          publishedAt: '2023-08-23T21:09:15.191Z',
+        },
       },
     },
   };
