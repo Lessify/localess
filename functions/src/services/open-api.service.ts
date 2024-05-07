@@ -22,7 +22,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
     },
     ContentAsset: {
       type: 'object',
-      description: 'Localess defined Object for Content Asset',
+      description: 'Content Asset define reference to a Asset.',
       required: ['kind', 'uri'],
       properties: {
         kind: {
@@ -40,7 +40,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
     },
     ContentLink: {
       type: 'object',
-      description: 'Localess defined Object for Content Link',
+      description: 'Content Link define reference to a Link.',
       required: ['kind', 'type', 'target', 'uri'],
       properties: {
         kind: {
@@ -68,7 +68,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
     },
     ContentReference: {
       type: 'object',
-      description: 'Localess defined Object for Content Reference',
+      description: 'Content Reference define reference to a Content.',
       required: ['kind', 'uri'],
       properties: {
         kind: {
@@ -86,7 +86,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
     },
     Content: {
       type: 'object',
-      description: 'Localess defined object for Content',
+      description: 'Content define shared object for all possible Content Types.',
       required: ['id', 'kind', 'name', 'slug', 'parentSlug', 'fullSlug', 'createdAt', 'updatedAt'],
       properties: {
         id: {
@@ -105,6 +105,11 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
           type: 'string',
           description: 'Name of the Content',
           example: 'Privacy Policy',
+        },
+        locale: {
+          type: 'string',
+          description: 'Locale unique identifier (ISO 639-1).',
+          example: 'en',
         },
         slug: {
           type: 'string',
@@ -146,7 +151,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
     },
     ContentMetadata: {
       type: 'object',
-      description: 'Localess defined object for Content Metadata',
+      description: 'Content Metadata define short information about a Content for navigation reason.',
       required: ['id', 'kind', 'name', 'slug', 'parentSlug', 'fullSlug', 'createdAt', 'updatedAt'],
       properties: {
         id: {
@@ -202,7 +207,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
       },
     },
     Links: {
-      description: 'Key-Value Object. Where Key is Content ID and Value is Content Metadata',
+      description: 'Key-Value Object. Where Key is Unique identifier for the Content object and Value is Content Metadata.',
       type: 'object',
       additionalProperties: {
         $ref: '#/components/schemas/ContentMetadata',
@@ -217,7 +222,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
     }
   }
   schemasDefinition['ContentData'] = {
-    description: 'Localess defined Object to connect all possible root Schemas',
+    description: 'ContentData defined Object to connect all possible root Schemas.',
     oneOf: rootSchemas.map(it => {
       return {
         $ref: `#/components/schemas/${it}`,
@@ -678,13 +683,13 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
       _id: {
         type: 'string',
         format: 'uuid',
-        description: 'Unique identifier of component in a content',
+        description: 'Unique identifier of a component in a content.',
         example: 'a8ca3ed3-6613-4fb6-ae4e-5b846eb5775c',
       },
       schema: {
         type: 'string',
         enum: [id],
-        description: 'Schema name',
+        description: 'Unique identifier for the Schema object.',
       },
     };
     for (const item of schema.fields || []) {
