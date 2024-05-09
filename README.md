@@ -26,7 +26,11 @@ Whether you're a developer looking to expand your app's reach or a business owne
 - It is **Open Source** Software, you also can contribute with code and feedback.
 - You pay only for infrastructure where you deploy the **Localess**.
 
-![Localess Video](https://github.com/Lessify/localess/wiki/img/app_animation.gif)
+## Translations
+![Localess Translation](https://github.com/Lessify/localess/wiki/img/translation-animation.webp)
+
+## Content
+![Localess Content](https://github.com/Lessify/localess/wiki/img/content-animation.webp)
 
 ## Supporting Localess & Lessify Project
 
