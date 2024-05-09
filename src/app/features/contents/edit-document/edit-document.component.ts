@@ -162,6 +162,7 @@ export class EditDocumentComponent implements OnInit {
     this.contentService.publish(this.spaceId(), this.contentId()).subscribe({
       next: () => {
         this.notificationService.success('Content has been published.');
+        this.sendEventToApp({ type: 'publish' });
       },
       error: () => {
         this.notificationService.error('Content can not be published.');
@@ -193,6 +194,7 @@ export class EditDocumentComponent implements OnInit {
       this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData).subscribe({
         next: () => {
           this.notificationService.success('Content has been updated.');
+          this.sendEventToApp({ type: 'save' });
         },
         error: () => {
           this.notificationService.error('Content can not be updated.');
@@ -409,6 +411,10 @@ export class EditDocumentComponent implements OnInit {
     console.log('onFormChange', event);
     this.sendEventToApp({ type: 'input', data: this.documentData });
   }
+  onStructureChange(event: string) {
+    console.log('onStructureChange', event);
+    this.sendEventToApp({ type: 'change', data: this.documentData });
+  }
 
   sendEventToApp(event: EventToApp) {
     const contentWindow = this.preview()?.nativeElement.contentWindow;
@@ -417,4 +423,6 @@ export class EditDocumentComponent implements OnInit {
       contentWindow.postMessage(event, url.origin);
     }
   }
+
+
 }

@@ -13,5 +13,5 @@ export interface EventToEditor {
 }
 
 // Event emitted by Editor to app in IFrame
-export type EventType = 'input' | 'save' | 'publish';
-export type EventToApp = { type: EventType } & { type: 'input'; data: any };
+export type EventType = 'input' | 'save' | 'publish' | 'change';
+export type EventToApp = { type: EventType } | { type: 'input' | 'change'; data: any };

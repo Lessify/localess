@@ -29,9 +29,9 @@
       });
     });
 
-    type EventType = 'input' | 'save' | 'publish';
+    type EventType = 'input' | 'save' | 'publish' | 'change';
     type EventCallback = (event: EventToApp) => void;
-    type EventToApp = { type: 'input'; data: any } | { type: 'save' } | { type: 'publish' };
+    type EventToApp = { type: EventType } | { type: 'input' | 'change'; data: any };
 
     class Sync {
       version = 'v1';
@@ -39,24 +39,35 @@
         input: [],
         save: [],
         publish: [],
+        change: [],
       };
 
       constructor() {
-        console.log(`%c🚀🚀🚀LOCALESS: Sync version ${this.version} initialized🚀🚀🚀`,'background: #222; color: #0063EB; font-size: 2rem;')
+        console.log(
+          `%c🚀🚀🚀LOCALESS: Sync version ${this.version} initialized🚀🚀🚀`,
+          'background: #222; color: #0063EB; font-size: 2rem;'
+        );
         // Receive message from
         addEventListener('message', event => {
           if (event.origin === location.ancestorOrigins.item(0)) {
             const data = event.data as EventToApp;
             switch (data.type) {
-              case 'input':
+              case 'input': {
                 this.emit(data);
                 break;
-              case 'save':
+              }
+              case 'save': {
                 this.emit(data);
                 break;
-              case 'publish':
+              }
+              case 'publish': {
                 this.emit(data);
                 break;
+              }
+              case 'change': {
+                this.emit(data);
+                break;
+              }
             }
           }
         });

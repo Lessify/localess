@@ -29,6 +29,7 @@
                     input: [],
                     save: [],
                     publish: [],
+                    change: [],
                 };
                 console.log(`%c🚀🚀🚀LOCALESS: Sync version ${this.version} initialized🚀🚀🚀`, 'background: #222; color: #0063EB; font-size: 2rem;');
                 // Receive message from
@@ -36,15 +37,22 @@
                     if (event.origin === location.ancestorOrigins.item(0)) {
                         const data = event.data;
                         switch (data.type) {
-                            case 'input':
+                            case 'input': {
                                 this.emit(data);
                                 break;
-                            case 'save':
+                            }
+                            case 'save': {
                                 this.emit(data);
                                 break;
-                            case 'publish':
+                            }
+                            case 'publish': {
                                 this.emit(data);
                                 break;
+                            }
+                            case 'change': {
+                                this.emit(data);
+                                break;
+                            }
                         }
                     }
                 });

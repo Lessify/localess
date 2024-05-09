@@ -100,7 +100,6 @@ export type OpenApiPathOperationResponseSchema = {
   links?: string; // TODO
 };
 
-export type OpenApiSchemaRef = { $ref: string };
 export type OpenApiSecurityRequirement = Record<string, string[]>[];
 export type OpenApiSecurityScheme = {
   type: 'apiKey' | 'http' | 'mutualTLS' | 'oauth2' | 'openIdConnect';
@@ -108,94 +107,111 @@ export type OpenApiSecurityScheme = {
   name: string;
   in: 'query' | 'header' | 'cookie';
 };
+
+export type OpenApiSchemaRef = {
+  $ref: string;
+  summary?: string;
+  description?: string;
+};
+export type OpenApiSchemaObject = {
+  type: 'object';
+  title?: string;
+  description?: string;
+  properties: Record<string, OpenApiSchemaDefinition>;
+  required?: string[];
+  example?: Record<string, string | object>;
+};
+export type OpenApiSchemaDictionary = {
+  type: 'object';
+  title?: string;
+  description?: string;
+  additionalProperties: OpenApiSchemaDefinition;
+  required?: string[];
+  example?: Record<string, string | object>;
+};
+export type OpenApiSchemaString = {
+  type: 'string';
+  format?: 'date' | 'date-time' | 'regex' | 'uri' | 'email' | 'uri-reference' | 'uuid' | 'color' | 'binary' | 'byte' | string;
+  title?: string;
+  description?: string;
+  example?: string;
+  default?: string;
+  enum?: string[];
+  minLength?: number;
+  maxLength?: number;
+};
+export type OpenApiSchemaNumber = {
+  type: 'number';
+  title?: string;
+  format?: 'float' | 'double';
+  example?: number;
+  minimum?: number;
+  maximum?: number;
+  description?: string;
+  default?: number;
+};
+export type OpenApiSchemaInteger = {
+  type: 'integer';
+  title?: string;
+  format?: 'int32' | 'int64';
+  example?: number;
+  minimum?: number;
+  maximum?: number;
+  description?: string;
+  default?: number;
+};
+export type OpenApiSchemaBoolean = {
+  type: 'boolean';
+  title?: string;
+  description?: string;
+  default?: boolean;
+  example?: boolean;
+};
+export type OpenApiSchemaArray = {
+  type: 'array';
+  title?: string;
+  minItems?: number;
+  maxItems?: number;
+  items:
+    | {
+        type: 'string';
+        enum?: string[];
+      }
+    | OpenApiSchemaRef
+    | {
+        description?: string;
+        discriminator?: {
+          propertyName: string;
+        };
+        oneOf: OpenApiSchemaRef[];
+      };
+  description?: string;
+};
+export type OpenApiSchemaOneOf = {
+  description?: string;
+  oneOf: OpenApiSchemaRef[];
+  discriminator?: {
+    propertyName: string;
+  };
+};
+export type OpenApiSchemaAllOf = {
+  description?: string;
+  allOf: OpenApiSchemaRef[];
+};
+export type OpenApiSchemaAnyOf = {
+  description?: string;
+  anyOf: OpenApiSchemaRef[];
+};
+
 export type OpenApiSchemaDefinition =
   | OpenApiSchemaRef
-  | {
-      type: 'object';
-      title?: string;
-      description?: string;
-      properties: Record<string, OpenApiSchemaDefinition>;
-      required?: string[];
-      example?: Record<string, string | object>;
-    }
-  | {
-      type: 'object';
-      title?: string;
-      description?: string;
-      additionalProperties: OpenApiSchemaDefinition;
-      required?: string[];
-      example?: Record<string, string | object>;
-    }
-  | {
-      type: 'string';
-      format?: 'date' | 'date-time' | 'regex' | 'uri' | 'email' | 'uri-reference' | 'uuid' | 'color' | 'binary' | 'byte' | string;
-      title?: string;
-      description?: string;
-      example?: string;
-      default?: string;
-      enum?: string[];
-      minLength?: number;
-      maxLength?: number;
-    }
-  | {
-      type: 'number';
-      title?: string;
-      format?: 'float' | 'double';
-      example?: number;
-      minimum?: number;
-      maximum?: number;
-      description?: string;
-      default?: number;
-    }
-  | {
-      type: 'integer';
-      title?: string;
-      format?: 'int32' | 'int64';
-      example?: number;
-      minimum?: number;
-      maximum?: number;
-      description?: string;
-      default?: number;
-    }
-  | {
-      type: 'boolean';
-      title?: string;
-      description?: string;
-      default?: boolean;
-      example?: boolean;
-    }
-  | {
-      type: 'array';
-      title?: string;
-      minItems?: number;
-      maxItems?: number;
-      items:
-        | {
-            type: 'string';
-            enum?: string[];
-          }
-        | OpenApiSchemaRef
-        | {
-            description?: string;
-            discriminator?: {
-              propertyName: string;
-            };
-            oneOf: OpenApiSchemaRef[];
-          };
-      description?: string;
-    }
-  | {
-      description?: string;
-      oneOf: OpenApiSchemaRef[];
-      discriminator?: {
-        propertyName: string;
-      };
-    }
-  | {
-      description?: string;
-      allOf: OpenApiSchemaRef[];
-    }
-  | {
-      description?: string;
-      anyOf: OpenApiSchemaRef[];
-    };
+  | OpenApiSchemaObject
+  | OpenApiSchemaDictionary
+  | OpenApiSchemaString
+  | OpenApiSchemaNumber
+  | OpenApiSchemaInteger
+  | OpenApiSchemaBoolean
+  | OpenApiSchemaArray
+  | OpenApiSchemaOneOf
+  | OpenApiSchemaAllOf
+  | OpenApiSchemaAnyOf;

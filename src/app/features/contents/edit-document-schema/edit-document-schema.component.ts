@@ -63,6 +63,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   // Outputs
   onSchemaChange = output<SchemaSelectChange>();
   onFormChange = output<string>();
+  onStructureChange = output<string>();
 
   rootSchema?: SchemaComponent;
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
@@ -279,10 +280,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         schema: schema.id,
       };
     }
+    this.onStructureChange.emit(`addSchemaOne ${field.name} ${schema.id}`);
   }
 
   removeSchemaOne(field: SchemaField): void {
     delete this.data[field.name];
+    this.onStructureChange.emit(`removeSchemaOne ${field.name}`);
   }
 
   addSchemaMany(field: SchemaField, schema: Schema): void {
@@ -300,6 +303,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         },
       ];
     }
+    this.onStructureChange.emit(`addSchemaMany ${field.name} ${schema.id}`);
   }
 
   duplicateSchemaMany(event: MouseEvent, data: any[], item: ContentData, idx: number): void {
@@ -308,6 +312,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     const clone = this.contentHelperService.clone(item, true);
     data.splice(idx + 1, 0, clone);
     //console.log(data)
+    this.onStructureChange.emit(`duplicateSchemaMany ${item.schema} ${item._id}`);
   }
 
   removeSchemaMany(field: SchemaField, schemaId: string): void {
@@ -321,6 +326,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         delete this.data[field.name];
       }
     }
+    this.onStructureChange.emit(`removeSchemaMany ${field.name}`);
   }
 
   navigationTo(contentId: string, fieldName: string, schemaName: string): void {
