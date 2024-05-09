@@ -341,6 +341,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   schemaDropDrop(event: CdkDragDrop<string[], any>, data: any[]): void {
     if (event.previousIndex === event.currentIndex) return;
     moveItemInArray(data, event.previousIndex, event.currentIndex);
+    this.onStructureChange.emit(`schemaDropDrop from-${event.previousIndex} to-${event.currentIndex}`);
   }
 
   previewText(content: ContentData, schema: SchemaComponent, locale: string): string | undefined {
