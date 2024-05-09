@@ -31,7 +31,7 @@
 
     type EventType = 'input' | 'save' | 'publish' | 'change';
     type EventCallback = (event: EventToApp) => void;
-    type EventToApp = { type: EventType } | { type: 'input' | 'change'; data: any };
+    type EventToApp = { type: 'save' | 'publish' } | { type: 'input' | 'change'; data: any };
 
     class Sync {
       version = 'v1';
