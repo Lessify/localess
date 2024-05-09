@@ -423,6 +423,4 @@ export class EditDocumentComponent implements OnInit {
       contentWindow.postMessage(event, url.origin);
     }
   }
-
-
 }
