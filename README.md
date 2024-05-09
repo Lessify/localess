@@ -1,10 +1,11 @@
-<h1 align="center">
+<picture>
+ <source media="(prefers-color-scheme: dark)" srcset="https://github.com/Lessify/localess/src/assets/logo-white.svg">
+ <img src="https://github.com/Lessify/localess/src/assets/logo-black.svg" alt="logo">
+</picture>
 <br/>
-  <img width="200" src="src/android-chrome-512x512.png" alt="Localess"/>
-  <br/>
-  Localess
 <br/>
-</h1>
+
+----
 
 ![GitHub](https://img.shields.io/github/license/Lessify/localess?style=for-the-badge)
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/Lessify?style=for-the-badge)
