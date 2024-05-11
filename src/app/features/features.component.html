@@ -3,7 +3,7 @@
     <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
       <mat-icon>{{ settingsStore.mainMenuExpended() ? 'menu_open' : 'menu' }}</mat-icon>
     </button>
-    <span class="name">Localess</span>
+    <img src="assets/logo-adaptive.svg" class="h-8 mx-2" alt="Logo" />
     <span class="spacer"></span>
 
     @if (spaceStore.spaces(); as spaces) {

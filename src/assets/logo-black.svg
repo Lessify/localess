@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 485.8 116">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #003dff;
+      }
+
+      .cls-1, .cls-3 {
+        stroke-width: 0px;
+      }
+
+      .cls-4 {
+        fill: #23252b;
+        font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        font-size: 90px;
+        font-weight: 600;
+      }
+
+      .cls-3 {
+        fill: #fff;
+      }
+
+    </style>
+  </defs>
+  <text class="cls-4" transform="translate(139.6 89.5)"><tspan x="0" y="0">Localess</tspan></text>
+  <g>
+    <circle class="cls-1" cx="57.6" cy="58" r="57.6"/>
+    <g>
+      <path class="cls-3" d="M81,81.3h0c-.5,4.6-4.3,8.1-8.9,8.2h-26.8c-4.1,0-7.4-3.2-7.5-7.3,0-.3,0-.6,0-.9h0c.5-4.6,4.3-8.1,8.9-8.2h26.8c4.1,0,7.4,3.2,7.5,7.3,0,.3,0,.6,0,.9Z"/>
+      <path class="cls-3" d="M62.7,58.3h0c-.5,4.6-4.3,8.1-8.9,8.2h-11.9c-4.1,0-7.4-3.2-7.5-7.3,0-.3,0-.6,0-.9h0c.5-4.6,4.3-8.1,8.9-8.2h11.9c4.1,0,7.4,3.2,7.5,7.3,0,.3,0,.6,0,.9Z"/>
+      <path class="cls-3" d="M65.4,35.2h0c-.5,4.6-4.3,8.1-8.9,8.2h-4.6c-4.1,0-7.4-3.2-7.5-7.3,0-.3,0-.6,0-.9h0c.5-4.6,4.3-8.1,8.9-8.2h4.6c4.1,0,7.4,3.2,7.5,7.3,0,.3,0,.6,0,.9Z"/>
+    </g>
+  </g>
+</svg>
