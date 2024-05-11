@@ -28,7 +28,10 @@
     <button mat-icon-button (click)="openNewTab('https://github.com/sponsors/Lessify')" matTooltip="Sponsor Us">
       <mat-icon class="motion-safe:animate-bounce">volunteer_activism</mat-icon>
     </button>
-    <button mat-icon-button [matMenuTriggerFor]="supportMenu" matTooltip="Community and Support">
+    <button mat-icon-button (click)="openNewTab('https://localess.org/home')" matTooltip="Visit Localess.ORG">
+      <mat-icon>public</mat-icon>
+    </button>
+    <button mat-icon-button [matMenuTriggerFor]="supportMenu" matTooltip="Documentation and Support">
       <mat-icon>help_center</mat-icon>
     </button>
     <mat-menu #supportMenu="matMenu">
