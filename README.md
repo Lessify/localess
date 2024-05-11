@@ -1,7 +1,6 @@
-<picture>
- <source media="(prefers-color-scheme: dark)" srcset="https://github.com/Lessify/localess/wiki/img/logo-white.svg">
- <img src="https://github.com/Lessify/localess/wiki/img/logo-black.svg" alt="logo">
-</picture>
+<br/>
+<br/>
+<img src="https://github.com/Lessify/localess/wiki/img/logo-adaptive.svg" alt="logo">
 <br/>
 <br/>
 
