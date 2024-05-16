@@ -17,7 +17,7 @@ COPY . .
 RUN npm install
 RUN npm run build
 ## Functions
-RUN npm --prefix functions install --platform=linuxmusl
+RUN npm --prefix functions install
 RUN npm --prefix functions run build
 
 CMD ["npm", "run", "emulator"]

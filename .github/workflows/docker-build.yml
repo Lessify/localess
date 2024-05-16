@@ -19,6 +19,7 @@ on:
       - src/**
       - functions/**
       - angular.json
+      - Dockerfile
       - firebase.json
       - firestore.indexes.json
       - firestore.rules
