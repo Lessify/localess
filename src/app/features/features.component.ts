@@ -55,6 +55,9 @@ export class FeaturesComponent implements OnInit {
 
   userSideMenu: Signal<SideMenuItem[]> = computed(() => {
     const selectedSpaceId = this.spaceStore.selectedSpaceId();
+    console.log('User Side Menu Computed : Selected Space Id :', selectedSpaceId);
+    console.log('User Side Menu Computed : User Role :', this.userStore.role());
+    console.log('User Side Menu Computed : User Permissions :', this.userStore.permissions());
     if (selectedSpaceId) {
       return [
         { link: `spaces/${selectedSpaceId}/dashboard`, label: 'Dashboard', icon: 'dashboard' },
@@ -123,8 +126,9 @@ export class FeaturesComponent implements OnInit {
     effect(
       () => {
         console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
+        console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
         if (!this.userStore.isAuthenticated()) {
-          this.router.navigate(['/login']);
+          this.router.navigate(['login']);
         }
       },
       { allowSignalWrites: true }

@@ -22,7 +22,7 @@ import { SettingsStore } from '@shared/store/settings.store';
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
-  redirect = ['/features'];
+  redirectToFeatures = ['features'];
   isLoading = false;
 
   //Form
@@ -50,10 +50,11 @@ export class LoginComponent {
     private readonly fb: FormBuilder
   ) {
     effect(
-      () => {
+      async () => {
         console.log('Login User Authenticated Effect :', this.userStore.isAuthenticated());
         if (this.userStore.isAuthenticated()) {
-          this.router.navigate(['/features']);
+          await this.router.navigate(this.redirectToFeatures);
+          window.location.reload();
         }
       },
       { allowSignalWrites: true }
