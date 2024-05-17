@@ -20,7 +20,9 @@ export const environment = {
   production: false,
   test: true,
   debug: true,
-  useEmulators: true,
+  emulator : {
+    enabled: true,
+  },
   version: '2.0.0',
 };
 

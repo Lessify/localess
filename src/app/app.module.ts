@@ -46,7 +46,7 @@ import { MarkdownModule } from 'ngx-markdown';
         persistence: indexedDBLocalPersistence,
         popupRedirectResolver: browserPopupRedirectResolver,
       });
-      if (environment.useEmulators) {
+      if (environment.emulator.enabled) {
         connectAuthEmulator(auth, 'http://localhost:9099', {
           disableWarnings: true,
         });
@@ -55,21 +55,21 @@ import { MarkdownModule } from 'ngx-markdown';
     }),
     provideFirestore(() => {
       const firestore = initializeFirestore(getApp(), { localCache: { kind: 'persistent' } });
-      if (environment.useEmulators) {
+      if (environment.emulator.enabled) {
         connectFirestoreEmulator(firestore, 'localhost', 8080);
       }
       return firestore;
     }),
     provideStorage(() => {
       const storage = getStorage();
-      if (environment.useEmulators) {
+      if (environment.emulator.enabled) {
         connectStorageEmulator(storage, 'localhost', 9199);
       }
       return storage;
     }),
     provideFunctions(() => {
       const functions = getFunctions();
-      if (environment.useEmulators) {
+      if (environment.emulator.enabled) {
         connectFunctionsEmulator(functions, 'localhost', 5001);
         //functions.customDomain = 'http://localhost:4200/api'
         functions.region = 'europe-west6';

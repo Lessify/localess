@@ -18,6 +18,8 @@ export const environment = {
   production: true,
   test: false,
   debug: false,
-  useEmulators: false,
+  emulator : {
+    enabled: false,
+  },
   version: '2.0.0',
 };
