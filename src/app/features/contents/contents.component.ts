@@ -9,8 +9,6 @@ import { NotificationService } from '@shared/services/notification.service';
 import { Schema, SchemaType } from '@shared/models/schema.model';
 import { SchemaService } from '@shared/services/schema.service';
 import { combineLatest } from 'rxjs';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import {
   Content,
   ContentDocument,
@@ -22,20 +20,18 @@ import {
 import { ContentService } from '@shared/services/content.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
-import { AddDocumentDialogComponent } from './add-document-dialog/add-document-dialog.component';
-import { AddDocumentDialogModel } from './add-document-dialog/add-document-dialog.model';
-import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
-import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
-import { EditDialogComponent } from './edit-dialog/edit-dialog.component';
-import { EditDialogModel } from './edit-dialog/edit-dialog.model';
-import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
+import { AddFolderDialogComponent, AddFolderDialogModel } from './add-folder-dialog';
+import { EditDialogComponent, EditDialogModel } from './edit-dialog';
+import { ExportDialogComponent, ExportDialogModel, ExportDialogReturn } from './export-dialog';
 import { TaskService } from '@shared/services/task.service';
-import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
 import { TokenService } from '@shared/services/token.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { PathItem, SpaceStore } from '@shared/store/space.store';
+import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 
 @Component({
   selector: 'll-contents',
@@ -54,7 +50,7 @@ export class ContentsComponent {
 
   isLoading = signal(true);
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'slug', 'schema', 'publishedAt', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'slug', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
   selection = new SelectionModel<Content>(true, []);
 
   schemas: Schema[] = [];
@@ -211,6 +207,34 @@ export class ContentsComponent {
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error(`Content '${element.name}' can not be deleted.`);
+        },
+      });
+  }
+
+  openMoveDialog(event: Event, element: Content) {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.dialog
+      .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
+        width: '500px',
+        data: {
+          spaceId: this.spaceId(),
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.contentService.move(this.spaceId(), element.id, it!.path, element.slug))
+      )
+      .subscribe({
+        next: () => {
+          this.selection.clear();
+          this.cd.markForCheck();
+          this.notificationService.success('Document has been moved.');
+        },
+        error: () => {
+          this.notificationService.error('Document can not be moved.');
         },
       });
   }

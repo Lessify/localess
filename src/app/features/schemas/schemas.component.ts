@@ -39,7 +39,7 @@ export class SchemasComponent implements OnInit {
   };
 
   dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
-  displayedColumns: string[] = ['type', /*'previewImage',*/ 'name', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['type', /*'previewImage',*/ 'name', /*'createdAt',*/ 'updatedAt', 'actions'];
   schemas: Schema[] = [];
 
   private destroyRef = inject(DestroyRef);

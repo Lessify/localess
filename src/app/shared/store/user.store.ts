@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import { getState, patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { from, pipe, switchMap } from 'rxjs';
@@ -112,11 +112,11 @@ export const UserStore = signalStore(
   }),
   withHooks({
     onInit: store => {
-      console.log('onInit', store);
+      console.log('onInit', getState(store));
       store.load();
     },
     onDestroy: store => {
-      console.log('onDestroy', store);
+      console.log('onDestroy', getState(store));
     },
   })
 );

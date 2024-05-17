@@ -152,8 +152,13 @@
           </button>
         }
         @if ('CONTENT_CREATE' | canUserPerform | async) {
-          <button mat-icon-button (click)="openCloneDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Clone">
+          <button mat-icon-button (click)="openCloneDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Clone Here">
             <mat-icon>content_copy</mat-icon>
+          </button>
+        }
+        @if ('CONTENT_CREATE' | canUserPerform | async) {
+          <button mat-icon-button (click)="openMoveDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Move">
+            <mat-icon>drive_file_move</mat-icon>
           </button>
         }
         @if ('CONTENT_DELETE' | canUserPerform | async) {

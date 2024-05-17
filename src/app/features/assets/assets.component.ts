@@ -43,7 +43,7 @@ export class AssetsComponent implements OnInit {
 
   private destroyRef = inject(DestroyRef);
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
-  displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
   selection = new SelectionModel<Asset>(true, []);
   assets: Asset[] = [];
   fileUploadQueue: File[] = [];

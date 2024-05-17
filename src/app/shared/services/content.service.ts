@@ -101,6 +101,20 @@ export class ContentService {
     );
   }
 
+  findAllFoldersByName(spaceId: string, name: string, max = 20): Observable<ContentDocument[]> {
+    const queryConstrains: QueryConstraint[] = [
+      where('kind', '==', ContentKind.FOLDER),
+      where('name', '>=', name),
+      where('name', '<=', `${name}~`),
+      limit(max),
+    ];
+
+    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
+      traceUntilFirst('Firestore:Contents:findAllFoldersByName'),
+      map(it => it as ContentDocument[])
+    );
+  }
+
   findById(spaceId: string, id: string): Observable<Content> {
     return docData(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findById'),
@@ -167,6 +181,26 @@ export class ContentService {
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
       traceUntilFirst('Firestore:Contents:update')
+    );
+  }
+
+  move(spaceId: string, id: string, parentSlug: string, slug: string): Observable<void> {
+    if (parentSlug === '~') {
+      parentSlug = '';
+    }
+    const update: UpdateData<Content> = {
+      parentSlug: parentSlug,
+      fullSlug: parentSlug ? `${parentSlug}/${slug}` : slug,
+      updatedAt: serverTimestamp(),
+    };
+    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
+      update.updatedBy = {
+        name: this.auth.currentUser.displayName,
+        email: this.auth.currentUser.email,
+      };
+    }
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
+      traceUntilFirst('Firestore:Contents:move')
     );
   }
 

@@ -25,7 +25,7 @@ export class SpacesComponent implements OnInit {
 
   isLoading = true;
   dataSource: MatTableDataSource<Space> = new MatTableDataSource<Space>([]);
-  displayedColumns: string[] = ['id', 'name', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'name', /*'createdAt',*/ 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 

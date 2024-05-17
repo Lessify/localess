@@ -28,7 +28,7 @@ export class UsersComponent implements OnInit {
   isLoading = true;
   isSyncLoading = false;
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
-  displayedColumns: string[] = ['avatar', 'email', 'name', 'role', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['avatar', 'email', 'name', 'role', /*'createdAt',*/ 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 

@@ -24,6 +24,7 @@ import { ReferenceSelectComponent } from './shared/reference-select/reference-se
 import { ReferencesSelectComponent } from './shared/references-select/references-select.component';
 import { ContentHistoryService } from '@shared/services/content-history.service';
 import { MarkdownModule } from 'ngx-markdown';
+import { MoveDialogComponent } from './move-dialog/move-dialog.component';
 
 @NgModule({
   declarations: [
@@ -40,6 +41,7 @@ import { MarkdownModule } from 'ngx-markdown';
     AssetsSelectComponent,
     ExportDialogComponent,
     ImportDialogComponent,
+    MoveDialogComponent,
   ],
   imports: [SharedModule, ContentsRoutingModule, MarkdownModule.forChild()],
   providers: [
