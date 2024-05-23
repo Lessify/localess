@@ -1,0 +1,31 @@
+name: localess
+version: 2.0.0
+specVersion: v1beta
+
+tags: [ai, marketing, utilities]
+
+displayName: Localess
+description: Localess is a powerful translation management tool and content management system built using Angular and Firebase. With Localess, you can easily manage and translate your website or app content into multiple languages, and it uses Artificial Intelligence to translate faster. The user-friendly interface makes it easy to navigate and the Firebase integration ensures that your translations are stored securely and can be easily accessed from anywhere. Whether you're a developer looking to expand your app's reach or a business owner looking to expand your online presence in new markets, Localess is the perfect solution for your localization needs.
+
+license: Apache-2.0
+
+sourceUrl : https://github.com/Lessify/localess
+releaseNotesUrl : https://github.com/Lessify/localess/blob/main/CHANGELOG.md
+
+author:
+  authorName: Lessify
+  url: https://lessify.io
+
+contributors:
+  - authorName: Alex Cibotari
+    url: https://github.com/alexcibotari
+
+billingRequired: true
+
+apis:
+  - apiName: translate.googleapis.com
+    reason: To use Google Translate to translate strings into your specified target languages.
+
+roles:
+  - role: datastore.user
+    reason: Allows the extension to write translated strings to Cloud Firestore.
