@@ -10,6 +10,7 @@ import { FIREBASE_CONFIG, FirebaseConfig } from './models';
 export const BATCH_MAX = 500;
 // TIME
 export const MINUTE = 60;
+export const TEN_MINUTES = 10 * MINUTE;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 // HTTP
