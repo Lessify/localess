@@ -5,7 +5,7 @@ import sharp from 'sharp';
 import { logger } from 'firebase-functions';
 import { HttpsError, onRequest } from 'firebase-functions/v2/https';
 import { Query } from 'firebase-admin/firestore';
-import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService } from './config';
+import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService, TEN_MINUTES } from './config';
 import { AssetFile, Content, ContentKind, ContentLink, Space } from './models';
 import {
   contentCachePath,
@@ -237,11 +237,17 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
             .send(content.toString());
         })
         .catch(() => {
-          res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+          res
+            .status(404)
+            .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+            .send(new HttpsError('not-found', 'File not found, on path. Please Publish again.'));
         });
     }
   } else {
-    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+      .send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
@@ -311,11 +317,17 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
             .send(content.toString());
         })
         .catch(() => {
-          res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+          res
+            .status(404)
+            .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+            .send(new HttpsError('not-found', 'File not found, on path. Please Publish again.'));
         });
     }
   } else {
-    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+      .send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
   }
 });
