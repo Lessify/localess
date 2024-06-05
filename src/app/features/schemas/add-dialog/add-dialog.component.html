@@ -3,19 +3,22 @@
   <br />
   <form [formGroup]="form">
     <mat-form-field>
-      <mat-label>Id</mat-label>
-      <input matInput type="text" formControlName="id" required minlength="3" maxlength="30" autocomplete="off" />
-      <mat-hint>Will be used in JSON structure.</mat-hint>
-      <mat-hint align="end">{{ form.controls['id'].value?.length || 0 }}/30</mat-hint>
-      @if (form.controls['id'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
-      }
-    </mat-form-field>
-    <mat-form-field>
       <mat-label>Display Name</mat-label>
       <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
       <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
       @if (form.controls['displayName'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Id</mat-label>
+      <input matInput type="text" formControlName="id" required minlength="3" maxlength="30" autocomplete="off" />
+      <button mat-icon-button matSuffix (click)="normalizeId()">
+        <mat-icon>auto_fix_normal</mat-icon>
+      </button>
+      <mat-hint>Will be used in JSON structure.</mat-hint>
+      <mat-hint align="end">{{ form.controls['id'].value?.length || 0 }}/30</mat-hint>
+      @if (form.controls['id'].errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>
       }
     </mat-form-field>

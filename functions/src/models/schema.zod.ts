@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { AssetFileType, SchemaFieldKind, SchemaType } from './schema.model';
 
-const FIELD_NAME_PATTERN = /^[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+$/;
-const ID_PATTERN = /^[a-zA-Z]+[a-zA-Z0-9-_.]*[a-zA-Z0-9]+$/;
+// const FIELD_NAME_PATTERN = /^[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+$/;
+// const ID_PATTERN = /^[a-zA-Z]+[a-zA-Z0-9-_.]*[a-zA-Z0-9]+$/;
 
 export const schemaTypeSchema = z.nativeEnum(SchemaType);
 
 export const schemaBaseSchema = z.object({
-  id: z.string().regex(ID_PATTERN),
+  id: z.string(),
   type: schemaTypeSchema,
   displayName: z.string().optional(),
 });
@@ -20,7 +20,7 @@ export const schemaEnumValueSchema = z.object({
 export const schemaFieldKindSchema = z.nativeEnum(SchemaFieldKind);
 
 export const schemaFieldBaseSchema = z.object({
-  name: z.string().regex(FIELD_NAME_PATTERN),
+  name: z.string(),
   kind: schemaFieldKindSchema,
   displayName: z.string().optional(),
   required: z.boolean().optional(),

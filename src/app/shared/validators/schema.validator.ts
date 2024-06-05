@@ -5,7 +5,7 @@ export class SchemaValidator {
   public static ID: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
-    Validators.pattern(CommonPattern.ID),
+    Validators.pattern(CommonPattern.SCHEMA_ID),
     Validators.minLength(3),
     Validators.maxLength(30),
   ];

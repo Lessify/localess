@@ -29,9 +29,11 @@ export class FormErrorHandlerService {
           case `^${CommonPattern.JSON_NAME}$`:
             return `Should contain with a-z, A-Z, 0-9, and underscore (_). Should start with a-z and end with a-z or A-Z or 0-9.`;
           case `^${CommonPattern.URL_SLUG}$`:
-            return `Should contain only a-z, A-Z, 0-9, - and underscore (_).`;
+            return `Should contain with a-z, A-Z, 0-9, - and underscore (_). Should start with a-z and end with a-z or A-Z or 0-9.`;
           case `^${CommonPattern.ID}$`:
             return `Should contain only a-z, A-Z, 0-9, hyphen (-), dot (.) and underscore (_). Should start with a-z or A-Z and end with a-z or A-Z or 0-9.`;
+          case `^${CommonPattern.SCHEMA_ID}$`:
+            return `Should contain only a-z, A-Z, 0-9, hyphen (-), dot (.) and underscore (_). Should start with a-z and end with a-z or A-Z or 0-9.`;
           default:
             return `Doesn't match the pattern ${errors['pattern'].requiredPattern}`;
         }
