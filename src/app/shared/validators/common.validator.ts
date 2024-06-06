@@ -63,10 +63,10 @@ export class CommonValidator {
       if (isEmptyInputValue(control.value)) {
         return null; // don't validate empty values to allow optional controls
       }
-      if (ownSkip && ownSkip === control.value) {
+      if (ownSkip && ownSkip.toLowerCase() === control.value.toLowerCase()) {
         return null;
       }
-      if (names.some(it => it === control.value)) {
+      if (names.some(it => it.toLowerCase() === control.value.toLowerCase())) {
         return { reservedName: true };
       }
       return null;

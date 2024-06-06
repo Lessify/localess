@@ -18,6 +18,8 @@ import { ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TaskService } from '@shared/services/task.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EditDialogComponent } from './edit-dialog/edit-dialog.component';
+import { EditDialogModel } from './edit-dialog/edit-dialog.model';
 
 @Component({
   selector: 'll-schemas',
@@ -81,7 +83,7 @@ export class SchemasComponent implements OnInit {
       .open<AddDialogComponent, AddDialogModel, SchemaCreate>(AddDialogComponent, {
         width: '500px',
         data: {
-          reservedNames: this.schemas.map(it => it.id),
+          reservedIds: this.schemas.map(it => it.id),
         },
       })
       .afterClosed()
@@ -95,6 +97,31 @@ export class SchemasComponent implements OnInit {
         },
         error: () => {
           this.notificationService.error('Schema can not be created.');
+        },
+      });
+  }
+
+  openEditIdDialog(element: Schema): void {
+    this.dialog
+      .open<EditDialogComponent, EditDialogModel, string>(EditDialogComponent, {
+        width: '500px',
+        data: {
+          id: element.id,
+          reservedIds: this.schemas.map(it => it.id),
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.schemaService.updateId(this.spaceId(), element, it!))
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Schema ID has been updated.');
+        },
+        error: (err) => {
+          console.error(err);
+          this.notificationService.error('Schema ID can not be updated.');
         },
       });
   }

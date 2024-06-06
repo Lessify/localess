@@ -219,3 +219,6 @@ export interface SchemaEnumUpdate extends Omit<SchemaEnum, 'id' | 'type' | 'crea
 
 // Firestore
 export interface SchemaCreateFS extends Omit<Schema, 'id'> {}
+
+export interface SchemaComponentUpdateIdFS extends Omit<SchemaComponent, 'id'> {}
+export interface SchemaEnumUpdateIdFS extends Omit<SchemaEnum, 'id'> {}

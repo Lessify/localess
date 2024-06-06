@@ -68,6 +68,7 @@ export enum UserPermission {
   ASSET_DELETE = 'ASSET_DELETE',
   ASSET_EXPORT = 'ASSET_EXPORT',
   ASSET_IMPORT = 'ASSET_IMPORT',
+  DEV_OPEN_API = 'DEV_OPEN_API',
 }
 
 export const USER_PERMISSIONS_IMPORT = [

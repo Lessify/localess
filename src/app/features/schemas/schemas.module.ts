@@ -14,11 +14,13 @@ import { AssetSelectComponent } from './shared/asset-select/asset-select.compone
 import { AssetService } from '@shared/services/asset.service';
 import { EditEnumComponent } from './edit-enum/edit-enum.component';
 import { EditCompComponent } from './edit-comp/edit-comp.component';
+import { EditDialogComponent } from './edit-dialog/edit-dialog.component';
 
 @NgModule({
   declarations: [
     SchemasComponent,
     AddDialogComponent,
+    EditDialogComponent,
     EditFieldComponent,
     EditCompComponent,
     EditEnumComponent,

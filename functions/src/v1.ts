@@ -116,7 +116,7 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
       return;
     } else {
       let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
-      if (kind) {
+      if (kind && (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER)) {
         contentsQuery = contentsQuery.where('kind', '==', kind);
       }
       if (startSlug) {

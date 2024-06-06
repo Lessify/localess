@@ -78,6 +78,11 @@
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+          <button mat-icon-button (click)="openEditIdDialog(element)" matTooltip="Edit ID">
+            <mat-icon>rebase_edit</mat-icon>
+          </button>
+        }
+        @if ('SCHEMA_UPDATE' | canUserPerform | async) {
           <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
             <mat-icon>edit</mat-icon>
           </button>

@@ -82,7 +82,7 @@ export class FeaturesComponent implements OnInit {
   developerMenu: Signal<SideMenuItem[]> = computed(() => {
     const selectedSpaceId = this.spaceStore.selectedSpaceId();
     if (selectedSpaceId) {
-      return [{ link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'api' }];
+      return [{ link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'api', permission: UserPermission.DEV_OPEN_API }];
     } else {
       return [];
     }

@@ -20,7 +20,7 @@ export class AddDialogComponent {
 
   form: FormGroup = this.fb.group({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
-    id: this.fb.control('', [...SchemaValidator.ID, CommonValidator.reservedName(this.data.reservedNames)]),
+    id: this.fb.control('', [...SchemaValidator.ID, CommonValidator.reservedName(this.data.reservedIds)]),
     type: this.fb.control(SchemaType.NODE, SchemaValidator.TYPE),
   });
 

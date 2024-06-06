@@ -18,15 +18,17 @@ import {
 } from '@angular/fire/firestore';
 import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import {
   Schema,
   SchemaComponent,
   SchemaComponentUpdate,
+  SchemaComponentUpdateIdFS,
   SchemaCreate,
   SchemaCreateFS,
   SchemaEnum,
   SchemaEnumUpdate,
+  SchemaEnumUpdateIdFS,
   SchemaType,
 } from '@shared/models/schema.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
@@ -69,6 +71,49 @@ export class SchemaService {
     };
     return from(setDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${entity.id}`), addEntity)).pipe(
       traceUntilFirst('Firestore:Schemas:create')
+    );
+  }
+
+  updateId(spaceId: string, entity: Schema, newId: string): Observable<void> {
+    console.log('updateId', entity, newId);
+    let addEntity: any = {};
+    if (entity.type === SchemaType.ROOT || entity.type === SchemaType.NODE) {
+      const editEntity: WithFieldValue<SchemaComponentUpdateIdFS> = {
+        type: entity.type,
+        createdAt: entity.createdAt,
+        updatedAt: serverTimestamp(),
+      };
+      if (entity.displayName) {
+        editEntity.displayName = entity.displayName;
+      }
+      if (entity.previewField) {
+        editEntity.previewField = entity.previewField;
+      }
+      if (entity.previewImage) {
+        editEntity.previewImage = entity.previewImage;
+      }
+      if (entity.fields) {
+        editEntity.fields = entity.fields;
+      }
+      addEntity = editEntity;
+    } else if (entity.type === SchemaType.ENUM) {
+      const editEntity: WithFieldValue<SchemaEnumUpdateIdFS> = {
+        type: entity.type,
+        createdAt: entity.createdAt,
+        updatedAt: serverTimestamp(),
+      };
+      if (entity.displayName) {
+        editEntity.displayName = entity.displayName;
+      }
+      if (entity.values) {
+        editEntity.values = entity.values;
+      }
+      addEntity = editEntity;
+    }
+
+    return from(setDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${newId}`), addEntity)).pipe(
+      traceUntilFirst('Firestore:Schemas:updateId'),
+      switchMap(() => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${entity.id}`))))
     );
   }
 
