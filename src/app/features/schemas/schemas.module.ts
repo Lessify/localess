@@ -10,23 +10,21 @@ import { EditFieldComponent } from './shared/edit-field/edit-field.component';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { TaskService } from '@shared/services/task.service';
-import { AssetSelectComponent } from './shared/asset-select/asset-select.component';
 import { AssetService } from '@shared/services/asset.service';
 import { EditEnumComponent } from './edit-enum/edit-enum.component';
 import { EditCompComponent } from './edit-comp/edit-comp.component';
-import { EditDialogComponent } from './edit-dialog/edit-dialog.component';
+import { EditIdDialogComponent } from './edit-id-dialog';
 
 @NgModule({
   declarations: [
     SchemasComponent,
     AddDialogComponent,
-    EditDialogComponent,
+    EditIdDialogComponent,
     EditFieldComponent,
     EditCompComponent,
     EditEnumComponent,
     ExportDialogComponent,
     ImportDialogComponent,
-    AssetSelectComponent,
   ],
   imports: [SharedModule, SchemasRoutingModule],
   providers: [SpaceService, SchemaService, TaskService, AssetService],

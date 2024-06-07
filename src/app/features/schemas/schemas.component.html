@@ -40,24 +40,16 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.id }}</mat-cell>
     </ng-container>
-    <ng-container matColumnDef="previewImage">
-      <mat-header-cell *matHeaderCellDef> Preview Image</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @if (element.previewImage; as previewImage) {
-          <img
-            class="img-thumbnail"
-            width="115"
-            height="115"
-            loading="lazy"
-            alt="thumbnail"
-            ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ previewImage }}" />
-        }
-      </mat-cell>
-    </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
         {{ element.displayName }} &nbsp;<span class="text-gray-500">#{{ element.id }}</span>
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="description">
+      <mat-header-cell *matHeaderCellDef> Description</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        {{ element.description }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="type">

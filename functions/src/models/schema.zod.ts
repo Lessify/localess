@@ -10,6 +10,7 @@ export const schemaBaseSchema = z.object({
   id: z.string(),
   type: schemaTypeSchema,
   displayName: z.string().optional(),
+  description: z.string().optional(),
 });
 
 export const schemaEnumValueSchema = z.object({
@@ -152,7 +153,6 @@ export const schemaFieldSchema = z.union([
 export const schemaComponentSchema = schemaBaseSchema.extend({
   type: z.union([z.literal(SchemaType.ROOT), z.literal(SchemaType.NODE)]),
   previewField: z.string().optional(),
-  previewImage: z.string().optional(),
   // fields: z.array(schemaFieldSchema).optional(),
 });
 

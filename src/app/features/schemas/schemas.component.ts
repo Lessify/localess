@@ -18,8 +18,7 @@ import { ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TaskService } from '@shared/services/task.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EditDialogComponent } from './edit-dialog/edit-dialog.component';
-import { EditDialogModel } from './edit-dialog/edit-dialog.model';
+import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
 
 @Component({
   selector: 'll-schemas',
@@ -41,7 +40,7 @@ export class SchemasComponent implements OnInit {
   };
 
   dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
-  displayedColumns: string[] = ['type', /*'previewImage',*/ 'name', /*'createdAt',*/ 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['type', 'name', 'description', /*'createdAt',*/ 'updatedAt', 'actions'];
   schemas: Schema[] = [];
 
   private destroyRef = inject(DestroyRef);
@@ -103,7 +102,7 @@ export class SchemasComponent implements OnInit {
 
   openEditIdDialog(element: Schema): void {
     this.dialog
-      .open<EditDialogComponent, EditDialogModel, string>(EditDialogComponent, {
+      .open<EditIdDialogComponent, EditIdDialogModel, string>(EditIdDialogComponent, {
         width: '500px',
         data: {
           id: element.id,
@@ -119,7 +118,7 @@ export class SchemasComponent implements OnInit {
         next: () => {
           this.notificationService.success('Schema ID has been updated.');
         },
-        error: (err) => {
+        error: err => {
           console.error(err);
           this.notificationService.error('Schema ID can not be updated.');
         },

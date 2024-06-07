@@ -43,7 +43,6 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
-import { TooltipComponent, TooltipDirective } from '@shared/components/tooltip';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -98,8 +97,6 @@ const SHARED_COMPONENTS: any[] = [
   ReleasesDialogComponent,
   CustomSnackBarComponent,
   IconComponent,
-  TooltipDirective,
-  TooltipComponent,
 ];
 
 @NgModule({

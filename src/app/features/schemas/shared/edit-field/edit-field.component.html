@@ -70,7 +70,7 @@
 
       <mat-form-field>
         <mat-label>Description</mat-label>
-        <textarea matInput formControlName="description" class="cdk-textarea-autosize"></textarea>
+        <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
         <mat-hint align="end">{{ form.value.description?.length || 0 }}/250</mat-hint>
         @if (form.controls['description']?.errors; as errors) {
           <mat-error>{{ fe.errors(errors) }}</mat-error>
@@ -78,7 +78,7 @@
       </mat-form-field>
       <mat-form-field>
         <mat-label>Default Value</mat-label>
-        <textarea matInput formControlName="defaultValue" class="cdk-textarea-autosize"></textarea>
+        <textarea matInput formControlName="defaultValue" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
         <mat-hint align="end">{{ form.value.defaultValue?.length || 0 }}/250</mat-hint>
         @if (form.controls['defaultValue']?.errors; as errors) {
           <mat-error>{{ fe.errors(errors) }}</mat-error>
@@ -144,7 +144,7 @@
           <mat-select formControlName="source">
             <mat-option value="self">Self - <i>values will be defined here</i></mat-option>
             @for (schema of enumSchemas(); track schema.id) {
-              <mat-option [value]="schema.id">
+              <mat-option [value]="schema.id" [matTooltip]="schema.description">
                 {{ schema.id }}
                 @if (schema.displayName) {
                   <span> ({{ schema.displayName }})</span>
@@ -206,7 +206,7 @@
           <mat-label>Schema</mat-label>
           <mat-select formControlName="schemas" multiple>
             @for (schema of nodeSchemas(); track schema.id) {
-              <mat-option [value]="schema.id">
+              <mat-option [value]="schema.id" [matTooltip]="schema.description">
                 {{ schema.id }}
                 @if (schema.displayName; as displayName) {
                   <span> ({{ displayName }})</span>

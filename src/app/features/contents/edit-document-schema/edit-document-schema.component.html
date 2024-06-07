@@ -301,27 +301,8 @@
                 </button>
                 <mat-menu #schemasMenu="matMenu">
                   @for (sch of filterSchema(field.schemas); track sch.id) {
-                    <button
-                      mat-menu-item
-                      (click)="addSchemaOne(field, sch)"
-                      [llTooltip]="imagePreview"
-                      contentType="template"
-                      [display]="sch.previewImage !== undefined"
-                      placement="left"
-                      [showDelay]="600"
-                      theme="light">
+                    <button mat-menu-item (click)="addSchemaOne(field, sch)" [matTooltip]="sch.description">
                       {{ sch.displayName || sch.id }}
-                      <ng-template #imagePreview>
-                        @if (sch.previewImage; as previewImage) {
-                          <img
-                            class="rounded"
-                            width="180"
-                            height="180"
-                            loading="lazy"
-                            alt="thumbnail"
-                            ngSrc="/api/v1/spaces/{{ space.id }}/assets/{{ previewImage }}" />
-                        }
-                      </ng-template>
                     </button>
                   }
                 </mat-menu>
@@ -374,27 +355,8 @@
                 </button>
                 <mat-menu #schemasMenu="matMenu">
                   @for (sch of filterSchema(field.schemas); track sch.id) {
-                    <button
-                      mat-menu-item
-                      (click)="addSchemaMany(field, sch)"
-                      [llTooltip]="imagePreview"
-                      contentType="template"
-                      [display]="sch.previewImage !== undefined"
-                      placement="left"
-                      [showDelay]="600"
-                      theme="light">
+                    <button mat-menu-item (click)="addSchemaMany(field, sch)" [matTooltip]="sch.description">
                       {{ sch.displayName || sch.id }}
-                      <ng-template #imagePreview>
-                        @if (sch.previewImage; as previewImage) {
-                          <img
-                            class="rounded"
-                            width="180"
-                            height="180"
-                            loading="lazy"
-                            alt="thumbnail"
-                            ngSrc="/api/v1/spaces/{{ space.id }}/assets/{{ previewImage }}" />
-                        }
-                      </ng-template>
                     </button>
                   }
                 </mat-menu>

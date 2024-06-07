@@ -21,10 +21,6 @@ import { SpaceService } from '@shared/services/space.service';
 import { Locale } from '@shared/models/locale.model';
 import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { Space } from '@shared/models/space.model';
-import { TranslationAddDialogComponent } from './translation-add-dialog/translation-add-dialog.component';
-import { TranslationAddDialogModel, TranslationAddDialogReturnModel } from './translation-add-dialog/translation-add-dialog.model';
-import { TranslationEditDialogModel } from './translation-edit-dialog/translation-edit-dialog.model';
-import { TranslationEditDialogComponent } from './translation-edit-dialog/translation-edit-dialog.component';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -39,6 +35,9 @@ import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-di
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslationHistory } from '@shared/models/translation-history.model';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
+import { EditDialogComponent, EditDialogModel } from './edit-dialog';
+import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
+import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
 
 @Component({
   selector: 'll-translations',
@@ -172,10 +171,10 @@ export class TranslationsComponent implements OnInit {
 
   openAddDialog(): void {
     this.dialog
-      .open<TranslationAddDialogComponent, TranslationAddDialogModel, TranslationAddDialogReturnModel>(TranslationAddDialogComponent, {
+      .open<AddDialogComponent, AddDialogModel, AddDialogReturnModel>(AddDialogComponent, {
         width: '500px',
         data: {
-          reservedNames: this.translationIds(),
+          reservedIds: this.translationIds(),
         },
       })
       .afterClosed()
@@ -204,9 +203,36 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
+  openEditIdDialog(translation: Translation): void {
+    this.dialog
+      .open<EditIdDialogComponent, EditIdDialogModel, string>(EditIdDialogComponent, {
+        width: '500px',
+        data: {
+          id: translation.id,
+          reservedIds: this.translationIds(),
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => {
+          return this.translationService.updateId(this.spaceId(), translation, it!);
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Translation ID has been updated.');
+        },
+        error: err => {
+          console.error(err);
+          this.notificationService.error('Translation ID can not be updated.');
+        },
+      });
+  }
+
   openEditDialog(translation: Translation): void {
     this.dialog
-      .open<TranslationEditDialogComponent, Translation, TranslationEditDialogModel>(TranslationEditDialogComponent, {
+      .open<EditDialogComponent, Translation, EditDialogModel>(EditDialogComponent, {
         width: '500px',
         data: ObjectUtils.clone(translation),
       })

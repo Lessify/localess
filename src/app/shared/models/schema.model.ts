@@ -12,6 +12,7 @@ export interface SchemaBase {
   id: string;
   type: SchemaType;
   displayName?: string;
+  description?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -20,7 +21,6 @@ export interface SchemaBase {
 export interface SchemaComponent extends SchemaBase {
   type: SchemaType.ROOT | SchemaType.NODE;
   previewField?: string;
-  previewImage?: string;
   fields?: SchemaField[];
 }
 

@@ -1,37 +1,35 @@
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatChipInputEvent } from '@angular/material/chips';
-import { COMMA, ENTER } from '@angular/cdk/keycodes';
-import { TranslationValidator } from '@shared/validators/translation.validator';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { TranslationAddDialogModel } from './translation-add-dialog.model';
+import { TranslationValidator } from '@shared/validators/translation.validator';
+import { Translation } from '@shared/models/translation.model';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { SchemaValidator } from '@shared/validators/schema.validator';
 import { CommonValidator } from '@shared/validators/common.validator';
 
 @Component({
-  selector: 'll-translation-add-dialog',
-  templateUrl: './translation-add-dialog.component.html',
-  styleUrls: ['./translation-add-dialog.component.scss'],
+  selector: 'll-translation-edit-dialog',
+  templateUrl: './edit-dialog.component.html',
+  styleUrls: ['./edit-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TranslationAddDialogComponent {
-  readonly separatorKeysCodes: number[] = [ENTER, COMMA];
-  translationTypes: string[] = ['STRING', 'PLURAL', 'ARRAY'];
+export class EditDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({
-    id: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.data.reservedNames)]),
-    type: this.fb.control('STRING', TranslationValidator.TYPE),
-    description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
-    value: this.fb.control('', TranslationValidator.STRING_VALUE),
-    labels: this.fb.control([], TranslationValidator.LABEL),
-    autoTranslate: this.fb.control(undefined),
+    description: this.fb.control('', TranslationValidator.DESCRIPTION),
+    labels: this.fb.control([], TranslationValidator.DESCRIPTION),
   });
 
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: TranslationAddDialogModel
-  ) {
-    this.form.valueChanges.subscribe(it => console.log(it));
+    @Inject(MAT_DIALOG_DATA) public data: Translation
+  ) {}
+
+  ngOnInit(): void {
+    if (this.data != null) {
+      this.form.patchValue(this.data);
+    }
   }
 
   addLabel(event: MatChipInputEvent): void {

@@ -751,6 +751,7 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
       {
         type: 'string',
         enum: schema.values?.map(it => it.value),
+        description: schema.description,
       },
     ];
   }
@@ -778,6 +779,7 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
       pascalName,
       {
         type: 'object',
+        description: schema.description,
         required: required,
         properties: schemasDefinition,
       },

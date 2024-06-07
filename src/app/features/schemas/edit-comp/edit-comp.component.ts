@@ -52,8 +52,8 @@ export class EditCompComponent implements OnInit {
 
   form: FormRecord = this.fb.record({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
+    description: this.fb.control<string | undefined>(undefined, SchemaValidator.DESCRIPTION),
     previewField: this.fb.control<string | undefined>(undefined, SchemaValidator.PREVIEW_FIELD),
-    previewImage: this.fb.control<string | undefined>(undefined),
     fields: this.fb.array<SchemaField>([]),
   });
 

@@ -1,4 +1,4 @@
-export interface EditDialogModel {
+export interface EditIdDialogModel {
   id: string;
   reservedIds: string[];
 }

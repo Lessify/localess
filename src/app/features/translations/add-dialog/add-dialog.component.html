@@ -1,4 +1,4 @@
-<h1 mat-dialog-title>Add Translation</h1>
+<h2 mat-dialog-title>Add Translation</h2>
 <mat-dialog-content>
   <br />
   <form [formGroup]="form">
@@ -25,7 +25,8 @@
     }
     <mat-form-field>
       <mat-label>Description</mat-label>
-      <textarea matInput #description class="cdk-textarea-autosize" formControlName="description"></textarea>
+      <textarea matInput #description formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6">
+      </textarea>
       <mat-hint align="end">{{ description.value?.length || 0 }}/250</mat-hint>
       @if (form.controls['description'].errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>
@@ -33,7 +34,7 @@
     </mat-form-field>
     <mat-form-field>
       <mat-label>Value</mat-label>
-      <textarea matInput #defaultValue class="cdk-textarea-autosize" formControlName="value"></textarea>
+      <textarea matInput #defaultValue formControlName="value" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
       <mat-hint align="end">{{ defaultValue.value?.length || 0 }}/1000</mat-hint>
       @if (form.controls['value'].errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>

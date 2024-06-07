@@ -34,6 +34,7 @@ export class EditEnumComponent implements OnInit {
 
   form: FormRecord = this.fb.record({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
+    description: this.fb.control<string | undefined>(undefined, SchemaValidator.DESCRIPTION),
     values: this.fb.array<SchemaEnumValue>([]),
   });
 

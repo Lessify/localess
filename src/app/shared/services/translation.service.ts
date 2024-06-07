@@ -15,7 +15,7 @@ import {
 import { from, Observable } from 'rxjs';
 import { Translation, TranslationCreate, TranslationCreateFS, TranslationType, TranslationUpdate } from '../models/translation.model';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { deleteField } from '@firebase/firestore';
 import { Auth } from '@angular/fire/auth';
@@ -115,6 +115,32 @@ export class TranslationService {
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
       traceUntilFirst('Firestore:Translations:update')
+    );
+  }
+
+  updateId(spaceId: string, entity: Translation, newId: string): Observable<void> {
+    console.log('updateId', entity, newId);
+    const addEntity: UpdateData<Translation> = {
+      type: entity.type,
+      locales: entity.locales,
+      createdAt: entity.createdAt,
+      updatedAt: serverTimestamp(),
+    };
+    if (entity.labels) {
+      addEntity.labels = entity.labels;
+    }
+    if (entity.description) {
+      addEntity.description = entity.description;
+    }
+    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
+      addEntity.updatedBy = {
+        name: this.auth.currentUser.displayName,
+        email: this.auth.currentUser.email,
+      };
+    }
+    return from(setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${newId}`), addEntity)).pipe(
+      traceUntilFirst('Firestore:Translations:updateId'),
+      switchMap(() => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`))))
     );
   }
 

@@ -242,6 +242,9 @@
                 <div class="d-flex flex-column">
                   <div class="p-2 align-items-start">
                     @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+                      <button mat-icon-button matTooltip="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
+                        <mat-icon>rebase_edit</mat-icon>
+                      </button>
                       <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(selectedTranslation)">
                         <mat-icon>edit</mat-icon>
                       </button>

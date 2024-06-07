@@ -33,19 +33,31 @@
             }
           </mat-form-field>
           <mat-form-field>
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
+            <mat-hint align="end">{{ form.controls['description'].value?.length || 0 }}/250</mat-hint>
+            @if (form.controls['description']?.errors; as errors) {
+              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field>
             <mat-label>Preview Field</mat-label>
-            <input matInput type="text" formControlName="previewField" minlength="3" maxlength="50" autocomplete="off" />
+            <mat-select formControlName="previewField">
+              @for (field of fields.controls; track field.value.name) {
+                @if (
+                  ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(field.value.kind)
+                ) {
+                  <mat-option [value]="field.value.name">
+                    {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
+                  </mat-option>
+                }
+              }
+            </mat-select>
             <mat-hint align="end">{{ form.controls['previewField'].value?.length || 0 }}/50</mat-hint>
             @if (form.controls['previewField'].errors; as errors) {
               <mat-error>{{ fe.errors(errors) }}</mat-error>
             }
           </mat-form-field>
-
-          <ll-schema-asset-select
-            [spaceId]="spaceId()"
-            [assetId]="form.controls['previewImage'].value"
-            (assetChange)="form.controls['previewImage'].setValue($event)" />
-
           <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="fieldDropDrop($event)">
             <mat-divider></mat-divider>
             <div mat-subheader>Fields</div>

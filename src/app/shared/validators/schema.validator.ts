@@ -12,6 +12,8 @@ export class SchemaValidator {
 
   public static TYPE: ValidatorFn[] = [Validators.required];
 
+  public static DESCRIPTION: ValidatorFn[] = [Validators.maxLength(250)];
+
   public static DISPLAY_NAME: ValidatorFn[] = [CommonValidator.noSpaceAround, Validators.maxLength(30)];
 
   public static PREVIEW_FIELD: ValidatorFn[] = [CommonValidator.noSpaceAround, Validators.maxLength(30)];

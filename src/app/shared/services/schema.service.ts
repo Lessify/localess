@@ -83,14 +83,14 @@ export class SchemaService {
         createdAt: entity.createdAt,
         updatedAt: serverTimestamp(),
       };
+      if (entity.description) {
+        editEntity.description = entity.description;
+      }
       if (entity.displayName) {
         editEntity.displayName = entity.displayName;
       }
       if (entity.previewField) {
         editEntity.previewField = entity.previewField;
-      }
-      if (entity.previewImage) {
-        editEntity.previewImage = entity.previewImage;
       }
       if (entity.fields) {
         editEntity.fields = entity.fields;
@@ -102,6 +102,9 @@ export class SchemaService {
         createdAt: entity.createdAt,
         updatedAt: serverTimestamp(),
       };
+      if (entity.description) {
+        editEntity.description = entity.description;
+      }
       if (entity.displayName) {
         editEntity.displayName = entity.displayName;
       }
@@ -121,8 +124,8 @@ export class SchemaService {
     ObjectUtils.clean(entity);
     const update: UpdateData<SchemaComponent> = {
       displayName: entity.displayName || deleteField(),
+      description: entity.description || deleteField(),
       previewField: entity.previewField || deleteField(),
-      previewImage: entity.previewImage || deleteField(),
       fields: entity.fields || deleteField(),
       updatedAt: serverTimestamp(),
     };
@@ -135,6 +138,7 @@ export class SchemaService {
     ObjectUtils.clean(entity);
     const update: UpdateData<SchemaEnum> = {
       displayName: entity.displayName || deleteField(),
+      description: entity.description || deleteField(),
       values: entity.values || deleteField(),
       updatedAt: serverTimestamp(),
     };

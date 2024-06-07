@@ -1,0 +1,28 @@
+<h2 mat-dialog-title>Edit Schema ID</h2>
+<mat-dialog-content>
+  <br />
+  <form [formGroup]="form">
+    <mat-form-field>
+      <mat-label>Id</mat-label>
+      <input matInput type="text" formControlName="id" required minlength="3" maxlength="30" autocomplete="off" />
+      <button mat-icon-button matSuffix (click)="normalizeId()">
+        <mat-icon>auto_fix_normal</mat-icon>
+      </button>
+      <mat-hint>Will be used in OpenAPI Schema Name.</mat-hint>
+      <mat-hint align="end">{{ form.controls['id'].value?.length || 0 }}/30</mat-hint>
+      @if (form.controls['id'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+  <br />
+  <p class="warn">
+    <strong>Warning:</strong>
+    Changing the ID will affect the relation between other Schema and OpenAPI Schema Name. It will also affect the API endpoint and the data
+    stored in the database.
+  </p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="form.value.id" [disabled]="!form.valid">Save</button>
+</mat-dialog-actions>

@@ -1,17 +1,24 @@
-<h1 mat-dialog-title>Translation</h1>
+<h2 mat-dialog-title>Edit Translation</h2>
 <mat-dialog-content>
   <br />
   <form [formGroup]="form">
     <mat-form-field>
       <mat-label>Description</mat-label>
-      <textarea matInput #description maxlength="250" class="cdk-textarea-autosize" formControlName="description"></textarea>
+      <textarea
+        matInput
+        #description
+        maxlength="250"
+        formControlName="description"
+        cdkTextareaAutosize
+        cdkAutosizeMinRows="2"
+        cdkAutosizeMaxRows="6"></textarea>
       <mat-hint align="end">{{ description.value?.length || 0 }}/250</mat-hint>
       @if (form.controls['description'].errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>
       }
     </mat-form-field>
     <mat-form-field>
-      <mat-chip-grid #chipList attr.aria-label="Select Label">
+      <mat-chip-grid #chipList [attr.aria-label]="'Select Label'">
         @for (label of form.controls['labels'].value; track label) {
           <mat-chip-row selectable removable (removed)="removeLabel(label)">
             {{ label }}
