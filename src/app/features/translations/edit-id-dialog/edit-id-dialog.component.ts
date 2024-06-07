@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { MatChipInputEvent } from '@angular/material/chips';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { TranslationValidator } from '@shared/validators/translation.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';

@@ -5,8 +5,6 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { TranslationValidator } from '@shared/validators/translation.validator';
 import { Translation } from '@shared/models/translation.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { SchemaValidator } from '@shared/validators/schema.validator';
-import { CommonValidator } from '@shared/validators/common.validator';
 
 @Component({
   selector: 'll-translation-edit-dialog',
