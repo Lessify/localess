@@ -173,10 +173,18 @@ export class FeaturesComponent implements OnInit {
 
   showReleases() {
     this.dialog.open<ReleasesDialogComponent, ReleasesDialogModel, void>(ReleasesDialogComponent, {
+      minWidth: '900px',
+      width: 'calc(100vw - 160px)',
+      maxWidth: '1280px',
+      maxHeight: 'calc(100vh - 80px)',
       data: {
         version: this.version,
         releases: this.releases,
       },
     });
+  }
+
+  switchTheme() {
+    this.settingsStore.setTheme(this.settingsStore.theme() === 'dark' ? 'light' : 'dark');
   }
 }

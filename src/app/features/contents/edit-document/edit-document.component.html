@@ -54,7 +54,7 @@
 
     @if ('CONTENT_UPDATE' | canUserPerform | async) {
       <button
-        mat-raised-button
+        mat-stroked-button
         color="primary"
         matTooltip="Save the page"
         [disabled]="isSaveLoading() || isPublishLoading()"
@@ -65,7 +65,7 @@
     }
     @if ('CONTENT_PUBLISH' | canUserPerform | async) {
       <button
-        mat-raised-button
+        mat-stroked-button
         color="accent"
         matTooltip="Publish to be available via API call"
         [disabled]="isPublishLoading() || isSaveLoading()"

@@ -2,12 +2,12 @@
   <mat-toolbar-row>
     Users
     <span class="spacer"></span>
-    <button mat-raised-button color="primary" (click)="inviteDialog()">
+    <button mat-stroked-button color="primary" (click)="inviteDialog()">
       <mat-icon>person_add</mat-icon>
       Invite
     </button>
 
-    <button mat-raised-button color="accent" matTooltip="Synchronize Users with Database." (click)="sync()">
+    <button mat-stroked-button color="accent" matTooltip="Synchronize Users with Database." (click)="sync()">
       <ll-icon [animate]="isSyncLoading" start="sync" end="sync" />
       Sync
     </button>
@@ -22,7 +22,11 @@
     <ng-container matColumnDef="avatar">
       <mat-header-cell *matHeaderCellDef> Avatar</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <img [ngSrc]="element.photoURL || '/assets/account_circle.svg'" width="40" height="40" mat-card-avatar alt="circle" />
+        @if (element.photoURL) {
+          <img [ngSrc]="element.photoURL" width="40" height="40" mat-card-avatar alt="circle" />
+        } @else {
+          <mat-icon class="text-4xl" style="width: 40px; height: 40px">account_circle</mat-icon>
+        }
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="email">

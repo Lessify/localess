@@ -1,5 +1,5 @@
 <div class="wrapper">
-  <mat-toolbar [color]="spaceStore.selectedSpace()?.ui?.color || 'primary'">
+  <mat-toolbar class="main">
     <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
       <mat-icon>{{ settingsStore.mainMenuExpended() ? 'menu_open' : 'menu' }}</mat-icon>
     </button>
@@ -21,10 +21,11 @@
         </mat-menu>
       }
     } @else {
-      <button mat-raised-button color="warn" routerLink="/features/spaces">No Spaces. Click here to create one.</button>
+      <button mat-stroked-button color="warn" routerLink="/features/spaces">No Spaces. Click here to create one.</button>
     }
 
     <span class="spacer"></span>
+    <span class="vertical-divider">&nbsp; </span>
     <button mat-icon-button (click)="openNewTab('https://github.com/sponsors/Lessify')" matTooltip="Sponsor Us">
       <mat-icon class="motion-safe:animate-bounce">volunteer_activism</mat-icon>
     </button>
@@ -42,6 +43,11 @@
         </button>
       }
     </mat-menu>
+    <span class="vertical-divider">&nbsp; </span>
+    <button mat-icon-button (click)="switchTheme()" aria-label="Switch theme" matTooltip="Switch theme">
+      <mat-icon class="dark:!hidden">dark_mode</mat-icon>
+      <mat-icon class="!hidden dark:!block">light_mode</mat-icon>
+    </button>
     <button mat-icon-button (click)="onSettingsMenuExpendedChangeState()" matTooltip="Settings">
       <mat-icon>settings</mat-icon>
     </button>
@@ -119,7 +125,6 @@
           </mat-list-item>
         }
       </mat-nav-list>
-      <mat-divider />
     </mat-sidenav>
 
     <mat-sidenav mode="over" [opened]="isSettingsMenuExpended()" position="end" (openedChange)="isSettingsMenuExpended.set($event)">

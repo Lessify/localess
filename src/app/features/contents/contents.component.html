@@ -7,7 +7,7 @@
     <span class="spacer"></span>
 
     @if ('CONTENT_CREATE' | canUserPerform | async) {
-      <button mat-raised-button color="primary" [matMenuTriggerFor]="contentCreateMenu">
+      <button mat-stroked-button color="primary" [matMenuTriggerFor]="contentCreateMenu">
         <mat-icon>add</mat-icon>
         Add Content
       </button>

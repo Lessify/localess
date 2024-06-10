@@ -1,18 +1,18 @@
-@import '../../styles/styles-variables';
+@use '@angular/material' as mat;
 
 .wrapper {
   height: calc(100% - 64px);
-  //display: flex;
-  //flex-direction: column;
-  //position: absolute;
+}
 
-  mat-toolbar {
-    padding-left: 0;
-  }
-
-  mat-sidenav-container {
-    // when side-nav is collapsed
-    mat-sidenav.collapsed {
+mat-sidenav-container {
+  height: 100%;
+  // when side-nav is collapsed
+  mat-sidenav {
+    width: 200px;
+    border-right: 1px solid var(--sys-outline-variant);
+    border-radius: 0;
+    &.collapsed {
+      width: 56px;
       mat-list-item {
         padding-right: 0;
         mat-icon {
@@ -20,121 +20,16 @@
         }
       }
     }
-
-    mat-sidenav-content {
-    }
   }
+  mat-sidenav-content {
+  }
+}
+
+.vertical-divider {
+  border-right: 1px solid var(--sys-outline-variant);
+  @apply mx-1;
 }
 
 mat-form-field {
   width: 100%;
-}
-
-.mat-mdc-list-item.active {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-mat-sidenav-container {
-  //flex: 1;
-  height: 100%;
-  //width: 100%;
-
-  .toolbar {
-    position: fixed;
-    width: 100%;
-    display: flex;
-    z-index: 10;
-
-    .nav-button {
-      margin: 0 10px 0 0;
-    }
-
-    .branding {
-      cursor: pointer;
-      overflow: hidden;
-      padding-top: 4px;
-      text-overflow: ellipsis;
-
-      &.center {
-        text-align: center;
-      }
-
-      img {
-        position: relative;
-        top: -2px;
-        width: 48px;
-        height: 48px;
-      }
-    }
-
-    .mat-mdc-outlined-button {
-      margin-right: 10px;
-    }
-
-    .spacer {
-      flex: 1 1 auto;
-    }
-    /* TODO(mdc-migration): The following rule targets internal classes of select that may no longer apply for the MDC version. */
-    mat-select {
-      margin: 0 0 0 20px;
-      width: 40px;
-      font-size: 14px;
-    }
-
-    @media (max-width: map-get($grid-breakpoints, lg)) {
-      .nav-button {
-        min-width: 0;
-        padding: 0 10px;
-      }
-    }
-  }
-
-  .wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-
-    .content {
-      flex: 1 0 auto;
-      margin-top: 64px;
-      overflow: hidden;
-    }
-  }
-
-  @media (max-width: $toolbar-breakpoint) {
-    .content {
-      margin-top: 56px !important;
-    }
-  }
-}
-
-mat-sidenav {
-  // width: 250px;
-
-  .branding {
-    height: 64px;
-    padding: 8px 10px;
-    font-size: 20px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-
-    img {
-      height: 48px;
-      margin: 2px 10px 0 0;
-    }
-
-    span {
-      position: relative;
-      top: 3px;
-    }
-  }
-
-  .mat-nav-list {
-    padding-top: 0;
-  }
 }

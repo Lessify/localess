@@ -7,14 +7,14 @@
       </a>
       <span class="spacer"></span>
       @if ('TRANSLATION_CREATE' | canUserPerform | async) {
-        <button mat-raised-button color="primary" (click)="openAddDialog()">
+        <button mat-stroked-button color="primary" (click)="openAddDialog()">
           <mat-icon>add</mat-icon>
           Add Translation
         </button>
       }
       @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
         <button
-          mat-raised-button
+          mat-stroked-button
           color="accent"
           matTooltip="Publish Translations to be available via API call"
           [disabled]="isPublishLoading()"
@@ -223,7 +223,7 @@
                     <mat-divider></mat-divider>
                     <div class="p-2 flex flex-row-reverse">
                       <button
-                        mat-raised-button
+                        mat-stroked-button
                         color="primary"
                         [disabled]="
                           isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue

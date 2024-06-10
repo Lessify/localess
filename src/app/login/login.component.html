@@ -19,7 +19,7 @@
 
         <div>
           <button
-            mat-raised-button
+            mat-stroked-button
             color="primary"
             class="w-full"
             (click)="loginWithEmailAndPassword(form.value.email, form.value.password)">
@@ -44,10 +44,10 @@
 
           <div class="mt-6 grid grid-cols-2 gap-4">
             @if (isGoogleAuthEnabled) {
-              <button mat-raised-button color="warn" (click)="loginWithGoogle()">Google</button>
+              <button mat-stroked-button color="warn" (click)="loginWithGoogle()">Google</button>
             }
             @if (isMicrosoftAuthEnabled) {
-              <button mat-raised-button color="warn" (click)="loginWithMicrosoft()"> Microsoft</button>
+              <button mat-stroked-button color="warn" (click)="loginWithMicrosoft()"> Microsoft</button>
             }
           </div>
         </div>

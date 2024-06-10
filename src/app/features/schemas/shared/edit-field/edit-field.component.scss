@@ -15,7 +15,7 @@ mat-expansion-panel {
     cursor: grab;
   }
   &.invalid {
-    border: solid 2px mat.get-color-from-palette($error-colors);
+    border: solid 2px mat.m2-get-color-from-palette($error-colors);
   }
 }
 

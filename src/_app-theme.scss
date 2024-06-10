@@ -1,0 +1,8 @@
+@use '@angular/material' as mat;
+
+@use './app/features/features-theme';
+
+// Styles for the docs app that are based on the current theme.
+@mixin theme($theme) {
+  @include features-theme.theme($theme);
+}

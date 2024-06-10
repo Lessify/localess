@@ -310,7 +310,7 @@
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-              <mat-nav-list class="ll-mat-nav-list-gap">
+              <mat-list class="ll-mat-list-gap">
                 @if (data[field.name]; as item) {
                   <mat-list-item (click)="navigationTo(item._id, field.name, item.schema)">
                     @if (schemaCompNodeById().get(item.schema); as sch) {
@@ -337,7 +337,7 @@
                     </mat-action-list>
                   </mat-list-item>
                 }
-              </mat-nav-list>
+              </mat-list>
             </mat-card-content>
           </mat-card>
         }
@@ -364,9 +364,9 @@
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-              <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
+              <mat-list cdkDropList class="ll-mat-list-gap" (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
                 @for (item of data[field.name]; track item; let idx = $index) {
-                  <mat-list-item cdkDrag (click)="navigationTo(item._id, field.name, item.schema)">
+                  <mat-list-item cdkDrag cdkDragPreviewContainer="parent" (click)="navigationTo(item._id, field.name, item.schema)">
                     <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
                     @if (schemaCompNodeById().get(item.schema); as sch) {
                       <div matListItemTitle>
@@ -395,7 +395,7 @@
                     </mat-action-list>
                   </mat-list-item>
                 }
-              </mat-nav-list>
+              </mat-list>
             </mat-card-content>
           </mat-card>
         }

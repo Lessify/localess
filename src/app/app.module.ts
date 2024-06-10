@@ -25,6 +25,7 @@ import { getPerformance, providePerformance } from '@angular/fire/performance';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 import { MarkdownModule } from 'ngx-markdown';
+import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
 
 @NgModule({
   declarations: [AppComponent],
@@ -39,7 +40,10 @@ import { MarkdownModule } from 'ngx-markdown';
 
     //Firebase
     AuthGuardModule,
-
+  ],
+  providers: [
+    provideHttpClient(withFetch(), withInterceptorsFromDi()),
+    // Firebase
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => {
       const auth = initializeAuth(getApp(), {
@@ -81,8 +85,6 @@ import { MarkdownModule } from 'ngx-markdown';
     providePerformance(() => {
       return getPerformance();
     }),
-  ],
-  providers: [
     {
       provide: IMAGE_LOADER,
       useValue: (config: ImageLoaderConfig) => {

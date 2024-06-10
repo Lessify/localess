@@ -1,6 +1,6 @@
 @use '@angular/material' as mat;
 
-@import 'styles-variables';
+@import './styles-variables';
 
 mat-grid-list {
   &.start {

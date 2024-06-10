@@ -1,10 +1,11 @@
 @use '@angular/material' as mat;
+@use './app-theme';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import './styles/styles-variables';
+@import 'styles/styles-variables';
 
 @import 'styles/background';
 @import 'styles/layout';
@@ -17,26 +18,43 @@
 @import 'styles/mat-table';
 @import 'styles/mat-toolbar';
 
-$primary: mat.define-palette(mat.$blue-palette, 900);
-$accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
+$primary: mat.m2-define-palette(mat.$m2-blue-palette, 900);
+$accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
 
-$theme: mat.define-light-theme(
-  (
-    color: (
-      primary: $primary,
-      accent: $accent,
-    ),
-    typography: mat.define-typography-config(),
-    density: 0,
+$light-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$azure-palette,
+    tertiary: mat.$blue-palette,
+  ),
+  typography: (
+    brand-family: 'Roboto',
+    bold-weight: 900
   )
-);
+));
+$dark-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$azure-palette,
+    tertiary: mat.$blue-palette,
+  )
+));
 
-@include mat.all-component-themes($theme);
-
-@include mat.all-component-typographies($theme);
 @include mat.core();
 
 /* You can add global styles to this file, and also import other style files */
+html {
+  @include mat.all-component-themes($light-theme);
+  @include mat.system-level-colors($light-theme);
+  @include mat.all-component-typographies($light-theme);
+  @include app-theme.theme($light-theme);
+  &.dark {
+    //@media (prefers-color-scheme: dark) {
+    @include mat.all-component-colors($dark-theme);
+    @include mat.system-level-colors($dark-theme);
+    @include app-theme.theme($dark-theme);
+  }
+}
 
 html,
 body {
@@ -44,7 +62,7 @@ body {
 }
 body {
   margin: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  //font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
 .spacer {
