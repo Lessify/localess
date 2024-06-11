@@ -7,6 +7,11 @@
   opacity: 0.5;
 }
 
+.selected {
+  //--mat-standard-button-toggle-selected-state-background-color #dae2f9
+  background-color: var(--sys-secondary-container);
+}
+
 mat-sidenav {
   width: 30%;
 }
