@@ -8,9 +8,7 @@ import { MatTooltip } from '@angular/material/tooltip';
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatTooltip,
-  ],
+  imports: [MatTooltip],
 })
 export class StatusComponent {
   mode = input.required<StatusMode>();
