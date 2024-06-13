@@ -3,9 +3,9 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{ entity?.displayName }}</span>
+    <span class="title">{{ entity?.displayName }}</span>
     &nbsp;
-    <span class="text-gray-500">#{{ entity?.id }}</span>
+    <span class="subtitle">#{{ entity?.id }}</span>
     <span class="spacer"></span>
 
     @if ('SCHEMA_UPDATE' | canUserPerform | async) {

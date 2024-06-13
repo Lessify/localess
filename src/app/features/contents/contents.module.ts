@@ -25,6 +25,7 @@ import { ReferencesSelectComponent } from './shared/references-select/references
 import { ContentHistoryService } from '@shared/services/content-history.service';
 import { MarkdownModule } from 'ngx-markdown';
 import { MoveDialogComponent } from './move-dialog/move-dialog.component';
+import { StatusComponent } from '@shared/components/status';
 
 @NgModule({
   declarations: [
@@ -43,7 +44,7 @@ import { MoveDialogComponent } from './move-dialog/move-dialog.component';
     ImportDialogComponent,
     MoveDialogComponent,
   ],
-  imports: [SharedModule, ContentsRoutingModule, MarkdownModule.forChild()],
+  imports: [SharedModule, ContentsRoutingModule, MarkdownModule.forChild(), StatusComponent],
   providers: [
     SpaceService,
     SchemaService,

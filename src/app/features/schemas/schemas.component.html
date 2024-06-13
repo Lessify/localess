@@ -43,7 +43,7 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{ element.displayName }} &nbsp;<span class="text-gray-500">#{{ element.id }}</span>
+        {{ element.displayName }} &nbsp;<span class="schema-id">#{{ element.id }}</span>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="description">

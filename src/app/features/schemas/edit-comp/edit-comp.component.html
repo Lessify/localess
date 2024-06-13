@@ -3,9 +3,9 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{ entity?.displayName }}</span>
+    <span class="title">{{ entity?.displayName }}</span>
     &nbsp;
-    <span class="text-gray-500">#{{ entity?.id }}</span>
+    <span class="subtitle">#{{ entity?.id }}</span>
     <span class="spacer"></span>
 
     @if ('SCHEMA_UPDATE' | canUserPerform | async) {
@@ -48,7 +48,7 @@
                   ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(field.value.kind)
                 ) {
                   <mat-option [value]="field.value.name">
-                    {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
+                    {{ field.value.displayName }} <span>#{{ field.value.name }}</span>
                   </mat-option>
                 }
               }
@@ -78,10 +78,10 @@
               [class.invalid]="field.invalid">
               <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
               <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
-              <div matListItemTitle>
-                {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
-              </div>
-              <div matListItemLine>
+              <span matListItemTitle>
+                {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
+              </span>
+              <span matListItemLine>
                 <span class="badge">{{ field.value.kind }}</span>
                 @if (field.value.translatable) {
                   &nbsp;<span class="badge">Translatable</span>
@@ -89,7 +89,7 @@
                 @if (field.value.required) {
                   &nbsp;<span class="badge">Required</span>
                 }
-              </div>
+              </span>
               <mat-action-list matListItemMeta>
                 <button mat-icon-button (click)="removeComponent($event, index)">
                   <mat-icon>delete</mat-icon>

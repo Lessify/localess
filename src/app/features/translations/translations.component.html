@@ -117,19 +117,13 @@
                     <div class="flex items-center gap-x-3">
                       @switch (identifyStatus(translation)) {
                         @case ('TRANSLATED') {
-                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-emerald-500/20 p-1" matTooltip="Translated">
-                            <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-                          </div>
+                          <ll-status mode="online" matTooltip="Translated" />
                         }
                         @case ('PARTIALLY_TRANSLATED') {
-                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-amber-500/20 p-1" matTooltip="Partially Translated">
-                            <div class="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
-                          </div>
+                          <ll-status mode="away" matTooltip="Partially Translated" />
                         }
                         @case ('UNTRANSLATED') {
-                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-red-500/20 p-1" matTooltip="Untranslated">
-                            <div class="h-1.5 w-1.5 rounded-full bg-red-500"></div>
-                          </div>
+                          <ll-status mode="offline" matTooltip="Untranslated" />
                         }
                       }
                       <div class="text-sm font-semibold leading-6 break-all">

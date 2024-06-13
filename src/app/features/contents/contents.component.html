@@ -86,17 +86,11 @@
         @switch (element.kind) {
           @case ('DOCUMENT') {
             @if (element?.publishedAt === undefined) {
-              <div class="h-3.5 w-3.5 flex-none rounded-full bg-gray-500/20 p-1" matTooltip="Not published">
-                <div class="h-1.5 w-1.5 rounded-full bg-gray-500"></div>
-              </div>
+              <ll-status mode="offline" matTooltip="Not published" />
             } @else if (element?.publishedAt?.seconds > element?.updatedAt?.seconds) {
-              <div class="h-3.5 w-3.5 flex-none rounded-full bg-emerald-500/20 p-1" matTooltip="Published">
-                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-              </div>
+              <ll-status mode="online" matTooltip="Published" />
             } @else if (element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds) {
-              <div class="h-3.5 w-3.5 flex-none rounded-full bg-amber-500/20 p-1" matTooltip="Draft">
-                <div class="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
-              </div>
+              <ll-status mode="away" matTooltip="Draft" />
             }
           }
           @case ('FOLDER') {

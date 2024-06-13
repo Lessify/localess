@@ -315,7 +315,7 @@
                   <mat-list-item (click)="navigationTo(item._id, field.name, item.schema)">
                     @if (schemaCompNodeById().get(item.schema); as sch) {
                       <div matListItemTitle>
-                        {{ sch.displayName }} <span class="text-gray-500">#{{ sch.id }}</span>
+                        {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
                         @if (sch.previewField) {
                           <div matListItemLine>
                             {{ previewText(item, sch, locale) }}
@@ -324,7 +324,7 @@
                       </div>
                     } @else {
                       <div matListItemTitle>
-                        <span class="text-amber-500">
+                        <span class="error">
                           Schema with ID <b>#{{ item.schema }}</b> can't be found.
                         </span>
                       </div>
@@ -370,7 +370,7 @@
                     <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
                     @if (schemaCompNodeById().get(item.schema); as sch) {
                       <div matListItemTitle>
-                        {{ sch.displayName }} <span class="text-gray-500">#{{ sch.id }}</span>
+                        {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
                         @if (sch.previewField) {
                           <div matListItemLine>
                             {{ previewText(item, sch, locale) }}
@@ -379,7 +379,7 @@
                       </div>
                     } @else {
                       <div matListItemTitle>
-                        <span class="text-amber-500">
+                        <span class="error">
                           Schema with ID <b>#{{ item.schema }}</b> can't be found.
                         </span>
                       </div>

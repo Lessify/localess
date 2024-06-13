@@ -17,4 +17,14 @@
   <body class="mat-typography">
     <ll-root></ll-root>
   </body>
+  <script>
+    if (localStorage) {
+      let state = JSON.parse(localStorage.getItem('LL-SETTINGS-STATE') || '{}');
+      if (state && state.theme === 'dark') {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    }
+  </script>
 </html>

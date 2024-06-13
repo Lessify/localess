@@ -1,11 +1,11 @@
 <div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
   <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <img class="mx-auto h-10 w-auto my-2" src="assets/logo-black.svg" alt="Localess" />
-    <h2 class="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Sign in to your account</h2>
+    <img class="mx-auto h-10 w-auto my-2" src="assets/logo-adaptive.svg" alt="Localess" />
+    <h2 class="mt-6 text-center text-2xl font-bold leading-9 tracking-tight"> Sign in to your account </h2>
   </div>
 
   <div class="sm:mx-auto sm:w-full sm:max-w-[480px]">
-    <div class="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
+    <div class="px-6 py-12 shadow sm:rounded-lg sm:px-12">
       <form class="space-y-6" [formGroup]="form">
         <mat-form-field>
           <mat-label>Email</mat-label>
@@ -34,11 +34,8 @@
       @if (isGoogleAuthEnabled || isMicrosoftAuthEnabled) {
         <div>
           <div class="relative mt-10">
-            <div class="absolute inset-0 flex items-center" aria-hidden="true">
-              <div class="w-full border-t border-gray-200"></div>
-            </div>
             <div class="relative flex justify-center text-sm font-medium leading-6">
-              <span class="bg-white px-6 text-gray-900">Or continue with</span>
+              <span class="px-6">Or continue with</span>
             </div>
           </div>
 

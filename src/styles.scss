@@ -46,12 +46,14 @@ $dark-theme: mat.define-theme((
 html {
   @include mat.all-component-themes($light-theme);
   @include mat.system-level-colors($light-theme);
+  @include mat.system-level-typography($light-theme);
   @include mat.all-component-typographies($light-theme);
   @include app-theme.theme($light-theme);
   &.dark {
     //@media (prefers-color-scheme: dark) {
     @include mat.all-component-colors($dark-theme);
     @include mat.system-level-colors($dark-theme);
+    @include mat.system-level-typography($dark-theme);
     @include app-theme.theme($dark-theme);
   }
 }
