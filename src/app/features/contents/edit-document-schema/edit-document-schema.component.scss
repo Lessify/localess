@@ -1,3 +1,10 @@
 mat-form-field {
   width: 100%;
 }
+
+.schema-id {
+  color: var(--sys-secondary);
+}
+.error {
+  color: var(--sys-error);
+}

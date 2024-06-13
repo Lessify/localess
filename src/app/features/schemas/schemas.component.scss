@@ -2,6 +2,10 @@ table {
   width: 100%;
 }
 
+.schema-id {
+  color: var(--sys-secondary);
+}
+
 mat-header-cell,
 mat-cell {
   &.mat-column-type {

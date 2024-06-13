@@ -7,14 +7,14 @@
       </a>
       <span class="spacer"></span>
       @if ('TRANSLATION_CREATE' | canUserPerform | async) {
-        <button mat-raised-button color="primary" (click)="openAddDialog()">
+        <button mat-stroked-button color="primary" (click)="openAddDialog()">
           <mat-icon>add</mat-icon>
           Add Translation
         </button>
       }
       @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
         <button
-          mat-raised-button
+          mat-stroked-button
           color="accent"
           matTooltip="Publish Translations to be available via API call"
           [disabled]="isPublishLoading()"
@@ -112,31 +112,25 @@
                   *cdkVirtualFor="let translation of translations | translationFilter: searchValue : selectedSearchLocale : selectedLabels"
                   (click)="selectTranslation(translation)"
                   (keyup.enter)="selectTranslation(translation)"
-                  [class.bg-gray-100]="translation.id === selectedTranslation?.id">
+                  [class.selected]="translation.id === selectedTranslation?.id">
                   <div class="min-w-0 flex-auto">
                     <div class="flex items-center gap-x-3">
                       @switch (identifyStatus(translation)) {
                         @case ('TRANSLATED') {
-                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-emerald-500/20 p-1" matTooltip="Translated">
-                            <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-                          </div>
+                          <ll-status mode="online" matTooltip="Translated" />
                         }
                         @case ('PARTIALLY_TRANSLATED') {
-                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-amber-500/20 p-1" matTooltip="Partially Translated">
-                            <div class="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
-                          </div>
+                          <ll-status mode="away" matTooltip="Partially Translated" />
                         }
                         @case ('UNTRANSLATED') {
-                          <div class="h-3.5 w-3.5 flex-none rounded-full bg-red-500/20 p-1" matTooltip="Untranslated">
-                            <div class="h-1.5 w-1.5 rounded-full bg-red-500"></div>
-                          </div>
+                          <ll-status mode="offline" matTooltip="Untranslated" />
                         }
                       }
-                      <div class="text-sm font-semibold leading-6 text-gray-900 break-all">
+                      <div class="text-sm font-semibold leading-6 break-all">
                         {{ translation.id }}
                       </div>
                     </div>
-                    <div class="flex items-center gap-x-2.5 text-xs leading-5 text-gray-400 break-words">
+                    <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                       @switch (translation.type) {
                         @case ('STRING') {
                           <ll-translation-string-view [value]="translation.locales[selectedSearchLocale]" />
@@ -223,7 +217,7 @@
                     <mat-divider></mat-divider>
                     <div class="p-2 flex flex-row-reverse">
                       <button
-                        mat-raised-button
+                        mat-stroked-button
                         color="primary"
                         [disabled]="
                           isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue
@@ -260,7 +254,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> ID </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> ID </div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ selectedTranslation.id }}
@@ -273,7 +267,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Status </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Status </div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ identifyStatus(selectedTranslation) }}
@@ -283,7 +277,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Description </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Description </div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           @if (selectedTranslation.description) {
@@ -297,7 +291,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Labels </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Labels </div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
@@ -315,7 +309,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Created At </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Created At </div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ selectedTranslation.createdAt?.toMillis() | date: 'medium' }}
@@ -325,7 +319,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Updated At </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Updated At </div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ selectedTranslation.updatedAt?.toMillis() | date: 'medium' }}
@@ -335,7 +329,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 text-gray-900 break-all"> Updated By </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Updated By </div>
                         </div>
                         <div
                           class="flex items-center gap-x-2.5 text-xs leading-5 break-words"
@@ -358,102 +352,99 @@
           @for (item of history$ | async; track item.id; let isLast = $last) {
             <li>
               <div class="relative pb-5">
-                @if (!isLast) {
-                  <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                }
                 <div class="relative flex space-x-3">
                   @switch (item.type) {
                     @case ('PUBLISHED') {
                       <div>
-                        <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
                           <mat-icon>publish</mat-icon>
                         </span>
                       </div>
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
-                          <p class="text-sm text-gray-500">
+                          <p class="text-sm">
                             Published by
-                            <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                               {{ item.name || 'Unknown' }}
                             </span>
                           </p>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <div class="whitespace-nowrap text-right text-sm">
                           <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                         </div>
                       </div>
                     }
                     @case ('CREATE') {
                       <div>
-                        <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
                           <mat-icon>add</mat-icon>
                         </span>
                       </div>
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
-                          <p class="text-sm text-gray-500">
-                            Add <span class="font-medium text-gray-900 break-all">{{ item.key }}</span> by
-                            <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                          <p class="text-sm">
+                            Add <span class="font-medium break-all">{{ item.key }}</span> by
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                               {{ item.name || 'Unknown' }}
                             </span>
                           </p>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <div class="whitespace-nowrap text-right text-sm">
                           <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                         </div>
                       </div>
                     }
                     @case ('UPDATE') {
                       <div>
-                        <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
                           <mat-icon>edit</mat-icon>
                         </span>
                       </div>
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
-                          <p class="text-sm text-gray-500">
-                            Edit <span class="font-medium text-gray-900 break-all">{{ item.key }}</span> by
-                            <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                          <p class="text-sm">
+                            Edit <span class="font-medium break-all">{{ item.key }}</span> by
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                               {{ item.name || 'Unknown' }}
                             </span>
                           </p>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <div class="whitespace-nowrap text-right text-sm">
                           <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                         </div>
                       </div>
                     }
                     @case ('DELETE') {
                       <div>
-                        <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
                           <mat-icon>delete</mat-icon>
                         </span>
                       </div>
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
-                          <p class="text-sm text-gray-500">
-                            Delete <span class="font-medium text-gray-900 break-all">{{ item.key }}</span> by
-                            <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                          <p class="text-sm">
+                            Delete <span class="font-medium break-all">{{ item.key }}</span> by
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                               {{ item.name || 'Unknown' }}
                             </span>
                           </p>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <div class="whitespace-nowrap text-right text-sm">
                           <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                         </div>
                       </div>
                     }
                     @default {
                       <div>
-                        <span class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center ring-8 ring-white text-white">
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
                           <mat-icon>question_mark</mat-icon>
                         </span>
                       </div>
                       <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
-                          <p class="text-sm text-gray-500">Unknown</p>
+                          <p class="text-sm">Unknown</p>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                        <div class="whitespace-nowrap text-right text-sm">
                           <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                         </div>
                       </div>

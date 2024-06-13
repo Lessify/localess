@@ -1,11 +1,11 @@
 <div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
   <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <img class="mx-auto h-10 w-auto my-2" src="assets/logo-black.svg" alt="Localess" />
-    <h2 class="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">First Setup</h2>
+    <img class="mx-auto h-10 w-auto my-2" src="assets/logo-adaptive.svg" alt="Localess" />
+    <h2 class="mt-6 text-center text-2xl font-bold leading-9 tracking-tight">First Setup</h2>
   </div>
 
   <div class="sm:mx-auto sm:w-full sm:max-w-[480px]">
-    <div class="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
+    <div class="px-6 py-12 shadow sm:rounded-lg sm:px-12">
       <form class="space-y-6" [formGroup]="form">
         <mat-form-field>
           <mat-label>Email</mat-label>
@@ -21,7 +21,7 @@
           <input matInput type="text" formControlName="displayName" autocomplete="off" />
         </mat-form-field>
         <div>
-          <button mat-raised-button color="primary" class="w-full" (click)="setup()" [disabled]="!form.valid">Setup</button>
+          <button mat-stroked-button color="primary" class="w-full" (click)="setup()" [disabled]="!form.valid">Setup</button>
         </div>
         <div>
           <button mat-stroked-button class="w-full" routerLink="/features">

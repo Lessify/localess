@@ -1,6 +1,6 @@
 @use '@angular/material' as mat;
 
-@import 'styles-variables';
+@import './styles-variables';
 
 mat-card {
   &.ll-not-shadow {
@@ -8,6 +8,6 @@ mat-card {
     background-color: transparent;
   }
   &.invalid {
-    border: solid 2px mat.get-color-from-palette($error-colors);
+    border: solid 2px mat.m2-get-color-from-palette($error-colors);
   }
 }

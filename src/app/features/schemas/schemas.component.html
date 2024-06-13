@@ -6,7 +6,7 @@
     </a>
     <span class="spacer"></span>
     @if ('SCHEMA_CREATE' | canUserPerform | async) {
-      <button mat-raised-button color="primary" (click)="openAddDialog()">
+      <button mat-stroked-button color="primary" (click)="openAddDialog()">
         <mat-icon>add</mat-icon>
         Add Schema
       </button>
@@ -43,7 +43,7 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{ element.displayName }} &nbsp;<span class="text-gray-500">#{{ element.id }}</span>
+        {{ element.displayName }} &nbsp;<span class="schema-id">#{{ element.id }}</span>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="description">

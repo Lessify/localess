@@ -3,13 +3,13 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{ entity?.displayName }}</span>
+    <span class="title">{{ entity?.displayName }}</span>
     &nbsp;
-    <span class="text-gray-500">#{{ entity?.id }}</span>
+    <span class="subtitle">#{{ entity?.id }}</span>
     <span class="spacer"></span>
 
     @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-      <button mat-raised-button color="primary" matTooltip="Save the schema" [disabled]="!form.valid || isSaveLoading" (click)="save()">
+      <button mat-stroked-button color="primary" matTooltip="Save the schema" [disabled]="!form.valid || isSaveLoading" (click)="save()">
         <ll-icon [animate]="isSaveLoading" start="save" end="sync" />
         Save
       </button>
@@ -48,7 +48,7 @@
                   ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(field.value.kind)
                 ) {
                   <mat-option [value]="field.value.name">
-                    {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
+                    {{ field.value.displayName }} <span>#{{ field.value.name }}</span>
                   </mat-option>
                 }
               }
@@ -58,13 +58,13 @@
               <mat-error>{{ fe.errors(errors) }}</mat-error>
             }
           </mat-form-field>
-          <mat-nav-list cdkDropList class="ll-mat-nav-list-gap" (cdkDropListDropped)="fieldDropDrop($event)">
+          <mat-list cdkDropList class="ll-mat-list-gap" (cdkDropListDropped)="fieldDropDrop($event)">
             <mat-divider></mat-divider>
             <div mat-subheader>Fields</div>
             <mat-form-field>
               <mat-label>Name</mat-label>
               <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
-              <button mat-raised-button matTextSuffix color="accent" (click)="addField()" [disabled]="!newFieldName.valid">Add</button>
+              <button mat-stroked-button matTextSuffix color="accent" (click)="addField()" [disabled]="!newFieldName.valid">Add</button>
               @if (newFieldName.errors; as errors) {
                 <mat-error>{{ fe.errors(errors) }}</mat-error>
               }
@@ -78,10 +78,10 @@
               [class.invalid]="field.invalid">
               <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
               <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
-              <div matListItemTitle>
-                {{ field.value.displayName }} <span class="text-gray-500">#{{ field.value.name }}</span>
-              </div>
-              <div matListItemLine>
+              <span matListItemTitle>
+                {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
+              </span>
+              <span matListItemLine>
                 <span class="badge">{{ field.value.kind }}</span>
                 @if (field.value.translatable) {
                   &nbsp;<span class="badge">Translatable</span>
@@ -89,7 +89,7 @@
                 @if (field.value.required) {
                   &nbsp;<span class="badge">Required</span>
                 }
-              </div>
+              </span>
               <mat-action-list matListItemMeta>
                 <button mat-icon-button (click)="removeComponent($event, index)">
                   <mat-icon>delete</mat-icon>
@@ -97,7 +97,7 @@
                 <mat-icon>arrow_right</mat-icon>
               </mat-action-list>
             </mat-list-item>
-          </mat-nav-list>
+          </mat-list>
         </div>
         @if (fields.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
           <div class="basis-2/3" formArrayName="fields">

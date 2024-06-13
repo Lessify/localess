@@ -1,0 +1,17 @@
+@switch (mode()) {
+  @case ('online') {
+    <div class="h-3.5 w-3.5 flex-none rounded-full bg-emerald-500/20 p-1">
+      <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
+    </div>
+  }
+  @case ('away') {
+    <div class="h-3.5 w-3.5 flex-none rounded-full bg-amber-500/20 p-1">
+      <div class="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
+    </div>
+  }
+  @case ('offline') {
+    <div class="h-3.5 w-3.5 flex-none rounded-full bg-gray-500/20 p-1">
+      <div class="h-1.5 w-1.5 rounded-full bg-gray-500"></div>
+    </div>
+  }
+}

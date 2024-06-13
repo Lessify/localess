@@ -25,9 +25,9 @@
           <mat-divider></mat-divider>
           <mat-card-actions>
             @if (user.isPasswordProvider() && user.numberProviders() === 1) {
-              <button mat-raised-button color="primary" (click)="openEditDialog()">Edit</button>
-              <button mat-raised-button (click)="openUpdateEmailDialog()">Update Email</button>
-              <button mat-raised-button (click)="openUpdatePasswordDialog()">Update Password</button>
+              <button mat-stroked-button color="primary" (click)="openEditDialog()">Edit</button>
+              <button mat-stroked-button (click)="openUpdateEmailDialog()">Update Email</button>
+              <button mat-stroked-button (click)="openUpdatePasswordDialog()">Update Password</button>
             } @else {
               Your account is linked to an external authentication provider.<br />
               You can't manage your personal data and password here.

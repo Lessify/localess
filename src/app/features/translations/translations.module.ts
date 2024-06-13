@@ -19,6 +19,7 @@ import { TranslationHistoryService } from '@shared/services/translation-history.
 import { EditDialogComponent } from './edit-dialog';
 import { AddDialogComponent } from './add-dialog';
 import { EditIdDialogComponent } from './edit-id-dialog';
+import { StatusComponent } from '@shared/components/status';
 
 @NgModule({
   declarations: [
@@ -35,7 +36,7 @@ import { EditIdDialogComponent } from './edit-id-dialog';
     ExportDialogComponent,
     ImportDialogComponent,
   ],
-  imports: [SharedModule, TranslationsRoutingModule],
+  imports: [SharedModule, TranslationsRoutingModule, StatusComponent],
   providers: [TranslationService, TranslationHistoryService, TranslateService, LocaleService, TaskService],
 })
 export class TranslationsModule {}

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ErrorHandler, NgModule, Optional, SkipSelf } from '@angular/core';
-import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
@@ -21,12 +21,26 @@ import { PageTitleStrategy } from './title/page-title.strategy';
 export { LocalStorageService };
 
 @NgModule({
+  declarations: [],
+  exports: [
+    // angular
+    FormsModule,
+    // material
+    MatSidenavModule,
+    MatToolbarModule,
+    MatListModule,
+    MatMenuModule,
+    MatIconModule,
+    MatSelectModule,
+    MatTooltipModule,
+    MatSnackBarModule,
+    MatButtonModule,
+    // 3rd party
+  ],
   imports: [
     // angular
     CommonModule,
-    HttpClientModule,
     FormsModule,
-
     // material
     MatSidenavModule,
     MatToolbarModule,
@@ -38,28 +52,10 @@ export { LocalStorageService };
     MatSnackBarModule,
     MatButtonModule,
   ],
-  declarations: [],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true },
     { provide: ErrorHandler, useClass: AppErrorHandler },
     { provide: TitleStrategy, useClass: PageTitleStrategy },
-  ],
-  exports: [
-    // angular
-    FormsModule,
-
-    // material
-    MatSidenavModule,
-    MatToolbarModule,
-    MatListModule,
-    MatMenuModule,
-    MatIconModule,
-    MatSelectModule,
-    MatTooltipModule,
-    MatSnackBarModule,
-    MatButtonModule,
-
-    // 3rd party
   ],
 })
 export class CoreModule {

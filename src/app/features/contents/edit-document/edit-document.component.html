@@ -3,9 +3,9 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span>{{ document?.name }}</span>
+    <span class="title">{{ document?.name }}</span>
     &nbsp;
-    <span class="text-gray-500">#{{ document?.slug }}</span>
+    <span class="subtitle">#{{ document?.slug }}</span>
     <span class="spacer"></span>
 
     <mat-button-toggle-group
@@ -54,7 +54,7 @@
 
     @if ('CONTENT_UPDATE' | canUserPerform | async) {
       <button
-        mat-raised-button
+        mat-stroked-button
         color="primary"
         matTooltip="Save the page"
         [disabled]="isSaveLoading() || isPublishLoading()"
@@ -65,7 +65,7 @@
     }
     @if ('CONTENT_PUBLISH' | canUserPerform | async) {
       <button
-        mat-raised-button
+        mat-stroked-button
         color="accent"
         matTooltip="Publish to be available via API call"
         [disabled]="isPublishLoading() || isSaveLoading()"
@@ -74,19 +74,12 @@
         Publish
       </button>
     }
-
     @if (document?.publishedAt === undefined) {
-      <div class="h-3.5 w-3.5 flex-none rounded-full bg-gray-500/20 p-1" matTooltip="Not published">
-        <div class="h-1.5 w-1.5 rounded-full bg-gray-500"></div>
-      </div>
+      <ll-status mode="offline" matTooltip="Not published" />
     } @else if (document?.publishedAt?.seconds > document?.updatedAt?.seconds) {
-      <div class="h-3.5 w-3.5 flex-none rounded-full bg-emerald-500/20 p-1" matTooltip="Published">
-        <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-      </div>
+      <ll-status mode="online" matTooltip="Published" />
     } @else if (document?.publishedAt && document?.publishedAt?.seconds < document?.updatedAt?.seconds) {
-      <div class="h-3.5 w-3.5 flex-none rounded-full bg-amber-500/20 p-1" matTooltip="Draft">
-        <div class="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
-      </div>
+      <ll-status mode="away" matTooltip="Draft" />
     }
 
     <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
@@ -201,103 +194,100 @@
         @for (item of history$ | async; track item.id; let isLast = $last) {
           <li>
             <div class="relative pb-5">
-              @if (!isLast) {
-                <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-              }
               <div class="relative flex space-x-3">
                 @switch (item.type) {
                   @case ('PUBLISHED') {
                     <div>
-                      <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                      <span class="h-8 w-8 rounded-full flex items-center justify-center">
                         <mat-icon>publish</mat-icon>
                       </span>
                     </div>
                     <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                       <div>
-                        <p class="text-sm text-gray-500">
+                        <p class="text-sm">
                           Published by
-                          <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                          <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                             {{ item.name || 'Unknown' }}
                           </span>
                         </p>
                       </div>
-                      <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                      <div class="whitespace-nowrap text-right text-sm">
                         <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                       </div>
                     </div>
                   }
                   @case ('CREATE') {
                     <div>
-                      <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                      <span class="h-8 w-8 rounded-full flex items-center justify-center">
                         <mat-icon>add</mat-icon>
                       </span>
                     </div>
                     <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                       <div>
-                        <p class="text-sm text-gray-500">
-                          Created with name <span class="font-medium text-gray-900 break-all">{{ item.cName }}</span> and slug
-                          <span class="font-medium text-gray-900 break-all">{{ item.cSlug }}</span> by
-                          <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                        <p class="text-sm">
+                          Created with name <span class="font-medium break-all">{{ item.cName }}</span> and slug
+                          <span class="font-medium break-all">{{ item.cSlug }}</span> by
+                          <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                             {{ item.name || 'Unknown' }}
                           </span>
                         </p>
                       </div>
-                      <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                      <div class="whitespace-nowrap text-right text-sm">
                         <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                       </div>
                     </div>
                   }
                   @case ('UPDATE') {
                     <div>
-                      <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white text-white">
+                      <span class="h-8 w-8 rounded-full flex items-center justify-center">
                         <mat-icon>edit</mat-icon>
                       </span>
                     </div>
                     <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                       <div>
-                        <p class="text-sm text-gray-500">
+                        <p class="text-sm">
                           Updated with
                           @if (item.cName) {
-                            name <span class="font-medium text-gray-900 break-all">{{ item.cName }}</span>
+                            name <span class="font-medium break-all">{{ item.cName }}</span>
                           }
                           @if (item.cSlug) {
                             @if (item.cName) {
                               and
                             }
-                            slug <span class="font-medium text-gray-900 break-all">{{ item.cSlug }}</span>
+                            slug <span class="font-medium break-all">{{ item.cSlug }}</span>
                           }
                           @if (item.cParentSlug) {
-                            parent slug <span class="font-medium text-gray-900 break-all">{{ item.cParentSlug }}</span>
+                            parent slug <span class="font-medium break-all">{{ item.cParentSlug }}</span>
                           } @else if (item.cData) {
                             content
                           } @else {
                             nothing
                           }
                           by
-                          <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                          <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                             {{ item.name || 'Unknown' }}
                           </span>
                         </p>
                       </div>
-                      <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                      <div class="whitespace-nowrap text-right text-sm">
                         <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                       </div>
                     </div>
                   }
                   @default {
                     <div>
-                      <span class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center ring-8 ring-white text-white">
+                      <span class="h-8 w-8 rounded-full flex items-center justify-center">
                         <mat-icon>question_mark</mat-icon>
                       </span>
                     </div>
                     <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                       <div>
-                        <p class="text-sm text-gray-500">Unknown</p> by
-                        <span class="font-medium text-gray-900" [matTooltip]="item.email || 'Unknown'">
+                        <p class="text-sm">Unknown</p> by
+                        <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                           {{ item.name || 'Unknown' }}
                         </span>
                       </div>
-                      <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                      <div class="whitespace-nowrap text-right text-sm">
                         <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                       </div>
                     </div>

@@ -1,8 +1,8 @@
 @use '@angular/material' as mat;
 
-@import 'styles-variables';
+@import './styles-variables';
 
-mat-nav-list.ll-mat-nav-list-gap {
+mat-list.ll-mat-list-gap {
   .cdk-drag-preview {
     box-sizing: border-box;
     border-radius: 4px;
@@ -36,17 +36,17 @@ mat-nav-list.ll-mat-nav-list-gap {
     }
 
     &.invalid {
-      border: solid 2px mat.get-color-from-palette($error-colors);
+      border: solid 2px mat.m2-get-color-from-palette($error-colors);
     }
 
     .mat-mdc-list-item-icon {
       &.type {
         margin-top: auto !important;
         margin-bottom: auto;
-        margin-left: 0px;
+        margin-left: 0;
         margin-right: 16px;
-        background-color: mat.get-color-from-palette($success-colors, 50);
-        color: mat.get-color-from-palette($success-colors, 900);
+        background-color: mat.m2-get-color-from-palette($success-colors, 50);
+        color: mat.m2-get-color-from-palette($success-colors, 900);
         width: 48px;
         height: 48px;
         padding-top: 12px;

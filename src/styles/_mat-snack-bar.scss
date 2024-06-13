@@ -1,31 +1,31 @@
 @use '@angular/material' as mat;
 
-@import 'styles-variables';
+@import './styles-variables';
 
 // Notifications
 mat-snack-bar-container {
   &.error-notification-overlay {
     .mdc-snackbar__surface {
-      color: mat.get-color-from-palette($error-colors, default-contrast);
-      background-color: mat.get-color-from-palette($error-colors, 700);
+      color: mat.m2-get-color-from-palette($error-colors, default-contrast);
+      background-color: mat.m2-get-color-from-palette($error-colors, 700);
     }
   }
   &.info-notification-overlay {
     .mdc-snackbar__surface {
-      color: mat.get-color-from-palette($info-colors, default-contrast);
-      background-color: mat.get-color-from-palette($info-colors, 700);
+      color: mat.m2-get-color-from-palette($info-colors, default-contrast);
+      background-color: mat.m2-get-color-from-palette($info-colors, 700);
     }
   }
   &.success-notification-overlay {
     .mdc-snackbar__surface {
-      color: mat.get-color-from-palette($success-colors, default-contrast);
-      background-color: mat.get-color-from-palette($success-colors, 700);
+      color: mat.m2-get-color-from-palette($success-colors, default-contrast);
+      background-color: mat.m2-get-color-from-palette($success-colors, 700);
     }
   }
   &.warning-notification-overlay {
     .mdc-snackbar__surface {
-      color: mat.get-color-from-palette($warning-colors, default-contrast);
-      background-color: mat.get-color-from-palette($warning-colors, 700);
+      color: mat.m2-get-color-from-palette($warning-colors, default-contrast);
+      background-color: mat.m2-get-color-from-palette($warning-colors, 700);
     }
   }
 }

@@ -6,13 +6,13 @@
     </a>
     <span class="spacer"></span>
     @if ('ASSET_CREATE' | canUserPerform | async) {
-      <button mat-raised-button color="primary" (click)="fileInput.click()">
+      <button mat-stroked-button color="primary" (click)="fileInput.click()">
         <mat-icon>upload_file</mat-icon>
         Upload Assets
       </button>
       <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
 
-      <button mat-raised-button color="primary" (click)="openAddFolderDialog()">
+      <button mat-stroked-button color="primary" (click)="openAddFolderDialog()">
         <mat-icon>add</mat-icon>
         Create Folder
       </button>
