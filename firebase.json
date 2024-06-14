@@ -5,7 +5,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "dist/localess",
+    "public": "dist/localess/browser",
     "ignore": ["**/.*"],
     "headers": [
       {
