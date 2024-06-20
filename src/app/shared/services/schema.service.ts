@@ -89,6 +89,9 @@ export class SchemaService {
       if (entity.displayName) {
         editEntity.displayName = entity.displayName;
       }
+      if (entity.labels) {
+        editEntity.labels = entity.labels;
+      }
       if (entity.previewField) {
         editEntity.previewField = entity.previewField;
       }
@@ -108,6 +111,9 @@ export class SchemaService {
       if (entity.displayName) {
         editEntity.displayName = entity.displayName;
       }
+      if (entity.labels) {
+        editEntity.labels = entity.labels;
+      }
       if (entity.values) {
         editEntity.values = entity.values;
       }
@@ -126,6 +132,7 @@ export class SchemaService {
       displayName: entity.displayName || deleteField(),
       description: entity.description || deleteField(),
       previewField: entity.previewField || deleteField(),
+      labels: entity.labels || deleteField(),
       fields: entity.fields || deleteField(),
       updatedAt: serverTimestamp(),
     };
@@ -139,6 +146,7 @@ export class SchemaService {
     const update: UpdateData<SchemaEnum> = {
       displayName: entity.displayName || deleteField(),
       description: entity.description || deleteField(),
+      labels: entity.labels || deleteField(),
       values: entity.values || deleteField(),
       updatedAt: serverTimestamp(),
     };

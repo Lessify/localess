@@ -4,15 +4,14 @@ import {
   Component,
   computed,
   DestroyRef,
-  ElementRef,
   inject,
   input,
+  model,
   OnInit,
   signal,
-  viewChild,
 } from '@angular/core';
-import { debounceTime, EMPTY, Observable, startWith } from 'rxjs';
-import { filter, map, switchMap, tap } from 'rxjs/operators';
+import { debounceTime, EMPTY, Observable } from 'rxjs';
+import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { FormControl } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -38,6 +37,7 @@ import { TranslationHistoryService } from '@shared/services/translation-history.
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
+import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 
 @Component({
   selector: 'll-translations',
@@ -46,7 +46,6 @@ import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TranslationsComponent implements OnInit {
-  labelsInput = viewChild.required<ElementRef<HTMLInputElement>>('labelsInput');
   // Input
   spaceId = input.required<string>();
 
@@ -55,15 +54,33 @@ export class TranslationsComponent implements OnInit {
 
   DEFAULT_LOCALE = 'en';
 
+  translations = signal<Translation[]>([]);
+  translationIds = computed(() => this.translations().map(it => it.id));
+
   //Search
   searchCtrl: FormControl = new FormControl();
   searchValue = '';
 
   //Labels
-  availableLabels: string[] = [];
-  selectedLabels: string[] = [];
-  labelCtrl: FormControl = new FormControl();
-  filteredLabels: Observable<string[]>;
+  currentLabel = model('');
+  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
+  allLabels = computed(() => {
+    const tmp = this.translations()
+      .map(it => it.labels)
+      .flat()
+      .filter(it => it != undefined)
+      .map(it => it!);
+    return [...new Set<string>(tmp)];
+  });
+  filterLabels = signal<string[]>([]);
+  filteredLabels = computed(() => {
+    const currentLabel = this.currentLabel()?.toLowerCase() || '';
+    return currentLabel
+      ? this.allLabels()
+          .filter(label => !this.filterLabels().includes(label))
+          .filter(label => label.toLowerCase().includes(currentLabel))
+      : this.allLabels().filter(label => !this.filterLabels().includes(label));
+  });
 
   selectedTranslation?: Translation;
   selectedTranslationLocaleValue?: string;
@@ -84,9 +101,6 @@ export class TranslationsComponent implements OnInit {
   isLocaleUpdateLoading = signal(false);
   isTranslateLoading = signal(false);
 
-  translations = signal<Translation[]>([]);
-  translationIds = computed(() => this.translations().map(it => it.id));
-
   private destroyRef = inject(DestroyRef);
 
   constructor(
@@ -99,13 +113,7 @@ export class TranslationsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly translateService: TranslateService
-  ) {
-    this.filteredLabels = this.labelCtrl.valueChanges.pipe(
-      startWith(null),
-      map((label: string | null) => (label ? this._filter(label) : this.availableLabels.slice())),
-      takeUntilDestroyed(this.destroyRef)
-    );
-  }
+  ) {}
 
   ngOnInit(): void {
     this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -144,7 +152,6 @@ export class TranslationsComponent implements OnInit {
             this.selectTranslation(translations[0]);
           }
         }
-        this.groupAvailableLabels(translations);
         this.isLoading.set(false);
       })
     );
@@ -377,40 +384,23 @@ export class TranslationsComponent implements OnInit {
 
   // Labels
   selectLabel(event: MatAutocompleteSelectedEvent): void {
-    this.selectedLabels = [...this.selectedLabels, event.option.viewValue];
-    this.labelsInput().nativeElement.value = '';
+    const { option } = event;
+    this.filterLabels.update(it => [...it, option.viewValue]);
+    this.currentLabel.set('');
+    option.deselect();
     this.selectedTranslation = undefined;
-    this.labelCtrl.setValue(null);
   }
 
   removeLabel(label: string): void {
-    const tmpArray: string[] = [...this.selectedLabels];
-    const index: number = tmpArray.indexOf(label);
-    if (index >= 0) {
-      tmpArray.splice(index, 1);
-    }
-    // for translationFilter pipe do change instance.
-    this.selectedLabels = [...tmpArray];
+    this.filterLabels.update(it => {
+      const idx = it.indexOf(label);
+      if (idx < 0) {
+        return it;
+      }
+      it.splice(idx, 1);
+      return [...it];
+    });
     this.selectedTranslation = undefined;
-  }
-
-  private _filter(value: string): string[] {
-    if (!value) {
-      return this.availableLabels;
-    }
-    const filterValue: string = value.toLowerCase();
-    return this.availableLabels.filter(label => label.toLowerCase().indexOf(filterValue) === 0);
-  }
-
-  groupAvailableLabels(input: Translation[]): void {
-    input
-      .map(it => it.labels)
-      .flat()
-      .forEach(it => {
-        if (it && !this.availableLabels.find(el => el === it)) {
-          this.availableLabels.push(it);
-        }
-      });
   }
 
   openPublishedInNewTab(locale: string): void {

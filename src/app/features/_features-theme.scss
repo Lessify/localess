@@ -1,13 +1,6 @@
 @use '@angular/material' as mat;
 
 @mixin theme($theme) {
-  mat-toolbar {
-    &.main {
-      color: mat.get-theme-color($theme, primary);
-      background-color: mat.get-theme-color($theme, primary-container);
-    }
-  }
-
   mat-sidenav-container {
   }
 

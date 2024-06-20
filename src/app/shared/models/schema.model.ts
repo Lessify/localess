@@ -13,6 +13,7 @@ export interface SchemaBase {
   type: SchemaType;
   displayName?: string;
   description?: string;
+  labels?: string[];
 
   createdAt: Timestamp;
   updatedAt: Timestamp;

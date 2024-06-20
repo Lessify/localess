@@ -11,6 +11,7 @@ export const schemaBaseSchema = z.object({
   type: schemaTypeSchema,
   displayName: z.string().optional(),
   description: z.string().optional(),
+  labels: z.array(z.string()).optional(),
 });
 
 export const schemaEnumValueSchema = z.object({

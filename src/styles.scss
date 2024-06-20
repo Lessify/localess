@@ -30,14 +30,20 @@ $light-theme: mat.define-theme((
   typography: (
     brand-family: 'Roboto',
     bold-weight: 900
-  )
+  ),
+  density: (
+    scale: 0
+  ),
 ));
 $dark-theme: mat.define-theme((
   color: (
     theme-type: dark,
     primary: mat.$azure-palette,
     tertiary: mat.$blue-palette,
-  )
+  ),
+  density: (
+    scale: 0
+  ),
 ));
 
 @include mat.core();

@@ -40,6 +40,25 @@
               <mat-error>{{ fe.errors(errors) }}</mat-error>
             }
           </mat-form-field>
+          <mat-form-field>
+            <mat-label>Labels</mat-label>
+            <mat-chip-grid #chipGrid aria-label="Enter Labels">
+              @for (label of form.controls['labels'].value; track label) {
+                <mat-chip-row (removed)="removeLabel(label)">
+                  {{ label }}
+                  <button matChipRemove [attr.aria-label]="'Remove ' + label">
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                </mat-chip-row>
+              }
+            </mat-chip-grid>
+            <input
+              placeholder="New Label..."
+              [matChipInputFor]="chipGrid"
+              [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+              [matChipInputAddOnBlur]="true"
+              (matChipInputTokenEnd)="addLabel($event)" />
+          </mat-form-field>
         </div>
         <div class="basis-2/3">
           <h3>Values</h3>

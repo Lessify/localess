@@ -35,6 +35,35 @@
   <mat-progress-bar mode="query" />
 }
 <div class="container-full-screen">
+  <div class="flex flex-row gap-2">
+    <div class="basis-1/4">
+      <mat-form-field>
+        <mat-label>Labels</mat-label>
+        <mat-chip-grid #chipGrid aria-label="Enter Labels">
+          @for (label of filterLabels(); track label) {
+            <mat-chip-row (removed)="removeLabel(label)">
+              {{ label }}
+              <button matChipRemove [attr.aria-label]="'Remove ' + label">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip-row>
+          }
+        </mat-chip-grid>
+        <input
+          matInput
+          placeholder="New Label..."
+          [(ngModel)]="currentLabel"
+          [matChipInputFor]="chipGrid"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          [matAutocomplete]="auto" />
+        <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectedLabel($event)">
+          @for (label of filteredLabels(); track label) {
+            <mat-option [value]="label">{{ label }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+  </div>
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id</mat-header-cell>
@@ -50,6 +79,16 @@
       <mat-header-cell *matHeaderCellDef> Description</mat-header-cell>
       <mat-cell *matCellDef="let element">
         {{ element.description }}
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="labels">
+      <mat-header-cell *matHeaderCellDef> Labels</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <mat-chip-set>
+          @for (label of element.labels; track label) {
+            <mat-chip>{{ label }}</mat-chip>
+          }
+        </mat-chip-set>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="type">

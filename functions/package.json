@@ -26,7 +26,7 @@
     "firebase-admin": "^12.1.1",
     "firebase-functions": "^5.0.1",
     "sharp": "^0.33.4",
-    "stripe": "^15.10.0",
+    "stripe": "^15.12.0",
     "uuid": "^9.0.1",
     "zod": "^3.23.8"
   },

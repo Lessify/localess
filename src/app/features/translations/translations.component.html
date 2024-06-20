@@ -78,23 +78,25 @@
           </div>
           <div class="basis-1/2">
             <mat-form-field>
-              <mat-chip-grid #chipList>
-                @for (selectedLabel of selectedLabels; track selectedLabel) {
-                  <mat-chip-row removable (removed)="removeLabel(selectedLabel)">
-                    {{ selectedLabel }}
-                    <mat-icon matChipRemove>cancel</mat-icon>
+              <mat-chip-grid #chipGrid aria-label="Enter Labels">
+                @for (label of filterLabels(); track label) {
+                  <mat-chip-row (removed)="removeLabel(label)">
+                    {{ label }}
+                    <button matChipRemove [attr.aria-label]="'Remove ' + label">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
                   </mat-chip-row>
                 }
                 <input
                   matInput
-                  #labelsInput
                   placeholder="Label Filter"
-                  [formControl]="labelCtrl"
-                  [matAutocomplete]="auto"
-                  [matChipInputFor]="chipList" />
+                  [(ngModel)]="currentLabel"
+                  [matChipInputFor]="chipGrid"
+                  [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                  [matAutocomplete]="auto" />
               </mat-chip-grid>
               <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectLabel($event)">
-                @for (label of filteredLabels | async; track label) {
+                @for (label of filteredLabels(); track label) {
                   <mat-option [value]="label"> {{ label }}</mat-option>
                 }
               </mat-autocomplete>
@@ -109,7 +111,7 @@
                 <li
                   role="listitem"
                   class="flex p-2 cursor-pointer relative items-center"
-                  *cdkVirtualFor="let translation of translations | translationFilter: searchValue : selectedSearchLocale : selectedLabels"
+                  *cdkVirtualFor="let translation of translations | translationFilter: searchValue : selectedSearchLocale : filterLabels()"
                   (click)="selectTranslation(translation)"
                   (keyup.enter)="selectTranslation(translation)"
                   [class.selected]="translation.id === selectedTranslation?.id">
@@ -295,11 +297,11 @@
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
-                            <mat-chip-listbox>
+                            <mat-chip-set>
                               @for (item of selectedTranslation.labels; track item) {
-                                <mat-chip-option>{{ item }}</mat-chip-option>
+                                <mat-chip>{{ item }}</mat-chip>
                               }
-                            </mat-chip-listbox>
+                            </mat-chip-set>
                           } @else {
                             No label available.
                           }

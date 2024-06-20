@@ -557,6 +557,7 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
           displayName: schema.displayName,
           description: schema.description,
           previewField: schema.previewField,
+          labels: schema.labels,
           fields: schema.fields,
         });
       } else if (schema.type === SchemaType.ENUM) {
@@ -565,6 +566,7 @@ async function schemasExport(spaceId: string, taskId: string, task: Task): Promi
           type: schema.type,
           displayName: schema.displayName,
           description: schema.description,
+          labels: schema.labels,
           values: schema.values,
         });
       }
@@ -624,6 +626,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
           displayName: schema.displayName || FieldValue.delete(),
           description: schema.description || FieldValue.delete(),
           previewField: schema.previewField || FieldValue.delete(),
+          labels: schema.labels || FieldValue.delete(),
           fields: schema.fields || FieldValue.delete(),
           updatedAt: FieldValue.serverTimestamp(),
         };
@@ -633,6 +636,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
           type: schema.type,
           displayName: schema.displayName || FieldValue.delete(),
           description: schema.description || FieldValue.delete(),
+          labels: schema.labels || FieldValue.delete(),
           values: schema.values || FieldValue.delete(),
           updatedAt: FieldValue.serverTimestamp(),
         };
@@ -648,6 +652,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
         if (schema.displayName) add.displayName = schema.displayName;
         if (schema.description) add.description = schema.description;
         if (schema.previewField) add.previewField = schema.previewField;
+        if (schema.labels) add.labels = schema.labels;
         if (schema.fields) add.fields = schema.fields;
         batch.set(schemaRef, add);
       } else if (schema.type === SchemaType.ENUM) {
@@ -658,6 +663,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
         };
         if (schema.displayName) add.displayName = schema.displayName;
         if (schema.description) add.description = schema.description;
+        if (schema.labels) add.labels = schema.labels;
         if (schema.values) add.values = schema.values;
         batch.set(schemaRef, add);
       }

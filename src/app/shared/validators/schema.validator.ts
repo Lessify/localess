@@ -18,6 +18,8 @@ export class SchemaValidator {
 
   public static PREVIEW_FIELD: ValidatorFn[] = [CommonValidator.noSpaceAround, Validators.maxLength(30)];
 
+  public static LABEL: ValidatorFn[] = [CommonValidator.noSpace, Validators.minLength(2), Validators.maxLength(50)];
+
   // Component
   public static FIELD_NAME: ValidatorFn[] = [
     Validators.required,

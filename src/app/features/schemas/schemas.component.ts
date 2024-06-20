@@ -1,4 +1,16 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  model,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,6 +31,12 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { TaskService } from '@shared/services/task.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
+import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+
+type TableFilter = {
+  labels?: string[];
+};
 
 @Component({
   selector: 'll-schemas',
@@ -40,13 +58,35 @@ export class SchemasComponent implements OnInit {
   };
 
   dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
-  displayedColumns: string[] = ['type', 'name', 'description', /*'createdAt',*/ 'updatedAt', 'actions'];
-  schemas: Schema[] = [];
+  displayedColumns: string[] = ['type', 'name', 'description', 'labels', /*'createdAt',*/ 'updatedAt', 'actions'];
+  schemas = signal<Schema[]>([]);
+  schemaIds = computed(() => this.schemas().map(it => it.id));
 
   private destroyRef = inject(DestroyRef);
 
   // Loading
   isLoading = true;
+
+  // Filter
+  currentLabel = model('');
+  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
+  allLabels = computed(() => {
+    const tmp = this.schemas()
+      .map(it => it.labels)
+      .flat()
+      .filter(it => it != undefined)
+      .map(it => it!);
+    return [...new Set<string>(tmp)];
+  });
+  filterLabels = signal<string[]>([]);
+  filteredLabels = computed(() => {
+    const currentLabel = this.currentLabel()?.toLowerCase() || '';
+    return currentLabel
+      ? this.allLabels()
+          .filter(label => !this.filterLabels().includes(label))
+          .filter(label => label.toLowerCase().includes(currentLabel))
+      : this.allLabels().filter(label => !this.filterLabels().includes(label));
+  });
 
   constructor(
     private readonly router: Router,
@@ -67,8 +107,9 @@ export class SchemasComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: schemas => {
-          this.schemas = schemas;
-          this.dataSource = new MatTableDataSource<Schema>(schemas);
+          this.schemas.set(schemas);
+          this.dataSource.data = schemas;
+          this.dataSource.filterPredicate = this.schemaFilterPredicate;
           this.dataSource.sort = this.sort();
           this.dataSource.paginator = this.paginator();
           this.isLoading = false;
@@ -77,12 +118,48 @@ export class SchemasComponent implements OnInit {
       });
   }
 
+  applyFilter(): void {
+    const filter: TableFilter = {};
+    if (this.filterLabels().length > 0) {
+      filter.labels = this.filterLabels();
+    }
+    this.dataSource.filter = JSON.stringify(filter);
+  }
+
+  schemaFilterPredicate(data: Schema, filter: string): boolean {
+    const tableFilter: TableFilter = JSON.parse(filter);
+    if (tableFilter.labels && tableFilter.labels.length > 0) {
+      return tableFilter.labels.every(label => data.labels?.includes(label));
+    }
+    return true;
+  }
+
+  removeLabel(label: string): void {
+    this.filterLabels.update(it => {
+      const idx = it.indexOf(label);
+      if (idx < 0) {
+        return it;
+      }
+      it.splice(idx, 1);
+      return [...it];
+    });
+    this.applyFilter();
+  }
+
+  selectedLabel(event: MatAutocompleteSelectedEvent): void {
+    const { option } = event;
+    this.filterLabels.update(it => [...it, option.viewValue]);
+    this.currentLabel.set('');
+    option.deselect();
+    this.applyFilter();
+  }
+
   openAddDialog(): void {
     this.dialog
       .open<AddDialogComponent, AddDialogModel, SchemaCreate>(AddDialogComponent, {
         width: '500px',
         data: {
-          reservedIds: this.schemas.map(it => it.id),
+          reservedIds: this.schemaIds(),
         },
       })
       .afterClosed()
@@ -106,7 +183,7 @@ export class SchemasComponent implements OnInit {
         width: '500px',
         data: {
           id: element.id,
-          reservedIds: this.schemas.map(it => it.id),
+          reservedIds: this.schemaIds(),
         },
       })
       .afterClosed()

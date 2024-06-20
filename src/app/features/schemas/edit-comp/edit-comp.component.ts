@@ -14,13 +14,14 @@ import {
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaService } from '@shared/services/schema.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
-import { SpaceService } from '@shared/services/space.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SettingsStore } from '@shared/store/settings.store';
+import { MatChipInputEvent } from '@angular/material/chips';
+import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 
 @Component({
   selector: 'll-schema-edit-comp',
@@ -54,16 +55,17 @@ export class EditCompComponent implements OnInit {
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     description: this.fb.control<string | undefined>(undefined, SchemaValidator.DESCRIPTION),
     previewField: this.fb.control<string | undefined>(undefined, SchemaValidator.PREVIEW_FIELD),
+    labels: this.fb.control<string[] | undefined>([]),
     fields: this.fb.array<SchemaField>([]),
   });
+
+  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
 
   constructor(
     readonly fe: FormErrorHandlerService,
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
     private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly spaceService: SpaceService,
     private readonly schemaService: SchemaService,
     private readonly notificationService: NotificationService
   ) {}
@@ -94,6 +96,27 @@ export class EditCompComponent implements OnInit {
           this.cd.markForCheck();
         },
       });
+  }
+
+  addLabel(event: MatChipInputEvent): void {
+    const { value, chipInput } = event;
+    if (value) {
+      const labels = this.form.controls['labels'].value;
+      if (labels instanceof Array) {
+        labels.push(value);
+      } else {
+        this.form.controls['labels'].setValue([value]);
+      }
+    }
+    chipInput.clear();
+  }
+
+  removeLabel(label: string): void {
+    const labels = this.form.controls['labels'].value;
+    if (labels instanceof Array) {
+      const index: number = labels.indexOf(label);
+      labels.splice(index, 1);
+    }
   }
 
   get fields(): FormArray<FormGroup> {

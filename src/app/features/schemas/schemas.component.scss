@@ -6,6 +6,14 @@ table {
   color: var(--sys-secondary);
 }
 
+mat-form-field {
+  width: 100%;
+
+  input {
+    width: 100%;
+  }
+}
+
 mat-header-cell,
 mat-cell {
   &.mat-column-type {

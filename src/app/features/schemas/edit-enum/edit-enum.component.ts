@@ -11,6 +11,8 @@ import { NotificationService } from '@shared/services/notification.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { SettingsStore } from '@shared/store/settings.store';
+import { MatChipInputEvent } from '@angular/material/chips';
+import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 
 @Component({
   selector: 'll-schema-edit-enum',
@@ -35,8 +37,11 @@ export class EditEnumComponent implements OnInit {
   form: FormRecord = this.fb.record({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     description: this.fb.control<string | undefined>(undefined, SchemaValidator.DESCRIPTION),
+    labels: this.fb.control<string[] | undefined>([]),
     values: this.fb.array<SchemaEnumValue>([]),
   });
+
+  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
 
   constructor(
     readonly fe: FormErrorHandlerService,
@@ -70,6 +75,27 @@ export class EditEnumComponent implements OnInit {
           this.cd.markForCheck();
         },
       });
+  }
+
+  addLabel(event: MatChipInputEvent): void {
+    const { value, chipInput } = event;
+    if (value) {
+      const labels = this.form.controls['labels'].value;
+      if (labels instanceof Array) {
+        labels.push(value);
+      } else {
+        this.form.controls['labels'].setValue([value]);
+      }
+    }
+    chipInput.clear();
+  }
+
+  removeLabel(label: string): void {
+    const labels = this.form.controls['labels'].value;
+    if (labels instanceof Array) {
+      const index: number = labels.indexOf(label);
+      labels.splice(index, 1);
+    }
   }
 
   save(): void {
