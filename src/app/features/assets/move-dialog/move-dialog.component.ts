@@ -4,12 +4,12 @@ import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
 import { MoveDialogModel } from './move-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
-import { ContentFolder } from '@shared/models/content.model';
-import { ContentService } from '@shared/services/content.service';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { AssetService } from '@shared/services/asset.service';
+import { AssetFolder } from '@shared/models/asset.model';
 
 @Component({
-  selector: 'll-content-move-dialog',
+  selector: 'll-asset-move-dialog',
   templateUrl: './move-dialog.component.html',
   styleUrls: ['./move-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,31 +21,36 @@ export class MoveDialogComponent implements OnInit {
 
   //Search
   searchCtrl: FormControl = new FormControl();
-  filteredContent: Observable<ContentFolder[]> = of([]);
+  filteredFolders: Observable<AssetFolder[]> = of([]);
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly contentService: ContentService,
+    private readonly assetService: AssetService,
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA)
     public data: MoveDialogModel
   ) {}
 
   ngOnInit(): void {
-    this.filteredContent = this.searchCtrl.valueChanges.pipe(
+    this.filteredFolders = this.searchCtrl.valueChanges.pipe(
       startWith(''),
       debounceTime(500),
-      switchMap(it => this.contentService.findAllFoldersByName(this.data.spaceId, it, 5))
+      switchMap(it => this.assetService.findAllFoldersByName(this.data.spaceId, it, 5))
     );
   }
 
-  displayContent(content?: ContentFolder): string {
-    return content ? `${content.name} | ${content.fullSlug}` : '';
+  displayContent(content?: AssetFolder): string {
+    if (content?.parentPath === '~') return `${content.name} | ${content.parentPath}`;
+    return content?.name || '';
   }
 
   contentSelected(event: MatAutocompleteSelectedEvent): void {
-    const content = event.option.value as ContentFolder;
-    this.form?.controls['path'].setValue(content.fullSlug);
+    const folder = event.option.value as AssetFolder;
+    let parentPath = '~';
+    if (folder.parentPath !== '~') {
+      parentPath = folder.parentPath ? `${folder.parentPath}/${folder.id}` : folder.id;
+    }
+    this.form?.controls['path'].setValue(parentPath);
   }
 
   contentReset() {

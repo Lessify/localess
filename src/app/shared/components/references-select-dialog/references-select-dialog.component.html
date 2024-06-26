@@ -1,0 +1,85 @@
+<h2 mat-dialog-title>Contents</h2>
+<ll-breadcrumb>
+  <span style="padding-left: 1rem">&nbsp;</span>
+  @for (pathItem of contentPath; track pathItem.fullSlug; let isFirst = $first) {
+    <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">
+      {{ pathItem.name }}
+    </ll-breadcrumb-item>
+  }
+</ll-breadcrumb>
+<mat-dialog-content>
+  <mat-table [dataSource]="dataSource" matSort>
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef> #</mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        @if (row.kind === 'DOCUMENT') {
+          <mat-checkbox
+            (click)="$event.stopPropagation()"
+            (change)="$event ? selection.toggle(row) : null"
+            [checked]="selection.isSelected(row)">
+          </mat-checkbox>
+        }
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="status">
+      <mat-header-cell *matHeaderCellDef> Status</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        @switch (element.kind) {
+          @case ('DOCUMENT') {
+            @if (element?.publishedAt === undefined) {
+              <ll-status mode="offline" matTooltip="Not published" />
+            } @else if (element?.publishedAt?.seconds > element?.updatedAt?.seconds) {
+              <ll-status mode="online" matTooltip="Published" />
+            } @else if (element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds) {
+              <ll-status mode="away" matTooltip="Draft" />
+            }
+          }
+          @case ('FOLDER') {
+            <mat-icon>folder</mat-icon>
+          }
+        }
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        {{ element.name }}
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="slug">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.slug }}</mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="schema">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        @if (element.kind === 'DOCUMENT') {
+          @if (schemasMapById().get(element.schema); as schema) {
+            {{ schema.displayName || schema.id }}
+          } @else {
+            unknown...
+          }
+        }
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="updatedAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }}</mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
+  </mat-table>
+  <mat-paginator></mat-paginator>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Close</button>
+  <button mat-stroked-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
+    @if (selection.selected.length > 1) {
+      Add Selected Assets ({{ selection.selected.length }})
+    } @else {
+      Add Selected Asset
+    }
+  </button>
+</mat-dialog-actions>

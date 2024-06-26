@@ -145,6 +145,11 @@
             <mat-icon>edit</mat-icon>
           </button>
         }
+        @if ('ASSET_UPDATE' | canUserPerform | async) {
+          <button mat-icon-button (click)="openMoveDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Move">
+            <mat-icon>drive_file_move</mat-icon>
+          </button>
+        }
         @if ('ASSET_DELETE' | canUserPerform | async) {
           <button
             mat-icon-button

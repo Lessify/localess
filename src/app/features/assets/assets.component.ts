@@ -25,6 +25,7 @@ import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.com
 import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { PathItem, SpaceStore } from '@shared/store/space.store';
+import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 
 @Component({
   selector: 'll-assets',
@@ -234,6 +235,34 @@ export class AssetsComponent implements OnInit {
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error(`Asset '${element.name}' can not be deleted.`);
+        },
+      });
+  }
+
+  openMoveDialog(event: Event, element: Asset) {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.dialog
+      .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
+        width: '500px',
+        data: {
+          spaceId: this.spaceId(),
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.assetService.move(this.spaceId(), element.id, it!.path))
+      )
+      .subscribe({
+        next: () => {
+          this.selection.clear();
+          this.cd.markForCheck();
+          this.notificationService.success('Asset has been moved.');
+        },
+        error: () => {
+          this.notificationService.error('Asset can not be moved.');
         },
       });
   }

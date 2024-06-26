@@ -1,0 +1,34 @@
+<h2 mat-dialog-title>Move Asset</h2>
+<mat-dialog-content>
+  <br />
+  <form [formGroup]="form">
+    <mat-form-field>
+      <mat-label>Folder</mat-label>
+      <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl" required />
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
+        @if (!searchCtrl.value) {
+          <mat-option [value]="{ name: 'Root', parentPath: '~' }">
+            <mat-icon>home</mat-icon>
+            <span>Root</span> | <small>~</small>
+          </mat-option>
+        }
+        @for (link of filteredFolders | async; track link.id) {
+          <mat-option [value]="link">
+            <mat-icon>folder</mat-icon>
+            <span>{{ link.name }}</span>
+          </mat-option>
+        }
+      </mat-autocomplete>
+      <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
+        <mat-icon>clear</mat-icon>
+      </button>
+      @if (form.controls['path'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-stroked-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Move</button>
+</mat-dialog-actions>

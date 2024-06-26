@@ -47,6 +47,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ReleasesDialogComponent } from '@shared/components/releases-dialog/releases-dialog.component';
+import { ReferencesSelectDialogComponent } from '@shared/components/references-select-dialog';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -94,6 +95,7 @@ const SHARED_COMPONENTS: any[] = [
   BreadcrumbComponent,
   BreadcrumbItemComponent,
   ConfirmationDialogComponent,
+  ReferencesSelectDialogComponent,
   ReleasesDialogComponent,
   CustomSnackBarComponent,
   IconComponent,

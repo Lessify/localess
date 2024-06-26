@@ -298,8 +298,8 @@
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
                             <mat-chip-set>
-                              @for (item of selectedTranslation.labels; track item) {
-                                <mat-chip>{{ item }}</mat-chip>
+                              @for (label of selectedTranslation.labels; track label) {
+                                <mat-chip [highlighted]="filterLabels().includes(label)">{{ label }}</mat-chip>
                               }
                             </mat-chip-set>
                           } @else {

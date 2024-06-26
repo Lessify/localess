@@ -27,6 +27,7 @@ import {
   ContentDocument,
   ContentDocumentCreate,
   ContentDocumentCreateFS,
+  ContentFolder,
   ContentFolderCreate,
   ContentFolderCreateFS,
   ContentKind,
@@ -101,7 +102,7 @@ export class ContentService {
     );
   }
 
-  findAllFoldersByName(spaceId: string, name: string, max = 20): Observable<ContentDocument[]> {
+  findAllFoldersByName(spaceId: string, name: string, max = 20): Observable<ContentFolder[]> {
     const queryConstrains: QueryConstraint[] = [
       where('kind', '==', ContentKind.FOLDER),
       where('name', '>=', name),
@@ -111,7 +112,7 @@ export class ContentService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findAllFoldersByName'),
-      map(it => it as ContentDocument[])
+      map(it => it as ContentFolder[])
     );
   }
 

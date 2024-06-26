@@ -128,6 +128,34 @@ export class AssetService {
     );
   }
 
+  findAllFilesByName(spaceId: string, name: string, max = 20): Observable<AssetFile[]> {
+    const queryConstrains: QueryConstraint[] = [
+      where('kind', '==', AssetKind.FILE),
+      where('name', '>=', name),
+      where('name', '<=', `${name}~`),
+      limit(max),
+    ];
+
+    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
+      traceUntilFirst('Firestore:Assets:findAllFilesByName'),
+      map(it => it as AssetFile[])
+    );
+  }
+
+  findAllFoldersByName(spaceId: string, name: string, max = 20): Observable<AssetFolder[]> {
+    const queryConstrains: QueryConstraint[] = [
+      where('kind', '==', AssetKind.FOLDER),
+      where('name', '>=', name),
+      where('name', '<=', `${name}~`),
+      limit(max),
+    ];
+
+    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
+      traceUntilFirst('Firestore:Assets:findAllFoldersByName'),
+      map(it => it as AssetFolder[])
+    );
+  }
+
   createFile(spaceId: string, parentPath: string, entity: File): Observable<DocumentReference> {
     const extIdx = entity.name.lastIndexOf('.');
     const addEntity: AssetFileCreateFS = {
@@ -183,6 +211,17 @@ export class AssetService {
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(
       traceUntilFirst('Firestore:Assets:updateFile')
     );
+  }
+
+  move(spaceId: string, id: string, parentPath: string): Observable<void> {
+    if (parentPath === '~') {
+      parentPath = '';
+    }
+    const update: UpdateData<Asset> = {
+      parentPath: parentPath,
+      updatedAt: serverTimestamp(),
+    };
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(traceUntilFirst('Firestore:Assets:move'));
   }
 
   delete(spaceId: string, id: string): Observable<void> {

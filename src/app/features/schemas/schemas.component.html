@@ -86,7 +86,7 @@
       <mat-cell *matCellDef="let element">
         <mat-chip-set>
           @for (label of element.labels; track label) {
-            <mat-chip>{{ label }}</mat-chip>
+            <mat-chip [highlighted]="filterLabels().includes(label)">{{ label }}</mat-chip>
           }
         </mat-chip-set>
       </mat-cell>

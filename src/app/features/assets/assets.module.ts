@@ -11,6 +11,7 @@ import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { TaskService } from '@shared/services/task.service';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
+import { MoveDialogComponent } from './move-dialog';
 
 @NgModule({
   declarations: [
@@ -20,6 +21,7 @@ import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.com
     EditFolderDialogComponent,
     ExportDialogComponent,
     ImportDialogComponent,
+    MoveDialogComponent,
   ],
   imports: [SharedModule, AssetsRoutingModule],
   providers: [SpaceService, AssetService, TaskService],

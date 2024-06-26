@@ -150,7 +150,7 @@
             <mat-icon>content_copy</mat-icon>
           </button>
         }
-        @if ('CONTENT_CREATE' | canUserPerform | async) {
+        @if ('CONTENT_UPDATE' | canUserPerform | async) {
           <button mat-icon-button (click)="openMoveDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Move">
             <mat-icon>drive_file_move</mat-icon>
           </button>
