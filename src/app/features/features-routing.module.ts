@@ -29,7 +29,7 @@ const hasPermissionUserManagement = () => {
       } else {
         return false;
       }
-    })
+    }),
   );
 };
 
@@ -46,7 +46,7 @@ const hasPermissionSpaceManagement = () => {
       } else {
         return false;
       }
-    })
+    }),
   );
 };
 
@@ -63,7 +63,7 @@ const hasPermissionTranslationRead = () => {
       } else {
         return false;
       }
-    })
+    }),
   );
 };
 
@@ -80,7 +80,7 @@ const hasPermissionSchemaRead = () => {
       } else {
         return false;
       }
-    })
+    }),
   );
 };
 
@@ -97,7 +97,7 @@ const hasPermissionContentRead = () => {
       } else {
         return false;
       }
-    })
+    }),
   );
 };
 
@@ -114,7 +114,7 @@ const hasPermissionAssetRead = () => {
       } else {
         return false;
       }
-    })
+    }),
   );
 };
 

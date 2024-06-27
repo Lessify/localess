@@ -24,7 +24,7 @@ export class MeComponent {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly meService: MeService
+    private readonly meService: MeService,
   ) {}
 
   openEditDialog(): void {
@@ -41,8 +41,8 @@ export class MeComponent {
         filter(it => it !== undefined),
         switchMap(it =>
           //TODO handle firestore update
-          this.meService.updateProfile(it!)
-        )
+          this.meService.updateProfile(it!),
+        ),
       )
       .subscribe({
         next: () => {
@@ -63,7 +63,7 @@ export class MeComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updateEmail(it!.newEmail))
+        switchMap(it => this.meService.updateEmail(it!.newEmail)),
       )
       .subscribe({
         next: () => {
@@ -84,7 +84,7 @@ export class MeComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updatePassword(it!.newPassword))
+        switchMap(it => this.meService.updatePassword(it!.newPassword)),
       )
       .subscribe({
         next: () => {

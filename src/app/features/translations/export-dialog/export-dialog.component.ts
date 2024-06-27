@@ -27,7 +27,7 @@ export class ExportDialogComponent {
 
   constructor(
     private readonly fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: ExportDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: ExportDialogModel,
   ) {}
 
   dateChange(event: MatDatepickerInputEvent<unknown>): void {

@@ -16,7 +16,7 @@ export class ContentHistoryService {
       idField: 'id',
     }).pipe(
       traceUntilFirst('Firestore:ContentHistory:findAll'),
-      map(it => it as ContentHistory[])
+      map(it => it as ContentHistory[]),
     );
   }
 }

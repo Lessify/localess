@@ -19,6 +19,6 @@ export class InstallDialogComponent {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: InstallDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: InstallDialogModel,
   ) {}
 }

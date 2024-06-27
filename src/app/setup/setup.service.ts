@@ -9,7 +9,7 @@ import { traceUntilFirst } from '@angular/fire/performance';
 export class SetupService {
   constructor(
     private readonly firestore: Firestore,
-    private readonly functions: Functions
+    private readonly functions: Functions,
   ) {}
 
   init(setup: Setup): Observable<any> {

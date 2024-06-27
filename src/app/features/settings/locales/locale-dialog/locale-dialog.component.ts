@@ -22,14 +22,14 @@ export class LocaleDialogComponent implements OnInit {
   filteredLocales: Observable<Locale[]> = this.form.controls['locale'].valueChanges.pipe(
     startWith(''),
     map(value => (typeof value === 'string' ? value : value.name)),
-    map(value => this._filter(value))
+    map(value => this._filter(value)),
   );
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly localeService: LocaleService,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: Locale[]
+    @Inject(MAT_DIALOG_DATA) public data: Locale[],
   ) {}
 
   ngOnInit(): void {

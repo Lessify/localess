@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { SchemaFieldKind, SchemaFieldReference, SchemaFieldReferences } from '@shared/models/schema.model';
-import { ContentDocument } from '@shared/models/content.model';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { debounceTime, Observable, of, startWith } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { SchemaFieldKind, SchemaFieldReference } from '@shared/models/schema.model';
+import { Content, ContentDocument } from '@shared/models/content.model';
 import { SettingsStore } from '@shared/store/settings.store';
+import { Space } from '@shared/models/space.model';
+import { MatDialog } from '@angular/material/dialog';
+import { ContentService } from '@shared/services/content.service';
+import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '@shared/components/references-select-dialog';
 
 @Component({
   selector: 'll-reference-select',
@@ -17,60 +18,71 @@ import { SettingsStore } from '@shared/store/settings.store';
 export class ReferenceSelectComponent implements OnInit {
   // Input
   form = input.required<FormGroup>();
-  component = input.required<SchemaFieldReference | SchemaFieldReferences>();
-  documents = input.required<ContentDocument[]>();
+  component = input.required<SchemaFieldReference>();
+  space = input.required<Space>();
 
-  // Search
-  searchCtrl: FormControl = new FormControl();
-  filteredContent: Observable<ContentDocument[]> = of([]);
+  content?: Content;
 
-  // Subscriptions
+  // Settings
   settingsStore = inject(SettingsStore);
 
-  constructor(readonly fe: FormErrorHandlerService) {}
+  constructor(
+    readonly fe: FormErrorHandlerService,
+    private readonly dialog: MatDialog,
+    private readonly cd: ChangeDetectorRef,
+    private readonly contentService: ContentService,
+  ) {}
 
   ngOnInit(): void {
-    // Data init in case everything is null
     if (this.form().value.kind === null) {
       this.form().patchValue({ kind: SchemaFieldKind.REFERENCE });
     }
-    if (this.form().value.uri !== null) {
-      this.searchCtrl.patchValue(this.documents().find(it => it.id === this.form().value.uri));
+    this.loadData();
+  }
+
+  loadData(): void {
+    const id: string | undefined = this.form().value.uri;
+    if (id) {
+      this.contentService.findById(this.space().id, id).subscribe({
+        next: content => {
+          this.content = content;
+          this.cd.markForCheck();
+        },
+      });
     }
-
-    this.filteredContent = this.searchCtrl.valueChanges.pipe(
-      startWith(''),
-      debounceTime(300),
-      map(it => it.toString().toLowerCase()),
-      map(
-        search =>
-          this.documents().filter(it => {
-            const path = this.component().path;
-            if (path) {
-              if (it.parentSlug.startsWith(path)) {
-                return it.name.toLowerCase().includes(search) || it.fullSlug.toLowerCase().includes(search);
-              } else {
-                return false;
-              }
-            } else {
-              return it.name.toLowerCase().includes(search) || it.fullSlug.toLowerCase().includes(search);
-            }
-          }) || []
-      )
-    );
   }
 
-  displayContent(content?: ContentDocument): string {
-    return content ? `${content.name} | ${content.fullSlug}` : '';
+  openReferenceSelectDialog(): void {
+    this.dialog
+      .open<ReferencesSelectDialogComponent, ReferencesSelectDialogModel, ContentDocument[] | undefined>(ReferencesSelectDialogComponent, {
+        minWidth: '900px',
+        width: 'calc(100vw - 160px)',
+        maxWidth: '1280px',
+        maxHeight: 'calc(100vh - 80px)',
+        data: {
+          spaceId: this.space().id,
+          multiple: false,
+        },
+      })
+      .afterClosed()
+      .subscribe({
+        next: selectedDocuments => {
+          if (selectedDocuments && selectedDocuments.length > 0) {
+            this.content = undefined;
+            this.cd.detectChanges();
+            this.content = selectedDocuments[0];
+            this.form().patchValue({
+              uri: this.content.id,
+              kind: SchemaFieldKind.REFERENCE,
+            });
+            this.cd.markForCheck();
+          }
+        },
+      });
   }
 
-  contentSelected(event: MatAutocompleteSelectedEvent): void {
-    const content = event.option.value as ContentDocument;
-    this.form().controls['uri'].setValue(content.id);
-  }
-
-  contentReset(): void {
-    this.searchCtrl.setValue('');
-    this.form().controls['uri'].setValue(undefined);
+  deleteReference() {
+    this.content = undefined;
+    this.form().controls['uri'].setValue(null);
   }
 }

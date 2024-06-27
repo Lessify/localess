@@ -17,7 +17,7 @@ export class ConfigDialogComponent {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: ConfigDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: ConfigDialogModel,
   ) {
     this.generateForm(data.plugin.configuration);
   }

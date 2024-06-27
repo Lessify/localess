@@ -15,7 +15,7 @@ export class CustomSnackBarComponent {
 
   constructor(
     private readonly router: Router,
-    @Inject(MAT_SNACK_BAR_DATA) public readonly data: CustomSnackBarModel
+    @Inject(MAT_SNACK_BAR_DATA) public readonly data: CustomSnackBarModel,
   ) {}
 
   navigate(link: string): void {

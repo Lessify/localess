@@ -51,7 +51,7 @@ export class EditEnumComponent implements OnInit {
     private readonly activatedRoute: ActivatedRoute,
     private readonly spaceService: SpaceService,
     private readonly schemaService: SchemaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -142,7 +142,7 @@ export class EditEnumComponent implements OnInit {
       this.fb.group({
         name: this.fb.control(element?.name || '', SchemaValidator.FIELD_OPTION_NAME),
         value: this.fb.control(element?.value || '', SchemaValidator.FIELD_OPTION_VALUE),
-      })
+      }),
     );
   }
 }

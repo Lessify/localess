@@ -36,7 +36,7 @@ import { getDownloadURL } from '@firebase/storage';
 export class TaskService {
   constructor(
     private readonly firestore: Firestore,
-    private readonly storage: Storage
+    private readonly storage: Storage,
   ) {}
 
   findAll(spaceId: string): Observable<Task[]> {
@@ -44,14 +44,14 @@ export class TaskService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tasks`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Tasks:findAll'),
-      map(it => it as Task[])
+      map(it => it as Task[]),
     );
   }
 
   findById(spaceId: string, id: string): Observable<Task> {
     return docData(doc(this.firestore, `spaces/${spaceId}/tasks/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Tasks:findById'),
-      map(it => it as Task)
+      map(it => it as Task),
     );
   }
 
@@ -84,7 +84,7 @@ export class TaskService {
 
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
-      traceUntilFirst('Firestore:Tasks:create')
+      traceUntilFirst('Firestore:Tasks:create'),
     );
   }
 
@@ -117,7 +117,7 @@ export class TaskService {
 
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
-      traceUntilFirst('Firestore:Tasks:create')
+      traceUntilFirst('Firestore:Tasks:create'),
     );
   }
 
@@ -150,7 +150,7 @@ export class TaskService {
 
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
-      traceUntilFirst('Firestore:Tasks:create')
+      traceUntilFirst('Firestore:Tasks:create'),
     );
   }
 
@@ -188,7 +188,7 @@ export class TaskService {
     }
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
-      traceUntilFirst('Firestore:Tasks:create')
+      traceUntilFirst('Firestore:Tasks:create'),
     );
   }
 

@@ -270,13 +270,13 @@
         <!--REFERENCE-->
         @case ('REFERENCE') {
           @if (form.controls[field.name]; as control) {
-            <ll-reference-select [form]="control" [component]="field" [documents]="documents" />
+            <ll-reference-select [form]="control" [component]="field" [space]="space" />
           }
         }
         <!--REFERENCE-->
         @case ('REFERENCES') {
           @if (form.controls[field.name]; as control) {
-            <ll-references-select [form]="control" [component]="field" [documents]="documents" />
+            <ll-references-select [form]="control" [component]="field" [space]="space" />
           }
         }
         <!--ASSET-->

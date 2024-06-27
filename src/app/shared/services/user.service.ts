@@ -21,20 +21,20 @@ import { map } from 'rxjs/operators';
 export class UserService {
   constructor(
     private readonly firestore: Firestore,
-    private readonly functions: Functions
+    private readonly functions: Functions,
   ) {}
 
   findAll(): Observable<User[]> {
     return collectionData(collection(this.firestore, 'users'), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Users:findAll'),
-      map(it => it as User[])
+      map(it => it as User[]),
     );
   }
 
   findById(id: string): Observable<User> {
     return docData(doc(this.firestore, `users/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Users:findById'),
-      map(it => it as User)
+      map(it => it as User),
     );
   }
 

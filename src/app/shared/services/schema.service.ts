@@ -47,7 +47,7 @@ export class SchemaService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/schemas`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Schemas:findAll'),
-      map(it => it as Schema[])
+      map(it => it as Schema[]),
     );
   }
 
@@ -58,7 +58,7 @@ export class SchemaService {
   findById(spaceId: string, id: string): Observable<Schema> {
     return docData(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Schemas:findById'),
-      map(it => it as Schema)
+      map(it => it as Schema),
     );
   }
 
@@ -70,7 +70,7 @@ export class SchemaService {
       updatedAt: serverTimestamp(),
     };
     return from(setDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${entity.id}`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Schemas:create')
+      traceUntilFirst('Firestore:Schemas:create'),
     );
   }
 
@@ -122,7 +122,7 @@ export class SchemaService {
 
     return from(setDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${newId}`), addEntity)).pipe(
       traceUntilFirst('Firestore:Schemas:updateId'),
-      switchMap(() => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${entity.id}`))))
+      switchMap(() => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${entity.id}`)))),
     );
   }
 
@@ -137,7 +137,7 @@ export class SchemaService {
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Schemas:update')
+      traceUntilFirst('Firestore:Schemas:update'),
     );
   }
 
@@ -151,7 +151,7 @@ export class SchemaService {
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/schemas/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Schemas:update')
+      traceUntilFirst('Firestore:Schemas:update'),
     );
   }
 

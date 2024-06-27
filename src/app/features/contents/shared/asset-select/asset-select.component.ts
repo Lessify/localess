@@ -23,14 +23,14 @@ export class AssetSelectComponent implements OnInit {
   space = input.required<Space>();
   asset?: Asset;
 
-  //Subscriptions
+  //Settings
   settingsStore = inject(SettingsStore);
 
   constructor(
     readonly fe: FormErrorHandlerService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly assetService: AssetService
+    private readonly assetService: AssetService,
   ) {}
 
   ngOnInit(): void {

@@ -77,9 +77,9 @@
   <button mat-button [mat-dialog-close]="undefined">Close</button>
   <button mat-stroked-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     @if (selection.selected.length > 1) {
-      Add Selected Assets ({{ selection.selected.length }})
+      Add Selected Documents ({{ selection.selected.length }})
     } @else {
-      Add Selected Asset
+      Add Selected Document
     }
   </button>
 </mat-dialog-actions>

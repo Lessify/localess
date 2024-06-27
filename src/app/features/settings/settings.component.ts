@@ -32,7 +32,7 @@ export class SettingsComponent {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-    private readonly cd: ChangeDetectorRef
+    private readonly cd: ChangeDetectorRef,
   ) {
     const idx = router.url.lastIndexOf('/');
     this.activeTab = router.url.substring(idx + 1);

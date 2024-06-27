@@ -22,7 +22,7 @@ export class EditDialogComponent implements OnInit {
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA)
-    public data: EditDialogModel
+    public data: EditDialogModel,
   ) {}
 
   ngOnInit(): void {

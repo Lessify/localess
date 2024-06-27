@@ -27,21 +27,21 @@ import { Functions, httpsCallableData } from '@angular/fire/functions';
 export class SpaceService {
   constructor(
     private firestore: Firestore,
-    private readonly functions: Functions
+    private readonly functions: Functions,
   ) {}
 
   findAll(): Observable<Space[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')];
     return collectionData(query(collection(this.firestore, `spaces`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Spaces:findAll'),
-      map(it => it as Space[])
+      map(it => it as Space[]),
     );
   }
 
   findById(id: string): Observable<Space> {
     return docData(doc(this.firestore, `spaces/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Spaces:findById'),
-      map(it => it as Space)
+      map(it => it as Space),
     );
   }
 

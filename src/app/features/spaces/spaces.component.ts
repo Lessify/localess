@@ -33,7 +33,7 @@ export class SpacesComponent implements OnInit {
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -64,7 +64,7 @@ export class SpacesComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.spaceService.create(it!))
+        switchMap(it => this.spaceService.create(it!)),
       )
       .subscribe({
         next: () => {
@@ -88,7 +88,7 @@ export class SpacesComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.spaceService.update(element.id, it!))
+        switchMap(it => this.spaceService.update(element.id, it!)),
       )
       .subscribe({
         next: () => {
@@ -112,7 +112,7 @@ export class SpacesComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.spaceService.delete(element.id))
+        switchMap(() => this.spaceService.delete(element.id)),
       )
       .subscribe({
         next: () => {

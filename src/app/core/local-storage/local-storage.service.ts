@@ -17,7 +17,7 @@ export class LocalStorageService {
             key
               .split('-')
               .map((token, index) => (index === 0 ? token : token.charAt(0).toUpperCase() + token.slice(1)))
-              .join('')
+              .join(''),
           );
         let currentStateRef = state;
         stateKeys.forEach((key, index) => {

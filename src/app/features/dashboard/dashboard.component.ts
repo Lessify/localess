@@ -24,7 +24,7 @@ export class DashboardComponent {
 
   constructor(
     private readonly notificationService: NotificationService,
-    private readonly spaceService: SpaceService
+    private readonly spaceService: SpaceService,
   ) {
     effect(() => {
       const selectedSpace = this.spaceStore.selectedSpace();

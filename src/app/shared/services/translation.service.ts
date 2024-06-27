@@ -25,26 +25,26 @@ export class TranslationService {
   constructor(
     private readonly firestore: Firestore,
     private readonly functions: Functions,
-    private readonly auth: Auth
+    private readonly auth: Auth,
   ) {}
 
   findAll(spaceId: string): Observable<Translation[]> {
     return collectionData(collection(this.firestore, `spaces/${spaceId}/translations`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Translations:findAll'),
-      map(it => it as Translation[])
+      map(it => it as Translation[]),
     );
   }
 
   countAll(spaceId: string): Observable<number> {
     return collectionCount(collection(this.firestore, `spaces/${spaceId}/translations`)).pipe(
-      traceUntilFirst('Firestore:Translations:countAll')
+      traceUntilFirst('Firestore:Translations:countAll'),
     );
   }
 
   findById(spaceId: string, id: string): Observable<Translation> {
     return docData(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Translations:findById'),
-      map(it => it as Translation)
+      map(it => it as Translation),
     );
   }
 
@@ -88,7 +88,7 @@ export class TranslationService {
     }
 
     return from(setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Translations:create')
+      traceUntilFirst('Firestore:Translations:create'),
     );
   }
 
@@ -114,7 +114,7 @@ export class TranslationService {
       };
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Translations:update')
+      traceUntilFirst('Firestore:Translations:update'),
     );
   }
 
@@ -140,7 +140,7 @@ export class TranslationService {
     }
     return from(setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${newId}`), addEntity)).pipe(
       traceUntilFirst('Firestore:Translations:updateId'),
-      switchMap(() => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`))))
+      switchMap(() => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`)))),
     );
   }
 
@@ -156,13 +156,13 @@ export class TranslationService {
       };
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Translations:updateLocale')
+      traceUntilFirst('Firestore:Translations:updateLocale'),
     );
   }
 
   delete(spaceId: string, id: string): Observable<void> {
     return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`))).pipe(
-      traceUntilFirst('Firestore:Translations:delete')
+      traceUntilFirst('Firestore:Translations:delete'),
     );
   }
 

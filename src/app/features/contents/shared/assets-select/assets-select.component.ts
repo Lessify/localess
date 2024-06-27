@@ -22,12 +22,11 @@ export class AssetsSelectComponent implements OnInit {
   form = input.required<FormArray>();
   component = input.required<SchemaFieldAssets>();
   space = input.required<Space>();
-
   // Outputs
   onAssetsChange = output<string[]>();
 
   assets: AssetFile[] = [];
-  // Subscriptions
+  // Settings
   settingsStore = inject(SettingsStore);
 
   constructor(
@@ -35,7 +34,7 @@ export class AssetsSelectComponent implements OnInit {
     readonly fe: FormErrorHandlerService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly assetService: AssetService
+    private readonly assetService: AssetService,
   ) {}
 
   ngOnInit(): void {

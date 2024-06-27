@@ -16,7 +16,7 @@ export class TranslationHistoryService {
       idField: 'id',
     }).pipe(
       traceUntilFirst('Firestore:TranslationsHistory:findAll'),
-      map(it => it as TranslationHistory[])
+      map(it => it as TranslationHistory[]),
     );
   }
 }

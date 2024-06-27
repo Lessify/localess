@@ -26,7 +26,7 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 export class PluginService {
   constructor(
     private readonly firestore: Firestore,
-    private readonly functions: Functions
+    private readonly functions: Functions,
   ) {}
 
   findAll(spaceId: string): Observable<Plugin[]> {
@@ -40,8 +40,8 @@ export class PluginService {
           const aPlugin = AVAILABLE_PLUGINS_MAP[plugin.id];
           plugin.latestVersion = aPlugin.version;
           return plugin;
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -58,14 +58,14 @@ export class PluginService {
           }
         });
         return pcl;
-      })
+      }),
     );
   }
 
   findById(spaceId: string, id: string): Observable<Plugin> {
     return docData(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Plugins:findById'),
-      map(it => it as Plugin)
+      map(it => it as Plugin),
     );
   }
 
@@ -85,7 +85,7 @@ export class PluginService {
       };
       return from(setDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), addEntity)).pipe(
         traceUntilFirst('Firestore:Plugins:create'),
-        map(() => true)
+        map(() => true),
       );
     }
     return of(false);
@@ -103,7 +103,7 @@ export class PluginService {
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Plugins:updateConfiguration')
+      traceUntilFirst('Firestore:Plugins:updateConfiguration'),
     );
   }
 
@@ -122,7 +122,7 @@ export class PluginService {
       };
       return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/plugins/${id}`), update)).pipe(
         traceUntilFirst('Firestore:Plugins:updateVersion'),
-        map(() => true)
+        map(() => true),
       );
     }
     return of(false);

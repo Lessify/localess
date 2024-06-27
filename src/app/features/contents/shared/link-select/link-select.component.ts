@@ -43,7 +43,7 @@ export class LinkSelectComponent implements OnInit {
     this.filteredContent = this.searchCtrl.valueChanges.pipe(
       startWith(''),
       debounceTime(300),
-      map(search => this.documents().filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || [])
+      map(search => this.documents().filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || []),
     );
   }
 

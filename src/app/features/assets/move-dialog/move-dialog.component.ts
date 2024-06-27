@@ -28,14 +28,14 @@ export class MoveDialogComponent implements OnInit {
     private readonly assetService: AssetService,
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA)
-    public data: MoveDialogModel
+    public data: MoveDialogModel,
   ) {}
 
   ngOnInit(): void {
     this.filteredFolders = this.searchCtrl.valueChanges.pipe(
       startWith(''),
       debounceTime(500),
-      switchMap(it => this.assetService.findAllFoldersByName(this.data.spaceId, it, 5))
+      switchMap(it => this.assetService.findAllFoldersByName(this.data.spaceId, it, 5)),
     );
   }
 

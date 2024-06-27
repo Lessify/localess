@@ -17,7 +17,7 @@ export class ImportDialogComponent {
 
   constructor(
     private readonly cd: ChangeDetectorRef,
-    private readonly fb: FormBuilder
+    private readonly fb: FormBuilder,
   ) {}
 
   async onFileChange(event: Event): Promise<void> {

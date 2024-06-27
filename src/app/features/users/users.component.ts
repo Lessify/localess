@@ -36,7 +36,7 @@ export class UsersComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
   ) {}
 
   ngOnInit(): void {
@@ -64,7 +64,7 @@ export class UsersComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.userService.invite(it!))
+        switchMap(it => this.userService.invite(it!)),
       )
       .subscribe({
         next: () => {
@@ -88,7 +88,7 @@ export class UsersComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.userService.update(element.id, it?.role, it?.permissions))
+        switchMap(it => this.userService.update(element.id, it?.role, it?.permissions)),
       )
       .subscribe({
         next: () => {
@@ -111,7 +111,7 @@ export class UsersComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.userService.delete(element.id))
+        switchMap(() => this.userService.delete(element.id)),
       )
       .subscribe({
         next: () => {

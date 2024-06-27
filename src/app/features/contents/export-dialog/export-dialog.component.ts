@@ -25,7 +25,7 @@ export class ExportDialogComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly contentService: ContentService,
-    @Inject(MAT_DIALOG_DATA) public data: ExportDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: ExportDialogModel,
   ) {}
 
   ngOnInit(): void {
@@ -34,7 +34,7 @@ export class ExportDialogComponent implements OnInit {
       debounceTime(500),
       switchMap(it => {
         return this.contentService.findAllByName(this.data.spaceId, it, 5);
-      })
+      }),
     );
   }
 

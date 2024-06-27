@@ -58,7 +58,7 @@
   <mat-accordion [multi]="true">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Form : {{ form().valid }} : {{ form().length }} {{ form().updateValueAndValidity() }}</mat-panel-title>
+        <mat-panel-title>Form : {{ form().valid }} : {{ form().length }}</mat-panel-title>
       </mat-expansion-panel-header>
       <pre>{{ form().value | json }}</pre>
       <pre>{{ form().errors | json }}</pre>

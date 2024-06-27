@@ -29,7 +29,7 @@ export class AddDialogComponent {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: AddDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: AddDialogModel,
   ) {
     effect(() => {
       if (!this.form.controls['id'].touched) {

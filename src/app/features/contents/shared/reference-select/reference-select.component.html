@@ -1,38 +1,38 @@
 <form [formGroup]="form()">
-  <mat-form-field>
-    <mat-label>{{ component().displayName || component().name }}</mat-label>
-    <mat-icon matIconPrefix>link</mat-icon>
-
-    <input matInput [required]="component().required" [matAutocomplete]="auto" [formControl]="searchCtrl" />
-    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
-      @for (link of filteredContent | async; track link.id) {
-        <mat-option [value]="link">
-          <span>{{ link.name }}</span> |
-          <small>{{ link.fullSlug }}</small>
-        </mat-option>
+  <mat-card class="ll-not-shadow">
+    <mat-card-header>
+      <mat-card-title-group>
+        <mat-card-title>
+          {{ component().displayName || component().name }}
+        </mat-card-title>
+        @if (component().description; as description) {
+          <mat-card-subtitle>{{ description }}</mat-card-subtitle>
+        }
+        <button mat-icon-button matTooltip="Add References" (click)="openReferenceSelectDialog()">
+          <mat-icon>add_link</mat-icon>
+        </button>
+      </mat-card-title-group>
+    </mat-card-header>
+    <mat-divider></mat-divider>
+    <mat-card-content>
+      @if (content && content.kind === 'DOCUMENT') {
+        <mat-list class="assets">
+          <mat-list-item>
+            <div matListItemTitle>{{ content.name }} #{{ content.slug }}</div>
+            <div matListItemLine>{{ content.fullSlug }}</div>
+            <mat-action-list matListItemMeta>
+              <button mat-icon-button (click)="deleteReference()">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-action-list>
+          </mat-list-item>
+        </mat-list>
       }
-    </mat-autocomplete>
-
-    <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
-      <mat-icon>clear</mat-icon>
-    </button>
-    @if (component().translatable) {
-      <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
-    }
-    @if (component().path; as path) {
-      <mat-hint>
-        Your content will be filtered by path : <b>{{ path }}</b>
-      </mat-hint>
-    }
-    @if (component().description; as description) {
-      <mat-hint>{{ description }}</mat-hint>
-    }
-    @if (form().controls['uri'].errors; as errors) {
-      <mat-error>{{ fe.errors(errors) }}</mat-error>
-    }
-  </mat-form-field>
-  <br />
-  <br />
+      @if (form().controls['uri'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
+    </mat-card-content>
+  </mat-card>
 </form>
 @if (settingsStore.debugEnabled()) {
   <mat-accordion>
@@ -41,7 +41,13 @@
         <mat-panel-title>Form => {{ form().valid }}</mat-panel-title>
       </mat-expansion-panel-header>
       <pre>{{ form().value | json }}</pre>
-      <pre>{{ form().errors | json }}</pre>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Content</mat-panel-title>
+      </mat-expansion-panel-header>
+      <pre>{{ content | json }}</pre>
     </mat-expansion-panel>
   </mat-accordion>
+  <br />
 }

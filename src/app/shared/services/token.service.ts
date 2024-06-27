@@ -28,21 +28,21 @@ export class TokenService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tokens`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Tokens:findAll'),
-      map(it => it as Token[])
+      map(it => it as Token[]),
     );
   }
 
   findFirst(spaceId: string): Observable<Token[]> {
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tokens`), limit(1)), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Tokens:findFirst'),
-      map(it => it as Token[])
+      map(it => it as Token[]),
     );
   }
 
   findById(spaceId: string, id: string): Observable<Token> {
     return docData(doc(this.firestore, `spaces/${spaceId}/tokens/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Tokens:findById'),
-      map(it => it as Token)
+      map(it => it as Token),
     );
   }
 

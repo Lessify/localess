@@ -40,7 +40,7 @@ import { AssetFileType } from '@shared/models/schema.model';
 export class AssetService {
   constructor(
     private readonly firestore: Firestore,
-    private readonly storage: Storage
+    private readonly storage: Storage,
   ) {}
 
   findAll(spaceId: string, parentPath?: string, fileType?: AssetFileType): Observable<Asset[]> {
@@ -89,7 +89,7 @@ export class AssetService {
         } else {
           return assets;
         }
-      })
+      }),
     );
   }
 
@@ -99,7 +99,7 @@ export class AssetService {
       queryConstrains.push(where('kind', '==', kind));
     }
     return collectionCount(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains)).pipe(
-      traceUntilFirst('Firestore:Assets:countAll')
+      traceUntilFirst('Firestore:Assets:countAll'),
     );
   }
 
@@ -108,14 +108,14 @@ export class AssetService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Assets:findAllByName'),
-      map(it => it as Asset[])
+      map(it => it as Asset[]),
     );
   }
 
   findById(spaceId: string, id: string): Observable<Asset> {
     return docData(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Assets:findById'),
-      map(it => it as Asset)
+      map(it => it as Asset),
     );
   }
 
@@ -124,7 +124,7 @@ export class AssetService {
       idField: 'id',
     }).pipe(
       traceUntilFirst('Firestore:Assets:findByIds'),
-      map(it => it as Asset[])
+      map(it => it as Asset[]),
     );
   }
 
@@ -138,7 +138,7 @@ export class AssetService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Assets:findAllFilesByName'),
-      map(it => it as AssetFile[])
+      map(it => it as AssetFile[]),
     );
   }
 
@@ -152,7 +152,7 @@ export class AssetService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Assets:findAllFoldersByName'),
-      map(it => it as AssetFolder[])
+      map(it => it as AssetFolder[]),
     );
   }
 
@@ -174,10 +174,10 @@ export class AssetService {
       switchMap(it =>
         from(uploadBytes(ref(this.storage, `spaces/${spaceId}/assets/${it.id}/original`), entity)).pipe(
           //tap(console.log),
-          map(() => it)
-        )
+          map(() => it),
+        ),
       ),
-      traceUntilFirst('Firestore:Assets:create')
+      traceUntilFirst('Firestore:Assets:create'),
     );
   }
 
@@ -199,7 +199,7 @@ export class AssetService {
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Assets:updateFolder')
+      traceUntilFirst('Firestore:Assets:updateFolder'),
     );
   }
 
@@ -209,7 +209,7 @@ export class AssetService {
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Assets:updateFile')
+      traceUntilFirst('Firestore:Assets:updateFile'),
     );
   }
 

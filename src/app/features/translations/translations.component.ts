@@ -112,7 +112,7 @@ export class TranslationsComponent implements OnInit {
     private readonly notificationService: NotificationService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly translateService: TranslateService
+    private readonly translateService: TranslateService,
   ) {}
 
   ngOnInit(): void {
@@ -135,7 +135,7 @@ export class TranslationsComponent implements OnInit {
         if (this.selectedTargetLocale === '') {
           this.selectedTargetLocale = space.localeFallback.id;
         }
-      })
+      }),
     );
     this.translations$ = this.translationService.findAll(this.spaceId()).pipe(
       tap(translations => {
@@ -153,7 +153,7 @@ export class TranslationsComponent implements OnInit {
           }
         }
         this.isLoading.set(false);
-      })
+      }),
     );
     this.history$ = this.translateHistoryService.findAll(this.spaceId());
   }
@@ -198,7 +198,7 @@ export class TranslationsComponent implements OnInit {
             autoTranslate: it?.autoTranslate,
           };
           return this.translationService.create(this.spaceId(), tc);
-        })
+        }),
       )
       .subscribe({
         next: () => {
@@ -224,7 +224,7 @@ export class TranslationsComponent implements OnInit {
         filter(it => it !== undefined),
         switchMap(it => {
           return this.translationService.updateId(this.spaceId(), translation, it!);
-        })
+        }),
       )
       .subscribe({
         next: () => {
@@ -252,7 +252,7 @@ export class TranslationsComponent implements OnInit {
             description: it!.description,
           };
           return this.translationService.update(this.spaceId(), translation.id, tu);
-        })
+        }),
       )
       .subscribe({
         next: () => {
@@ -275,7 +275,7 @@ export class TranslationsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it),
-        switchMap(() => this.translationService.delete(this.spaceId(), element.id))
+        switchMap(() => this.translationService.delete(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -305,7 +305,7 @@ export class TranslationsComponent implements OnInit {
             return this.taskService.createTranslationImportTask(this.spaceId(), it.file);
           }
           return EMPTY;
-        })
+        }),
       )
       .subscribe({
         next: () => {
@@ -341,7 +341,7 @@ export class TranslationsComponent implements OnInit {
             return this.taskService.createTranslationExportTask(this.spaceId(), it.fromDate);
           }
           return EMPTY;
-        })
+        }),
       )
       .subscribe({
         next: () => {

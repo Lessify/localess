@@ -69,13 +69,13 @@ export class AssetsComponent implements OnInit {
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {
     toObservable(this.spaceStore.assetPath)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
         switchMap(() => this.assetService.findAll(this.spaceId(), this.parentPath)),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: assets => {
@@ -95,7 +95,7 @@ export class AssetsComponent implements OnInit {
       .pipe(
         tap(console.log),
         concatMap(it => this.assetService.createFile(this.spaceId(), this.parentPath, it)),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: () => {
@@ -131,7 +131,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.createFolder(this.spaceId(), this.parentPath, it!))
+        switchMap(it => this.assetService.createFolder(this.spaceId(), this.parentPath, it!)),
       )
       .subscribe({
         next: () => {
@@ -166,7 +166,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFolder(this.spaceId(), element.id, it!))
+        switchMap(it => this.assetService.updateFolder(this.spaceId(), element.id, it!)),
       )
       .subscribe({
         next: () => {
@@ -195,7 +195,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFile(this.spaceId(), element.id, it!))
+        switchMap(it => this.assetService.updateFile(this.spaceId(), element.id, it!)),
       )
       .subscribe({
         next: () => {
@@ -224,7 +224,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.assetService.delete(this.spaceId(), element.id))
+        switchMap(() => this.assetService.delete(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -253,7 +253,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.move(this.spaceId(), element.id, it!.path))
+        switchMap(it => this.assetService.move(this.spaceId(), element.id, it!.path)),
       )
       .subscribe({
         next: () => {
@@ -339,7 +339,7 @@ export class AssetsComponent implements OnInit {
       .pipe(
         filter(it => it !== undefined),
         tap(console.log),
-        switchMap(it => this.taskService.createAssetImportTask(this.spaceId(), it!.file))
+        switchMap(it => this.taskService.createAssetImportTask(this.spaceId(), it!.file)),
       )
       .subscribe({
         next: () => {
@@ -367,7 +367,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createAssetExportTask(this.spaceId(), it?.path))
+        switchMap(it => this.taskService.createAssetExportTask(this.spaceId(), it?.path)),
       )
       .subscribe({
         next: () => {

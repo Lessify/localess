@@ -25,7 +25,7 @@ export class AddDocumentDialogComponent {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: AddDocumentDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: AddDocumentDialogModel,
   ) {
     effect(() => {
       if (!this.form.controls['slug'].touched) {

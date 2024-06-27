@@ -93,7 +93,7 @@ export class EditDocumentComponent implements OnInit {
     private readonly notificationService: NotificationService,
     private readonly contentHelperService: ContentHelperService,
     private readonly sanitizer: DomSanitizer,
-    readonly fe: FormErrorHandlerService
+    readonly fe: FormErrorHandlerService,
   ) {
     toObservable(this.spaceStore.selectedSpaceId)
       .pipe(
@@ -105,9 +105,9 @@ export class EditDocumentComponent implements OnInit {
             this.contentService.findById(it!, this.contentId()),
             this.contentService.findAllDocuments(it!),
             this.schemaService.findAll(it!),
-          ])
+          ]),
         ),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: ([space, document, documents, schemas]) => {

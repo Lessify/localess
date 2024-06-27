@@ -77,8 +77,8 @@ export const SpaceStore = signalStore(
             error: error => {
               console.error('Error loading spaces', error);
             },
-          })
-        )
+          }),
+        ),
       ),
       spaceById: (id: string) => computed(() => state.spaces().find(space => space.id === id)),
       changeSpace: (space: Space) => {
@@ -116,5 +116,5 @@ export const SpaceStore = signalStore(
     onDestroy: store => {
       console.log('onDestroy', store);
     },
-  })
+  }),
 );

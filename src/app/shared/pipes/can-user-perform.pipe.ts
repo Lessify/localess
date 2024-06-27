@@ -23,7 +23,7 @@ export class CanUserPerformPipe implements PipeTransform {
             }
           }
           return false;
-        })
+        }),
       );
     }
     if (Array.isArray(permission)) {
@@ -37,7 +37,7 @@ export class CanUserPerformPipe implements PipeTransform {
             }
           }
           return false;
-        })
+        }),
       );
     }
     return of(false);

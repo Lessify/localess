@@ -17,7 +17,7 @@ export class MeDialogComponent implements OnInit {
 
   constructor(
     private readonly fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: MeDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: MeDialogModel,
   ) {}
 
   ngOnInit(): void {

@@ -36,7 +36,7 @@ export class TasksComponent implements OnInit {
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -77,7 +77,7 @@ export class TasksComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.taskService.delete(this.spaceId(), element.id))
+        switchMap(() => this.taskService.delete(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {

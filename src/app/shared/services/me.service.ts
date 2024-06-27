@@ -12,14 +12,14 @@ export class MeService {
   updateProfile(model: MeUpdate): Observable<void> {
     return from(updateProfile(this.auth.currentUser!, model)).pipe(
       traceUntilFirst('Firestore:Me:updateProfile'),
-      tap(() => this.auth.currentUser?.reload())
+      tap(() => this.auth.currentUser?.reload()),
     );
   }
 
   updateEmail(newEmail: string): Observable<void> {
     return from(updateEmail(this.auth.currentUser!, newEmail)).pipe(
       traceUntilFirst('Firestore:Me:updateEmail'),
-      tap(() => this.auth.currentUser?.reload())
+      tap(() => this.auth.currentUser?.reload()),
     );
   }
 

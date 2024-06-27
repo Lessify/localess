@@ -67,7 +67,7 @@ export class EditCompComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly router: Router,
     private readonly schemaService: SchemaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -159,7 +159,7 @@ export class EditCompComponent implements OnInit {
       case SchemaFieldKind.MARKDOWN: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         fieldForm.addControl('minLength', this.fb.control<number | undefined>(element.minLength, SchemaValidator.FIELD_MIN_LENGTH));
         fieldForm.addControl('maxLength', this.fb.control<number | undefined>(element.maxLength, SchemaValidator.FIELD_MAX_LENGTH));
@@ -168,7 +168,7 @@ export class EditCompComponent implements OnInit {
       case SchemaFieldKind.NUMBER: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         fieldForm.addControl('minValue', this.fb.control<number | undefined>(element.minValue, SchemaValidator.FIELD_MIN_VALUE));
         fieldForm.addControl('maxValue', this.fb.control<number | undefined>(element.maxValue, SchemaValidator.FIELD_MAX_VALUE));
@@ -177,28 +177,28 @@ export class EditCompComponent implements OnInit {
       case SchemaFieldKind.COLOR: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         break;
       }
       case SchemaFieldKind.DATE: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         break;
       }
       case SchemaFieldKind.BOOLEAN: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         break;
       }
       case SchemaFieldKind.OPTION: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
         element.options?.forEach(it => options.push(this.generateOptionForm(it)));
@@ -209,7 +209,7 @@ export class EditCompComponent implements OnInit {
       case SchemaFieldKind.OPTIONS: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         fieldForm.addControl('source', this.fb.control<string>(element.source, SchemaValidator.FIELD_OPTION_SOURCE));
         const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
@@ -223,7 +223,7 @@ export class EditCompComponent implements OnInit {
       case SchemaFieldKind.LINK: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         break;
       }
@@ -235,22 +235,22 @@ export class EditCompComponent implements OnInit {
       case SchemaFieldKind.ASSET: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         fieldForm.addControl(
           'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES)
+          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
         );
         break;
       }
       case SchemaFieldKind.ASSETS: {
         fieldForm.addControl(
           'translatable',
-          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE)
+          this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         fieldForm.addControl(
           'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES)
+          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
         );
         break;
       }

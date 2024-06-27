@@ -48,6 +48,7 @@ import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ReleasesDialogComponent } from '@shared/components/releases-dialog/releases-dialog.component';
 import { ReferencesSelectDialogComponent } from '@shared/components/references-select-dialog';
+import { StatusComponent } from '@shared/components/status';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -102,7 +103,7 @@ const SHARED_COMPONENTS: any[] = [
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, NgOptimizedImage, MATERIAL_MODULES, RouterLink],
+  imports: [CommonModule, FormsModule, NgOptimizedImage, MATERIAL_MODULES, RouterLink, StatusComponent],
   declarations: [SHARED_COMPONENTS, SHARED_PIPES, SHARED_DIRECTIVES],
   exports: [
     CommonModule,

@@ -20,7 +20,7 @@ export class EditIdDialogComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: EditIdDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: EditIdDialogModel,
   ) {}
 
   ngOnInit(): void {

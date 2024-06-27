@@ -23,7 +23,7 @@ export class AddFolderDialogComponent {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: AddFolderDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: AddFolderDialogModel,
   ) {
     effect(() => {
       if (!this.form.controls['slug'].touched) {

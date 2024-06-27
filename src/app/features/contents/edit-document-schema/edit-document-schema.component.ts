@@ -70,7 +70,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   schemaCompNodeList = computed(() =>
     this.schemas()
       .filter(it => it.type === SchemaType.NODE)
-      .map(it => it as SchemaComponent)
+      .map(it => it as SchemaComponent),
   );
   schemaCompNodeById = computed(
     () =>
@@ -78,8 +78,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         this.schemas()
           .filter(it => it.type === SchemaType.NODE)
           .map(it => it as SchemaComponent)
-          .map(it => [it.id, it])
-      )
+          .map(it => [it.id, it]),
+      ),
   );
   schemaEnumMapById = computed(
     () =>
@@ -87,8 +87,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         this.schemas()
           .filter(it => it.type === SchemaType.ENUM)
           .map(it => it as SchemaEnum)
-          .map(it => [it.id, it])
-      )
+          .map(it => [it.id, it]),
+      ),
   );
   schemaFieldsMap: Map<string, SchemaField> = new Map<string, SchemaField>();
   //Loadings
@@ -98,7 +98,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
     private readonly contentHelperService: ContentHelperService,
-    readonly fe: FormErrorHandlerService
+    readonly fe: FormErrorHandlerService,
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -160,7 +160,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         .pipe(
           debounceTime(500),
           filter(it => Object.keys(it).length !== 0),
-          takeUntilDestroyed(this.destroyRef)
+          takeUntilDestroyed(this.destroyRef),
         )
         .subscribe({
           next: formValue => {

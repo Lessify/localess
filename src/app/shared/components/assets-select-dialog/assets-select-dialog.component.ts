@@ -64,7 +64,7 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
     readonly fe: FormErrorHandlerService,
     private readonly cd: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA)
-    public data: AssetsSelectDialogModel
+    public data: AssetsSelectDialogModel,
   ) {}
 
   ngOnInit(): void {
@@ -79,7 +79,7 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
           this.assetPath = path;
           return this.assetService.findAll(this.data.spaceId, this.parentPath, this.data.fileType);
         }),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: assets => {

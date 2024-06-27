@@ -22,6 +22,6 @@ export class UserInviteDialogComponent {
 
   constructor(
     private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService
+    readonly fe: FormErrorHandlerService,
   ) {}
 }

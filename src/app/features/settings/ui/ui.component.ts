@@ -31,12 +31,12 @@ export class UiComponent {
     readonly fe: FormErrorHandlerService,
     private readonly spaceService: SpaceService,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: space => {

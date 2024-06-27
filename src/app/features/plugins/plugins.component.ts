@@ -44,7 +44,7 @@ export class PluginsComponent implements OnInit {
     private readonly spaceService: SpaceService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -88,7 +88,7 @@ export class PluginsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(id => this.pluginService.install(this.selectedSpace!.id, id!))
+        switchMap(id => this.pluginService.install(this.selectedSpace!.id, id!)),
       )
       .subscribe({
         next: value => {
@@ -116,7 +116,7 @@ export class PluginsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.pluginService.updateVersion(this.selectedSpace!.id, element.id))
+        switchMap(() => this.pluginService.updateVersion(this.selectedSpace!.id, element.id)),
       )
       .subscribe({
         next: value => {
@@ -144,7 +144,7 @@ export class PluginsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.pluginService.updateConfiguration(this.selectedSpace!.id, element.id, it!))
+        switchMap(it => this.pluginService.updateConfiguration(this.selectedSpace!.id, element.id, it!)),
       )
       .subscribe({
         next: () => {
@@ -168,7 +168,7 @@ export class PluginsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.pluginService.sendEvent(this.selectedSpace!.id, element.id, action.id))
+        switchMap(() => this.pluginService.sendEvent(this.selectedSpace!.id, element.id, action.id)),
       )
       .subscribe({
         next: () => {
@@ -192,7 +192,7 @@ export class PluginsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.pluginService.uninstall(this.selectedSpace!.id, element.id))
+        switchMap(() => this.pluginService.uninstall(this.selectedSpace!.id, element.id)),
       )
       .subscribe({
         next: () => {

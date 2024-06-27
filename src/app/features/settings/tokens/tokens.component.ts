@@ -36,13 +36,13 @@ export class TokensComponent {
     private readonly tokenService: TokenService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
         switchMap(it => this.tokenService.findAll(it!.id)),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: tokens => {
@@ -64,7 +64,7 @@ export class TokensComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.tokenService.create(spaceId!, it!.name))
+        switchMap(it => this.tokenService.create(spaceId!, it!.name)),
       )
       .subscribe({
         next: () => {
@@ -89,7 +89,7 @@ export class TokensComponent {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.tokenService.delete(spaceId!, element.id))
+        switchMap(() => this.tokenService.delete(spaceId!, element.id)),
       )
       .subscribe({
         next: () => {

@@ -94,5 +94,5 @@ export const SettingsStore = signalStore(
     onDestroy: store => {
       console.log('onDestroy', getState(store));
     },
-  })
+  }),
 );

@@ -249,8 +249,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -268,8 +268,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -281,8 +281,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -294,8 +294,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -307,8 +307,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -320,8 +320,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -333,8 +333,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -352,8 +352,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -367,7 +367,7 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: false, //disabled
               },
-              validators
+              validators,
             ),
           });
           form.setControl(field.name, link);
@@ -381,7 +381,7 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: false, //disabled
               },
-              validators
+              validators,
             ),
           });
           form.setControl(field.name, link);
@@ -403,10 +403,10 @@ export class ContentHelperService {
                   value: undefined,
                   disabled: false, //disabled
                 },
-                validators
+                validators,
               ),
               kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-            })
+            }),
           );
           break;
         }
@@ -425,8 +425,8 @@ export class ContentHelperService {
                 value: undefined,
                 disabled: disabled,
               },
-              validators
-            )
+              validators,
+            ),
           );
           break;
         }
@@ -442,8 +442,8 @@ export class ContentHelperService {
         this.fb.group({
           uri: this.fb.control(it.uri, Validators.required),
           kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -467,8 +467,8 @@ export class ContentHelperService {
         this.fb.group({
           uri: this.fb.control(it, Validators.required),
           kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-        })
-      )
+        }),
+      ),
     );
   }
 

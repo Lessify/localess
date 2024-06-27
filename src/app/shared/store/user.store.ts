@@ -96,8 +96,8 @@ export const UserStore = signalStore(
             error: error => {
               console.error('Error loading token', error);
             },
-          })
-        )
+          }),
+        ),
       ),
       setAuthenticated: (isAuthenticated: boolean) => {
         patchState(state, { isAuthenticated });
@@ -118,5 +118,5 @@ export const UserStore = signalStore(
     onDestroy: store => {
       console.log('onDestroy', getState(store));
     },
-  })
+  }),
 );

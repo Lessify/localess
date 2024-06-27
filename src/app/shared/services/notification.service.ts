@@ -9,7 +9,7 @@ import { ActionRoute, CustomSnackBarModel } from '@shared/components/custom-snac
 export class NotificationService {
   constructor(
     private readonly snackBar: MatSnackBar,
-    private readonly zone: NgZone
+    private readonly zone: NgZone,
   ) {}
 
   default(message: string, actions?: ActionRoute[]) {

@@ -75,7 +75,7 @@ export class ContentsComponent {
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {
     toObservable(this.spaceStore.contentPath)
       .pipe(
@@ -84,9 +84,9 @@ export class ContentsComponent {
           combineLatest([
             this.schemasService.findAll(this.spaceId(), SchemaType.ROOT),
             this.contentService.findAll(this.spaceId(), this.parentPath),
-          ])
+          ]),
         ),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: ([schemas, contents]) => {
@@ -116,7 +116,7 @@ export class ContentsComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.createDocument(this.spaceId(), this.parentPath, it!))
+        switchMap(it => this.contentService.createDocument(this.spaceId(), this.parentPath, it!)),
       )
       .subscribe({
         next: () => {
@@ -140,7 +140,7 @@ export class ContentsComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.createFolder(this.spaceId(), this.parentPath, it!))
+        switchMap(it => this.contentService.createFolder(this.spaceId(), this.parentPath, it!)),
       )
       .subscribe({
         next: () => {
@@ -168,7 +168,7 @@ export class ContentsComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.update(this.spaceId(), element.id, this.parentPath, it!))
+        switchMap(it => this.contentService.update(this.spaceId(), element.id, this.parentPath, it!)),
       )
       .subscribe({
         next: () => {
@@ -196,7 +196,7 @@ export class ContentsComponent {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.contentService.delete(this.spaceId(), element))
+        switchMap(() => this.contentService.delete(this.spaceId(), element)),
       )
       .subscribe({
         next: () => {
@@ -225,7 +225,7 @@ export class ContentsComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.move(this.spaceId(), element.id, it!.path, element.slug))
+        switchMap(it => this.contentService.move(this.spaceId(), element.id, it!.path, element.slug)),
       )
       .subscribe({
         next: () => {
@@ -253,7 +253,7 @@ export class ContentsComponent {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.contentService.cloneDocument(this.spaceId(), element))
+        switchMap(() => this.contentService.cloneDocument(this.spaceId(), element)),
       )
       .subscribe({
         next: () => {
@@ -341,7 +341,7 @@ export class ContentsComponent {
       .pipe(
         filter(it => it !== undefined),
         tap(console.log),
-        switchMap(it => this.taskService.createContentImportTask(this.spaceId(), it!.file))
+        switchMap(it => this.taskService.createContentImportTask(this.spaceId(), it!.file)),
       )
       .subscribe({
         next: () => {
@@ -369,7 +369,7 @@ export class ContentsComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createContentExportTask(this.spaceId(), it?.path))
+        switchMap(it => this.taskService.createContentExportTask(this.spaceId(), it?.path)),
       )
       .subscribe({
         next: () => {

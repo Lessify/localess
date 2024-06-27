@@ -7,6 +7,7 @@ import {
   deleteDoc,
   doc,
   docData,
+  documentId,
   DocumentReference,
   Firestore,
   limit,
@@ -44,7 +45,7 @@ export class ContentService {
     private readonly firestore: Firestore,
     private readonly functions: Functions,
     private readonly auth: Auth,
-    private readonly contentHelperService: ContentHelperService
+    private readonly contentHelperService: ContentHelperService,
   ) {}
 
   findAll(spaceId: string, parentSlug?: string): Observable<Content[]> {
@@ -57,7 +58,7 @@ export class ContentService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findAll'),
-      map(it => it as Content[])
+      map(it => it as Content[]),
     );
   }
 
@@ -67,7 +68,7 @@ export class ContentService {
       queryConstrains.push(where('kind', '==', kind));
     }
     return collectionCount(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains)).pipe(
-      traceUntilFirst('Firestore:Contents:countAll')
+      traceUntilFirst('Firestore:Contents:countAll'),
     );
   }
 
@@ -75,7 +76,7 @@ export class ContentService {
     const queryConstrains: QueryConstraint[] = [where('kind', '==', ContentKind.DOCUMENT)];
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findAllDocuments'),
-      map(it => it as ContentDocument[])
+      map(it => it as ContentDocument[]),
     );
   }
 
@@ -84,7 +85,7 @@ export class ContentService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findAllByName'),
-      map(it => it as Content[])
+      map(it => it as Content[]),
     );
   }
 
@@ -98,7 +99,7 @@ export class ContentService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findAllDocumentsByName'),
-      map(it => it as ContentDocument[])
+      map(it => it as ContentDocument[]),
     );
   }
 
@@ -112,14 +113,23 @@ export class ContentService {
 
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findAllFoldersByName'),
-      map(it => it as ContentFolder[])
+      map(it => it as ContentFolder[]),
     );
   }
 
   findById(spaceId: string, id: string): Observable<Content> {
     return docData(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findById'),
-      map(it => it as Content)
+      map(it => it as Content),
+    );
+  }
+
+  findByIds(spaceId: string, ids: string[]): Observable<Content[]> {
+    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), where(documentId(), 'in', ids)), {
+      idField: 'id',
+    }).pipe(
+      traceUntilFirst('Firestore:Contents:findByIds'),
+      map(it => it as Content[]),
     );
   }
 
@@ -141,7 +151,7 @@ export class ContentService {
       };
     }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Contents:create')
+      traceUntilFirst('Firestore:Contents:create'),
     );
   }
 
@@ -162,7 +172,7 @@ export class ContentService {
       };
     }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Contents:create')
+      traceUntilFirst('Firestore:Contents:create'),
     );
   }
 
@@ -181,7 +191,7 @@ export class ContentService {
       };
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Contents:update')
+      traceUntilFirst('Firestore:Contents:update'),
     );
   }
 
@@ -201,7 +211,7 @@ export class ContentService {
       };
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Contents:move')
+      traceUntilFirst('Firestore:Contents:move'),
     );
   }
 
@@ -217,7 +227,7 @@ export class ContentService {
       };
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Contents:update')
+      traceUntilFirst('Firestore:Contents:update'),
     );
   }
 
@@ -244,13 +254,13 @@ export class ContentService {
       };
     }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Contents:clone')
+      traceUntilFirst('Firestore:Contents:clone'),
     );
   }
 
   delete(spaceId: string, element: Content): Observable<void> {
     return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`))).pipe(
-      traceUntilFirst('Firestore:Contents:delete')
+      traceUntilFirst('Firestore:Contents:delete'),
     );
   }
 

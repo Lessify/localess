@@ -94,7 +94,7 @@ export class SchemasComponent implements OnInit {
     private readonly taskService: TaskService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -165,7 +165,7 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.schemaService.create(this.spaceId(), it!))
+        switchMap(it => this.schemaService.create(this.spaceId(), it!)),
       )
       .subscribe({
         next: () => {
@@ -189,7 +189,7 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.schemaService.updateId(this.spaceId(), element, it!))
+        switchMap(it => this.schemaService.updateId(this.spaceId(), element, it!)),
       )
       .subscribe({
         next: () => {
@@ -223,7 +223,7 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.schemaService.delete(this.spaceId(), element.id))
+        switchMap(() => this.schemaService.delete(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -244,7 +244,7 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createSchemaImportTask(this.spaceId(), it!.file))
+        switchMap(it => this.taskService.createSchemaImportTask(this.spaceId(), it!.file)),
       )
       .subscribe({
         next: () => {
@@ -269,7 +269,7 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createSchemaExportTask(this.spaceId(), it?.fromDate))
+        switchMap(it => this.taskService.createSchemaExportTask(this.spaceId(), it?.fromDate)),
       )
       .subscribe({
         next: () => {

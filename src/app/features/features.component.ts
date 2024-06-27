@@ -113,7 +113,7 @@ export class FeaturesComponent implements OnInit {
     private readonly router: Router,
     private readonly reposService: ReposService,
     private readonly dialog: MatDialog,
-    @Optional() private auth: Auth
+    @Optional() private auth: Auth,
   ) {
     reposService
       .reposListReleases({ owner: 'Lessify', repo: 'localess' })
@@ -131,7 +131,7 @@ export class FeaturesComponent implements OnInit {
           this.router.navigate(['login']);
         }
       },
-      { allowSignalWrites: true }
+      { allowSignalWrites: true },
     );
   }
 

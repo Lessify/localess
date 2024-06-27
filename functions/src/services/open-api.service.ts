@@ -771,7 +771,7 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
         description: 'Unique identifier for the Schema object.',
       },
     };
-    for (const item of schema.fields || []) {
+    for (const item of schema.fields?.sort((a, b) => a.name.localeCompare(b.name)) || []) {
       const [name, schema] = fieldToOpenApiSchemaDefinition(item);
       schemasDefinition[name] = schema;
     }

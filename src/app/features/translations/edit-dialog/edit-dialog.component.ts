@@ -21,7 +21,7 @@ export class EditDialogComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: Translation
+    @Inject(MAT_DIALOG_DATA) public data: Translation,
   ) {}
 
   ngOnInit(): void {

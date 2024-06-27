@@ -20,7 +20,7 @@ export class EditFileDialogComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: EditFileDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: EditFileDialogModel,
   ) {}
 
   ngOnInit(): void {

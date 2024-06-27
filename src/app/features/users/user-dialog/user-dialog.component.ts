@@ -22,7 +22,7 @@ export class UserDialogComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: UserDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: UserDialogModel,
   ) {}
 
   ngOnInit(): void {

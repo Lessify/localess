@@ -42,12 +42,12 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
   schemasMapById = computed(() => new Map(this.schemas().map(it => [it.id, it])));
   contents = signal<Content[]>([]);
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = ['select', 'status', 'slug', 'name', 'schema', 'updatedAt'];
+  displayedColumns: string[] = ['select', 'status', 'name', 'slug', 'schema', 'updatedAt'];
   selection = new SelectionModel<ContentDocument>(this.data.multiple, []);
   contentPath: PathItem[] = [];
 
   get parentPath(): string {
-    if (this.contentPath && this.contentPath.length > 0) {
+    if (this.contentPath.length > 0) {
       return this.contentPath[this.contentPath.length - 1].fullSlug;
     }
     return '';
@@ -69,7 +69,7 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
     readonly fe: FormErrorHandlerService,
     private readonly cd: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA)
-    public data: ReferencesSelectDialogModel
+    public data: ReferencesSelectDialogModel,
   ) {}
 
   ngOnInit(): void {
@@ -87,7 +87,7 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
             this.contentService.findAll(this.data.spaceId, this.parentPath),
           ]);
         }),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: ([schemas, contents]) => {
@@ -118,7 +118,7 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
       const contentPath = ObjectUtils.clone(this.contentPath);
       contentPath.push({
         name: element.name,
-        fullSlug: element.parentSlug ? `${element.parentSlug}/${element.id}` : element.id,
+        fullSlug: element.fullSlug,
       });
       this.path$.next(contentPath);
     }

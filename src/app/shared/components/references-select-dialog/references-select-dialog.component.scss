@@ -2,37 +2,28 @@ table {
   width: 100%;
 }
 
-mat-cell {
+mat-row {
   cursor: pointer;
-  &.mat-column-preview {
-    img {
-      max-width: 115px;
-      max-height: 115px;
-    }
-  }
 }
 
 mat-header-cell,
 mat-cell {
-  &.mat-column-preview {
-    max-width: 150px;
-  }
   &.mat-column-select {
     max-width: 80px;
   }
-  &.mat-column-icon {
-    max-width: 70px;
+  &.mat-column-status {
+    max-width: 80px;
   }
-  &.mat-column-size {
-    max-width: 110px;
-  }
-  &.mat-column-type {
-    max-width: 135px;
+  &.mat-column-publishedAt {
+    max-width: 220px;
   }
   &.mat-column-createdAt {
     max-width: 220px;
   }
   &.mat-column-updatedAt {
     max-width: 220px;
+  }
+  &.mat-column-actions {
+    max-width: 200px;
   }
 }

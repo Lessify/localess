@@ -36,12 +36,12 @@ export class LocalesComponent {
     readonly localeService: LocaleService,
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: space => {
@@ -64,7 +64,7 @@ export class LocalesComponent {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.localeService.create(id, it!.locale))
+        switchMap(it => this.localeService.create(id, it!.locale)),
       )
       .subscribe({
         next: () => {
@@ -89,7 +89,7 @@ export class LocalesComponent {
       .afterClosed()
       .pipe(
         filter(it => it || false),
-        switchMap(() => this.localeService.delete(spaceId!, element))
+        switchMap(() => this.localeService.delete(spaceId!, element)),
       )
       .subscribe({
         next: () => {

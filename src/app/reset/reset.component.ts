@@ -22,7 +22,7 @@ export class ResetComponent {
   constructor(
     @Optional() public readonly auth: Auth,
     private readonly router: Router,
-    private readonly fb: FormBuilder
+    private readonly fb: FormBuilder,
   ) {}
 
   async passwordReset(): Promise<void> {

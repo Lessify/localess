@@ -47,7 +47,7 @@ export class LoginComponent {
   constructor(
     @Optional() public readonly auth: Auth,
     private readonly router: Router,
-    private readonly fb: FormBuilder
+    private readonly fb: FormBuilder,
   ) {
     effect(
       async () => {
@@ -57,7 +57,7 @@ export class LoginComponent {
           window.location.reload();
         }
       },
-      { allowSignalWrites: true }
+      { allowSignalWrites: true },
     );
   }
 

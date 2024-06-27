@@ -29,7 +29,7 @@ export class ImportDialogComponent {
   constructor(
     private readonly cd: ChangeDetectorRef,
     private readonly fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: ImportDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: ImportDialogModel,
   ) {}
 
   async onFileChange(event: Event): Promise<void> {

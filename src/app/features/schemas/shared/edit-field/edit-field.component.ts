@@ -41,7 +41,7 @@ export class EditFieldComponent implements OnInit {
   constructor(
     readonly fe: FormErrorHandlerService,
     private readonly fb: FormBuilder,
-    private readonly cd: ChangeDetectorRef
+    private readonly cd: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -310,7 +310,7 @@ export class EditFieldComponent implements OnInit {
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         this.form.addControl(
           'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES)
+          this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
         );
         // REMOVE
         // Text & TextArea
@@ -335,7 +335,7 @@ export class EditFieldComponent implements OnInit {
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         this.form.addControl(
           'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES)
+          this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
         );
         // REMOVE
         // Text & TextArea

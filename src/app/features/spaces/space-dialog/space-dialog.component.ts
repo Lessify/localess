@@ -19,7 +19,7 @@ export class SpaceDialogComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: SpaceDialogModel
+    @Inject(MAT_DIALOG_DATA) public data: SpaceDialogModel,
   ) {}
 
   ngOnInit(): void {

@@ -15,7 +15,7 @@ export class LocaleService {
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update)).pipe(
-      traceUntilFirst('Firestore:Spaces:Locales:markAsFallback')
+      traceUntilFirst('Firestore:Spaces:Locales:markAsFallback'),
     );
   }
 

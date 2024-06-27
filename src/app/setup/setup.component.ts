@@ -26,7 +26,7 @@ export class SetupComponent {
     private readonly fb: FormBuilder,
     private readonly setupService: SetupService,
     private readonly notificationService: NotificationService,
-    private readonly cd: ChangeDetectorRef
+    private readonly cd: ChangeDetectorRef,
   ) {}
 
   setup(): void {

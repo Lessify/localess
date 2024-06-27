@@ -35,7 +35,7 @@ export class TranslationArrayEditComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     this.values.clear();
     JSON.parse(changes['value'].currentValue || '[]').forEach((it: any) =>
-      this.values.push(this.fb.control(it, TranslationValidator.ARRAY_VALUE))
+      this.values.push(this.fb.control(it, TranslationValidator.ARRAY_VALUE)),
     );
     if (changes['value'].isFirstChange()) {
       this.valueChange.emit(changes['value'].currentValue);
