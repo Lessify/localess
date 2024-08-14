@@ -19,14 +19,14 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@google-cloud/translate": "^8.3.0",
+    "@google-cloud/translate": "^8.4.0",
     "compressing": "^1.10.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "firebase-admin": "^12.2.0",
+    "firebase-admin": "^12.3.1",
     "firebase-functions": "^5.0.1",
     "sharp": "^0.33.4",
-    "stripe": "^16.2.0",
+    "stripe": "^16.7.0",
     "uuid": "^10.0.0",
     "zod": "^3.23.8"
   },

@@ -4,7 +4,7 @@
       <mat-icon>{{ settingsStore.mainMenuExpended() ? 'menu_open' : 'menu' }}</mat-icon>
     </button>
     <img src="assets/logo-adaptive.svg" class="h-8 ml-2" alt="Logo" />
-    @if (spaceStore.selectedSpace()?.ui; as ui) {
+    @if (appSettingsStore.ui(); as ui) {
       @if (ui.text) {
         <span class="vertical-divider">&nbsp; </span>
         <span class="ml-2 post-logo-text-{{ ui.color }}">
@@ -89,23 +89,6 @@
             <div mat-subheader>Admin</div>
           }
           @for (item of adminSideMenu; track item.label) {
-            @if (item.permission | canUserPerform | async) {
-              <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
-                <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
-                @if (settingsStore.mainMenuExpended()) {
-                  <div matListItemTitle>{{ item.label }}</div>
-                }
-              </mat-list-item>
-            }
-          }
-        }
-
-        @if (['DEV_OPEN_API'] | canUserPerform | async) {
-          <mat-divider />
-          @if (settingsStore.mainMenuExpended()) {
-            <div mat-subheader>Developer</div>
-          }
-          @for (item of developerMenu(); track item.label) {
             @if (item.permission | canUserPerform | async) {
               <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
                 <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>

@@ -1,0 +1,40 @@
+<mat-toolbar class="border-b !bg-transparent">
+  <mat-toolbar-row>
+    User Interface
+    <span class="spacer"></span>
+    <button mat-stroked-button color="primary" [disabled]="!form.valid" (click)="save()">
+      <mat-icon>save</mat-icon>
+      Save
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="query" />
+}
+
+<div class="my-3">
+  <form [formGroup]="form">
+    <mat-form-field>
+      <mat-label>Color</mat-label>
+      <mat-select formControlName="color">
+        <mat-option value="primary">Primary</mat-option>
+        <mat-option value="secondary">Secondary</mat-option>
+        <mat-option value="tertiary">Tertiary</mat-option>
+        <mat-option value="error">Error</mat-option>
+      </mat-select>
+      @if (form.controls['color'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
+    </mat-form-field>
+    <br />
+    <mat-form-field>
+      <mat-label>Text</mat-label>
+      <input matInput type="text" formControlName="text" maxlength="10" autocomplete="off" />
+      <mat-hint align="end">{{ form.controls['text'].value?.length || 0 }}/10</mat-hint>
+      @if (form.controls['text'].errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</div>

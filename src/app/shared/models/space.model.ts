@@ -9,8 +9,6 @@ export interface Space {
   localeFallback: Locale;
   // Environments
   environments?: SpaceEnvironment[];
-  // UI
-  ui?: SpaceUi;
   // overview
   overview?: SpaceOverview;
 
@@ -22,13 +20,6 @@ export interface SpaceEnvironment {
   name: string;
   url: string;
 }
-
-export interface SpaceUi {
-  text?: string;
-  color?: SpaceUiColor;
-}
-
-export type SpaceUiColor = 'primary' | 'secondary' | 'tertiary' | 'error';
 
 export interface SpaceCreate {
   name: string;
@@ -44,11 +35,6 @@ export interface SpaceCreateFS {
 
 export interface SpaceUpdate {
   name: string;
-}
-
-export interface SpaceUiUpdate {
-  text?: string;
-  color?: SpaceUiColor;
 }
 
 export interface SpaceOverview {

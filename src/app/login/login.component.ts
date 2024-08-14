@@ -14,7 +14,7 @@ import { EMPTY, Observable, Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { UserStore } from '@shared/store/user.store';
-import { SettingsStore } from '@shared/store/settings.store';
+import { LocalSettingsStore } from '@shared/store/local-settings.store';
 
 @Component({
   selector: 'll-login',
@@ -42,7 +42,7 @@ export class LoginComponent {
 
   private destroyRef = inject(DestroyRef);
   userStore = inject(UserStore);
-  settingsStore = inject(SettingsStore);
+  settingsStore = inject(LocalSettingsStore);
 
   constructor(
     @Optional() public readonly auth: Auth,

@@ -1,0 +1,16 @@
+@use '@angular/material' as mat;
+
+@import '../../../../../styles/styles-variables';
+
+mat-form-field {
+  width: 100%;
+}
+
+.title {
+  font: var(--sys-title-large);
+}
+
+.subtitle {
+  font: var(--sys-title-medium);
+  color: var(--sys-secondary);
+}

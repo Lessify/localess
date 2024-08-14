@@ -28,7 +28,8 @@ import { ReleasesDialogComponent } from '@shared/components/releases-dialog/rele
 import { ReleasesDialogModel } from '@shared/components/releases-dialog/releases-dialog.model';
 import { SpaceStore } from '@shared/store/space.store';
 import { UserStore } from '@shared/store/user.store';
-import { SettingsStore } from '@shared/store/settings.store';
+import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { AppSettingsStore } from '@shared/store/app-settings.store';
 
 interface SideMenuItem {
   icon: string;
@@ -73,24 +74,17 @@ export class FeaturesComponent implements OnInit {
         { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT },
         // { link: 'plugins', label: 'Plugins', icon: 'extension', permission: UserPermission.SPACE_MANAGEMENT },
         { link: `spaces/${selectedSpaceId}/settings`, label: 'Settings', icon: 'settings', permission: UserPermission.SPACE_MANAGEMENT },
+        { link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'api', permission: UserPermission.DEV_OPEN_API },
       ];
     } else {
       return [];
     }
   });
 
-  developerMenu: Signal<SideMenuItem[]> = computed(() => {
-    const selectedSpaceId = this.spaceStore.selectedSpaceId();
-    if (selectedSpaceId) {
-      return [{ link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'api', permission: UserPermission.DEV_OPEN_API }];
-    } else {
-      return [];
-    }
-  });
-
   adminSideMenu: SideMenuItem[] = [
-    { link: 'a/users', label: 'Users', icon: 'people', permission: UserPermission.USER_MANAGEMENT },
-    { link: 'a/spaces', label: 'Spaces', icon: 'space_dashboard', permission: UserPermission.SPACE_MANAGEMENT },
+    { link: 'admin/users', label: 'Users', icon: 'people', permission: UserPermission.USER_MANAGEMENT },
+    { link: 'admin/spaces', label: 'Spaces', icon: 'space_dashboard', permission: UserPermission.SPACE_MANAGEMENT },
+    { link: 'admin/settings', label: 'Settings', icon: 'settings', permission: UserPermission.SETTINGS_MANAGEMENT },
   ];
 
   communitySideMenu: SideMenuItem[] = [
@@ -105,7 +99,8 @@ export class FeaturesComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   spaceStore = inject(SpaceStore);
   userStore = inject(UserStore);
-  settingsStore = inject(SettingsStore);
+  settingsStore = inject(LocalSettingsStore);
+  appSettingsStore = inject(AppSettingsStore);
 
   constructor(
     private readonly storageService: LocalStorageService,

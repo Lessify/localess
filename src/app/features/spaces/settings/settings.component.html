@@ -1,0 +1,19 @@
+<mat-toolbar>
+  <mat-toolbar-row>
+    Settings
+    <span class="spacer"></span>
+  </mat-toolbar-row>
+</mat-toolbar>
+<div class="container-full-screen">
+  <nav mat-tab-nav-bar [tabPanel]="tabPanel" mat-stretch-tabs="false" mat-align-tabs="center">
+    @for (tabItem of tabItems; track tabItem.label) {
+      <a mat-tab-link [routerLink]="tabItem.link" (click)="activeTab = tabItem.link" [active]="activeTab === tabItem.link">
+        <mat-icon>{{ tabItem.icon }}</mat-icon>
+        &nbsp;
+        <span>{{ tabItem.label }}</span>
+      </a>
+    }
+  </nav>
+  <mat-tab-nav-panel #tabPanel></mat-tab-nav-panel>
+  <router-outlet></router-outlet>
+</div>

@@ -18,9 +18,8 @@ import {
 import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { map } from 'rxjs/operators';
-import { Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUiUpdate, SpaceUpdate } from '../models/space.model';
+import { Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUpdate } from '../models/space.model';
 import { Locale } from '../models/locale.model';
-import { ObjectUtils } from '@core/utils/object-utils.service';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 
 @Injectable({ providedIn: 'root' })
@@ -60,14 +59,6 @@ export class SpaceService {
   update(id: string, entity: SpaceUpdate): Observable<void> {
     const update: UpdateData<Space> = {
       name: entity.name,
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${id}`), update)).pipe(traceUntilFirst('Firestore:Spaces:update'));
-  }
-
-  updateUi(id: string, entity: SpaceUiUpdate): Observable<void> {
-    const update: UpdateData<Space> = {
-      ui: ObjectUtils.clone(entity),
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${id}`), update)).pipe(traceUntilFirst('Firestore:Spaces:update'));

@@ -50,6 +50,23 @@ const hasPermissionSpaceManagement = () => {
   );
 };
 
+const hasPermissionSettingsManagement = () => {
+  return pipe(
+    customClaims,
+    map(claims => {
+      if (Array.isArray(claims)) {
+        return false;
+      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
+        return true;
+      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
+        return claims['permissions']?.includes(UserPermission.SETTINGS_MANAGEMENT);
+      } else {
+        return false;
+      }
+    }),
+  );
+};
+
 const hasPermissionTranslationRead = () => {
   return pipe(
     customClaims,
@@ -141,7 +158,7 @@ const routes: Routes = [
       {
         path: 'spaces/:spaceId/translations',
         title: 'Translations',
-        loadChildren: () => import('./translations/translations.module').then(m => m.TranslationsModule),
+        loadChildren: () => import('./spaces/translations/translations.module').then(m => m.TranslationsModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionTranslationRead,
@@ -150,7 +167,7 @@ const routes: Routes = [
       {
         path: 'spaces/:spaceId/contents',
         title: 'Contents',
-        loadChildren: () => import('./contents/contents.module').then(m => m.ContentsModule),
+        loadChildren: () => import('./spaces/contents/contents.module').then(m => m.ContentsModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionContentRead,
@@ -159,7 +176,7 @@ const routes: Routes = [
       {
         path: 'spaces/:spaceId/assets',
         title: 'Assets',
-        loadChildren: () => import('./assets/assets.module').then(m => m.AssetsModule),
+        loadChildren: () => import('./spaces/assets/assets.module').then(m => m.AssetsModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionAssetRead,
@@ -168,7 +185,7 @@ const routes: Routes = [
       {
         path: 'spaces/:spaceId/schemas',
         title: 'Schemas',
-        loadChildren: () => import('./schemas/schemas.module').then(m => m.SchemasModule),
+        loadChildren: () => import('./spaces/schemas/schemas.module').then(m => m.SchemasModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSchemaRead,
@@ -177,7 +194,7 @@ const routes: Routes = [
       {
         path: 'spaces/:spaceId/tasks',
         title: 'Tasks',
-        loadChildren: () => import('./tasks/tasks.module').then(m => m.TasksModule),
+        loadChildren: () => import('./spaces/tasks/tasks.module').then(m => m.TasksModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionTranslationRead,
@@ -186,34 +203,42 @@ const routes: Routes = [
       {
         path: 'spaces/:spaceId/open-api',
         title: 'Open API',
-        loadChildren: () => import('./open-api/open-api.module').then(m => m.OpenApiModule),
+        loadChildren: () => import('./spaces/open-api/open-api.module').then(m => m.OpenApiModule),
       },
-
       {
         path: 'spaces/:spaceId/settings',
         title: 'Settings',
-        loadChildren: () => import('./settings/settings.module').then(m => m.SettingsModule),
+        loadChildren: () => import('./spaces/settings/settings.module').then(m => m.SettingsModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSpaceManagement,
         },
       },
       {
-        path: 'a/users',
+        path: 'admin/users',
         title: 'Users',
-        loadChildren: () => import('./users/users.module').then(m => m.UsersModule),
+        loadChildren: () => import('./admin/users/users.module').then(m => m.UsersModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionUserManagement,
         },
       },
       {
-        path: 'a/spaces',
+        path: 'admin/spaces',
         title: 'Spaces',
-        loadChildren: () => import('./spaces/spaces.module').then(m => m.SpacesModule),
+        loadChildren: () => import('./admin/spaces/spaces.module').then(m => m.SpacesModule),
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSpaceManagement,
+        },
+      },
+      {
+        path: 'admin/settings',
+        title: 'Settings',
+        loadChildren: () => import('./admin/settings/settings.module').then(m => m.SettingsModule),
+        canActivate: [AuthGuard],
+        data: {
+          authGuardPipe: hasPermissionSettingsManagement,
         },
       },
       {
