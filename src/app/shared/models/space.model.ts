@@ -1,6 +1,5 @@
 import { FieldValue, Timestamp } from '@angular/fire/firestore';
 import { Locale } from './locale.model';
-import { ThemePalette } from '@angular/material/core';
 
 export interface Space {
   id: string;
@@ -25,8 +24,11 @@ export interface SpaceEnvironment {
 }
 
 export interface SpaceUi {
-  color?: ThemePalette;
+  text?: string;
+  color?: SpaceUiColor;
 }
+
+export type SpaceUiColor = 'primary' | 'secondary' | 'tertiary' | 'error';
 
 export interface SpaceCreate {
   name: string;
@@ -45,7 +47,8 @@ export interface SpaceUpdate {
 }
 
 export interface SpaceUiUpdate {
-  color?: ThemePalette;
+  text?: string;
+  color?: SpaceUiColor;
 }
 
 export interface SpaceOverview {

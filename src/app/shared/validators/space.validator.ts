@@ -23,4 +23,5 @@ export class SpaceValidator {
   ];
 
   public static UI_COLOR: ValidatorFn[] = [];
+  public static UI_TEXT: ValidatorFn[] = [CommonValidator.noSpaceAround, Validators.maxLength(30)];
 }

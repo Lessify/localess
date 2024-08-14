@@ -3,7 +3,15 @@
     <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
       <mat-icon>{{ settingsStore.mainMenuExpended() ? 'menu_open' : 'menu' }}</mat-icon>
     </button>
-    <img src="assets/logo-adaptive.svg" class="h-8 mx-2" alt="Logo" />
+    <img src="assets/logo-adaptive.svg" class="h-8 ml-2" alt="Logo" />
+    @if (spaceStore.selectedSpace()?.ui; as ui) {
+      @if (ui.text) {
+        <span class="vertical-divider">&nbsp; </span>
+        <span class="ml-2 post-logo-text-{{ ui.color }}">
+          {{ ui.text }}
+        </span>
+      }
+    }
     <span class="spacer"></span>
 
     @if (spaceStore.spaces(); as spaces) {

@@ -20,10 +20,20 @@
         <mat-label>Color</mat-label>
         <mat-select formControlName="color">
           <mat-option value="primary">Primary</mat-option>
-          <mat-option value="accent">Accent</mat-option>
-          <mat-option value="warn">Warn</mat-option>
+          <mat-option value="secondary">Secondary</mat-option>
+          <mat-option value="tertiary">Tertiary</mat-option>
+          <mat-option value="error">Error</mat-option>
         </mat-select>
         @if (form.controls['color'].errors; as errors) {
+          <mat-error>{{ fe.errors(errors) }}</mat-error>
+        }
+      </mat-form-field>
+      <br />
+      <mat-form-field>
+        <mat-label>Text</mat-label>
+        <input matInput type="text" formControlName="text" maxlength="30" autocomplete="off" />
+        <mat-hint align="end">{{ form.controls['text'].value?.length || 0 }}/30</mat-hint>
+        @if (form.controls['text'].errors; as errors) {
           <mat-error>{{ fe.errors(errors) }}</mat-error>
         }
       </mat-form-field>

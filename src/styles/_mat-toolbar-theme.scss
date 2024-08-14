@@ -5,6 +5,19 @@
     &.main {
       color: mat.get-theme-color($theme, primary);
       background-color: mat.get-theme-color($theme, primary-container);
+
+      .post-logo-text-primary {
+        color: mat.get-theme-color($theme, primary);
+      }
+      .post-logo-text-secondary {
+        color: mat.get-theme-color($theme, secondary);
+      }
+      .post-logo-text-tertiary {
+        color: mat.get-theme-color($theme, tertiary);
+      }
+      .post-logo-text-error {
+        color: mat.get-theme-color($theme, error);
+      }
     }
 
     mat-toolbar-row.second {

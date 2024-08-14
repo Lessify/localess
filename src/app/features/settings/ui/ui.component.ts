@@ -5,9 +5,9 @@ import { NotificationService } from '@shared/services/notification.service';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { ThemePalette } from '@angular/material/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/store/space.store';
+import { SpaceUiColor } from '@shared/models/space.model';
 
 @Component({
   selector: 'll-space-settings-ui',
@@ -23,7 +23,8 @@ export class UiComponent {
 
   // Form
   form: FormGroup = this.fb.group({
-    color: this.fb.control<ThemePalette>(undefined, SpaceValidator.UI_COLOR),
+    text: this.fb.control<string | undefined>(undefined, SpaceValidator.UI_TEXT),
+    color: this.fb.control<SpaceUiColor | undefined>(undefined, SpaceValidator.UI_COLOR),
   });
 
   constructor(
