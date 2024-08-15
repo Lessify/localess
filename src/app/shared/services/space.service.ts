@@ -14,6 +14,7 @@ import {
   serverTimestamp,
   UpdateData,
   updateDoc,
+  deleteField,
 } from '@angular/fire/firestore';
 import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
@@ -59,6 +60,7 @@ export class SpaceService {
   update(id: string, entity: SpaceUpdate): Observable<void> {
     const update: UpdateData<Space> = {
       name: entity.name,
+      icon: entity.icon || deleteField(),
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${id}`), update)).pipe(traceUntilFirst('Firestore:Spaces:update'));

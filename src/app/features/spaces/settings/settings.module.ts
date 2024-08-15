@@ -12,6 +12,7 @@ import { VisualEditorComponent } from './visual-editor/visual-editor.component';
 import { TokensComponent } from './tokens/tokens.component';
 import { TokenDialogComponent } from './tokens/token-dialog/token-dialog.component';
 import { TokenService } from '@shared/services/token.service';
+import { MaterialService } from '@shared/services/material.service';
 
 @NgModule({
   declarations: [
@@ -24,6 +25,6 @@ import { TokenService } from '@shared/services/token.service';
     TokenDialogComponent,
   ],
   imports: [SharedModule, SettingsRoutingModule],
-  providers: [SpaceService, LocaleService, TokenService],
+  providers: [SpaceService, LocaleService, TokenService, MaterialService],
 })
 export class SettingsModule {}

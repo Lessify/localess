@@ -4,6 +4,7 @@ import { Locale } from './locale.model';
 export interface Space {
   id: string;
   name: string;
+  icon?: string;
   // Locales
   locales: Locale[];
   localeFallback: Locale;
@@ -35,6 +36,7 @@ export interface SpaceCreateFS {
 
 export interface SpaceUpdate {
   name: string;
+  icon?: string;
 }
 
 export interface SpaceOverview {

@@ -73,8 +73,8 @@ export class FeaturesComponent implements OnInit {
         { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ },
         { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT },
         // { link: 'plugins', label: 'Plugins', icon: 'extension', permission: UserPermission.SPACE_MANAGEMENT },
-        { link: `spaces/${selectedSpaceId}/settings`, label: 'Settings', icon: 'settings', permission: UserPermission.SPACE_MANAGEMENT },
         { link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'api', permission: UserPermission.DEV_OPEN_API },
+        { link: `spaces/${selectedSpaceId}/settings`, label: 'Settings', icon: 'settings', permission: UserPermission.SPACE_MANAGEMENT },
       ];
     } else {
       return [];

@@ -17,12 +17,18 @@
     @if (spaceStore.spaces(); as spaces) {
       @if (spaceStore.selectedSpace(); as selectedSpace) {
         <button mat-flat-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
+          @if (selectedSpace.icon) {
+            <mat-icon>{{ selectedSpace.icon }}</mat-icon>
+          }
           {{ selectedSpace.name }}
           <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
         </button>
         <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
           @for (space of spaces; track space.id) {
             <button mat-menu-item (click)="onSpaceSelection(space)">
+              @if (space.icon) {
+                <mat-icon>{{ space.icon }}</mat-icon>
+              }
               <span [class.font-semibold]="space.id === selectedSpace.id"> {{ space.name }} </span>
             </button>
           }

@@ -29,6 +29,23 @@
           <mat-error>{{ fe.errors(errors) }}</mat-error>
         }
       </mat-form-field>
+      <br />
+      <mat-form-field>
+        <mat-label>Icon</mat-label>
+        <mat-select formControlName="icon">
+          <mat-select-trigger>
+            <mat-icon>{{ form.controls['icon'].value }}</mat-icon>
+            {{ form.controls['icon'].value }}
+          </mat-select-trigger>
+          <mat-option [value]="undefined">None</mat-option>
+          @for (icon of icons$ | async; track icon.name) {
+            <mat-option [value]="icon.name">
+              <mat-icon>{{ icon.name }}</mat-icon>
+              {{ icon.name }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
     </form>
   </div>
 }

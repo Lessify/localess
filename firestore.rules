@@ -86,16 +86,10 @@ service cloud.firestore {
       allow write: if isSignedIn() && (hasRole('admin') || hasPermission('USER_MANAGEMENT'));
     }
 
-    // Configs Setup
-    match /configs/setup {
-      allow read: if isSignedIn() && hasRole('admin');
-      allow write: if isSignedIn() && hasRole('admin');
-    }
-
     // Configs
     match /configs/{configId} {
-      allow read: if isSignedIn() && hasRole('admin');
-      allow write: if isSignedIn() && hasRole('admin');
+      allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SETTINGS_MANAGEMENT'));
+      allow write: if isSignedIn() && (hasRole('admin') || hasPermission('SETTINGS_MANAGEMENT'));
     }
 
     match /{document=**} {

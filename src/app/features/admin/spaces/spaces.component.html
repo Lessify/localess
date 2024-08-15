@@ -24,7 +24,13 @@
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.name }}</mat-cell>
+      <mat-cell *matCellDef="let element">
+        @if (element.icon; as icon) {
+          <mat-icon>{{ icon }}</mat-icon>
+          &nbsp;
+        }
+        {{ element.name }}
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>

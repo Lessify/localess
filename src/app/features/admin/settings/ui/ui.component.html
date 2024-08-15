@@ -30,8 +30,8 @@
     <br />
     <mat-form-field>
       <mat-label>Text</mat-label>
-      <input matInput type="text" formControlName="text" maxlength="10" autocomplete="off" />
-      <mat-hint align="end">{{ form.controls['text'].value?.length || 0 }}/10</mat-hint>
+      <input matInput type="text" formControlName="text" maxlength="30" autocomplete="off" />
+      <mat-hint align="end">{{ form.controls['text'].value?.length || 0 }}/30</mat-hint>
       @if (form.controls['text'].errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>
       }

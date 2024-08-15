@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
-import { filter } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 import { SpaceService } from '@shared/services/space.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { FormBuilder, FormGroup } from '@angular/forms';
@@ -7,6 +7,7 @@ import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/store/space.store';
+import { MaterialService } from '@shared/services/material.service';
 
 @Component({
   selector: 'll-space-settings-general',
@@ -21,8 +22,13 @@ export class GeneralComponent {
   // Form
   form: FormGroup = this.fb.group({
     name: this.fb.control('', SpaceValidator.NAME),
+    icon: this.fb.control<string | undefined>(undefined),
   });
 
+  icons$ = this.materialService.findAllIcons().pipe(
+    map(it => it.icons),
+    map(it => it.filter(icon => !icon.unsupported_families.includes('Material Icons'))),
+  );
   private destroyRef = inject(DestroyRef);
 
   constructor(
@@ -31,6 +37,7 @@ export class GeneralComponent {
     private readonly spaceService: SpaceService,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
+    private readonly materialService: MaterialService,
   ) {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
