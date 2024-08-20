@@ -1,12 +1,14 @@
-import { OpenApiSchema, OpenApiSchemaDefinition, Schema, SchemaField, SchemaFieldKind, SchemaType } from '../models';
+import { Schema, SchemaField, SchemaFieldKind, SchemaType } from '../models';
+import { OpenAPIObject } from 'openapi3-ts/oas30';
+import { ReferenceObject, SchemaObject } from 'openapi3-ts/dist/model/openapi30';
 
 /**
  * Generate Open API
  * @param {Map<string, Schema>} schemasById
- * @return {OpenApiSchema} OpenApiSchema
+ * @return {OpenAPIObject} OpenApiSchema
  */
-export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema {
-  const schemasDefinition: Record<string, OpenApiSchemaDefinition> = {
+export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject {
+  const schemasDefinition: Record<string, SchemaObject | ReferenceObject> = {
     Translations: {
       description: 'Key-Value Object. Where Key is Translation ID and Value is Translated Content',
       type: 'object',
@@ -316,7 +318,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
     schemasDefinition[name] = schema;
   }
 
-  const openApi: OpenApiSchema = {
+  const openApi: OpenAPIObject = {
     openapi: '3.0.3',
     info: {
       title: 'Localess Open API Specification',
@@ -743,7 +745,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenApiSchema
  * @param {Schema} schema - result
  * @return {OpenApiSchemaDefinition} asfdasf
  */
-export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [string, OpenApiSchemaDefinition] {
+export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [string, SchemaObject | ReferenceObject] {
   const pascalName = id[0].toUpperCase() + id.slice(1);
   if (schema.type === SchemaType.ENUM) {
     return [
@@ -758,7 +760,7 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
   if (schema.type === SchemaType.NODE || schema.type === SchemaType.ROOT) {
     const required = ['_id', 'schema'];
     schema.fields?.filter(it => it.required === true).forEach(it => required.push(it.name));
-    const schemasDefinition: Record<string, OpenApiSchemaDefinition> = {
+    const schemasDefinition: Record<string, SchemaObject | ReferenceObject> = {
       _id: {
         type: 'string',
         format: 'uuid',
@@ -798,7 +800,7 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
  * @param {SchemaField} field
  * @return {OpenApiSchema} OpenApiSchema
  */
-export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, OpenApiSchemaDefinition] {
+export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, SchemaObject | ReferenceObject] {
   if (field.kind === SchemaFieldKind.TEXT || field.kind === SchemaFieldKind.TEXTAREA || field.kind === SchemaFieldKind.MARKDOWN) {
     return [
       field.name,
