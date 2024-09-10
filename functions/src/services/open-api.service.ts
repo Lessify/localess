@@ -425,13 +425,24 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               },
             },
             {
-              name: 'startSlug',
+              name: 'parentSlug',
               in: 'query',
-              description: 'Content start slug.',
+              description: 'Content parent slug.',
               required: false,
               schema: {
                 type: 'string',
                 example: 'legal/policy',
+              },
+            },
+            {
+              name: 'includeSubSlugs',
+              in: 'query',
+              description: 'If **true**, include all sub slugs, otherwise only content under current selected **parent slug**.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: true,
+                default: false,
               },
             },
             {

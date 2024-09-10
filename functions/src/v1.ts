@@ -72,7 +72,7 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
   const { spaceId } = req.params;
-  const { kind, startSlug, cv, token } = req.query;
+  const { kind, parentSlug, includeSubSlugs, cv, token } = req.query;
   if (!validateToken(token)) {
     res
       .status(404)
@@ -103,11 +103,14 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
     logger.info('v1 spaces links cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/links?cv=${metadata.generation}`;
+      if (parentSlug !== undefined) {
+        url += `&parentSlug=${parentSlug}`;
+      }
+      if (includeSubSlugs !== undefined) {
+        url += `&includeSubSlugs=${includeSubSlugs}`;
+      }
       if (kind !== undefined) {
         url += `&kind=${kind}`;
-      }
-      if (startSlug !== undefined) {
-        url += `&startSlug=${startSlug}`;
       }
       if (token) {
         url += `&token=${token}`;
@@ -116,11 +119,19 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
       return;
     } else {
       let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
+      if (parentSlug) {
+        if (includeSubSlugs === 'true') {
+          contentsQuery = contentsQuery.where('parentSlug', '>=', parentSlug).where('parentSlug', '<', `${parentSlug}/~`);
+        } else {
+          contentsQuery = contentsQuery.where('parentSlug', '==', parentSlug);
+        }
+      } else {
+        if (includeSubSlugs !== 'true') {
+          contentsQuery = contentsQuery.where('parentSlug', '==', '');
+        }
+      }
       if (kind && (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER)) {
         contentsQuery = contentsQuery.where('kind', '==', kind);
-      }
-      if (startSlug) {
-        contentsQuery = contentsQuery.where('fullSlug', '>=', startSlug).where('fullSlug', '<', `${startSlug}~`);
       }
       const contentsSnapshot = await contentsQuery.get();
 
