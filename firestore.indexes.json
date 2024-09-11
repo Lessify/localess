@@ -27,6 +27,14 @@
       ]
     },
     {
+      "collectionGroup": "contents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "parentSlug", "order": "ASCENDING" },
+        { "fieldPath": "kind", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "schemas",
       "queryScope": "COLLECTION",
       "fields": [

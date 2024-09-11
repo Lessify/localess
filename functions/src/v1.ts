@@ -106,10 +106,10 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
       if (parentSlug !== undefined) {
         url += `&parentSlug=${parentSlug}`;
       }
-      if (includeChildren !== undefined) {
+      if (includeChildren === 'true') {
         url += `&includeChildren=${includeChildren}`;
       }
-      if (kind !== undefined) {
+      if (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER) {
         url += `&kind=${kind}`;
       }
       if (token) {
