@@ -72,7 +72,7 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
   const { spaceId } = req.params;
-  const { kind, parentSlug, includeSubSlugs, cv, token } = req.query;
+  const { kind, parentSlug, includeChildren, cv, token } = req.query;
   if (!validateToken(token)) {
     res
       .status(404)
@@ -106,8 +106,8 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
       if (parentSlug !== undefined) {
         url += `&parentSlug=${parentSlug}`;
       }
-      if (includeSubSlugs !== undefined) {
-        url += `&includeSubSlugs=${includeSubSlugs}`;
+      if (includeChildren !== undefined) {
+        url += `&includeChildren=${includeChildren}`;
       }
       if (kind !== undefined) {
         url += `&kind=${kind}`;
@@ -120,13 +120,13 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
     } else {
       let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
       if (parentSlug) {
-        if (includeSubSlugs === 'true') {
+        if (includeChildren === 'true') {
           contentsQuery = contentsQuery.where('parentSlug', '>=', parentSlug).where('parentSlug', '<', `${parentSlug}/~`);
         } else {
           contentsQuery = contentsQuery.where('parentSlug', '==', parentSlug);
         }
       } else {
-        if (includeSubSlugs !== 'true') {
+        if (includeChildren !== 'true') {
           contentsQuery = contentsQuery.where('parentSlug', '==', '');
         }
       }

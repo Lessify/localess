@@ -435,7 +435,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               },
             },
             {
-              name: 'includeSubSlugs',
+              name: 'includeChildren',
               in: 'query',
               description: 'If **true**, include all sub slugs, otherwise only content under current selected **parent slug**.',
               required: false,
