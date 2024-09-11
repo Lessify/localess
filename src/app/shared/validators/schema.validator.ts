@@ -62,14 +62,14 @@ export class SchemaValidator {
     Validators.required,
     CommonValidator.noSpaceAround,
     Validators.minLength(1),
-    Validators.maxLength(30),
+    Validators.maxLength(50),
   ];
 
   public static FIELD_OPTION_VALUE: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpaceAround,
     Validators.minLength(1),
-    Validators.maxLength(30),
+    Validators.maxLength(50),
   ];
 
   public static FIELD_SCHEMA: ValidatorFn[] = [Validators.required];

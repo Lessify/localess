@@ -80,7 +80,7 @@
                 <mat-form-field style="width: 50%; padding-right: 10px">
                   <mat-label>Name</mat-label>
                   <input matInput type="text" formControlName="name" autocomplete="off" />
-                  <mat-hint align="end">{{ control.value.name?.length || 0 }}/30</mat-hint>
+                  <mat-hint align="end">{{ control.value.name?.length || 0 }}/50</mat-hint>
                   @if (control.controls['name']?.errors; as errors) {
                     <mat-error>{{ fe.errors(errors) }}</mat-error>
                   }
@@ -88,7 +88,7 @@
                 <mat-form-field style="width: 50%">
                   <mat-label>Value</mat-label>
                   <input matInput type="text" formControlName="value" autocomplete="off" />
-                  <mat-hint align="end">{{ control.value.value?.length || 0 }}/30</mat-hint>
+                  <mat-hint align="end">{{ control.value.value?.length || 0 }}/50</mat-hint>
                   @if (control.controls['value']?.errors; as errors) {
                     <mat-error>{{ fe.errors(errors) }}</mat-error>
                   }

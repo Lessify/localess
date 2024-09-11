@@ -204,7 +204,7 @@
         @case ('OPTION') {
           <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <mat-select [formControlName]="field.name" [placeholder]="defaultOptionPlaceholder(field)">
+            <mat-select [formControlName]="field.name">
               @if (!field.required) {
                 <mat-option>-- None --</mat-option>
               }
@@ -236,7 +236,7 @@
         @case ('OPTIONS') {
           <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <mat-select [formControlName]="field.name" [placeholder]="defaultOptionsPlaceholder(field)" multiple>
+            <mat-select [formControlName]="field.name" multiple>
               <!--Handle source not defined in previous versions-->
               @if (field.source === undefined || field.source === 'self') {
                 @for (option of field.options; track option.value) {
