@@ -30,8 +30,8 @@
       "collectionGroup": "contents",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "parentSlug", "order": "ASCENDING" },
-        { "fieldPath": "kind", "order": "DESCENDING" }
+        { "fieldPath": "kind", "order": "DESCENDING" },
+        { "fieldPath": "parentSlug", "order": "ASCENDING" }
       ]
     },
     {
