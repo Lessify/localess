@@ -435,9 +435,9 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               },
             },
             {
-              name: 'includeChildren',
+              name: 'excludeChildren',
               in: 'query',
-              description: 'If **true**, include all sub slugs, otherwise only content under current selected **parent slug**.',
+              description: 'If **true**, exclude all sub slugs, otherwise include all content under current selected **parent slug**.',
               required: false,
               schema: {
                 type: 'boolean',

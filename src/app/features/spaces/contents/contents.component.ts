@@ -322,7 +322,7 @@ export class ContentsComponent {
     this.tokenService.findFirst(this.spaceId()).subscribe({
       next: tokens => {
         if (tokens.length === 1) {
-          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/links?includeChildren=true`);
+          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/links`);
           url.searchParams.set('token', tokens[0].id);
           window.open(url, '_blank');
         } else {
