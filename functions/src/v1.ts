@@ -358,10 +358,29 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
     let filename = `${asset.name}${asset.extension}`;
     // apply resize for valid 'w' parameter and images
-    if (width && !Number.isNaN(width) && asset.type.startsWith('image/') && asset.type !== 'image/svg+xml') {
-      filename = `${asset.name}-w${width}${asset.extension}`;
-      const [file] = await assetFile.download();
-      await sharp(file).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
+    if (width && !Number.isNaN(width) && asset.type.startsWith('image/')) {
+      if (asset.type === 'image/webp' || asset.type === 'image/gif') {
+        // possible animated or single frame webp/gif
+        const [file] = await assetFile.download();
+        const sharpFile = sharp(file);
+        const sharpFileMetadata = await sharpFile.metadata();
+        if (sharpFileMetadata.pages) {
+          // animated webp/gif
+          await assetFile.download({ destination: tempFilePath });
+        } else {
+          // single frame webp/gif
+          filename = `${asset.name}-w${width}${asset.extension}`;
+          await sharpFile.resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
+        }
+      } else if (asset.type === 'image/svg+xml') {
+        // svg, cannot resize
+        await assetFile.download({ destination: tempFilePath });
+      } else {
+        // other images
+        filename = `${asset.name}-w${width}${asset.extension}`;
+        const [file] = await assetFile.download();
+        await sharp(file).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
+      }
     } else {
       await assetFile.download({ destination: tempFilePath });
     }
