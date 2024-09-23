@@ -1,5 +1,3 @@
-import { Timestamp } from 'firebase-admin/firestore';
-
 export interface User {
   /**
    * The user's `uid`.
@@ -10,6 +8,10 @@ export interface User {
    */
   readonly email?: string;
   /**
+   * Whether or not the user's primary email is verified.
+   */
+  readonly emailVerified: boolean;
+  /**
    * The user's display name.
    */
   readonly displayName?: string;
@@ -18,16 +20,36 @@ export interface User {
    */
   readonly photoURL?: string;
   /**
+   * The user's primary phone number, if set.
+   */
+  readonly phoneNumber?: string;
+  /**
    * Whether or not the user is disabled: true for disabled; false for enabled.
    */
   readonly disabled: boolean;
 
+  // Custom Claims
   readonly role?: UserRole;
+  readonly permissions?: UserPermission[];
 
-  readonly permissions?: string[];
+  // Providers
+  readonly providers: string[];
 
-  readonly createdAt: Timestamp;
-  readonly updatedAt: Timestamp;
+  // Metadata
+  /**
+   * The date the user was created, formatted as a UTC string.
+   */
+  readonly creationTime: string;
+  /**
+   * The date the user last signed in, formatted as a UTC string.
+   */
+  readonly lastSignInTime: string;
+  /**
+   * The time at which the user was last active (ID token refreshed),
+   * formatted as a UTC Date string (eg 'Sat, 03 Feb 2001 04:05:06 GMT').
+   * Returns null if the user was never active.
+   */
+  readonly lastRefreshTime?: string | null;
 }
 
 export interface UserInvite {
@@ -35,7 +57,13 @@ export interface UserInvite {
   email: string;
   password: string;
   role?: UserRole;
-  permissions?: string[];
+  permissions?: UserPermission[];
+}
+
+export interface UserUpdate {
+  id: string;
+  role?: UserRole;
+  permissions?: UserPermission[];
 }
 
 export type UserRole = 'admin' | 'custom';
@@ -43,6 +71,7 @@ export type UserRole = 'admin' | 'custom';
 export enum UserPermission {
   USER_MANAGEMENT = 'USER_MANAGEMENT',
   SPACE_MANAGEMENT = 'SPACE_MANAGEMENT',
+  SETTINGS_MANAGEMENT = 'SETTINGS_MANAGEMENT',
   TRANSLATION_READ = 'TRANSLATION_READ',
   TRANSLATION_CREATE = 'TRANSLATION_CREATE',
   TRANSLATION_UPDATE = 'TRANSLATION_UPDATE',
@@ -69,4 +98,5 @@ export enum UserPermission {
   ASSET_DELETE = 'ASSET_DELETE',
   ASSET_EXPORT = 'ASSET_EXPORT',
   ASSET_IMPORT = 'ASSET_IMPORT',
+  DEV_OPEN_API = 'DEV_OPEN_API',
 }

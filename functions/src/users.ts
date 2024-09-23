@@ -1,182 +1,76 @@
-import { auth, logger } from 'firebase-functions';
+import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
-import { FieldValue } from 'firebase-admin/firestore';
 import { authService } from './config';
 import { canPerform } from './utils/security-utils';
-import { User, UserInvite, UserPermission } from './models';
-import { findUserById } from './services';
+import { User, UserInvite, UserPermission, UserUpdate } from './models';
 
-const onAuthUserCreate = auth.user().onCreate((user, context) => {
-  logger.info(`[AuthUser::onCreate] id='${user.uid}' eventId='${context.eventId}'`);
-  logger.info(`[AuthUser::onCreate] user='${JSON.stringify(user)}'`);
-  if (!user.email) {
-    return null;
-  }
-  const userRef = findUserById(user.uid);
+const userList = onCall<void>(async request => {
+  logger.info('[userList] data: ' + JSON.stringify(request.data));
+  logger.info('[userList] context.auth: ' + JSON.stringify(request.auth));
+  if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
-  return userRef.set(
-    {
+  const users = await authService.listUsers();
+  return users.users.map(user => {
+    return {
+      id: user.uid,
       email: user.email,
-      displayName: user.displayName || FieldValue.delete(),
-      photoURL: user.photoURL || FieldValue.delete(),
+      emailVerified: user.emailVerified,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      phoneNumber: user.phoneNumber,
       disabled: user.disabled,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
+      // Custom Claims
+      role: user.customClaims?.['role'],
+      permissions: user.customClaims?.['permissions'],
+      // Providers
+      providers: user.providerData.map(provider => provider.providerId),
+      // Metadata
+      creationTime: user.metadata.creationTime,
+      lastSignInTime: user.metadata.lastSignInTime,
+      lastRefreshTime: user.metadata.lastRefreshTime,
+    } satisfies User;
+  });
 });
-
-// const onAuthUserDelete = auth.user()
-//   .onDelete(async (user, context) => {
-//     logger.info(`[AuthUser::onDelete] id='${user.uid}' eventId='${context.eventId}'`);
-//     const userRef = findUserById(user.uid);
-//     const userDS = await userRef.get();
-//     if (userDS.exists) {
-//       await userRef.delete();
-//     }
-//     return true;
-//   });
 
 const userInvite = onCall<UserInvite>(async request => {
   logger.info('[userInvite] data: ' + JSON.stringify(request.data));
   logger.info('[userInvite] context.auth: ' + JSON.stringify(request.auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
-
-  const adminUser = await authService.createUser({
-    displayName: request.data.displayName,
-    email: request.data.email,
-    password: request.data.password,
+  const { data } = request;
+  const user = await authService.createUser({
+    displayName: data.displayName,
+    email: data.email,
+    password: data.password,
     disabled: false,
   });
-  await authService.setCustomUserClaims(adminUser.uid, { role: request.data.role, permissions: request.data.permissions });
-  return true;
+  await authService.setCustomUserClaims(user.uid, { role: data.role, permissions: data.permissions });
 });
 
-// TODO add use case for Deleted users from Firebase directly
-const usersSync = onCall<never>(async request => {
-  logger.info('[usersSync] data: ' + JSON.stringify(request.data));
-  logger.info('[usersSync] context.auth: ' + JSON.stringify(request.auth));
+const userUpdate = onCall<UserUpdate>(async request => {
+  logger.info('[userUpdate] data: ' + JSON.stringify(request.data));
+  logger.info('[userUpdate] context.auth: ' + JSON.stringify(request.auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
-
-  const listUsers = await authService.listUsers();
-  listUsers.users.map(async userRecord => {
-    logger.debug('[usersSync] userRecord: ' + JSON.stringify(userRecord));
-    const userRef = findUserById(userRecord.uid);
-    const userSnapshot = await userRef.get();
-
-    logger.debug(`[usersSync] userDS: id='${userSnapshot.id}' exist=${userSnapshot.exists}`);
-    if (userSnapshot.exists) {
-      const user = await userSnapshot.data()!;
-      logger.debug('[usersSync] user: ' + JSON.stringify(user));
-      if (
-        userRecord.email !== user['email'] ||
-        userRecord.displayName !== user['displayName'] ||
-        userRecord.photoURL !== user['photoURL'] ||
-        userRecord.disabled !== user['disabled'] ||
-        userRecord.customClaims?.['role'] !== user['role'] ||
-        userRecord.customClaims?.['permissions'] !== user['permissions']
-      ) {
-        logger.debug(`[usersSync] user: id='${userSnapshot.id}' to be updated`);
-        await userRef.set(
-          {
-            email: userRecord.email,
-            displayName: userRecord.displayName || FieldValue.delete(),
-            photoURL: userRecord.photoURL || FieldValue.delete(),
-            disabled: userRecord.disabled,
-            role: userRecord.customClaims?.['role'] || FieldValue.delete(),
-            permissions: userRecord.customClaims?.['permissions'] || FieldValue.delete(),
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
-      } else {
-        logger.debug(`[usersSync] user: id='${userSnapshot.id}' no updates required`);
-      }
-    } else {
-      logger.debug(`[usersSync] user: id='${userSnapshot.id}' to be added`);
-      await userRef.set(
-        {
-          email: userRecord.email,
-          displayName: userRecord.displayName || FieldValue.delete(),
-          photoURL: userRecord.photoURL || FieldValue.delete(),
-          disabled: userRecord.disabled,
-          role: userRecord.customClaims?.['role'],
-          permissions: userRecord.customClaims?.['permissions'],
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
-    }
-  });
-  return true;
-});
-
-const onUserUpdate = onDocumentUpdated('users/{userId}', async event => {
-  logger.info(`[User::onUpdate] eventId='${event.id}'`);
-  logger.info(`[User::onUpdate] params='${JSON.stringify(event.params)}'`);
-  const { userId } = event.params;
-  // No Data
-  if (!event.data) return;
-  const before = event.data.before.data() as User;
-  const after = event.data.after.data() as User;
-  // Role change from ADMIN
-  const roleBefore = before.role;
-  const roleAfter = after.role;
-  // Role change from ADMIN
-  const permissionsBefore = before.permissions;
-  const permissionsAfter = after.permissions;
-
-  if (roleBefore !== roleAfter || permissionsBefore !== permissionsAfter) {
-    logger.info(`[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' from='${roleBefore}' to='${roleAfter}'`);
-    logger.info(
-      `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' from='${permissionsBefore}' to='${permissionsAfter}'`
-    );
-    const { customClaims } = await authService.getUser(userId);
-    // check if role update already in Auth
-    if (customClaims?.['role'] !== roleAfter || customClaims?.['permissions'] !== permissionsAfter) {
-      logger.debug(
-        `[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${customClaims?.['role']}' db='${roleAfter}', auth update required.`
-      );
-      logger.debug(
-        `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${customClaims?.['permissions']}' db='${permissionsAfter}', auth update required.`
-      );
-      return await authService.setCustomUserClaims(userId, { role: roleAfter, permissions: permissionsAfter });
-    } else {
-      logger.debug(
-        `[User::onUpdate::RoleChange] eventId='${event.id}' id='${userId}' auth='${customClaims?.['role']}' db='${roleAfter}', auth update not required.`
-      );
-      logger.debug(
-        `[User::onUpdate::PermissionsChange] eventId='${event.id}' id='${userId}' auth='${customClaims?.['permissions']}' db='${permissionsAfter}', auth update not required.`
-      );
-    }
-    return true;
+  const { data } = request;
+  if (data.role === 'admin') {
+    await authService.setCustomUserClaims(data.id, { role: data.role });
+  } else if (data.role === 'custom') {
+    await authService.setCustomUserClaims(data.id, { role: data.role, permissions: data.permissions });
+  } else {
+    await authService.setCustomUserClaims(data.id, null);
   }
-
-  // DisplayName change from Me
-  // const displayNameBefore = before['displayName']
-  // const displayNameAfter = after['displayName']
-  // if (displayNameBefore !== displayNameAfter) {
-  //   logger.info(`[User::onUpdate::DisplayNameChange] id='${change.before.id}' eventId='${context.eventId}' from='${displayNameBefore}' to='${displayNameAfter}'`);
-  //   return authService.updateUser(change.before.id, {displayName: displayNameAfter})
-  // }
-
-  return true;
 });
 
-const onUserDelete = onDocumentDeleted('users/{userId}', async event => {
-  logger.info(`[User::onDelete] eventId='${event.id}'`);
-  logger.info(`[User::onDelete] params='${JSON.stringify(event.params)}'`);
-  const { userId } = event.params;
-  return authService.deleteUser(userId);
+const userDelete = onCall<string>(async request => {
+  logger.info('[userUpdate] data: ' + JSON.stringify(request.data));
+  logger.info('[userUpdate] context.auth: ' + JSON.stringify(request.auth));
+  if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { data } = request;
+  await authService.deleteUser(data);
 });
 
 export const user = {
-  onauthcreate: onAuthUserCreate,
-  onupdate: onUserUpdate,
-  ondelete: onUserDelete,
+  list: userList,
   invite: userInvite,
-  sync: usersSync,
+  update: userUpdate,
+  delete: userDelete,
 };

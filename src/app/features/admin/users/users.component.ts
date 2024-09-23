@@ -26,9 +26,8 @@ export class UsersComponent implements OnInit {
   paginator = viewChild.required(MatPaginator);
 
   isLoading = true;
-  isSyncLoading = false;
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
-  displayedColumns: string[] = ['avatar', 'email', 'name', 'role', /*'createdAt',*/ 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'creationTime', 'lastSignInTime', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
@@ -47,12 +46,20 @@ export class UsersComponent implements OnInit {
     this.userService
       .findAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(response => {
-        this.dataSource = new MatTableDataSource<User>(response);
-        this.dataSource.sort = this.sort();
-        this.dataSource.paginator = this.paginator();
-        this.isLoading = false;
-        this.cd.markForCheck();
+      .subscribe({
+        next: response => {
+          console.log(response);
+          this.dataSource = new MatTableDataSource<User>(response);
+          this.dataSource.sort = this.sort();
+          this.dataSource.paginator = this.paginator();
+          this.isLoading = false;
+          this.cd.markForCheck();
+        },
+        error: () => {
+          this.notificationService.error('Users can not be loaded.');
+          this.isLoading = false;
+          this.cd.markForCheck();
+        },
       });
   }
 
@@ -69,9 +76,11 @@ export class UsersComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notificationService.success('User has been invited.');
+          this.loadData();
         },
         error: () => {
           this.notificationService.error('User can not be invited.');
+          this.loadData();
         },
       });
   }
@@ -88,14 +97,16 @@ export class UsersComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.userService.update(element.id, it?.role, it?.permissions)),
+        switchMap(it => this.userService.update({ id: element.id, role: it?.role, permissions: it?.permissions })),
       )
       .subscribe({
         next: () => {
           this.notificationService.success('User has been updated.');
+          this.loadData();
         },
         error: () => {
           this.notificationService.error('User can not be updated.');
+          this.loadData();
         },
       });
   }
@@ -116,28 +127,12 @@ export class UsersComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notificationService.success(`User '${element.email}' has been deleted.`);
+          this.loadData();
         },
         error: () => {
           this.notificationService.error(`User '${element.email}' can not be deleted.`);
+          this.loadData();
         },
       });
-  }
-
-  sync(): void {
-    this.isSyncLoading = true;
-    this.userService.sync().subscribe({
-      next: () => {
-        this.notificationService.success(`Sync is in progress, it may take upt to few minutes.`);
-      },
-      error: () => {
-        this.notificationService.error(`Users can not be synced.`);
-      },
-      complete: () => {
-        setTimeout(() => {
-          this.isSyncLoading = false;
-          this.cd.markForCheck();
-        }, 1000);
-      },
-    });
   }
 }

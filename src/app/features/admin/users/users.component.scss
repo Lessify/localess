@@ -4,19 +4,28 @@ table {
 
 mat-header-cell,
 mat-cell {
-  &.mat-column-avatar {
-    max-width: 100px;
+
+  &.mat-column-active {
+    max-width: 75px;
   }
 
-  &.mat-column-createdAt {
-    max-width: 220px;
+  &.mat-column-providers {
+    max-width: 95px;
   }
 
-  &.mat-column-updatedAt {
-    max-width: 220px;
+  &.mat-column-role {
+    max-width: 125px;
+  }
+
+  &.mat-column-creationTime {
+    max-width: 120px;
+  }
+
+  &.mat-column-lastSignInTime {
+    max-width: 120px;
   }
 
   &.mat-column-actions {
-    max-width: 140px;
+    max-width: 125px;
   }
 }

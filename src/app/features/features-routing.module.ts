@@ -153,7 +153,7 @@ const routes: Routes = [
       {
         path: 'spaces/:spaceId/dashboard',
         title: 'Dashboard',
-        loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule),
+        loadChildren: () => import('./spaces/dashboard/dashboard.module').then(m => m.DashboardModule),
       },
       {
         path: 'spaces/:spaceId/translations',

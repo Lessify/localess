@@ -6,11 +6,6 @@
       <mat-icon>person_add</mat-icon>
       Invite
     </button>
-
-    <button mat-stroked-button color="accent" matTooltip="Synchronize Users with Database." (click)="sync()">
-      <ll-icon [animate]="isSyncLoading" start="sync" end="sync" />
-      Sync
-    </button>
   </mat-toolbar-row>
 </mat-toolbar>
 @if (isLoading) {
@@ -19,23 +14,44 @@
 
 <div class="container-full-screen">
   <mat-table [dataSource]="dataSource" matSort>
-    <ng-container matColumnDef="avatar">
-      <mat-header-cell *matHeaderCellDef> Avatar</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @if (element.photoURL) {
-          <img [ngSrc]="element.photoURL" width="40" height="40" mat-card-avatar alt="circle" />
-        } @else {
-          <mat-icon class="text-4xl" style="width: 40px; height: 40px">account_circle</mat-icon>
-        }
-      </mat-cell>
-    </ng-container>
     <ng-container matColumnDef="email">
       <mat-header-cell *matHeaderCellDef mat-sort-header="email"> Email</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.email }}</mat-cell>
+      <mat-cell *matCellDef="let element">
+        {{ element.email }}
+        @if (element.emailVerified) {
+          &nbsp;
+          <mat-icon matTooltip="Email Verified" matTooltipPosition="after">verified</mat-icon>
+        }
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.displayName }}</mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="active">
+      <mat-header-cell *matHeaderCellDef> Active</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        @if (element.disabled) {
+          <mat-icon matTooltip="User is Disabled" matTooltipPosition="after">block</mat-icon>
+        } @else {
+          <mat-icon matTooltip="User is Active" matTooltipPosition="after">check</mat-icon>
+        }
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="providers">
+      <mat-header-cell *matHeaderCellDef> Providers</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        @for (provider of element.providers; track provider) {
+          @switch (provider) {
+            @case ('password') {
+              <mat-icon matTooltip="Email & Password" matTooltipPosition="after">email</mat-icon>
+            }
+            @default {
+              <mat-icon [matTooltip]="provider" matTooltipPosition="after">verified_user</mat-icon>
+            }
+          }
+        }
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="role">
       <mat-header-cell *matHeaderCellDef mat-sort-header="role"> Role</mat-header-cell>
@@ -46,13 +62,17 @@
         }
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="createdAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.createdAt?.toDate() | date: 'medium' }}</mat-cell>
+    <ng-container matColumnDef="creationTime">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="creationTime"> Created At</mat-header-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.creationTime | date: 'medium'">
+        {{ element.creationTime | date: 'mediumDate' }}
+      </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }}</mat-cell>
+    <ng-container matColumnDef="lastSignInTime">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="lastSignInTime">Last SignIn</mat-header-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.lastSignInTime | date: 'medium'">
+        {{ element.lastSignInTime | date: 'mediumDate' }}</mat-cell
+      >
     </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
