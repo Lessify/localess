@@ -146,7 +146,11 @@
           </button>
         }
         @if ('CONTENT_CREATE' | canUserPerform | async) {
-          <button mat-icon-button (click)="openCloneDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Clone Here">
+          <button
+            mat-icon-button
+            (click)="openCloneDialog($event, element)"
+            [disabled]="element.kind === 'FOLDER'"
+            matTooltip="Clone the Document Here">
             <mat-icon>content_copy</mat-icon>
           </button>
         }

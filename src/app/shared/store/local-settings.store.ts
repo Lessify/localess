@@ -4,12 +4,14 @@ import { computed } from '@angular/core';
 const LS_KEY = 'LL-SETTINGS-STATE';
 
 export type Theme = 'light' | 'dark' | 'auto';
+export type EditorSize = '' | 'sm' | 'md' | 'lg';
 
 export interface LocalSettingsState {
   theme: Theme;
   mainMenuExpended: boolean;
   debugEnabled: boolean;
   editorEnabled: boolean;
+  editorSize: EditorSize;
 }
 
 export const initialState: LocalSettingsState = {
@@ -17,6 +19,7 @@ export const initialState: LocalSettingsState = {
   mainMenuExpended: true,
   debugEnabled: false,
   editorEnabled: false,
+  editorSize: '',
 };
 
 function setDocumentTheme(theme: Theme) {
@@ -76,6 +79,10 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { editorEnabled });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), editorEnabled }));
       },
+      setEditorSize: (editorSize: EditorSize): void => {
+        patchState(store, { editorSize });
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), editorSize }));
+      },
     };
   }),
   withComputed(store => {
@@ -84,6 +91,7 @@ export const LocalSettingsStore = signalStore(
       debugEnabled: computed(() => store.debugEnabled()),
       mainMenuExpended: computed(() => store.mainMenuExpended()),
       editorEnabled: computed(() => store.editorEnabled()),
+      editorSize: computed(() => store.editorSize()),
     };
   }),
   withHooks({

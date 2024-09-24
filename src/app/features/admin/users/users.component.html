@@ -8,15 +8,21 @@
     </button>
   </mat-toolbar-row>
 </mat-toolbar>
-@if (isLoading) {
+@if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
 
 <div class="container-full-screen">
+  <div>
+    <mat-form-field appearance="fill">
+      <mat-label>Filter</mat-label>
+      <input matInput (keyup)="applyFilter($event)" placeholder="Filter emails and names ..." />
+    </mat-form-field>
+  </div>
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="email">
       <mat-header-cell *matHeaderCellDef mat-sort-header="email"> Email</mat-header-cell>
-      <mat-cell *matCellDef="let element">
+      <mat-cell *matCellDef="let element" class="break-all">
         {{ element.email }}
         @if (element.emailVerified) {
           &nbsp;
@@ -26,7 +32,7 @@
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.displayName }}</mat-cell>
+      <mat-cell *matCellDef="let element" class="break-all"> {{ element.displayName }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="active">
       <mat-header-cell *matHeaderCellDef> Active</mat-header-cell>

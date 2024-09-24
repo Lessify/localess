@@ -25,10 +25,28 @@ mat-card.browser {
   mat-card-content {
     height: 100%;
     padding: 0;
+    align-self: center;
     iframe {
       width: 100%;
+      min-width: 100%;
       height: calc(100% - 5px);
       border: none;
+      //border: #003dff 1px solid;
+      &.sm {
+        min-width: 640px
+      }
+      &.md {
+        min-width: 768px
+      }
+      &.lg {
+        min-width: 1024px
+      }
+      &.xl {
+        min-width: 1280px
+      }
+      &.xxl {
+        min-width: 1536px
+      }
     }
   }
 }
@@ -40,4 +58,8 @@ mat-card.browser {
 .subtitle {
   font: var(--sys-title-medium);
   color: var(--sys-secondary);
+}
+
+iframe {
+
 }

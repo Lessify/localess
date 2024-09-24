@@ -246,8 +246,8 @@ export class ContentsComponent {
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
-          title: 'Clone Content',
-          content: `Are you sure about clone Content with name: ${element.name}.`,
+          title: 'Clone Document',
+          content: `Are you sure about clone the Document with name: ${element.name}.`,
         },
       })
       .afterClosed()

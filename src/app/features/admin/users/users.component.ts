@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSort } from '@angular/material/sort';
@@ -25,7 +25,7 @@ export class UsersComponent implements OnInit {
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
-  isLoading = true;
+  isLoading = signal(true);
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
   displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'creationTime', 'lastSignInTime', 'actions'];
 
@@ -47,20 +47,30 @@ export class UsersComponent implements OnInit {
       .findAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: response => {
-          console.log(response);
-          this.dataSource = new MatTableDataSource<User>(response);
+        next: users => {
+          console.log(users);
+          this.dataSource.data = users;
+          this.dataSource.filterPredicate = this.userFilterPredicate;
           this.dataSource.sort = this.sort();
           this.dataSource.paginator = this.paginator();
-          this.isLoading = false;
+          this.isLoading.set(false);
           this.cd.markForCheck();
         },
         error: () => {
           this.notificationService.error('Users can not be loaded.');
-          this.isLoading = false;
+          this.isLoading.set(false);
           this.cd.markForCheck();
         },
       });
+  }
+
+  applyFilter(event: KeyboardEvent) {
+    this.dataSource.filter = (event.target as HTMLInputElement).value.toLowerCase();
+  }
+
+  userFilterPredicate(data: User, filter: string): boolean {
+    console.log(data, filter);
+    return data.email?.toLowerCase().includes(filter) || data.displayName?.toLowerCase().includes(filter) || false;
   }
 
   inviteDialog(): void {

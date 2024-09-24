@@ -9,6 +9,7 @@
     <span class="spacer"></span>
 
     <mat-button-toggle-group
+      hideSingleSelectionIndicator="true"
       (change)="settingsStore.setEditorEnabled(!settingsStore.editorEnabled())"
       [value]="settingsStore.editorEnabled()">
       <mat-button-toggle [value]="true" matTooltip="Design Mode">
@@ -123,6 +124,27 @@
                 <mat-card-title>{{ selectedEnvironment?.name }}</mat-card-title>
                 <mat-card-subtitle>{{ selectedEnvironment?.url }}</mat-card-subtitle>
                 <span class="spacer"></span>
+                <mat-button-toggle-group
+                  hideSingleSelectionIndicator="true"
+                  (change)="settingsStore.setEditorSize($event.value)"
+                  [value]="settingsStore.editorSize()"
+                  style="height: 42px">
+                  <mat-button-toggle value="" matTooltip="Unlimited">
+                    <mat-icon>screenshot_monitor</mat-icon>
+                  </mat-button-toggle>
+                  <mat-button-toggle value="sm" matTooltip="Smartphone: 640px">
+                    <mat-icon>smartphone</mat-icon>
+                  </mat-button-toggle>
+                  <mat-button-toggle value="md" matTooltip="Tablet: 768px">
+                    <mat-icon>tablet</mat-icon>
+                  </mat-button-toggle>
+                  <mat-button-toggle value="lg" matTooltip="Laptop: 1024px">
+                    <mat-icon>laptop_windows</mat-icon>
+                  </mat-button-toggle>
+                  <mat-button-toggle value="xl" matTooltip="Desktop: 1280px">
+                    <mat-icon>desktop_windows</mat-icon>
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
                 <button mat-icon-button matTooltip="Reload" (click)="changeEnvironment(selectedEnvironment)">
                   <mat-icon>refresh</mat-icon>
                 </button>
@@ -139,7 +161,7 @@
               </mat-card-header>
               <mat-divider />
               <mat-card-content>
-                <iframe id="previewId" #preview [src]="iframeUrl"></iframe>
+                <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()"></iframe>
               </mat-card-content>
             </mat-card>
           } @else {
