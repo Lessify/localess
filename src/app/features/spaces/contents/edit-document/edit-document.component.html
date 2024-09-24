@@ -129,7 +129,7 @@
                   (change)="settingsStore.setEditorSize($event.value)"
                   [value]="settingsStore.editorSize()"
                   style="height: 42px">
-                  <mat-button-toggle value="" matTooltip="Unlimited">
+                  <mat-button-toggle value="" matTooltip="Fullscreen">
                     <mat-icon>screenshot_monitor</mat-icon>
                   </mat-button-toggle>
                   <mat-button-toggle value="sm" matTooltip="Smartphone: 640px">
@@ -160,7 +160,7 @@
                 </mat-menu>
               </mat-card-header>
               <mat-divider />
-              <mat-card-content>
+              <mat-card-content [ngClass]="{ center: settingsStore.editorSize() !== '' }">
                 <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()"></iframe>
               </mat-card-content>
             </mat-card>

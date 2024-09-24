@@ -25,7 +25,9 @@ mat-card.browser {
   mat-card-content {
     height: 100%;
     padding: 0;
-    align-self: center;
+    &.center {
+      align-self: center;
+    }
     iframe {
       width: 100%;
       min-width: 100%;
