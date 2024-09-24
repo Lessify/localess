@@ -26,7 +26,7 @@ steps:
   # deploy to firebase
   - name: gcr.io/$PROJECT_ID/firebase
     id: 'firebase-deploy'
-    args: ['deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force', '--binary-authorization=default']
+    args: ['deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force']
   - name: 'gcr.io/cloud-builders/gsutil'
     id: 'gsutil-cors'
     args: ['cors', 'set', 'cors.json', 'gs://${_LOCALESS_FIREBASE_STORAGE_BUCKET}']
