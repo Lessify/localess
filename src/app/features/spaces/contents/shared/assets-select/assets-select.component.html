@@ -17,15 +17,14 @@
   </mat-card-header>
   <mat-divider></mat-divider>
   <mat-card-content>
-    <mat-list cdkDropList class="assets" (cdkDropListDropped)="assetDropDrop($event)">
+    <mat-list cdkDropList (cdkDropListDropped)="assetDropDrop($event)">
       @for (asset of assets; track asset.id; let idx = $index) {
         <mat-list-item cdkDrag cdkDragPreviewContainer="parent">
-          <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
           @if (asset.type.startsWith('image/')) {
             <img
               matListItemAvatar
-              class="border object-contain rounded bg-stripes-gray"
-              width="290"
+              class="border object-contain bg-stripes-gray !rounded"
+              width="200"
               height="200"
               alt="thumbnail"
               loading="lazy"
@@ -44,6 +43,8 @@
             <button mat-icon-button (click)="deleteAsset(idx)">
               <mat-icon>delete</mat-icon>
             </button>
+            &nbsp;&nbsp;
+            <mat-icon cdkDragHandle>drag_indicator</mat-icon>
           </mat-action-list>
         </mat-list-item>
       }

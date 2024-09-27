@@ -10,6 +10,7 @@ export enum ContentHistoryType {
 export type ContentHistory = ContentHistoryPublish | ContentHistoryCreate | ContentHistoryUpdate | ContentHistoryDelete;
 
 export interface ContentHistoryBase {
+  id: string;
   type: ContentHistoryType;
   createdAt: Timestamp;
   name?: string;

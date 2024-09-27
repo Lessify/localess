@@ -20,113 +20,129 @@
 @if (isLoading) {
   <mat-progress-bar mode="query" />
 } @else {
-  <div class="px-2 mx-auto mt-3">
+  <div class="full-screen">
     <form [formGroup]="form">
-      <div class="flex flex-row gap-4">
-        <div class="basis-1/3">
-          <mat-form-field>
-            <mat-label>Display Name</mat-label>
-            <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
-            <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
-            @if (form.controls['displayName'].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Description</mat-label>
-            <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
-            <mat-hint align="end">{{ form.controls['description'].value?.length || 0 }}/250</mat-hint>
-            @if (form.controls['description']?.errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Preview Field</mat-label>
-            <mat-select formControlName="previewField">
-              @for (field of fields.controls; track field.value.name) {
-                @if (
-                  ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(field.value.kind)
-                ) {
-                  <mat-option [value]="field.value.name">
-                    {{ field.value.displayName }} <span>#{{ field.value.name }}</span>
-                  </mat-option>
-                }
+      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
+        <mat-tab label="Fields">
+          <mat-drawer-container (backdropClick)="selectedFieldIdx = undefined">
+            <mat-drawer-content>
+              <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8" style="height: calc(100vh - 177px)">
+                <mat-nav-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+                  <mat-form-field>
+                    <mat-label>Name</mat-label>
+                    <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
+                    <button mat-stroked-button matTextSuffix color="accent" (click)="addField()" [disabled]="!newFieldName.valid">
+                      Add
+                    </button>
+                    @if (newFieldName.errors; as errors) {
+                      <mat-error>{{ fe.errors(errors) }}</mat-error>
+                    }
+                  </mat-form-field>
+                  @for (field of fields.controls; track field.value.name; let index = $index; let last = $last) {
+                    <mat-list-item
+                      cdkDrag
+                      cdkDragPreviewContainer="parent"
+                      (click)="selectComponent(index)"
+                      [activated]="index === selectedFieldIdx"
+                      [class.invalid]="field.invalid">
+                      <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
+                      <span matListItemTitle>
+                        {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
+                      </span>
+                      <span matListItemLine>
+                        <span class="badge">{{ field.value.kind }}</span>
+                        @if (field.value.translatable) {
+                          &nbsp;<span class="badge">Translatable</span>
+                        }
+                        @if (field.value.required) {
+                          &nbsp;<span class="badge">Required</span>
+                        }
+                      </span>
+                      <mat-action-list matListItemMeta>
+                        <button mat-icon-button (click)="removeComponent($event, index)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                        &nbsp;&nbsp;
+                        <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                      </mat-action-list>
+                    </mat-list-item>
+                    @if (!last) {
+                      <mat-divider />
+                    }
+                  }
+                </mat-nav-list>
+              </div>
+            </mat-drawer-content>
+            <mat-drawer position="end" [opened]="selectedFieldIdx !== undefined">
+              @if (fields.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
+                <div formArrayName="fields">
+                  <ll-schema-field-edit [form]="selectedComponent" [reservedNames]="fieldReservedNames" [schemas]="schemas" />
+                </div>
               }
-            </mat-select>
-            <mat-hint align="end">{{ form.controls['previewField'].value?.length || 0 }}/50</mat-hint>
-            @if (form.controls['previewField'].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Labels</mat-label>
-            <mat-chip-grid #chipGrid aria-label="Enter Labels">
-              @for (label of form.controls['labels'].value; track label) {
-                <mat-chip-row (removed)="removeLabel(label)">
-                  {{ label }}
-                  <button matChipRemove [attr.aria-label]="'Remove ' + label">
-                    <mat-icon>cancel</mat-icon>
-                  </button>
-                </mat-chip-row>
-              }
-            </mat-chip-grid>
-            <input
-              placeholder="New Label..."
-              [matChipInputFor]="chipGrid"
-              [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-              [matChipInputAddOnBlur]="true"
-              (matChipInputTokenEnd)="addLabel($event)" />
-            @if (form.controls['labels'].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
-          <mat-list cdkDropList class="ll-mat-list-gap" (cdkDropListDropped)="fieldDropDrop($event)">
-            <mat-divider></mat-divider>
-            <div mat-subheader>Fields</div>
+            </mat-drawer>
+          </mat-drawer-container>
+        </mat-tab>
+        <mat-tab label="Settings">
+          <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8">
             <mat-form-field>
-              <mat-label>Name</mat-label>
-              <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
-              <button mat-stroked-button matTextSuffix color="accent" (click)="addField()" [disabled]="!newFieldName.valid">Add</button>
-              @if (newFieldName.errors; as errors) {
+              <mat-label>Display Name</mat-label>
+              <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
+              <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
+              @if (form.controls['displayName'].errors; as errors) {
                 <mat-error>{{ fe.errors(errors) }}</mat-error>
               }
             </mat-form-field>
-            <mat-list-item
-              cdkDrag
-              cdkDragPreviewContainer="parent"
-              *ngFor="let field of fields.controls; let index = index"
-              (click)="selectComponent(index)"
-              [class.active]="index === selectedFieldIdx"
-              [class.invalid]="field.invalid">
-              <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
-              <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
-              <span matListItemTitle>
-                {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
-              </span>
-              <span matListItemLine>
-                <span class="badge">{{ field.value.kind }}</span>
-                @if (field.value.translatable) {
-                  &nbsp;<span class="badge">Translatable</span>
+            <mat-form-field>
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
+              <mat-hint align="end">{{ form.controls['description'].value?.length || 0 }}/250</mat-hint>
+              @if (form.controls['description']?.errors; as errors) {
+                <mat-error>{{ fe.errors(errors) }}</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Preview Field</mat-label>
+              <mat-select formControlName="previewField">
+                @for (field of fields.controls; track field.value.name) {
+                  @if (
+                    ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(field.value.kind)
+                  ) {
+                    <mat-option [value]="field.value.name">
+                      {{ field.value.displayName }} <span>#{{ field.value.name }}</span>
+                    </mat-option>
+                  }
                 }
-                @if (field.value.required) {
-                  &nbsp;<span class="badge">Required</span>
+              </mat-select>
+              <mat-hint align="end">{{ form.controls['previewField'].value?.length || 0 }}/50</mat-hint>
+              @if (form.controls['previewField'].errors; as errors) {
+                <mat-error>{{ fe.errors(errors) }}</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Labels</mat-label>
+              <mat-chip-grid #chipGrid aria-label="Enter Labels">
+                @for (label of form.controls['labels'].value; track label) {
+                  <mat-chip-row (removed)="removeLabel(label)">
+                    {{ label }}
+                    <button matChipRemove [attr.aria-label]="'Remove ' + label">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </mat-chip-row>
                 }
-              </span>
-              <mat-action-list matListItemMeta>
-                <button mat-icon-button (click)="removeComponent($event, index)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-                <mat-icon>arrow_right</mat-icon>
-              </mat-action-list>
-            </mat-list-item>
-          </mat-list>
-        </div>
-        @if (fields.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
-          <div class="basis-2/3" formArrayName="fields">
-            <ll-schema-field-edit [form]="selectedComponent" [reservedNames]="fieldReservedNames" [schemas]="schemas" />
+              </mat-chip-grid>
+              <input
+                placeholder="New Label..."
+                [matChipInputFor]="chipGrid"
+                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                [matChipInputAddOnBlur]="true"
+                (matChipInputTokenEnd)="addLabel($event)" />
+              @if (form.controls['labels'].errors; as errors) {
+                <mat-error>{{ fe.errors(errors) }}</mat-error>
+              }
+            </mat-form-field>
           </div>
-        }
-      </div>
+        </mat-tab>
+      </mat-tab-group>
     </form>
   </div>
 }

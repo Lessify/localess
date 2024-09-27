@@ -19,13 +19,13 @@
     <mat-divider></mat-divider>
     <mat-card-content>
       @if (asset && asset.kind === 'FILE') {
-        <mat-list class="assets">
+        <mat-list>
           <mat-list-item>
             @if (asset.type.startsWith('image/')) {
               <img
                 matListItemAvatar
-                class="border object-contain bg-stripes-gray"
-                width="290"
+                class="border object-contain bg-stripes-gray !rounded"
+                width="200"
                 height="200"
                 alt="thumbnail"
                 loading="lazy"

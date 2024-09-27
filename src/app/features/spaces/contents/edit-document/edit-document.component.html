@@ -115,7 +115,7 @@
 
 <mat-sidenav-container>
   <mat-sidenav-content>
-    <div class="container-full-screen container-fluid">
+    <div class="full-screen container-fluid">
       <mat-drawer-container autosize="true">
         <mat-drawer mode="side" [opened]="settingsStore.editorEnabled()">
           @if (selectedEnvironment) {
@@ -173,7 +173,7 @@
         </mat-drawer>
         <mat-drawer-content>
           @if (rootSchema) {
-            <div class="container-full-screen">
+            <div class="flex flex-col mx-auto max-w-screen-md p-4">
               <ll-breadcrumb>
                 @for (schemaPathItem of schemaPath; track schemaPathItem.contentId; let isFirst = $first) {
                   <ll-breadcrumb-item (click)="navigateToSchemaBackwards(schemaPathItem)" [home]="isFirst">

@@ -87,9 +87,9 @@ export class EditCompComponent implements OnInit {
           if (schema.type === SchemaType.NODE || schema.type === SchemaType.ROOT) {
             this.fields.clear();
             schema.fields?.forEach(it => this.addField(it));
-            if (this.selectedFieldIdx === undefined) {
-              this.selectComponent(this.fields.length - 1);
-            }
+            // if (this.selectedFieldIdx === undefined) {
+            //   this.selectComponent(this.fields.length - 1);
+            // }
           }
 
           this.isLoading = false;
