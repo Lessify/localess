@@ -44,7 +44,13 @@ mat-list.assets {
   }
 }
 
-mat-list,mat-nav-list[cdkDropList] {
+//.invalid {
+//  border: solid 2px mat.m2-get-color-from-palette($error-colors);
+//}
+// Drag And Drop
+mat-list,mat-nav-list.cdk-drop-list {
+  // This is the element that will be rendered next to the user's cursor as they're dragging an item in a sortable list.
+  // By default the element looks exactly like the element that is being dragged.
   .cdk-drag-preview {
     box-sizing: border-box;
     border-radius: 4px;
@@ -52,12 +58,17 @@ mat-list,mat-nav-list[cdkDropList] {
     0 8px 10px 1px rgba(0, 0, 0, 0.14),
     0 3px 14px 2px rgba(0, 0, 0, 0.12);
   }
-
+  // This is element that will be shown instead of the real element as it's being dragged inside a cdkDropList.
+  // By default this will look exactly like the element that is being sorted.
   .cdk-drag-placeholder {
     opacity: 0;
   }
-
+  // Animate an item that has been dropped.
   .cdk-drag-animating {
     transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+  // Class that is added to the host element of the cdkDragHandle directive.
+  .cdk-drag-handle {
+    cursor: grab;
   }
 }

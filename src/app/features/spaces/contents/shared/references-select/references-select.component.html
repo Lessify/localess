@@ -14,16 +14,26 @@
   </mat-card-header>
   <mat-divider></mat-divider>
   <mat-card-content>
-    <mat-list cdkDropList class="assets" (cdkDropListDropped)="referenceDropDrop($event)">
-      @for (item of contents; track item.id; let idx = $index) {
+    <mat-list cdkDropList (cdkDropListDropped)="referenceDropDrop($event)">
+      @for (content of contents; track content.id; let index = $index) {
         <mat-list-item cdkDrag cdkDragPreviewContainer="parent">
-          <mat-icon matListItemIcon cdkDragHandle>drag_indicator</mat-icon>
-          <div matListItemTitle>{{ item.name }} #{{ item.slug }}</div>
-          <div matListItemLine>{{ item.fullSlug }}</div>
+          <div matListItemIcon class="!self-center">
+            @if (content?.publishedAt === undefined) {
+              <ll-status mode="offline" matTooltip="Not published" />
+            } @else if (content?.publishedAt?.seconds > content?.updatedAt?.seconds) {
+              <ll-status mode="online" matTooltip="Published" />
+            } @else if (content?.publishedAt && content?.publishedAt?.seconds < content?.updatedAt?.seconds) {
+              <ll-status mode="away" matTooltip="Draft" />
+            }
+          </div>
+          <div matListItemTitle>{{ content.name }} #{{ content.slug }}</div>
+          <div matListItemLine>{{ content.fullSlug }}</div>
           <mat-action-list matListItemMeta>
-            <button mat-icon-button (click)="deleteReference(idx)">
+            <button mat-icon-button (click)="deleteReference(index)">
               <mat-icon>delete</mat-icon>
             </button>
+            &nbsp;&nbsp;
+            <mat-icon cdkDragHandle>drag_indicator</mat-icon>
           </mat-action-list>
         </mat-list-item>
       }
