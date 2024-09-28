@@ -20,89 +20,93 @@
 @if (isLoading) {
   <mat-progress-bar mode="query" />
 } @else {
-  <div class="px-2 mx-auto mt-3">
+  <div class="full-screen">
     <form [formGroup]="form">
-      <div class="flex flex-row gap-4">
-        <div class="basis-1/3">
-          <mat-form-field>
-            <mat-label>Display Name</mat-label>
-            <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
-            <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
-            @if (form.controls['displayName'].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Description</mat-label>
-            <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
-            <mat-hint align="end">{{ form.controls['description'].value?.length || 0 }}/250</mat-hint>
-            @if (form.controls['description']?.errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Labels</mat-label>
-            <mat-chip-grid #chipGrid aria-label="Enter Labels">
-              @for (label of form.controls['labels'].value; track label) {
-                <mat-chip-row (removed)="removeLabel(label)">
-                  {{ label }}
-                  <button matChipRemove [attr.aria-label]="'Remove ' + label">
-                    <mat-icon>cancel</mat-icon>
-                  </button>
-                </mat-chip-row>
-              }
-            </mat-chip-grid>
-            <input
-              placeholder="New Label..."
-              [matChipInputFor]="chipGrid"
-              [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-              [matChipInputAddOnBlur]="true"
-              (matChipInputTokenEnd)="addLabel($event)" />
-          </mat-form-field>
-        </div>
-        <div class="basis-2/3">
-          <h3>Values</h3>
-          <mat-divider></mat-divider>
-          <br />
-          <mat-accordion cdkDropList multi formArrayName="values" (cdkDropListDropped)="valueDropDrop($event)">
-            @for (control of values.controls; track control; let idx = $index) {
-              <mat-expansion-panel cdkDrag [formGroupName]="idx" expanded [class.invalid]="control.invalid">
-                <mat-expansion-panel-header>
-                  <mat-panel-title>
-                    <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                    Option {{ idx + 1 }}
-                    <button mat-icon-button (click)="removeOptionForm(idx)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </mat-panel-title>
-                </mat-expansion-panel-header>
+      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
+        <mat-tab label="Values">
+          <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8" style="height: calc(100vh - 177px)">
+            <mat-accordion cdkDropList multi="true" formArrayName="values" (cdkDropListDropped)="valueDropDrop($event)">
+              @for (control of values.controls; track control; let index = $index) {
+                <mat-expansion-panel cdkDrag [formGroupName]="index" expanded="true" [class.invalid]="control.invalid">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                      Option {{ index + 1 }}
+                      <button mat-icon-button (click)="removeOptionForm(index)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </mat-panel-title>
+                  </mat-expansion-panel-header>
 
-                <mat-form-field style="width: 50%; padding-right: 10px">
-                  <mat-label>Name</mat-label>
-                  <input matInput type="text" formControlName="name" autocomplete="off" />
-                  <mat-hint align="end">{{ control.value.name?.length || 0 }}/50</mat-hint>
-                  @if (control.controls['name']?.errors; as errors) {
-                    <mat-error>{{ fe.errors(errors) }}</mat-error>
-                  }
-                </mat-form-field>
-                <mat-form-field style="width: 50%">
-                  <mat-label>Value</mat-label>
-                  <input matInput type="text" formControlName="value" autocomplete="off" />
-                  <mat-hint align="end">{{ control.value.value?.length || 0 }}/50</mat-hint>
-                  @if (control.controls['value']?.errors; as errors) {
-                    <mat-error>{{ fe.errors(errors) }}</mat-error>
-                  }
-                </mat-form-field>
-              </mat-expansion-panel>
-            }
-            <mat-action-row>
-              <button mat-icon-button (click)="addValueForm()">
-                <mat-icon>add</mat-icon>
-              </button>
-            </mat-action-row>
-          </mat-accordion>
-        </div>
-      </div>
+                  <mat-form-field style="width: 50%; padding-right: 10px">
+                    <mat-label>Name</mat-label>
+                    <input matInput type="text" formControlName="name" autocomplete="off" />
+                    <mat-hint align="end">{{ control.value.name?.length || 0 }}/50</mat-hint>
+                    @if (control.controls['name']?.errors; as errors) {
+                      <mat-error>{{ fe.errors(errors) }}</mat-error>
+                    }
+                  </mat-form-field>
+                  <mat-form-field style="width: 50%">
+                    <mat-label>Value</mat-label>
+                    <input matInput type="text" formControlName="value" autocomplete="off" />
+                    <mat-hint align="end">{{ control.value.value?.length || 0 }}/50</mat-hint>
+                    @if (control.controls['value']?.errors; as errors) {
+                      <mat-error>{{ fe.errors(errors) }}</mat-error>
+                    }
+                  </mat-form-field>
+                </mat-expansion-panel>
+              }
+              <mat-action-row>
+                <button mat-icon-button (click)="addValueForm()">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </mat-action-row>
+            </mat-accordion>
+          </div>
+        </mat-tab>
+        <mat-tab label="Settings">
+          <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8">
+            <mat-form-field>
+              <mat-label>Display Name</mat-label>
+              <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
+              <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
+              @if (form.controls['displayName'].errors; as errors) {
+                <mat-error>{{ fe.errors(errors) }}</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
+              <mat-hint align="end">{{ form.controls['description'].value?.length || 0 }}/250</mat-hint>
+              @if (form.controls['description']?.errors; as errors) {
+                <mat-error>{{ fe.errors(errors) }}</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Labels</mat-label>
+              <mat-chip-grid #chipGrid aria-label="Enter Labels">
+                @for (label of form.controls['labels'].value; track label) {
+                  <mat-chip-row (removed)="removeLabel(label)">
+                    {{ label }}
+                    <button matChipRemove [attr.aria-label]="'Remove ' + label">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </mat-chip-row>
+                }
+              </mat-chip-grid>
+              <input
+                placeholder="New Label..."
+                [matChipInputFor]="chipGrid"
+                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                [matChipInputAddOnBlur]="true"
+                (matChipInputTokenEnd)="addLabel($event)" />
+              @if (form.controls['labels'].errors; as errors) {
+                <mat-error>{{ fe.errors(errors) }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
     </form>
   </div>
 }

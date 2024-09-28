@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
-import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
+import { Schema, SchemaEnumUpdate, SchemaEnumValue, schemaFieldKindDescriptions, SchemaType } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -145,4 +145,6 @@ export class EditEnumComponent implements OnInit {
       }),
     );
   }
+
+  protected readonly schemaFieldKindDescriptions = schemaFieldKindDescriptions;
 }
