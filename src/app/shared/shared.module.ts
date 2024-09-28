@@ -49,6 +49,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ReleasesDialogComponent } from '@shared/components/releases-dialog/releases-dialog.component';
 import { ReferencesSelectDialogComponent } from '@shared/components/references-select-dialog';
 import { StatusComponent } from '@shared/components/status';
+import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -89,7 +90,7 @@ const MATERIAL_MODULES: any[] = [
 ];
 
 const SHARED_PIPES: any[] = [CanUserPerformPipe, DigitalStorePipe, TimeDurationPipe, TranslationFilterPipe];
-const SHARED_DIRECTIVES: any[] = [FileDragAndDropDirective];
+const SHARED_DIRECTIVES: any[] = [FileDragAndDropDirective, ImagePreviewDirective];
 
 const SHARED_COMPONENTS: any[] = [
   AssetsSelectDialogComponent,
