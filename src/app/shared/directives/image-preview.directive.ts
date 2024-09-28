@@ -1,17 +1,33 @@
-import { Directive, ElementRef, HostListener } from '@angular/core';
+import { Directive, ElementRef, HostListener, input } from '@angular/core';
 
 @Directive({
-  selector: '[llImagePreview]',
+  selector: 'img[llImagePreview]',
 })
 export class ImagePreviewDirective {
-  constructor(private hostElement: ElementRef<HTMLImageElement>) {
-    console.log('ImagePreviewDirective', hostElement.nativeElement);
+  scale = input<number>(2, { alias: 'llImagePreview' });
+
+  constructor(private hostElement: ElementRef<HTMLImageElement>) {}
+
+  @HostListener('mouseover')
+  public onMouseOver() {
+    if (this.hostElement.nativeElement.parentElement) {
+      this.hostElement.nativeElement.parentElement.style.overflow = 'visible';
+    }
+    this.hostElement.nativeElement.style.zIndex = '50';
+    this.hostElement.nativeElement.style.transform = `scale(${this.scale() || 2})`;
+    this.hostElement.nativeElement.style.transition = 'transform 0.3s ease-in-out';
   }
 
-  @HostListener('mouseover', ['$event'])
-  public onMouseOver(event: MouseEvent) {
-    const img = event.target as HTMLImageElement;
-    console.log('mouseover', event);
-    console.log('mouseover', img.srcset);
+  @HostListener('mouseout')
+  public onMouseOut() {
+    this.hostElement.nativeElement.style.transform = 'scale(1)';
+    this.hostElement.nativeElement.style.zIndex = '';
+    setTimeout(() => {
+      if (this.hostElement.nativeElement.parentElement) {
+        this.hostElement.nativeElement.style.transform = '';
+        this.hostElement.nativeElement.style.transition = '';
+        this.hostElement.nativeElement.parentElement.style.overflow = '';
+      }
+    }, 400);
   }
 }
