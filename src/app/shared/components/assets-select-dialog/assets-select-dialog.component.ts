@@ -21,7 +21,6 @@ import { MatTableDataSource } from '@angular/material/table';
 import { AssetService } from '@shared/services/asset.service';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { SpaceService } from '@shared/services/space.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PathItem } from '@shared/store/space.store';
 
@@ -60,7 +59,6 @@ export class AssetsSelectDialogComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly assetService: AssetService,
-    private readonly spaceService: SpaceService,
     readonly fe: FormErrorHandlerService,
     private readonly cd: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA)

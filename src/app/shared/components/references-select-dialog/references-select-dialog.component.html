@@ -65,7 +65,9 @@
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }}</mat-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+      </mat-cell>
     </ng-container>
 
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>

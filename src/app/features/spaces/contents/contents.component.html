@@ -126,15 +126,21 @@
     </ng-container>
     <ng-container matColumnDef="publishedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="publishedAt"> Published At</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.publishedAt?.toDate() | date: 'medium' }}</mat-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.publishedAt?.toDate() | date: 'medium'">
+        {{ element.publishedAt?.toDate() | date: 'mediumDate' }}
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.createdAt?.toDate() | date: 'medium' }}</mat-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.createdAt?.toDate() | date: 'medium'">
+        {{ element.createdAt?.toDate() | date: 'mediumDate' }}
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }}</mat-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+      </mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="actions">

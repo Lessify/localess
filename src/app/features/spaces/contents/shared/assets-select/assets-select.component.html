@@ -34,12 +34,12 @@
             <mat-icon matListItemIcon>file_present</mat-icon>
           }
           <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
-          <div matListItemLine>
+          <code matListItemLine>
             {{ asset.size | digitalStore }}
             @if (asset.metadata; as metadata) {
               | W{{ metadata.width }} x H{{ metadata.height }}
             }
-          </div>
+          </code>
           <mat-action-list matListItemMeta>
             <button mat-icon-button (click)="deleteAsset(idx)">
               <mat-icon>delete</mat-icon>

@@ -14,16 +14,7 @@ mat-cell {
   &.mat-column-status {
     max-width: 80px;
   }
-  &.mat-column-publishedAt {
-    max-width: 220px;
-  }
-  &.mat-column-createdAt {
-    max-width: 220px;
-  }
   &.mat-column-updatedAt {
-    max-width: 220px;
-  }
-  &.mat-column-actions {
-    max-width: 200px;
+    max-width: 130px;
   }
 }

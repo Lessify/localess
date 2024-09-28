@@ -53,13 +53,13 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div>
-          <div>{{ element.name }}{{ element.extension }}</div>
+          <div class="break-all">{{ element.name }}{{ element.extension }}</div>
           @if (element.metadata; as metadata) {
-            <div class="fw-light">
+            <code class="fw-light">
               @if (metadata.width && metadata.height) {
                 W{{ metadata.width }} x H{{ metadata.height }}
               }
-            </div>
+            </code>
           }
         </div>
       </mat-cell>
@@ -74,7 +74,9 @@
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.updatedAt?.toDate() | date: 'medium' }}</mat-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+      </mat-cell>
     </ng-container>
 
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>

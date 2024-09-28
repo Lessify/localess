@@ -28,7 +28,7 @@ export class TasksComponent implements OnInit {
   now = Date.now();
   isLoading = true;
   dataSource: MatTableDataSource<Task> = new MatTableDataSource<Task>([]);
-  displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
