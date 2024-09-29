@@ -94,11 +94,6 @@
             <mat-icon>rebase_edit</mat-icon>
           </button>
         }
-        @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-          <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit">
-            <mat-icon>edit</mat-icon>
-          </button>
-        }
         @if ('SCHEMA_DELETE' | canUserPerform | async) {
           <button mat-icon-button (click)="openDeleteDialog($event, element)" matTooltip="Delete">
             <mat-icon>delete</mat-icon>
@@ -107,7 +102,7 @@
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>
   <mat-paginator></mat-paginator>
 </div>

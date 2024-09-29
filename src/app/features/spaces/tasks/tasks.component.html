@@ -16,11 +16,53 @@
     </ng-container>
     <ng-container matColumnDef="kind">
       <mat-header-cell *matHeaderCellDef mat-sort-header="kind"> Kind</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.kind }}</mat-cell>
+      <mat-cell *matCellDef="let element">
+        @switch (element.kind) {
+          @case ('ASSET_EXPORT') {
+            Asset Export
+          }
+          @case ('ASSET_IMPORT') {
+            Asset Import
+          }
+          @case ('CONTENT_EXPORT') {
+            Content Export
+          }
+          @case ('CONTENT_IMPORT') {
+            Content Import
+          }
+          @case ('SCHEMA_EXPORT') {
+            Schema Export
+          }
+          @case ('SCHEMA_IMPORT') {
+            Schema Import
+          }
+          @case ('TRANSLATION_EXPORT') {
+            Translation Export
+          }
+          @case ('TRANSLATION_IMPORT') {
+            Translation Import
+          }
+        }
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="status">
       <mat-header-cell *matHeaderCellDef mat-sort-header="status"> Status</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.status }}</mat-cell>
+      <mat-cell *matCellDef="let element">
+        @switch (element.status) {
+          @case ('INITIATED') {
+            <mat-icon [matTooltip]="element.status">pending</mat-icon>
+          }
+          @case ('IN_PROGRESS') {
+            <mat-icon [matTooltip]="element.status">hourglass</mat-icon>
+          }
+          @case ('FINISHED') {
+            <mat-icon [matTooltip]="element.status">done</mat-icon>
+          }
+          @case ('ERROR') {
+            <mat-icon [matTooltip]="element.status">error</mat-icon>
+          }
+        }
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="file">
       <mat-header-cell *matHeaderCellDef> File</mat-header-cell>

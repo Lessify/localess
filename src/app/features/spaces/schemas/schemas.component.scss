@@ -13,12 +13,8 @@ mat-form-field {
   color: var(--sys-secondary);
 }
 
-mat-form-field {
-  width: 100%;
-
-  input {
-    width: 100%;
-  }
+mat-row {
+  cursor: pointer;
 }
 
 mat-header-cell,
@@ -36,6 +32,6 @@ mat-cell {
   }
 
   &.mat-column-actions {
-    max-width: 180px;
+    max-width: 125px;
   }
 }

@@ -181,7 +181,7 @@ export class SchemasComponent implements OnInit {
       });
   }
 
-  openEditDialog(element: Schema): void {
+  onRowSelect(element: Schema): void {
     if (element.type === SchemaType.ROOT || element.type === SchemaType.NODE) {
       this.router.navigate(['features', 'spaces', this.spaceId(), 'schemas', 'comp', element.id]);
     } else if (element.type === SchemaType.ENUM) {

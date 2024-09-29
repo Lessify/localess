@@ -9,11 +9,11 @@ mat-cell {
   }
 
   &.mat-column-kind {
-    max-width: 190px;
+    max-width: 160px;
   }
 
   &.mat-column-status {
-    max-width: 120px;
+    max-width: 80px;
   }
 
   &.mat-column-description {
@@ -29,6 +29,6 @@ mat-cell {
   }
 
   &.mat-column-actions {
-    max-width: 140px;
+    max-width: 125px;
   }
 }
