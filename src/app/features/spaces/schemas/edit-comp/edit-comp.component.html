@@ -76,7 +76,7 @@
             <mat-drawer position="end" [opened]="selectedFieldIdx !== undefined">
               @if (fields.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
                 <div formArrayName="fields">
-                  <ll-schema-field-edit [form]="selectedComponent" [reservedNames]="fieldReservedNames" [schemas]="schemas" />
+                  <ll-schema-field-edit [form]="selectedComponent" [schemas]="schemas" />
                 </div>
               }
             </mat-drawer>

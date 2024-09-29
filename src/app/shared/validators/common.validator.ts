@@ -88,5 +88,6 @@ export enum CommonPattern {
   URL_SLUG = '[a-z]+[a-zA-Z0-9-_]*[a-zA-Z0-9]+',
   ID = '[a-zA-Z]+[a-zA-Z0-9-_.]*[a-zA-Z0-9]+',
   SCHEMA_ID = '[a-zA-Z]+[a-zA-Z0-9]+',
+  ENUM_VALUE = '[a-zA-Z]+[a-zA-Z0-9-_]*[a-zA-Z0-9]+',
   //URL = ''//'(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?'
 }

@@ -1,18 +1,18 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
-import { Schema, SchemaEnumUpdate, SchemaEnumValue, schemaFieldKindDescriptions, SchemaType } from '@shared/models/schema.model';
+import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaService } from '@shared/services/schema.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
-import { SpaceService } from '@shared/services/space.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { LocalSettingsStore } from '@shared/store/local-settings.store';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
+import { CommonValidator } from '@shared/validators/common.validator';
 
 @Component({
   selector: 'll-schema-edit-enum',
@@ -27,6 +27,12 @@ export class EditEnumComponent implements OnInit {
 
   entity?: Schema;
   schemas: Schema[] = [];
+
+  selectedFieldIdx?: number;
+
+  fieldReservedNames: string[] = [];
+  newFieldName = this.fb.control('', [...SchemaValidator.FIELD_OPTION_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
+
   //Loadings
   isLoading = true;
   isSaveLoading = false;
@@ -48,8 +54,6 @@ export class EditEnumComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
     private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly spaceService: SpaceService,
     private readonly schemaService: SchemaService,
     private readonly notificationService: NotificationService,
   ) {}
@@ -63,6 +67,7 @@ export class EditEnumComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([schemas, schema]) => {
+          this.fieldReservedNames = [];
           this.schemas = schemas;
           this.entity = schema;
 
@@ -126,25 +131,67 @@ export class EditEnumComponent implements OnInit {
     return this.form.controls['values'] as FormArray<FormGroup>;
   }
 
-  valueDropDrop(event: CdkDragDrop<string[]>): void {
+  valueControlAt(index: number, controlName: string): AbstractControl | undefined {
+    return this.values.at(index)?.controls[controlName];
+  }
+
+  selectComponent(index: number) {
+    this.selectedFieldIdx = undefined;
+    this.cd.detectChanges();
+    this.selectedFieldIdx = index;
+    this.cd.markForCheck();
+  }
+
+  removeComponent(event: MouseEvent, index: number) {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    // Remove name from reserved names
+    const cValue = this.valueControlAt(index, 'name')?.value;
+    if (cValue) {
+      const idx = this.fieldReservedNames.indexOf(cValue);
+      if (idx !== -1) {
+        this.fieldReservedNames.splice(index, 1);
+      }
+    }
+    // Remove Component
+    this.values?.removeAt(index);
+  }
+
+  addValueForm(element?: SchemaEnumValue): void {
+    if (element) {
+      this.values?.push(
+        this.fb.group({
+          name: this.fb.control(element.name, [
+            ...SchemaValidator.FIELD_OPTION_NAME,
+            CommonValidator.reservedName(this.fieldReservedNames, element.name),
+          ]),
+          value: this.fb.control(element.value, SchemaValidator.FIELD_OPTION_VALUE),
+        }),
+      );
+      this.fieldReservedNames.push(element.name);
+    } else {
+      const fieldName = this.newFieldName.value || '';
+      this.values?.push(
+        this.fb.group({
+          name: this.fb.control<string>(fieldName, [
+            ...SchemaValidator.FIELD_OPTION_NAME,
+            CommonValidator.reservedName(this.fieldReservedNames, fieldName),
+          ]),
+          value: this.fb.control<string>(fieldName, SchemaValidator.FIELD_OPTION_VALUE),
+        }),
+      );
+      this.fieldReservedNames.push(fieldName);
+      this.newFieldName.reset();
+      this.selectComponent(this.values.length - 1);
+    }
+  }
+
+  // Drag and Drop
+  fieldDropDrop(event: CdkDragDrop<string[]>): void {
     if (event.previousIndex === event.currentIndex) return;
     const tmp = this.values.at(event.previousIndex);
     this.values.removeAt(event.previousIndex);
     this.values.insert(event.currentIndex, tmp);
   }
-
-  removeOptionForm(idx: number): void {
-    this.values?.removeAt(idx);
-  }
-
-  addValueForm(element?: SchemaEnumValue): void {
-    this.values?.push(
-      this.fb.group({
-        name: this.fb.control(element?.name || '', SchemaValidator.FIELD_OPTION_NAME),
-        value: this.fb.control(element?.value || '', SchemaValidator.FIELD_OPTION_VALUE),
-      }),
-    );
-  }
-
-  protected readonly schemaFieldKindDescriptions = schemaFieldKindDescriptions;
 }

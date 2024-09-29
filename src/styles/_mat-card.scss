@@ -8,6 +8,6 @@ mat-card {
     background-color: transparent;
   }
   &.invalid {
-    border: solid 2px mat.m2-get-color-from-palette($error-colors);
+    border: solid 2px var(--sys-error);
   }
 }

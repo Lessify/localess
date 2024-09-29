@@ -14,6 +14,7 @@ import { AssetService } from '@shared/services/asset.service';
 import { EditEnumComponent } from './edit-enum/edit-enum.component';
 import { EditCompComponent } from './edit-comp/edit-comp.component';
 import { EditIdDialogComponent } from './edit-id-dialog';
+import { EditValueComponent } from './shared/edit-value/edit-value.component';
 
 @NgModule({
   declarations: [
@@ -21,6 +22,7 @@ import { EditIdDialogComponent } from './edit-id-dialog';
     AddDialogComponent,
     EditIdDialogComponent,
     EditFieldComponent,
+    EditValueComponent,
     EditCompComponent,
     EditEnumComponent,
     ExportDialogComponent,

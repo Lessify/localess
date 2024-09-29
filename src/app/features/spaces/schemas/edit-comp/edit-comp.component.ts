@@ -37,7 +37,6 @@ export class EditCompComponent implements OnInit {
   entity?: Schema;
   schemas: Schema[] = [];
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
-  fieldNameReadonly = true;
 
   selectedFieldIdx?: number;
 
@@ -79,6 +78,7 @@ export class EditCompComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([schemas, schema]) => {
+          this.fieldReservedNames = [];
           this.schemas = schemas;
           this.entity = schema;
 
@@ -306,7 +306,6 @@ export class EditCompComponent implements OnInit {
   selectComponent(index: number): void {
     this.selectedFieldIdx = undefined;
     this.cd.detectChanges();
-    this.fieldNameReadonly = true;
     this.selectedFieldIdx = index;
     this.cd.markForCheck();
   }

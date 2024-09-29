@@ -67,7 +67,8 @@ export class SchemaValidator {
 
   public static FIELD_OPTION_VALUE: ValidatorFn[] = [
     Validators.required,
-    CommonValidator.noSpaceAround,
+    CommonValidator.noSpace,
+    Validators.pattern(CommonPattern.ENUM_VALUE),
     Validators.minLength(1),
     Validators.maxLength(50),
   ];

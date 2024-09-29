@@ -44,9 +44,15 @@ mat-list.assets {
   }
 }
 
-//.invalid {
-//  border: solid 2px mat.m2-get-color-from-palette($error-colors);
-//}
+mat-list,mat-nav-list {
+  mat-list-item {
+    &.invalid {
+      border: dashed 1px var(--sys-error);
+      @apply bg-stripes-red
+    }
+  }
+}
+
 // Drag And Drop
 mat-list,mat-nav-list.cdk-drop-list {
   // This is the element that will be rendered next to the user's cursor as they're dragging an item in a sortable list.

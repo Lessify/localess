@@ -24,7 +24,6 @@ import { LocalSettingsStore } from '@shared/store/local-settings.store';
 export class EditFieldComponent implements OnInit {
   // Input
   @Input() form: FormGroup = this.fb.group({});
-  @Input() reservedNames: string[] = [];
   schemas = input.required<Schema[]>();
 
   fieldKinds = Object.values(SchemaFieldKind);

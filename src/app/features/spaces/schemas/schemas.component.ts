@@ -32,11 +32,6 @@ import { TaskService } from '@shared/services/task.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-
-type TableFilter = {
-  labels?: string[];
-};
 
 @Component({
   selector: 'll-schemas',
@@ -118,40 +113,24 @@ export class SchemasComponent implements OnInit {
       });
   }
 
-  applyFilter(): void {
-    const filter: TableFilter = {};
-    if (this.filterLabels().length > 0) {
-      filter.labels = this.filterLabels();
-    }
-    this.dataSource.filter = JSON.stringify(filter);
+  applyFilter(event: KeyboardEvent): void {
+    this.dataSource.filter = (event.target as HTMLInputElement).value.toLowerCase();
   }
 
   schemaFilterPredicate(data: Schema, filter: string): boolean {
-    const tableFilter: TableFilter = JSON.parse(filter);
-    if (tableFilter.labels && tableFilter.labels.length > 0) {
-      return tableFilter.labels.every(label => data.labels?.includes(label));
+    if (data.id.toLowerCase().includes(filter)) {
+      return true;
     }
-    return true;
-  }
-
-  removeLabel(label: string): void {
-    this.filterLabels.update(it => {
-      const idx = it.indexOf(label);
-      if (idx < 0) {
-        return it;
-      }
-      it.splice(idx, 1);
-      return [...it];
-    });
-    this.applyFilter();
-  }
-
-  selectedLabel(event: MatAutocompleteSelectedEvent): void {
-    const { option } = event;
-    this.filterLabels.update(it => [...it, option.viewValue]);
-    this.currentLabel.set('');
-    option.deselect();
-    this.applyFilter();
+    if (data.displayName?.toLowerCase().includes(filter)) {
+      return true;
+    }
+    if (data.description?.toLowerCase().includes(filter)) {
+      return true;
+    }
+    if (data.labels && data.labels.length > 0) {
+      return data.labels.some(label => label.toLowerCase().includes(filter));
+    }
+    return false;
   }
 
   openAddDialog(): void {

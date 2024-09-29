@@ -24,45 +24,53 @@
     <form [formGroup]="form">
       <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
         <mat-tab label="Values">
-          <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8" style="height: calc(100vh - 177px)">
-            <mat-accordion cdkDropList multi="true" formArrayName="values" (cdkDropListDropped)="valueDropDrop($event)">
-              @for (control of values.controls; track control; let index = $index) {
-                <mat-expansion-panel cdkDrag [formGroupName]="index" expanded="true" [class.invalid]="control.invalid">
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                      Option {{ index + 1 }}
-                      <button mat-icon-button (click)="removeOptionForm(index)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
-
-                  <mat-form-field style="width: 50%; padding-right: 10px">
+          <mat-drawer-container (backdropClick)="selectedFieldIdx = undefined">
+            <mat-drawer-content>
+              <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8" style="height: calc(100vh - 177px)">
+                <mat-nav-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+                  <mat-form-field>
                     <mat-label>Name</mat-label>
-                    <input matInput type="text" formControlName="name" autocomplete="off" />
-                    <mat-hint align="end">{{ control.value.name?.length || 0 }}/50</mat-hint>
-                    @if (control.controls['name']?.errors; as errors) {
+                    <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
+                    <button mat-stroked-button matTextSuffix color="accent" (click)="addValueForm()" [disabled]="!newFieldName.valid">
+                      Add
+                    </button>
+                    @if (newFieldName.errors; as errors) {
                       <mat-error>{{ fe.errors(errors) }}</mat-error>
                     }
                   </mat-form-field>
-                  <mat-form-field style="width: 50%">
-                    <mat-label>Value</mat-label>
-                    <input matInput type="text" formControlName="value" autocomplete="off" />
-                    <mat-hint align="end">{{ control.value.value?.length || 0 }}/50</mat-hint>
-                    @if (control.controls['value']?.errors; as errors) {
-                      <mat-error>{{ fe.errors(errors) }}</mat-error>
+                  @for (field of values.controls; track field.value.name; let index = $index; let last = $last) {
+                    <mat-list-item
+                      cdkDrag
+                      cdkDragPreviewContainer="parent"
+                      (click)="selectComponent(index)"
+                      [activated]="index === selectedFieldIdx"
+                      [class.invalid]="field.invalid">
+                      <span matListItemTitle>
+                        {{ field.value.name }} <span class="field-id">#{{ field.value.value }}</span>
+                      </span>
+                      <mat-action-list matListItemMeta>
+                        <button mat-icon-button (click)="removeComponent($event, index)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                        &nbsp;&nbsp;
+                        <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                      </mat-action-list>
+                    </mat-list-item>
+                    @if (!last) {
+                      <mat-divider />
                     }
-                  </mat-form-field>
-                </mat-expansion-panel>
+                  }
+                </mat-nav-list>
+              </div>
+            </mat-drawer-content>
+            <mat-drawer position="end" [opened]="selectedFieldIdx !== undefined">
+              @if (values.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
+                <div formArrayName="values">
+                  <ll-schema-value-edit [form]="selectedComponent" />
+                </div>
               }
-              <mat-action-row>
-                <button mat-icon-button (click)="addValueForm()">
-                  <mat-icon>add</mat-icon>
-                </button>
-              </mat-action-row>
-            </mat-accordion>
-          </div>
+            </mat-drawer>
+          </mat-drawer-container>
         </mat-tab>
         <mat-tab label="Settings">
           <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8">

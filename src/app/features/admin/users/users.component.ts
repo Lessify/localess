@@ -69,7 +69,6 @@ export class UsersComponent implements OnInit {
   }
 
   userFilterPredicate(data: User, filter: string): boolean {
-    console.log(data, filter);
     return data.email?.toLowerCase().includes(filter) || data.displayName?.toLowerCase().includes(filter) || false;
   }
 

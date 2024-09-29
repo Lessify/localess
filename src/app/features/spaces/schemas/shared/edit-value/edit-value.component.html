@@ -1,0 +1,34 @@
+<div class="p-4">
+  <form [formGroup]="form">
+    <mat-form-field>
+      <mat-label>Display Name</mat-label>
+      <input matInput type="text" formControlName="name" autocomplete="off" />
+      <mat-hint>Shown to content creators.</mat-hint>
+      <mat-hint align="end">{{ form.value.name?.length || 0 }}/50</mat-hint>
+      @if (form.controls['name']?.errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Value</mat-label>
+      <input matInput type="text" formControlName="value" autocomplete="off" />
+      <mat-hint>Technical representation stored in data structure.</mat-hint>
+      <mat-hint align="end">{{ form.value.value?.length || 0 }}/50</mat-hint>
+      @if (form.controls['value']?.errors; as errors) {
+        <mat-error>{{ fe.errors(errors) }}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</div>
+
+@if (settingsStore.debugEnabled()) {
+  <mat-accordion [multi]="true">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Form : {{ form?.valid }}</mat-panel-title>
+      </mat-expansion-panel-header>
+      <pre>{{ form.value | json }}</pre>
+      <pre>{{ form.errors | json }}</pre>
+    </mat-expansion-panel>
+  </mat-accordion>
+}

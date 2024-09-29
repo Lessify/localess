@@ -141,7 +141,10 @@
       <mat-form-field>
         <mat-label>Source</mat-label>
         <mat-select formControlName="source">
-          <mat-option value="self">Self - <i>values will be defined here</i></mat-option>
+          <mat-option value="self" matTooltip="Deprecated, Will be removed in future releases.">
+            Self - <i>values will be defined here</i>
+            <strong> (Deprecated, Will be removed in future releases.)</strong>
+          </mat-option>
           @for (schema of enumSchemas(); track schema.id) {
             <mat-option [value]="schema.id" [matTooltip]="schema.description">
               {{ schema.id }}
@@ -159,21 +162,21 @@
         <h3>Options</h3>
         <mat-divider></mat-divider>
         <br />
-        <mat-accordion cdkDropList multi formArrayName="options" (cdkDropListDropped)="optionDropDrop($event)">
-          @for (option of options?.controls; track option; let idx = $index) {
-            <mat-expansion-panel cdkDrag [formGroupName]="idx" expanded [class.invalid]="option.invalid">
+        <mat-accordion cdkDropList multi="true" formArrayName="options" (cdkDropListDropped)="optionDropDrop($event)">
+          @for (option of options?.controls; track option; let index = $index) {
+            <mat-expansion-panel cdkDrag [formGroupName]="index" expanded="true" [class.invalid]="option.invalid">
               <mat-expansion-panel-header>
                 <mat-panel-title>
                   <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                  Option {{ idx + 1 }}
-                  <button mat-icon-button (click)="removeOptionForm(idx)">
+                  Option {{ index + 1 }}
+                  <button mat-icon-button (click)="removeOptionForm(index)">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </mat-panel-title>
               </mat-expansion-panel-header>
 
               <mat-form-field style="width: 50%; padding-right: 10px">
-                <mat-label>Name</mat-label>
+                <mat-label>Display Name</mat-label>
                 <input matInput type="text" formControlName="name" autocomplete="off" />
                 <mat-hint align="end">{{ option.value.name?.length || 0 }}/30</mat-hint>
                 @if (form.controls['name']?.errors; as errors) {
