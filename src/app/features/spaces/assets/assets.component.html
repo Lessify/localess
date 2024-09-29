@@ -18,9 +18,11 @@
       </button>
     }
 
-    <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-      <mat-icon>more_vert</mat-icon>
-    </button>
+    @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
+      <button mat-icon-button [matMenuTriggerFor]="extraMenu">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+    }
 
     <mat-menu #extraMenu="matMenu">
       @if ('ASSET_IMPORT' | canUserPerform | async) {

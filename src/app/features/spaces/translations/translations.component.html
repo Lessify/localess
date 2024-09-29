@@ -36,18 +36,20 @@
             <span>Published {{ locale.name }} JSON</span>
           </button>
         }
-        <mat-divider></mat-divider>
-        @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
-          <button mat-menu-item (click)="openImportDialog(space.locales)">
-            <mat-icon>cloud_upload</mat-icon>
-            <span>Import</span>
-          </button>
-        }
-        @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
-          <button mat-menu-item (click)="openExportDialog(space.locales)">
-            <mat-icon>cloud_download</mat-icon>
-            <span>Export</span>
-          </button>
+        @if (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async) {
+          <mat-divider></mat-divider>
+          @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
+            <button mat-menu-item (click)="openImportDialog(space.locales)">
+              <mat-icon>cloud_upload</mat-icon>
+              <span>Import</span>
+            </button>
+          }
+          @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
+            <button mat-menu-item (click)="openExportDialog(space.locales)">
+              <mat-icon>cloud_download</mat-icon>
+              <span>Export</span>
+            </button>
+          }
         }
       </mat-menu>
     </mat-toolbar-row>
