@@ -24,7 +24,7 @@ steps:
       - 'LOCALESS_AUTH_CUSTOM_DOMAIN=${_LOCALESS_AUTH_CUSTOM_DOMAIN}'
       - 'LOCALESS_AUTH_PROVIDERS=${_LOCALESS_AUTH_PROVIDERS}'
   # deploy to firebase
-  - name: gcr.io/$PROJECT_ID/firebase
+  - name: ghcr.io/lessify/firebase:edge
     id: 'firebase-deploy'
     args: ['deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force']
   - name: 'gcr.io/cloud-builders/gsutil'
