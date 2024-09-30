@@ -24,7 +24,7 @@ import { TaskService } from '@shared/services/task.service';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
 import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { PathItem, SpaceStore } from '@shared/store/space.store';
+import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 
 @Component({

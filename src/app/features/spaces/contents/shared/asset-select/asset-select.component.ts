@@ -8,7 +8,7 @@ import { AssetService } from '@shared/services/asset.service';
 import { Space } from '@shared/models/space.model';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-asset-select',

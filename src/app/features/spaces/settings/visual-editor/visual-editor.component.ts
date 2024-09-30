@@ -8,8 +8,8 @@ import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { SpaceStore } from '@shared/store/space.store';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { SpaceStore } from '@shared/stores/space.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-space-settings-visual-editor',

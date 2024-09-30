@@ -13,8 +13,8 @@ import { Router } from '@angular/router';
 import { EMPTY, Observable, Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { UserStore } from '@shared/store/user.store';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { UserStore } from '@shared/stores/user.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-login',

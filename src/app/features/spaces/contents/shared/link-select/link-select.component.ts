@@ -7,7 +7,7 @@ import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { debounceTime, Observable, of, startWith } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-link-select',

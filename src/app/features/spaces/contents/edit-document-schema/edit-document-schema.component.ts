@@ -35,7 +35,7 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-content-document-schema-edit',

@@ -48,7 +48,6 @@ export class UsersComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: users => {
-          console.log(users);
           this.dataSource.data = users;
           this.dataSource.filterPredicate = this.userFilterPredicate;
           this.dataSource.sort = this.sort();

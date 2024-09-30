@@ -11,7 +11,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -34,8 +33,9 @@ import { TokenService } from '@shared/services/token.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ContentHistory } from '@shared/models/content-history.model';
 import { ContentHistoryService } from '@shared/services/content-history.service';
-import { SpaceStore } from '@shared/store/space.store';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { SpaceStore } from '@shared/stores/space.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -43,7 +43,7 @@ import { LocalSettingsStore } from '@shared/store/local-settings.store';
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditDocumentComponent implements OnInit {
+export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   // Input
   spaceId = input.required<string>();
   contentId = input.required<string>();
@@ -82,7 +82,6 @@ export class EditDocumentComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   constructor(
-    private readonly fb: FormBuilder,
     private readonly router: Router,
     private readonly cd: ChangeDetectorRef,
     private readonly spaceService: SpaceService,
@@ -121,7 +120,7 @@ export class EditDocumentComponent implements OnInit {
           if (document.kind === ContentKind.DOCUMENT) {
             this.document = document;
             this.rootSchema = schemas.find(it => it.id === document.schema);
-            this.documentData = document.data || {
+            this.documentData = ObjectUtils.clone(document.data) || {
               _id: v4(),
               schema: this.rootSchema?.id || '',
             };
@@ -155,6 +154,10 @@ export class EditDocumentComponent implements OnInit {
 
   ngOnInit(): void {
     this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId());
+  }
+
+  get isFormDirty(): boolean {
+    return !ObjectUtils.isEqual(this.document?.data, this.contentHelperService.clone(this.documentData));
   }
 
   publish(): void {

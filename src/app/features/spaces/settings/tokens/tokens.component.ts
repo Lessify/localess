@@ -12,7 +12,7 @@ import { TokenDialogModel } from './token-dialog/token-dialog.model';
 import { Token } from '@shared/models/token.model';
 import { TokenService } from '@shared/services/token.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { SpaceStore } from '@shared/store/space.store';
+import { SpaceStore } from '@shared/stores/space.store';
 
 @Component({
   selector: 'll-space-settings-tokens',

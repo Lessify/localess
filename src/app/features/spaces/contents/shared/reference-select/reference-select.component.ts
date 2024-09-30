@@ -3,7 +3,7 @@ import { FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldKind, SchemaFieldReference } from '@shared/models/schema.model';
 import { Content, ContentDocument } from '@shared/models/content.model';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { Space } from '@shared/models/space.model';
 import { MatDialog } from '@angular/material/dialog';
 import { ContentService } from '@shared/services/content.service';

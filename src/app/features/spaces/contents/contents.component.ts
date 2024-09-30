@@ -28,7 +28,7 @@ import { TaskService } from '@shared/services/task.service';
 import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
 import { TokenService } from '@shared/services/token.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { PathItem, SpaceStore } from '@shared/store/space.store';
+import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';

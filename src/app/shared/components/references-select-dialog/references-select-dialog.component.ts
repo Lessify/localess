@@ -22,7 +22,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PathItem } from '@shared/store/space.store';
+import { PathItem } from '@shared/stores/space.store';
 import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { SchemaService } from '@shared/services/schema.service';

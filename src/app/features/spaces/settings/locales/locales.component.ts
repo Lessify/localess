@@ -12,7 +12,7 @@ import { LocaleService } from '@shared/services/locale.service';
 import { Locale } from '@shared/models/locale.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { SpaceStore } from '@shared/store/space.store';
+import { SpaceStore } from '@shared/stores/space.store';
 
 @Component({
   selector: 'll-space-settings-locales',

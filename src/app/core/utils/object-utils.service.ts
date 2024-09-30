@@ -41,4 +41,37 @@ export class ObjectUtils {
       });
     }
   }
+
+  public static isEqual(source: any, target: any): boolean {
+    if (source instanceof Array && target instanceof Array) {
+      if (source.length !== target.length) {
+        return false;
+      }
+      for (let i = 0; i < source.length; i++) {
+        if (!this.isEqual(source[i], target[i])) {
+          return false;
+        }
+      }
+      return true;
+    } else if (source instanceof Object && target instanceof Object) {
+      const sourceKeys = Object.getOwnPropertyNames(source);
+      const targetKeys = Object.getOwnPropertyNames(target);
+      if (sourceKeys.length !== targetKeys.length) {
+        return false;
+      }
+      for (const key of sourceKeys) {
+        if (!this.isEqual(source[key], target[key])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return source === target;
+  }
+
+  public static isEqualAsString(source: any, target: any): boolean {
+    const sourceString = JSON.stringify(source);
+    const targetString = JSON.stringify(target);
+    return sourceString === targetString;
+  }
 }

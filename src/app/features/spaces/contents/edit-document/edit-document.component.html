@@ -7,7 +7,6 @@
     &nbsp;
     <span class="subtitle">#{{ document?.slug }}</span>
     <span class="spacer"></span>
-
     <mat-button-toggle-group
       hideSingleSelectionIndicator="true"
       (change)="settingsStore.setEditorEnabled(!settingsStore.editorEnabled())"
@@ -52,12 +51,11 @@
         }
       </div>
     </mat-menu>
-
     @if ('CONTENT_UPDATE' | canUserPerform | async) {
       <button
         mat-stroked-button
         color="primary"
-        matTooltip="Save the page"
+        matTooltip="Save the changes."
         [disabled]="isSaveLoading() || isPublishLoading()"
         (click)="save()">
         <ll-icon [animate]="isSaveLoading()" start="save" end="sync" />

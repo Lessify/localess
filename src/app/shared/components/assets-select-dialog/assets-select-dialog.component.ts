@@ -22,7 +22,7 @@ import { AssetService } from '@shared/services/asset.service';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PathItem } from '@shared/store/space.store';
+import { PathItem } from '@shared/stores/space.store';
 
 @Component({
   selector: 'll-assets-select-dialog',

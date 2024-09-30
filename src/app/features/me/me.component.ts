@@ -9,7 +9,7 @@ import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.m
 import { MeEmailDialogComponent } from './me-email-dialog/me-email-dialog.component';
 import { MeEmailDialogModel } from './me-email-dialog/me-email-dialog.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { UserStore } from '@shared/store/user.store';
+import { UserStore } from '@shared/stores/user.store';
 
 @Component({
   selector: 'll-me',

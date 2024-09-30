@@ -9,10 +9,11 @@ import { combineLatest } from 'rxjs';
 import { NotificationService } from '@shared/services/notification.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { CommonValidator } from '@shared/validators/common.validator';
+import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 
 @Component({
   selector: 'll-schema-edit-enum',
@@ -20,7 +21,7 @@ import { CommonValidator } from '@shared/validators/common.validator';
   styleUrl: './edit-enum.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditEnumComponent implements OnInit {
+export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   // Input
   spaceId = input.required<string>();
   schemaId = input.required<string>();
@@ -71,6 +72,7 @@ export class EditEnumComponent implements OnInit {
           this.schemas = schemas;
           this.entity = schema;
 
+          this.form.reset();
           this.form.patchValue(schema);
           if (schema.type === SchemaType.ENUM) {
             this.values.clear();
@@ -80,6 +82,10 @@ export class EditEnumComponent implements OnInit {
           this.cd.markForCheck();
         },
       });
+  }
+
+  get isFormDirty(): boolean {
+    return this.form.dirty;
   }
 
   addLabel(event: MatChipInputEvent): void {
@@ -93,6 +99,7 @@ export class EditEnumComponent implements OnInit {
       }
     }
     chipInput.clear();
+    this.form.markAsDirty();
   }
 
   removeLabel(label: string): void {
@@ -101,6 +108,7 @@ export class EditEnumComponent implements OnInit {
       const index: number = labels.indexOf(label);
       labels.splice(index, 1);
     }
+    this.form.markAsDirty();
   }
 
   save(): void {
@@ -136,10 +144,7 @@ export class EditEnumComponent implements OnInit {
   }
 
   selectComponent(index: number) {
-    this.selectedFieldIdx = undefined;
-    this.cd.detectChanges();
     this.selectedFieldIdx = index;
-    this.cd.markForCheck();
   }
 
   removeComponent(event: MouseEvent, index: number) {
@@ -156,6 +161,7 @@ export class EditEnumComponent implements OnInit {
     }
     // Remove Component
     this.values?.removeAt(index);
+    this.form.markAsDirty();
   }
 
   addValueForm(element?: SchemaEnumValue): void {
@@ -184,6 +190,7 @@ export class EditEnumComponent implements OnInit {
       this.fieldReservedNames.push(fieldName);
       this.newFieldName.reset();
       this.selectComponent(this.values.length - 1);
+      this.form.markAsDirty();
     }
   }
 
@@ -193,5 +200,6 @@ export class EditEnumComponent implements OnInit {
     const tmp = this.values.at(event.previousIndex);
     this.values.removeAt(event.previousIndex);
     this.values.insert(event.currentIndex, tmp);
+    this.form.markAsDirty();
   }
 }

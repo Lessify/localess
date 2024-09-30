@@ -19,9 +19,10 @@ import { combineLatest } from 'rxjs';
 import { NotificationService } from '@shared/services/notification.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
+import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 
 @Component({
   selector: 'll-schema-edit-comp',
@@ -29,7 +30,7 @@ import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
   styleUrl: './edit-comp.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditCompComponent implements OnInit {
+export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   // Input
   spaceId = input.required<string>();
   schemaId = input.required<string>();
@@ -82,20 +83,22 @@ export class EditCompComponent implements OnInit {
           this.schemas = schemas;
           this.entity = schema;
 
+          this.form.reset();
           this.form.patchValue(schema);
 
           if (schema.type === SchemaType.NODE || schema.type === SchemaType.ROOT) {
             this.fields.clear();
             schema.fields?.forEach(it => this.addField(it));
-            // if (this.selectedFieldIdx === undefined) {
-            //   this.selectComponent(this.fields.length - 1);
-            // }
           }
 
           this.isLoading = false;
           this.cd.markForCheck();
         },
       });
+  }
+
+  get isFormDirty(): boolean {
+    return this.form.dirty;
   }
 
   addLabel(event: MatChipInputEvent): void {
@@ -109,6 +112,7 @@ export class EditCompComponent implements OnInit {
       }
     }
     chipInput.clear();
+    this.form.markAsDirty();
   }
 
   removeLabel(label: string): void {
@@ -117,6 +121,7 @@ export class EditCompComponent implements OnInit {
       const index: number = labels.indexOf(label);
       labels.splice(index, 1);
     }
+    this.form.markAsDirty();
   }
 
   get fields(): FormArray<FormGroup> {
@@ -273,6 +278,7 @@ export class EditCompComponent implements OnInit {
     this.newFieldName.reset();
     if (!element) {
       this.selectComponent(this.fields.length - 1);
+      this.form.markAsDirty();
     }
   }
 
@@ -290,24 +296,12 @@ export class EditCompComponent implements OnInit {
     }
     // Remove
     this.fields.removeAt(index);
-    if (this.fields.length === 0) {
-      this.selectedFieldIdx = undefined;
-      this.cd.markForCheck();
-    } else if (this.selectedFieldIdx) {
-      if (index == 0 && this.selectedFieldIdx == 0) {
-        this.selectComponent(0);
-      } else if (index <= this.selectedFieldIdx) {
-        this.selectComponent(this.selectedFieldIdx - 1);
-      }
-    }
+    this.form.markAsDirty();
   }
 
   // handle form array element selection, by enforcing refresh
   selectComponent(index: number): void {
-    this.selectedFieldIdx = undefined;
-    this.cd.detectChanges();
     this.selectedFieldIdx = index;
-    this.cd.markForCheck();
   }
 
   save(): void {
@@ -341,5 +335,6 @@ export class EditCompComponent implements OnInit {
     const tmp = this.fields.at(event.previousIndex);
     this.fields.removeAt(event.previousIndex);
     this.fields.insert(event.currentIndex, tmp);
+    this.form.markAsDirty();
   }
 }

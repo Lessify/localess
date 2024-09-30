@@ -4,7 +4,7 @@ import { Timestamp } from '@angular/fire/firestore';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SpaceService } from '@shared/services/space.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { SpaceStore } from '@shared/store/space.store';
+import { SpaceStore } from '@shared/stores/space.store';
 
 @Component({
   selector: 'll-dashboard',

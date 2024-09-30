@@ -26,10 +26,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { ReleasesDialogComponent } from '@shared/components/releases-dialog/releases-dialog.component';
 import { ReleasesDialogModel } from '@shared/components/releases-dialog/releases-dialog.model';
-import { SpaceStore } from '@shared/store/space.store';
-import { UserStore } from '@shared/store/user.store';
-import { LocalSettingsStore } from '@shared/store/local-settings.store';
-import { AppSettingsStore } from '@shared/store/app-settings.store';
+import { SpaceStore } from '@shared/stores/space.store';
+import { UserStore } from '@shared/stores/user.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { AppSettingsStore } from '@shared/stores/app-settings.store';
 
 interface SideMenuItem {
   icon: string;
