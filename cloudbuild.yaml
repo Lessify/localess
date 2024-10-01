@@ -30,3 +30,5 @@ steps:
   - name: 'gcr.io/cloud-builders/gsutil'
     id: 'gsutil-cors'
     args: ['cors', 'set', 'cors.json', 'gs://${_LOCALESS_FIREBASE_STORAGE_BUCKET}']
+options:
+  logging: CLOUD_LOGGING_ONLY
