@@ -6,4 +6,5 @@ export interface UserInviteDialogResponse {
   password: string;
   role?: UserRole;
   permissions?: UserPermission[];
+  lock?: boolean;
 }

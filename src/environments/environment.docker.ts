@@ -14,6 +14,9 @@ export const environment = {
     customDomain: '*',
     providers: 'GOOGLE,MICROSOFT',
   },
+  login: {
+    message: '',
+  },
   production: false,
   test: true,
   debug: false,

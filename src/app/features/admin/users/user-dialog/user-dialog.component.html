@@ -15,6 +15,14 @@
     </mat-form-field>
 
     @if (form.value.role === 'custom') {
+      <br />
+      <mat-slide-toggle
+        formControlName="lock"
+        matTooltip="When Enabled the user will not be able to change his password and other personal data.">
+        Lock User
+      </mat-slide-toggle>
+      <br />
+      <br />
       <b>Permissions</b>
       <mat-selection-list formControlName="permissions">
         <div mat-subheader>Administration</div>

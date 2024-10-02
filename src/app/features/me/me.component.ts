@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { MeDialogComponent } from './me-dialog/me-dialog.component';
@@ -22,7 +22,6 @@ export class MeComponent {
 
   constructor(
     private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly meService: MeService,
   ) {}

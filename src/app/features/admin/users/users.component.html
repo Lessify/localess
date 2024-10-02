@@ -65,6 +65,9 @@
         {{ element.role || 'none' | uppercase }}
         @if (element.role === 'custom') {
           &nbsp;<mat-icon [matTooltip]="element.permissions?.join('&#10;')" matTooltipPosition="after">info</mat-icon>
+          @if (element.lock) {
+            <mat-icon matTooltip="The user is not be able to change his password and other personal data."> lock </mat-icon>
+          }
         }
       </mat-cell>
     </ng-container>

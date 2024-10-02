@@ -15,6 +15,9 @@ export const environment = {
     customDomain: env.LOCALESS_AUTH_CUSTOM_DOMAIN,
     providers: env.LOCALESS_AUTH_PROVIDERS,
   },
+  login: {
+    message: env.LOCALESS_LOGIN_MESSAGE,
+  },
   production: true,
   test: false,
   debug: false,

@@ -15,6 +15,7 @@ export class UserDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({
     role: this.fb.control<string | undefined>(undefined),
     permissions: this.fb.control<string[] | undefined>(undefined),
+    lock: this.fb.control<boolean | undefined>(undefined),
   });
 
   settingsStore = inject(LocalSettingsStore);

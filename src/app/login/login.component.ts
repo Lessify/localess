@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject, Optional } from '@angular/core';
+import { Component, effect, inject, Optional } from '@angular/core';
 import {
   Auth,
   GoogleAuthProvider,
@@ -10,7 +10,7 @@ import {
   User,
 } from '@angular/fire/auth';
 import { Router } from '@angular/router';
-import { EMPTY, Observable, Subscription } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { UserStore } from '@shared/stores/user.store';
@@ -34,13 +34,11 @@ export class LoginComponent {
   //Login
   isGoogleAuthEnabled: boolean = environment.auth.providers.includes('GOOGLE');
   isMicrosoftAuthEnabled: boolean = environment.auth.providers.includes('MICROSOFT');
+  message: string = environment.login.message;
 
   public readonly user: Observable<User | null> = EMPTY;
   parsedToken?: Promise<IdTokenResult>;
-  // Subscriptions
-  private readonly userDisposable: Subscription | undefined;
 
-  private destroyRef = inject(DestroyRef);
   userStore = inject(UserStore);
   settingsStore = inject(LocalSettingsStore);
 

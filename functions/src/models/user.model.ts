@@ -31,6 +31,7 @@ export interface User {
   // Custom Claims
   readonly role?: UserRole;
   readonly permissions?: UserPermission[];
+  readonly lock?: boolean;
 
   // Providers
   readonly providers: string[];
@@ -58,12 +59,14 @@ export interface UserInvite {
   password: string;
   role?: UserRole;
   permissions?: UserPermission[];
+  lock?: boolean;
 }
 
 export interface UserUpdate {
   id: string;
   role?: UserRole;
   permissions?: UserPermission[];
+  lock?: boolean;
 }
 
 export type UserRole = 'admin' | 'custom';

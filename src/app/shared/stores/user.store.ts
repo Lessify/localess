@@ -15,6 +15,7 @@ export interface UserState {
   emailVerified: boolean;
   role: UserRole | undefined;
   permissions: string[] | undefined;
+  lock: boolean | undefined;
   photoURL: string | undefined | null;
   // Provider Data
   isPasswordProvider: boolean;
@@ -33,6 +34,7 @@ export const initialState: UserState = {
   role: undefined,
   photoURL: undefined,
   permissions: undefined,
+  lock: undefined,
   isPasswordProvider: false,
   isGoogleProvider: false,
   isMicrosoftProvider: false,
@@ -90,7 +92,8 @@ export const UserStore = signalStore(
               if (token.claims['role'] || token.claims['permissions']) {
                 const role = token.claims['role'] as UserRole | undefined;
                 const permissions = token.claims['permissions'] as string[] | undefined;
-                patchState(state, { role, permissions });
+                const lock = token.claims['lock'] as boolean | undefined;
+                patchState(state, { role, permissions, lock });
               }
             },
             error: error => {
@@ -108,6 +111,7 @@ export const UserStore = signalStore(
   withComputed(state => {
     return {
       isRoleAdmin: computed(() => state.role() === 'admin'),
+      isLocked: computed(() => state.lock() === true),
     };
   }),
   withHooks({

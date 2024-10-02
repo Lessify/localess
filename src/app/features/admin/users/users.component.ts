@@ -100,12 +100,13 @@ export class UsersComponent implements OnInit {
         data: {
           role: element.role,
           permissions: element.permissions,
+          lock: element.lock,
         },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.userService.update({ id: element.id, role: it?.role, permissions: it?.permissions })),
+        switchMap(it => this.userService.update({ id: element.id, role: it?.role, permissions: it?.permissions, lock: it?.lock })),
       )
       .subscribe({
         next: () => {

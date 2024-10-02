@@ -16,6 +16,7 @@ export class UserInviteDialogComponent {
     displayName: this.fb.control('', [Validators.minLength(2)]),
     role: this.fb.control<string | undefined>(undefined),
     permissions: this.fb.control<string[] | undefined>(undefined),
+    lock: this.fb.control<boolean | undefined>(undefined),
   });
 
   settingsStore = inject(LocalSettingsStore);
