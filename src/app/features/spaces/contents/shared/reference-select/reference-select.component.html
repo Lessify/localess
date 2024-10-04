@@ -29,11 +29,11 @@
             </div>
             <div matListItemTitle>{{ content.name }} #{{ content.slug }}</div>
             <code matListItemLine>{{ content.fullSlug }}</code>
-            <mat-action-list matListItemMeta>
+            <div matListItemMeta>
               <button mat-icon-button (click)="deleteReference()">
                 <mat-icon>delete</mat-icon>
               </button>
-            </mat-action-list>
+            </div>
           </mat-list-item>
         </mat-list>
       }

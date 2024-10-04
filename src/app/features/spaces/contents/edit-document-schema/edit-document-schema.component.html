@@ -310,7 +310,7 @@
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-              <mat-nav-list>
+              <mat-action-list>
                 @if (data[field.name]; as item) {
                   <mat-list-item (click)="navigationTo(item._id, field.name, item.schema)">
                     @if (schemaCompNodeById().get(item.schema); as sch) {
@@ -329,14 +329,14 @@
                         </span>
                       </div>
                     }
-                    <mat-action-list matListItemMeta>
+                    <div matListItemMeta>
                       <button mat-icon-button (click)="removeSchemaOne(field)">
                         <mat-icon>delete</mat-icon>
                       </button>
-                    </mat-action-list>
+                    </div>
                   </mat-list-item>
                 }
-              </mat-nav-list>
+              </mat-action-list>
             </mat-card-content>
           </mat-card>
         }
@@ -349,7 +349,7 @@
                 @if (field.description) {
                   <mat-card-subtitle>{{ field.description }}</mat-card-subtitle>
                 }
-                <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema">
+                <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema at the end">
                   <mat-icon>add_circle</mat-icon>
                 </button>
                 <mat-menu #schemasMenu="matMenu">
@@ -363,12 +363,12 @@
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-              <mat-nav-list cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
+              <mat-action-list cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
                 @for (item of data[field.name]; track item; let index = $index; let last = $last) {
                   <mat-list-item cdkDrag cdkDragPreviewContainer="parent" (click)="navigationTo(item._id, field.name, item.schema)">
                     @if (schemaCompNodeById().get(item.schema); as sch) {
                       <div matListItemTitle>
-                        #{{ index }} {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
+                        {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
                         @if (sch.previewField) {
                           <div matListItemLine>
                             {{ previewText(item, sch, locale) }}
@@ -382,23 +382,23 @@
                         </span>
                       </div>
                     }
-                    <mat-action-list matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuBelow" matTooltip="Add Schema Below">
-                        <mat-icon>add_row_below</mat-icon>
-                      </button>
-                      <mat-menu #schemasMenuBelow="matMenu">
-                        @for (sch of filterSchema(field.schemas); track sch.id) {
-                          <button mat-menu-item (click)="addSchemaMany(field, sch, index + 1)" [matTooltip]="sch.description">
-                            {{ sch.displayName || sch.id }}
-                          </button>
-                        }
-                      </mat-menu>
-                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuAbove" matTooltip="Add Schema Above">
+                    <div matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuAbove" matTooltip="Add Schema above">
                         <mat-icon>add_row_above</mat-icon>
                       </button>
                       <mat-menu #schemasMenuAbove="matMenu">
                         @for (sch of filterSchema(field.schemas); track sch.id) {
                           <button mat-menu-item (click)="addSchemaMany(field, sch, index)" [matTooltip]="sch.description">
+                            {{ sch.displayName || sch.id }}
+                          </button>
+                        }
+                      </mat-menu>
+                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuBelow" matTooltip="Add Schema below">
+                        <mat-icon>add_row_below</mat-icon>
+                      </button>
+                      <mat-menu #schemasMenuBelow="matMenu">
+                        @for (sch of filterSchema(field.schemas); track sch.id) {
+                          <button mat-menu-item (click)="addSchemaMany(field, sch, index + 1)" [matTooltip]="sch.description">
                             {{ sch.displayName || sch.id }}
                           </button>
                         }
@@ -411,13 +411,13 @@
                       </button>
                       &nbsp;&nbsp;
                       <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                    </mat-action-list>
+                    </div>
                   </mat-list-item>
                   @if (!last) {
                     <mat-divider />
                   }
                 }
-              </mat-nav-list>
+              </mat-action-list>
             </mat-card-content>
           </mat-card>
         }

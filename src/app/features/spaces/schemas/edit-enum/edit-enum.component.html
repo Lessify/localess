@@ -25,8 +25,8 @@
         <mat-tab label="Values">
           <mat-drawer-container (backdropClick)="selectedFieldIdx = undefined">
             <mat-drawer-content>
-              <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8" style="height: calc(100vh - 177px)">
-                <mat-nav-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+              <div class="flex flex-col mx-auto max-w-screen-lg gap-6 p-8" style="height: calc(100vh - 177px)">
+                <mat-action-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
                   <mat-form-field>
                     <mat-label>Name</mat-label>
                     <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
@@ -47,19 +47,19 @@
                       <span matListItemTitle>
                         {{ field.value.name }} <span class="field-id">#{{ field.value.value }}</span>
                       </span>
-                      <mat-action-list matListItemMeta>
+                      <div matListItemMeta>
                         <button mat-icon-button (click)="removeComponent($event, index)">
                           <mat-icon>delete</mat-icon>
                         </button>
                         &nbsp;&nbsp;
                         <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                      </mat-action-list>
+                      </div>
                     </mat-list-item>
                     @if (!last) {
                       <mat-divider />
                     }
                   }
-                </mat-nav-list>
+                </mat-action-list>
               </div>
             </mat-drawer-content>
             <mat-drawer position="end" [opened]="selectedFieldIdx !== undefined">
