@@ -288,13 +288,21 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     this.onStructureChange.emit(`removeSchemaOne ${field.name}`);
   }
 
-  addSchemaMany(field: SchemaField, schema: Schema): void {
-    const sch: ContentData[] | undefined = this.data[field.name];
-    if (sch) {
-      sch.push({
-        _id: v4(),
-        schema: schema.id,
-      });
+  addSchemaMany(field: SchemaField, schema: Schema, index?: number): void {
+    const fieldData: ContentData[] | undefined = this.data[field.name];
+    if (fieldData) {
+      if (index !== undefined) {
+        // add at index
+        fieldData.splice(index, 0, {
+          _id: v4(),
+          schema: schema.id,
+        });
+      } else {
+        fieldData.push({
+          _id: v4(),
+          schema: schema.id,
+        });
+      }
     } else {
       this.data[field.name] = [
         {
@@ -306,9 +314,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     this.onStructureChange.emit(`addSchemaMany ${field.name} ${schema.id}`);
   }
 
-  duplicateSchemaMany(event: MouseEvent, data: any[], item: ContentData, idx: number): void {
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  duplicateSchemaMany(data: any[], item: ContentData, idx: number): void {
     const clone = this.contentHelperService.clone(item, true);
     data.splice(idx + 1, 0, clone);
     //console.log(data)

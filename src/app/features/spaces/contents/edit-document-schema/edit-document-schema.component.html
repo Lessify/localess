@@ -368,7 +368,7 @@
                   <mat-list-item cdkDrag cdkDragPreviewContainer="parent" (click)="navigationTo(item._id, field.name, item.schema)">
                     @if (schemaCompNodeById().get(item.schema); as sch) {
                       <div matListItemTitle>
-                        {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
+                        #{{ index }} {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
                         @if (sch.previewField) {
                           <div matListItemLine>
                             {{ previewText(item, sch, locale) }}
@@ -382,8 +382,28 @@
                         </span>
                       </div>
                     }
-                    <mat-action-list matListItemMeta>
-                      <button mat-icon-button (click)="duplicateSchemaMany($event, data[field.name], item, index)">
+                    <mat-action-list matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuBelow" matTooltip="Add Schema Below">
+                        <mat-icon>add_row_below</mat-icon>
+                      </button>
+                      <mat-menu #schemasMenuBelow="matMenu">
+                        @for (sch of filterSchema(field.schemas); track sch.id) {
+                          <button mat-menu-item (click)="addSchemaMany(field, sch, index + 1)" [matTooltip]="sch.description">
+                            {{ sch.displayName || sch.id }}
+                          </button>
+                        }
+                      </mat-menu>
+                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuAbove" matTooltip="Add Schema Above">
+                        <mat-icon>add_row_above</mat-icon>
+                      </button>
+                      <mat-menu #schemasMenuAbove="matMenu">
+                        @for (sch of filterSchema(field.schemas); track sch.id) {
+                          <button mat-menu-item (click)="addSchemaMany(field, sch, index)" [matTooltip]="sch.description">
+                            {{ sch.displayName || sch.id }}
+                          </button>
+                        }
+                      </mat-menu>
+                      <button mat-icon-button (click)="duplicateSchemaMany(data[field.name], item, index)">
                         <mat-icon>content_copy</mat-icon>
                       </button>
                       <button mat-icon-button (click)="removeSchemaMany(field, item._id)">

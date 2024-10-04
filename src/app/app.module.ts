@@ -26,6 +26,7 @@ import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 import { MarkdownModule } from 'ngx-markdown';
 import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
+import { MatIconRegistry } from '@angular/material/icon';
 
 @NgModule({
   declarations: [AppComponent],
@@ -114,4 +115,8 @@ import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/c
   ],
   bootstrap: [AppComponent],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(iconRegistry: MatIconRegistry) {
+    iconRegistry.setDefaultFontSetClass('material-symbols-outlined');
+  }
+}
