@@ -382,7 +382,7 @@
                         </span>
                       </div>
                     }
-                    <div matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                    <mat-action-list matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
                       <button mat-icon-button [matMenuTriggerFor]="schemasMenuAbove" matTooltip="Add Schema above">
                         <mat-icon>add_row_above</mat-icon>
                       </button>
@@ -411,7 +411,7 @@
                       </button>
                       &nbsp;&nbsp;
                       <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                    </div>
+                    </mat-action-list>
                   </mat-list-item>
                   @if (!last) {
                     <mat-divider />
