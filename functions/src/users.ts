@@ -5,9 +5,10 @@ import { canPerform } from './utils/security-utils';
 import { User, UserInvite, UserPermission, UserUpdate } from './models';
 
 const userList = onCall<void>(async request => {
-  logger.info('[userList] data: ' + JSON.stringify(request.data));
-  logger.info('[userList] context.auth: ' + JSON.stringify(request.auth));
-  if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { auth, data } = request;
+  logger.info('[userList] data: ' + JSON.stringify(data));
+  logger.info('[userList] auth: ' + JSON.stringify(auth));
+  if (!canPerform(UserPermission.USER_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const users = await authService.listUsers();
   return users.users.map(user => {
@@ -36,7 +37,7 @@ const userList = onCall<void>(async request => {
 const userInvite = onCall<UserInvite>(async request => {
   const { auth, data } = request;
   logger.info('[userInvite] data: ' + JSON.stringify(data));
-  logger.info('[userInvite] context.auth: ' + JSON.stringify(auth));
+  logger.info('[userInvite] auth: ' + JSON.stringify(auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const user = await authService.createUser({
@@ -51,7 +52,7 @@ const userInvite = onCall<UserInvite>(async request => {
 const userUpdate = onCall<UserUpdate>(async request => {
   const { auth, data } = request;
   logger.info('[userUpdate] data: ' + JSON.stringify(data));
-  logger.info('[userUpdate] context.auth: ' + JSON.stringify(auth));
+  logger.info('[userUpdate] auth: ' + JSON.stringify(auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   if (data.role === 'admin') {
@@ -66,7 +67,7 @@ const userUpdate = onCall<UserUpdate>(async request => {
 const userDelete = onCall<string>(async request => {
   const { auth, data } = request;
   logger.info('[userUpdate] data: ' + JSON.stringify(data));
-  logger.info('[userUpdate] context.auth: ' + JSON.stringify(auth));
+  logger.info('[userUpdate] auth: ' + JSON.stringify(auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   await authService.deleteUser(data);
