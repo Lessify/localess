@@ -11,6 +11,7 @@ import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/fire
 const beforeCreated = beforeUserCreated(async request => {
   const { data, eventId } = request;
   logger.info(`[Identity::beforeCreated] id='${data.uid}' eventId='${eventId}'`);
+  logger.info(`[Identity::beforeCreated] id='${data.uid}' eventId='${eventId}'`);
   logger.info(`[Identity::beforeCreated] user='${JSON.stringify(data)}'`);
   if (!data.email) {
     return;
@@ -37,6 +38,7 @@ const beforeCreated = beforeUserCreated(async request => {
 
 const beforeSignedIn = beforeUserSignedIn(async request => {
   const { data, eventId } = request;
+  logger.info(`[Identity::beforeSignedIn] id='${data.uid}' eventId='${eventId}'`);
   logger.info(`[Identity::beforeSignedIn] id='${data.uid}' eventId='${eventId}'`);
   logger.info(`[Identity::beforeSignedIn] user='${JSON.stringify(data)}'`);
 
@@ -135,6 +137,7 @@ const sync = onCall<never>(async request => {
 
 const onUpdate = onDocumentUpdated('users/{userId}', async event => {
   logger.info(`[User::onUpdate] eventId='${event.id}'`);
+  logger.info(`[User::onUpdate] eventId='${event.id}'`);
   logger.info(`[User::onUpdate] params='${JSON.stringify(event.params)}'`);
   const { userId } = event.params;
   // No Data
@@ -153,6 +156,7 @@ const onUpdate = onDocumentUpdated('users/{userId}', async event => {
 
 const onDelete = onDocumentDeleted('users/{userId}', async event => {
   const { id, params } = event;
+  logger.info(`[User::onDelete] eventId='${id}'`);
   logger.info(`[User::onDelete] eventId='${id}'`);
   logger.info(`[User::onDelete] params='${JSON.stringify(params)}'`);
   return authService.deleteUser(params.userId);
