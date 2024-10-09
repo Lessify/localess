@@ -1,8 +1,6 @@
+import { Timestamp } from 'firebase-admin/firestore';
+
 export interface User {
-  /**
-   * The user's `uid`.
-   */
-  readonly id: string;
   /**
    * The user's primary email, if set.
    */
@@ -29,28 +27,14 @@ export interface User {
   readonly disabled: boolean;
 
   // Custom Claims
-  readonly role?: UserRole;
-  readonly permissions?: UserPermission[];
-  readonly lock?: boolean;
-
+  role?: UserRole;
+  permissions?: UserPermission[];
+  lock?: boolean;
   // Providers
-  readonly providers: string[];
-
+  providers: string[];
   // Metadata
-  /**
-   * The date the user was created, formatted as a UTC string.
-   */
-  readonly creationTime: string;
-  /**
-   * The date the user last signed in, formatted as a UTC string.
-   */
-  readonly lastSignInTime: string;
-  /**
-   * The time at which the user was last active (ID token refreshed),
-   * formatted as a UTC Date string (eg 'Sat, 03 Feb 2001 04:05:06 GMT').
-   * Returns null if the user was never active.
-   */
-  readonly lastRefreshTime?: string | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface UserInvite {

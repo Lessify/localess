@@ -1,3 +1,5 @@
+import { Timestamp } from '@angular/fire/firestore';
+
 export interface User {
   /**
    * The user's `uid`.
@@ -6,49 +8,37 @@ export interface User {
   /**
    * The user's primary email, if set.
    */
-  readonly email?: string;
+  email?: string;
   /**
    * Whether or not the user's primary email is verified.
    */
-  readonly emailVerified: boolean;
+  emailVerified: boolean;
   /**
    * The user's display name.
    */
-  readonly displayName?: string;
+  displayName?: string;
   /**
    * The user's photo URL.
    */
-  readonly photoURL?: string;
+  photoURL?: string;
   /**
    * The user's primary phone number, if set.
    */
-  readonly phoneNumber?: string;
+  phoneNumber?: string;
   /**
    * Whether or not the user is disabled: true for disabled; false for enabled.
    */
-  readonly disabled: boolean;
+  disabled: boolean;
 
   // Custom Claims
-  readonly role?: UserRole;
-  readonly permissions?: UserPermission[];
-  readonly lock?: boolean;
+  role?: UserRole;
+  permissions?: UserPermission[];
+  lock?: boolean;
   // Providers
-  readonly providers: string[];
+  providers: string[];
   // Metadata
-  /**
-   * The date the user was created, formatted as a UTC string.
-   */
-  readonly creationTime: string;
-  /**
-   * The date the user last signed in, formatted as a UTC string.
-   */
-  readonly lastSignInTime: string;
-  /**
-   * The time at which the user was last active (ID token refreshed),
-   * formatted as a UTC Date string (eg 'Sat, 03 Feb 2001 04:05:06 GMT').
-   * Returns null if the user was never active.
-   */
-  readonly lastRefreshTime?: string | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface UserInvite {
@@ -61,7 +51,6 @@ export interface UserInvite {
 }
 
 export interface UserUpdate {
-  id: string;
   role?: UserRole;
   permissions?: UserPermission[];
   lock?: boolean;

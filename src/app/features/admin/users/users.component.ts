@@ -26,8 +26,9 @@ export class UsersComponent implements OnInit {
   paginator = viewChild.required(MatPaginator);
 
   isLoading = signal(true);
+  isSyncLoading = signal(false);
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
-  displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'creationTime', 'lastSignInTime', 'actions'];
+  displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'createdAt', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
@@ -48,6 +49,7 @@ export class UsersComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: users => {
+          console.log(users);
           this.dataSource.data = users;
           this.dataSource.filterPredicate = this.userFilterPredicate;
           this.dataSource.sort = this.sort();
@@ -106,7 +108,7 @@ export class UsersComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.userService.update({ id: element.id, role: it?.role, permissions: it?.permissions, lock: it?.lock })),
+        switchMap(it => this.userService.update(element.id, it!)),
       )
       .subscribe({
         next: () => {
@@ -143,5 +145,23 @@ export class UsersComponent implements OnInit {
           this.loadData();
         },
       });
+  }
+
+  sync(): void {
+    this.isSyncLoading.set(true);
+    this.userService.sync().subscribe({
+      next: () => {
+        this.notificationService.success(`Sync is in progress, it may take upt to few minutes.`);
+      },
+      error: () => {
+        this.notificationService.error(`Users can not be synced.`);
+      },
+      complete: () => {
+        setTimeout(() => {
+          this.isSyncLoading.set(false);
+          this.cd.markForCheck();
+        }, 1000);
+      },
+    });
   }
 }

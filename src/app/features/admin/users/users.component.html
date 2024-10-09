@@ -2,6 +2,11 @@
   <mat-toolbar-row>
     Users
     <span class="spacer"></span>
+    <button mat-stroked-button color="accent" matTooltip="Synchronize Users with Database." (click)="sync()">
+      <ll-icon [animate]="isSyncLoading()" start="sync" end="sync" />
+      Sync
+    </button>
+
     <button mat-stroked-button color="primary" (click)="inviteDialog()">
       <mat-icon>person_add</mat-icon>
       Invite
@@ -71,16 +76,16 @@
         }
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="creationTime">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="creationTime"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.creationTime | date: 'medium'">
-        {{ element.creationTime | date: 'mediumDate' }}
+    <ng-container matColumnDef="createdAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.createdAt?.toDate() | date: 'medium'">
+        {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="lastSignInTime">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="lastSignInTime">Last SignIn</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.lastSignInTime | date: 'medium'">
-        {{ element.lastSignInTime | date: 'mediumDate' }}</mat-cell
+    <ng-container matColumnDef="updatedAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
+      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}</mat-cell
       >
     </ng-container>
     <ng-container matColumnDef="actions">
