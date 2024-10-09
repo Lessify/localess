@@ -159,10 +159,10 @@ const onDelete = onDocumentDeleted('users/{userId}', async event => {
 });
 
 export const user = {
-  beforeCreated: beforeCreated,
-  beforeSignedIn: beforeSignedIn,
-  onUpdate: onUpdate,
-  onDelete: onDelete,
+  beforecreated: beforeCreated,
+  beforesignedin: beforeSignedIn,
+  onupdate: onUpdate,
+  ondelete: onDelete,
   invite: invite,
   sync: sync,
 };
