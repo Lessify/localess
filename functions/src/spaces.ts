@@ -18,148 +18,158 @@ import { FieldValue, UpdateData } from 'firebase-admin/firestore';
 
 // Firestore events
 const onSpaceDelete = onDocumentDeleted('spaces/{spaceId}', async event => {
-  logger.info(`[Space::onDelete] eventId='${event.id}'`);
-  logger.info(`[Space::onDelete] params='${JSON.stringify(event.params)}'`);
-  const { spaceId } = event.params;
+  const { id, params, data } = event;
+  logger.info(`[Space::onDelete] eventId='${id}'`);
+  logger.info(`[Space::onDelete] params='${JSON.stringify(params)}'`);
+  const { spaceId } = params;
+
+  if (data) {
+    // Recursive delete
+    logger.info(`[Space::onDelete] data='${JSON.stringify(data)}'`);
+    await firestoreService.recursiveDelete(data.ref);
+  } else {
+    // Batch delete
+    let batch = firestoreService.batch();
+    let count = 0;
+    // Assets
+    const assetsSnapshot = await findAssets(spaceId).get();
+    logger.info(`[Space::onDelete] Assets size='${assetsSnapshot.docs.length}'`);
+    for (const item of assetsSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+    // Contents
+    const contentsSnapshot = await findContents(spaceId).get();
+    logger.info(`[Space::onDelete] Contents size='${contentsSnapshot.docs.length}'`);
+    for (const item of contentsSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+    // Plugins
+    const pluginsSnapshot = await findPlugins(spaceId).get();
+    logger.info(`[Space::onDelete] plugins size='${pluginsSnapshot.docs.length}'`);
+    for (const item of pluginsSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+    // Schemas
+    const schemasSnapshot = await findSchemas(spaceId).get();
+    logger.info(`[Space::onDelete] Schemas size='${schemasSnapshot.docs.length}'`);
+    for (const item of schemasSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+    // Tasks
+    const tasksSnapshot = await findTasks(spaceId).get();
+    logger.info(`[Space::onDelete] Tasks size='${tasksSnapshot.docs.length}'`);
+    for (const item of tasksSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+    // Tokens
+    const tokensSnapshot = await findTokens(spaceId).get();
+    logger.info(`[Space::onDelete] Tokens size='${tokensSnapshot.docs.length}'`);
+    for (const item of tokensSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+    // Translations
+    const translationsSnapshot = await findTranslations(spaceId).get();
+    logger.info(`[Space::onDelete] Translations size='${translationsSnapshot.docs.length}'`);
+    for (const item of translationsSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+    // Translations History
+    const translationsHistorySnapshot = await findTranslationsHistory(spaceId).get();
+    logger.info(`[Space::onDelete] Translations History size='${translationsHistorySnapshot.docs.length}'`);
+    for (const item of translationsHistorySnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+    }
+  }
+  // delete files
   await bucket.deleteFiles({
     prefix: `spaces/${spaceId}/`,
   });
-  let batch = firestoreService.batch();
-  let count = 0;
-  // Assets
-  const assetsSnapshot = await findAssets(spaceId).get();
-  logger.info(`[Space::onDelete] Assets size='${assetsSnapshot.docs.length}'`);
-  for (const item of assetsSnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await batch.commit();
-    batch = firestoreService.batch();
-    count = 0;
-  }
-  // Contents
-  const contentsSnapshot = await findContents(spaceId).get();
-  logger.info(`[Space::onDelete] Contents size='${contentsSnapshot.docs.length}'`);
-  for (const item of contentsSnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await batch.commit();
-    batch = firestoreService.batch();
-    count = 0;
-  }
-  // Plugins
-  const pluginsSnapshot = await findPlugins(spaceId).get();
-  logger.info(`[Space::onDelete] plugins size='${pluginsSnapshot.docs.length}'`);
-  for (const item of pluginsSnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await batch.commit();
-    batch = firestoreService.batch();
-    count = 0;
-  }
-  // Schemas
-  const schemasSnapshot = await findSchemas(spaceId).get();
-  logger.info(`[Space::onDelete] Schemas size='${schemasSnapshot.docs.length}'`);
-  for (const item of schemasSnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await batch.commit();
-    batch = firestoreService.batch();
-    count = 0;
-  }
-  // Tasks
-  const tasksSnapshot = await findTasks(spaceId).get();
-  logger.info(`[Space::onDelete] Tasks size='${tasksSnapshot.docs.length}'`);
-  for (const item of tasksSnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await batch.commit();
-    batch = firestoreService.batch();
-    count = 0;
-  }
-  // Tokens
-  const tokensSnapshot = await findTokens(spaceId).get();
-  logger.info(`[Space::onDelete] Tokens size='${tokensSnapshot.docs.length}'`);
-  for (const item of tokensSnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await batch.commit();
-    batch = firestoreService.batch();
-    count = 0;
-  }
-  // Translations
-  const translationsSnapshot = await findTranslations(spaceId).get();
-  logger.info(`[Space::onDelete] Translations size='${translationsSnapshot.docs.length}'`);
-  for (const item of translationsSnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await batch.commit();
-    batch = firestoreService.batch();
-    count = 0;
-  }
-  // Translations History
-  const translationsHistorySnapshot = await findTranslationsHistory(spaceId).get();
-  logger.info(`[Space::onDelete] Translations History size='${translationsHistorySnapshot.docs.length}'`);
-  for (const item of translationsHistorySnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await batch.commit();
-  }
   return;
 });
 
