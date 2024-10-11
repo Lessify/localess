@@ -196,11 +196,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     if (this.contentErrors.length === 0) {
       this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData).subscribe({
         next: () => {
-          this.notificationService.success('Content has been updated.');
+          this.notificationService.success('Content has been saved in draft.');
           this.sendEventToApp({ type: 'save' });
         },
         error: () => {
-          this.notificationService.error('Content can not be updated.');
+          this.notificationService.error('Content can not be saved.');
         },
         complete: () => {
           setTimeout(() => {

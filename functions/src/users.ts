@@ -8,7 +8,7 @@ import { beforeUserCreated, beforeUserSignedIn } from 'firebase-functions/v2/ide
 import { findUserById } from './services';
 import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 
-const beforeCreated = beforeUserCreated(async request => {
+const beforecreated = beforeUserCreated(async request => {
   const { data, eventId } = request;
   logger.info(`[Identity::beforeCreated] id='${data.uid}' eventId='${eventId}'`);
   logger.info(`[Identity::beforeCreated] user='${JSON.stringify(data)}'`);
@@ -35,7 +35,7 @@ const beforeCreated = beforeUserCreated(async request => {
   );
 });
 
-const beforeSignedIn = beforeUserSignedIn(async request => {
+const beforesignedin = beforeUserSignedIn(async request => {
   const { data, eventId } = request;
   logger.info(`[Identity::beforeSignedIn] id='${data.uid}' eventId='${eventId}'`);
   logger.info(`[Identity::beforeSignedIn] user='${JSON.stringify(data)}'`);
@@ -159,8 +159,8 @@ const onDelete = onDocumentDeleted('users/{userId}', async event => {
 });
 
 export const user = {
-  beforecreated: beforeCreated,
-  beforesignedin: beforeSignedIn,
+  beforecreated: beforecreated,
+  beforesignedin: beforesignedin,
   onupdate: onUpdate,
   ondelete: onDelete,
   invite: invite,
