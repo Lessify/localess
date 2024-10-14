@@ -68,7 +68,7 @@ const sync = onCall<never>(async request => {
   if (!canPerform(UserPermission.USER_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const listUsers = await authService.listUsers();
-  listUsers.users.map(async userRecord => {
+  for (const userRecord of listUsers.users) {
     logger.debug('[User::sync] userRecord: ' + JSON.stringify(userRecord));
     const userRef = findUserById(userRecord.uid);
     const userSnapshot = await userRef.get();
@@ -129,7 +129,7 @@ const sync = onCall<never>(async request => {
         { merge: true }
       );
     }
-  });
+  }
   return true;
 });
 
