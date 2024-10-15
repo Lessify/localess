@@ -49,7 +49,6 @@ export class UsersComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: users => {
-          console.log(users);
           this.dataSource.data = users;
           this.dataSource.filterPredicate = this.userFilterPredicate;
           this.dataSource.sort = this.sort();
@@ -86,11 +85,9 @@ export class UsersComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notificationService.success('User has been invited.');
-          this.loadData();
         },
         error: () => {
           this.notificationService.error('User can not be invited.');
-          this.loadData();
         },
       });
   }
@@ -113,11 +110,10 @@ export class UsersComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notificationService.success('User has been updated.');
-          this.loadData();
         },
-        error: () => {
+        error: (error) => {
           this.notificationService.error('User can not be updated.');
-          this.loadData();
+          console.error(error);
         },
       });
   }
@@ -138,11 +134,9 @@ export class UsersComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notificationService.success(`User '${element.email}' has been deleted.`);
-          this.loadData();
         },
         error: () => {
           this.notificationService.error(`User '${element.email}' can not be deleted.`);
-          this.loadData();
         },
       });
   }

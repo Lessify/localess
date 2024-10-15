@@ -39,6 +39,7 @@ export class UserService {
   }
 
   update(id: string, model: UserUpdate): Observable<void> {
+    console.log('UserService:update', id, model);
     const update: UpdateData<User> = {
       updatedAt: serverTimestamp(),
     };
@@ -46,12 +47,13 @@ export class UserService {
       case 'admin': {
         update.role = model.role;
         update.permissions = deleteField();
+        update.lock = deleteField();
         break;
       }
       case 'custom': {
         update.role = model.role;
         update.permissions = model.permissions;
-        update.lock = model.lock;
+        update.lock = model.lock || false;
         break;
       }
       case undefined: {

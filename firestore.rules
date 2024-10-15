@@ -82,8 +82,7 @@ service cloud.firestore {
 
     // Users
     match /users/{userId} {
-      allow get: if isSignedIn() && ( isSignedInWithUser(userId) || (hasRole('admin') || hasPermission('USER_MANAGEMENT')));
-      allow list: if isSignedIn() && (hasRole('admin') || hasPermission('USER_MANAGEMENT'));
+      allow read: if isSignedIn() && ( isSignedInWithUser(userId) || (hasRole('admin') || hasPermission('USER_MANAGEMENT')));
       allow write: if isSignedIn() && (hasRole('admin') || hasPermission('USER_MANAGEMENT'));
     }
 
