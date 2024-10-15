@@ -111,7 +111,7 @@ export class UsersComponent implements OnInit {
         next: () => {
           this.notificationService.success('User has been updated.');
         },
-        error: (error) => {
+        error: error => {
           this.notificationService.error('User can not be updated.');
           console.error(error);
         },
