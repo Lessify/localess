@@ -421,7 +421,7 @@ export class TranslationsComponent implements OnInit {
           // make sure the component is updated
           this.translateValue = '';
           this.cd.detectChanges();
-          this.notificationService.success('Translated');
+          this.notificationService.info('Translated');
           this.translateValue = value;
           this.cd.markForCheck();
         },
@@ -430,7 +430,7 @@ export class TranslationsComponent implements OnInit {
           this.notificationService.error('Can not be translation.', [
             {
               label: 'Documentation',
-              link: 'https://github.com/Lessify/localess/wiki/Setup#cloud-translation-api-not-enabled',
+              link: 'https://localess.org/docs/setup/firebase#errors-in-the-user-interface',
             },
           ]);
         },

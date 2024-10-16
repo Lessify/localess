@@ -1,5 +1,5 @@
 export interface TranslateData {
   content: string;
-  sourceLocale: string;
+  sourceLocale?: string;
   targetLocale: string;
 }

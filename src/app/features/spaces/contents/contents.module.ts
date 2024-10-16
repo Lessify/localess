@@ -26,6 +26,7 @@ import { ContentHistoryService } from '@shared/services/content-history.service'
 import { MarkdownModule } from 'ngx-markdown';
 import { MoveDialogComponent } from './move-dialog/move-dialog.component';
 import { StatusComponent } from '@shared/components/status';
+import { TranslateService } from '@shared/services/translate.service';
 
 @NgModule({
   declarations: [
@@ -54,6 +55,7 @@ import { StatusComponent } from '@shared/components/status';
     AssetService,
     TaskService,
     TokenService,
+    TranslateService,
   ],
 })
 export class ContentsModule {}

@@ -4,7 +4,7 @@
       @switch (field.kind) {
         <!--TEXT-->
         @case ('TEXT') {
-          <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
+          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
               matInput
@@ -12,13 +12,26 @@
               [formControlName]="field.name"
               [attr.minlength]="field.minLength"
               [attr.maxlength]="field.maxLength"
-              [placeholder]="!isDefaultLocale && data[field.name]"
+              [placeholder]="!isDefaultLocale() && data[field.name]"
               autocomplete="off" />
-            <!--<span matTextPrefix *ngIf="field.translatable && !isDefaultLocale">
-              <mat-slide-toggle [checked]="form.controls[field.name].enabled" (change)="markFiledAvailable($event, field)" />
-            </span>-->
             @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+              <button
+                [matMenuTriggerFor]="tMenu"
+                [disabled]="isDefaultLocale()"
+                mat-icon-button
+                matSuffix
+                matTooltip="Translate the field with AI">
+                <mat-icon>translate</mat-icon>
+                <mat-menu #tMenu="matMenu">
+                  @for (locale of availableLocales(); track locale.id) {
+                    @if (locale.id !== selectedLocaleId()) {
+                      <button mat-menu-item (click)="translate(field.name, locale.id, selectedLocaleId())">
+                        Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
+                      </button>
+                    }
+                  }
+                </mat-menu>
+              </button>
             }
             @if (field.description) {
               <mat-hint>{{ field.description }}</mat-hint>
@@ -33,7 +46,7 @@
         }
         <!--TEXTAREA-->
         @case ('TEXTAREA') {
-          <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
+          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <textarea
               matInput
@@ -43,10 +56,26 @@
               [formControlName]="field.name"
               [attr.minLength]="field.minLength"
               [attr.maxlength]="field.maxLength"
-              [placeholder]="!isDefaultLocale && data[field.name]"
+              [placeholder]="!isDefaultLocale() && data[field.name]"
               autocomplete="off"></textarea>
             @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+              <button
+                [matMenuTriggerFor]="tMenu"
+                [disabled]="isDefaultLocale()"
+                mat-icon-button
+                matSuffix
+                matTooltip="Translate the field with AI">
+                <mat-icon>translate</mat-icon>
+                <mat-menu #tMenu="matMenu">
+                  @for (locale of availableLocales(); track locale.id) {
+                    @if (locale.id !== selectedLocaleId()) {
+                      <button mat-menu-item (click)="translate(field.name, locale.id, selectedLocaleId())">
+                        Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
+                      </button>
+                    }
+                  }
+                </mat-menu>
+              </button>
             }
             @if (field.description) {
               <mat-hint>{{ field.description }}</mat-hint>
@@ -96,7 +125,7 @@
         }
         <!--NUMBER-->
         @case ('NUMBER') {
-          <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
+          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
               matInput
@@ -104,7 +133,7 @@
               [formControlName]="field.name"
               [attr.min]="field.minValue"
               [attr.max]="field.maxValue"
-              [placeholder]="!isDefaultLocale && data[field.name]"
+              [placeholder]="!isDefaultLocale() && data[field.name]"
               autocomplete="off" />
             @if (field.translatable) {
               <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
@@ -119,7 +148,7 @@
         }
         <!--COLOR-->
         @case ('COLOR') {
-          <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
+          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
               matInput
@@ -127,7 +156,7 @@
               [formControlName]="field.name"
               [attr.min]="field.minValue"
               [attr.max]="field.maxValue"
-              [placeholder]="!isDefaultLocale && data[field.name]"
+              [placeholder]="!isDefaultLocale() && data[field.name]"
               autocomplete="off" />
             @if (field.translatable) {
               <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
@@ -142,13 +171,13 @@
         }
         <!--DATE-->
         @case ('DATE') {
-          <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
+          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
               matInput
               type="date"
               [formControlName]="field.name"
-              [placeholder]="!isDefaultLocale && data[field.name]"
+              [placeholder]="!isDefaultLocale() && data[field.name]"
               autocomplete="off" />
             @if (field.translatable) {
               <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
@@ -163,13 +192,13 @@
         }
         <!--DATE TIME-->
         @case ('DATETIME') {
-          <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
+          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
               matInput
               type="datetime-local"
               [formControlName]="field.name"
-              [placeholder]="!isDefaultLocale && data[field.name]"
+              [placeholder]="!isDefaultLocale() && data[field.name]"
               autocomplete="off" />
             @if (field.translatable) {
               <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
@@ -202,7 +231,7 @@
         }
         <!--OPTION-->
         @case ('OPTION') {
-          <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
+          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <mat-select [formControlName]="field.name">
               @if (!field.required) {
@@ -234,7 +263,7 @@
         }
         <!--OPTIONS-->
         @case ('OPTIONS') {
-          <mat-form-field [floatLabel]="isDefaultLocale ? 'auto' : 'always'">
+          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <mat-select [formControlName]="field.name" multiple>
               <!--Handle source not defined in previous versions-->
@@ -264,7 +293,11 @@
         <!--LINK-->
         @case ('LINK') {
           @if (form.controls[field.name]; as control) {
-            <ll-link-select [form]="control" [component]="field" [documents]="documents" [default]="!isDefaultLocale && data[field.name]" />
+            <ll-link-select
+              [form]="control"
+              [component]="field"
+              [documents]="documents"
+              [default]="!isDefaultLocale() && data[field.name]" />
           }
         }
         <!--REFERENCE-->
@@ -318,7 +351,7 @@
                         {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
                         @if (sch.previewField) {
                           <div matListItemLine>
-                            {{ previewText(item, sch, locale) }}
+                            {{ previewText(item, sch, selectedLocaleId()) }}
                           </div>
                         }
                       </div>
@@ -371,7 +404,7 @@
                         {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
                         @if (sch.previewField) {
                           <div matListItemLine>
-                            {{ previewText(item, sch, locale) }}
+                            {{ previewText(item, sch, selectedLocaleId()) }}
                           </div>
                         }
                       </div>
@@ -434,7 +467,7 @@
       <mat-expansion-panel-header>
         <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
       </mat-expansion-panel-header>
-      <pre>isDefaultLocale = {{ isDefaultLocale }}</pre>
+      <pre>isDefaultLocale = {{ isDefaultLocale() }}</pre>
       <pre>{{ form.value | json }}</pre>
       <pre>{{ form.errors | json }}</pre>
     </mat-expansion-panel>

@@ -10,8 +10,12 @@ export const translate = onCall<TranslateData>(async request => {
   logger.info('[translate] context.auth: ' + JSON.stringify(request.auth));
   const { content, sourceLocale, targetLocale } = request.data;
   if (!canPerform(UserPermission.TRANSLATION_UPDATE, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
-  if (!(SUPPORT_LOCALES.has(sourceLocale) && SUPPORT_LOCALES.has(targetLocale)))
-    throw new HttpsError('invalid-argument', 'Unsupported language');
+  if (sourceLocale && !SUPPORT_LOCALES.has(sourceLocale)) {
+    throw new HttpsError('invalid-argument', `Unsupported source locale : '${sourceLocale}'`);
+  }
+  if (!SUPPORT_LOCALES.has(targetLocale)) {
+    throw new HttpsError('invalid-argument', `Unsupported target locale : '${targetLocale}'`);
+  }
 
   const projectId = firebaseConfig.projectId;
   let locationId; // firebaseConfig.locationId || 'global'

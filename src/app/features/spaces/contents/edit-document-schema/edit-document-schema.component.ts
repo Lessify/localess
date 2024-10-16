@@ -32,10 +32,12 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { Space } from '@shared/models/space.model';
 import { SchemaSelectChange } from './edit-document-schema.model';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { DEFAULT_LOCALE } from '@shared/models/locale.model';
+import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { TranslateService } from '@shared/services/translate.service';
+import { NotificationService } from '@shared/services/notification.service';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -47,7 +49,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   // Form
   form: FormRecord = this.fb.record({});
 
-  isDefaultLocale = true;
+  isDefaultLocale = computed(() => this.selectedLocale().id === DEFAULT_LOCALE.id);
+  selectedLocaleId = computed(() => this.selectedLocale().id);
   // Subscriptions
   settingsStore = inject(LocalSettingsStore);
 
@@ -55,11 +58,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   // Inputs
   @Input() documents: ContentDocument[] = [];
-  @Input({ required: true }) locale = 'en';
   @Input() space?: Space;
   @Input() data: ContentData = { _id: '', schema: '' };
   //data = input.required<ContentData>();
   schemas = input.required<Schema[]>();
+  selectedLocale = input.required<Locale>();
+  availableLocales = input.required<Locale[]>();
   // Outputs
   onSchemaChange = output<SchemaSelectChange>();
   onFormChange = output<string>();
@@ -98,12 +102,14 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     private readonly fb: FormBuilder,
     private readonly cd: ChangeDetectorRef,
     private readonly contentHelperService: ContentHelperService,
+    private readonly translateService: TranslateService,
+    private readonly notificationService: NotificationService,
     readonly fe: FormErrorHandlerService,
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     //console.group('EditDocumentSchemaComponent:ngOnChanges')
-    //console.log(changes)
+    console.log(changes);
 
     const dataChange = changes['data'];
     if (dataChange) {
@@ -128,8 +134,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
       }
     }
 
-    const localeChange = changes['locale'];
-    if (localeChange) {
+    const selectedLocaleChange = changes['selectedLocale'];
+    if (selectedLocaleChange) {
       this.onChanged();
     }
     //console.groupEnd()
@@ -154,7 +160,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   generateForm(): void {
     if (this.rootSchema && (this.rootSchema.type === SchemaType.ROOT || this.rootSchema.type === SchemaType.NODE)) {
       // true - check all fields, false - all fields become optional
-      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, this.isDefaultLocale);
+      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, this.isDefaultLocale());
 
       this.form.valueChanges
         .pipe(
@@ -175,7 +181,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
               if (field.kind === SchemaFieldKind.SCHEMA) continue;
               const value = formValue[field.name];
               //console.log('value', value);
-              if (this.isDefaultLocale) {
+              if (this.isDefaultLocale()) {
                 // check everything
                 if (value === null) {
                   delete this.data[field.name];
@@ -186,11 +192,11 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                 // check only locale
                 if (field.translatable) {
                   if (value === undefined || value === null || value === '') {
-                    delete this.data[`${field.name}_i18n_${this.locale}`];
+                    delete this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
                   } else if (Array.isArray(value) && value.length === 0) {
-                    delete this.data[`${field.name}_i18n_${this.locale}`];
+                    delete this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
                   } else {
-                    this.data[`${field.name}_i18n_${this.locale}`] = value;
+                    this.data[`${field.name}_i18n_${this.selectedLocaleId()}`] = value;
                   }
                 }
               }
@@ -216,7 +222,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   onChanged(): void {
     //console.group('onChanged')
     this.isFormLoading = true;
-    this.isDefaultLocale = this.locale === DEFAULT_LOCALE.id;
     this.cd.detectChanges();
     this.generateForm();
     this.formPatch();
@@ -230,7 +235,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   formPatch(): void {
     //console.group('formPatch')
     this.form.reset();
-    const extractSchemaContent = this.contentHelperService.extractSchemaContent(this.data, this.rootSchema!, this.locale, false);
+    const extractSchemaContent = this.contentHelperService.extractSchemaContent(
+      this.data,
+      this.rootSchema!,
+      this.selectedLocaleId(),
+      false,
+    );
     //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
     this.form.patchValue(extractSchemaContent);
     Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
@@ -350,12 +360,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     this.onStructureChange.emit(`schemaDropDrop from-${event.previousIndex} to-${event.currentIndex}`);
   }
 
-  previewText(content: ContentData, schema: SchemaComponent, locale: string): string | undefined {
+  previewText(content: ContentData, schema: SchemaComponent, localeId: string): string | undefined {
     if (schema.previewField) {
       const field = schema.fields?.find(it => it.name === schema.previewField);
       if (field) {
-        if (field.translatable && !this.isDefaultLocale) {
-          return content[schema.previewField + '_i18n_' + locale];
+        if (field.translatable && !this.isDefaultLocale()) {
+          return content[schema.previewField + '_i18n_' + localeId];
         } else {
           return content[schema.previewField];
         }
@@ -365,7 +375,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   defaultOptionPlaceholder(field: SchemaFieldOption): string {
-    if (!this.isDefaultLocale) {
+    if (!this.isDefaultLocale()) {
       const value = this.data[field.name] as string;
       return field.options?.find(it => it.value === value)?.name || '';
     }
@@ -373,7 +383,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   defaultOptionsPlaceholder(field: SchemaFieldOptions): string {
-    if (!this.isDefaultLocale) {
+    if (!this.isDefaultLocale()) {
       const values = this.data[field.name] as string[];
       const options = new Map(field.options?.map(it => [it.value, it.name]));
       return values.map(it => options.get(it)).join(',');
@@ -389,6 +399,45 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     } else {
       formField.setValue(undefined);
       formField.disable();
+    }
+  }
+
+  translate(fieldName: string, sourceLocale: string, targetLocale: string): void {
+    // get source locale content
+    // this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
+    //debugger;
+    let content = '';
+    if (sourceLocale === DEFAULT_LOCALE.id) {
+      content = this.data[fieldName];
+    } else {
+      content = this.data[`${fieldName}_i18n_${sourceLocale}`];
+    }
+    if (content === undefined || content === null || content === '') {
+      this.notificationService.warn('No content to translate');
+    } else {
+      this.translateService
+        .translate({
+          content: content,
+          sourceLocale: sourceLocale !== DEFAULT_LOCALE.id ? sourceLocale : undefined,
+          targetLocale: targetLocale,
+        })
+        .subscribe({
+          next: result => {
+            if (this.form.contains(fieldName)) {
+              this.form.controls[fieldName].setValue(result);
+            }
+            this.notificationService.info('Translated');
+          },
+          error: err => {
+            console.error(err);
+            this.notificationService.error('Can not be translation.', [
+              {
+                label: 'Documentation',
+                link: 'https://localess.org/docs/setup/firebase#errors-in-the-user-interface',
+              },
+            ]);
+          },
+        });
     }
   }
 }

@@ -185,7 +185,8 @@
               <ll-content-document-schema-edit
                 [data]="selectedDocumentData"
                 [schemas]="schemas"
-                [locale]="selectedLocale.id"
+                [selectedLocale]="selectedLocale"
+                [availableLocales]="availableLocales"
                 [documents]="documents"
                 [space]="selectedSpace"
                 (onSchemaChange)="onSchemaChange($event)"

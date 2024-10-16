@@ -14,7 +14,7 @@ export class TranslateService {
     if (environment.production) {
       return translate(data).pipe(traceUntilFirst('Functions:Translate:translate'));
     } else {
-      return of(`${data.sourceLocale}-${data.targetLocale} -> ${data.content}`);
+      return of(`${data.content} : ${data.sourceLocale} -> ${data.targetLocale}`);
     }
   }
 }
