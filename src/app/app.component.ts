@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Performance } from '@angular/fire/performance';
+import { Analytics } from '@angular/fire/analytics';
 
 @Component({
   selector: 'll-root',
@@ -7,5 +8,8 @@ import { Performance } from '@angular/fire/performance';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  constructor(private readonly performance: Performance) {}
+  constructor(
+    private readonly performance: Performance,
+    private readonly analytics: Analytics,
+  ) {}
 }

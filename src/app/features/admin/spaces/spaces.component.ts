@@ -106,7 +106,7 @@ export class SpacesComponent implements OnInit {
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
           title: 'Delete Space',
-          content: `Are you sure about deleting Space with name '${element.name}'.`,
+          content: `Are you sure about deleting Space with name '${element.name}'.\n This action can not be undone.`,
         },
       })
       .afterClosed()

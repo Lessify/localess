@@ -186,11 +186,20 @@ export class ContentsComponent {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
+    let title = '';
+    let content = '';
+    if (element.kind === ContentKind.FOLDER) {
+      title = 'Delete Folder';
+      content = `Are you sure about deleting Folder with name: ${element.name}.\n All sub folders and documents will be deleted.`;
+    } else if (element.kind === ContentKind.DOCUMENT) {
+      title = 'Delete Document';
+      content = `Are you sure about deleting Document with name: ${element.name}.`;
+    }
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
-          title: 'Delete Content',
-          content: `Are you sure about deleting Content with name: ${element.name}.`,
+          title: title,
+          content: content,
         },
       })
       .afterClosed()

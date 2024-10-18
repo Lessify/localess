@@ -1,5 +1,9 @@
 <h2 mat-dialog-title>{{ data.title }}</h2>
-<mat-dialog-content> {{ data.content }} </mat-dialog-content>
+<mat-dialog-content>
+  <p class="whitespace-pre-wrap">
+    {{ data.content }}
+  </p>
+</mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button color="primary" [mat-dialog-close]="false">Cancel</button>
   <button mat-button cdkFocusInitial color="primary" [mat-dialog-close]="true">OK</button>

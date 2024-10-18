@@ -200,7 +200,7 @@ export class SchemasComponent implements OnInit {
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
           title: 'Delete Schema',
-          content: `Are you sure about deleting Schema with name '${element.id}'.`,
+          content: `Are you sure about deleting Schema with name '${element.id}'.\n Any Content document associated with the Schema will not work anymore.`,
         },
       })
       .afterClosed()

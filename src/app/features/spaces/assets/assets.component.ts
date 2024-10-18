@@ -214,11 +214,20 @@ export class AssetsComponent implements OnInit {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
+    let title = '';
+    let content = '';
+    if (element.kind === AssetKind.FOLDER) {
+      title = 'Delete Folder';
+      content = `Are you sure about deleting Folder with name: ${element.name}.\n All sub folders and assets will be deleted.`;
+    } else if (element.kind === AssetKind.FILE) {
+      title = 'Delete Asset';
+      content = `Are you sure about deleting Asset with name: ${element.name}.`;
+    }
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
-          title: 'Delete Asset',
-          content: `Are you sure about deleting Asset with name: ${element.name}.`,
+          title: title,
+          content: content,
         },
       })
       .afterClosed()

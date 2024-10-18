@@ -27,6 +27,7 @@ import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 import { MarkdownModule } from 'ngx-markdown';
 import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
 import { MatIconRegistry } from '@angular/material/icon';
+import { getAnalytics, provideAnalytics } from '@angular/fire/analytics';
 
 @NgModule({
   declarations: [AppComponent],
@@ -83,6 +84,7 @@ import { MatIconRegistry } from '@angular/material/icon';
       }
       return functions;
     }),
+    provideAnalytics(() => getAnalytics()),
     providePerformance(() => {
       return getPerformance();
     }),
