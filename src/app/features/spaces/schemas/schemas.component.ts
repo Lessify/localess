@@ -21,7 +21,7 @@ import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { Schema, SchemaCreate, SchemaType } from '@shared/models/schema.model';
+import { Schema, SchemaCreate, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
@@ -56,6 +56,7 @@ export class SchemasComponent implements OnInit {
   displayedColumns: string[] = ['type', 'name', 'description', 'labels', /*'createdAt',*/ 'updatedAt', 'actions'];
   schemas = signal<Schema[]>([]);
   schemaIds = computed(() => this.schemas().map(it => it.id));
+  schemasInUse = computed(() => this.inUseSchema(this.schemas()));
 
   private destroyRef = inject(DestroyRef);
 
@@ -156,7 +157,10 @@ export class SchemasComponent implements OnInit {
       });
   }
 
-  openEditIdDialog(element: Schema): void {
+  openEditIdDialog(event: MouseEvent, element: Schema): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
     this.dialog
       .open<EditIdDialogComponent, EditIdDialogModel, string>(EditIdDialogComponent, {
         width: '500px',
@@ -264,5 +268,38 @@ export class SchemasComponent implements OnInit {
           this.notificationService.error('Schema Export Task can not be created.');
         },
       });
+  }
+
+  /**
+   * Schema names that are in use by other schemas
+   * @param schemas
+   */
+  inUseSchema(schemas: Schema[]): Record<string, string[]> {
+    const result: Record<string, string[]> = {};
+    for (const schema of schemas) {
+      if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
+        for (const field of schema.fields || []) {
+          if (field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS) {
+            for (const fieldSchema of field.schemas || []) {
+              if (result[fieldSchema]) {
+                result[fieldSchema].push(schema.id);
+              } else {
+                result[fieldSchema] = [schema.id];
+              }
+            }
+          } else if (field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) {
+            const fieldEnum = field.source;
+            if (fieldEnum !== 'self') {
+              if (result[fieldEnum]) {
+                result[fieldEnum].push(schema.id);
+              } else {
+                result[fieldEnum] = [schema.id];
+              }
+            }
+          }
+        }
+      }
+    }
+    return result;
   }
 }
