@@ -21,7 +21,7 @@ import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { Schema, SchemaCreate, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
@@ -46,11 +46,7 @@ export class SchemasComponent implements OnInit {
   // Inputs
   spaceId = input.required<string>();
 
-  schemaTypeIcons: Record<SchemaType, string> = {
-    ROOT: 'margin',
-    NODE: 'polyline',
-    ENUM: 'list',
-  };
+  schemaTypeDescriptions = schemaTypeDescriptions;
 
   dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
   displayedColumns: string[] = ['type', 'name', 'description', 'labels', /*'createdAt',*/ 'updatedAt', 'actions'];
@@ -103,8 +99,8 @@ export class SchemasComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: schemas => {
-          this.schemas.set(schemas);
-          this.dataSource.data = schemas;
+          this.schemas.set(schemas.sort(sortSchema));
+          this.dataSource.data = this.schemas();
           this.dataSource.filterPredicate = this.schemaFilterPredicate;
           this.dataSource.sort = this.sort();
           this.dataSource.paginator = this.paginator();

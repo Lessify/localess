@@ -1,6 +1,12 @@
 import { FieldValue, Timestamp } from '@angular/fire/firestore';
 import { ValidationErrors } from '@angular/forms';
 
+export function sortContent(a: Content, b: Content): number {
+  const aIsFolder = a.kind === ContentKind.FOLDER ? 0 : 1;
+  const bIsFolder = b.kind === ContentKind.FOLDER ? 0 : 1;
+  return `${aIsFolder}${a.name}`.localeCompare(`${bIsFolder}${b.name}`);
+}
+
 export interface ContentError {
   contentId: string;
   locale: string;

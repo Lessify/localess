@@ -8,6 +8,7 @@ import {
   schemaFieldKindDescriptions,
   SchemaFieldOptionSelectable,
   SchemaType,
+  sortSchema,
 } from '@shared/models/schema.model';
 import { MatSelectChange } from '@angular/material/select';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -32,8 +33,16 @@ export class EditFieldComponent implements OnInit {
   selectedFieldKind = this.schemaFieldKindDescriptions[SchemaFieldKind.TEXT];
   nameReadonly = true;
   // Schemas
-  nodeSchemas = computed(() => this.schemas().filter(it => it.type === SchemaType.NODE));
-  enumSchemas = computed(() => this.schemas().filter(it => it.type === SchemaType.ENUM));
+  nodeSchemas = computed(() =>
+    this.schemas()
+      .filter(it => it.type === SchemaType.NODE)
+      .sort(sortSchema),
+  );
+  enumSchemas = computed(() =>
+    this.schemas()
+      .filter(it => it.type === SchemaType.ENUM)
+      .sort(sortSchema),
+  );
 
   settingsStore = inject(LocalSettingsStore);
 

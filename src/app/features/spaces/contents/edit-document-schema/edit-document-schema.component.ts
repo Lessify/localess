@@ -22,6 +22,7 @@ import {
   SchemaFieldOption,
   SchemaFieldOptions,
   SchemaType,
+  sortSchemaEnumValue,
 } from '@shared/models/schema.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
@@ -91,6 +92,10 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         this.schemas()
           .filter(it => it.type === SchemaType.ENUM)
           .map(it => it as SchemaEnum)
+          .map(it => {
+            it.values?.sort(sortSchemaEnumValue);
+            return it;
+          })
           .map(it => [it.id, it]),
       ),
   );

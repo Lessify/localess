@@ -6,7 +6,7 @@ import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { NotificationService } from '@shared/services/notification.service';
-import { Schema, SchemaType } from '@shared/models/schema.model';
+import { Schema, SchemaType, sortSchema } from '@shared/models/schema.model';
 import { SchemaService } from '@shared/services/schema.service';
 import { combineLatest } from 'rxjs';
 import {
@@ -16,6 +16,7 @@ import {
   ContentFolderCreate,
   ContentKind,
   ContentUpdate,
+  sortContent,
 } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
@@ -90,10 +91,10 @@ export class ContentsComponent {
       )
       .subscribe({
         next: ([schemas, contents]) => {
-          this.schemas = schemas;
-          this.schemasMapById = new Map(schemas.map(it => [it.id, it]));
-          this.contents = contents;
-          this.dataSource = new MatTableDataSource<Content>(contents);
+          this.schemas = schemas.sort(sortSchema);
+          this.schemasMapById = new Map(this.schemas.map(it => [it.id, it]));
+          this.contents = contents.sort(sortContent);
+          this.dataSource = new MatTableDataSource<Content>(this.contents);
           this.dataSource.sort = this.sort();
           this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);

@@ -44,7 +44,8 @@
                       (click)="selectComponent(index)"
                       [activated]="index === selectedFieldIdx"
                       [class.invalid]="field.invalid">
-                      <mat-icon matListItemIcon class="type">{{ schemaFieldKindDescriptions[field.value.kind].icon }}</mat-icon>
+                      @let descriptor = schemaFieldKindDescriptions[field.value.kind];
+                      <mat-icon matListItemIcon class="type" [matTooltip]="descriptor.description">{{ descriptor.icon }}</mat-icon>
                       <span matListItemTitle>
                         {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
                       </span>

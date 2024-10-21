@@ -1,10 +1,34 @@
 import { Timestamp } from '@angular/fire/firestore';
 
+export function sortSchema(a: Schema, b: Schema): number {
+  if (a.displayName && b.displayName) {
+    return a.displayName.localeCompare(b.displayName);
+  } else {
+    return a.id.localeCompare(b.id);
+  }
+}
+
+export function sortSchemaEnumValue(a: SchemaEnumValue, b: SchemaEnumValue): number {
+  return a.name.localeCompare(b.name);
+}
+
 export enum SchemaType {
   ROOT = 'ROOT',
   NODE = 'NODE',
   ENUM = 'ENUM',
 }
+
+export interface FieldTypeDescription {
+  name: string;
+  description: string;
+  icon: string;
+}
+
+export const schemaTypeDescriptions: Record<SchemaType, FieldTypeDescription> = {
+  ROOT: { name: 'Root', icon: 'margin', description: 'Root schema, top level schema' },
+  NODE: { name: 'Node', icon: 'polyline', description: 'Node schema, nested schema' },
+  ENUM: { name: 'Enum', icon: 'list', description: 'Enum schema, list of values' },
+};
 
 export type Schema = SchemaComponent | SchemaEnum;
 
@@ -76,27 +100,28 @@ export enum SchemaFieldKind {
 
 export interface FieldKindDescription {
   name: string;
+  description: string;
   icon: string;
 }
 
 export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescription> = {
-  TEXT: { name: 'Text', icon: 'title' },
-  TEXTAREA: { name: 'TextArea', icon: 'rtt' },
-  MARKDOWN: { name: 'Markdown', icon: 'functions' },
-  NUMBER: { name: 'Number', icon: 'pin' },
-  COLOR: { name: 'Color', icon: 'colorize' },
-  DATE: { name: 'Date', icon: 'event' },
-  DATETIME: { name: 'Date and Time', icon: 'schedule' },
-  BOOLEAN: { name: 'Boolean', icon: 'toggle_on' },
-  OPTION: { name: 'Single Option', icon: 'list' },
-  OPTIONS: { name: 'Multiple Options', icon: 'list' },
-  LINK: { name: 'Link', icon: 'link' },
-  REFERENCE: { name: 'Reference (One)', icon: 'link' },
-  REFERENCES: { name: 'References (Many)', icon: 'link' },
-  ASSET: { name: 'Asset ( One )', icon: 'attachment' },
-  ASSETS: { name: 'Assets ( Many )', icon: 'attachment' },
-  SCHEMA: { name: 'Schema ( One )', icon: 'polyline' },
-  SCHEMAS: { name: 'Schemas ( Many )', icon: 'polyline' },
+  TEXT: { name: 'Text', icon: 'title', description: 'Short text field, titles or headlines' },
+  TEXTAREA: { name: 'TextArea', icon: 'rtt', description: 'Long text field, description' },
+  MARKDOWN: { name: 'Markdown', icon: 'functions', description: 'Markdown text field, description' },
+  NUMBER: { name: 'Number', icon: 'pin', description: 'Number field, amount or quantity' },
+  COLOR: { name: 'Color', icon: 'colorize', description: 'Color field, background or text color' },
+  DATE: { name: 'Date', icon: 'event', description: 'Date field, calendar date picker' },
+  DATETIME: { name: 'Date and Time', icon: 'schedule', description: 'Date and time field, calendar date and time picker' },
+  BOOLEAN: { name: 'Boolean', icon: 'toggle_on', description: 'Boolean field, true or false' },
+  OPTION: { name: 'Option (One)', icon: 'list', description: 'Single selection field, dropdown' },
+  OPTIONS: { name: 'Options (Multiple)', icon: 'list', description: 'Multiple selection field, dropdown' },
+  LINK: { name: 'Link', icon: 'link', description: 'Link field, external URL or internal resource' },
+  REFERENCE: { name: 'Reference (One)', icon: 'link', description: 'Reference field, to a internal resource' },
+  REFERENCES: { name: 'References (Multiple)', icon: 'link', description: 'References field, to multiple internal resources' },
+  ASSET: { name: 'Asset (One)', icon: 'attachment', description: 'Asset field, image, video or file' },
+  ASSETS: { name: 'Assets (Multiple)', icon: 'attachment', description: 'Assets field, multiple images, videos or files' },
+  SCHEMA: { name: 'Schema (One)', icon: 'polyline', description: 'Schema field, to a internal schema' },
+  SCHEMAS: { name: 'Schemas (Multiple)', icon: 'polyline', description: 'Schemas field, to multiple internal schemas' },
 };
 
 export interface SchemaFieldBase {

@@ -43,12 +43,16 @@
     </mat-form-field>
   </div>
   <mat-table [dataSource]="dataSource" matSort>
-    <ng-container matColumnDef="id">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.id }}</mat-cell>
+    <ng-container matColumnDef="type">
+      <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        @let descriptor = schemaTypeDescriptions[element.type];
+        <mat-icon [matTooltip]="descriptor.description">{{ descriptor.icon }}</mat-icon>
+        &nbsp; {{ descriptor.name }}
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="displayName"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
         {{ element.displayName }} &nbsp;<span class="schema-id">#{{ element.id }}</span>
       </mat-cell>
@@ -67,12 +71,6 @@
             <mat-chip [highlighted]="filterLabels().includes(label)">{{ label }}</mat-chip>
           }
         </mat-chip-set>
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="type">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <mat-icon>{{ schemaTypeIcons[element.type] }}</mat-icon> &nbsp; {{ element.type }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">

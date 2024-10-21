@@ -5,7 +5,7 @@ import { AddDialogModel } from './add-dialog.model';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CommonValidator } from '@shared/validators/common.validator';
-import { SchemaType } from '@shared/models/schema.model';
+import { SchemaType, schemaTypeDescriptions } from '@shared/models/schema.model';
 import { NameUtils } from '@core/utils/name-utils.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 
@@ -16,12 +16,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddDialogComponent {
+  schemaTypeDescriptions = schemaTypeDescriptions;
   types: string[] = Object.keys(SchemaType);
 
   form: FormGroup = this.fb.group({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
-    id: this.fb.control('', [...SchemaValidator.ID, CommonValidator.reservedName(this.data.reservedIds)]),
-    type: this.fb.control(SchemaType.NODE, SchemaValidator.TYPE),
+    id: this.fb.control<string | undefined>('', [...SchemaValidator.ID, CommonValidator.reservedName(this.data.reservedIds)]),
+    type: this.fb.control<SchemaType>(SchemaType.NODE, SchemaValidator.TYPE),
   });
 
   formDisplayNameValue = toSignal(this.form.controls['displayName'].valueChanges);
@@ -36,6 +37,10 @@ export class AddDialogComponent {
         this.form.controls['id'].setValue(NameUtils.schemaId(this.formDisplayNameValue() || ''));
       }
     });
+  }
+
+  get type(): SchemaType {
+    return this.form.controls['type'].value;
   }
 
   normalizeId() {

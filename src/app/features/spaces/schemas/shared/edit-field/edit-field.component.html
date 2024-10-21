@@ -20,9 +20,10 @@
           {{ selectedFieldKind.name }}
         </mat-select-trigger>
         @for (kind of fieldKinds; track kind) {
-          <mat-option [value]="kind">
-            <mat-icon>{{ schemaFieldKindDescriptions[kind].icon }}</mat-icon>
-            {{ schemaFieldKindDescriptions[kind].name }}
+          @let descriptor = schemaFieldKindDescriptions[kind];
+          <mat-option [value]="kind" [matTooltip]="descriptor.description">
+            <mat-icon>{{ descriptor.icon }}</mat-icon>
+            {{ descriptor.name }}
           </mat-option>
         }
       </mat-select>
