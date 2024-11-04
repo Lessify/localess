@@ -10,9 +10,8 @@ import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/fire
 
 const beforecreated = beforeUserCreated(async request => {
   const { data, eventId } = request;
-  logger.info(`[Identity::beforeCreated] id='${data.uid}' eventId='${eventId}'`);
-  logger.info(`[Identity::beforeCreated] user='${JSON.stringify(data)}'`);
-  if (!data.email) {
+  logger.info(`[Identity::beforeCreated] eventId='${eventId}' user='${JSON.stringify(data)}'`);
+  if (!data || !data.email) {
     return;
   }
   const userRef = findUserById(data.uid);
@@ -37,9 +36,10 @@ const beforecreated = beforeUserCreated(async request => {
 
 const beforesignedin = beforeUserSignedIn(async request => {
   const { data, eventId } = request;
-  logger.info(`[Identity::beforeSignedIn] id='${data.uid}' eventId='${eventId}'`);
-  logger.info(`[Identity::beforeSignedIn] user='${JSON.stringify(data)}'`);
-
+  logger.info(`[Identity::beforeCreated] eventId='${eventId}' user='${JSON.stringify(data)}'`);
+  if (!data) {
+    return;
+  }
   const userRef = findUserById(data.uid);
   const userDoc = await userRef.get();
   logger.info(`[Identity::beforeSignedIn] user='${JSON.stringify(userDoc.data())}'`);

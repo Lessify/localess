@@ -17,7 +17,7 @@
             @if (field.translatable) {
               <button
                 [matMenuTriggerFor]="tMenu"
-                [disabled]="isDefaultLocale()"
+                [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
                 mat-icon-button
                 matSuffix
                 matTooltip="Translate the field with AI">
@@ -61,7 +61,7 @@
             @if (field.translatable) {
               <button
                 [matMenuTriggerFor]="tMenu"
-                [disabled]="isDefaultLocale()"
+                [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
                 mat-icon-button
                 matSuffix
                 matTooltip="Translate the field with AI">

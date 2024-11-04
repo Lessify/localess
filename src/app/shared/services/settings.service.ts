@@ -2,22 +2,32 @@ import { Injectable } from '@angular/core';
 import { doc, docData, Firestore, serverTimestamp, setDoc, UpdateData } from '@angular/fire/firestore';
 import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { Functions } from '@angular/fire/functions';
 import { AppSettings, AppSettingsUiUpdate } from '@shared/models/settings.model';
+import { getAllChanges, RemoteConfig } from '@angular/fire/remote-config';
+import { AllParameters } from 'rxfire/remote-config';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   constructor(
-    private firestore: Firestore,
+    private readonly firestore: Firestore,
     private readonly functions: Functions,
+    private readonly remoteConfig: RemoteConfig,
   ) {}
 
   find(): Observable<AppSettings> {
     return docData(doc(this.firestore, `configs/settings`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Settings:find'),
       map(it => it as AppSettings),
+    );
+  }
+
+  config(): Observable<AllParameters> {
+    return getAllChanges(this.remoteConfig).pipe(
+      traceUntilFirst('remote-config'),
+      tap(it => console.log('REMOTE CONFIG', it)),
     );
   }
 

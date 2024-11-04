@@ -28,6 +28,7 @@ import { MarkdownModule } from 'ngx-markdown';
 import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
 import { MatIconRegistry } from '@angular/material/icon';
 import { getAnalytics, provideAnalytics } from '@angular/fire/analytics';
+import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-config';
 
 @NgModule({
   declarations: [AppComponent],
@@ -85,8 +86,11 @@ import { getAnalytics, provideAnalytics } from '@angular/fire/analytics';
       return functions;
     }),
     provideAnalytics(() => getAnalytics()),
-    providePerformance(() => {
-      return getPerformance();
+    providePerformance(() => getPerformance()),
+    provideRemoteConfig(() => {
+      const remoteConfig = getRemoteConfig();
+      remoteConfig.defaultConfig = {};
+      return remoteConfig;
     }),
     {
       provide: IMAGE_LOADER,

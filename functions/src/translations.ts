@@ -2,11 +2,11 @@ import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { FieldValue, WithFieldValue } from 'firebase-admin/firestore';
-import { protos } from '@google-cloud/translate';
 import { canPerform } from './utils/security-utils';
-import { bucket, firebaseConfig, SUPPORT_LOCALES, translationService } from './config';
+import { bucket } from './config';
 import { PublishTranslationsData, Space, Translation, TranslationHistory, TranslationHistoryType, UserPermission } from './models';
 import { findSpaceById, findTranslations, findTranslationsHistory } from './services';
+import { translateCloud } from './services/translate.service';
 
 // Publish
 const publish = onCall<PublishTranslationsData>(async request => {
@@ -79,36 +79,15 @@ const onCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId
     const spaceSnapshot = await findSpaceById(spaceId).get();
 
     const space = spaceSnapshot.data() as Space;
-    // is incoming locale supporting translation ?
-    if (!SUPPORT_LOCALES.has(space.localeFallback.id)) return;
-
     const localeValue = translation.locales[space.localeFallback.id];
-
-    const projectId = firebaseConfig.projectId;
-    let locationId; // firebaseConfig.locationId || 'global'
-    if (firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us-')) {
-      locationId = 'us-central1';
-    } else {
-      locationId = 'global';
-    }
 
     for (const locale of space.locales) {
       // skip already filled data
       if (locale.id === space.localeFallback.id) continue;
-      // skip unsupported locale
-      if (!SUPPORT_LOCALES.has(locale.id)) continue;
-
-      const request: protos.google.cloud.translation.v3.ITranslateTextRequest = {
-        parent: `projects/${projectId}/locations/${locationId}`,
-        contents: [localeValue],
-        mimeType: 'text/plain',
-        sourceLanguageCode: space.localeFallback.id,
-        targetLanguageCode: locale.id,
-      };
       try {
-        const [responseTranslateText] = await translationService.translateText(request);
-        if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {
-          update[`locales.${locale.id}`] = responseTranslateText.translations[0].translatedText;
+        const tValue = translateCloud(localeValue, space.localeFallback.id, locale.id);
+        if (tValue) {
+          update[`locales.${locale.id}`] = tValue;
         }
       } catch (e) {
         logger.error(e);

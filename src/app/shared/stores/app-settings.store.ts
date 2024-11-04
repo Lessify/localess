@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
-import { pipe, switchMap } from 'rxjs';
+import { combineLatest, pipe, switchMap } from 'rxjs';
 import { SettingsService } from '@shared/services/settings.service';
 import { AppUi } from '@shared/models/settings.model';
 
@@ -26,12 +26,13 @@ export const AppSettingsStore = signalStore(
     return {
       load: rxMethod<void>(
         pipe(
-          switchMap(() => settingsService.find()),
+          switchMap(() => combineLatest([settingsService.find(), settingsService.config()])),
           tapResponse({
-            next: response => {
-              console.log('Loaded Settings', response);
-              if (response) {
-                patchState(state, { ui: response.ui });
+            next: ([settings, config]) => {
+              console.log('Loaded Settings', settings);
+              console.log('Loaded Config', config);
+              if (settings) {
+                patchState(state, { ui: settings.ui });
               }
             },
             error: error => {

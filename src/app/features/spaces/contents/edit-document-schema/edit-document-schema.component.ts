@@ -423,7 +423,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
       this.translateService
         .translate({
           content: content,
-          sourceLocale: sourceLocale !== DEFAULT_LOCALE.id ? sourceLocale : undefined,
+          sourceLocale: sourceLocale !== DEFAULT_LOCALE.id ? sourceLocale : null,
           targetLocale: targetLocale,
         })
         .subscribe({
