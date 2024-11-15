@@ -179,7 +179,7 @@ export class TranslationsComponent implements OnInit {
   openAddDialog(): void {
     this.dialog
       .open<AddDialogComponent, AddDialogModel, AddDialogReturnModel>(AddDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           reservedIds: this.translationIds(),
         },
@@ -213,7 +213,7 @@ export class TranslationsComponent implements OnInit {
   openEditIdDialog(translation: Translation): void {
     this.dialog
       .open<EditIdDialogComponent, EditIdDialogModel, string>(EditIdDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           id: translation.id,
           reservedIds: this.translationIds(),
@@ -240,7 +240,7 @@ export class TranslationsComponent implements OnInit {
   openEditDialog(translation: Translation): void {
     this.dialog
       .open<EditDialogComponent, Translation, EditDialogModel>(EditDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: ObjectUtils.clone(translation),
       })
       .afterClosed()
@@ -290,7 +290,7 @@ export class TranslationsComponent implements OnInit {
   openImportDialog(locales: Locale[]): void {
     this.dialog
       .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(ImportDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           locales: locales,
         },
@@ -325,7 +325,7 @@ export class TranslationsComponent implements OnInit {
   openExportDialog(locales: Locale[]): void {
     this.dialog
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           locales: locales,
         },

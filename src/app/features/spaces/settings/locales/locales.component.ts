@@ -58,7 +58,7 @@ export class LocalesComponent {
     const { id, locales } = this.spaceStore.selectedSpace()!;
     this.dialog
       .open<LocaleDialogComponent, Locale[], LocaleDialogModel>(LocaleDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: locales,
       })
       .afterClosed()

@@ -123,7 +123,7 @@ export class AssetsComponent implements OnInit {
   openAddFolderDialog(): void {
     this.dialog
       .open<AddFolderDialogComponent, AddFolderDialogModel, AssetFolderCreate>(AddFolderDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
         },
@@ -157,7 +157,7 @@ export class AssetsComponent implements OnInit {
     event.stopImmediatePropagation();
     this.dialog
       .open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdate>(EditFolderDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
           asset: ObjectUtils.clone(element),
@@ -186,7 +186,7 @@ export class AssetsComponent implements OnInit {
     event.stopImmediatePropagation();
     this.dialog
       .open<EditFileDialogComponent, EditFileDialogModel, AssetFileUpdate>(EditFileDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
           asset: ObjectUtils.clone(element),
@@ -254,7 +254,7 @@ export class AssetsComponent implements OnInit {
     event.stopImmediatePropagation();
     this.dialog
       .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           spaceId: this.spaceId(),
         },
@@ -342,7 +342,7 @@ export class AssetsComponent implements OnInit {
   openImportDialog() {
     this.dialog
       .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
       })
       .afterClosed()
       .pipe(
@@ -368,7 +368,7 @@ export class AssetsComponent implements OnInit {
   openExportDialog() {
     this.dialog
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           spaceId: this.spaceId(),
         },

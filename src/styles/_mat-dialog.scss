@@ -1,0 +1,21 @@
+@use '@angular/material' as mat;
+
+@import './styles-variables';
+
+.cdk-overlay-pane.mat-mdc-dialog-panel {
+  &.sm {
+    min-width: 500px;
+    width: calc(100vw - 160px);
+    max-width: 640px;
+    max-height: calc(100vh - 80px);
+  }
+  &.xl {
+    min-width: 900px;
+    width: calc(100vw - 160px);
+    max-width: 1280px;
+    max-height: calc(100vh - 80px);
+  }
+  &.full-screen {
+
+  }
+}

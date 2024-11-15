@@ -56,7 +56,7 @@ export class SpacesComponent implements OnInit {
   openAddDialog(): void {
     this.dialog
       .open<SpaceDialogComponent, SpaceDialogModel, SpaceDialogModel>(SpaceDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           name: '',
         },
@@ -80,7 +80,7 @@ export class SpacesComponent implements OnInit {
   openEditDialog(element: Space): void {
     this.dialog
       .open<SpaceDialogComponent, SpaceDialogModel, SpaceDialogModel>(SpaceDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           name: element.name,
         },

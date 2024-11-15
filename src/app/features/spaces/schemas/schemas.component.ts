@@ -133,7 +133,7 @@ export class SchemasComponent implements OnInit {
   openAddDialog(): void {
     this.dialog
       .open<AddDialogComponent, AddDialogModel, SchemaCreate>(AddDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           reservedIds: this.schemaIds(),
         },
@@ -159,7 +159,7 @@ export class SchemasComponent implements OnInit {
     event.stopImmediatePropagation();
     this.dialog
       .open<EditIdDialogComponent, EditIdDialogModel, string>(EditIdDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           id: element.id,
           reservedIds: this.schemaIds(),
@@ -218,7 +218,7 @@ export class SchemasComponent implements OnInit {
   openImportDialog() {
     this.dialog
       .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
       })
       .afterClosed()
       .pipe(
@@ -243,7 +243,7 @@ export class SchemasComponent implements OnInit {
   openExportDialog() {
     this.dialog
       .open<ExportDialogComponent, void, ExportDialogReturn>(ExportDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
       })
       .afterClosed()
       .pipe(

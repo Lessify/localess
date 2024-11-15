@@ -75,7 +75,7 @@ export class UsersComponent implements OnInit {
   inviteDialog(): void {
     this.dialog
       .open<UserInviteDialogComponent, void, UserInviteDialogResponse>(UserInviteDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
       })
       .afterClosed()
       .pipe(
@@ -95,7 +95,7 @@ export class UsersComponent implements OnInit {
   editDialog(element: User): void {
     this.dialog
       .open<UserDialogComponent, UserDialogModel, UserDialogModel>(UserDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           role: element.role,
           permissions: element.permissions,

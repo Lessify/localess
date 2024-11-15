@@ -29,7 +29,7 @@ export class MeComponent {
   openEditDialog(): void {
     this.dialog
       .open<MeDialogComponent, MeDialogModel, MeDialogModel>(MeDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           displayName: this.userStore.displayName() || undefined,
           photoURL: this.userStore.photoURL() || undefined,
@@ -57,7 +57,7 @@ export class MeComponent {
   openUpdateEmailDialog(): void {
     this.dialog
       .open<MeEmailDialogComponent, void, MeEmailDialogModel>(MeEmailDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
       })
       .afterClosed()
       .pipe(
@@ -78,7 +78,7 @@ export class MeComponent {
   openUpdatePasswordDialog(): void {
     this.dialog
       .open<MePasswordDialogComponent, void, MePasswordDialogModel>(MePasswordDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
       })
       .afterClosed()
       .pipe(

@@ -59,7 +59,7 @@ export class TokensComponent {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
       .open<TokenDialogComponent, never, TokenDialogModel>(TokenDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
       })
       .afterClosed()
       .pipe(

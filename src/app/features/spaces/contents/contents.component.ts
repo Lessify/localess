@@ -107,7 +107,7 @@ export class ContentsComponent {
   openAddDocumentDialog(): void {
     this.dialog
       .open<AddDocumentDialogComponent, AddDocumentDialogModel, ContentDocumentCreate>(AddDocumentDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           schemas: this.schemas,
           reservedNames: this.contents.map(it => it.name),
@@ -132,7 +132,7 @@ export class ContentsComponent {
   openAddFolderDialog(): void {
     this.dialog
       .open<AddFolderDialogComponent, AddFolderDialogModel, ContentFolderCreate>(AddFolderDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           reservedNames: this.contents.map(it => it.name),
           reservedSlugs: this.contents.map(it => it.slug),
@@ -159,7 +159,7 @@ export class ContentsComponent {
     event.stopImmediatePropagation();
     this.dialog
       .open<EditDialogComponent, EditDialogModel, ContentUpdate>(EditDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           content: ObjectUtils.clone(element),
           reservedNames: this.contents.map(it => it.name),
@@ -227,7 +227,7 @@ export class ContentsComponent {
     event.stopImmediatePropagation();
     this.dialog
       .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           spaceId: this.spaceId(),
         },
@@ -345,7 +345,7 @@ export class ContentsComponent {
   openImportDialog() {
     this.dialog
       .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
       })
       .afterClosed()
       .pipe(
@@ -371,7 +371,7 @@ export class ContentsComponent {
   openExportDialog() {
     this.dialog
       .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
-        width: '500px',
+        panelClass: 'sm',
         data: {
           spaceId: this.spaceId(),
         },

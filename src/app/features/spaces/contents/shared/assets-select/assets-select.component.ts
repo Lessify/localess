@@ -64,10 +64,7 @@ export class AssetsSelectComponent implements OnInit {
   openAssetSelectDialog(): void {
     this.dialog
       .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, AssetFile[] | undefined>(AssetsSelectDialogComponent, {
-        minWidth: '900px',
-        width: 'calc(100vw - 160px)',
-        maxWidth: '1280px',
-        maxHeight: 'calc(100vh - 80px)',
+        panelClass: 'xl',
         data: {
           spaceId: this.space().id,
           multiple: true,
