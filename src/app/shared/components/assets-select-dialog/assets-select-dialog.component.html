@@ -82,9 +82,9 @@
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>
-  <mat-paginator></mat-paginator>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
+  <mat-paginator></mat-paginator>
   <button mat-button [mat-dialog-close]="undefined">Close</button>
   <button mat-stroked-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     @if (selection.selected.length > 1) {
