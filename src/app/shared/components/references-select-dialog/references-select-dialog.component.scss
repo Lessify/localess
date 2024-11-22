@@ -2,6 +2,10 @@ table {
   width: 100%;
 }
 
+mat-dialog-content {
+  @apply pt-0 #{!important};
+}
+
 mat-row {
   cursor: pointer;
 }

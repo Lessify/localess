@@ -193,7 +193,7 @@
     <!--    </ng-container>-->
 
     <!--    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>-->
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>
   <mat-paginator></mat-paginator>

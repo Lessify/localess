@@ -42,17 +42,17 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
         {{ element.name }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="slug">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Slug</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.slug }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="schema">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Schema</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @if (element.kind === 'DOCUMENT') {
           @if (schemasMapById().get(element.schema); as schema) {
@@ -64,18 +64,18 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Updated At</mat-header-cell>
       <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
 
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>
-  <mat-paginator></mat-paginator>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
+  <mat-paginator></mat-paginator>
   <button mat-button [mat-dialog-close]="undefined">Close</button>
   <button mat-stroked-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     @if (selection.selected.length > 1) {
