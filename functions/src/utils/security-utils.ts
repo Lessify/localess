@@ -1,6 +1,6 @@
 import { AuthData } from 'firebase-functions/lib/common/providers/https';
 import { ROLE_ADMIN, ROLE_CUSTOM } from '../config';
-import { UserPermission } from '../models/user.model';
+import { UserPermission } from '../models';
 
 /**
  * Check roles of authenticated user
