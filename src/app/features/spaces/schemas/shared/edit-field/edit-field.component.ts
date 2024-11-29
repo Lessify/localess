@@ -81,6 +81,7 @@ export class EditFieldComponent implements OnInit {
     switch (value) {
       case SchemaFieldKind.TEXT:
       case SchemaFieldKind.TEXTAREA:
+      case SchemaFieldKind.RICH_TEXT:
       case SchemaFieldKind.MARKDOWN: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
@@ -109,7 +110,7 @@ export class EditFieldComponent implements OnInit {
         this.form.addControl('minValue', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUE));
         this.form.addControl('maxValue', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUE));
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Option & Options
@@ -129,7 +130,7 @@ export class EditFieldComponent implements OnInit {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -153,7 +154,7 @@ export class EditFieldComponent implements OnInit {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -176,7 +177,7 @@ export class EditFieldComponent implements OnInit {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -199,7 +200,7 @@ export class EditFieldComponent implements OnInit {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -226,7 +227,7 @@ export class EditFieldComponent implements OnInit {
         this.form.addControl('options', options);
         this.form.addControl('source', this.fb.control<string>('self', SchemaValidator.FIELD_OPTION_SOURCE));
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -253,7 +254,7 @@ export class EditFieldComponent implements OnInit {
         this.form.addControl('minValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUES));
         this.form.addControl('maxValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUES));
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -271,7 +272,7 @@ export class EditFieldComponent implements OnInit {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -296,7 +297,7 @@ export class EditFieldComponent implements OnInit {
         this.form.addControl('path', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_REFERENCE_PATH));
         // REMOVE
         this.form.removeControl('translatable');
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -321,7 +322,7 @@ export class EditFieldComponent implements OnInit {
           this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
         );
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -346,7 +347,7 @@ export class EditFieldComponent implements OnInit {
           this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
         );
         // REMOVE
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -368,7 +369,7 @@ export class EditFieldComponent implements OnInit {
         this.form.addControl('schemas', this.fb.control<string[] | undefined>(undefined));
         // REMOVE
         this.form.removeControl('translatable');
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number
@@ -390,7 +391,7 @@ export class EditFieldComponent implements OnInit {
         this.form.addControl('schemas', this.fb.control<string[] | undefined>(undefined));
         // REMOVE
         this.form.removeControl('translatable');
-        // Text & TextArea
+        // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
         this.form.removeControl('maxLength');
         // Number

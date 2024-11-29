@@ -43,6 +43,12 @@ export const schemaFieldTextareaSchema = schemaFieldBaseSchema.extend({
   maxLength: z.number().optional(),
 });
 
+export const schemaFieldRichTextSchema = schemaFieldBaseSchema.extend({
+  kind: z.literal(SchemaFieldKind.RICH_TEXT),
+  minLength: z.number().optional(),
+  maxLength: z.number().optional(),
+});
+
 export const schemaFieldMarkdownSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.MARKDOWN),
   minLength: z.number().optional(),
@@ -134,6 +140,7 @@ export const schemaFieldAssetsSchema = schemaFieldBaseSchema.extend({
 export const schemaFieldSchema = z.union([
   schemaFieldTextSchema,
   schemaFieldTextareaSchema,
+  schemaFieldRichTextSchema,
   schemaFieldMarkdownSchema,
   schemaFieldNumberSchema,
   schemaFieldColorSchema,

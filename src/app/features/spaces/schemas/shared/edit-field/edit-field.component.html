@@ -49,6 +49,7 @@
       [
         'TEXT',
         'TEXTAREA',
+        'RICH_TEXT',
         'MARKDOWN',
         'NUMBER',
         'COLOR',
@@ -103,8 +104,8 @@
       </mat-form-field>
     }
 
-    <!--Text and Textarea-->
-    @if (['TEXT', 'TEXTAREA', 'MARKDOWN'].includes(form.value.kind)) {
+    <!--Text, Textarea, RichText and Markdown-->
+    @if (['TEXT', 'TEXTAREA', 'RICH_TEXT', 'MARKDOWN'].includes(form.value.kind)) {
       <mat-form-field>
         <mat-label>Min Length</mat-label>
         <input matInput type="number" formControlName="minLength" autocomplete="off" />

@@ -62,6 +62,7 @@ export interface SchemaEnumValue {
 export type SchemaField =
   | SchemaFieldText
   | SchemaFieldTextarea
+  | SchemaFieldRichText
   | SchemaFieldMarkdown
   | SchemaFieldNumber
   | SchemaFieldColor
@@ -81,6 +82,7 @@ export type SchemaField =
 export enum SchemaFieldKind {
   TEXT = 'TEXT',
   TEXTAREA = 'TEXTAREA',
+  RICH_TEXT = 'RICH_TEXT',
   MARKDOWN = 'MARKDOWN',
   NUMBER = 'NUMBER',
   COLOR = 'COLOR',
@@ -107,7 +109,12 @@ export interface FieldKindDescription {
 export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescription> = {
   TEXT: { name: 'Text', icon: 'title', description: 'Short text field, titles or headlines' },
   TEXTAREA: { name: 'TextArea', icon: 'rtt', description: 'Long text field, description' },
-  MARKDOWN: { name: 'Markdown', icon: 'functions', description: 'Markdown text field, description' },
+  RICH_TEXT: {
+    name: 'RichText',
+    icon: 'format_shapes',
+    description: 'Rich text field, text that includes formatting commands for page layout such as bold, underline, italic, etc.',
+  },
+  MARKDOWN: { name: 'Markdown', icon: 'markdown', description: 'Markdown text field, description' },
   NUMBER: { name: 'Number', icon: 'pin', description: 'Number field, amount or quantity' },
   COLOR: { name: 'Color', icon: 'colorize', description: 'Color field, background or text color' },
   DATE: { name: 'Date', icon: 'event', description: 'Date field, calendar date picker' },
@@ -142,6 +149,12 @@ export interface SchemaFieldText extends SchemaFieldBase {
 
 export interface SchemaFieldTextarea extends SchemaFieldBase {
   kind: SchemaFieldKind.TEXTAREA;
+  minLength?: number;
+  maxLength?: number;
+}
+
+export interface SchemaFieldRichText extends SchemaFieldBase {
+  kind: SchemaFieldKind.RICH_TEXT;
   minLength?: number;
   maxLength?: number;
 }

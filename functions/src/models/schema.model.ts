@@ -37,6 +37,7 @@ export interface SchemaEnumValue {
 export type SchemaField =
   | SchemaFieldText
   | SchemaFieldTextarea
+  | SchemaFieldRichText
   | SchemaFieldMarkdown
   | SchemaFieldNumber
   | SchemaFieldColor
@@ -56,6 +57,7 @@ export type SchemaField =
 export enum SchemaFieldKind {
   TEXT = 'TEXT',
   TEXTAREA = 'TEXTAREA',
+  RICH_TEXT = 'RICH_TEXT',
   MARKDOWN = 'MARKDOWN',
   NUMBER = 'NUMBER',
   COLOR = 'COLOR',
@@ -91,6 +93,12 @@ export interface SchemaFieldText extends SchemaFieldBase {
 
 export interface SchemaFieldTextarea extends SchemaFieldBase {
   kind: SchemaFieldKind.TEXTAREA;
+  minLength?: number;
+  maxLength?: number;
+}
+
+export interface SchemaFieldRichText extends SchemaFieldBase {
+  kind: SchemaFieldKind.RICH_TEXT;
   minLength?: number;
   maxLength?: number;
 }

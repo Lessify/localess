@@ -8,25 +8,27 @@ import { SchemaService } from '@shared/services/schema.service';
 import { ContentService } from '@shared/services/content.service';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { AssetService } from '@shared/services/asset.service';
-import { AddDocumentDialogComponent } from './add-document-dialog/add-document-dialog.component';
-import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
-import { EditDialogComponent } from './edit-dialog/edit-dialog.component';
+import { AddDocumentDialogComponent } from './add-document-dialog';
+import { AddFolderDialogComponent } from './add-folder-dialog';
+import { EditDialogComponent } from './edit-dialog';
 import { EditDocumentComponent } from './edit-document/edit-document.component';
 import { LinkSelectComponent } from './shared/link-select/link-select.component';
 import { EditDocumentSchemaComponent } from './edit-document-schema/edit-document-schema.component';
 import { AssetSelectComponent } from './shared/asset-select/asset-select.component';
 import { AssetsSelectComponent } from './shared/assets-select/assets-select.component';
-import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ImportDialogComponent } from './import-dialog/import-dialog.component';
+import { ExportDialogComponent } from './export-dialog';
+import { ImportDialogComponent } from './import-dialog';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { ReferenceSelectComponent } from './shared/reference-select/reference-select.component';
 import { ReferencesSelectComponent } from './shared/references-select/references-select.component';
 import { ContentHistoryService } from '@shared/services/content-history.service';
 import { MarkdownModule } from 'ngx-markdown';
-import { MoveDialogComponent } from './move-dialog/move-dialog.component';
+import { MoveDialogComponent } from './move-dialog';
 import { StatusComponent } from '@shared/components/status';
 import { TranslateService } from '@shared/services/translate.service';
+import { NgxTiptapModule } from 'ngx-tiptap';
+import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-editor.component';
 
 @NgModule({
   declarations: [
@@ -44,8 +46,9 @@ import { TranslateService } from '@shared/services/translate.service';
     ExportDialogComponent,
     ImportDialogComponent,
     MoveDialogComponent,
+    RichTextEditorComponent,
   ],
-  imports: [SharedModule, ContentsRoutingModule, MarkdownModule.forChild(), StatusComponent],
+  imports: [SharedModule, ContentsRoutingModule, MarkdownModule.forChild(), StatusComponent, NgxTiptapModule],
   providers: [
     SpaceService,
     SchemaService,

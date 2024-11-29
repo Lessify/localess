@@ -1,0 +1,7 @@
+@use '@angular/material' as mat;
+
+ll-rich-text-editor {
+  .border-color {
+    border-color: var(--sys-outline);
+  }
+}

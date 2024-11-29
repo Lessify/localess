@@ -235,6 +235,7 @@ export class ContentHelperService {
       switch (field.kind) {
         case SchemaFieldKind.TEXT:
         case SchemaFieldKind.TEXTAREA:
+        case SchemaFieldKind.RICH_TEXT:
         case SchemaFieldKind.MARKDOWN: {
           if (field.minLength) {
             validators.push(Validators.minLength(field.minLength));
