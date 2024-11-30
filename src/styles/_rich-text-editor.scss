@@ -24,6 +24,14 @@ ll-rich-text-editor {
       margin-top: 0;
     }
 
+    /* Code and preformatted text styles */
+    code {
+      background-color: var(--sys-on-secondary-container);
+      border-radius: 0.5rem;
+      color: var(--sys-on-secondary);
+      font-size: 0.85rem;
+      padding: 0.3em 0.3em;
+    }
     /* List styles */
     ul {
       list-style: disc;

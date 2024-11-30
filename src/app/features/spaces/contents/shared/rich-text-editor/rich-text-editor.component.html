@@ -82,6 +82,16 @@
           </svg>
         </button>
         <span class="vertical-divider">&nbsp; </span>
+        <button
+          class="rounded h-7 w-7 flex justify-center items-center ml-1"
+          [ngClass]="{ selected: editor.isActive('code') }"
+          (click)="editor.chain().focus().toggleCode().run()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-code" viewBox="0 0 16 16">
+            <path
+              d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8z" />
+          </svg>
+        </button>
+        <span class="vertical-divider">&nbsp; </span>
         <span class="spacer"></span>
         @if (field.translatable) {
           <span class="vertical-divider">&nbsp; </span>

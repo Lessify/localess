@@ -16,6 +16,7 @@ import History from '@tiptap/extension-history';
 import ListItem from '@tiptap/extension-list-item';
 import OrderedList from '@tiptap/extension-ordered-list';
 import BulletList from '@tiptap/extension-bullet-list';
+import Code from '@tiptap/extension-code';
 
 @Component({
   selector: 'll-rich-text-editor',
@@ -47,6 +48,7 @@ export class RichTextEditorComponent implements OnDestroy {
       }),
       OrderedList,
       BulletList,
+      Code,
     ],
     editorProps: {
       attributes: {
