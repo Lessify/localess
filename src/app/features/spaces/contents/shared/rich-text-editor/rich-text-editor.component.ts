@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnDestroy } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldRichText } from '@shared/models/schema.model';
@@ -33,23 +33,7 @@ export class RichTextEditorComponent implements OnDestroy {
   settingsStore = inject(LocalSettingsStore);
 
   editor = new Editor({
-    extensions: [
-      Document,
-      Text,
-      Paragraph,
-      Bold,
-      Italic,
-      Strike,
-      Underline,
-      Placeholder,
-      History,
-      ListItem.extend({
-        content: 'text*',
-      }),
-      OrderedList,
-      BulletList,
-      Code,
-    ],
+    extensions: [Document, Text, Paragraph, Bold, Italic, Strike, Underline, Placeholder, History, ListItem, OrderedList, BulletList, Code],
     editorProps: {
       attributes: {
         class: 'p-2 border-color border-t rounded-b-md outline-none',
@@ -58,10 +42,7 @@ export class RichTextEditorComponent implements OnDestroy {
     },
   });
 
-  constructor(
-    readonly fe: FormErrorHandlerService,
-    private readonly cd: ChangeDetectorRef,
-  ) {}
+  constructor(readonly fe: FormErrorHandlerService) {}
 
   ngOnDestroy(): void {
     this.editor.destroy();

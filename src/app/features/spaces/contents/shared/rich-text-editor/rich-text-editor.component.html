@@ -11,6 +11,17 @@
         autocomplete="off"></textarea>
       <div class="rounded-t-md p-1 flex">
         <button
+          matTooltip="Paragraph"
+          class="rounded h-7 w-7 flex justify-center items-center ml-1"
+          [ngClass]="{ selected: editor.isActive('paragraph') }"
+          (click)="editor.chain().focus().setParagraph().run()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-paragraph" viewBox="0 0 16 16">
+            <path d="M10.5 15a.5.5 0 0 1-.5-.5V2H9v12.5a.5.5 0 0 1-1 0V9H7a4 4 0 1 1 0-8h5.5a.5.5 0 0 1 0 1H11v12.5a.5.5 0 0 1-.5.5"/>
+          </svg>
+        </button>
+        <span class="vertical-divider">&nbsp; </span>
+        <button
+          matTooltip="Bold"
           class="rounded h-7 w-7 flex justify-center items-center ml-1"
           [ngClass]="{ selected: editor.isActive('bold') }"
           (click)="editor.chain().focus().toggleBold().run()">
@@ -20,6 +31,7 @@
           </svg>
         </button>
         <button
+          matTooltip="Italic"
           class="rounded h-7 w-7 flex justify-center items-center ml-1"
           [ngClass]="{ selected: editor.isActive('italic') }"
           (click)="editor.chain().focus().toggleItalic().run()">
@@ -29,6 +41,7 @@
           </svg>
         </button>
         <button
+          matTooltip="Strike"
           class="rounded h-7 w-7 flex justify-center items-center ml-1"
           [ngClass]="{ selected: editor.isActive('strike') }"
           (click)="editor.chain().focus().toggleStrike().run()">
@@ -44,6 +57,7 @@
           </svg>
         </button>
         <button
+          matTooltip="Underline"
           class="rounded h-7 w-7 flex justify-center items-center ml-1"
           [ngClass]="{ selected: editor.isActive('underline') }"
           (click)="editor.chain().focus().toggleUnderline().run()">
@@ -60,6 +74,7 @@
         </button>
         <span class="vertical-divider">&nbsp; </span>
         <button
+          matTooltip="Bullet List"
           class="rounded h-7 w-7 flex justify-center items-center ml-1"
           [ngClass]="{ selected: editor.isActive('bulletList') }"
           (click)="editor.chain().focus().toggleBulletList().run()">
@@ -70,6 +85,7 @@
           </svg>
         </button>
         <button
+          matTooltip="Ordered List"
           class="rounded h-7 w-7 flex justify-center items-center ml-1"
           [ngClass]="{ selected: editor.isActive('orderedList') }"
           (click)="editor.chain().focus().toggleOrderedList().run()">
@@ -83,6 +99,7 @@
         </button>
         <span class="vertical-divider">&nbsp; </span>
         <button
+          matTooltip="Code"
           class="rounded h-7 w-7 flex justify-center items-center ml-1"
           [ngClass]="{ selected: editor.isActive('code') }"
           (click)="editor.chain().focus().toggleCode().run()">
