@@ -5,6 +5,20 @@ ll-rich-text-editor {
     border-color: var(--sys-outline);
   }
 
+  mat-form-field {
+    .mdc-text-field--outlined {
+      padding-left: 0;
+      padding-right: 0;
+
+      .mat-mdc-form-field-infix {
+        padding-bottom: 0;
+        padding-top: 8px;
+      }
+    }
+
+  }
+
+
   .tiptap {
     :first-child {
       margin-top: 0;

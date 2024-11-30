@@ -55,7 +55,7 @@ expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) 
         .then(content => {
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-            .contentType('application/json')
+            .contentType('application/json; charset=utf-8')
             .send(content.toString());
         })
         .catch(() => {
@@ -162,7 +162,7 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
         );
       res
         .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-        .contentType('application/json')
+        .contentType('application/json; charset=utf-8')
         .send(response);
       return;
     }
@@ -244,7 +244,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
         .then(content => {
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-            .contentType('application/json')
+            .contentType('application/json; charset=utf-8')
             .send(content.toString());
         })
         .catch(() => {
@@ -324,7 +324,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
         .then(content => {
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-            .contentType('application/json')
+            .contentType('application/json; charset=utf-8')
             .send(content.toString());
         })
         .catch(() => {

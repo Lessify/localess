@@ -35,7 +35,7 @@ export class RichTextEditorComponent implements OnDestroy {
     extensions: [Document, Text, Paragraph, Bold, Italic, Strike, Underline, Placeholder, History, ListItem, OrderedList, BulletList],
     editorProps: {
       attributes: {
-        class: 'p-2 border-color border rounded-b-md outline-none',
+        class: 'p-2 border-color border-t rounded-b-md outline-none',
         spellcheck: 'false',
       },
     },
@@ -44,8 +44,7 @@ export class RichTextEditorComponent implements OnDestroy {
   constructor(
     readonly fe: FormErrorHandlerService,
     private readonly cd: ChangeDetectorRef,
-  ) {
-  }
+  ) {}
 
   ngOnDestroy(): void {
     this.editor.destroy();
