@@ -12,6 +12,10 @@ import Document from '@tiptap/extension-document';
 import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
+import History from '@tiptap/extension-history';
+import ListItem from '@tiptap/extension-list-item';
+import OrderedList from '@tiptap/extension-ordered-list';
+import BulletList from '@tiptap/extension-bullet-list';
 
 @Component({
   selector: 'll-rich-text-editor',
@@ -28,7 +32,7 @@ export class RichTextEditorComponent implements OnDestroy {
   settingsStore = inject(LocalSettingsStore);
 
   editor = new Editor({
-    extensions: [Document, Text, Paragraph, Bold, Italic, Strike, Underline, Placeholder],
+    extensions: [Document, Text, Paragraph, Bold, Italic, Strike, Underline, Placeholder, History, ListItem, OrderedList, BulletList],
     editorProps: {
       attributes: {
         class: 'p-2 border-color border rounded-b-md outline-none',
@@ -40,7 +44,8 @@ export class RichTextEditorComponent implements OnDestroy {
   constructor(
     readonly fe: FormErrorHandlerService,
     private readonly cd: ChangeDetectorRef,
-  ) {}
+  ) {
+  }
 
   ngOnDestroy(): void {
     this.editor.destroy();

@@ -161,6 +161,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     switch (element?.kind) {
       case SchemaFieldKind.TEXT:
       case SchemaFieldKind.TEXTAREA:
+      case SchemaFieldKind.RICH_TEXT:
       case SchemaFieldKind.MARKDOWN: {
         fieldForm.addControl(
           'translatable',

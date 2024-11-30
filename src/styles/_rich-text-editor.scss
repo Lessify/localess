@@ -4,4 +4,28 @@ ll-rich-text-editor {
   .border-color {
     border-color: var(--sys-outline);
   }
+
+  .tiptap {
+    :first-child {
+      margin-top: 0;
+    }
+
+    /* List styles */
+    ul {
+      list-style: disc;
+    }
+    ol {
+      list-style: decimal;
+    }
+    ul,
+    ol {
+      padding: 0 1rem;
+      margin: 1.25rem 1rem 1.25rem 0.4rem;
+
+      li p {
+        margin-top: 0.25em;
+        margin-bottom: 0.25em;
+      }
+    }
+  }
 }

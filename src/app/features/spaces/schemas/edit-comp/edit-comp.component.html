@@ -50,13 +50,41 @@
                         {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
                       </span>
                       <span matListItemLine>
-                        <span class="badge">{{ field.value.kind }}</span>
+                        <span class="badge">{{ descriptor.name }}</span>
                         @if (field.value.translatable) {
-                          &nbsp;<span class="badge">Translatable</span>
+                          <span class="badge">Translatable</span>
                         }
                         @if (field.value.required) {
-                          &nbsp;<span class="badge">Required</span>
+                          <span class="badge">Required</span>
                         }
+                        @if (field.value.fileTypes) {
+                          <span class="badge">File Type: {{ field.value.fileTypes }}</span>
+                        }
+                        @if (field.value.path) {
+                          <span class="badge">Path: {{ field.value.path }}</span>
+                        }
+                        @if (field.value.source) {
+                          <span class="badge">Path: {{ field.value.source }}</span>
+                        }
+                        @if (field.value.minLength) {
+                          <span class="badge">Min Length: {{ field.value.minLength }}</span>
+                        }
+                        @if (field.value.maxLength) {
+                          <span class="badge">Max Length: {{ field.value.maxLength }}</span>
+                        }
+                        @if (field.value.minValue) {
+                          <span class="badge">Min Value: {{ field.value.minValue }}</span>
+                        }
+                        @if (field.value.maxValue) {
+                          <span class="badge">Max Value: {{ field.value.maxValue }}</span>
+                        }
+                        @if (field.value.minValues) {
+                          <span class="badge">Min Values: {{ field.value.minValues }}</span>
+                        }
+                        @if (field.value.maxValues) {
+                          <span class="badge">Max Values: {{ field.value.maxValues }}</span>
+                        }
+
                       </span>
                       <div matListItemMeta>
                         <button mat-icon-button (click)="removeComponent($event, index)">

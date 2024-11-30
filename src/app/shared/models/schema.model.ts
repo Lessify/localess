@@ -108,9 +108,9 @@ export interface FieldKindDescription {
 
 export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescription> = {
   TEXT: { name: 'Text', icon: 'title', description: 'Short text field, titles or headlines' },
-  TEXTAREA: { name: 'TextArea', icon: 'rtt', description: 'Long text field, description' },
+  TEXTAREA: { name: 'Text Area', icon: 'rtt', description: 'Long text field, description' },
   RICH_TEXT: {
-    name: 'RichText',
+    name: 'Rich Text',
     icon: 'format_shapes',
     description: 'Rich text field, text that includes formatting commands for page layout such as bold, underline, italic, etc.',
   },
@@ -123,8 +123,8 @@ export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescr
   OPTION: { name: 'Option (One)', icon: 'list', description: 'Single selection field, dropdown' },
   OPTIONS: { name: 'Options (Multiple)', icon: 'list', description: 'Multiple selection field, dropdown' },
   LINK: { name: 'Link', icon: 'link', description: 'Link field, external URL or internal resource' },
-  REFERENCE: { name: 'Reference (One)', icon: 'link', description: 'Reference field, to a internal resource' },
-  REFERENCES: { name: 'References (Multiple)', icon: 'link', description: 'References field, to multiple internal resources' },
+  REFERENCE: { name: 'Reference (One)', icon: 'dataset_linked', description: 'Reference field, to a internal resource' },
+  REFERENCES: { name: 'References (Multiple)', icon: 'dataset_linked', description: 'References field, to multiple internal resources' },
   ASSET: { name: 'Asset (One)', icon: 'attachment', description: 'Asset field, image, video or file' },
   ASSETS: { name: 'Assets (Multiple)', icon: 'attachment', description: 'Assets field, multiple images, videos or files' },
   SCHEMA: { name: 'Schema (One)', icon: 'polyline', description: 'Schema field, to a internal schema' },

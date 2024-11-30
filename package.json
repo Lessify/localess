@@ -59,6 +59,10 @@
     "@tiptap/extension-document": "^2.7.1",
     "@tiptap/extension-text": "^2.7.1",
     "@tiptap/extension-paragraph": "^2.7.1",
+    "@tiptap/extension-history": "^2.7.1",
+    "@tiptap/extension-list-item": "^2.7.1",
+    "@tiptap/extension-bullet-list": "^2.7.1",
+    "@tiptap/extension-ordered-list": "^2.7.1",
     "uuid": "^10.0.0",
     "zone.js": "~0.14.2"
   },
