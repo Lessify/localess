@@ -32,7 +32,22 @@ export class RichTextEditorComponent implements OnDestroy {
   settingsStore = inject(LocalSettingsStore);
 
   editor = new Editor({
-    extensions: [Document, Text, Paragraph, Bold, Italic, Strike, Underline, Placeholder, History, ListItem, OrderedList, BulletList],
+    extensions: [
+      Document,
+      Text,
+      Paragraph,
+      Bold,
+      Italic,
+      Strike,
+      Underline,
+      Placeholder,
+      History,
+      ListItem.extend({
+        content: 'text*',
+      }),
+      OrderedList,
+      BulletList,
+    ],
     editorProps: {
       attributes: {
         class: 'p-2 border-color border-t rounded-b-md outline-none',
