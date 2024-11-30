@@ -812,7 +812,12 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
  * @return {OpenApiSchema} OpenApiSchema
  */
 export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, SchemaObject | ReferenceObject] {
-  if (field.kind === SchemaFieldKind.TEXT || field.kind === SchemaFieldKind.TEXTAREA || field.kind === SchemaFieldKind.MARKDOWN) {
+  if (
+    field.kind === SchemaFieldKind.TEXT ||
+    field.kind === SchemaFieldKind.TEXTAREA ||
+    field.kind === SchemaFieldKind.RICH_TEXT ||
+    field.kind === SchemaFieldKind.MARKDOWN
+  ) {
     return [
       field.name,
       {
