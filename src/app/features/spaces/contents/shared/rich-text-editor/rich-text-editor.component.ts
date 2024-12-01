@@ -17,6 +17,7 @@ import ListItem from '@tiptap/extension-list-item';
 import OrderedList from '@tiptap/extension-ordered-list';
 import BulletList from '@tiptap/extension-bullet-list';
 import Code from '@tiptap/extension-code';
+import Link from '@tiptap/extension-link';
 
 @Component({
   selector: 'll-rich-text-editor',
@@ -33,7 +34,25 @@ export class RichTextEditorComponent implements OnDestroy {
   settingsStore = inject(LocalSettingsStore);
 
   editor = new Editor({
-    extensions: [Document, Text, Paragraph, Bold, Italic, Strike, Underline, Placeholder, History, ListItem, OrderedList, BulletList, Code],
+    extensions: [
+      Document,
+      Text,
+      Paragraph,
+      Bold,
+      Italic,
+      Strike,
+      Underline,
+      Placeholder,
+      History,
+      ListItem,
+      OrderedList,
+      BulletList,
+      Code,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+      }),
+    ],
     editorProps: {
       attributes: {
         class: 'p-2 border-color border-t rounded-b-md outline-none',
@@ -43,6 +62,24 @@ export class RichTextEditorComponent implements OnDestroy {
   });
 
   constructor(readonly fe: FormErrorHandlerService) {}
+
+  setLink(): void {
+    const previousUrl = this.editor.getAttributes('link')['href'];
+    const url = window.prompt('URL', previousUrl);
+    console.log('previousUrl', previousUrl);
+    console.log('url', url);
+    // cancelled
+    if (url === null) {
+      return;
+    }
+    // empty
+    if (url === '') {
+      this.editor.chain().focus().unsetLink().run();
+      return;
+    }
+    // update link
+    this.editor.chain().focus().setLink({ href: url, target: '_blank' }).run();
+  }
 
   ngOnDestroy(): void {
     this.editor.destroy();

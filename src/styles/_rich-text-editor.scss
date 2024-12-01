@@ -32,6 +32,15 @@ ll-rich-text-editor {
       font-size: 0.85rem;
       padding: 0.3em 0.3em;
     }
+    /* Link styles */
+    a {
+      color: var(--sys-primary);
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
     /* List styles */
     ul {
       list-style: disc;
