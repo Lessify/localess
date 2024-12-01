@@ -65,6 +65,7 @@
     "@tiptap/extension-ordered-list": "^2.7.1",
     "@tiptap/extension-code": "^2.7.1",
     "@tiptap/extension-link": "^2.7.1",
+    "@tiptap/extension-heading": "^2.7.1",
     "uuid": "^10.0.0",
     "zone.js": "~0.14.2"
   },

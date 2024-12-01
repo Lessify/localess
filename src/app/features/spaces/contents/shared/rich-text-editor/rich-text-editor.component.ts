@@ -18,6 +18,7 @@ import OrderedList from '@tiptap/extension-ordered-list';
 import BulletList from '@tiptap/extension-bullet-list';
 import Code from '@tiptap/extension-code';
 import Link from '@tiptap/extension-link';
+import Heading from '@tiptap/extension-heading';
 
 @Component({
   selector: 'll-rich-text-editor',
@@ -38,6 +39,9 @@ export class RichTextEditorComponent implements OnDestroy {
       Document,
       Text,
       Paragraph,
+      Heading.configure({
+        levels: [1, 2, 3, 4, 5, 6],
+      }),
       Bold,
       Italic,
       Strike,
