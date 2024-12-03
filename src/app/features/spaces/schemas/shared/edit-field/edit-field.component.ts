@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
-  AssetFileType, assetFileTypeDescriptions,
+  AssetFileType,
+  assetFileTypeDescriptions,
   Schema,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
