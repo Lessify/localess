@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
-  AssetFileType,
+  AssetFileType, assetFileTypeDescriptions,
   Schema,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
@@ -28,8 +28,10 @@ export class EditFieldComponent implements OnInit {
   schemas = input.required<Schema[]>();
 
   fieldKinds = Object.values(SchemaFieldKind);
+  assetTypes = Object.values(AssetFileType);
 
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
+  assetFileTypeDescriptions = assetFileTypeDescriptions;
   selectedFieldKind = this.schemaFieldKindDescriptions[SchemaFieldKind.TEXT];
   nameReadonly = true;
   // Schemas

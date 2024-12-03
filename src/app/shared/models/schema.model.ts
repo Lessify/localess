@@ -131,6 +131,23 @@ export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescr
   SCHEMAS: { name: 'Schemas (Multiple)', icon: 'polyline', description: 'Schemas field, to multiple internal schemas' },
 };
 
+export const assetFileTypeDescriptions: Record<AssetFileType, FieldKindDescription> = {
+  ANY: { name: 'Any File', icon: 'file_present', description: 'All type of files.' },
+  IMAGE: { name: 'Images', icon: 'image', description: 'Image or graphical files including both bitmap and vector still images.' },
+  VIDEO: { name: 'Videos', icon: 'video_file', description: 'Videos files.' },
+  AUDIO: { name: 'Audio', icon: 'audio_file', description: 'Audio or music files.' },
+  TEXT: {
+    name: 'Text Documents',
+    icon: 'description',
+    description: 'Text-only files including any human-readable content, source code, or textual data.',
+  },
+  APPLICATION: {
+    name: 'Application Documents',
+    icon: 'file_present',
+    description: "Any kind of binary data that doesn't fall explicitly into one of the other types.",
+  },
+};
+
 export interface SchemaFieldBase {
   name: string;
   kind: SchemaFieldKind;

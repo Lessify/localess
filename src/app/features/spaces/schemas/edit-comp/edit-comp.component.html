@@ -50,7 +50,7 @@
                         {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
                       </span>
                       <span matListItemLine>
-                        <span class="badge">{{ descriptor.name }}</span>
+                        <span class="badge" [matTooltip]="descriptor.description">{{ descriptor.name }}</span>
                         @if (field.value.translatable) {
                           <span class="badge">Translatable</span>
                         }
@@ -58,13 +58,23 @@
                           <span class="badge">Required</span>
                         }
                         @if (field.value.fileTypes) {
-                          <span class="badge">File Type: {{ field.value.fileTypes }}</span>
+                          @let descriptor = assetFileTypeDescriptions[field.value.fileTypes];
+                          <span class="badge" [matTooltip]="descriptor.description">File Type: {{ descriptor.name }}</span>
                         }
                         @if (field.value.path) {
                           <span class="badge">Path: {{ field.value.path }}</span>
                         }
                         @if (field.value.source) {
-                          <span class="badge">Path: {{ field.value.source }}</span>
+                          <span class="badge">Enum: {{ field.value.source }}</span>
+                        }
+                        @if (field.value.schemas) {
+                          @if (field.value.schemas.length === 1) {
+                            <span class="badge">Schema: {{ field.value.schemas[0] }}</span>
+                          } @else {
+                            <span class="badge" matTooltipClass="allow-cr" [matTooltip]="field.value.schemas.join(',&#10;')">
+                              Schemas: {{ field.value.schemas[0] }}, ...
+                            </span>
+                          }
                         }
                         @if (field.value.minLength) {
                           <span class="badge">Min Length: {{ field.value.minLength }}</span>

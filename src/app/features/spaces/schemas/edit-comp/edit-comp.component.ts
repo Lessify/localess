@@ -8,6 +8,7 @@ import {
   SchemaField,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
+  assetFileTypeDescriptions,
   SchemaFieldOptionSelectable,
   SchemaType,
 } from '@shared/models/schema.model';
@@ -38,6 +39,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   entity?: Schema;
   schemas: Schema[] = [];
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
+  assetFileTypeDescriptions = assetFileTypeDescriptions;
 
   selectedFieldIdx?: number;
 
