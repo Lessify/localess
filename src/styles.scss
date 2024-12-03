@@ -57,12 +57,15 @@ html {
   @include mat.system-level-typography($light-theme);
   @include mat.all-component-typographies($light-theme);
   @include app-theme.theme($light-theme);
+  @import 'styles/highlightjs/light';
+
   &.dark {
     //@media (prefers-color-scheme: dark) {
     @include mat.all-component-colors($dark-theme);
     @include mat.system-level-colors($dark-theme);
     @include mat.system-level-typography($dark-theme);
     @include app-theme.theme($dark-theme);
+    @import 'styles/highlightjs/dark';
   }
 }
 
@@ -70,6 +73,7 @@ html,
 body {
   height: 100%;
 }
+
 body {
   margin: 0;
   //font-family: Roboto, 'Helvetica Neue', sans-serif;

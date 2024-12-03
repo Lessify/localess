@@ -3,7 +3,7 @@ import { AbstractControl } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldRichText } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { Editor } from '@tiptap/core';
+import { Editor, Extension } from '@tiptap/core';
 import Bold from '@tiptap/extension-bold';
 import Italic from '@tiptap/extension-italic';
 import Strike from '@tiptap/extension-strike';
@@ -17,8 +17,10 @@ import ListItem from '@tiptap/extension-list-item';
 import OrderedList from '@tiptap/extension-ordered-list';
 import BulletList from '@tiptap/extension-bullet-list';
 import Code from '@tiptap/extension-code';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import Link from '@tiptap/extension-link';
 import Heading from '@tiptap/extension-heading';
+import { common, createLowlight } from 'lowlight';
 
 @Component({
   selector: 'll-rich-text-editor',
@@ -31,11 +33,24 @@ export class RichTextEditorComponent implements OnDestroy {
   form = input.required<AbstractControl>();
   component = input.required<SchemaFieldRichText>();
 
+  fnKey: string = window.navigator.userAgent.includes('Mac OS') ? 'Cmd' : 'Ctrl';
+
   //Settings
   settingsStore = inject(LocalSettingsStore);
+  lowlight = createLowlight(common);
 
   editor = new Editor({
     extensions: [
+      Extension.create({
+        addKeyboardShortcuts() {
+          return {
+            Tab: ({ editor }) => {
+              editor.commands.insertContent('  ');
+              return true;
+            },
+          };
+        },
+      }),
       Document,
       Text,
       Paragraph,
@@ -52,6 +67,9 @@ export class RichTextEditorComponent implements OnDestroy {
       OrderedList,
       BulletList,
       Code,
+      CodeBlockLowlight.configure({
+        lowlight: this.lowlight,
+      }),
       Link.configure({
         openOnClick: false,
         autolink: true,
