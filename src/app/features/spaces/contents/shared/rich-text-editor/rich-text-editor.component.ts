@@ -33,7 +33,7 @@ export class RichTextEditorComponent implements OnDestroy {
   form = input.required<AbstractControl>();
   component = input.required<SchemaFieldRichText>();
 
-  fnKey: string = window.navigator.userAgent.includes('Mac OS') ? 'Cmd' : 'Ctrl';
+  fnKey: string = /(Mac|iPhone|iPod|iPad)/i.test(window.navigator.userAgent) ? 'Cmd' : 'Ctrl';
 
   //Settings
   settingsStore = inject(LocalSettingsStore);
