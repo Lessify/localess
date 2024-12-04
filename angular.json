@@ -41,9 +41,7 @@
               "src/scripts"
             ],
             "styles": [
-              "src/styles.scss",
-              "node_modules/@stoplight/elements/styles.min.css",
-              "node_modules/prismjs/themes/prism-okaidia.css"
+              "src/styles.scss"
             ],
             "scripts": [
               "node_modules/@stoplight/elements/web-components.min.js",

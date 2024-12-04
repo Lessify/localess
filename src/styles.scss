@@ -7,6 +7,11 @@
 
 @import 'styles/styles-variables';
 
+@import "@stoplight/elements/styles.min.css";
+markdown {
+  @import "prismjs/themes/prism-okaidia";
+}
+
 @import 'styles/background';
 @import 'styles/layout';
 @import 'styles/markdown';
@@ -58,7 +63,6 @@ html {
   @include mat.all-component-typographies($light-theme);
   @include app-theme.theme($light-theme);
   @import 'styles/highlightjs/light';
-
   &.dark {
     //@media (prefers-color-scheme: dark) {
     @include mat.all-component-colors($dark-theme);
