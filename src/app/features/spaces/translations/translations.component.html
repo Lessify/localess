@@ -184,7 +184,7 @@
                     <div class="p-2">
                       <mat-form-field class="with-button">
                         <mat-label>Target Locale</mat-label>
-                        <mat-select [(value)]="selectedTargetLocale" (selectionChange)="translateValue = undefined">
+                        <mat-select [(value)]="selectedTargetLocale" (selectionChange)="translateValue.set(undefined)">
                           @for (locale of space.locales; track locale.id) {
                             <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
                           }
@@ -203,7 +203,7 @@
                       @switch (selectedTranslation.type) {
                         @case ('STRING') {
                           <ll-translation-string-edit
-                            [value]="translateValue || selectedTranslation.locales[selectedTargetLocale]"
+                            [value]="translateValue() || selectedTranslation.locales[selectedTargetLocale]"
                             (valueChange)="selectedTranslationLocaleValue = $event" />
                         }
                         @case ('PLURAL') {

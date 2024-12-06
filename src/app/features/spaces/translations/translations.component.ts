@@ -10,7 +10,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { debounceTime, EMPTY, Observable } from 'rxjs';
+import { debounceTime, EMPTY, Observable, single } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { FormControl } from '@angular/forms';
@@ -84,7 +84,7 @@ export class TranslationsComponent implements OnInit {
 
   selectedTranslation?: Translation;
   selectedTranslationLocaleValue?: string;
-  translateValue?: string;
+  translateValue = signal<undefined | string>(undefined);
 
   selectedSearchLocale = '';
   selectedSourceLocale = '';
@@ -361,7 +361,7 @@ export class TranslationsComponent implements OnInit {
 
   selectTranslation(translation: Translation): void {
     this.selectedTranslation = translation;
-    this.translateValue = undefined;
+    this.translateValue.set(undefined);
   }
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
@@ -419,11 +419,8 @@ export class TranslationsComponent implements OnInit {
       .subscribe({
         next: value => {
           // make sure the component is updated
-          this.translateValue = '';
-          this.cd.detectChanges();
           this.notificationService.info('Translated');
-          this.translateValue = value;
-          this.cd.markForCheck();
+          this.translateValue.set(value);
         },
         error: (err: unknown) => {
           console.error(err);
