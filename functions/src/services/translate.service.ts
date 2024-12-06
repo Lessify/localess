@@ -19,10 +19,16 @@ import { protos } from '@google-cloud/translate';
  * @param {string} targetLocale
  */
 export async function translateCloud(content: string, sourceLocale: string | null, targetLocale: string): Promise<string> {
+  let deeplApiKey: string | undefined = undefined;
   // Get Server Configurations
-  await remoteConfigTemplate.load();
-  const config = remoteConfigTemplate.evaluate();
-  const deeplApiKey = config.getString('deepl_api_key');
+  try {
+    await remoteConfigTemplate.load();
+    const config = remoteConfigTemplate.evaluate();
+    deeplApiKey = config.getString('deepl_api_key');
+  } catch (e) {
+    logger.warn(e);
+  }
+
   if (deeplApiKey) {
     // DeepL Translate
     if (sourceLocale && !DEEPL_SOURCE_SUPPORT_LOCALES.has(sourceLocale)) {
