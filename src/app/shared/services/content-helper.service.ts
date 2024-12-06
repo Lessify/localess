@@ -179,7 +179,7 @@ export class ContentHelperService {
   }
 
   clone<T>(source: T, generateNewID = false): T {
-    if (source instanceof Array) {
+    if (Array.isArray(source)) {
       const target: any = Object.assign([], source);
       Object.getOwnPropertyNames(target).forEach(value => {
         if (target[value] instanceof Object) {
@@ -187,11 +187,11 @@ export class ContentHelperService {
         }
       });
       return target;
-    } else if (source instanceof Object) {
+    } else if (source instanceof Object || typeof source === 'object') {
       const target: any = Object.assign({}, source);
       Object.getOwnPropertyNames(target).forEach(fieldName => {
         const value = target[fieldName];
-        if (target[fieldName] instanceof Object) {
+        if (target[fieldName] instanceof Object || typeof target[fieldName] === 'object') {
           target[fieldName] = this.clone(target[fieldName], generateNewID);
           if (Object.getOwnPropertyNames(target[fieldName]).some(it => it === 'kind')) {
             if (isLinkContent(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {

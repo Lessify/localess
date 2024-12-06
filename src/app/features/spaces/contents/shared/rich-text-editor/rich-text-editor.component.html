@@ -219,7 +219,7 @@
           </button>
         }
       </div>
-      <tiptap-editor [editor]="editor" [formControl]="form()"></tiptap-editor>
+      <tiptap-editor [editor]="editor" outputFormat="json" [formControl]="form()"></tiptap-editor>
       @if (field.description) {
         <mat-hint class="hint">{{ field.description }}</mat-hint>
       }

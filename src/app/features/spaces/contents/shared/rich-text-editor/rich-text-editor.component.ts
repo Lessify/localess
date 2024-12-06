@@ -88,8 +88,6 @@ export class RichTextEditorComponent implements OnDestroy {
   setLink(): void {
     const previousUrl = this.editor.getAttributes('link')['href'];
     const url = window.prompt('URL', previousUrl);
-    console.log('previousUrl', previousUrl);
-    console.log('url', url);
     // cancelled
     if (url === null) {
       return;
