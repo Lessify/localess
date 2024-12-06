@@ -10,7 +10,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { debounceTime, EMPTY, Observable, single } from 'rxjs';
+import { debounceTime, EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { FormControl } from '@angular/forms';
