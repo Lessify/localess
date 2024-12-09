@@ -85,7 +85,7 @@ const onCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId
       // skip already filled data
       if (locale.id === space.localeFallback.id) continue;
       try {
-        const tValue = translateCloud(localeValue, space.localeFallback.id, locale.id);
+        const tValue = await translateCloud(localeValue, space.localeFallback.id, locale.id);
         const field = 'locales.' + locale.id;
         if (tValue) {
           update[field] = tValue;
