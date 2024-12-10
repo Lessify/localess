@@ -120,10 +120,16 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           if (document.kind === ContentKind.DOCUMENT) {
             this.document = document;
             this.rootSchema = schemas.find(it => it.id === document.schema);
-            this.documentData = ObjectUtils.clone(document.data) || {
-              _id: v4(),
-              schema: this.rootSchema?.id || '',
-            };
+            if (document.data === undefined) {
+              this.documentData = {
+                _id: v4(),
+                schema: this.rootSchema?.id || '',
+              };
+            } else if (typeof document.data === 'string') {
+              this.documentData = JSON.parse(document.data);
+            } else {
+              this.documentData = ObjectUtils.clone(document.data);
+            }
           }
 
           // Generate initial path only once

@@ -1,6 +1,6 @@
 export class ObjectUtils {
   public static clone<T>(source: T, clean = false): T {
-    if (source instanceof Array) {
+    if (Array.isArray(source)) {
       const target: any = Object.assign([], source);
       Object.getOwnPropertyNames(target).forEach(value => {
         if (target[value] instanceof Object) {
@@ -8,10 +8,10 @@ export class ObjectUtils {
         }
       });
       return target;
-    } else if (source instanceof Object) {
+    } else if (source instanceof Object || typeof source === 'object') {
       const target: any = Object.assign({}, source);
       Object.getOwnPropertyNames(target).forEach(value => {
-        if (target[value] instanceof Object) {
+        if (target[value] instanceof Object || typeof target[value] === 'object') {
           target[value] = this.clone(target[value]);
         }
         if (clean && target[value] == null) {
@@ -24,7 +24,7 @@ export class ObjectUtils {
   }
 
   public static clean(source: any) {
-    if (source instanceof Array) {
+    if (Array.isArray(source)) {
       source.forEach(value => {
         if (value instanceof Object) {
           this.clean(value);
@@ -43,7 +43,7 @@ export class ObjectUtils {
   }
 
   public static isEqual(source: any, target: any): boolean {
-    if (source instanceof Array && target instanceof Array) {
+    if (Array.isArray(source) && Array.isArray(target)) {
       if (source.length !== target.length) {
         return false;
       }

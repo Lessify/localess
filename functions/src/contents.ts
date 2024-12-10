@@ -46,7 +46,11 @@ const publish = onCall<PublishContentData>(async request => {
         publishedAt: new Date().toISOString(),
       };
       if (content.data) {
-        documentStorage.data = extractContent(content.data, schemas, locale.id);
+        if (typeof content.data === 'string') {
+          documentStorage.data = extractContent(JSON.parse(content.data), schemas, locale.id);
+        } else {
+          documentStorage.data = extractContent(content.data, schemas, locale.id);
+        }
       }
       // Save generated JSON
       logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/${locale.id}.json`);
@@ -111,7 +115,11 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
           updatedAt: content.updatedAt.toDate().toISOString(),
         };
         if (content.data) {
-          documentStorage.data = extractContent(content.data, schemas, locale.id);
+          if (typeof content.data === 'string') {
+            documentStorage.data = extractContent(JSON.parse(content.data), schemas, locale.id);
+          } else {
+            documentStorage.data = extractContent(content.data, schemas, locale.id);
+          }
         }
         // Save generated JSON
         logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);

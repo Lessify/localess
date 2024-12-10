@@ -27,7 +27,7 @@ export interface ContentBase {
 export interface ContentDocument<T extends ContentData = ContentData> extends ContentBase {
   kind: ContentKind.DOCUMENT;
   schema: string;
-  data?: T;
+  data?: T | string;
   publishedAt?: Timestamp;
 }
 

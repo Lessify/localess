@@ -217,7 +217,7 @@ export class ContentService {
 
   updateDocumentData(spaceId: string, id: string, data: ContentData): Observable<void> {
     const update: UpdateData<ContentDocument> = {
-      data: this.contentHelperService.clone(data),
+      data: JSON.stringify(this.contentHelperService.clone(data)),
       updatedAt: serverTimestamp(),
     };
     if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
