@@ -102,6 +102,37 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
         uri: 'WLWc4vOACzG1QjK9AEo9',
       },
     },
+    ContentRichText: {
+      type: 'object',
+      description: 'Content RichText define content as JSON Object.',
+      properties: {
+        type: {
+          type: 'string',
+          description: 'Define the type of Content Node',
+        },
+        content: {
+          type: 'array',
+          description: 'List of Content Nodes',
+          items: {
+            $ref: '#/components/schemas/ContentRichText',
+          },
+        },
+      },
+      example: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'Wow, this editor instance exports its content as JSON.',
+              },
+            ],
+          },
+        ],
+      },
+    },
     Content: {
       type: 'object',
       description: 'Content define shared object for all possible Content Types.',
@@ -812,12 +843,7 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
  * @return {OpenApiSchema} OpenApiSchema
  */
 export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, SchemaObject | ReferenceObject] {
-  if (
-    field.kind === SchemaFieldKind.TEXT ||
-    field.kind === SchemaFieldKind.TEXTAREA ||
-    field.kind === SchemaFieldKind.RICH_TEXT ||
-    field.kind === SchemaFieldKind.MARKDOWN
-  ) {
+  if (field.kind === SchemaFieldKind.TEXT || field.kind === SchemaFieldKind.TEXTAREA || field.kind === SchemaFieldKind.MARKDOWN) {
     return [
       field.name,
       {
@@ -825,6 +851,15 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, Sch
         minLength: field.minLength,
         maxLength: field.maxLength,
         description: field.description,
+      },
+    ];
+  }
+  if (field.kind === SchemaFieldKind.RICH_TEXT) {
+    return [
+      field.name,
+      {
+        description: field.description,
+        $ref: '#/components/schemas/ContentRichText',
       },
     ];
   }

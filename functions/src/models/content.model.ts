@@ -94,6 +94,24 @@ export interface ReferenceContent {
   uri: string;
 }
 
+export interface RichTextContent {
+  type?: string;
+  content?: RichTextContent[];
+}
+
+// export type RichTextContent = {
+//   type?: string;
+//   attrs?: Record<string, any>;
+//   content?: RichTextContent[];
+//   marks?: {
+//     type: string;
+//     attrs?: Record<string, any>;
+//     [key: string]: any;
+//   }[];
+//   text?: string;
+//   [key: string]: any;
+// };
+
 // Import and Export
 export interface ContentFolderExport extends Omit<ContentFolder, 'createdAt' | 'updatedAt'> {
   id: string;
