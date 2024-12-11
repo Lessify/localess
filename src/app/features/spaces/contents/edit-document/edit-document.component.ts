@@ -163,7 +163,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   get isFormDirty(): boolean {
-    return !ObjectUtils.isEqual(this.document?.data, this.contentHelperService.clone(this.documentData));
+    return !ObjectUtils.isEqual(this.document?.data, JSON.stringify(this.contentHelperService.clone(this.documentData)));
   }
 
   publish(): void {
