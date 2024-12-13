@@ -189,12 +189,18 @@ export class ContentsComponent {
     event.stopImmediatePropagation();
     let title = '';
     let content = '';
+    let messageSuccess = '';
+    let messageError = '';
     if (element.kind === ContentKind.FOLDER) {
       title = 'Delete Folder';
       content = `Are you sure about deleting Folder with name: ${element.name}.\n All sub folders and documents will be deleted.`;
+      messageSuccess = `Folder '${element.name}' has been deleted.`;
+      messageError = `Folder '${element.name}' can not be deleted.`;
     } else if (element.kind === ContentKind.DOCUMENT) {
       title = 'Delete Document';
       content = `Are you sure about deleting Document with name: ${element.name}.`;
+      messageSuccess = `Document '${element.name}' has been deleted.`;
+      messageError = `Document '${element.name}' can not be deleted.`;
     }
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
@@ -212,11 +218,11 @@ export class ContentsComponent {
         next: () => {
           this.selection.clear();
           this.cd.markForCheck();
-          this.notificationService.success(`Content '${element.name}' has been deleted.`);
+          this.notificationService.success(messageSuccess);
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error(`Content '${element.name}' can not be deleted.`);
+          this.notificationService.error(messageError);
         },
       });
   }
@@ -269,11 +275,53 @@ export class ContentsComponent {
         next: () => {
           this.selection.clear();
           this.cd.markForCheck();
-          this.notificationService.success(`Content '${element.name}' has been cloned.`);
+          this.notificationService.success(`Document '${element.name}' has been cloned.`);
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error(`Content '${element.name}' can not be cloned.`);
+          this.notificationService.error(`Document '${element.name}' can not be cloned.`);
+        },
+      });
+  }
+
+  openPublishDialog(event: Event, element: Content): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    let title = '';
+    let content = '';
+    let messageSuccess = '';
+    let messageError = '';
+    if (element.kind === ContentKind.FOLDER) {
+      title = 'Publish Folder';
+      content = `Are you sure about publishing the Folder with the name: ${element.name}.\n All sub folders and documents will be published.`;
+      messageSuccess = `Folder '${element.name}' has been published.`;
+      messageError = `Folder '${element.name}' can not be published.`;
+    } else if (element.kind === ContentKind.DOCUMENT) {
+      title = 'Publish Document';
+      content = `Are you sure about publishing the Document with the name: ${element.name}.`;
+      messageSuccess = `Document '${element.name}' has been published.`;
+      messageError = `Document '${element.name}' can not be published.`;
+    }
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
+        data: {
+          title: title,
+          content: content,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it || false),
+        switchMap(() => this.contentService.publish(this.spaceId(), element.id)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(messageSuccess);
+        },
+        error: (err: unknown) => {
+          console.error(err);
+          this.notificationService.success(messageError);
         },
       });
   }

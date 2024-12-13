@@ -71,6 +71,21 @@ export function findContentsByStartFullSlug(spaceId: string, startFullSlug: stri
 }
 
 /**
+ * find Content by Full Slug
+ * @param {string} spaceId Space identifier
+ * @param {string} startFullSlug Start Full Slug path
+ * @return {DocumentReference} document reference to the space
+ */
+export function findDocumentsToPublishByStartFullSlug(spaceId: string, startFullSlug: string): Query {
+  logger.info(`[findDocumentsToPublishByStartFullSlug] spaceId=${spaceId} startFullSlug=${startFullSlug}`);
+  return firestoreService
+    .collection(`spaces/${spaceId}/contents`)
+    .where('fullSlug', '>=', startFullSlug)
+    .where('fullSlug', '<', `${startFullSlug}~`)
+    .where('kind', '==', ContentKind.DOCUMENT);
+}
+
+/**
  * find Content by ID
  * @param {string} spaceId Space identifier
  * @param {string} id Content identifier

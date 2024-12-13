@@ -4,6 +4,11 @@ ll-rich-text-editor {
   .border-color {
     border-color: var(--sys-outline);
   }
+  .tool-bar-sticky {
+    background-color: var(--sys-surface);
+    border-color: var(--sys-outline);
+    @apply sticky top-0 z-10 border-b border-x p-1 flex;
+  }
 
   mat-form-field {
     .mdc-text-field--outlined {

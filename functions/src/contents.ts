@@ -1,6 +1,6 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten, DocumentSnapshot } from 'firebase-functions/v2/firestore';
 import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
 import { canPerform } from './utils/security-utils';
 import { BATCH_MAX, bucket, firestoreService } from './config';
@@ -16,7 +16,16 @@ import {
   Space,
   UserPermission,
 } from './models';
-import { extractContent, findAllContentsByParentSlug, findContentById, findContentsHistory, findSchemas, findSpaceById } from './services';
+import {
+  extractContent,
+  findAllContentsByParentSlug,
+  findContentById,
+  findContentsHistory,
+  findDocumentsToPublishByStartFullSlug,
+  findSchemas,
+  findSpaceById,
+} from './services';
+import { AuthData } from 'firebase-functions/lib/common/providers/https';
 
 // Publish
 const publish = onCall<PublishContentData>(async request => {
@@ -30,50 +39,82 @@ const publish = onCall<PublishContentData>(async request => {
   const schemasSnapshot = await findSchemas(spaceId).get();
   if (spaceSnapshot.exists && contentSnapshot.exists) {
     const space: Space = spaceSnapshot.data() as Space;
-    const content: ContentDocument = contentSnapshot.data() as ContentDocument;
+    const content: Content = contentSnapshot.data() as Content;
     const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
-    for (const locale of space.locales) {
-      const documentStorage: ContentDocumentStorage = {
-        id: contentSnapshot.id,
-        name: content.name,
-        kind: content.kind,
-        locale: locale.id,
-        slug: content.slug,
-        fullSlug: content.fullSlug,
-        parentSlug: content.parentSlug,
-        createdAt: content.createdAt.toDate().toISOString(),
-        updatedAt: content.updatedAt.toDate().toISOString(),
-        publishedAt: new Date().toISOString(),
-      };
-      if (content.data) {
-        if (typeof content.data === 'string') {
-          documentStorage.data = extractContent(JSON.parse(content.data), schemas, locale.id);
-        } else {
-          documentStorage.data = extractContent(content.data, schemas, locale.id);
-        }
+    if (content.kind === ContentKind.DOCUMENT) {
+      await publishDocument(spaceId, space, contentId, content, contentSnapshot, schemas, auth);
+    } else if (content.kind === ContentKind.FOLDER) {
+      const documentsSnapshot = await findDocumentsToPublishByStartFullSlug(spaceId, `${content.fullSlug}/`).get();
+      for (const documentSnapshot of documentsSnapshot.docs) {
+        const document = documentSnapshot.data() as ContentDocument;
+        // SKIP if the page was already published, by comparing publishedAt and updatedAt
+        if (document.publishedAt && document.publishedAt.seconds > document.updatedAt.seconds) continue;
+        await publishDocument(spaceId, space, contentId, document, documentSnapshot, schemas, auth);
       }
-      // Save generated JSON
-      logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/${locale.id}.json`);
-      await bucket.file(`spaces/${spaceId}/contents/${contentId}/${locale.id}.json`).save(JSON.stringify(documentStorage));
     }
     // Save Cache
     logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/cache.json`);
     await bucket.file(`spaces/${spaceId}/contents/${contentId}/cache.json`).save('');
-    // Update publishedAt
-    await contentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
-    const addHistory: WithFieldValue<ContentHistory> = {
-      type: ContentHistoryType.PUBLISHED,
-      name: auth?.token['name'] || FieldValue.delete(),
-      email: auth?.token.email || FieldValue.delete(),
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    await findContentsHistory(spaceId, contentId).add(addHistory);
     return;
   } else {
     logger.info(`[Content::contentPublish] Content ${contentId} does not exist.`);
     throw new HttpsError('not-found', 'Content not found');
   }
 });
+
+/**
+ * Publish Document
+ * @param {string} spaceId space id
+ * @param {Space} space
+ * @param {string} documentId
+ * @param {ContentDocument} document
+ * @param {DocumentSnapshot} documentSnapshot
+ * @param {Map<string, Schema>} schemas
+ * @param {AuthData} auth
+ */
+async function publishDocument(
+  spaceId: string,
+  space: Space,
+  documentId: string,
+  document: ContentDocument,
+  documentSnapshot: DocumentSnapshot,
+  schemas: Map<string, Schema>,
+  auth?: AuthData
+) {
+  for (const locale of space.locales) {
+    const documentStorage: ContentDocumentStorage = {
+      id: documentId,
+      name: document.name,
+      kind: document.kind,
+      locale: locale.id,
+      slug: document.slug,
+      fullSlug: document.fullSlug,
+      parentSlug: document.parentSlug,
+      createdAt: document.createdAt.toDate().toISOString(),
+      updatedAt: document.updatedAt.toDate().toISOString(),
+      publishedAt: new Date().toISOString(),
+    };
+    if (document.data) {
+      if (typeof document.data === 'string') {
+        documentStorage.data = extractContent(JSON.parse(document.data), schemas, locale.id);
+      } else {
+        documentStorage.data = extractContent(document.data, schemas, locale.id);
+      }
+    }
+    // Save generated JSON
+    logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
+    await bucket.file(`spaces/${spaceId}/contents/${documentId}/${locale.id}.json`).save(JSON.stringify(documentStorage));
+    // Update publishedAt
+    await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
+    const addHistory: WithFieldValue<ContentHistory> = {
+      type: ContentHistoryType.PUBLISHED,
+      name: auth?.token['name'] || FieldValue.delete(),
+      email: auth?.token.email || FieldValue.delete(),
+      createdAt: FieldValue.serverTimestamp(),
+    };
+    await findContentsHistory(spaceId, documentId).add(addHistory);
+  }
+}
 
 // Firestore events
 const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}', async event => {
