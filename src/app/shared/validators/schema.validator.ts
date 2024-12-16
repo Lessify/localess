@@ -7,16 +7,14 @@ export class SchemaValidator {
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.SCHEMA_ID),
     Validators.minLength(3),
-    Validators.maxLength(30),
+    Validators.maxLength(50),
   ];
 
   public static TYPE: ValidatorFn[] = [Validators.required];
 
   public static DESCRIPTION: ValidatorFn[] = [Validators.maxLength(250)];
 
-  public static DISPLAY_NAME: ValidatorFn[] = [CommonValidator.noSpaceAround, Validators.maxLength(30)];
-
-  public static PREVIEW_FIELD: ValidatorFn[] = [CommonValidator.noSpaceAround, Validators.maxLength(30)];
+  public static DISPLAY_NAME: ValidatorFn[] = [CommonValidator.noSpaceAround, Validators.maxLength(50)];
 
   public static LABEL: ValidatorFn[] = [CommonValidator.noSpace, Validators.minLength(2), Validators.maxLength(50)];
 

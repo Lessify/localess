@@ -56,7 +56,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   form: FormRecord = this.fb.record({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
     description: this.fb.control<string | undefined>(undefined, SchemaValidator.DESCRIPTION),
-    previewField: this.fb.control<string | undefined>(undefined, SchemaValidator.PREVIEW_FIELD),
+    previewField: this.fb.control<string | undefined>(undefined),
     labels: this.fb.control<string[] | undefined>([]),
     fields: this.fb.array<SchemaField>([]),
   });

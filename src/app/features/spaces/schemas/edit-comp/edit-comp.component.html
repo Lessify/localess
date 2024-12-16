@@ -150,7 +150,6 @@
                   }
                 }
               </mat-select>
-              <mat-hint align="end">{{ form.controls['previewField'].value?.length || 0 }}/50</mat-hint>
               @if (form.controls['previewField'].errors; as errors) {
                 <mat-error>{{ fe.errors(errors) }}</mat-error>
               }
