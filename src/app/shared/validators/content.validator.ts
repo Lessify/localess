@@ -5,7 +5,7 @@ export class ContentValidator {
   public static NAME: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpaceAround,
-    Validators.minLength(3),
+    Validators.minLength(2),
     Validators.maxLength(50),
   ];
 
@@ -13,7 +13,7 @@ export class ContentValidator {
     Validators.required,
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.URL_SLUG),
-    Validators.minLength(3),
+    Validators.minLength(2),
     Validators.maxLength(50),
   ];
 

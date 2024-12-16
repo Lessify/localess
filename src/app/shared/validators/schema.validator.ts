@@ -21,7 +21,7 @@ export class SchemaValidator {
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.SCHEMA_ID),
     CommonValidator.reservedName(SCHEMA_RESERVED_IDS),
-    Validators.minLength(3),
+    Validators.minLength(2),
     Validators.maxLength(50),
   ];
 
