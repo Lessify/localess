@@ -1,11 +1,26 @@
 import { ValidatorFn, Validators } from '@angular/forms';
-import { CommonPattern, CommonValidator, RESERVED_NAMES } from './common.validator';
+import { CommonPattern, CommonValidator } from './common.validator';
+
+const SCHEMA_RESERVED_IDS = [
+  'Translations',
+  'Links',
+  'ContentMetadata',
+  'ContentReference',
+  'ContentRichText',
+  'ContentLink',
+  'ContentData',
+  'ContentAsset',
+  'Content',
+];
+
+const SCHEMA_RESERVED_FIELD_NAMES = ['_id', 'schema'];
 
 export class SchemaValidator {
   public static ID: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.SCHEMA_ID),
+    CommonValidator.reservedName(SCHEMA_RESERVED_IDS),
     Validators.minLength(3),
     Validators.maxLength(50),
   ];
@@ -22,8 +37,8 @@ export class SchemaValidator {
   public static FIELD_NAME: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
-    CommonValidator.reservedName(RESERVED_NAMES),
     Validators.pattern(CommonPattern.JSON_NAME),
+    CommonValidator.reservedName(SCHEMA_RESERVED_FIELD_NAMES),
     Validators.minLength(2),
     Validators.maxLength(30),
   ];

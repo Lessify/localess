@@ -81,8 +81,6 @@ export class CommonValidator {
   }
 }
 
-export const RESERVED_NAMES = ['_id', 'schema', 'kind'];
-
 export enum CommonPattern {
   JSON_NAME = '[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+',
   URL_SLUG = '[a-z]+[a-zA-Z0-9-_]*[a-zA-Z0-9]+',
