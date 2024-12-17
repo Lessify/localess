@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "localess-dev"
+    "default": "demo-localess-dev"
   },
   "targets": {
-    "localess-dev": {
+    "demo-localess-dev": {
       "hosting": {
         "localess": [
-          "localess-dev"
+          "demo-localess-dev"
         ]
       }
     }

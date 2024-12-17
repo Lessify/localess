@@ -24,8 +24,6 @@ import { ReposService } from '@shared/generated/github/services/repos.service';
 import { Release } from '@shared/generated/github/models/release';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { ReleasesDialogComponent } from '@shared/components/releases-dialog/releases-dialog.component';
-import { ReleasesDialogModel } from '@shared/components/releases-dialog/releases-dialog.model';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
@@ -52,7 +50,7 @@ export class FeaturesComponent implements OnInit {
 
   logo = 'assets/logo.png';
   version = environment.version;
-  releases: Release[] = [];
+  latestRelease?: Release;
 
   userSideMenu: Signal<SideMenuItem[]> = computed(() => {
     const selectedSpaceId = this.spaceStore.selectedSpaceId();
@@ -111,11 +109,11 @@ export class FeaturesComponent implements OnInit {
     @Optional() private auth: Auth,
   ) {
     reposService
-      .reposListReleases({ owner: 'Lessify', repo: 'localess' })
+      .reposGetLatestRelease({ owner: 'Lessify', repo: 'localess' })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: value => {
-          this.releases = value;
+          this.latestRelease = value;
         },
       });
     effect(
@@ -164,16 +162,6 @@ export class FeaturesComponent implements OnInit {
 
   onDebugEnabledChangeState() {
     this.settingsStore.setDebug(!this.settingsStore.debugEnabled());
-  }
-
-  showReleases() {
-    this.dialog.open<ReleasesDialogComponent, ReleasesDialogModel, void>(ReleasesDialogComponent, {
-      panelClass: 'xl',
-      data: {
-        version: this.version,
-        releases: this.releases,
-      },
-    });
   }
 
   switchTheme() {

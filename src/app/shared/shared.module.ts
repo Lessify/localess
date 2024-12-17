@@ -46,7 +46,6 @@ import { AssetsSelectDialogComponent } from '@shared/components/assets-select-di
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ReleasesDialogComponent } from '@shared/components/releases-dialog/releases-dialog.component';
 import { ReferencesSelectDialogComponent } from '@shared/components/references-select-dialog';
 import { StatusComponent } from '@shared/components/status';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
@@ -98,7 +97,6 @@ const SHARED_COMPONENTS: any[] = [
   BreadcrumbItemComponent,
   ConfirmationDialogComponent,
   ReferencesSelectDialogComponent,
-  ReleasesDialogComponent,
   CustomSnackBarComponent,
   IconComponent,
 ];

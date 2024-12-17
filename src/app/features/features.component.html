@@ -106,19 +106,22 @@
           }
         }
 
-        @if (settingsStore.mainMenuExpended()) {
-          <mat-divider />
-          <mat-list-item (click)="showReleases()">
-            Version : {{ version }}
-            @if (releases.length > 1 && releases[0] && releases[0].tag_name > 'v' + version) {
-              <mat-action-list matListItemMeta [matTooltip]="'A new version is available : ' + releases[0].name">
-                <mat-icon color="warn">hotel_class</mat-icon>
-              </mat-action-list>
+        <mat-divider />
+        @if (latestRelease?.tag_name > 'v' + version) {
+          <mat-list-item
+            (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)"
+            [matTooltip]="'A new version is available : ' + latestRelease.name">
+            <mat-icon matListItemIcon class="motion-safe:animate-pulse flash"> release_alert </mat-icon>
+            @if (settingsStore.mainMenuExpended()) {
+              Version : {{ version }}
             }
           </mat-list-item>
-          <mat-divider />
-          <mat-list-item>
-            Developed by <a href="https://lessify.io" class="font-semibold leading-6" target="_blank">Lessify</a>
+        } @else {
+          <mat-list-item matTooltip="You are on the latest version." (click)="openNewTab('https://localess.org/changelog/v2')">
+            <mat-icon matListItemIcon> new_releases </mat-icon>
+            @if (settingsStore.mainMenuExpended()) {
+              Version : {{ version }}
+            }
           </mat-list-item>
         }
       </mat-nav-list>

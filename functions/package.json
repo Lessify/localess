@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "scripts": {
     "lint": "eslint --ext .js,.ts .",
     "lint:fix": "eslint --fix --ext .js,.ts .",

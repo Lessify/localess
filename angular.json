@@ -126,8 +126,8 @@
             "prerender": false,
             "ssr": false,
             "browserTarget": "localess:build:production",
-            "firebaseProject": "localess-dev",
-            "firebaseHostingSite": "localess-dev"
+            "firebaseProject": "demo-localess-dev",
+            "firebaseHostingSite": "demo-localess-dev"
           }
         },
         "lint": {
