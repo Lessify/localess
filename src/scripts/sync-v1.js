@@ -4,13 +4,26 @@
         return window.top !== window.self;
     }
     function sendEditorData(data) {
+        console.log('sendEditorData', data);
         window.parent.postMessage(data, '*');
     }
-    if (isInIframe()) {
+    function createCSS() {
+        const style = document.createElement('style');
+        style.id = 'localess-css-sync';
+        style.textContent = `
+    [data-ll-id] {
+      outline: #003DFF dashed 1px;
+      display: block;
+    }
+    `.trim();
+        document.head.appendChild(style);
+    }
+    function markVisualEditorElements() {
         document.querySelectorAll('[data-ll-id]').forEach(element => {
-            element.style.outline = '#003DFF dashed 1px';
-            element.style.position = 'relative';
-            element.style.display = 'block';
+            //element.classList.add('localess-outline')
+            if (element.offsetHeight < 5) {
+                element.style.minHeight = '5px';
+            }
             element.addEventListener('click', event => {
                 event.stopPropagation();
                 const id = element.getAttribute('data-ll-id');
@@ -22,6 +35,10 @@
                 }
             });
         });
+    }
+    if (isInIframe()) {
+        createCSS();
+        setTimeout(() => markVisualEditorElements(), 1000);
         class Sync {
             constructor() {
                 this.version = 'v1';
@@ -35,6 +52,7 @@
                 // Receive message from
                 addEventListener('message', event => {
                     if (event.origin === location.ancestorOrigins.item(0)) {
+                        setTimeout(() => markVisualEditorElements(), 1000);
                         const data = event.data;
                         switch (data.type) {
                             case 'input': {

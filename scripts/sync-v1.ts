@@ -1,22 +1,39 @@
 (function () {
+  interface EventToEditor {
+    owner: string;
+    id: string;
+  }
+  type EventType = 'input' | 'save' | 'publish' | 'change';
+  type EventCallback = (event: EventToApp) => void;
+  type EventToApp = { type: 'save' | 'publish' } | { type: 'input' | 'change'; data: any };
+
   function isInIframe() {
     return window.top !== window.self;
   }
 
   function sendEditorData(data: any) {
+    console.log('sendEditorData', data);
     window.parent.postMessage(data, '*');
   }
 
-  if (isInIframe()) {
-    interface EventToEditor {
-      owner: string;
-      id: string;
+  function createCSS() {
+    const style = document.createElement('style');
+    style.id = 'localess-css-sync';
+    style.textContent = `
+    [data-ll-id] {
+      outline: #003DFF dashed 1px;
+      display: block;
     }
+    `.trim();
+    document.head.appendChild(style);
+  }
 
+  function markVisualEditorElements() {
     document.querySelectorAll<HTMLElement>('[data-ll-id]').forEach(element => {
-      element.style.outline = '#003DFF dashed 1px';
-      element.style.position = 'relative';
-      element.style.display = 'block';
+      //element.classList.add('localess-outline')
+      if (element.offsetHeight < 5) {
+        element.style.minHeight = '5px'
+      }
       element.addEventListener('click', event => {
         event.stopPropagation();
         const id = element.getAttribute('data-ll-id');
@@ -28,10 +45,11 @@
         }
       });
     });
+  }
 
-    type EventType = 'input' | 'save' | 'publish' | 'change';
-    type EventCallback = (event: EventToApp) => void;
-    type EventToApp = { type: 'save' | 'publish' } | { type: 'input' | 'change'; data: any };
+  if (isInIframe()) {
+    createCSS()
+    setTimeout(() => markVisualEditorElements(), 1000);
 
     class Sync {
       version = 'v1';
@@ -50,6 +68,7 @@
         // Receive message from
         addEventListener('message', event => {
           if (event.origin === location.ancestorOrigins.item(0)) {
+            setTimeout(() => markVisualEditorElements(), 1000);
             const data = event.data as EventToApp;
             switch (data.type) {
               case 'input': {

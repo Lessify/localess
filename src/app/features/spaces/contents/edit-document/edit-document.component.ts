@@ -422,6 +422,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
   onStructureChange(event: string) {
     console.log('onStructureChange', event);
+    this.generateDocumentIdsTree();
     this.sendEventToApp({ type: 'change', data: this.documentData });
   }
 
