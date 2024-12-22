@@ -103,5 +103,7 @@ Generated data used by exposed API's is store in Storage to make it even faster 
 
 [//]: # 'netstat -aon | findstr 4000'
 [//]: # 'taskkill /PID <PID> /F'
-[//]: # 'git commit --amend --reset-author'
 [//]: # 'docker build --tag=buildme .'
+[//]: # 'git commit --amend --reset-author'
+[//]: # 'git rebase -i main~4 main'
+[//]: # 'git push origin +main'
