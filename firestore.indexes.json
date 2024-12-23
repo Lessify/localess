@@ -10,6 +10,14 @@
       ]
     },
     {
+      "collectionGroup": "assets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "contents",
       "queryScope": "COLLECTION",
       "fields": [
