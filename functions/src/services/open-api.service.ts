@@ -134,69 +134,18 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       },
     },
     Content: {
-      type: 'object',
-      description: 'Content define shared object for all possible Content Types.',
-      required: ['id', 'kind', 'name', 'slug', 'parentSlug', 'fullSlug', 'createdAt', 'updatedAt'],
-      properties: {
-        id: {
-          type: 'string',
-          format: 'uri',
-          description: 'Unique identifier for the object.',
-          example: 'WLWc4vOACzG1QjK9AEo9',
+      allOf: [
+        { $ref: '#/components/schemas/ContentMetadata' },
+        {
+          type: 'object',
+          description: 'Content define shared object for all possible Content Types.',
+          properties: {
+            data: {
+              $ref: '#/components/schemas/ContentData',
+            },
+          },
         },
-        kind: {
-          type: 'string',
-          description: 'Define the type of Content, whether it is a FOLDER or DOCUMENT.',
-          enum: ['FOLDER', 'DOCUMENT'],
-          example: 'DOCUMENT',
-        },
-        name: {
-          type: 'string',
-          description: 'Name of the Content',
-          example: 'Privacy Policy',
-        },
-        locale: {
-          type: 'string',
-          description: 'Locale unique identifier (ISO 639-1).',
-          example: 'en',
-        },
-        slug: {
-          type: 'string',
-          description: 'SLUG of the Content',
-          example: 'privacy-policy',
-        },
-        parentSlug: {
-          type: 'string',
-          description: 'Parent SLUG of the Content',
-          example: 'legal',
-        },
-        fullSlug: {
-          type: 'string',
-          description: 'Combination of SLUG and Parent SLUG of the Content',
-          example: 'legal/privacy-policy',
-        },
-        createdAt: {
-          type: 'string',
-          format: 'date-time',
-          description: 'Date and Time at which the Content was created.',
-          example: '2023-08-23T21:08:17.551Z',
-        },
-        updatedAt: {
-          type: 'string',
-          format: 'date-time',
-          description: 'Date and Time at which the Content was updated.',
-          example: '2024-01-23T14:10:37.852Z',
-        },
-        publishedAt: {
-          type: 'string',
-          format: 'date-time',
-          description: 'Date and Time at which the Content was published.',
-          example: '2023-08-23T21:09:15.191Z',
-        },
-        data: {
-          $ref: '#/components/schemas/ContentData',
-        },
-      },
+      ],
       example: {
         id: 'WLWc4vOACzG1QjK9AEo9',
         kind: 'DOCUMENT',

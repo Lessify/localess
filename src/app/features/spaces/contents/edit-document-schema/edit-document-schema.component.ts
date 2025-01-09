@@ -65,6 +65,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   schemas = input.required<Schema[]>();
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();
+  hoverSchemaPath = input<string[]>();
   // Outputs
   onSchemaChange = output<SchemaSelectChange>();
   onFormChange = output<string>();

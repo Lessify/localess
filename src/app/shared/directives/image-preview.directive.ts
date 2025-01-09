@@ -8,7 +8,7 @@ export class ImagePreviewDirective {
 
   constructor(private hostElement: ElementRef<HTMLImageElement>) {}
 
-  @HostListener('mouseover')
+  @HostListener('mouseenter')
   public onMouseOver() {
     if (this.hostElement.nativeElement.parentElement) {
       this.hostElement.nativeElement.parentElement.style.overflow = 'visible';
@@ -19,7 +19,7 @@ export class ImagePreviewDirective {
     this.hostElement.nativeElement.style.transition = 'transform 0.3s ease-in-out';
   }
 
-  @HostListener('mouseout')
+  @HostListener('mouseleave')
   public onMouseOut() {
     this.hostElement.nativeElement.style.transform = 'scale(1)';
     this.hostElement.nativeElement.style.zIndex = '';

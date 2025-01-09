@@ -54,6 +54,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
+  hoverSchemaPath = signal<string[] | undefined>(undefined);
   selectedEnvironment?: SpaceEnvironment;
   iframeUrl?: SafeUrl;
   availableLocales: Locale[] = [];
@@ -280,6 +281,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     } else {
       this.selectedDocumentData = field;
     }
+    // Send Message to iFrame about Schema Selection
+    this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId });
     //console.groupEnd()
   }
 
@@ -308,6 +311,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       //console.log('localSelectedContent', localSelectedContent)
       this.selectedDocumentData = localSelectedContent;
     }
+    // Send Message to iFrame about Schema Selection
+    this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId });
     //console.groupEnd()
   }
 
@@ -350,69 +355,75 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   @HostListener('window:message', ['$event'])
   contentIdLink(event: MessageEvent<EventToEditor>): void {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
-      console.log('MessageEvent');
-      console.log(event);
-      // find element
-      const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(event.data.id)) || [];
-      // Iterative traversing content and validating fields.
-      let selectedContentId = contentIdIteration.shift();
-      // check Root Schema
-      if (this.documentData._id === selectedContentId) {
-        console.log('root', selectedContentId);
-        const schema = this.schemaMapById.get(this.documentData.schema);
-        if (schema) {
-          this.navigateToSchemaBackwards({
-            contentId: this.documentData._id,
-            schemaName: this.documentData.schema,
-            fieldName: '',
-          });
-          selectedContentId = contentIdIteration.shift();
+      console.log('MessageEvent', event);
+      const { id, type } = event.data;
+      // find element path
+      const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(id)) || [];
+      if (type === 'selectSchema') {
+        // Iterative traversing content and validating fields.
+        let selectedContentId = contentIdIteration.shift();
+        // check Root Schema
+        if (this.documentData._id === selectedContentId) {
+          console.log('root', selectedContentId);
+          const schema = this.schemaMapById.get(this.documentData.schema);
+          if (schema) {
+            this.navigateToSchemaBackwards({
+              contentId: this.documentData._id,
+              schemaName: this.documentData.schema,
+              fieldName: '',
+            });
+            selectedContentId = contentIdIteration.shift();
+          } else {
+            console.log(`schema ${this.selectedDocumentData.schema} not-found`);
+            return;
+          }
         } else {
-          console.log(`schema ${this.selectedDocumentData.schema} not-found`);
+          console.log(`root id ${selectedContentId} not-found`);
           return;
         }
-      } else {
-        console.log(`root id ${selectedContentId} not-found`);
-        return;
-      }
-      // Navigate to child
-      while (selectedContentId) {
-        console.log('child', selectedContentId);
-        const schema = this.schemaMapById.get(this.selectedDocumentData.schema);
-        if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
-          schemaFieldsLoop: for (const field of schema.fields || []) {
-            if (field.kind === SchemaFieldKind.SCHEMA) {
-              const cData: ContentData | undefined = this.selectedDocumentData[field.name];
-              if (cData && cData._id === selectedContentId) {
-                this.navigateToSchemaForwards({
-                  contentId: selectedContentId!,
-                  fieldName: field.name,
-                  schemaName: cData.schema,
-                });
-                break;
-              }
-            }
-            if (field.kind === SchemaFieldKind.SCHEMAS) {
-              const cData: ContentData[] | undefined = this.selectedDocumentData[field.name];
-              for (const content of cData || []) {
-                if (content._id === selectedContentId) {
+        // Navigate to child
+        while (selectedContentId) {
+          console.log('child', selectedContentId);
+          const schema = this.schemaMapById.get(this.selectedDocumentData.schema);
+          if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
+            schemaFieldsLoop: for (const field of schema.fields || []) {
+              if (field.kind === SchemaFieldKind.SCHEMA) {
+                const cData: ContentData | undefined = this.selectedDocumentData[field.name];
+                if (cData && cData._id === selectedContentId) {
                   this.navigateToSchemaForwards({
-                    contentId: selectedContentId,
+                    contentId: selectedContentId!,
                     fieldName: field.name,
-                    schemaName: content.schema,
+                    schemaName: cData.schema,
                   });
-                  break schemaFieldsLoop;
+                  break;
+                }
+              }
+              if (field.kind === SchemaFieldKind.SCHEMAS) {
+                const cData: ContentData[] | undefined = this.selectedDocumentData[field.name];
+                for (const content of cData || []) {
+                  if (content._id === selectedContentId) {
+                    this.navigateToSchemaForwards({
+                      contentId: selectedContentId,
+                      fieldName: field.name,
+                      schemaName: content.schema,
+                    });
+                    break schemaFieldsLoop;
+                  }
                 }
               }
             }
+            selectedContentId = contentIdIteration.shift();
+          } else {
+            console.log(`schema ${this.selectedDocumentData.schema} not-found`);
+            return;
           }
-          selectedContentId = contentIdIteration.shift();
-        } else {
-          console.log(`schema ${this.selectedDocumentData.schema} not-found`);
-          return;
         }
+        console.log(`id ${selectedContentId} not-found`);
+      } else if (type === 'hoverSchema') {
+        this.hoverSchemaPath.set(contentIdIteration);
+      } else if (type === 'leaveSchema') {
+        this.hoverSchemaPath.set(undefined);
       }
-      console.log(`id ${selectedContentId} not-found`);
     }
   }
 
@@ -420,6 +431,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     console.log('onFormChange', event);
     this.sendEventToApp({ type: 'input', data: this.documentData });
   }
+
   onStructureChange(event: string) {
     console.log('onStructureChange', event);
     this.generateDocumentIdsTree();

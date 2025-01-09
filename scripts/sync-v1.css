@@ -1,4 +1,9 @@
-.localess-outline {
-  outline: #003DFF dashed 1px;
+[data-ll-id] {
+  outline: #74777f dashed 1px;
   display: block;
+}
+
+[data-ll-id]:hover {
+  outline-style: solid;
+  outline-color: #005cbb;
 }
