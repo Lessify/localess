@@ -18,7 +18,7 @@ export const contentBaseSchema = z.object({
 export const contentDocumentSchema = contentBaseSchema.extend({
   kind: z.literal(ContentKind.DOCUMENT),
   schema: z.string(),
-  data: contentDataSchema.optional(),
+  data: z.string().optional().or(contentDataSchema.optional()),
 });
 
 export const contentFolderSchema = contentBaseSchema.extend({
