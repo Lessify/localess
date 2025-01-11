@@ -5,6 +5,7 @@ const LS_KEY = 'LL-SETTINGS-STATE';
 
 export type Theme = 'light' | 'dark' | 'auto';
 export type EditorSize = '' | 'sm' | 'md' | 'lg';
+export type DataLayout = 'list' | 'grid';
 
 export interface LocalSettingsState {
   theme: Theme;
@@ -12,6 +13,7 @@ export interface LocalSettingsState {
   debugEnabled: boolean;
   editorEnabled: boolean;
   editorSize: EditorSize;
+  assetLayout: DataLayout;
 }
 
 export const initialState: LocalSettingsState = {
@@ -20,6 +22,7 @@ export const initialState: LocalSettingsState = {
   debugEnabled: false,
   editorEnabled: false,
   editorSize: '',
+  assetLayout: 'list',
 };
 
 function setDocumentTheme(theme: Theme) {
@@ -83,6 +86,10 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { editorSize });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), editorSize }));
       },
+      setAssetLayout: (assetLayout: DataLayout): void => {
+        patchState(store, { assetLayout });
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), assetLayout }));
+      },
     };
   }),
   withComputed(store => {
@@ -92,6 +99,7 @@ export const LocalSettingsStore = signalStore(
       mainMenuExpended: computed(() => store.mainMenuExpended()),
       editorEnabled: computed(() => store.editorEnabled()),
       editorSize: computed(() => store.editorSize()),
+      assetLayout: computed(() => store.assetLayout()),
     };
   }),
   withHooks({

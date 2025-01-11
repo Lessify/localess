@@ -11,7 +11,15 @@ import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
 import { AssetService } from '@shared/services/asset.service';
-import { Asset, AssetFile, AssetFileUpdate, AssetFolderCreate, AssetFolderUpdate, AssetKind } from '@shared/models/asset.model';
+import {
+  Asset,
+  AssetFile,
+  AssetFileUpdate,
+  AssetFolder,
+  AssetFolderCreate,
+  AssetFolderUpdate,
+  AssetKind,
+} from '@shared/models/asset.model';
 import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
 import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
@@ -26,6 +34,7 @@ import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-assets',
@@ -34,7 +43,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsComponent implements OnInit {
-  sort = viewChild.required(MatSort);
+  sort = viewChild(MatSort);
   paginator = viewChild.required(MatPaginator);
 
   // Input
@@ -63,6 +72,8 @@ export class AssetsComponent implements OnInit {
 
   // Loading
   isLoading = signal(true);
+  // Local Settings
+  settingsStore = inject(LocalSettingsStore);
 
   constructor(
     private readonly assetService: AssetService,
@@ -81,7 +92,7 @@ export class AssetsComponent implements OnInit {
         next: assets => {
           this.assets = assets;
           this.dataSource = new MatTableDataSource<Asset>(assets);
-          this.dataSource.sort = this.sort();
+          this.dataSource.sort = this.sort() || null;
           this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
           this.selection.clear();
@@ -160,7 +171,7 @@ export class AssetsComponent implements OnInit {
         panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
-          asset: ObjectUtils.clone(element),
+          asset: ObjectUtils.clone(element) as AssetFolder,
         },
       })
       .afterClosed()
@@ -189,7 +200,7 @@ export class AssetsComponent implements OnInit {
         panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
-          asset: ObjectUtils.clone(element),
+          asset: ObjectUtils.clone(element) as AssetFile,
         },
       })
       .afterClosed()
@@ -394,10 +405,11 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  onDownload(event: Event, element: AssetFile): void {
+  onDownload(event: Event, element: Asset): void {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
+    if (element.kind !== AssetKind.FILE) return;
     window.open(`/api/v1/spaces/${this.spaceId()}/assets/${element.id}?download`);
   }
 
