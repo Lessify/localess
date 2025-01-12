@@ -305,19 +305,9 @@ export class AssetsComponent implements OnInit {
     this.selection.select(...this.dataSource.data);
   }
 
-  onRowSelect(element: Asset): void {
-    // if (element.kind === AssetKind.FILE) {
-    //   element.publishedAt
-    //   if (this.schemasMap.has(element.schema)) {
-    //     this.router.navigate(['features', 'contents', element.id]);
-    //   } else {
-    //     this.notificationService.warn(`Content Schema can not be found.`);
-    //   }
-    //   return;
-    // }
-
-    this.isLoading.set(true);
+  onAssetSelect(element: Asset): void {
     if (element.kind === AssetKind.FOLDER) {
+      this.isLoading.set(true);
       this.selection.clear();
       const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
       assetPath.push({

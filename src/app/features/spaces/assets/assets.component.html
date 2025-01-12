@@ -9,10 +9,10 @@
       hideSingleSelectionIndicator="true"
       (change)="settingsStore.setAssetLayout($event.value)"
       [value]="settingsStore.assetLayout()">
-      <mat-button-toggle value="list" matTooltip="Table View">
+      <mat-button-toggle value="list" matTooltip="List Layout">
         <mat-icon>view_list</mat-icon>
       </mat-button-toggle>
-      <mat-button-toggle value="grid" matTooltip="Card View">
+      <mat-button-toggle value="grid" matTooltip="Grid Layout">
         <mat-icon>grid_view</mat-icon>
       </mat-button-toggle>
     </mat-button-toggle-group>
@@ -62,232 +62,247 @@
       </ll-breadcrumb-item>
     }
   </ll-breadcrumb>
-
-  @if (settingsStore.assetLayout() === 'list') {
-    <mat-table [dataSource]="dataSource" matSort llFileDragDrop (filesChanges)="filesDragAndDrop($event)">
-      <!-- Checkbox Column -->
-      <ng-container matColumnDef="select">
-        <mat-header-cell *matHeaderCellDef>
-          <mat-checkbox
-            (change)="$event ? toggleAllRows() : null"
-            [checked]="selection.hasValue() && isAllSelected()"
-            [indeterminate]="selection.hasValue() && !isAllSelected()">
-          </mat-checkbox>
-        </mat-header-cell>
-        <mat-cell *matCellDef="let row">
-          <mat-checkbox
-            (click)="$event.stopPropagation()"
-            (change)="$event ? selection.toggle(row) : null"
-            [checked]="selection.isSelected(row)">
-          </mat-checkbox>
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="icon">
-        <mat-header-cell *matHeaderCellDef> Icon</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          @switch (element.kind) {
-            @case ('FILE') {
-              <mat-icon>{{ fileIcon(element.type) }}</mat-icon>
-            }
-            @case ('FOLDER') {
-              <mat-icon>folder</mat-icon>
-            }
-          }
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="preview">
-        <mat-header-cell *matHeaderCellDef> Preview</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          @if (element.kind === 'FILE' && filePreview(element.type)) {
-            @if (element.inProgress) {
-              <mat-progress-spinner mode="indeterminate" />
-            } @else {
-              <img
-                class="border object-contain rounded bg-stripes-gray"
-                width="115"
-                height="115"
-                loading="lazy"
-                alt="thumbnail"
-                ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ element.id }}" />
-            }
-          }
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="name">
-        <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          <div>
-            <div class="break-all">{{ element.name }}{{ element.extension }}</div>
-            @if (element.metadata; as metadata) {
-              @if (metadata.width && metadata.height) {
-                <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
+  <div llFileDragDrop (filesChanges)="filesDragAndDrop($event)">
+    @if (settingsStore.assetLayout() === 'list') {
+      <mat-table [dataSource]="dataSource" matSort>
+        <!-- Checkbox Column -->
+        <ng-container matColumnDef="select">
+          <mat-header-cell *matHeaderCellDef>
+            <mat-checkbox
+              (change)="$event ? toggleAllRows() : null"
+              [checked]="selection.hasValue() && isAllSelected()"
+              [indeterminate]="selection.hasValue() && !isAllSelected()">
+            </mat-checkbox>
+          </mat-header-cell>
+          <mat-cell *matCellDef="let row">
+            <mat-checkbox
+              (click)="$event.stopPropagation()"
+              (change)="$event ? selection.toggle(row) : null"
+              [checked]="selection.isSelected(row)">
+            </mat-checkbox>
+          </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="icon">
+          <mat-header-cell *matHeaderCellDef> Icon</mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            @switch (element.kind) {
+              @case ('FILE') {
+                <mat-icon>{{ fileIcon(element.type) }}</mat-icon>
+              }
+              @case ('FOLDER') {
+                <mat-icon>folder</mat-icon>
               }
             }
-          </div>
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="size">
-        <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size</mat-header-cell>
-        <mat-cell *matCellDef="let element"> {{ element.size | digitalStore }}</mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="type">
-        <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
-        <mat-cell *matCellDef="let element"> {{ element.type }}</mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="createdAt">
-        <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-        <mat-cell *matCellDef="let element" [matTooltip]="element.createdAt?.toDate() | date: 'medium'">
-          {{ element.createdAt?.toDate() | date: 'mediumDate' }}
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="updatedAt">
-        <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-        <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          <button
-            mat-icon-button
-            (click)="onDownload($event, element)"
-            [disabled]="element.kind === 'FOLDER' || element.inProgress === true"
-            matTooltip="Download">
-            <mat-icon>download</mat-icon>
-          </button>
-          @if ('ASSET_UPDATE' | canUserPerform | async) {
-            <button mat-icon-button (click)="openEditDialog($event, element)" [disabled]="element.inProgress === true" matTooltip="Edit">
-              <mat-icon>edit</mat-icon>
-            </button>
-          }
-          @if ('ASSET_UPDATE' | canUserPerform | async) {
-            <button mat-icon-button (click)="openMoveDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Move">
-              <mat-icon>drive_file_move</mat-icon>
-            </button>
-          }
-          @if ('ASSET_DELETE' | canUserPerform | async) {
-            <button
-              mat-icon-button
-              (click)="openDeleteDialog($event, element)"
-              [disabled]="element.inProgress === true && now - (element.createdAt?.toMillis() || 0) < 600000"
-              matTooltip="Delete">
-              <mat-icon>delete</mat-icon>
-            </button>
-          }
-        </mat-cell>
-      </ng-container>
-
-      <!--    <ng-container matColumnDef="actions">-->
-      <!--      <mat-header-cell mat-header-cell *matHeaderCellDef>-->
-      <!--        <button mat-stroked-button-->
-      <!--                *ngIf="'ASSET_UPDATE' | canUserPerform | async"-->
-      <!--                [disabled]="selection.selected.length !== 1 || selection.selected[0].kind !== 'FOLDER'"-->
-      <!--                (click)="openEditFolderDialog(selection.selected[0])">-->
-      <!--          <mat-icon>edit</mat-icon>-->
-      <!--          Edit-->
-      <!--        </button>-->
-      <!--        <button mat-stroked-button-->
-      <!--                *ngIf="'ASSET_DELETE' | canUserPerform | async"-->
-      <!--                [disabled]="selection.selected.length !== 1"-->
-      <!--                (click)="openDeleteDialog(selection.selected[0])">-->
-      <!--          <mat-icon>delete</mat-icon>-->
-      <!--          Delete-->
-      <!--        </button>-->
-      <!--      </mat-header-cell>-->
-      <!--    </ng-container>-->
-
-      <!--    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>-->
-      <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-      <mat-row
-        *matRowDef="let row; columns: displayedColumns"
-        (click)="onRowSelect(row)"
-        [class.row-folder]="row.kind === 'FOLDER'"></mat-row>
-      @if (!isLoading()) {
-        <ng-container *matNoDataRow>
-          <div class="text-center align-middle">
-            <br />
-            <br />
-            Drag and Drop a file here or use the "Upload Asset" button
-            <br />
-            <br />
-          </div>
+          </mat-cell>
         </ng-container>
-      }
-    </mat-table>
-  } @else {
-    <div class="flex flex-wrap gap-2 justify-evenly">
-      @for (item of dataSource.filteredData; track item.id) {
-        <mat-card class="digital-asset-card" appearance="outlined">
-          @if (item.inProgress) {
-            <div class="progress">
-              <mat-progress-spinner mode="indeterminate" />
-            </div>
-          } @else if (item.kind === 'FILE' && filePreview(item.type)) {
-            <img
-              class="object-contain bg-stripes-gray"
-              width="800"
-              height="800"
-              loading="lazy"
-              alt="thumbnail"
-              ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ item.id }}" />
-          } @else if (item.kind === 'FILE') {
-            <img mat-card-image ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg" alt="File" width="240" height="240" />
-          } @else {
-            <img mat-card-image ngSrc="assets/icons/folder.svg" alt="Folder" width="240" height="240" />
-          }
-          <mat-card-header>
-            <mat-card-subtitle class="break-all">{{ item.name }}{{ item.extension }}</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            @if (item.kind === 'FILE') {
-              @if (item.metadata; as metadata) {
+        <ng-container matColumnDef="preview">
+          <mat-header-cell *matHeaderCellDef> Preview</mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            @if (element.kind === 'FILE' && filePreview(element.type)) {
+              @if (element.inProgress) {
+                <mat-progress-spinner mode="indeterminate" />
+              } @else {
+                <img
+                  class="border object-contain rounded bg-stripes-gray"
+                  width="115"
+                  height="115"
+                  loading="lazy"
+                  alt="thumbnail"
+                  ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ element.id }}" />
+              }
+            }
+          </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="name">
+          <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <div>
+              <div class="break-all">{{ element.name }}{{ element.extension }}</div>
+              @if (element.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {
                   <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
                 }
               }
-              @if (item.size; as size) {
-                <p>{{ size | digitalStore }}</p>
-              }
-            }
-            <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">
-              {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
-            </p>
-          </mat-card-content>
-          <span class="spacer"></span>
-          <mat-card-actions>
+            </div>
+          </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="size">
+          <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size</mat-header-cell>
+          <mat-cell *matCellDef="let element"> {{ element.size | digitalStore }}</mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="type">
+          <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
+          <mat-cell *matCellDef="let element"> {{ element.type }}</mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="createdAt">
+          <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
+          <mat-cell *matCellDef="let element" [matTooltip]="element.createdAt?.toDate() | date: 'medium'">
+            {{ element.createdAt?.toDate() | date: 'mediumDate' }}
+          </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="updatedAt">
+          <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
+          <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+            {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+          </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
+          <mat-cell *matCellDef="let element">
             <button
               mat-icon-button
-              (click)="onDownload($event, item)"
-              [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
+              (click)="onDownload($event, element)"
+              [disabled]="element.kind === 'FOLDER' || element.inProgress === true"
               matTooltip="Download">
               <mat-icon>download</mat-icon>
             </button>
             @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button mat-icon-button (click)="openEditDialog($event, item)" [disabled]="item.inProgress === true" matTooltip="Edit">
+              <button mat-icon-button (click)="openEditDialog($event, element)" [disabled]="element.inProgress === true" matTooltip="Edit">
                 <mat-icon>edit</mat-icon>
               </button>
             }
             @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button mat-icon-button (click)="openMoveDialog($event, item)" [disabled]="item.kind === 'FOLDER'" matTooltip="Move">
+              <button mat-icon-button (click)="openMoveDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Move">
                 <mat-icon>drive_file_move</mat-icon>
               </button>
             }
             @if ('ASSET_DELETE' | canUserPerform | async) {
               <button
                 mat-icon-button
-                (click)="openDeleteDialog($event, item)"
-                [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
+                (click)="openDeleteDialog($event, element)"
+                [disabled]="element.inProgress === true && now - (element.createdAt?.toMillis() || 0) < 600000"
                 matTooltip="Delete">
                 <mat-icon>delete</mat-icon>
               </button>
             }
-          </mat-card-actions>
-        </mat-card>
-      }
-    </div>
-  }
-  <mat-paginator></mat-paginator>
+          </mat-cell>
+        </ng-container>
+
+        <!--    <ng-container matColumnDef="actions">-->
+        <!--      <mat-header-cell mat-header-cell *matHeaderCellDef>-->
+        <!--        <button mat-stroked-button-->
+        <!--                *ngIf="'ASSET_UPDATE' | canUserPerform | async"-->
+        <!--                [disabled]="selection.selected.length !== 1 || selection.selected[0].kind !== 'FOLDER'"-->
+        <!--                (click)="openEditFolderDialog(selection.selected[0])">-->
+        <!--          <mat-icon>edit</mat-icon>-->
+        <!--          Edit-->
+        <!--        </button>-->
+        <!--        <button mat-stroked-button-->
+        <!--                *ngIf="'ASSET_DELETE' | canUserPerform | async"-->
+        <!--                [disabled]="selection.selected.length !== 1"-->
+        <!--                (click)="openDeleteDialog(selection.selected[0])">-->
+        <!--          <mat-icon>delete</mat-icon>-->
+        <!--          Delete-->
+        <!--        </button>-->
+        <!--      </mat-header-cell>-->
+        <!--    </ng-container>-->
+
+        <!--    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>-->
+        <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+        <mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          (click)="onAssetSelect(row)"
+          [class.cursor-pointer]="row.kind === 'FOLDER'"></mat-row>
+        @if (!isLoading()) {
+          <ng-container *matNoDataRow>
+            <div class="text-center align-middle">
+              <br />
+              <br />
+              Drag and Drop a file here or use the "Upload Asset" button
+              <br />
+              <br />
+              <br />
+            </div>
+          </ng-container>
+        }
+      </mat-table>
+    } @else {
+      <div class="flex flex-wrap gap-2 justify-start">
+        @for (item of dataSource.connect() | async; track item.id) {
+          <mat-card
+            class="digital-asset-card"
+            appearance="outlined"
+            [class.cursor-pointer]="item.kind === 'FOLDER'"
+            (click)="onAssetSelect(item)">
+            @if (item.inProgress) {
+              <div class="progress">
+                <mat-progress-spinner mode="indeterminate" />
+              </div>
+            } @else if (item.kind === 'FILE' && filePreview(item.type)) {
+              <img
+                class="object-contain bg-stripes-gray"
+                width="800"
+                height="800"
+                loading="lazy"
+                alt="thumbnail"
+                ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ item.id }}" />
+            } @else if (item.kind === 'FILE') {
+              <img mat-card-image ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg" alt="File" width="240" height="240" />
+            } @else {
+              <img mat-card-image ngSrc="assets/icons/folder.svg" alt="Folder" width="240" height="240" />
+            }
+            <mat-card-header>
+              <mat-card-subtitle class="break-all">{{ item.name }}{{ item.extension }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (item.kind === 'FILE') {
+                @if (item.metadata; as metadata) {
+                  @if (metadata.width && metadata.height) {
+                    <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
+                  }
+                }
+                @if (item.size; as size) {
+                  <p>{{ size | digitalStore }}</p>
+                }
+              }
+              <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">
+                {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
+              </p>
+            </mat-card-content>
+            <span class="spacer"></span>
+            <mat-card-actions>
+              <button
+                mat-icon-button
+                (click)="onDownload($event, item)"
+                [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
+                matTooltip="Download">
+                <mat-icon>download</mat-icon>
+              </button>
+              @if ('ASSET_UPDATE' | canUserPerform | async) {
+                <button mat-icon-button (click)="openEditDialog($event, item)" [disabled]="item.inProgress === true" matTooltip="Edit">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              }
+              @if ('ASSET_UPDATE' | canUserPerform | async) {
+                <button mat-icon-button (click)="openMoveDialog($event, item)" [disabled]="item.kind === 'FOLDER'" matTooltip="Move">
+                  <mat-icon>drive_file_move</mat-icon>
+                </button>
+              }
+              @if ('ASSET_DELETE' | canUserPerform | async) {
+                <button
+                  mat-icon-button
+                  (click)="openDeleteDialog($event, item)"
+                  [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
+                  matTooltip="Delete">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        } @empty {
+          <div class="text-center align-middle">
+            <br />
+            <br />
+            Drag and Drop a file here or use the "Upload Asset" button
+            <br />
+            <br />
+            <br />
+          </div>
+        }
+      </div>
+    }
+  </div>
+  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
   @if (fileUploadQueue.length > 0) {
     <div class="file-progress-upload">
       <mat-card>
