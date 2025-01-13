@@ -104,10 +104,11 @@
               } @else {
                 <img
                   class="border object-contain rounded bg-stripes-gray"
-                  width="115"
-                  height="115"
+                  width="200"
+                  height="200"
                   loading="lazy"
                   alt="thumbnail"
+                  [loaderParams]="{ thumbnail: true }"
                   ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ element.id }}" />
               }
             }
@@ -121,6 +122,9 @@
               @if (element.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {
                   <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
+                }
+                @if (metadata.animated) {
+                  <p matTooltip="Animated image"><mat-icon>animated_images</mat-icon></p>
                 }
               }
             </div>
@@ -199,10 +203,7 @@
 
         <!--    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>-->
         <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-        <mat-row
-          *matRowDef="let row; columns: displayedColumns"
-          (click)="onAssetSelect(row)"
-          [class.cursor-pointer]="row.kind === 'FOLDER'"></mat-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></mat-row>
         @if (!isLoading()) {
           <ng-container *matNoDataRow>
             <div class="text-center align-middle">
@@ -219,11 +220,7 @@
     } @else {
       <div class="flex flex-wrap gap-2 justify-start">
         @for (item of dataSource.connect() | async; track item.id) {
-          <mat-card
-            class="digital-asset-card"
-            appearance="outlined"
-            [class.cursor-pointer]="item.kind === 'FOLDER'"
-            (click)="onAssetSelect(item)">
+          <mat-card class="digital-asset-card cursor-pointer" appearance="outlined" (click)="onAssetSelect(item)">
             @if (item.inProgress) {
               <div class="progress">
                 <mat-progress-spinner mode="indeterminate" />
@@ -231,10 +228,11 @@
             } @else if (item.kind === 'FILE' && filePreview(item.type)) {
               <img
                 class="object-contain bg-stripes-gray"
-                width="800"
-                height="800"
+                width="600"
+                height="600"
                 loading="lazy"
                 alt="thumbnail"
+                [loaderParams]="{ thumbnail: true }"
                 ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ item.id }}" />
             } @else if (item.kind === 'FILE') {
               <img mat-card-image ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg" alt="File" width="240" height="240" />

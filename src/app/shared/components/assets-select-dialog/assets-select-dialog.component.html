@@ -41,10 +41,11 @@
         @if (element.kind === 'FILE' && filePreview(element.type)) {
           <img
             class="border object-contain rounded bg-stripes-gray"
-            width="115"
-            height="115"
+            width="200"
+            height="200"
             alt="thumbnail"
             loading="lazy"
+            [loaderParams]="{ thumbnail: true }"
             ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
         }
       </mat-cell>

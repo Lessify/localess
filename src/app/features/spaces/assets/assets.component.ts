@@ -35,6 +35,8 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { ImagePreviewDialogComponent } from './image-preview-dialog/image-preview-dialog.component';
+import { ImagePreviewDialogModel } from './image-preview-dialog/image-preview-dialog.model';
 
 @Component({
   selector: 'll-assets',
@@ -306,7 +308,22 @@ export class AssetsComponent implements OnInit {
   }
 
   onAssetSelect(element: Asset): void {
-    if (element.kind === AssetKind.FOLDER) {
+    if (element.kind === AssetKind.FILE) {
+      this.dialog
+        .open<ImagePreviewDialogComponent, ImagePreviewDialogModel, void>(ImagePreviewDialogComponent, {
+          panelClass: 'image-preview',
+          data: {
+            spaceId: this.spaceId(),
+            asset: element,
+          },
+        })
+        .afterClosed()
+        .subscribe({
+          next: () => {
+            console.log('close');
+          },
+        });
+    } else if (element.kind === AssetKind.FOLDER) {
       this.isLoading.set(true);
       this.selection.clear();
       const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
