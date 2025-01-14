@@ -1,4 +1,32 @@
-<h2 mat-dialog-title>Assets</h2>
+<h2 mat-dialog-title>
+  <span>Assets</span>
+  <div class="header-actions">
+    <mat-button-toggle-group
+      hideSingleSelectionIndicator="true"
+      (change)="settingsStore.setAssetDialogLayout($event.value)"
+      [value]="settingsStore.assetDialogLayout()">
+      <mat-button-toggle value="list" matTooltip="List Layout">
+        <mat-icon>view_list</mat-icon>
+      </mat-button-toggle>
+      <mat-button-toggle value="grid" matTooltip="Grid Layout">
+        <mat-icon>grid_view</mat-icon>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+    @if ('ASSET_CREATE' | canUserPerform | async) {
+      <button mat-stroked-button color="primary" (click)="fileInput.click()">
+        <mat-icon>upload_file</mat-icon>
+        Upload Assets
+      </button>
+      <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
+    }
+  </div>
+</h2>
+@if (isLoading()) {
+  <mat-progress-bar mode="query" />
+}
+@if (isLoading()) {
+  <mat-progress-bar mode="query" />
+}
 <ll-breadcrumb>
   <span style="padding-left: 1rem">&nbsp;</span>
   @for (pathItem of assetPath; track pathItem.fullSlug; let isFirst = $first) {
@@ -8,81 +36,134 @@
   }
 </ll-breadcrumb>
 <mat-dialog-content>
-  <mat-table [dataSource]="dataSource" matSort>
-    <!-- Checkbox Column -->
-    <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef> #</mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        @if (row.kind === 'FILE') {
-          <mat-checkbox
-            (click)="$event.stopPropagation()"
-            (change)="$event ? selection.toggle(row) : null"
-            [checked]="selection.isSelected(row)">
-          </mat-checkbox>
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="icon">
-      <mat-header-cell *matHeaderCellDef> Icon</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @switch (element.kind) {
-          @case ('FILE') {
-            <mat-icon>{{ fileIcon(element.type) }}</mat-icon>
+  @if (settingsStore.assetDialogLayout() === 'list') {
+    <mat-table [dataSource]="dataSource" matSort>
+      <!-- Checkbox Column -->
+      <ng-container matColumnDef="select">
+        <mat-header-cell *matHeaderCellDef> #</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          @if (row.kind === 'FILE') {
+            <mat-checkbox
+              (click)="$event.stopPropagation()"
+              (change)="$event ? selection.toggle(row) : null"
+              [checked]="selection.isSelected(row)">
+            </mat-checkbox>
           }
-          @case ('FOLDER') {
-            <mat-icon>folder</mat-icon>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="icon">
+        <mat-header-cell *matHeaderCellDef> Icon</mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          @switch (element.kind) {
+            @case ('FILE') {
+              <mat-icon>{{ fileIcon(element.type) }}</mat-icon>
+            }
+            @case ('FOLDER') {
+              <mat-icon>folder</mat-icon>
+            }
           }
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="preview">
-      <mat-header-cell *matHeaderCellDef> Preview</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @if (element.kind === 'FILE' && filePreview(element.type)) {
-          <img
-            class="border object-contain rounded bg-stripes-gray"
-            width="200"
-            height="200"
-            alt="thumbnail"
-            loading="lazy"
-            [loaderParams]="{ thumbnail: true }"
-            ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <div>
-          <div class="break-all">{{ element.name }}{{ element.extension }}</div>
-          @if (element.metadata; as metadata) {
-            <code class="fw-light">
-              @if (metadata.width && metadata.height) {
-                W{{ metadata.width }} x H{{ metadata.height }}
-              }
-            </code>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="preview">
+        <mat-header-cell *matHeaderCellDef> Preview</mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          @if (element.kind === 'FILE' && filePreview(element.type)) {
+            <img
+              class="border object-contain rounded bg-stripes-gray"
+              width="200"
+              height="200"
+              alt="thumbnail"
+              loading="lazy"
+              [loaderParams]="{ thumbnail: true }"
+              ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
           }
-        </div>
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="size">
-      <mat-header-cell *matHeaderCellDef> Size</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.size | digitalStore }}</mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="type">
-      <mat-header-cell *matHeaderCellDef> Type</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.type }}</mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
-      </mat-cell>
-    </ng-container>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="name">
+        <mat-header-cell *matHeaderCellDef> Name</mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          <div>
+            <div class="break-all">{{ element.name }}{{ element.extension }}</div>
+            @if (element.metadata; as metadata) {
+              <code class="fw-light">
+                @if (metadata.width && metadata.height) {
+                  W{{ metadata.width }} x H{{ metadata.height }}
+                }
+              </code>
+            }
+          </div>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="size">
+        <mat-header-cell *matHeaderCellDef> Size</mat-header-cell>
+        <mat-cell *matCellDef="let element"> {{ element.size | digitalStore }}</mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="type">
+        <mat-header-cell *matHeaderCellDef> Type</mat-header-cell>
+        <mat-cell *matCellDef="let element"> {{ element.type }}</mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="updatedAt">
+        <mat-header-cell *matHeaderCellDef> Updated At</mat-header-cell>
+        <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        </mat-cell>
+      </ng-container>
 
-    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
-  </mat-table>
+      <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></mat-row>
+    </mat-table>
+  } @else {
+    <div class="flex flex-wrap gap-2 justify-start">
+      @for (item of dataSource.connect() | async; track item.id) {
+        <mat-card class="digital-asset-card cursor-pointer" appearance="outlined" (click)="onAssetSelect(item)">
+          @if (item.inProgress) {
+            <div class="progress">
+              <mat-progress-spinner mode="indeterminate" />
+            </div>
+          } @else if (item.kind === 'FILE' && filePreview(item.type)) {
+            <img
+              class="object-contain bg-stripes-gray"
+              width="600"
+              height="600"
+              loading="lazy"
+              alt="thumbnail"
+              [loaderParams]="{ thumbnail: true }"
+              ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ item.id }}" />
+          } @else if (item.kind === 'FILE') {
+            <img mat-card-image ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg" alt="File" width="240" height="240" />
+          } @else {
+            <img mat-card-image ngSrc="assets/icons/folder.svg" alt="Folder" width="240" height="240" />
+          }
+          <mat-card-header>
+            <mat-card-subtitle class="break-all">{{ item.name }}{{ item.extension }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (item.kind === 'FILE') {
+              @if (item.metadata; as metadata) {
+                @if (metadata.width && metadata.height) {
+                  <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
+                }
+              }
+              @if (item.size; as size) {
+                <p>{{ size | digitalStore }}</p>
+              }
+            }
+            <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">
+              {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
+            </p>
+          </mat-card-content>
+          <span class="spacer"></span>
+          <mat-card-actions>
+            <mat-checkbox
+              (click)="$event.stopPropagation()"
+              (change)="$event ? selection.toggle(item) : null"
+              [checked]="selection.isSelected(item)">
+            </mat-checkbox>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
+  }
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <mat-paginator></mat-paginator>

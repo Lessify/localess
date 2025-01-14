@@ -14,6 +14,7 @@ export interface LocalSettingsState {
   editorEnabled: boolean;
   editorSize: EditorSize;
   assetLayout: DataLayout;
+  assetDialogLayout: DataLayout;
 }
 
 export const initialState: LocalSettingsState = {
@@ -23,6 +24,7 @@ export const initialState: LocalSettingsState = {
   editorEnabled: false,
   editorSize: '',
   assetLayout: 'list',
+  assetDialogLayout: 'list',
 };
 
 function setDocumentTheme(theme: Theme) {
@@ -90,6 +92,10 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { assetLayout });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), assetLayout }));
       },
+      setAssetDialogLayout: (assetDialogLayout: DataLayout): void => {
+        patchState(store, { assetDialogLayout });
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), assetDialogLayout }));
+      },
     };
   }),
   withComputed(store => {
@@ -100,6 +106,7 @@ export const LocalSettingsStore = signalStore(
       editorEnabled: computed(() => store.editorEnabled()),
       editorSize: computed(() => store.editorSize()),
       assetLayout: computed(() => store.assetLayout()),
+      assetDialogLayout: computed(() => store.assetDialogLayout()),
     };
   }),
   withHooks({

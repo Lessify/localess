@@ -20,19 +20,29 @@ xl (1280px)	max-width: 1280px;
     max-width: 1280px;
     max-height: calc(100vh - 80px);
   }
+  &.xxl {
+    min-width: 900px;
+    width: calc(100vw - 160px);
+    max-width: 1536px;
+    max-height: calc(100vh - 80px);
+  }
   &.full-screen {
-
+    min-width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
   }
   &.image-preview {
-    min-width: 950px;
-    max-width: 1000px;
+    max-width: calc(100vw - 80px);
+    max-height: calc(100vh - 80px);
 
     mat-dialog-content {
       min-height: fit-content;
       min-width: fit-content;
       img {
-        width: 100%;
-        height: 100%;
+        min-width: 800px;
+        min-height: 800px;
+        max-width: calc(100vw - 180px);
+        max-height: calc(100vh - 180px);
       }
     }
   }
