@@ -11,7 +11,15 @@ import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
 import { AssetService } from '@shared/services/asset.service';
-import { Asset, AssetFile, AssetFileUpdate, AssetFolderCreate, AssetFolderUpdate, AssetKind } from '@shared/models/asset.model';
+import {
+  Asset,
+  AssetFile,
+  AssetFileUpdate,
+  AssetFolder,
+  AssetFolderCreate,
+  AssetFolderUpdate,
+  AssetKind,
+} from '@shared/models/asset.model';
 import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
 import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
@@ -26,6 +34,9 @@ import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { ImagePreviewDialogComponent } from './image-preview-dialog/image-preview-dialog.component';
+import { ImagePreviewDialogModel } from './image-preview-dialog/image-preview-dialog.model';
 
 @Component({
   selector: 'll-assets',
@@ -34,7 +45,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssetsComponent implements OnInit {
-  sort = viewChild.required(MatSort);
+  sort = viewChild(MatSort);
   paginator = viewChild.required(MatPaginator);
 
   // Input
@@ -63,6 +74,8 @@ export class AssetsComponent implements OnInit {
 
   // Loading
   isLoading = signal(true);
+  // Local Settings
+  settingsStore = inject(LocalSettingsStore);
 
   constructor(
     private readonly assetService: AssetService,
@@ -81,7 +94,7 @@ export class AssetsComponent implements OnInit {
         next: assets => {
           this.assets = assets;
           this.dataSource = new MatTableDataSource<Asset>(assets);
-          this.dataSource.sort = this.sort();
+          this.dataSource.sort = this.sort() || null;
           this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
           this.selection.clear();
@@ -160,7 +173,7 @@ export class AssetsComponent implements OnInit {
         panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
-          asset: ObjectUtils.clone(element),
+          asset: ObjectUtils.clone(element) as AssetFolder,
         },
       })
       .afterClosed()
@@ -189,7 +202,7 @@ export class AssetsComponent implements OnInit {
         panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
-          asset: ObjectUtils.clone(element),
+          asset: ObjectUtils.clone(element) as AssetFile,
         },
       })
       .afterClosed()
@@ -294,19 +307,24 @@ export class AssetsComponent implements OnInit {
     this.selection.select(...this.dataSource.data);
   }
 
-  onRowSelect(element: Asset): void {
-    // if (element.kind === AssetKind.FILE) {
-    //   element.publishedAt
-    //   if (this.schemasMap.has(element.schema)) {
-    //     this.router.navigate(['features', 'contents', element.id]);
-    //   } else {
-    //     this.notificationService.warn(`Content Schema can not be found.`);
-    //   }
-    //   return;
-    // }
-
-    this.isLoading.set(true);
-    if (element.kind === AssetKind.FOLDER) {
+  onAssetSelect(element: Asset): void {
+    if (element.kind === AssetKind.FILE) {
+      this.dialog
+        .open<ImagePreviewDialogComponent, ImagePreviewDialogModel, void>(ImagePreviewDialogComponent, {
+          panelClass: 'image-preview',
+          data: {
+            spaceId: this.spaceId(),
+            asset: element,
+          },
+        })
+        .afterClosed()
+        .subscribe({
+          next: () => {
+            console.log('close');
+          },
+        });
+    } else if (element.kind === AssetKind.FOLDER) {
+      this.isLoading.set(true);
       this.selection.clear();
       const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
       assetPath.push({
@@ -394,10 +412,11 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  onDownload(event: Event, element: AssetFile): void {
+  onDownload(event: Event, element: Asset): void {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
+    if (element.kind !== AssetKind.FILE) return;
     window.open(`/api/v1/spaces/${this.spaceId()}/assets/${element.id}?download`);
   }
 

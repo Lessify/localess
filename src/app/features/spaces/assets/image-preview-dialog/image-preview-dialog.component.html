@@ -1,0 +1,13 @@
+<mat-dialog-content>
+  <img
+    class="object-contain bg-stripes-gray"
+    width="1000"
+    height="1000"
+    loading="lazy"
+    alt="thumbnail"
+    [loaderParams]="{ thumbnail: true }"
+    ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ data.asset.id }}" />
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="undefined">Close</button>
+</mat-dialog-actions>

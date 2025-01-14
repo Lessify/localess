@@ -347,7 +347,7 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info('v1 spaces asset params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces asset query: ' + JSON.stringify(req.query));
   const { spaceId, assetId } = req.params;
-  const { w: width, download } = req.query;
+  const { w: width, download, thumbnail } = req.query;
 
   const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
   const [exists] = await assetFile.exists();
@@ -362,15 +362,25 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       if (asset.type === 'image/webp' || asset.type === 'image/gif') {
         // possible animated or single frame webp/gif
         const [file] = await assetFile.download();
-        const sharpFile = sharp(file);
+        let sharpFile = sharp(file);
         const sharpFileMetadata = await sharpFile.metadata();
-        if (sharpFileMetadata.pages) {
-          // animated webp/gif
-          await assetFile.download({ destination: tempFilePath });
-        } else {
-          // single frame webp/gif
-          filename = `${asset.name}-w${width}${asset.extension}`;
+        const isAnimated = sharpFileMetadata.pages !== undefined;
+        if (thumbnail && isAnimated) {
+          // Thumbnail with Animation: Remove animations, to reduce load
+          filename = `${asset.name}-w${width}-thumbnail${asset.extension}`;
+          sharpFile = sharp(file, { page: 0, pages: 1 });
           await sharpFile.resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
+        } else if (thumbnail && !isAnimated) {
+          // thumbnail without Animation
+          filename = `${asset.name}-w${width}-thumbnail${asset.extension}`;
+          // single frame webp/gif
+          await sharpFile.resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
+        } else {
+          // Animated
+          filename = `${asset.name}-w${width}${asset.extension}`;
+          // animated webp/gif
+          // TODO no way now to resize animated files
+          await assetFile.download({ destination: tempFilePath });
         }
       } else if (asset.type === 'image/svg+xml') {
         // svg, cannot resize

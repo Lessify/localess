@@ -30,6 +30,7 @@
                 height="200"
                 alt="thumbnail"
                 loading="lazy"
+                [loaderParams]="{ thumbnail: true }"
                 ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
             } @else {
               <mat-icon matListItemIcon>file_present</mat-icon>

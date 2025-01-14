@@ -692,6 +692,16 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
                 example: false,
               },
             },
+            {
+              name: 'thumbnail',
+              in: 'query',
+              description: 'In case you have animated image like WebP/Gif, and you wish to generate non animated thumbnail.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: false,
+              },
+            },
           ],
           responses: {
             '200': {

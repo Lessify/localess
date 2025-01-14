@@ -201,5 +201,5 @@
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>
-  <mat-paginator></mat-paginator>
+  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
 </div>

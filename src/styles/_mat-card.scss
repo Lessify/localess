@@ -10,4 +10,26 @@ mat-card {
   &.invalid {
     border: solid 2px var(--sys-error);
   }
+  &.digital-asset-card {
+    max-width: 240px;
+    min-width: 240px;
+    img {
+      min-width: 240px;
+      min-height: 240px;
+      max-width: 240px;
+      max-height: 240px;
+      border-top-left-radius: inherit;
+      border-top-right-radius: inherit;
+      border-bottom-width: var(--mdc-outlined-card-outline-width);
+      border-bottom-color: var(--mdc-outlined-card-outline-color, var(--mat-app-outline-variant));
+    }
+    .progress {
+      min-width: 240px;
+      min-height: 240px;
+      max-width: 240px;
+      max-height: 240px;
+      align-content: center;
+      padding-left: 60px;
+    }
+  }
 }
