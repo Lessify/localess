@@ -2,11 +2,13 @@
   <mat-toolbar-row>
     Dashboard
     <span class="spacer"></span>
-    @if ('SPACE_MANAGEMENT' | canUserPerform | async) {
-      <button mat-icon-button (click)="calculateOverview()">
-        <mat-icon>refresh</mat-icon>
-      </button>
-    }
+    <div class="actions">
+      @if ('SPACE_MANAGEMENT' | canUserPerform | async) {
+        <button mat-icon-button (click)="calculateOverview()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      }
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 <div class="container-full-screen">

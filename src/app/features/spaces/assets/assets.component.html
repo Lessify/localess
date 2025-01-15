@@ -5,50 +5,55 @@
       <mat-icon>help</mat-icon>
     </a>
     <span class="spacer"></span>
-    <mat-button-toggle-group
-      hideSingleSelectionIndicator="true"
-      (change)="settingsStore.setAssetLayout($event.value)"
-      [value]="settingsStore.assetLayout()">
-      <mat-button-toggle value="list" matTooltip="List Layout">
-        <mat-icon>view_list</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="grid" matTooltip="Grid Layout">
-        <mat-icon>grid_view</mat-icon>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
-    @if ('ASSET_CREATE' | canUserPerform | async) {
-      <button mat-stroked-button color="primary" (click)="fileInput.click()">
-        <mat-icon>upload_file</mat-icon>
-        Upload Assets
-      </button>
-      <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
+    <div class="actions">
+      @if (fileUploadQueue().length > 0) {
+        <ll-icon [animate]="true" start="save" end="progress_activity" [matBadge]="fileUploadQueue().length" />
+      }
+      <mat-button-toggle-group
+        hideSingleSelectionIndicator="true"
+        (change)="settingsStore.setAssetLayout($event.value)"
+        [value]="settingsStore.assetLayout()">
+        <mat-button-toggle value="list" matTooltip="List Layout">
+          <mat-icon>view_list</mat-icon>
+        </mat-button-toggle>
+        <mat-button-toggle value="grid" matTooltip="Grid Layout">
+          <mat-icon>grid_view</mat-icon>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+      @if ('ASSET_CREATE' | canUserPerform | async) {
+        <button mat-stroked-button color="primary" (click)="fileInput.click()">
+          <mat-icon>upload_file</mat-icon>
+          Upload Assets
+        </button>
+        <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
 
-      <button mat-stroked-button color="primary" (click)="openAddFolderDialog()">
-        <mat-icon>add</mat-icon>
-        Create Folder
-      </button>
-    }
-
-    @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
-      <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-    }
-
-    <mat-menu #extraMenu="matMenu">
-      @if ('ASSET_IMPORT' | canUserPerform | async) {
-        <button mat-menu-item (click)="openImportDialog()">
-          <mat-icon>cloud_upload</mat-icon>
-          <span>Import</span>
+        <button mat-stroked-button color="primary" (click)="openAddFolderDialog()">
+          <mat-icon>add</mat-icon>
+          Create Folder
         </button>
       }
-      @if ('ASSET_EXPORT' | canUserPerform | async) {
-        <button mat-menu-item (click)="openExportDialog()">
-          <mat-icon>cloud_download</mat-icon>
-          <span>Export</span>
+
+      @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
+        <button mat-icon-button [matMenuTriggerFor]="extraMenu">
+          <mat-icon>more_vert</mat-icon>
         </button>
       }
-    </mat-menu>
+
+      <mat-menu #extraMenu="matMenu">
+        @if ('ASSET_IMPORT' | canUserPerform | async) {
+          <button mat-menu-item (click)="openImportDialog()">
+            <mat-icon>cloud_upload</mat-icon>
+            <span>Import</span>
+          </button>
+        }
+        @if ('ASSET_EXPORT' | canUserPerform | async) {
+          <button mat-menu-item (click)="openExportDialog()">
+            <mat-icon>cloud_download</mat-icon>
+            <span>Export</span>
+          </button>
+        }
+      </mat-menu>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 @if (isLoading()) {
@@ -131,12 +136,28 @@
           </mat-cell>
         </ng-container>
         <ng-container matColumnDef="size">
-          <mat-header-cell *matHeaderCellDef mat-sort-header="size"> Size</mat-header-cell>
-          <mat-cell *matCellDef="let element"> {{ element.size | digitalStore }}</mat-cell>
+          <mat-header-cell *matHeaderCellDef mat-sort-header="size"> File Size</mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            @if (element.size) {
+              {{ element.size | digitalStore }}
+            } @else {
+              <mat-icon>remove</mat-icon>
+            }
+          </mat-cell>
         </ng-container>
         <ng-container matColumnDef="type">
           <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
-          <mat-cell *matCellDef="let element"> {{ element.type }}</mat-cell>
+          <mat-cell *matCellDef="let element">
+            @if (element.kind === 'FILE') {
+              @if (element.type) {
+                {{ element.type }}
+              } @else {
+                unknown
+              }
+            } @else {
+              Folder
+            }
+          </mat-cell>
         </ng-container>
         <ng-container matColumnDef="createdAt">
           <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
@@ -244,13 +265,13 @@
             </mat-card-header>
             <mat-card-content>
               @if (item.kind === 'FILE') {
+                @if (item.size; as size) {
+                  <p>{{ size | digitalStore }}</p>
+                }
                 @if (item.metadata; as metadata) {
                   @if (metadata.width && metadata.height) {
                     <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
                   }
-                }
-                @if (item.size; as size) {
-                  <p>{{ size | digitalStore }}</p>
                 }
               }
               <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">
@@ -258,7 +279,7 @@
               </p>
             </mat-card-content>
             <span class="spacer"></span>
-            <mat-card-actions>
+            <mat-card-actions align="end">
               <button
                 mat-icon-button
                 (click)="onDownload($event, item)"
@@ -288,7 +309,7 @@
             </mat-card-actions>
           </mat-card>
         } @empty {
-          <div class="text-center align-middle">
+          <div class="basis-full text-center align-middle">
             <br />
             <br />
             Drag and Drop a file here or use the "Upload Asset" button
@@ -301,7 +322,7 @@
     }
   </div>
   <mat-paginator class="mat-paginator-sticky"></mat-paginator>
-  @if (fileUploadQueue.length > 0) {
+  @if (false || fileUploadQueue().length > 0) {
     <div class="file-progress-upload">
       <mat-card>
         <mat-card-header>
@@ -310,7 +331,7 @@
         <mat-card-content>
           <mat-divider></mat-divider>
           <mat-list role="list">
-            @for (file of fileUploadQueue; track file.name; let idx = $index) {
+            @for (file of fileUploadQueue(); track file.name; let idx = $index) {
               <mat-list-item role="listitem">
                 {{ file.name.length < 30 ? file.name : file.name.slice(0, 27).concat('...') }}
                 @if (idx === 0) {

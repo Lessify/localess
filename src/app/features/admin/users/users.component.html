@@ -2,15 +2,17 @@
   <mat-toolbar-row>
     Users
     <span class="spacer"></span>
-    <button mat-stroked-button color="accent" matTooltip="Synchronize Users with Database." (click)="sync()">
-      <ll-icon [animate]="isSyncLoading()" start="sync" end="sync" />
-      Sync
-    </button>
+    <div class="actions">
+      <button mat-stroked-button color="accent" matTooltip="Synchronize Users with Database." (click)="sync()">
+        <ll-icon [animate]="isSyncLoading()" start="sync" end="sync" />
+        Sync
+      </button>
 
-    <button mat-stroked-button color="primary" (click)="inviteDialog()">
-      <mat-icon>person_add</mat-icon>
-      Invite
-    </button>
+      <button mat-stroked-button color="primary" (click)="inviteDialog()">
+        <mat-icon>person_add</mat-icon>
+        Invite
+      </button>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 @if (isLoading()) {

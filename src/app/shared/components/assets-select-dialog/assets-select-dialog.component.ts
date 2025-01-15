@@ -5,7 +5,7 @@ import {
   DestroyRef,
   inject,
   Inject,
-  OnDestroy, OnInit,
+  OnInit,
   signal,
   viewChild,
 } from '@angular/core';
@@ -39,7 +39,7 @@ export class AssetsSelectDialogComponent implements OnInit {
   assets: Asset[] = [];
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'updatedAt'];
-  selection = new SelectionModel<Asset>(this.data.multiple, []);
+  selection = new SelectionModel<Asset>(this.data.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   assetPath: PathItem[] = [];
 
   fileUploadQueue = signal<File[]>([]);

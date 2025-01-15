@@ -2,10 +2,12 @@
   <mat-toolbar-row>
     Locales
     <span class="spacer"></span>
-    <button mat-stroked-button color="primary" (click)="openAddDialog()">
-      <mat-icon>add</mat-icon>
-      Add Locale
-    </button>
+    <div class="actions">
+      <button mat-stroked-button color="primary" (click)="openAddDialog()">
+        <mat-icon>add</mat-icon>
+        Add Locale
+      </button>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 @if (isLoading()) {

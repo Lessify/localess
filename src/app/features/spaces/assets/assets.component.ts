@@ -56,9 +56,9 @@ export class AssetsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
   displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
-  selection = new SelectionModel<Asset>(true, []);
+  selection = new SelectionModel<Asset>(true, [], undefined, (o1, o2) => o1.id === o2.id);
   assets: Asset[] = [];
-  fileUploadQueue: File[] = [];
+  fileUploadQueue = signal<File[]>([]);
   now = Date.now();
 
   get parentPath(): string {
@@ -112,7 +112,10 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.fileUploadQueue.shift();
+          this.fileUploadQueue.update(files => {
+            files.shift();
+            return files;
+          });
         },
         error: () => {
           this.notificationService.error(`Asset can not be uploaded.`);
@@ -126,7 +129,10 @@ export class AssetsComponent implements OnInit {
       if (target.files && target.files.length > 0) {
         for (let idx = 0; idx < target.files.length; idx++) {
           const file = target.files[idx];
-          this.fileUploadQueue.push(file);
+          this.fileUploadQueue.update(files => {
+            files.push(file);
+            return files;
+          });
           this.fileUploadQueue$.next(file);
         }
       }
@@ -422,7 +428,10 @@ export class AssetsComponent implements OnInit {
 
   filesDragAndDrop(event: File[]) {
     event.forEach(file => {
-      this.fileUploadQueue.push(file);
+      this.fileUploadQueue.update(files => {
+        files.push(file);
+        return files;
+      });
       this.fileUploadQueue$.next(file);
     });
   }

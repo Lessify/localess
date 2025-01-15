@@ -6,52 +6,54 @@
         <mat-icon>help</mat-icon>
       </a>
       <span class="spacer"></span>
-      @if ('TRANSLATION_CREATE' | canUserPerform | async) {
-        <button mat-stroked-button color="primary" (click)="openAddDialog()">
-          <mat-icon>add</mat-icon>
-          Add Translation
-        </button>
-      }
-      @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
-        <button
-          mat-stroked-button
-          color="accent"
-          matTooltip="Publish Translations to be available via API call"
-          [disabled]="isPublishLoading()"
-          (click)="publish()">
-          <ll-icon [animate]="isPublishLoading()" start="publish" end="sync" />
-          Publish
-        </button>
-      }
-      <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
-        <mat-icon>history</mat-icon>
-      </button>
-      <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-      <mat-menu #importMenu="matMenu">
-        @for (locale of space.locales; track locale.id) {
-          <button mat-menu-item (click)="openPublishedInNewTab(locale.id)">
-            <mat-icon>public</mat-icon>
-            <span>Published {{ locale.name }} JSON</span>
+      <div class="actions">
+        @if ('TRANSLATION_CREATE' | canUserPerform | async) {
+          <button mat-stroked-button color="primary" (click)="openAddDialog()">
+            <mat-icon>add</mat-icon>
+            Add Translation
           </button>
         }
-        @if (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async) {
-          <mat-divider></mat-divider>
-          @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openImportDialog(space.locales)">
-              <mat-icon>cloud_upload</mat-icon>
-              <span>Import</span>
-            </button>
-          }
-          @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openExportDialog(space.locales)">
-              <mat-icon>cloud_download</mat-icon>
-              <span>Export</span>
-            </button>
-          }
+        @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
+          <button
+            mat-stroked-button
+            color="accent"
+            matTooltip="Publish Translations to be available via API call"
+            [disabled]="isPublishLoading()"
+            (click)="publish()">
+            <ll-icon [animate]="isPublishLoading()" start="publish" end="sync" />
+            Publish
+          </button>
         }
-      </mat-menu>
+        <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
+          <mat-icon>history</mat-icon>
+        </button>
+        <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #importMenu="matMenu">
+          @for (locale of space.locales; track locale.id) {
+            <button mat-menu-item (click)="openPublishedInNewTab(locale.id)">
+              <mat-icon>public</mat-icon>
+              <span>Published {{ locale.name }} JSON</span>
+            </button>
+          }
+          @if (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async) {
+            <mat-divider></mat-divider>
+            @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
+              <button mat-menu-item (click)="openImportDialog(space.locales)">
+                <mat-icon>cloud_upload</mat-icon>
+                <span>Import</span>
+              </button>
+            }
+            @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
+              <button mat-menu-item (click)="openExportDialog(space.locales)">
+                <mat-icon>cloud_download</mat-icon>
+                <span>Export</span>
+              </button>
+            }
+          }
+        </mat-menu>
+      </div>
     </mat-toolbar-row>
   </mat-toolbar>
   @if (isLoading()) {

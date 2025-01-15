@@ -2,10 +2,12 @@
   <mat-toolbar-row>
     Spaces
     <span class="spacer"></span>
-    <button mat-stroked-button color="primary" (click)="openAddDialog()">
-      <mat-icon>add</mat-icon>
-      Add Space
-    </button>
+    <div class="actions">
+      <button mat-stroked-button color="primary" (click)="openAddDialog()">
+        <mat-icon>add</mat-icon>
+        Add Space
+      </button>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 @if (isLoading) {

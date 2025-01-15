@@ -5,31 +5,33 @@
       <mat-icon>help</mat-icon>
     </a>
     <span class="spacer"></span>
-    @if ('SCHEMA_CREATE' | canUserPerform | async) {
-      <button mat-stroked-button color="primary" (click)="openAddDialog()">
-        <mat-icon>add</mat-icon>
-        Add Schema
-      </button>
-    }
-    @if (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async) {
-      <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-      <mat-menu #extraMenu="matMenu">
-        @if ('SCHEMA_IMPORT' | canUserPerform | async) {
-          <button mat-menu-item (click)="openImportDialog()">
-            <mat-icon>cloud_upload</mat-icon>
-            <span>Import</span>
-          </button>
-        }
-        @if ('SCHEMA_EXPORT' | canUserPerform | async) {
-          <button mat-menu-item (click)="openExportDialog()">
-            <mat-icon>cloud_download</mat-icon>
-            <span>Export</span>
-          </button>
-        }
-      </mat-menu>
-    }
+    <div class="actions">
+      @if ('SCHEMA_CREATE' | canUserPerform | async) {
+        <button mat-stroked-button color="primary" (click)="openAddDialog()">
+          <mat-icon>add</mat-icon>
+          Add Schema
+        </button>
+      }
+      @if (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async) {
+        <button mat-icon-button [matMenuTriggerFor]="extraMenu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #extraMenu="matMenu">
+          @if ('SCHEMA_IMPORT' | canUserPerform | async) {
+            <button mat-menu-item (click)="openImportDialog()">
+              <mat-icon>cloud_upload</mat-icon>
+              <span>Import</span>
+            </button>
+          }
+          @if ('SCHEMA_EXPORT' | canUserPerform | async) {
+            <button mat-menu-item (click)="openExportDialog()">
+              <mat-icon>cloud_download</mat-icon>
+              <span>Export</span>
+            </button>
+          }
+        </mat-menu>
+      }
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 @if (isLoading) {

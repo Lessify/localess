@@ -1,6 +1,9 @@
 <h2 mat-dialog-title>
   <span>Assets</span>
   <div class="header-actions">
+    @if (fileUploadQueue().length > 0) {
+      <ll-icon [animate]="true" start="save" end="progress_activity" [matBadge]="fileUploadQueue().length" />
+    }
     <mat-button-toggle-group
       hideSingleSelectionIndicator="true"
       (change)="settingsStore.setAssetDialogLayout($event.value)"
@@ -21,9 +24,6 @@
     }
   </div>
 </h2>
-@if (isLoading()) {
-  <mat-progress-bar mode="query" />
-}
 @if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
@@ -95,12 +95,28 @@
         </mat-cell>
       </ng-container>
       <ng-container matColumnDef="size">
-        <mat-header-cell *matHeaderCellDef> Size</mat-header-cell>
-        <mat-cell *matCellDef="let element"> {{ element.size | digitalStore }}</mat-cell>
+        <mat-header-cell *matHeaderCellDef> File Size</mat-header-cell>
+        <mat-cell *matCellDef="let element">
+          @if (element.size) {
+            {{ element.size | digitalStore }}
+          } @else {
+            <mat-icon>remove</mat-icon>
+          }
+        </mat-cell>
       </ng-container>
       <ng-container matColumnDef="type">
         <mat-header-cell *matHeaderCellDef> Type</mat-header-cell>
-        <mat-cell *matCellDef="let element"> {{ element.type }}</mat-cell>
+        <mat-cell *matCellDef="let element">
+          @if (element.kind === 'FILE') {
+            @if (element.type) {
+              {{ element.type }}
+            } @else {
+              unknown
+            }
+          } @else {
+            Folder
+          }
+        </mat-cell>
       </ng-container>
       <ng-container matColumnDef="updatedAt">
         <mat-header-cell *matHeaderCellDef> Updated At</mat-header-cell>
@@ -139,13 +155,13 @@
           </mat-card-header>
           <mat-card-content>
             @if (item.kind === 'FILE') {
+              @if (item.size; as size) {
+                <p>{{ size | digitalStore }}</p>
+              }
               @if (item.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {
                   <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
                 }
-              }
-              @if (item.size; as size) {
-                <p>{{ size | digitalStore }}</p>
               }
             }
             <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">
@@ -153,7 +169,7 @@
             </p>
           </mat-card-content>
           <span class="spacer"></span>
-          <mat-card-actions>
+          <mat-card-actions align="end">
             <mat-checkbox
               (click)="$event.stopPropagation()"
               (change)="$event ? selection.toggle(item) : null"
@@ -167,6 +183,7 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <mat-paginator></mat-paginator>
+  <button mat-button [disabled]="selection.isEmpty()" (click)="selection.clear()">Deselect All ({{ selection.selected.length }})</button>
   <button mat-button [mat-dialog-close]="undefined">Close</button>
   <button mat-stroked-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     @if (selection.selected.length > 1) {
