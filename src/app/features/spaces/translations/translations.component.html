@@ -353,117 +353,119 @@
       </div>
     </mat-sidenav-content>
     <mat-sidenav position="end" [opened]="showHistory" (openedChange)="showHistory = $event">
-      <div class="flow-root m-4">
-        <ul role="list" class="-mb-8">
-          @for (item of history$ | async; track item.id; let isLast = $last) {
-            <li>
-              <div class="relative pb-5">
-                <div class="relative flex space-x-3">
-                  @switch (item.type) {
-                    @case ('PUBLISHED') {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>publish</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+      @if (showHistory) {
+        <div class="flow-root m-4">
+          <ul role="list" class="-mb-8">
+            @for (item of history$ | async; track item.id; let isLast = $last) {
+              <li>
+                <div class="relative pb-5">
+                  <div class="relative flex space-x-3">
+                    @switch (item.type) {
+                      @case ('PUBLISHED') {
                         <div>
-                          <p class="text-sm">
-                            Published by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                              {{ item.name || 'Unknown' }}
-                            </span>
-                          </p>
+                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                            <mat-icon>publish</mat-icon>
+                          </span>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div>
+                            <p class="text-sm">
+                              Published by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                {{ item.name || 'Unknown' }}
+                              </span>
+                            </p>
+                          </div>
+                          <div class="whitespace-nowrap text-right text-sm">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
                         </div>
-                      </div>
-                    }
-                    @case ('CREATE') {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>add</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      }
+                      @case ('CREATE') {
                         <div>
-                          <p class="text-sm">
-                            Add <span class="font-medium break-all">{{ item.key }}</span> by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                              {{ item.name || 'Unknown' }}
-                            </span>
-                          </p>
+                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                            <mat-icon>add</mat-icon>
+                          </span>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div>
+                            <p class="text-sm">
+                              Add <span class="font-medium break-all">{{ item.key }}</span> by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                {{ item.name || 'Unknown' }}
+                              </span>
+                            </p>
+                          </div>
+                          <div class="whitespace-nowrap text-right text-sm">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
                         </div>
-                      </div>
-                    }
-                    @case ('UPDATE') {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>edit</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      }
+                      @case ('UPDATE') {
                         <div>
-                          <p class="text-sm">
-                            Edit <span class="font-medium break-all">{{ item.key }}</span> by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                              {{ item.name || 'Unknown' }}
-                            </span>
-                          </p>
+                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                            <mat-icon>edit</mat-icon>
+                          </span>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div>
+                            <p class="text-sm">
+                              Edit <span class="font-medium break-all">{{ item.key }}</span> by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                {{ item.name || 'Unknown' }}
+                              </span>
+                            </p>
+                          </div>
+                          <div class="whitespace-nowrap text-right text-sm">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
                         </div>
-                      </div>
-                    }
-                    @case ('DELETE') {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>delete</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      }
+                      @case ('DELETE') {
                         <div>
-                          <p class="text-sm">
-                            Delete <span class="font-medium break-all">{{ item.key }}</span> by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                              {{ item.name || 'Unknown' }}
-                            </span>
-                          </p>
+                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                            <mat-icon>delete</mat-icon>
+                          </span>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div>
+                            <p class="text-sm">
+                              Delete <span class="font-medium break-all">{{ item.key }}</span> by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                {{ item.name || 'Unknown' }}
+                              </span>
+                            </p>
+                          </div>
+                          <div class="whitespace-nowrap text-right text-sm">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
                         </div>
-                      </div>
-                    }
-                    @default {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>question_mark</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      }
+                      @default {
                         <div>
-                          <p class="text-sm">Unknown</p>
+                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                            <mat-icon>question_mark</mat-icon>
+                          </span>
                         </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div>
+                            <p class="text-sm">Unknown</p>
+                          </div>
+                          <div class="whitespace-nowrap text-right text-sm">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
                         </div>
-                      </div>
+                      }
                     }
-                  }
+                  </div>
                 </div>
-              </div>
-            </li>
-          } @empty {
-            No Records found
-          }
-        </ul>
-      </div>
+              </li>
+            } @empty {
+              No Records found
+            }
+          </ul>
+        </div>
+      }
     </mat-sidenav>
   </mat-sidenav-container>
 }

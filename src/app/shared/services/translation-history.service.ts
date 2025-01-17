@@ -11,7 +11,7 @@ export class TranslationHistoryService {
   constructor(private readonly firestore: Firestore) {}
 
   findAll(spaceId: string): Observable<TranslationHistory[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(20)];
+    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(30)];
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/translations_history`), ...queryConstrains), {
       idField: 'id',
     }).pipe(
