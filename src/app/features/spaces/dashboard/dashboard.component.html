@@ -55,25 +55,25 @@
           <div class="overflow-hidden rounded-lg px-4 py-5 shadow dark:border-2 sm:p-6">
             <dt class="truncate text-sm font-medium">Total</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight">
-              {{ space.overview?.translationSize + space?.overview?.assetsSize + space?.overview?.contentSize | digitalStore }}
+              {{ space.overview?.translationSize + space?.overview?.assetsSize + space?.overview?.contentSize | formatFileSize }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg px-4 py-5 shadow dark:border-2 sm:p-6">
             <dt class="truncate text-sm font-medium">Translations</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight">
-              {{ space.overview?.translationSize || 0 | digitalStore }}
+              {{ space.overview?.translationSize || 0 | formatFileSize }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg px-4 py-5 shadow dark:border-2 sm:p-6">
             <dt class="truncate text-sm font-medium">Asset Files</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight">
-              {{ space.overview?.assetsSize || 0 | digitalStore }}
+              {{ space.overview?.assetsSize || 0 | formatFileSize }}
             </dd>
           </div>
           <div class="overflow-hidden rounded-lg px-4 py-5 shadow dark:border-2 sm:p-6">
             <dt class="truncate text-sm font-medium">Content Documents</dt>
             <dd class="w-full flex-none text-3xl font-medium leading-10 tracking-tight">
-              {{ space.overview?.contentSize || 0 | digitalStore }}
+              {{ space.overview?.contentSize || 0 | formatFileSize }}
             </dd>
           </div>
         </dl>

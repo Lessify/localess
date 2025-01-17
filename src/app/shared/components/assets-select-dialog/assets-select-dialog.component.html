@@ -98,7 +98,7 @@
         <mat-header-cell *matHeaderCellDef> File Size</mat-header-cell>
         <mat-cell *matCellDef="let element">
           @if (element.size) {
-            {{ element.size | digitalStore }}
+            {{ element.size | formatFileSize }}
           } @else {
             <mat-icon>remove</mat-icon>
           }
@@ -156,7 +156,7 @@
           <mat-card-content>
             @if (item.kind === 'FILE') {
               @if (item.size; as size) {
-                <p>{{ size | digitalStore }}</p>
+                <p>{{ size | formatFileSize }}</p>
               }
               @if (item.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {

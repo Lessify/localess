@@ -70,7 +70,7 @@
         @if (element.file; as file) {
           <div>
             <div>{{ file.name }}</div>
-            <div>Size : {{ file.size | digitalStore }}</div>
+            <div>Size : {{ file.size | formatFileSize }}</div>
           </div>
         }
       </mat-cell>

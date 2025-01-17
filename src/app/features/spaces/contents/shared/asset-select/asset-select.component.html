@@ -37,7 +37,7 @@
             }
             <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
             <code matListItemLine>
-              {{ asset.size | digitalStore }}
+              {{ asset.size | formatFileSize }}
               @if (asset.metadata; as metadata) {
                 | W{{ metadata.width }} x H{{ metadata.height }}
               }
