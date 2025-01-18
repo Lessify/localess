@@ -92,6 +92,7 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: assets => {
+          console.log(assets);
           this.assets = assets;
           this.dataSource = new MatTableDataSource<Asset>(assets);
           this.dataSource.sort = this.sort() || null;
@@ -314,7 +315,7 @@ export class AssetsComponent implements OnInit {
   }
 
   onAssetSelect(element: Asset): void {
-    if (element.kind === AssetKind.FILE) {
+    if (element.kind === AssetKind.FILE && element.type.startsWith('image/')) {
       this.dialog
         .open<ImagePreviewDialogComponent, ImagePreviewDialogModel, void>(ImagePreviewDialogComponent, {
           panelClass: 'image-preview',
