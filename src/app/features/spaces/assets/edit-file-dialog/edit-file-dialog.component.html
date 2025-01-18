@@ -4,9 +4,9 @@
   <form [formGroup]="form">
     <mat-form-field>
       <mat-label>Name</mat-label>
-      <input matInput type="text" formControlName="name" maxlength="50" autocomplete="off" />
+      <input matInput type="text" formControlName="name" maxlength="100" autocomplete="off" />
       <span matTextSuffix>{{ data.asset.extension }}</span>
-      <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/50</mat-hint>
+      <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/100</mat-hint>
       @if (form.controls['name'].errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>
       }
