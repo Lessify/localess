@@ -2,10 +2,12 @@
   <mat-toolbar-row>
     Tokens
     <span class="spacer"></span>
-    <button mat-stroked-button color="primary" (click)="openAddDialog()">
-      <mat-icon>add</mat-icon>
-      Add Token
-    </button>
+    <div class="actions">
+      <button mat-stroked-button color="primary" (click)="openAddDialog()">
+        <mat-icon>add</mat-icon>
+        Add Token
+      </button>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 @if (isLoading()) {
@@ -45,5 +47,5 @@
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
   </mat-table>
-  <mat-paginator></mat-paginator>
+  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
 </div>

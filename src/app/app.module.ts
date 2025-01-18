@@ -97,7 +97,8 @@ import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-confi
       useValue: (config: ImageLoaderConfig) => {
         // optimize image for API assets
         if (config.src.startsWith('/api/') && config.width) {
-          return `${config.src}?w=${config.width}`;
+          const thumbnailParam = config.loaderParams && config.loaderParams['thumbnail'] ? '&thumbnail=true' : '';
+          return `${config.src}?w=${config.width}${thumbnailParam}`;
         } else {
           return config.src;
         }

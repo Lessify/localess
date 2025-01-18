@@ -3,7 +3,7 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { FieldValue, WithFieldValue } from 'firebase-admin/firestore';
 import { canPerform } from './utils/security-utils';
-import { bucket } from './config';
+import { bucket, firestoreService } from './config';
 import { PublishTranslationsData, Space, Translation, TranslationHistory, TranslationHistoryType, UserPermission } from './models';
 import { findSpaceById, findTranslations, findTranslationsHistory } from './services';
 import { translateCloud } from './services/translate.service';
@@ -147,6 +147,19 @@ const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{trans
     addHistory.name = afterData.updatedBy.name;
   }
   await findTranslationsHistory(spaceId).add(addHistory);
+  const countSnapshot = await findTranslationsHistory(spaceId).count().get();
+  const { count } = countSnapshot.data();
+  if (count > 30) {
+    const historySnapshot = await findTranslationsHistory(spaceId)
+      .orderBy('createdAt', 'asc')
+      .limit(count - 30)
+      .get();
+    if (historySnapshot.size > 0) {
+      const batch = firestoreService.batch();
+      historySnapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+  }
   return;
 });
 

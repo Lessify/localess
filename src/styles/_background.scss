@@ -3,12 +3,9 @@
 @import './styles-variables';
 
 .file-drag-and-drop-wrapper {
-  background-color: $background-blue-color !important;
-  border-style: solid !important;
-  border-color: $border-blue-color !important;
-  border-width: 3px !important;
-  border-radius: 5px;
-  opacity: 0.25;
+  background-color: var(--sys-primary-container) !important;
+  outline: var(--sys-primary) solid 3px !important;
+  opacity: 0.5;
 }
 
 

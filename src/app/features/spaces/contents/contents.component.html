@@ -5,48 +5,49 @@
       <mat-icon>help</mat-icon>
     </a>
     <span class="spacer"></span>
+    <div class="actions">
+      @if ('CONTENT_CREATE' | canUserPerform | async) {
+        <button mat-stroked-button color="primary" [matMenuTriggerFor]="contentCreateMenu">
+          <mat-icon>add</mat-icon>
+          Add Content
+        </button>
+        <mat-menu #contentCreateMenu="matMenu">
+          <button mat-menu-item (click)="openAddDocumentDialog()">
+            <mat-icon>post_add</mat-icon>
+            <span>Document</span>
+          </button>
+          <button mat-menu-item (click)="openAddFolderDialog()">
+            <mat-icon>create_new_folder</mat-icon>
+            <span>Folder</span>
+          </button>
+        </mat-menu>
+      }
 
-    @if ('CONTENT_CREATE' | canUserPerform | async) {
-      <button mat-stroked-button color="primary" [matMenuTriggerFor]="contentCreateMenu">
-        <mat-icon>add</mat-icon>
-        Add Content
+      <button mat-icon-button [matMenuTriggerFor]="extraMenu">
+        <mat-icon>more_vert</mat-icon>
       </button>
-      <mat-menu #contentCreateMenu="matMenu">
-        <button mat-menu-item (click)="openAddDocumentDialog()">
-          <mat-icon>post_add</mat-icon>
-          <span>Document</span>
+
+      <mat-menu #extraMenu="matMenu">
+        <button mat-menu-item (click)="openLinksInNewTab()">
+          <mat-icon>link</mat-icon>
+          <span>Links</span>
         </button>
-        <button mat-menu-item (click)="openAddFolderDialog()">
-          <mat-icon>create_new_folder</mat-icon>
-          <span>Folder</span>
-        </button>
+
+        <mat-divider></mat-divider>
+        @if ('CONTENT_IMPORT' | canUserPerform | async) {
+          <button mat-menu-item (click)="openImportDialog()">
+            <mat-icon>cloud_upload</mat-icon>
+            <span>Import</span>
+          </button>
+        }
+        @if ('CONTENT_EXPORT' | canUserPerform | async) {
+          <button mat-menu-item (click)="openExportDialog()">
+            <mat-icon>cloud_download</mat-icon>
+            <span>Export</span>
+          </button>
+        }
       </mat-menu>
-    }
-
-    <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-      <mat-icon>more_vert</mat-icon>
-    </button>
-
-    <mat-menu #extraMenu="matMenu">
-      <button mat-menu-item (click)="openLinksInNewTab()">
-        <mat-icon>link</mat-icon>
-        <span>Links</span>
-      </button>
-
-      <mat-divider></mat-divider>
-      @if ('CONTENT_IMPORT' | canUserPerform | async) {
-        <button mat-menu-item (click)="openImportDialog()">
-          <mat-icon>cloud_upload</mat-icon>
-          <span>Import</span>
-        </button>
-      }
-      @if ('CONTENT_EXPORT' | canUserPerform | async) {
-        <button mat-menu-item (click)="openExportDialog()">
-          <mat-icon>cloud_download</mat-icon>
-          <span>Export</span>
-        </button>
-      }
-    </mat-menu>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 @if (isLoading()) {
@@ -201,5 +202,5 @@
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>
-  <mat-paginator></mat-paginator>
+  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
 </div>

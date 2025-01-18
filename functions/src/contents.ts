@@ -317,6 +317,19 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
   }
 
   await findContentsHistory(spaceId, contentId).add(addHistory);
+  const countSnapshot = await findContentsHistory(spaceId, contentId).count().get();
+  const { count } = countSnapshot.data();
+  if (count > 30) {
+    const historySnapshot = await findContentsHistory(spaceId, contentId)
+      .orderBy('createdAt', 'asc')
+      .limit(count - 30)
+      .get();
+    if (historySnapshot.size > 0) {
+      const batch = firestoreService.batch();
+      historySnapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+  }
   return;
 });
 

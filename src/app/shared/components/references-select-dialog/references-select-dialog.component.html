@@ -76,6 +76,7 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <mat-paginator></mat-paginator>
+  <button mat-button [disabled]="selection.isEmpty()" (click)="selection.clear()">Deselect All ({{ selection.selected.length }})</button>
   <button mat-button [mat-dialog-close]="undefined">Close</button>
   <button mat-stroked-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     @if (selection.selected.length > 1) {

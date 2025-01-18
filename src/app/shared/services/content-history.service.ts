@@ -11,7 +11,7 @@ export class ContentHistoryService {
   constructor(private readonly firestore: Firestore) {}
 
   findAll(spaceId: string, id: string): Observable<ContentHistory[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(20)];
+    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(30)];
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents/${id}/histories`), ...queryConstrains), {
       idField: 'id',
     }).pipe(

@@ -7,103 +7,106 @@
     &nbsp;
     <span class="subtitle">#{{ document?.slug }}</span>
     <span class="spacer"></span>
-    <mat-button-toggle-group
-      hideSingleSelectionIndicator="true"
-      (change)="settingsStore.setEditorEnabled(!settingsStore.editorEnabled())"
-      [value]="settingsStore.editorEnabled()">
-      <mat-button-toggle [value]="true" matTooltip="Design Mode">
-        <mat-icon>design_services</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle [value]="false" matTooltip="Form Mode">
-        <mat-icon>edit_note</mat-icon>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
+    <div class="actions">
+      <mat-button-toggle-group
+        hideSingleSelectionIndicator="true"
+        (change)="settingsStore.setEditorEnabled(!settingsStore.editorEnabled())"
+        [value]="settingsStore.editorEnabled()">
+        <mat-button-toggle [value]="true" matTooltip="Design Mode">
+          <mat-icon>design_services</mat-icon>
+        </mat-button-toggle>
+        <mat-button-toggle [value]="false" matTooltip="Form Mode">
+          <mat-icon>edit_note</mat-icon>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
 
-    <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
-      {{ selectedLocale.name }}
-      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
-    </button>
-
-    <mat-menu #localesMenu="matMenu">
-      @for (locale of availableLocales; track locale.id) {
-        <button mat-menu-item (click)="onLocaleChanged(locale)">
-          <span [class.fw-semibold]="locale.id === selectedLocale.id">
-            {{ locale.name }}
-          </span>
-        </button>
-      }
-    </mat-menu>
-
-    @if (contentErrors.length > 0) {
-      <button mat-icon-button [matMenuTriggerFor]="contentErrorsMenu">
-        <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline</mat-icon>
+      <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
+        {{ selectedLocale.name }}
+        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
       </button>
-    }
 
-    <mat-menu class="mat-menu-error-messages" #contentErrorsMenu="matMenu" xPosition="before">
-      <div class="vstack gap-1">
-        @for (error of contentErrors; track error.contentId) {
-          <div class="p-2">
-            <mat-icon color="accent">warning</mat-icon>
-            In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for Locale
-            {{ availableLocalesMap.get(error.locale) }}
-          </div>
+      <mat-menu #localesMenu="matMenu">
+        @for (locale of availableLocales; track locale.id) {
+          <button mat-menu-item (click)="onLocaleChanged(locale)">
+            <span [class.fw-semibold]="locale.id === selectedLocale.id">
+              {{ locale.name }}
+            </span>
+          </button>
         }
-      </div>
-    </mat-menu>
-    @if ('CONTENT_UPDATE' | canUserPerform | async) {
-      <button
-        mat-stroked-button
-        color="primary"
-        matTooltip="Save the changes."
-        [disabled]="isSaveLoading() || isPublishLoading()"
-        (click)="save()">
-        <ll-icon [animate]="isSaveLoading()" start="save" end="sync" />
-        Save
-      </button>
-    }
-    @if ('CONTENT_PUBLISH' | canUserPerform | async) {
-      <button
-        mat-stroked-button
-        color="accent"
-        matTooltip="Publish to be available via API call"
-        [disabled]="isPublishLoading() || isSaveLoading()"
-        (click)="publish()">
-        <ll-icon [animate]="isPublishLoading()" start="publish" end="sync" />
-        Publish
-      </button>
-    }
-    @if (document?.publishedAt === undefined) {
-      <ll-status mode="offline" matTooltip="Not published" />
-    } @else if (document?.publishedAt?.seconds > document?.updatedAt?.seconds) {
-      <ll-status mode="online" matTooltip="Published" />
-    } @else if (document?.publishedAt && document?.publishedAt?.seconds < document?.updatedAt?.seconds) {
-      <ll-status mode="away" matTooltip="Draft" />
-    }
+      </mat-menu>
 
-    <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
-      <mat-icon>history</mat-icon>
-    </button>
-
-    <button mat-icon-button [matMenuTriggerFor]="importMenu">
-      <mat-icon>more_vert</mat-icon>
-    </button>
-
-    <mat-menu #importMenu="matMenu">
-      @for (locale of selectedSpace?.locales; track locale.id) {
-        <button mat-menu-item (click)="openDraftInNewTab(locale.id)">
-          <mat-icon>mode_edit</mat-icon>
-          <span>Draft {{ locale.name }} JSON</span>
+      @if (contentErrors.length > 0) {
+        <button mat-icon-button [matMenuTriggerFor]="contentErrorsMenu">
+          <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline</mat-icon>
         </button>
       }
-      <mat-divider />
-      @for (locale of selectedSpace?.locales; track locale.id) {
-        <button mat-menu-item (click)="openPublishedInNewTab(locale.id)">
-          <mat-icon>public</mat-icon>
-          <span>Published {{ locale.name }} JSON</span>
+
+      <mat-menu class="mat-menu-error-messages" #contentErrorsMenu="matMenu" xPosition="before">
+        <div class="vstack gap-1">
+          @for (error of contentErrors; track error.contentId) {
+            <div class="p-2">
+              <mat-icon color="accent">warning</mat-icon>
+              In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for
+              Locale
+              {{ availableLocalesMap.get(error.locale) }}
+            </div>
+          }
+        </div>
+      </mat-menu>
+      @if ('CONTENT_UPDATE' | canUserPerform | async) {
+        <button
+          mat-stroked-button
+          color="primary"
+          matTooltip="Save the changes."
+          [disabled]="isSaveLoading() || isPublishLoading()"
+          (click)="save()">
+          <ll-icon [animate]="isSaveLoading()" start="save" end="sync" />
+          Save
         </button>
       }
-    </mat-menu>
+      @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+        <button
+          mat-stroked-button
+          color="accent"
+          matTooltip="Publish to be available via API call"
+          [disabled]="isPublishLoading() || isSaveLoading()"
+          (click)="publish()">
+          <ll-icon [animate]="isPublishLoading()" start="publish" end="sync" />
+          Publish
+        </button>
+      }
+      @if (document?.publishedAt === undefined) {
+        <ll-status mode="offline" matTooltip="Not published" />
+      } @else if (document?.publishedAt?.seconds > document?.updatedAt?.seconds) {
+        <ll-status mode="online" matTooltip="Published" />
+      } @else if (document?.publishedAt && document?.publishedAt?.seconds < document?.updatedAt?.seconds) {
+        <ll-status mode="away" matTooltip="Draft" />
+      }
+
+      <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
+        <mat-icon>history</mat-icon>
+      </button>
+
+      <button mat-icon-button [matMenuTriggerFor]="importMenu">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+
+      <mat-menu #importMenu="matMenu">
+        @for (locale of selectedSpace?.locales; track locale.id) {
+          <button mat-menu-item (click)="openDraftInNewTab(locale.id)">
+            <mat-icon>mode_edit</mat-icon>
+            <span>Draft {{ locale.name }} JSON</span>
+          </button>
+        }
+        <mat-divider />
+        @for (locale of selectedSpace?.locales; track locale.id) {
+          <button mat-menu-item (click)="openPublishedInNewTab(locale.id)">
+            <mat-icon>public</mat-icon>
+            <span>Published {{ locale.name }} JSON</span>
+          </button>
+        }
+      </mat-menu>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 
@@ -211,117 +214,119 @@
     </div>
   </mat-sidenav-content>
   <mat-sidenav position="end" [opened]="showHistory" (openedChange)="showHistory = $event">
-    <div class="flow-root m-4">
-      <ul role="list" class="-mb-8">
-        @for (item of history$ | async; track item.id; let isLast = $last) {
-          <li>
-            <div class="relative pb-5">
-              <div class="relative flex space-x-3">
-                @switch (item.type) {
-                  @case ('PUBLISHED') {
-                    <div>
-                      <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                        <mat-icon>publish</mat-icon>
-                      </span>
-                    </div>
-                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+    @if (showHistory) {
+      <div class="flow-root m-4">
+        <ul role="list" class="-mb-8">
+          @for (item of history$ | async; track item.id; let isLast = $last) {
+            <li>
+              <div class="relative pb-5">
+                <div class="relative flex space-x-3">
+                  @switch (item.type) {
+                    @case ('PUBLISHED') {
                       <div>
-                        <p class="text-sm">
-                          Published by
-                          <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                            {{ item.name || 'Unknown' }}
-                          </span>
-                        </p>
-                      </div>
-                      <div class="whitespace-nowrap text-right text-sm">
-                        <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                      </div>
-                    </div>
-                  }
-                  @case ('CREATE') {
-                    <div>
-                      <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                        <mat-icon>add</mat-icon>
-                      </span>
-                    </div>
-                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                      <div>
-                        <p class="text-sm">
-                          Created with name <span class="font-medium break-all">{{ item.cName }}</span> and slug
-                          <span class="font-medium break-all">{{ item.cSlug }}</span> by
-                          <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                            {{ item.name || 'Unknown' }}
-                          </span>
-                        </p>
-                      </div>
-                      <div class="whitespace-nowrap text-right text-sm">
-                        <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                      </div>
-                    </div>
-                  }
-                  @case ('UPDATE') {
-                    <div>
-                      <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                        <mat-icon>edit</mat-icon>
-                      </span>
-                    </div>
-                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                      <div>
-                        <p class="text-sm">
-                          Updated with
-                          @if (item.cName) {
-                            name <span class="font-medium break-all">{{ item.cName }}</span>
-                          }
-                          @if (item.cSlug) {
-                            @if (item.cName) {
-                              and
-                            }
-                            slug <span class="font-medium break-all">{{ item.cSlug }}</span>
-                          }
-                          @if (item.cParentSlug) {
-                            parent slug <span class="font-medium break-all">{{ item.cParentSlug }}</span>
-                          } @else if (item.cData) {
-                            content
-                          } @else {
-                            nothing
-                          }
-                          by
-                          <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                            {{ item.name || 'Unknown' }}
-                          </span>
-                        </p>
-                      </div>
-                      <div class="whitespace-nowrap text-right text-sm">
-                        <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                      </div>
-                    </div>
-                  }
-                  @default {
-                    <div>
-                      <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                        <mat-icon>question_mark</mat-icon>
-                      </span>
-                    </div>
-                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                      <div>
-                        <p class="text-sm">Unknown</p> by
-                        <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                          {{ item.name || 'Unknown' }}
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                          <mat-icon>publish</mat-icon>
                         </span>
                       </div>
-                      <div class="whitespace-nowrap text-right text-sm">
-                        <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                        <div>
+                          <p class="text-sm">
+                            Published by
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                              {{ item.name || 'Unknown' }}
+                            </span>
+                          </p>
+                        </div>
+                        <div class="whitespace-nowrap text-right text-sm">
+                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        </div>
                       </div>
-                    </div>
+                    }
+                    @case ('CREATE') {
+                      <div>
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                          <mat-icon>add</mat-icon>
+                        </span>
+                      </div>
+                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                        <div>
+                          <p class="text-sm">
+                            Created with name <span class="font-medium break-all">{{ item.cName }}</span> and slug
+                            <span class="font-medium break-all">{{ item.cSlug }}</span> by
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                              {{ item.name || 'Unknown' }}
+                            </span>
+                          </p>
+                        </div>
+                        <div class="whitespace-nowrap text-right text-sm">
+                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        </div>
+                      </div>
+                    }
+                    @case ('UPDATE') {
+                      <div>
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                          <mat-icon>edit</mat-icon>
+                        </span>
+                      </div>
+                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                        <div>
+                          <p class="text-sm">
+                            Updated with
+                            @if (item.cName) {
+                              name <span class="font-medium break-all">{{ item.cName }}</span>
+                            }
+                            @if (item.cSlug) {
+                              @if (item.cName) {
+                                and
+                              }
+                              slug <span class="font-medium break-all">{{ item.cSlug }}</span>
+                            }
+                            @if (item.cParentSlug) {
+                              parent slug <span class="font-medium break-all">{{ item.cParentSlug }}</span>
+                            } @else if (item.cData) {
+                              content
+                            } @else {
+                              nothing
+                            }
+                            by
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                              {{ item.name || 'Unknown' }}
+                            </span>
+                          </p>
+                        </div>
+                        <div class="whitespace-nowrap text-right text-sm">
+                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        </div>
+                      </div>
+                    }
+                    @default {
+                      <div>
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                          <mat-icon>question_mark</mat-icon>
+                        </span>
+                      </div>
+                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                        <div>
+                          <p class="text-sm">Unknown</p> by
+                          <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                            {{ item.name || 'Unknown' }}
+                          </span>
+                        </div>
+                        <div class="whitespace-nowrap text-right text-sm">
+                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                        </div>
+                      </div>
+                    }
                   }
-                }
+                </div>
               </div>
-            </div>
-          </li>
-        } @empty {
-          No Records found
-        }
-      </ul>
-    </div>
+            </li>
+          } @empty {
+            No Records found
+          }
+        </ul>
+      </div>
+    }
   </mat-sidenav>
 </mat-sidenav-container>

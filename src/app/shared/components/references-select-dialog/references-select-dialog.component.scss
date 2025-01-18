@@ -4,6 +4,7 @@ table {
 
 mat-dialog-content {
   @apply pt-0 #{!important};
+  @apply pb-1 #{!important};
 }
 
 mat-row {

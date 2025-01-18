@@ -2,14 +2,20 @@ table {
   width: 100%;
 }
 
+.header-actions {
+  @apply mt-1 float-right flex gap-4 items-center;
+}
+
 mat-dialog-content {
   @apply pt-0 #{!important};
+  @apply pb-1 #{!important};
 }
 
 mat-cell {
-  cursor: pointer;
   &.mat-column-preview {
     img {
+      min-width: 115px;
+      min-height: 115px;
       max-width: 115px;
       max-height: 115px;
     }

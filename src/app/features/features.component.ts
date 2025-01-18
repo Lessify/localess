@@ -12,7 +12,6 @@ import {
   signal,
   Signal,
 } from '@angular/core';
-import { Observable } from 'rxjs';
 
 import { LocalStorageService } from '@core/core.module';
 import { Auth, signOut } from '@angular/fire/auth';
@@ -90,9 +89,6 @@ export class FeaturesComponent implements OnInit {
     { link: 'https://github.com/Lessify/localess', label: 'Code', icon: 'code' },
     { link: 'https://github.com/Lessify/localess/issues', label: 'Feedback', icon: 'forum' },
   ];
-
-  stickyHeader$: Observable<boolean> | undefined;
-  language$: Observable<string> | undefined;
 
   private destroyRef = inject(DestroyRef);
   spaceStore = inject(SpaceStore);

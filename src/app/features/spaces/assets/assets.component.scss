@@ -1,8 +1,7 @@
-@use '@angular/material' as mat;
-
 table {
   width: 100%;
 }
+
 
 //mat-header-cell {
 //  &.mat-column-actions {
@@ -15,11 +14,11 @@ table {
 //  }
 //}
 
-mat-row {
-  &.row-folder {
-    cursor: pointer;
-  }
-}
+//mat-row {
+//  &.row-folder {
+//    cursor: pointer;
+//  }
+//}
 
 mat-cell {
   &.mat-column-preview {

@@ -29,13 +29,14 @@
               height="200"
               alt="thumbnail"
               loading="lazy"
+              [loaderParams]="{ thumbnail: true }"
               ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
           } @else {
             <mat-icon matListItemIcon>file_present</mat-icon>
           }
           <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
           <code matListItemLine>
-            {{ asset.size | digitalStore }}
+            {{ asset.size | formatFileSize }}
             @if (asset.metadata; as metadata) {
               | W{{ metadata.width }} x H{{ metadata.height }}
             }

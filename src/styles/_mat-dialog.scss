@@ -1,6 +1,11 @@
-@use '@angular/material' as mat;
-
-@import './styles-variables';
+/*
+None	width: 100%;
+sm (640px)	max-width: 640px;
+md (768px)	max-width: 768px;
+lg (1024px)	max-width: 1024px;
+xl (1280px)	max-width: 1280px;
+2xl (1536px)	max-width: 1536px;
+*/
 
 .cdk-overlay-pane.mat-mdc-dialog-panel {
   &.sm {
@@ -15,7 +20,30 @@
     max-width: 1280px;
     max-height: calc(100vh - 80px);
   }
+  &.xxl {
+    min-width: 900px;
+    width: calc(100vw - 160px);
+    max-width: 1536px;
+    max-height: calc(100vh - 80px);
+  }
   &.full-screen {
+    min-width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+  &.image-preview {
+    max-width: calc(100vw - 80px);
+    max-height: calc(100vh - 80px);
 
+    mat-dialog-content {
+      min-height: fit-content;
+      min-width: fit-content;
+      img {
+        min-width: 800px;
+        min-height: 800px;
+        max-width: calc(100vw - 180px);
+        max-height: calc(100vh - 180px);
+      }
+    }
   }
 }

@@ -55,7 +55,7 @@ export class AssetSelectComponent implements OnInit {
   openAssetSelectDialog(): void {
     this.dialog
       .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, Asset[] | undefined>(AssetsSelectDialogComponent, {
-        panelClass: 'xl',
+        panelClass: 'full-screen',
         data: {
           spaceId: this.space().id,
           multiple: false,

@@ -43,7 +43,7 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
   contents = signal<Content[]>([]);
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
   displayedColumns: string[] = ['select', 'status', 'name', 'slug', 'schema', 'updatedAt'];
-  selection = new SelectionModel<ContentDocument>(this.data.multiple, []);
+  selection = new SelectionModel<ContentDocument>(this.data.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   contentPath: PathItem[] = [];
 
   get parentPath(): string {

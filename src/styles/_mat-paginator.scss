@@ -1,0 +1,5 @@
+mat-paginator {
+  &.mat-paginator-sticky {
+    @apply sticky bottom-0 z-10;
+  }
+}

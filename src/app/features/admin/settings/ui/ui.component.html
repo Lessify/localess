@@ -2,10 +2,12 @@
   <mat-toolbar-row>
     User Interface
     <span class="spacer"></span>
-    <button mat-stroked-button color="primary" [disabled]="!form.valid" (click)="save()">
-      <mat-icon>save</mat-icon>
-      Save
-    </button>
+    <div class="actions">
+      <button mat-stroked-button color="primary" [disabled]="!form.valid" (click)="save()">
+        <mat-icon>save</mat-icon>
+        Save
+      </button>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 

@@ -24,12 +24,12 @@
     "cors": "^2.8.5",
     "deepl-node": "^1.15.0",
     "express": "^4.21.2",
-    "firebase-admin": "^13.0.1",
-    "firebase-functions": "^6.1.1",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
     "sharp": "^0.33.5",
     "stripe": "^17.4.0",
-    "uuid": "^11.0.3",
-    "zod": "^3.23.8"
+    "uuid": "^11.0.5",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "openapi3-ts": "^4.4.0",
