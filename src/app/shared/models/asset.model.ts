@@ -29,12 +29,14 @@ export interface AssetFile extends AssetBase {
   size: number;
   alt?: string;
   metadata?: AssetMetadata;
+  source?: string;
 }
 
 export interface AssetMetadata {
   format?: string;
   width?: number;
   height?: number;
+  orientation?: 'landscape' | 'portrait' | 'squarish';
 }
 
 // Common image file types
@@ -103,8 +105,17 @@ export interface AssetFileCreateFS extends AssetCreateFS {
   type: string;
   size: number;
   alt?: string;
+  source?: string;
 }
 
 export interface AssetFolderCreateFS extends AssetCreateFS {
   kind: AssetKind.FOLDER;
 }
+
+export type AssetFileImport = {
+  url: string;
+  name: string;
+  extension: string;
+  alt?: string;
+  source?: string;
+};

@@ -36,6 +36,7 @@ export const remoteConfigService = getRemoteConfig(app);
 export const remoteConfigTemplate = remoteConfigService.initServerTemplate({
   defaultConfig: {
     deepl_api_key: '',
+    unsplash_api_key: '',
   },
 });
 
@@ -307,3 +308,4 @@ export const DEEPL_TARGET_SUPPORT_LOCALES = new Set([
 ]);
 
 export const firebaseConfig: FirebaseConfig = JSON.parse(process.env[FIREBASE_CONFIG] || '');
+export const isEmulatorEnabled: boolean = process.env.FUNCTIONS_EMULATOR == 'true';

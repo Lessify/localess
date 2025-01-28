@@ -309,6 +309,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
       // Optional Fields
       if (asset.alt) add.alt = asset.alt;
       if (asset.metadata) add.metadata = asset.metadata;
+      if (asset.source) add.source = asset.source;
       batch.set(assetRef, add);
       ids.set(asset.id, assetTmpPath);
     } else if (asset.kind === AssetKind.FOLDER) {

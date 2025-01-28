@@ -24,12 +24,20 @@ const onFileUpload = onObjectFinalized(async event => {
       if (size) {
         update.size = size;
       }
+      update.metadata = {
+        format: format,
+        height: height,
+        width: width,
+      };
+      // calculate orientation
       if (width && height) {
-        update.metadata = {
-          format: format,
-          height: height,
-          width: width,
-        };
+        if (width > height) {
+          update.metadata.orientation = 'landscape';
+        } else if (height > width) {
+          update.metadata.orientation = 'portrait';
+        } else {
+          update.metadata.orientation = 'squarish';
+        }
       }
     }
     await assetRef.update(update);

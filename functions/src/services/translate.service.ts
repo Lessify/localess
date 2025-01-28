@@ -3,6 +3,7 @@ import {
   DEEPL_TARGET_SUPPORT_LOCALES,
   firebaseConfig,
   GCP_SUPPORT_LOCALES,
+  isEmulatorEnabled,
   remoteConfigTemplate,
   translationService,
 } from '../config';
@@ -20,13 +21,18 @@ import { protos } from '@google-cloud/translate';
  */
 export async function translateCloud(content: string, sourceLocale: string | null, targetLocale: string): Promise<string> {
   let deeplApiKey: string | undefined = undefined;
-  // Get Server Configurations
-  try {
-    await remoteConfigTemplate.load();
-    const config = remoteConfigTemplate.evaluate();
-    deeplApiKey = config.getString('deepl_api_key');
-  } catch (e) {
-    logger.warn(e);
+  if (isEmulatorEnabled) {
+    // Read from local env
+    deeplApiKey = process.env.DEEPL_API_KEY;
+  } else {
+    // Get Server Configurations
+    try {
+      await remoteConfigTemplate.load();
+      const config = remoteConfigTemplate.evaluate();
+      deeplApiKey = config.getString('deepl_api_key');
+    } catch (error) {
+      logger.warn(error);
+    }
   }
 
   if (deeplApiKey) {

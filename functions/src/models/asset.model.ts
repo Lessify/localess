@@ -28,12 +28,14 @@ export interface AssetFile extends AssetBase {
   size: number;
   alt?: string;
   metadata?: AssetMetadata;
+  source?: string;
 }
 
 export interface AssetMetadata {
   format?: string;
   width?: number;
   height?: number;
+  orientation?: 'landscape' | 'portrait' | 'squarish';
 }
 
 // Import and Export

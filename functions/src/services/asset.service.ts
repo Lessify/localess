@@ -80,6 +80,7 @@ export function docAssetToExport(docId: string, asset: Asset): AssetExport | und
       size: asset.size,
       alt: asset.alt,
       metadata: asset.metadata,
+      source: asset.source,
     } as AssetFileExport;
   }
   return undefined;

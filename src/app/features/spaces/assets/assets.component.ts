@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { concatMap, filter, switchMap, tap } from 'rxjs/operators';
+import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { NotificationService } from '@shared/services/notification.service';
@@ -14,6 +14,7 @@ import { AssetService } from '@shared/services/asset.service';
 import {
   Asset,
   AssetFile,
+  AssetFileImport,
   AssetFileUpdate,
   AssetFolder,
   AssetFolderCreate,
@@ -37,6 +38,9 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { ImagePreviewDialogComponent } from './image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogModel } from './image-preview-dialog/image-preview-dialog.model';
+import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
+import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
+import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 
 @Component({
   selector: 'll-assets',
@@ -58,7 +62,7 @@ export class AssetsComponent implements OnInit {
   displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
   selection = new SelectionModel<Asset>(true, [], undefined, (o1, o2) => o1.id === o2.id);
   assets: Asset[] = [];
-  fileUploadQueue = signal<File[]>([]);
+  fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
   now = Date.now();
 
   get parentPath(): string {
@@ -70,7 +74,8 @@ export class AssetsComponent implements OnInit {
   }
 
   // Subscriptions
-  private fileUploadQueue$ = new Subject<File>();
+  private fileUploadQueue$ = new Subject<File | AssetFileImport>();
+  unsplashOk$ = this.unsplashPluginService.ok();
 
   // Loading
   isLoading = signal(true);
@@ -83,6 +88,7 @@ export class AssetsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
+    private readonly unsplashPluginService: UnsplashPluginService,
   ) {
     toObservable(this.spaceStore.assetPath)
       .pipe(
@@ -92,7 +98,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: assets => {
-          console.log(assets);
           this.assets = assets;
           this.dataSource = new MatTableDataSource<Asset>(assets);
           this.dataSource.sort = this.sort() || null;
@@ -108,7 +113,13 @@ export class AssetsComponent implements OnInit {
     this.fileUploadQueue$
       .pipe(
         tap(console.log),
-        concatMap(it => this.assetService.createFile(this.spaceId(), this.parentPath, it)),
+        concatMap(it => {
+          if (it instanceof File) {
+            return this.assetService.createFile(this.spaceId(), this.parentPath, it);
+          } else {
+            return this.assetService.importFile(this.spaceId(), this.parentPath, it);
+          }
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
@@ -138,6 +149,76 @@ export class AssetsComponent implements OnInit {
         }
       }
     }
+  }
+
+  openUrlPrompt(): void {
+    const urlStr = window.prompt('URL');
+    // cancelled
+    if (urlStr === null) {
+      return;
+    }
+    // empty
+    if (urlStr === '') {
+      this.notificationService.warn('URL is empty.');
+      return;
+    }
+    // value is present
+    if (!URL.canParse(urlStr)) {
+      this.notificationService.warn('Not a valid URL.');
+      return;
+    }
+    const url = new URL(urlStr);
+    const name = url.pathname.split('/').pop() || 'unknown';
+    const extIdx = name.lastIndexOf('.');
+    const asset: AssetFileImport = {
+      url: urlStr,
+      name: extIdx > 0 ? name.substring(0, extIdx) : name,
+      extension: extIdx > 0 ? name.substring(extIdx) : '',
+      source: url.hostname,
+    };
+    this.fileUploadQueue.update(files => {
+      files.push(asset);
+      return files;
+    });
+    this.fileUploadQueue$.next(asset);
+  }
+
+  openUnsplashDialog() {
+    this.dialog
+      .open<UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel, UnsplashPhoto[]>(UnsplashAssetsSelectDialogComponent, {
+        panelClass: 'full-screen',
+        data: {
+          spaceId: this.spaceId(),
+          multiple: true,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        map(it => it!),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: assets => {
+          for (const asset of assets) {
+            const afi: AssetFileImport = {
+              url: asset.urls.raw,
+              name: asset.slug,
+              extension: '.jpg',
+              alt: asset.alt_description || asset.description || undefined,
+              source: 'unsplash.com',
+            };
+            this.fileUploadQueue.update(files => {
+              files.push(afi);
+              return files;
+            });
+            this.fileUploadQueue$.next(afi);
+          }
+        },
+        error: () => {
+          this.notificationService.error('Files can not be imported.');
+        },
+      });
   }
 
   openAddFolderDialog(): void {

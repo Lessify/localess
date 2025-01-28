@@ -89,7 +89,9 @@ import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-confi
     providePerformance(() => getPerformance()),
     provideRemoteConfig(() => {
       const remoteConfig = getRemoteConfig();
-      remoteConfig.defaultConfig = {};
+      remoteConfig.defaultConfig = {
+        unsplash_ui_enable: false,
+      };
       return remoteConfig;
     }),
     {

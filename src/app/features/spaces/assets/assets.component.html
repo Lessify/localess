@@ -21,11 +21,31 @@
         </mat-button-toggle>
       </mat-button-toggle-group>
       @if ('ASSET_CREATE' | canUserPerform | async) {
-        <button mat-stroked-button color="primary" (click)="fileInput.click()">
+        <button mat-stroked-button color="primary" [matMenuTriggerFor]="uploadExtraMenu">
           <mat-icon>upload_file</mat-icon>
           Upload Assets
         </button>
         <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
+        <mat-menu #uploadExtraMenu="matMenu">
+          <button mat-menu-item (click)="fileInput.click()">
+            <mat-icon>attach_file_add</mat-icon>
+            <span>From Local</span>
+          </button>
+          <button mat-menu-item (click)="openUrlPrompt()">
+            <mat-icon>add_link</mat-icon>
+            <span>From Link</span>
+          </button>
+          @if (unsplashOk$ | async) {
+            <button mat-menu-item (click)="openUnsplashDialog()">
+              <mat-icon>
+                <svg role="img" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor">
+                  <path d="M9 9V4h7v5H9Zm7 3h5v9H4v-9h5v5h7v-5Z" />
+                </svg>
+              </mat-icon>
+              <span>From Unsplash</span>
+            </button>
+          }
+        </mat-menu>
 
         <button mat-stroked-button color="primary" (click)="openAddFolderDialog()">
           <mat-icon>add</mat-icon>
@@ -126,11 +146,13 @@
               <div class="break-all">{{ element.name }}{{ element.extension }}</div>
               @if (element.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {
-                  <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
+                  <div>
+                    <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
+                  </div>
                 }
-                @if (metadata.animated) {
-                  <p matTooltip="Animated image"><mat-icon>animated_images</mat-icon></p>
-                }
+              }
+              @if (element.source) {
+                <div class="badge">{{ element.source }}</div>
               }
             </div>
           </mat-cell>
@@ -272,6 +294,9 @@
                   @if (metadata.width && metadata.height) {
                     <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
                   }
+                }
+                @if (item.source) {
+                  <div class="badge">{{ item.source }}</div>
                 }
               }
               <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">

@@ -25,6 +25,7 @@ export const assetFileSchema = assetBaseSchema.extend({
   size: z.number(),
   alt: z.string().optional(),
   metadata: assetMetadataSchema.optional(),
+  source: z.string().optional(),
 });
 
 export const assetSchema = z.union([assetFileSchema, assetFolderSchema]);

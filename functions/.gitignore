@@ -6,3 +6,6 @@ typings/
 
 # Node.js dependency directory
 node_modules/
+
+# ENV
+.env.local

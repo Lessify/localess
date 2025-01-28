@@ -13,6 +13,7 @@ import { TaskService } from '@shared/services/task.service';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
 import { MoveDialogComponent } from './move-dialog';
 import { ImagePreviewDialogComponent } from './image-preview-dialog/image-preview-dialog.component';
+import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 
 @NgModule({
   declarations: [
@@ -26,6 +27,6 @@ import { ImagePreviewDialogComponent } from './image-preview-dialog/image-previe
     ImagePreviewDialogComponent,
   ],
   imports: [SharedModule, AssetsRoutingModule],
-  providers: [SpaceService, AssetService, TaskService],
+  providers: [SpaceService, AssetService, TaskService, UnsplashPluginService],
 })
 export class AssetsModule {}

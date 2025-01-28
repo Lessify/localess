@@ -85,11 +85,14 @@
           <div>
             <div class="break-all">{{ element.name }}{{ element.extension }}</div>
             @if (element.metadata; as metadata) {
-              <code class="fw-light">
-                @if (metadata.width && metadata.height) {
-                  W{{ metadata.width }} x H{{ metadata.height }}
-                }
-              </code>
+              @if (metadata.width && metadata.height) {
+                <div>
+                  <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
+                </div>
+              }
+            }
+            @if (element.source) {
+              <div class="badge">{{ element.source }}</div>
             }
           </div>
         </mat-cell>
@@ -162,6 +165,9 @@
                 @if (metadata.width && metadata.height) {
                   <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
                 }
+              }
+              @if (item.source) {
+                <div class="badge">{{ item.source }}</div>
               }
             }
             <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">

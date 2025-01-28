@@ -1,0 +1,15 @@
+.header-actions {
+  @apply mt-1 float-right flex gap-4 items-center;
+}
+
+mat-dialog-content {
+  @apply pt-0 #{!important};
+  @apply pb-1 #{!important};
+}
+
+mat-form-field {
+  width: 100%;
+  input {
+    width: 100%;
+  }
+}

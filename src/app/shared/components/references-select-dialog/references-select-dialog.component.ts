@@ -60,8 +60,10 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
       fullSlug: '',
     },
   ]);
-
+  // Subscriptions
   private destroyRef = inject(DestroyRef);
+  // Loading
+  isLoading = signal(true);
 
   constructor(
     private readonly schemasService: SchemaService,
@@ -96,6 +98,7 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
           this.dataSource = new MatTableDataSource<Content>(contents);
           this.dataSource.sort = this.sort();
           this.dataSource.paginator = this.paginator();
+          this.isLoading.set(false);
           this.cd.markForCheck();
         },
       });
@@ -112,9 +115,8 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
     if (element.kind === ContentKind.DOCUMENT) {
       this.selection.toggle(element);
       return;
-    }
-
-    if (element.kind === ContentKind.FOLDER) {
+    } else if (element.kind === ContentKind.FOLDER) {
+      this.isLoading.set(false);
       const contentPath = ObjectUtils.clone(this.contentPath);
       contentPath.push({
         name: element.name,

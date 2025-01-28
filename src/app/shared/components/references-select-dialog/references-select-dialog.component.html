@@ -1,4 +1,7 @@
 <h2 mat-dialog-title>Contents</h2>
+@if (isLoading()) {
+  <mat-progress-bar mode="query" />
+}
 <ll-breadcrumb>
   <span style="padding-left: 1rem">&nbsp;</span>
   @for (pathItem of contentPath; track pathItem.fullSlug; let isFirst = $first) {

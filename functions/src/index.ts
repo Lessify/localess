@@ -31,3 +31,4 @@ export { v1 as publicv1 } from './v1';
 
 // Plugins API
 // export { stripe } from './plugins/stripe/stripe';
+export { unsplash } from './plugins/unsplash/api';

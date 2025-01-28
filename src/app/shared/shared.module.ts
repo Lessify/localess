@@ -49,6 +49,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ReferencesSelectDialogComponent } from '@shared/components/references-select-dialog';
 import { StatusComponent } from '@shared/components/status';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
+import { UnsplashAssetsSelectDialogComponent } from '@shared/components/unsplash-assets-select-dialog/unsplash-assets-select-dialog.component';
 
 const MATERIAL_MODULES: any[] = [
   MatSidenavModule,
@@ -99,6 +100,7 @@ const SHARED_COMPONENTS: any[] = [
   ReferencesSelectDialogComponent,
   CustomSnackBarComponent,
   IconComponent,
+  UnsplashAssetsSelectDialogComponent,
 ];
 
 @NgModule({

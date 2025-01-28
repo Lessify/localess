@@ -27,6 +27,7 @@ import {
   Asset,
   AssetFile,
   AssetFileCreateFS,
+  AssetFileImport,
   AssetFileUpdate,
   AssetFolder,
   AssetFolderCreate,
@@ -35,10 +36,12 @@ import {
   AssetKind,
 } from '@shared/models/asset.model';
 import { AssetFileType } from '@shared/models/schema.model';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable()
 export class AssetService {
   constructor(
+    private readonly httpClient: HttpClient,
     private readonly firestore: Firestore,
     private readonly storage: Storage,
   ) {}
@@ -153,6 +156,42 @@ export class AssetService {
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Assets:findAllFoldersByName'),
       map(it => it as AssetFolder[]),
+    );
+  }
+
+  importFile(spaceId: string, parentPath: string, entity: AssetFileImport): Observable<DocumentReference> {
+    // 1. Download file
+    // 2. Add Entity
+    // 3. Upload File
+    return this.httpClient.get(entity.url, { responseType: 'blob' }).pipe(
+      switchMap(fileBlob => {
+        const addEntity: AssetFileCreateFS = {
+          kind: AssetKind.FILE,
+          inProgress: true,
+          name: entity.name,
+          extension: entity.extension,
+          type: fileBlob.type,
+          size: fileBlob.size,
+          parentPath: parentPath,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+        if (entity.alt) {
+          addEntity.alt = entity.alt;
+        }
+        if (entity.source) {
+          addEntity.source = entity.source;
+        }
+        return from(addDoc(collection(this.firestore, `spaces/${spaceId}/assets`), addEntity)).pipe(
+          switchMap(it =>
+            from(uploadBytes(ref(this.storage, `spaces/${spaceId}/assets/${it.id}/original`), fileBlob)).pipe(
+              //tap(console.log),
+              map(() => it),
+            ),
+          ),
+          traceUntilFirst('Firestore:Assets:import'),
+        );
+      }),
     );
   }
 

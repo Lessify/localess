@@ -1,0 +1,77 @@
+<h2 mat-dialog-title>Select Image from Unsplash</h2>
+@if (isLoading()) {
+  <mat-progress-bar mode="query" />
+}
+<div class="px-6 pb-2">
+  <mat-form-field>
+    <mat-label>Search</mat-label>
+    <input matInput #si (keyup.enter)="search(si.value)" placeholder="Ex. Morning Coffee or Sunrise" />
+    <mat-icon matIconPrefix>search</mat-icon>
+    <mat-button-toggle-group
+      class="mr-1"
+      matTextSuffix
+      hideSingleSelectionIndicator="true"
+      (change)="orientation.set($event.value)"
+      [value]="orientation()">
+      <mat-button-toggle value="squarish" matTooltip="Squarish">
+        <mat-icon>crop_square</mat-icon>
+      </mat-button-toggle>
+      <mat-button-toggle value="landscape" matTooltip="Landscape">
+        <mat-icon>crop_landscape</mat-icon>
+      </mat-button-toggle>
+      <mat-button-toggle value="portrait" matTooltip="Portrait">
+        <mat-icon>crop_portrait</mat-icon>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+    <button mat-stroked-button matTextSuffix color="accent" (click)="search(si.value)">
+      <mat-icon>search</mat-icon>
+      Search
+    </button>
+    <mat-hint align="end">Remaining requests : {{ remaining() }} / {{ limit() }}</mat-hint>
+  </mat-form-field>
+</div>
+<mat-dialog-content>
+  <div class="flex flex-wrap gap-2 justify-start">
+    @for (item of assets(); track item.id) {
+      <mat-card class="digital-asset-card cursor-pointer" appearance="outlined" (click)="selection.toggle(item)">
+        <img class="object-contain bg-stripes-gray" width="600" height="600" loading="lazy" alt="thumbnail" [ngSrc]="item.urls.regular" />
+        <mat-card-header>
+          <mat-card-subtitle class="break-all">{{ item.description || item.alt_description }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <code class="fw-light"> W{{ item.width }} x H{{ item.height }} </code>
+          <p [matTooltip]="item.updated_at | date: 'medium'">
+            {{ item.updated_at | date: 'mediumDate' }}
+          </p>
+          <p>
+            by <a [href]="item.user.links.html + '?utm_source=localess&utm_medium=referral'" target="_blank">{{ item.user.name }}</a>
+          </p>
+        </mat-card-content>
+        <span class="spacer"></span>
+        <mat-card-actions align="end">
+          <mat-checkbox
+            (click)="$event.stopPropagation()"
+            (change)="$event ? selection.toggle(item) : null"
+            [checked]="selection.isSelected(item)">
+          </mat-checkbox>
+        </mat-card-actions>
+      </mat-card>
+    }
+  </div>
+  @if (showLoadMore()) {
+    <div class="m-4 flex justify-center">
+      <button mat-stroked-button (click)="search(si.value, this.currentPage() + 1)"> Load More </button>
+    </div>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [disabled]="selection.isEmpty()" (click)="selection.clear()">Deselect All ({{ selection.selected.length }})</button>
+  <button mat-button [mat-dialog-close]="undefined">Close</button>
+  <button mat-stroked-button color="primary" [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
+    @if (selection.selected.length > 1) {
+      Add Selected Assets ({{ selection.selected.length }})
+    } @else {
+      Add Selected Asset
+    }
+  </button>
+</mat-dialog-actions>
