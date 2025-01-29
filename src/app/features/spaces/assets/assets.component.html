@@ -270,7 +270,7 @@
               </div>
             } @else if (item.kind === 'FILE' && filePreview(item.type)) {
               <img
-                class="object-contain bg-stripes-gray"
+                class="object-contain bg-stripes-gray cursor-zoom-in"
                 width="600"
                 height="600"
                 loading="lazy"
@@ -347,7 +347,7 @@
     }
   </div>
   <mat-paginator class="mat-paginator-sticky"></mat-paginator>
-  @if (false || fileUploadQueue().length > 0) {
+  @if (false) {
     <div class="file-progress-upload">
       <mat-card>
         <mat-card-header>

@@ -26,6 +26,7 @@ table {
 
 mat-cell {
   &.mat-column-preview {
+    cursor: zoom-in;
     img {
       min-width: 115px;
       min-height: 115px;
