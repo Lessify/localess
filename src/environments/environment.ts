@@ -20,6 +20,9 @@ export const environment = {
   login: {
     message: 'Hello Login Message',
   },
+  plugins: {
+    unsplash: true,
+  },
   production: false,
   test: true,
   debug: true,

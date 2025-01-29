@@ -2,7 +2,8 @@
 @if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
-<div class="px-6 pb-2">
+<mat-dialog-content>
+  <br />
   <mat-form-field>
     <mat-label>Search</mat-label>
     <input matInput #si (keyup.enter)="search(si.value)" placeholder="Ex. Morning Coffee or Sunrise" />
@@ -29,7 +30,7 @@
     </button>
     <mat-hint align="end">Remaining requests : {{ remaining() }} / {{ limit() }}</mat-hint>
   </mat-form-field>
-</div>
+</mat-dialog-content>
 <mat-dialog-content>
   <div class="flex flex-wrap gap-2 justify-start">
     @for (item of assets(); track item.id) {

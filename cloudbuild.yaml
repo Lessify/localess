@@ -24,6 +24,7 @@ steps:
       - 'LOCALESS_AUTH_CUSTOM_DOMAIN=${_LOCALESS_AUTH_CUSTOM_DOMAIN}'
       - 'LOCALESS_AUTH_PROVIDERS=${_LOCALESS_AUTH_PROVIDERS}'
       - 'LOCALESS_LOGIN_MESSAGE=${_LOCALESS_LOGIN_MESSAGE}'
+      - 'LOCALESS_UNSPLASH_ENABLE=${_LOCALESS_UNSPLASH_ENABLE}'
   # deploy to firebase
   - name: ghcr.io/lessify/firebase:edge
     id: 'firebase-deploy'

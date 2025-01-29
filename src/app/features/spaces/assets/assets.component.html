@@ -35,7 +35,7 @@
             <mat-icon>add_link</mat-icon>
             <span>From Link</span>
           </button>
-          @if (unsplashOk$ | async) {
+          @if (unsplashPluginService.enabled()) {
             <button mat-menu-item (click)="openUnsplashDialog()">
               <mat-icon>
                 <svg role="img" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor">

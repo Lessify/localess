@@ -75,7 +75,6 @@ export class AssetsComponent implements OnInit {
 
   // Subscriptions
   private fileUploadQueue$ = new Subject<File | AssetFileImport>();
-  unsplashOk$ = this.unsplashPluginService.ok();
 
   // Loading
   isLoading = signal(true);
@@ -88,7 +87,7 @@ export class AssetsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-    private readonly unsplashPluginService: UnsplashPluginService,
+    readonly unsplashPluginService: UnsplashPluginService,
   ) {
     toObservable(this.spaceStore.assetPath)
       .pipe(

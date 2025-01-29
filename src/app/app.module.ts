@@ -92,6 +92,7 @@ import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-confi
       remoteConfig.defaultConfig = {
         unsplash_ui_enable: false,
       };
+      console.log('RemoteConfig:init', remoteConfig);
       return remoteConfig;
     }),
     {
@@ -125,7 +126,7 @@ import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-confi
   bootstrap: [AppComponent],
 })
 export class AppModule {
-  constructor(iconRegistry: MatIconRegistry) {
+  constructor(private readonly iconRegistry: MatIconRegistry) {
     iconRegistry.setDefaultFontSetClass('material-symbols-outlined');
   }
 }

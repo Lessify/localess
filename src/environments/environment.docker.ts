@@ -17,6 +17,9 @@ export const environment = {
   login: {
     message: '',
   },
+  plugins: {
+    unsplash: false,
+  },
   production: false,
   test: true,
   debug: false,

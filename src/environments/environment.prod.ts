@@ -18,6 +18,9 @@ export const environment = {
   login: {
     message: env.LOCALESS_LOGIN_MESSAGE,
   },
+  plugins: {
+    unsplash: env.LOCALESS_UNSPLASH_ENABLE === 'true',
+  },
   production: true,
   test: false,
   debug: false,
