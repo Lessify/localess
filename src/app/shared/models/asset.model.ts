@@ -37,6 +37,7 @@ export interface AssetMetadata {
   width?: number;
   height?: number;
   orientation?: 'landscape' | 'portrait' | 'squarish';
+  animated?: boolean;
 }
 
 // Common image file types

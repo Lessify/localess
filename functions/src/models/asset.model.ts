@@ -36,6 +36,7 @@ export interface AssetMetadata {
   width?: number;
   height?: number;
   orientation?: 'landscape' | 'portrait' | 'squarish';
+  animated?: boolean;
 }
 
 // Import and Export

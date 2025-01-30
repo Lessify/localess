@@ -8,6 +8,19 @@
     [loaderParams]="{ thumbnail: true }"
     ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ data.asset.id }}" />
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Close</button>
+<mat-dialog-actions class="!justify-between">
+  <div>
+    {{ data.asset.name }}{{ data.asset.extension }}
+    @if (data.asset.size; as size) {
+      <span class="vertical-divider">&nbsp;</span>
+      {{ size | formatFileSize }}
+    }
+    @if (data.asset.metadata; as metadata) {
+      @if (metadata.width && metadata.height) {
+        <span class="vertical-divider">&nbsp;</span>
+        W{{ metadata.width }} x H{{ metadata.height }}
+      }
+    }
+  </div>
+  <button mat-stroked-button [mat-dialog-close]="undefined">Close</button>
 </mat-dialog-actions>

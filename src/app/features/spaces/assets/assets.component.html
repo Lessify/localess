@@ -146,9 +146,7 @@
               <div class="break-all">{{ element.name }}{{ element.extension }}</div>
               @if (element.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {
-                  <div>
-                    <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
-                  </div>
+                  <div> W{{ metadata.width }} x H{{ metadata.height }} </div>
                 }
               }
               @if (element.source) {
@@ -292,7 +290,7 @@
                 }
                 @if (item.metadata; as metadata) {
                   @if (metadata.width && metadata.height) {
-                    <code class="fw-light"> W{{ metadata.width }} x H{{ metadata.height }} </code>
+                    W{{ metadata.width }} x H{{ metadata.height }}
                   }
                 }
                 @if (item.source) {

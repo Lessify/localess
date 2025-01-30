@@ -40,7 +40,7 @@
           <mat-card-subtitle class="break-all">{{ item.description || item.alt_description }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <code class="fw-light"> W{{ item.width }} x H{{ item.height }} </code>
+          W{{ item.width }} x H{{ item.height }}
           <p [matTooltip]="item.updated_at | date: 'medium'">
             {{ item.updated_at | date: 'mediumDate' }}
           </p>

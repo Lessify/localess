@@ -33,7 +33,7 @@ xl (1280px)	max-width: 1280px;
   }
   &.image-preview {
     max-width: calc(100vw - 80px);
-    max-height: calc(100vh - 80px);
+    //max-height: calc(100vh - 80px);
 
     mat-dialog-content {
       min-height: fit-content;

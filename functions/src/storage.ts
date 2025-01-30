@@ -20,7 +20,7 @@ const onFileUpload = onObjectFinalized(async event => {
     };
     if (contentType && contentType.startsWith('image/')) {
       const [file] = await bucket.file(name).download();
-      const { size, width, height, format } = await sharp(file).metadata();
+      const { size, width, height, format, pages } = await sharp(file).metadata();
       if (size) {
         update.size = size;
       }
@@ -28,6 +28,7 @@ const onFileUpload = onObjectFinalized(async event => {
         format: format,
         height: height,
         width: width,
+        animated: pages !== undefined,
       };
       // calculate orientation
       if (width && height) {
