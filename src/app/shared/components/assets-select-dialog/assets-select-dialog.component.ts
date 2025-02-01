@@ -148,7 +148,7 @@ export class AssetsSelectDialogComponent implements OnInit {
   }
 
   filePreview(type: string): boolean {
-    return type.startsWith('image/');
+    return type.startsWith('image/') || type.startsWith('video/');
   }
 
   onFileUpload(event: Event): void {

@@ -2,6 +2,10 @@ import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { firestoreService } from '../config';
 import { Asset, AssetExport, AssetFileExport, AssetFolderExport, AssetKind } from '../models';
+import ffmpeg, { FfprobeData } from 'fluent-ffmpeg';
+import fs from 'fs';
+import os from 'os';
+import ffmpegStatic from 'ffmpeg-static';
 
 /**
  * find Content by Full Slug
@@ -84,4 +88,53 @@ export function docAssetToExport(docId: string, asset: Asset): AssetExport | und
     } as AssetFileExport;
   }
   return undefined;
+}
+
+/**
+ * Extract Thumbnail from a video
+ * @param {string} videoPath - video path
+ * @param {string} outputImageName - output file name
+ * @param {string} time - time
+ * @return {Promise<void>} - void
+ */
+export function extractThumbnail(videoPath: string, outputImageName: string, time: string = '00:00:01'): Promise<void> {
+  const outputPath = `${os.tmpdir()}/${outputImageName}`;
+  return new Promise((resolve, reject) => {
+    ffmpeg.setFfmpegPath(ffmpegStatic!);
+    ffmpeg(videoPath)
+      .on('start', command => console.log(`FFmpeg command: ${command}`))
+      .on('progress', progress => console.log(`Processing: ${progress.percent}% done`))
+      .on('end', () => {
+        if (fs.existsSync(outputPath)) {
+          console.log(`Thumbnail saved at: ${outputPath}`);
+          resolve();
+        } else {
+          reject(new Error('Error: Screenshot was not generated!'));
+        }
+      })
+      .on('error', err => reject(new Error(`FFmpeg Error: ${err.message}`)))
+      .screenshots({
+        timestamps: [time],
+        filename: outputImageName,
+        folder: os.tmpdir(),
+      });
+  });
+}
+
+/**
+ * Extract Vide Metadata
+ * @param {string} video
+ * @return {Promise<FfprobeData>} - metadata
+ */
+export function extractMetadata(video: string): Promise<FfprobeData> {
+  return new Promise((resolve, reject) => {
+    ffmpeg.setFfmpegPath(ffmpegStatic!);
+    ffmpeg.ffprobe(video, (err, metadata) => {
+      if (err) {
+        reject(new Error(`Error extracting metadata: ${err.message}`));
+      } else {
+        resolve(metadata);
+      }
+    });
+  });
 }

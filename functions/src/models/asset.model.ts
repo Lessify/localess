@@ -31,13 +31,32 @@ export interface AssetFile extends AssetBase {
   source?: string;
 }
 
-export interface AssetMetadata {
-  format?: string;
-  width?: number;
-  height?: number;
-  orientation?: 'landscape' | 'portrait' | 'squarish';
-  animated?: boolean;
-}
+export type AssetMetadata =
+  | {
+      format?: string;
+      width?: number;
+      height?: number;
+      orientation?: 'landscape' | 'portrait' | 'squarish';
+    }
+  | {
+      type: 'image';
+      format?: string;
+      width?: number;
+      height?: number;
+      orientation?: 'landscape' | 'portrait' | 'squarish';
+      progressive?: boolean;
+      animated?: boolean;
+    }
+  | {
+      type: 'video';
+      format?: string;
+      formatLong?: string;
+      width?: number;
+      height?: number;
+      orientation?: 'landscape' | 'portrait' | 'squarish';
+      duration?: number;
+      bitRate?: number;
+    };
 
 // Import and Export
 export interface AssetFolderExport extends Omit<AssetFolder, 'createdAt' | 'updatedAt'> {

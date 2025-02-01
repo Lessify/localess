@@ -148,9 +148,11 @@
                 @if (metadata.width && metadata.height) {
                   <div> W{{ metadata.width }} x H{{ metadata.height }} </div>
                 }
-              }
-              @if (element.source) {
-                <div class="badge">{{ element.source }}</div>
+                @if (metadata.type === 'video') {
+                  @if (metadata.duration; as duration) {
+                    <div> Duration: {{ duration | timeDuration }} </div>
+                  }
+                }
               }
             </div>
           </mat-cell>
@@ -292,9 +294,11 @@
                   @if (metadata.width && metadata.height) {
                     W{{ metadata.width }} x H{{ metadata.height }}
                   }
-                }
-                @if (item.source) {
-                  <div class="badge">{{ item.source }}</div>
+                  @if (metadata.type === 'video') {
+                    @if (metadata.duration; as duration) {
+                      <div> Duration: {{ duration | timeDuration }} </div>
+                    }
+                  }
                 }
               }
               <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">

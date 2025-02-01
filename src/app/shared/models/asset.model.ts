@@ -32,13 +32,32 @@ export interface AssetFile extends AssetBase {
   source?: string;
 }
 
-export interface AssetMetadata {
-  format?: string;
-  width?: number;
-  height?: number;
-  orientation?: 'landscape' | 'portrait' | 'squarish';
-  animated?: boolean;
-}
+export type AssetMetadata =
+  | {
+      format?: string;
+      width?: number;
+      height?: number;
+      orientation?: 'landscape' | 'portrait' | 'squarish';
+    }
+  | {
+      type: 'image';
+      format?: string;
+      width?: number;
+      height?: number;
+      orientation?: 'landscape' | 'portrait' | 'squarish';
+      progressive?: boolean;
+      animated?: boolean;
+    }
+  | {
+      type: 'video';
+      format?: string;
+      formatLong?: string;
+      width?: number;
+      height?: number;
+      orientation?: 'landscape' | 'portrait' | 'squarish';
+      duration?: number;
+      bitRate?: number;
+    };
 
 // Common image file types
 export const webImages: Record<string, string> = {

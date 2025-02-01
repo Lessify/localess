@@ -10,6 +10,7 @@ import { AssetFile, Content, ContentKind, ContentLink, Space } from './models';
 import {
   contentCachePath,
   contentLocaleCachePath,
+  extractThumbnail,
   findContentByFullSlug,
   findSpaceById,
   findTokenById,
@@ -352,13 +353,14 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
   const [exists] = await assetFile.exists();
   const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
+  let overwriteType: string | undefined;
   logger.info(`v1 spaces asset: ${exists} & ${assetSnapshot.exists}`);
   if (exists && assetSnapshot.exists) {
     const asset = assetSnapshot.data() as AssetFile;
     const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
     let filename = `${asset.name}${asset.extension}`;
     // apply resize for valid 'w' parameter and images
-    if (width && !Number.isNaN(width) && asset.type.startsWith('image/')) {
+    if (asset.type.startsWith('image/') && width && !Number.isNaN(width)) {
       if (asset.type === 'image/webp' || asset.type === 'image/gif') {
         // possible animated or single frame webp/gif
         const [file] = await assetFile.download();
@@ -391,6 +393,12 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
         const [file] = await assetFile.download();
         await sharp(file).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
       }
+    } else if (asset.type.startsWith('video/') && width && !Number.isNaN(width) && thumbnail) {
+      await assetFile.download({ destination: tempFilePath });
+      await extractThumbnail(tempFilePath, `screenshot-${assetId}.webp`);
+      filename = `${asset.name}-w${width}-thumbnail.webp`;
+      overwriteType = 'image/webp';
+      await sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
     } else {
       await assetFile.download({ destination: tempFilePath });
     }
@@ -401,7 +409,7 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
       .header('Content-Disposition', disposition)
-      .contentType(asset.type)
+      .contentType(overwriteType || asset.type)
       .sendFile(tempFilePath);
     return;
   } else {

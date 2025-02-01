@@ -173,7 +173,7 @@ export class AssetsComponent implements OnInit {
       url: urlStr,
       name: extIdx > 0 ? name.substring(0, extIdx) : name,
       extension: extIdx > 0 ? name.substring(extIdx) : '',
-      source: url.hostname,
+      source: urlStr,
     };
     this.fileUploadQueue.update(files => {
       files.push(asset);
@@ -205,7 +205,7 @@ export class AssetsComponent implements OnInit {
               name: asset.slug,
               extension: '.jpg',
               alt: asset.alt_description || asset.description || undefined,
-              source: 'unsplash.com',
+              source: asset.urls.raw,
             };
             this.fileUploadQueue.update(files => {
               files.push(afi);
@@ -441,7 +441,7 @@ export class AssetsComponent implements OnInit {
   }
 
   filePreview(type: string): boolean {
-    return type.startsWith('image/');
+    return type.startsWith('image/') || type.startsWith('video/');
   }
 
   openImportDialog() {
