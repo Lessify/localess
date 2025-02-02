@@ -72,6 +72,13 @@
             <span>Export</span>
           </button>
         }
+        @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
+          <mat-divider />
+          <button mat-menu-item (click)="openRegenerateMetadataDialog()">
+            <mat-icon>sync_alt</mat-icon>
+            <span>Regenerate Metadata</span>
+          </button>
+        }
       </mat-menu>
     </div>
   </mat-toolbar-row>

@@ -1,11 +1,12 @@
-import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
+import { DocumentReference, FieldValue, Query, Timestamp, UpdateData } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
-import { firestoreService } from '../config';
-import { Asset, AssetExport, AssetFileExport, AssetFolderExport, AssetKind } from '../models';
+import { bucket, firestoreService } from '../config';
+import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFolderExport, AssetKind } from '../models';
 import ffmpeg, { FfprobeData } from 'fluent-ffmpeg';
 import fs from 'fs';
 import os from 'os';
 import ffmpegStatic from 'ffmpeg-static';
+import sharp from 'sharp';
 
 /**
  * find Content by Full Slug
@@ -102,11 +103,9 @@ export function extractThumbnail(videoPath: string, outputImageName: string, tim
   return new Promise((resolve, reject) => {
     ffmpeg.setFfmpegPath(ffmpegStatic!);
     ffmpeg(videoPath)
-      .on('start', command => console.log(`FFmpeg command: ${command}`))
-      .on('progress', progress => console.log(`Processing: ${progress.percent}% done`))
       .on('end', () => {
         if (fs.existsSync(outputPath)) {
-          console.log(`Thumbnail saved at: ${outputPath}`);
+          logger.info(`Thumbnail saved at: ${outputPath}`);
           resolve();
         } else {
           reject(new Error('Error: Screenshot was not generated!'));
@@ -126,7 +125,7 @@ export function extractThumbnail(videoPath: string, outputImageName: string, tim
  * @param {string} video
  * @return {Promise<FfprobeData>} - metadata
  */
-export function extractMetadata(video: string): Promise<FfprobeData> {
+export function extractVideoMetadata(video: string): Promise<FfprobeData> {
   return new Promise((resolve, reject) => {
     ffmpeg.setFfmpegPath(ffmpegStatic!);
     ffmpeg.ffprobe(video, (err, metadata) => {
@@ -137,4 +136,85 @@ export function extractMetadata(video: string): Promise<FfprobeData> {
       }
     });
   });
+}
+
+/**
+ * Update Asset Metadata
+ * @param {string} assetRef - firestore asset reference
+ */
+export async function updateMetadataByRef(assetRef: DocumentReference): Promise<void> {
+  const storagePath = `${assetRef.path}/original`;
+  const assetDocSnapshot = await assetRef.get();
+  const asset = assetDocSnapshot.data() as Asset;
+  const update: UpdateData<AssetFile> = {
+    inProgress: FieldValue.delete(),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+  if (asset.kind === AssetKind.FILE) {
+    if (asset.type.startsWith('image/')) {
+      // Image
+      const [file] = await bucket.file(storagePath).download();
+      const { size, width, height, format, pages, isProgressive } = await sharp(file).metadata();
+      if (size) {
+        update.size = size;
+      }
+      update.metadata = {
+        type: 'image',
+        format: format,
+        height: height,
+        width: width,
+        animated: pages !== undefined,
+        progressive: isProgressive,
+      };
+      // calculate orientation
+      if (width && height) {
+        if (width > height) {
+          update.metadata.orientation = 'landscape';
+        } else if (height > width) {
+          update.metadata.orientation = 'portrait';
+        } else {
+          update.metadata.orientation = 'squarish';
+        }
+      }
+    } else if (asset.type.startsWith('video/')) {
+      // Video
+      const tempFilePath = `${os.tmpdir()}/assets-tmp`;
+      await bucket.file(storagePath).download({ destination: tempFilePath });
+      const metadata = await extractVideoMetadata(tempFilePath);
+      update.metadata = {
+        type: 'video',
+        format: metadata.format.format_name,
+        formatLong: metadata.format.format_long_name,
+        duration: metadata.format.duration,
+        bitRate: metadata.format.bit_rate,
+      };
+      if (metadata.streams.length > 0) {
+        const video = metadata.streams[0];
+        update.metadata.height = video.height;
+        update.metadata.width = video.width;
+        // calculate orientation
+        const { width, height } = video;
+        if (width && height) {
+          if (width > height) {
+            update.metadata.orientation = 'landscape';
+          } else if (height > width) {
+            update.metadata.orientation = 'portrait';
+          } else {
+            update.metadata.orientation = 'squarish';
+          }
+        }
+      }
+    }
+  } else {
+    return;
+  }
+  await assetRef.update(update);
+}
+/**
+ * Update Asset Metadata
+ * @param {string} assetRefPath - firestore asset reference path
+ */
+export async function updateMetadataByPath(assetRefPath: string): Promise<void> {
+  const assetRef = firestoreService.doc(assetRefPath);
+  return updateMetadataByRef(assetRef);
 }

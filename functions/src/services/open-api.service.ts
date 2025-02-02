@@ -302,7 +302,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
     openapi: '3.0.3',
     info: {
       title: 'Localess Open API Specification',
-      version: '2.5.0',
+      version: '2.5.1',
       description: 'Fetch data from Localess via REST API',
       contact: {
         name: 'Lessify Team',
@@ -695,7 +695,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'thumbnail',
               in: 'query',
-              description: 'In case you have animated image like WebP/Gif, and you wish to generate non animated thumbnail.',
+              description: 'In case you have a video or animated image like WebP/Gif, and you wish to generate thumbnail.',
               required: false,
               schema: {
                 type: 'boolean',

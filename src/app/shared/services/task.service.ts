@@ -21,6 +21,7 @@ import {
   Task,
   TaskAssetExportCreateFS,
   TaskAssetImportCreateFS,
+  TaskAssetRegenerateMetadataCreateFS,
   TaskContentExportCreateFS,
   TaskContentImportCreateFS,
   TaskKind,
@@ -86,6 +87,16 @@ export class TaskService {
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create'),
     );
+  }
+
+  createAssetRegenerateMetadataTask(spaceId: string): Observable<DocumentReference> {
+    const addEntity: TaskAssetRegenerateMetadataCreateFS = {
+      kind: TaskKind.ASSET_REGEN_METADATA,
+      status: TaskStatus.INITIATED,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity)).pipe(traceUntilFirst('Firestore:Tasks:create'));
   }
 
   createContentExportTask(spaceId: string, path?: string): Observable<DocumentReference> {

@@ -46,7 +46,7 @@ import {
   findSchemaById,
   findSchemas,
   findTranslationById,
-  findTranslations,
+  findTranslations, updateMetadataByRef,
 } from './services';
 import { tmpdir } from 'os';
 import { ZodError } from 'zod/lib/ZodError';
@@ -109,6 +109,8 @@ const onTaskCreate = onDocumentCreated(
           updateToFinished.trace = JSON.stringify(errors.format());
         }
       }
+    } else if (task.kind === TaskKind.ASSET_REGEN_METADATA) {
+      await assetRegenerateMetadata(spaceId);
     } else if (task.kind === TaskKind.CONTENT_EXPORT) {
       const metadata = await contentsExport(spaceId, taskId, task);
       updateToFinished['file'] = {
@@ -355,6 +357,19 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
     ids.clear();
   }
   logger.info('[Task:onCreate:assetsImport] bulk total changes : ' + totalChanges);
+  return undefined;
+}
+
+/**
+ * Asset Regenerate Metadata Job
+ * @param {string} spaceId original task
+ */
+async function assetRegenerateMetadata(spaceId: string): Promise<void> {
+  const assetsSnapshot = await findAssets(spaceId, AssetKind.FILE).get();
+  for (const assetSnapshot of assetsSnapshot.docs) {
+    logger.info('[Task:onCreate:assetsRegenMetadata] asset : ' + assetSnapshot.ref.path);
+    await updateMetadataByRef(assetSnapshot.ref);
+  }
   return undefined;
 }
 

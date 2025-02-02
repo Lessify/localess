@@ -499,6 +499,37 @@ export class AssetsComponent implements OnInit {
       });
   }
 
+  openRegenerateMetadataDialog(): void {
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
+        data: {
+          title: 'Regenerate Metadata',
+          content: `Are you sure about regenerating assets metadata? It is a long running job, it may take from few minutes till one hour.`,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it || false),
+        switchMap(() => this.taskService.createAssetRegenerateMetadataTask(this.spaceId())),
+      )
+      .subscribe({
+        next: () => {
+          this.selection.clear();
+          this.cd.markForCheck();
+          this.notificationService.success('Assets Regenerate Metadata Task has been created.', [
+            {
+              label: 'To Tasks',
+              link: `/features/spaces/${this.spaceId()}/tasks`,
+            },
+          ]);
+        },
+        error: (err: unknown) => {
+          console.error(err);
+          this.notificationService.error(`Assets Regenerate Metadata Task can not be created.`);
+        },
+      });
+  }
+
   onDownload(event: Event, element: Asset): void {
     // Prevent Default
     event.preventDefault();

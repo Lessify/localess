@@ -3,6 +3,7 @@ import { FieldValue, Timestamp } from '@angular/fire/firestore';
 export enum TaskKind {
   ASSET_EXPORT = 'ASSET_EXPORT',
   ASSET_IMPORT = 'ASSET_IMPORT',
+  ASSET_REGEN_METADATA = 'ASSET_REGEN_METADATA',
   CONTENT_EXPORT = 'CONTENT_EXPORT',
   CONTENT_IMPORT = 'CONTENT_IMPORT',
   SCHEMA_EXPORT = 'SCHEMA_EXPORT',
@@ -28,7 +29,7 @@ export interface Task {
   kind: TaskKind;
   status: TaskStatus;
 
-  // import file
+  // import/export file
   file?: TaskFile;
   // export by date
   fromDate?: number;
@@ -63,6 +64,11 @@ export interface TaskAssetImportCreateFS extends TaskCreateFS {
   status: TaskStatus.INITIATED;
   tmpPath: string;
   file: TaskFile;
+}
+
+export interface TaskAssetRegenerateMetadataCreateFS extends TaskCreateFS {
+  kind: TaskKind.ASSET_REGEN_METADATA;
+  status: TaskStatus.INITIATED;
 }
 
 export interface TaskContentExportCreateFS extends TaskCreateFS {

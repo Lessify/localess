@@ -24,6 +24,9 @@
           @case ('ASSET_IMPORT') {
             Asset Import
           }
+          @case ('ASSET_REGEN_METADATA') {
+            Asset Regeneration Metadata
+          }
           @case ('CONTENT_EXPORT') {
             Content Export
           }
@@ -72,6 +75,8 @@
             <div>{{ file.name }}</div>
             <div>Size : {{ file.size | formatFileSize }}</div>
           </div>
+        } @else {
+          <mat-icon>remove</mat-icon>
         }
       </mat-cell>
     </ng-container>
@@ -79,17 +84,19 @@
       <mat-header-cell *matHeaderCellDef> Description</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div>
-          @if (element.fromDate || element.path) {
-            <div>
-              @if (element.fromDate) {
-                Partial export by date : {{ element.fromDate | date }}
-              }
-              @if (element.path) {
-                Partial export by path
-              }
-            </div>
-          } @else {
-            <div>Full export</div>
+          @if (element.file) {
+            @if (element.fromDate || element.path) {
+              <div>
+                @if (element.fromDate) {
+                  Partial export by date : {{ element.fromDate | date }}
+                }
+                @if (element.path) {
+                  Partial export by path
+                }
+              </div>
+            } @else {
+              <div>Full export</div>
+            }
           }
           @if (element.locale; as locale) {
             <div>Locale : {{ locale }}</div>
