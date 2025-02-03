@@ -46,12 +46,13 @@ import {
   findSchemaById,
   findSchemas,
   findTranslationById,
-  findTranslations, updateMetadataByRef,
+  findTranslations,
+  updateMetadataByRef,
 } from './services';
 import { tmpdir } from 'os';
-import { ZodError } from 'zod/lib/ZodError';
+import { ZodError } from 'zod';
 
-const TMP_TASK_FOLDER = `${tmpdir()}/task`;
+const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
 
 // Firestore events
 const onTaskCreate = onDocumentCreated(

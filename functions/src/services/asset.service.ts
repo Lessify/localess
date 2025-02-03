@@ -2,11 +2,11 @@ import { DocumentReference, FieldValue, Query, Timestamp, UpdateData } from 'fir
 import { logger } from 'firebase-functions/v2';
 import { bucket, firestoreService } from '../config';
 import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFolderExport, AssetKind } from '../models';
-import ffmpeg, { FfprobeData } from 'fluent-ffmpeg';
+import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import os from 'os';
-import ffmpegStatic from 'ffmpeg-static';
 import sharp from 'sharp';
+import { exiftool } from 'exiftool-vendored';
 
 /**
  * find Content by Full Slug
@@ -100,8 +100,8 @@ export function docAssetToExport(docId: string, asset: Asset): AssetExport | und
  */
 export function extractThumbnail(videoPath: string, outputImageName: string, time: string = '00:00:01'): Promise<void> {
   const outputPath = `${os.tmpdir()}/${outputImageName}`;
+  if (fs.existsSync(outputPath)) return Promise.resolve();
   return new Promise((resolve, reject) => {
-    ffmpeg.setFfmpegPath(ffmpegStatic!);
     ffmpeg(videoPath)
       .on('end', () => {
         if (fs.existsSync(outputPath)) {
@@ -117,24 +117,6 @@ export function extractThumbnail(videoPath: string, outputImageName: string, tim
         filename: outputImageName,
         folder: os.tmpdir(),
       });
-  });
-}
-
-/**
- * Extract Vide Metadata
- * @param {string} video
- * @return {Promise<FfprobeData>} - metadata
- */
-export function extractVideoMetadata(video: string): Promise<FfprobeData> {
-  return new Promise((resolve, reject) => {
-    ffmpeg.setFfmpegPath(ffmpegStatic!);
-    ffmpeg.ffprobe(video, (err, metadata) => {
-      if (err) {
-        reject(new Error(`Error extracting metadata: ${err.message}`));
-      } else {
-        resolve(metadata);
-      }
-    });
   });
 }
 
@@ -160,14 +142,20 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
       }
       update.metadata = {
         type: 'image',
-        format: format,
-        height: height,
-        width: width,
-        animated: pages !== undefined,
-        progressive: isProgressive,
       };
+      if (format) {
+        update.metadata.format = format;
+      }
+      if (pages) {
+        update.metadata.pages = pages;
+      }
+      if (isProgressive) {
+        update.metadata.progressive = isProgressive;
+      }
       // calculate orientation
       if (width && height) {
+        update.metadata.height = height;
+        update.metadata.width = width;
         if (width > height) {
           update.metadata.orientation = 'landscape';
         } else if (height > width) {
@@ -180,28 +168,27 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
       // Video
       const tempFilePath = `${os.tmpdir()}/assets-tmp`;
       await bucket.file(storagePath).download({ destination: tempFilePath });
-      const metadata = await extractVideoMetadata(tempFilePath);
+      const metadata = await exiftool.read(tempFilePath);
+      const { FileTypeExtension, Duration, ImageWidth, ImageHeight } = metadata;
       update.metadata = {
         type: 'video',
-        format: metadata.format.format_name,
-        formatLong: metadata.format.format_long_name,
-        duration: metadata.format.duration,
-        bitRate: metadata.format.bit_rate,
       };
-      if (metadata.streams.length > 0) {
-        const video = metadata.streams[0];
-        update.metadata.height = video.height;
-        update.metadata.width = video.width;
-        // calculate orientation
-        const { width, height } = video;
-        if (width && height) {
-          if (width > height) {
-            update.metadata.orientation = 'landscape';
-          } else if (height > width) {
-            update.metadata.orientation = 'portrait';
-          } else {
-            update.metadata.orientation = 'squarish';
-          }
+      if (FileTypeExtension) {
+        update.metadata.format = FileTypeExtension;
+      }
+      if (Duration) {
+        update.metadata.duration = Duration;
+      }
+      // calculate orientation
+      if (ImageWidth && ImageHeight) {
+        update.metadata.height = ImageHeight;
+        update.metadata.width = ImageWidth;
+        if (ImageWidth > ImageHeight) {
+          update.metadata.orientation = 'landscape';
+        } else if (ImageHeight > ImageWidth) {
+          update.metadata.orientation = 'portrait';
+        } else {
+          update.metadata.orientation = 'squarish';
         }
       }
     }
