@@ -395,7 +395,7 @@ export class AssetsComponent implements OnInit {
   }
 
   onAssetSelect(element: Asset): void {
-    if (element.kind === AssetKind.FILE && element.type.startsWith('image/')) {
+    if (element.kind === AssetKind.FILE && this.filePreview(element.type)) {
       this.dialog
         .open<ImagePreviewDialogComponent, ImagePreviewDialogModel, void>(ImagePreviewDialogComponent, {
           panelClass: 'image-preview',

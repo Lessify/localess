@@ -418,4 +418,4 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   }
 });
 
-export const v1 = onRequest(expressApp);
+export const v1 = onRequest({ memory: '512MiB' }, expressApp);

@@ -44,8 +44,7 @@ export type AssetMetadata =
       width?: number;
       height?: number;
       orientation?: 'landscape' | 'portrait' | 'squarish';
-      progressive?: boolean;
-      pages?: number;
+      duration?: number;
     }
   | {
       type: 'video';

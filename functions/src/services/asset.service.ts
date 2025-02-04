@@ -5,7 +5,6 @@ import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFolderExport, Asse
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import os from 'os';
-import sharp from 'sharp';
 import { exiftool } from 'exiftool-vendored';
 
 /**
@@ -132,33 +131,28 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
     inProgress: FieldValue.delete(),
     updatedAt: FieldValue.serverTimestamp(),
   };
-  if (asset.kind === AssetKind.FILE) {
+  if (asset.kind === AssetKind.FILE && (asset.type.startsWith('image/') || asset.type.startsWith('video/'))) {
+    const tempFilePath = `${os.tmpdir()}/assets-${assetRef.id}`;
+    await bucket.file(storagePath).download({ destination: tempFilePath });
     if (asset.type.startsWith('image/')) {
       // Image
-      const [file] = await bucket.file(storagePath).download();
-      const { size, width, height, format, pages, isProgressive } = await sharp(file).metadata();
-      if (size) {
-        update.size = size;
-      }
+      const { Duration, FileTypeExtension, ImageWidth, ImageHeight } = await exiftool.read(tempFilePath);
       update.metadata = {
         type: 'image',
       };
-      if (format) {
-        update.metadata.format = format;
+      if (FileTypeExtension) {
+        update.metadata.format = FileTypeExtension;
       }
-      if (pages) {
-        update.metadata.pages = pages;
-      }
-      if (isProgressive) {
-        update.metadata.progressive = isProgressive;
+      if (Duration) {
+        update.metadata.duration = Duration;
       }
       // calculate orientation
-      if (width && height) {
-        update.metadata.height = height;
-        update.metadata.width = width;
-        if (width > height) {
+      if (ImageWidth && ImageHeight) {
+        update.metadata.height = ImageHeight;
+        update.metadata.width = ImageWidth;
+        if (ImageWidth > ImageHeight) {
           update.metadata.orientation = 'landscape';
-        } else if (height > width) {
+        } else if (ImageHeight > ImageWidth) {
           update.metadata.orientation = 'portrait';
         } else {
           update.metadata.orientation = 'squarish';
@@ -166,8 +160,6 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
       }
     } else if (asset.type.startsWith('video/')) {
       // Video
-      const tempFilePath = `${os.tmpdir()}/assets-tmp`;
-      await bucket.file(storagePath).download({ destination: tempFilePath });
       const metadata = await exiftool.read(tempFilePath);
       const { FileTypeExtension, Duration, ImageWidth, ImageHeight } = metadata;
       update.metadata = {
@@ -177,7 +169,20 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
         update.metadata.format = FileTypeExtension;
       }
       if (Duration) {
-        update.metadata.duration = Duration;
+        if (typeof Duration === 'number') {
+          update.metadata.duration = Number.parseInt(Duration.toString());
+        } else if (typeof Duration === 'string') {
+          // WebM Format Duration: '00:01:05.161000000'
+          const strDuration = Duration as string;
+          const ftr = [3600, 60, 1];
+          const durationSplit = strDuration.split(':');
+          if (durationSplit.length === 3) {
+            update.metadata.duration = 0;
+            for (let idx = 0; idx < durationSplit.length; idx++) {
+              update.metadata.duration += Number.parseInt(durationSplit[idx]) * ftr[idx];
+            }
+          }
+        }
       }
       // calculate orientation
       if (ImageWidth && ImageHeight) {

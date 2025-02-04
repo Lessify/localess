@@ -155,10 +155,8 @@
                 @if (metadata.width && metadata.height) {
                   <div> W{{ metadata.width }} x H{{ metadata.height }} </div>
                 }
-                @if (metadata.type === 'video') {
-                  @if (metadata.duration; as duration) {
-                    <div> Duration: {{ duration | timeDuration }} </div>
-                  }
+                @if (metadata.duration; as duration) {
+                  <div> Duration: {{ duration | timeDuration }} </div>
                 }
               }
             </div>
@@ -301,10 +299,8 @@
                   @if (metadata.width && metadata.height) {
                     W{{ metadata.width }} x H{{ metadata.height }}
                   }
-                  @if (metadata.type === 'video') {
-                    @if (metadata.duration; as duration) {
-                      <div> Duration: {{ duration | timeDuration }} </div>
-                    }
+                  @if (metadata.duration; as duration) {
+                    <div> Duration: {{ duration | timeDuration }} </div>
                   }
                 }
               }

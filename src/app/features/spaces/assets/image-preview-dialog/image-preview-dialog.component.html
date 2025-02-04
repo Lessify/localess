@@ -20,6 +20,10 @@
         <span class="vertical-divider">&nbsp;</span>
         W{{ metadata.width }} x H{{ metadata.height }}
       }
+      @if (metadata.duration; as duration) {
+        <span class="vertical-divider">&nbsp;</span>
+        Duration: {{ duration | timeDuration }}
+      }
     }
   </div>
   <button mat-stroked-button [mat-dialog-close]="undefined">Close</button>
