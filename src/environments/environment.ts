@@ -29,7 +29,7 @@ export const environment = {
   emulator : {
     enabled: true,
   },
-  version: '2.5.1',
+  version: '2.4.1',
 };
 
 /*
