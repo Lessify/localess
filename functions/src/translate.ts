@@ -3,6 +3,7 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { canPerform } from './utils/security-utils';
 import { TranslateData, UserPermission } from './models';
 import { translateCloud } from './services/translate.service';
+import { isEmulatorEnabled } from './config';
 
 export const translate = onCall<TranslateData>(async request => {
   logger.info('[translate] data: ' + JSON.stringify(request.data));
@@ -11,5 +12,9 @@ export const translate = onCall<TranslateData>(async request => {
   if (!canPerform(UserPermission.TRANSLATION_UPDATE, request.auth) || !canPerform(UserPermission.CONTENT_UPDATE, request.auth)) {
     throw new HttpsError('permission-denied', 'permission-denied');
   }
-  return await translateCloud(content, sourceLocale, targetLocale);
+  if (isEmulatorEnabled) {
+    return `${content} : ${sourceLocale} -> ${targetLocale}`;
+  } else {
+    return await translateCloud(content, sourceLocale, targetLocale);
+  }
 });

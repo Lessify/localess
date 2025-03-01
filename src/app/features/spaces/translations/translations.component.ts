@@ -419,7 +419,7 @@ export class TranslationsComponent implements OnInit {
       .subscribe({
         next: value => {
           // make sure the component is updated
-          this.translateValue.set('');
+          this.translateValue.set(undefined);
           this.notificationService.info('Translated');
           this.translateValue.set(value);
         },
@@ -433,6 +433,7 @@ export class TranslationsComponent implements OnInit {
           ]);
         },
         complete: () => {
+          console.log('complete');
           setTimeout(() => {
             this.isTranslateLoading.set(false);
             this.cd.markForCheck();

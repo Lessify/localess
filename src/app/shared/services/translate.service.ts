@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { TranslateData } from '@shared/models/translate.model';
-import { environment } from '../../../environments/environment';
+import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class TranslateService {
@@ -11,10 +11,6 @@ export class TranslateService {
 
   translate(data: TranslateData): Observable<string | undefined> {
     const translate = httpsCallableData<TranslateData, string | undefined>(this.functions, 'translate');
-    if (environment.production) {
-      return translate(data).pipe(traceUntilFirst('Functions:Translate:translate'));
-    } else {
-      return of(`${data.content} : ${data.sourceLocale} -> ${data.targetLocale}`);
-    }
+    return translate(data).pipe(tap(console.log), traceUntilFirst('Functions:Translate:translate'));
   }
 }
