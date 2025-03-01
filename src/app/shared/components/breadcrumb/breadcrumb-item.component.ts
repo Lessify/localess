@@ -2,6 +2,7 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@an
 
 @Component({
   selector: 'll-breadcrumb-item',
+  standalone: true,
   templateUrl: './breadcrumb-item.component.html',
   styleUrls: ['./breadcrumb-item.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -13,12 +13,33 @@ import { Token } from '@shared/models/token.model';
 import { TokenService } from '@shared/services/token.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/stores/space.store';
+import { MatToolbar } from '@angular/material/toolbar';
+import { MatIcon } from '@angular/material/icon';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { MatTooltip } from '@angular/material/tooltip';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'll-space-settings-tokens',
+  standalone: true,
   templateUrl: './tokens.component.html',
   styleUrls: ['./tokens.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbar,
+    MatIcon,
+    MatButton,
+    MatProgressBar,
+    MatTableModule,
+    MatSortModule,
+    MatIconButton,
+    CdkCopyToClipboard,
+    MatTooltip,
+    DatePipe,
+    MatPaginator,
+  ],
 })
 export class TokensComponent {
   sort = viewChild.required(MatSort);

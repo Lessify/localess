@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { activate } from '@angular/fire/remote-config';
+import { MatToolbar } from '@angular/material/toolbar';
+import { MatTabLink, MatTabNav, MatTabNavPanel } from '@angular/material/tabs';
+import { MatIcon } from '@angular/material/icon';
 
 interface TabItem {
   icon: string;
@@ -10,9 +13,19 @@ interface TabItem {
 
 @Component({
   selector: 'll-admin-settings',
+  standalone: true,
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbar,
+    MatTabNav,
+    MatTabLink,
+    RouterLink,
+    MatIcon,
+    MatTabNavPanel,
+    RouterOutlet,
+  ],
 })
 export class SettingsComponent {
   activeTab = 'ui';

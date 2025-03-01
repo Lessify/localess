@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'll-translation-string-view',
+  standalone: true,
   templateUrl: './translation-string-view.component.html',
   styleUrls: ['./translation-string-view.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

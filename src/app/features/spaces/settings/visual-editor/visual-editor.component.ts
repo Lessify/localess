@@ -3,19 +3,44 @@ import { filter } from 'rxjs/operators';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceEnvironment } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/stores/space.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
+import { MatIcon } from '@angular/material/icon';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatAccordion, MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'll-space-settings-visual-editor',
+  standalone: true,
   templateUrl: './visual-editor.component.html',
   styleUrls: ['./visual-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbarModule,
+    MatIcon,
+    MatButton,
+    MatProgressBar,
+    ReactiveFormsModule,
+    MatAccordion,
+    MatExpansionModule,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    MatIconButton,
+    MatFormField,
+    MatInput,
+    JsonPipe,
+  ],
 })
 export class VisualEditorComponent {
   isLoading = signal(true);

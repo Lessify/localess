@@ -11,14 +11,23 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { ReferencesSelectDialogModel } from './references-select-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { SelectionModel } from '@angular/cdk/collections';
 import { switchMap } from 'rxjs/operators';
 import { BehaviorSubject, combineLatest } from 'rxjs';
-import { MatTableDataSource } from '@angular/material/table';
+import {
+  MatCell,
+  MatCellDef,
+  MatColumnDef,
+  MatHeaderCell,
+  MatHeaderCellDef,
+  MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef,
+  MatTable,
+  MatTableDataSource,
+} from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -27,12 +36,48 @@ import { Content, ContentDocument, ContentKind } from '@shared/models/content.mo
 import { ContentService } from '@shared/services/content.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { Schema, SchemaType } from '@shared/models/schema.model';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { StatusComponent } from '@shared/components/status';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { DatePipe } from '@angular/common';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-references-select-dialog',
+  standalone: true,
   templateUrl: './references-select-dialog.component.html',
   styleUrls: ['./references-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatDialogTitle,
+    MatProgressBar,
+    BreadcrumbComponent,
+    BreadcrumbItemComponent,
+    MatDialogContent,
+    MatTable,
+    MatSort,
+    MatColumnDef,
+    MatHeaderCell,
+    MatHeaderCellDef,
+    MatCellDef,
+    MatCell,
+    MatCheckbox,
+    StatusComponent,
+    MatTooltip,
+    MatIcon,
+    DatePipe,
+    MatHeaderRow,
+    MatRow,
+    MatRowDef,
+    MatHeaderRowDef,
+    MatDialogActions,
+    MatPaginator,
+    MatButton,
+    MatDialogClose,
+  ],
 })
 export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
   sort = viewChild.required(MatSort);

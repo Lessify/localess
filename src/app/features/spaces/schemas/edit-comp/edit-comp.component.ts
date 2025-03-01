@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
   AssetFileType,
@@ -18,18 +18,68 @@ import { SchemaService } from '@shared/services/schema.service';
 import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { NotificationService } from '@shared/services/notification.service';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatChipInputEvent } from '@angular/material/chips';
+import { MatChipGrid, MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
+import { MatToolbar } from '@angular/material/toolbar';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { AsyncPipe, JsonPipe } from '@angular/common';
+import { MatTooltip } from '@angular/material/tooltip';
+import { IconComponent } from '@shared/components/icon/icon.component';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
+import { MatDrawerContainer } from '@angular/material/sidenav';
+import { MatActionList, MatListItem } from '@angular/material/list';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatDivider } from '@angular/material/divider';
+import { SchemasModule } from '../schemas.module';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { MatOption, MatSelect } from '@angular/material/select';
+import { MatAccordion, MatExpansionPanel, MatExpansionPanelTitle } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-schema-edit-comp',
+  standalone: true,
   templateUrl: './edit-comp.component.html',
   styleUrl: './edit-comp.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbar,
+    MatIconButton,
+    MatIcon,
+    CanUserPerformPipe,
+    AsyncPipe,
+    MatButton,
+    MatTooltip,
+    IconComponent,
+    MatProgressBar,
+    ReactiveFormsModule,
+    MatTabsModule,
+    MatDrawerContainer,
+    MatActionList,
+    MatFormField,
+    CdkDropList,
+    MatInput,
+    MatListItem,
+    CdkDrag,
+    CdkDragHandle,
+    MatDivider,
+    SchemasModule,
+    CdkTextareaAutosize,
+    MatSelect,
+    MatOption,
+    MatChipsModule,
+    MatAccordion,
+    MatExpansionPanel,
+    MatExpansionPanelTitle,
+    JsonPipe,
+  ],
 })
 export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   // Input

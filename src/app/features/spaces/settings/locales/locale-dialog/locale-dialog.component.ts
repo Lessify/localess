@@ -1,18 +1,33 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogContent, MatDialogModule } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Observable, startWith } from 'rxjs';
 import { LocaleService } from '@shared/services/locale.service';
 import { map } from 'rxjs/operators';
 import { Locale } from '@shared/models/locale.model';
 import { LocaleValidator } from '@shared/validators/locale.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { MatFormField } from '@angular/material/form-field';
+import { MatAutocomplete, MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatInput } from '@angular/material/input';
+import { AsyncPipe } from '@angular/common';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-locale-dialog',
+  standalone: true,
   templateUrl: './locale-dialog.component.html',
   styleUrls: ['./locale-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatDialogModule,
+    ReactiveFormsModule,
+    MatFormField,
+    MatAutocompleteModule,
+    MatInput,
+    AsyncPipe,
+    MatButton,
+  ],
 })
 export class LocaleDialogComponent implements OnInit {
   locales: Locale[] = [];

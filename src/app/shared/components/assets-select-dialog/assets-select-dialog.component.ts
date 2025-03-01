@@ -9,7 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { AssetsSelectDialogModel } from './assets-select-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
@@ -17,7 +17,19 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { Asset, AssetKind } from '@shared/models/asset.model';
 import { concatMap, switchMap, tap } from 'rxjs/operators';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { MatTableDataSource } from '@angular/material/table';
+import {
+  MatCell,
+  MatCellDef,
+  MatColumnDef,
+  MatHeaderCell,
+  MatHeaderCellDef,
+  MatHeaderRow,
+  MatHeaderRowDef,
+  MatRow,
+  MatRowDef,
+  MatTable,
+  MatTableDataSource,
+} from '@angular/material/table';
 import { AssetService } from '@shared/services/asset.service';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
@@ -25,12 +37,69 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PathItem } from '@shared/stores/space.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { NotificationService } from '@shared/services/notification.service';
+import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardImage } from '@angular/material/card';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatTooltip } from '@angular/material/tooltip';
+import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { IconComponent } from '@shared/components/icon/icon.component';
+import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
+import { MatIcon } from '@angular/material/icon';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { AsyncPipe, DatePipe, NgOptimizedImage } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
+import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatButton } from '@angular/material/button';
+import { MatBadge } from '@angular/material/badge';
 
 @Component({
   selector: 'll-assets-select-dialog',
+  standalone: true,
   templateUrl: './assets-select-dialog.component.html',
   styleUrls: ['./assets-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatDialogActions,
+    MatPaginator,
+    MatCardActions,
+    MatCheckbox,
+    MatTooltip,
+    MatDialogTitle,
+    BreadcrumbComponent,
+    BreadcrumbItemComponent,
+    IconComponent,
+    MatButtonToggleGroup,
+    MatButtonToggle,
+    MatIcon,
+    CanUserPerformPipe,
+    AsyncPipe,
+    MatProgressBar,
+    MatDialogContent,
+    MatTable,
+    MatHeaderCell,
+    MatCell,
+    NgOptimizedImage,
+    TimeDurationPipe,
+    FormatFileSizePipe,
+    DatePipe,
+    MatHeaderRow,
+    MatRow,
+    MatCard,
+    MatProgressSpinner,
+    MatCardImage,
+    MatCardHeader,
+    MatCardContent,
+    MatDialogClose,
+    MatButton,
+    MatHeaderRowDef,
+    MatRowDef,
+    MatCellDef,
+    MatHeaderCellDef,
+    MatColumnDef,
+    MatSort,
+    MatBadge,
+  ],
 })
 export class AssetsSelectDialogComponent implements OnInit {
   sort = viewChild(MatSort);

@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
-import { MatSort } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
@@ -17,12 +17,35 @@ import { InstallDialogModel } from './install-dialog/install-dialog.model';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
 import { ConfigDialogModel } from './config-dialog/config-dialog.model';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatTooltip } from '@angular/material/tooltip';
+import { DatePipe, NgIf } from '@angular/common';
+import { MatIconButton } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDivider } from '@angular/material/divider';
 
 @Component({
   selector: 'll-plugins',
+  standalone: true,
   templateUrl: './plugins.component.html',
   styleUrls: ['./plugins.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbarModule,
+    MatIconModule,
+    MatProgressBar,
+    MatTableModule,
+    MatSortModule,
+    MatTooltip,
+    NgIf,
+    DatePipe,
+    MatIconButton,
+    MatMenuModule,
+    MatDivider,
+    MatPaginatorModule,
+  ],
 })
 export class PluginsComponent implements OnInit {
   sort = viewChild.required(MatSort);

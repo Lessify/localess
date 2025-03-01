@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, OnDestroy } from '@angular/core';
-import { AbstractControl } from '@angular/forms';
+import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldRichText } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
@@ -21,12 +21,26 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import Link from '@tiptap/extension-link';
 import Heading from '@tiptap/extension-heading';
 import { common, createLowlight } from 'lowlight';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatTooltip } from '@angular/material/tooltip';
+import { NgClass } from '@angular/common';
+import { NgxTiptapModule } from 'ngx-tiptap';
 
 @Component({
   selector: 'll-rich-text-editor',
+  standalone: true,
   templateUrl: './rich-text-editor.component.html',
   styleUrls: ['./rich-text-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatFormField,
+    MatInput,
+    MatTooltip,
+    NgClass,
+    NgxTiptapModule,
+    ReactiveFormsModule,
+  ],
 })
 export class RichTextEditorComponent implements OnDestroy {
   // Input

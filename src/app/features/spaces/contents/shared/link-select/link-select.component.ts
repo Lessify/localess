@@ -1,19 +1,40 @@
 import { ChangeDetectionStrategy, Component, inject, input, Input, OnInit } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
 import { ContentDocument, LinkContent } from '@shared/models/content.model';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatAutocomplete, MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { debounceTime, Observable, of, startWith } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { MatSlideToggleChange } from '@angular/material/slide-toggle';
+import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { MatFormField } from '@angular/material/form-field';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatMenu, MatMenuModule } from '@angular/material/menu';
+import { MatInput } from '@angular/material/input';
+import { AsyncPipe, JsonPipe } from '@angular/common';
+import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-link-select',
+  standalone: true,
   templateUrl: './link-select.component.html',
   styleUrls: ['./link-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    ReactiveFormsModule,
+    MatFormField,
+    MatIconButton,
+    MatIcon,
+    MatMenuModule,
+    MatInput,
+    MatAutocompleteModule,
+    AsyncPipe,
+    MatSlideToggle,
+    MatExpansionModule,
+    JsonPipe,
+  ],
 })
 export class LinkSelectComponent implements OnInit {
   // Input

@@ -1,15 +1,26 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { ImportDialogModel } from './import-dialog.model';
 import { KeyValue } from '@angular/common';
-import { MatSelectChange } from '@angular/material/select';
+import { MatError, MatFormField, MatOption, MatSelect, MatSelectChange } from '@angular/material/select';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-translation-import-dialog',
+  standalone: true,
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatDialogModule,
+    ReactiveFormsModule,
+    MatFormField,
+    MatSelect,
+    MatOption,
+    MatButton,
+    MatError,
+  ],
 })
 export class ImportDialogComponent {
   exportKinds: KeyValue<string, string>[] = [
@@ -30,7 +41,8 @@ export class ImportDialogComponent {
     private readonly cd: ChangeDetectorRef,
     private readonly fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: ImportDialogModel,
-  ) {}
+  ) {
+  }
 
   async onFileChange(event: Event): Promise<void> {
     if (event.target && event.target instanceof HTMLInputElement) {

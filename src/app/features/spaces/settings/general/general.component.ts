@@ -2,18 +2,30 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { filter, map } from 'rxjs/operators';
 import { SpaceService } from '@shared/services/space.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/stores/space.store';
 import { MaterialService } from '@shared/services/material.service';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatOption, MatSelect } from '@angular/material/select';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'll-space-settings-general',
+  standalone: true,
   templateUrl: './general.component.html',
   styleUrls: ['./general.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatToolbarModule, MatProgressBar, MatFormField, MatInput, MatIconButton, MatIcon, CdkCopyToClipboard, ReactiveFormsModule, MatTooltip, MatSelect, MatOption, AsyncPipe],
 })
 export class GeneralComponent {
   isLoading = signal(true);

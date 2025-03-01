@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, Input, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
   AssetFileType,
@@ -11,17 +11,54 @@ import {
   SchemaType,
   sortSchema,
 } from '@shared/models/schema.model';
-import { MatSelectChange } from '@angular/material/select';
+import { MatFormField, MatOption, MatSelect, MatSelectChange } from '@angular/material/select';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { MatSelectionListChange } from '@angular/material/list';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
+import {
+  MatListModule,
+  MatListOption,
+  MatListSubheaderCssMatStyler,
+  MatSelectionList,
+  MatSelectionListChange,
+} from '@angular/material/list';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { MatInput } from '@angular/material/input';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { MatDivider } from '@angular/material/divider';
+import { MatAccordion, MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'll-schema-field-edit',
+  standalone: true,
   templateUrl: './edit-field.component.html',
   styleUrls: ['./edit-field.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    ReactiveFormsModule,
+    MatFormField,
+    MatInput,
+    MatIconButton,
+    MatIcon,
+    MatSelect,
+    MatOption,
+    MatTooltip,
+    MatSlideToggle,
+    CdkTextareaAutosize,
+    MatDivider,
+    MatAccordion,
+    CdkDropList,
+    CdkDrag,
+    MatExpansionModule,
+    CdkDragHandle,
+    MatSelectionList,
+    MatListModule,
+    JsonPipe,
+  ],
 })
 export class EditFieldComponent implements OnInit {
   // Input

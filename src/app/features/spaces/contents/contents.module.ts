@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 
 import { SharedModule } from '@shared/shared.module';
-import { ContentsComponent } from './contents.component';
 import { ContentsRoutingModule } from './contents-routing.module';
 import { SpaceService } from '@shared/services/space.service';
 import { SchemaService } from '@shared/services/schema.service';
@@ -29,10 +28,10 @@ import { StatusComponent } from '@shared/components/status';
 import { TranslateService } from '@shared/services/translate.service';
 import { NgxTiptapModule } from 'ngx-tiptap';
 import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-editor.component';
+import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 
 @NgModule({
   declarations: [
-    ContentsComponent,
     AddFolderDialogComponent,
     AddDocumentDialogComponent,
     EditDialogComponent,
@@ -48,7 +47,7 @@ import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-edi
     MoveDialogComponent,
     RichTextEditorComponent,
   ],
-  imports: [SharedModule, ContentsRoutingModule, MarkdownModule.forChild(), StatusComponent, NgxTiptapModule],
+  imports: [SharedModule, ContentsRoutingModule, MarkdownModule.forChild(), StatusComponent, NgxTiptapModule, BreadcrumbComponent, BreadcrumbItemComponent],
   providers: [
     SpaceService,
     SchemaService,
@@ -61,4 +60,5 @@ import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-edi
     TranslateService,
   ],
 })
-export class ContentsModule {}
+export class ContentsModule {
+}

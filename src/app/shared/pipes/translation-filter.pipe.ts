@@ -1,7 +1,10 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { Translation } from '../models/translation.model';
 
-@Pipe({ name: 'translationFilter' })
+@Pipe({
+  name: 'translationFilter',
+  standalone: true,
+})
 export class TranslationFilterPipe implements PipeTransform {
   transform(items: Translation[], filter: string, locale: string, labels: string[]): Translation[] {
     if (!items || (!filter && !labels.length)) {

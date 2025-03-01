@@ -13,8 +13,8 @@ import {
 import { debounceTime, EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
-import { FormControl } from '@angular/forms';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 import { TranslationService } from '@shared/services/translation.service';
 import { SpaceService } from '@shared/services/space.service';
 import { Locale } from '@shared/models/locale.model';
@@ -38,12 +38,72 @@ import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
+import { AsyncPipe, DatePipe } from '@angular/common';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { MatButton, MatButtonModule, MatIconAnchor } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { IconComponent } from '@shared/components/icon/icon.component';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatDivider } from '@angular/material/divider';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatSidenavContainer, MatSidenavModule } from '@angular/material/sidenav';
+import { MatFormField } from '@angular/material/form-field';
+import { MatSelect } from '@angular/material/select';
+import { MatInput } from '@angular/material/input';
+import { MatChipGrid, MatChipsModule } from '@angular/material/chips';
+import { CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { TranslationFilterPipe } from '@shared/pipes/translation-filter.pipe';
+import { StatusComponent } from '@shared/components/status';
+import { TranslationStringViewComponent } from './translation-string-view/translation-string-view.component';
+import { TranslationPluralViewComponent } from './translation-plural-view/translation-plural-view.component';
+import { TranslationArrayViewComponent } from './translation-array-view/translation-array-view.component';
+import { TranslationStringEditComponent } from './translation-string-edit/translation-string-edit.component';
+import { TranslationPluralEditComponent } from './translation-plural-edit/translation-plural-edit.component';
+import { TranslationArrayEditComponent } from './translation-array-edit/translation-array-edit.component';
+import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'll-translations',
+  standalone: true,
   templateUrl: './translations.component.html',
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    AsyncPipe,
+    MatToolbarModule,
+    MatIconModule,
+    CanUserPerformPipe,
+    MatIconAnchor,
+    MatButtonModule,
+    MatTooltip,
+    IconComponent,
+    MatMenuModule,
+    MatDivider,
+    MatProgressBar,
+    MatSidenavModule,
+    MatFormField,
+    MatSelect,
+    MatOption,
+    MatInput,
+    ReactiveFormsModule,
+    MatChipsModule,
+    FormsModule,
+    MatAutocompleteModule,
+    CdkVirtualScrollViewport,
+    TranslationFilterPipe,
+    CdkVirtualForOf,
+    StatusComponent,
+    TranslationStringViewComponent,
+    TranslationPluralViewComponent,
+    TranslationArrayViewComponent,
+    TranslationStringEditComponent,
+    TranslationPluralEditComponent,
+    TranslationArrayEditComponent,
+    CdkCopyToClipboard,
+    DatePipe,
+  ],
 })
 export class TranslationsComponent implements OnInit {
   // Input
@@ -77,8 +137,8 @@ export class TranslationsComponent implements OnInit {
     const currentLabel = this.currentLabel()?.toLowerCase() || '';
     return currentLabel
       ? this.allLabels()
-          .filter(label => !this.filterLabels().includes(label))
-          .filter(label => label.toLowerCase().includes(currentLabel))
+        .filter(label => !this.filterLabels().includes(label))
+        .filter(label => label.toLowerCase().includes(currentLabel))
       : this.allLabels().filter(label => !this.filterLabels().includes(label));
   });
 
@@ -113,7 +173,8 @@ export class TranslationsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly translateService: TranslateService,
-  ) {}
+  ) {
+  }
 
   ngOnInit(): void {
     this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({

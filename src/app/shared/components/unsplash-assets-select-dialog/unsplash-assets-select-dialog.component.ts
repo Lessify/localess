@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Inject, OnInit, signal } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SelectionModel } from '@angular/cdk/collections';
@@ -7,12 +7,37 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatFormField, MatFormFieldModule, MatHint } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatButton } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
+import { MatCheckbox } from '@angular/material/checkbox';
 
 @Component({
   selector: 'll-unsplash-assets-select-dialog',
+  standalone: true,
   templateUrl: './unsplash-assets-select-dialog.component.html',
   styleUrls: ['./unsplash-assets-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatDialogModule,
+    MatProgressBar,
+    MatFormFieldModule,
+    MatInput,
+    MatIcon,
+    MatButtonToggleModule,
+    MatTooltip,
+    MatButton,
+    NgOptimizedImage,
+    MatCardModule,
+    DatePipe,
+    MatCheckbox,
+  ],
 })
 export class UnsplashAssetsSelectDialogComponent implements OnInit {
   assets = signal<UnsplashPhoto[]>([]);

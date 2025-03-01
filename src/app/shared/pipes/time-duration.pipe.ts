@@ -3,7 +3,10 @@ import { Pipe, PipeTransform } from '@angular/core';
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
 
-@Pipe({ name: 'timeDuration' })
+@Pipe({
+  name: 'timeDuration',
+  standalone: true,
+})
 export class TimeDurationPipe implements PipeTransform {
   transform(duration?: number): string {
     if (duration != undefined) {

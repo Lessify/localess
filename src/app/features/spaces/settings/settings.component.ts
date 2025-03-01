@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, input } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Space } from '@shared/models/space.model';
 import { activate } from '@angular/fire/remote-config';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatIcon } from '@angular/material/icon';
 
 interface TabItem {
   icon: string;
@@ -11,9 +14,11 @@ interface TabItem {
 
 @Component({
   selector: 'll-spaces-settings',
+  standalone: true,
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatToolbarModule, MatTabsModule, MatIcon, RouterOutlet, RouterLink],
 })
 export class SettingsComponent {
   // Input

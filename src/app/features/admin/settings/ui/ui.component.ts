@@ -1,17 +1,36 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
 import { NotificationService } from '@shared/services/notification.service';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AppUiColor } from '@shared/models/settings.model';
 import { SettingsValidator } from '@shared/validators/settings.validator';
 import { SettingsService } from '@shared/services/settings.service';
+import { MatToolbar } from '@angular/material/toolbar';
+import { MatIcon } from '@angular/material/icon';
+import { MatButton } from '@angular/material/button';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatFormField } from '@angular/material/form-field';
+import { MatOption, MatSelect } from '@angular/material/select';
+import { MatInput } from '@angular/material/input';
 
 @Component({
   selector: 'll-admin-settings-ui',
+  standalone: true,
   templateUrl: './ui.component.html',
   styleUrls: ['./ui.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbar,
+    MatIcon,
+    MatButton,
+    MatProgressBar,
+    ReactiveFormsModule,
+    MatFormField,
+    MatSelect,
+    MatOption,
+    MatInput,
+  ],
 })
 export class UiComponent {
   private destroyRef = inject(DestroyRef);

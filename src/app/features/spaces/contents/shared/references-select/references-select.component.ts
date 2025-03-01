@@ -8,13 +8,39 @@ import { MatDialog } from '@angular/material/dialog';
 import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '@shared/components/references-select-dialog';
 import { Space } from '@shared/models/space.model';
 import { ContentService } from '@shared/services/content.service';
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import { MatCard, MatCardModule } from '@angular/material/card';
+import { MatIcon } from '@angular/material/icon';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatDivider } from '@angular/material/divider';
+import { MatList, MatListModule } from '@angular/material/list';
+import { StatusComponent } from '@shared/components/status';
+import { MatError } from '@angular/material/form-field';
+import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'll-references-select',
+  standalone: true,
   templateUrl: './references-select.component.html',
   styleUrls: ['./references-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatCardModule,
+    MatIcon,
+    MatIconButton,
+    MatTooltip,
+    MatDivider,
+    MatListModule,
+    CdkDropList,
+    CdkDrag,
+    StatusComponent,
+    CdkDragHandle,
+    MatError,
+    MatExpansionModule,
+    JsonPipe,
+  ],
 })
 export class ReferencesSelectComponent implements OnInit {
   // Input

@@ -12,7 +12,7 @@ import {
   output,
   SimpleChanges,
 } from '@angular/core';
-import { FormArray, FormBuilder, FormRecord } from '@angular/forms';
+import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import {
   Schema,
   SchemaComponent,
@@ -32,19 +32,76 @@ import { v4 } from 'uuid';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { Space } from '@shared/models/space.model';
 import { SchemaSelectChange } from './edit-document-schema.model';
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { MatSlideToggleChange } from '@angular/material/slide-toggle';
+import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { TranslateService } from '@shared/services/translate.service';
 import { NotificationService } from '@shared/services/notification.service';
+import { MatError, MatFormField, MatHint, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { AsyncPipe, JsonPipe, NgClass } from '@angular/common';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatMenu, MatMenuModule } from '@angular/material/menu';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
+import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
+import { MarkdownComponent } from 'ngx-markdown';
+import { MatSelect, MatSelectModule } from '@angular/material/select';
+import { LinkSelectComponent } from '../shared/link-select/link-select.component';
+import { ReferenceSelectComponent } from '../shared/reference-select/reference-select.component';
+import { ReferencesSelectComponent } from '../shared/references-select/references-select.component';
+import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
+import { AssetsSelectComponent } from '../shared/assets-select/assets-select.component';
+import { MatCard, MatCardModule } from '@angular/material/card';
+import { MatDivider } from '@angular/material/divider';
+import { MatActionList, MatListModule } from '@angular/material/list';
+import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-content-document-schema-edit',
+  standalone: true,
   templateUrl: './edit-document-schema.component.html',
   styleUrls: ['./edit-document-schema.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    ReactiveFormsModule,
+    MatFormField,
+    MatInput,
+    CanUserPerformPipe,
+    AsyncPipe,
+    MatIconButton,
+    MatTooltip,
+    MatIcon,
+    MatMenuModule,
+    CdkTextareaAutosize,
+    RichTextEditorComponent,
+    MatTabsModule,
+    MarkdownComponent,
+    MatSlideToggle,
+    MatSuffix,
+    MatHint,
+    MatError,
+    MatSelectModule,
+    LinkSelectComponent,
+    ReferenceSelectComponent,
+    ReferencesSelectComponent,
+    AssetSelectComponent,
+    AssetsSelectComponent,
+    MatCardModule,
+    MatDivider,
+    MatListModule,
+    NgClass,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    MatExpansionModule,
+    JsonPipe,
+  ],
 })
 export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   // Form

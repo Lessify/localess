@@ -10,12 +10,19 @@ import { MeEmailDialogComponent } from './me-email-dialog/me-email-dialog.compon
 import { MeEmailDialogModel } from './me-email-dialog/me-email-dialog.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserStore } from '@shared/stores/user.store';
+import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
+import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardModule } from '@angular/material/card';
+import { NgOptimizedImage, UpperCasePipe } from '@angular/common';
+import { MatDivider } from '@angular/material/divider';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-me',
+  standalone: true,
   templateUrl: './me.component.html',
   styleUrls: ['./me.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatToolbarModule, MatCardModule, NgOptimizedImage, MatDivider, UpperCasePipe, MatButton],
 })
 export class MeComponent {
   userStore = inject(UserStore);

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { KeyValuePipe } from '@angular/common';
 
 interface Plural {
   0: string;
@@ -11,9 +12,11 @@ interface Plural {
 
 @Component({
   selector: 'll-translation-plural-view',
+  standalone: true,
   templateUrl: './translation-plural-view.component.html',
   styleUrls: ['./translation-plural-view.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [KeyValuePipe],
 })
 export class TranslationPluralViewComponent {
   value = input.required<string>();

@@ -4,7 +4,10 @@ import { map } from 'rxjs/operators';
 import { UserStore } from '@shared/stores/user.store';
 import { toObservable } from '@angular/core/rxjs-interop';
 
-@Pipe({ name: 'canUserPerform' })
+@Pipe({
+  name: 'canUserPerform',
+  standalone: true,
+})
 export class CanUserPerformPipe implements PipeTransform {
   userStore = inject(UserStore);
   role$ = toObservable(this.userStore.role);

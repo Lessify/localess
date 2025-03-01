@@ -15,7 +15,7 @@ import {
 
 import { LocalStorageService } from '@core/core.module';
 import { Auth, signOut } from '@angular/fire/auth';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Space } from '@shared/models/space.model';
 import { environment } from '../../environments/environment';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
@@ -27,6 +27,16 @@ import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { AppSettingsStore } from '@shared/stores/app-settings.store';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIcon } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule, MatNavList } from '@angular/material/list';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { AsyncPipe } from '@angular/common';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
 
 interface SideMenuItem {
   icon: string;
@@ -38,9 +48,26 @@ interface SideMenuItem {
 
 @Component({
   selector: 'll-features',
+  standalone: true,
   templateUrl: './features.component.html',
   styleUrl: './features.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbarModule,
+    MatButtonModule,
+    MatIcon,
+    MatTooltip,
+    MatMenuModule,
+    RouterLink,
+    MatSidenavModule,
+    MatNavList,
+    CanUserPerformPipe,
+    AsyncPipe,
+    MatListModule,
+    RouterLinkActive,
+    MatSlideToggle,
+    RouterOutlet,
+  ],
 })
 export class FeaturesComponent implements OnInit {
   // Settings

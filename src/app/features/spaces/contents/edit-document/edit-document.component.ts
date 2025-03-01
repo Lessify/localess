@@ -36,12 +36,56 @@ import { ContentHistoryService } from '@shared/services/content-history.service'
 import { SpaceStore } from '@shared/stores/space.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
+import { MatToolbar } from '@angular/material/toolbar';
+import { MatIcon } from '@angular/material/icon';
+import { MatButtonToggleGroup, MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatMenu, MatMenuModule } from '@angular/material/menu';
+import { MatBadge } from '@angular/material/badge';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { AsyncPipe, DatePipe, JsonPipe, NgClass } from '@angular/common';
+import { IconComponent } from '@shared/components/icon/icon.component';
+import { StatusComponent } from '@shared/components/status';
+import { MatDivider } from '@angular/material/divider';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatSidenavContainer, MatSidenavModule } from '@angular/material/sidenav';
+import { MatCard, MatCardModule } from '@angular/material/card';
+import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
+import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-content-document-edit',
+  standalone: true,
   templateUrl: './edit-document.component.html',
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbar,
+    MatIcon,
+    MatButtonToggleModule,
+    MatTooltip,
+    MatButton,
+    MatMenuModule,
+    MatIconButton,
+    MatBadge,
+    CanUserPerformPipe,
+    AsyncPipe,
+    IconComponent,
+    StatusComponent,
+    MatDivider,
+    MatProgressBar,
+    MatSidenavModule,
+    MatCardModule,
+    NgClass,
+    BreadcrumbComponent,
+    BreadcrumbItemComponent,
+    EditDocumentSchemaComponent,
+    MatExpansionModule,
+    JsonPipe,
+    DatePipe,
+  ],
 })
 export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   // Input

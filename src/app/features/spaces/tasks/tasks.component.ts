@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, viewChild } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
@@ -11,12 +11,34 @@ import { ConfirmationDialogComponent } from '@shared/components/confirmation-dia
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { saveAs } from 'file-saver-es';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { DatePipe } from '@angular/common';
+import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
+import { MatIconButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-tasks',
+  standalone: true,
   templateUrl: './tasks.component.html',
   styleUrls: ['./tasks.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbarModule,
+    MatProgressBar,
+    MatTableModule,
+    MatSortModule,
+    MatIcon,
+    MatTooltip,
+    FormatFileSizePipe,
+    DatePipe,
+    TimeDurationPipe,
+    MatIconButton,
+    MatPaginator,
+  ],
 })
 export class TasksComponent implements OnInit {
   sort = viewChild.required(MatSort);

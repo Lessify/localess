@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap, tap } from 'rxjs/operators';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { NotificationService } from '@shared/services/notification.service';
 import { Schema, SchemaType, sortSchema } from '@shared/models/schema.model';
@@ -33,12 +33,46 @@ import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { MatToolbar } from '@angular/material/toolbar';
+import { MatButton, MatIconAnchor, MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { AsyncPipe, DatePipe } from '@angular/common';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDivider } from '@angular/material/divider';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { StatusComponent } from '@shared/components/status';
 
 @Component({
   selector: 'll-contents',
+  standalone: true,
   templateUrl: './contents.component.html',
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbar,
+    MatIconAnchor,
+    MatIcon,
+    MatTooltip,
+    CanUserPerformPipe,
+    AsyncPipe,
+    MatButton,
+    MatMenuModule,
+    MatIconButton,
+    MatDivider,
+    MatProgressBar,
+    BreadcrumbComponent,
+    BreadcrumbItemComponent,
+    MatTableModule,
+    MatSortModule,
+    MatCheckbox,
+    StatusComponent,
+    DatePipe,
+    MatPaginator,
+  ],
 })
 export class ContentsComponent {
   sort = viewChild.required(MatSort);

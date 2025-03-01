@@ -8,14 +8,42 @@ import { AssetService } from '@shared/services/asset.service';
 import { Space } from '@shared/models/space.model';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { MatCardModule } from '@angular/material/card';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton } from '@angular/material/button';
+import { MatDivider } from '@angular/material/divider';
+import { MatListModule } from '@angular/material/list';
+import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
+import { JsonPipe, NgOptimizedImage } from '@angular/common';
+import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { MatError } from '@angular/material/form-field';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-assets-select',
+  standalone: true,
   templateUrl: './assets-select.component.html',
   styleUrls: ['./assets-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatCardModule,
+    MatIcon,
+    MatTooltip,
+    MatIconButton,
+    MatDivider,
+    MatListModule,
+    CdkDropList,
+    CdkDrag,
+    ImagePreviewDirective,
+    NgOptimizedImage,
+    FormatFileSizePipe,
+    MatError,
+    MatExpansionModule,
+    JsonPipe,
+  ],
 })
 export class AssetsSelectComponent implements OnInit {
   // Inputs
@@ -35,7 +63,8 @@ export class AssetsSelectComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly assetService: AssetService,
-  ) {}
+  ) {
+  }
 
   ngOnInit(): void {
     //console.group('AssetsSelectComponent:ngOnInit')

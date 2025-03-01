@@ -2,7 +2,10 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
-@Pipe({ name: 'formatFileSize' })
+@Pipe({
+  name: 'formatFileSize',
+  standalone: true,
+})
 export class FormatFileSizePipe implements PipeTransform {
   transform(bytes?: number): string {
     if (bytes != undefined) {

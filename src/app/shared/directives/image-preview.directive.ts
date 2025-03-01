@@ -2,6 +2,7 @@ import { Directive, ElementRef, HostListener, input } from '@angular/core';
 
 @Directive({
   selector: 'img[llImagePreview]',
+  standalone: true,
 })
 export class ImagePreviewDirective {
   scale = input<number>(2, { alias: 'llImagePreview' });

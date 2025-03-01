@@ -1,18 +1,39 @@
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { MatChipInputEvent } from '@angular/material/chips';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { TranslationValidator } from '@shared/validators/translation.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { AddDialogModel } from './add-dialog.model';
 import { CommonValidator } from '@shared/validators/common.validator';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatOption, MatSelect } from '@angular/material/select';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { MatIcon } from '@angular/material/icon';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-translation-add-dialog',
+  standalone: true,
   templateUrl: './add-dialog.component.html',
   styleUrls: ['./add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatDialogModule,
+    ReactiveFormsModule,
+    MatFormField,
+    MatInput,
+    MatSelect,
+    MatOption,
+    CdkTextareaAutosize,
+    MatChipsModule,
+    MatIcon,
+    MatCheckbox,
+    MatButton,
+  ],
 })
 export class AddDialogComponent {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];

@@ -1,16 +1,21 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { TranslationValidator } from '@shared/validators/translation.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { EditIdDialogModel } from './edit-id-dialog.model';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-translation-edit-id-dialog',
+  standalone: true,
   templateUrl: './edit-id-dialog.component.html',
   styleUrls: ['./edit-id-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormField, MatInput, MatButton],
 })
 export class EditIdDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

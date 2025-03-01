@@ -1,15 +1,21 @@
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { FormBuilder, FormRecord, ValidatorFn, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { FormBuilder, FormRecord, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { ConfigDialogModel } from './config-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { PluginConfiguration } from '@shared/models/plugin.model';
+import { MatFormField } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInput } from '@angular/material/input';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-plugin-config-dialog',
+  standalone: true,
   templateUrl: './config-dialog.component.html',
   styleUrls: ['./config-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormField, MatSelectModule, MatInput, MatButton],
 })
 export class ConfigDialogComponent {
   form: FormRecord = this.fb.record({});

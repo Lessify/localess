@@ -2,6 +2,7 @@ import { Directive, EventEmitter, HostBinding, HostListener, Output } from '@ang
 
 @Directive({
   selector: '[llFileDragDrop]',
+  standalone: true,
 })
 export class FileDragAndDropDirective {
   @Output() private filesChanges: EventEmitter<File[]> = new EventEmitter();

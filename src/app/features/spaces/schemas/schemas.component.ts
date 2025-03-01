@@ -12,10 +12,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
@@ -32,12 +32,43 @@ import { TaskService } from '@shared/services/task.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
+import { MatToolbar } from '@angular/material/toolbar';
+import { MatButton, MatIconAnchor, MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { AsyncPipe, DatePipe } from '@angular/common';
+import { MatMenu, MatMenuModule } from '@angular/material/menu';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatChipSet, MatChipsModule } from '@angular/material/chips';
 
 @Component({
   selector: 'll-schemas',
+  standalone: true,
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbar,
+    MatIconAnchor,
+    MatIcon,
+    MatTooltip,
+    CanUserPerformPipe,
+    AsyncPipe,
+    MatButton,
+    MatIconButton,
+    MatMenuModule,
+    MatProgressBar,
+    MatFormField,
+    MatInput,
+    MatTableModule,
+    MatSortModule,
+    MatChipsModule,
+    DatePipe,
+    MatPaginator,
+  ],
 })
 export class SchemasComponent implements OnInit {
   sort = viewChild.required(MatSort);

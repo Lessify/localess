@@ -1,13 +1,19 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs';
 import { TranslationValidator } from '@shared/validators/translation.validator';
+import { MatFormField, MatHint } from '@angular/material/form-field';
+import { MatIcon } from '@angular/material/icon';
+import { MatInput } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'll-translation-array-edit',
+  standalone: true,
   templateUrl: './translation-array-edit.component.html',
   styleUrls: ['./translation-array-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule, MatFormField, MatIcon, MatInput, MatButtonModule, MatHint],
 })
 export class TranslationArrayEditComponent implements OnInit, OnChanges {
   @Input() value = '';

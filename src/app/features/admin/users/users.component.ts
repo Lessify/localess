@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { UserService } from '@shared/services/user.service';
 import { User } from '@shared/models/user.model';
@@ -14,12 +14,38 @@ import { ConfirmationDialogComponent } from '@shared/components/confirmation-dia
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { IconComponent } from '@shared/components/icon/icon.component';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { DatePipe, UpperCasePipe } from '@angular/common';
 
 @Component({
   selector: 'll-users',
+  standalone: true,
   templateUrl: './users.component.html',
   styleUrls: ['./users.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbarModule,
+    MatButton,
+    MatTooltip,
+    MatTableModule,
+    IconComponent,
+    MatProgressBar,
+    MatFormField,
+    MatInput,
+    MatSortModule,
+    MatIcon,
+    UpperCasePipe,
+    DatePipe,
+    MatIconButton,
+    MatPaginator,
+  ],
 })
 export class UsersComponent implements OnInit {
   sort = viewChild.required(MatSort);
@@ -37,7 +63,8 @@ export class UsersComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
-  ) {}
+  ) {
+  }
 
   ngOnInit(): void {
     this.loadData();

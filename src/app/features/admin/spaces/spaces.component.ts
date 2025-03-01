@@ -1,23 +1,43 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
 import { SpaceDialogModel } from './space-dialog/space-dialog.model';
-import { MatSort } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { SpaceService } from '@shared/services/space.service';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'll-spaces',
+  standalone: true,
   templateUrl: './spaces.component.html',
   styleUrls: ['./spaces.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatToolbarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatProgressBarModule,
+    CdkCopyToClipboard,
+    MatTooltipModule,
+    DatePipe,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+  ],
 })
 export class SpacesComponent implements OnInit {
   sort = viewChild.required(MatSort);
@@ -34,7 +54,8 @@ export class SpacesComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) {
+  }
 
   ngOnInit(): void {
     this.loadData();
