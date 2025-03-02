@@ -38,10 +38,10 @@ import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDividerModule } from '@angular/material/divider';
-import { SchemasModule } from '../schemas.module';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
 
 @Component({
   selector: 'll-schema-edit-comp',
@@ -66,12 +66,12 @@ import { MatExpansionModule } from '@angular/material/expansion';
     DragDropModule,
     MatInputModule,
     MatDividerModule,
-    SchemasModule,
     TextFieldModule,
     MatSelectModule,
     MatChipsModule,
     MatExpansionModule,
     JsonPipe,
+    EditFieldComponent,
   ],
 })
 export class EditCompComponent implements OnInit, DirtyFormGuardComponent {

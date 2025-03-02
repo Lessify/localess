@@ -56,7 +56,6 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     DragDropModule,
     MatInput,
     MatDivider,
-    SchemasModule,
     CdkTextareaAutosize,
     MatChipsModule,
     MatExpansionModule,
