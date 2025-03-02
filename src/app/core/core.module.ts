@@ -12,13 +12,10 @@ import { FormsModule } from '@angular/forms';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { AppErrorHandler } from './error-handler/app-error-handler.service';
-import { LocalStorageService } from './local-storage/local-storage.service';
 import { HttpErrorInterceptor } from './http-interceptors/http-error.interceptor';
 import { MatButtonModule } from '@angular/material/button';
 import { TitleStrategy } from '@angular/router';
 import { PageTitleStrategy } from './title/page-title.strategy';
-
-export { LocalStorageService };
 
 @NgModule({
   declarations: [],

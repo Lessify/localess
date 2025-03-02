@@ -1,10 +1,8 @@
-import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-
-import { AppRoutingModule } from './app-routing.module';
-import { AppComponent } from './app.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
+import { ApplicationConfig, importProvidersFrom, provideExperimentalZonelessChangeDetection } from '@angular/core';
 import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
+import { getAnalytics, provideAnalytics, ScreenTrackingService, UserTrackingService } from '@angular/fire/analytics';
+import { getPerformance, providePerformance } from '@angular/fire/performance';
 import { environment } from '../environments/environment';
 import {
   browserPopupRedirectResolver,
@@ -13,39 +11,30 @@ import {
   initializeAuth,
   provideAuth,
 } from '@angular/fire/auth';
-import { AuthGuardModule } from '@angular/fire/auth-guard';
 import { connectFirestoreEmulator, initializeFirestore, provideFirestore } from '@angular/fire/firestore';
 import { connectStorageEmulator, getStorage, provideStorage } from '@angular/fire/storage';
-import { CoreModule } from '@core/core.module';
+import { connectFunctionsEmulator, getFunctions, provideFunctions } from '@angular/fire/functions';
+import { getRemoteConfig, provideRemoteConfig } from '@angular/fire/remote-config';
+import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 import { MAT_CHIPS_DEFAULT_OPTIONS } from '@angular/material/chips';
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
-import { connectFunctionsEmulator, getFunctions, provideFunctions } from '@angular/fire/functions';
-import { getPerformance, providePerformance } from '@angular/fire/performance';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
-import { MarkdownModule } from 'ngx-markdown';
-import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
-import { MatIconRegistry } from '@angular/material/icon';
-import { getAnalytics, provideAnalytics } from '@angular/fire/analytics';
-import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-config';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
+import { routes } from './app-routing';
+import { provideMarkdown } from 'ngx-markdown';
+import { CoreModule } from '@core/core.module';
+import { AuthGuardModule } from '@angular/fire/auth-guard';
 
-@NgModule({
-  declarations: [AppComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    BrowserAnimationsModule,
-    MarkdownModule.forRoot(),
-    //Core
-    CoreModule,
-
-    //Firebase
-    AuthGuardModule,
-  ],
+export const appConfig: ApplicationConfig = {
   providers: [
+    provideExperimentalZonelessChangeDetection(),
+    provideRouter(routes, withComponentInputBinding(), withNavigationErrorHandler(console.error)),
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
+    provideAnimations(),
+    provideMarkdown(),
+    importProvidersFrom(CoreModule, AuthGuardModule),
     // Firebase
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => {
@@ -86,6 +75,8 @@ import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-confi
       return functions;
     }),
     provideAnalytics(() => getAnalytics()),
+    ScreenTrackingService,
+    UserTrackingService,
     providePerformance(() => getPerformance()),
     provideRemoteConfig(() => {
       const remoteConfig = getRemoteConfig();
@@ -107,7 +98,10 @@ import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-confi
         }
       },
     },
-    { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } },
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: { appearance: 'outline' },
+    },
     {
       provide: MAT_PAGINATOR_DEFAULT_OPTIONS,
       useValue: {
@@ -123,10 +117,4 @@ import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-confi
       },
     },
   ],
-  bootstrap: [AppComponent],
-})
-export class AppModule {
-  constructor(private readonly iconRegistry: MatIconRegistry) {
-    iconRegistry.setDefaultFontSetClass('material-symbols-outlined');
-  }
-}
+};

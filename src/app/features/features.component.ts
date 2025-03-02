@@ -13,7 +13,6 @@ import {
   Signal,
 } from '@angular/core';
 
-import { LocalStorageService } from '@core/core.module';
 import { Auth, signOut } from '@angular/fire/auth';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Space } from '@shared/models/space.model';
@@ -124,7 +123,6 @@ export class FeaturesComponent implements OnInit {
   appSettingsStore = inject(AppSettingsStore);
 
   constructor(
-    private readonly storageService: LocalStorageService,
     private readonly cd: ChangeDetectorRef,
     private readonly router: Router,
     private readonly reposService: ReposService,
@@ -156,7 +154,6 @@ export class FeaturesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.storageService.testLocalStorage();
     if (FeaturesComponent.isIEorEdgeOrSafari()) {
       console.log('IE, Edge or Safari detected');
     }

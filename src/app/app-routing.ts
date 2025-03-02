@@ -1,5 +1,5 @@
-import { inject, NgModule } from '@angular/core';
-import { Router, RouterModule, Routes, UrlTree } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes, UrlTree } from '@angular/router';
 import { Observable } from 'rxjs';
 import { UserStore } from '@shared/stores/user.store';
 
@@ -13,7 +13,7 @@ export function authGuard(): Observable<boolean | UrlTree> | Promise<boolean | U
   }
 }
 
-const routes: Routes = [
+export const routes: Routes = [
   {
     path: '',
     redirectTo: 'features',
@@ -44,9 +44,3 @@ const routes: Routes = [
     redirectTo: 'features',
   },
 ];
-
-@NgModule({
-  imports: [RouterModule.forRoot(routes, { bindToComponentInputs: true })],
-  exports: [RouterModule],
-})
-export class AppRoutingModule {}
