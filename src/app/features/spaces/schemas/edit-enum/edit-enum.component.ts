@@ -28,8 +28,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatListModule } from '@angular/material/list';
 import { MatInput } from '@angular/material/input';
 import { MatDivider } from '@angular/material/divider';
-import { SchemasModule } from '../schemas.module';
-import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { TextFieldModule } from '@angular/cdk/text-field';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
 
@@ -56,7 +55,7 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     DragDropModule,
     MatInput,
     MatDivider,
-    CdkTextareaAutosize,
+    TextFieldModule,
     MatChipsModule,
     MatExpansionModule,
     JsonPipe,

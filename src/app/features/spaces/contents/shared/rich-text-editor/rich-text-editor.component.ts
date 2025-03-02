@@ -33,14 +33,7 @@ import { NgxTiptapModule } from 'ngx-tiptap';
   templateUrl: './rich-text-editor.component.html',
   styleUrls: ['./rich-text-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatFormField,
-    MatInput,
-    MatTooltip,
-    NgClass,
-    NgxTiptapModule,
-    ReactiveFormsModule,
-  ],
+  imports: [MatFormField, MatInput, MatTooltip, NgClass, NgxTiptapModule, ReactiveFormsModule],
 })
 export class RichTextEditorComponent implements OnDestroy {
   // Input

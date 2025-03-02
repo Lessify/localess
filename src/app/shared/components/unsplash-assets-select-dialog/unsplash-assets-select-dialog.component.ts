@@ -8,7 +8,7 @@ import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField, MatFormFieldModule, MatHint } from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';

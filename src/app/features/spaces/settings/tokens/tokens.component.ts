@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
-import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenDialogComponent } from './token-dialog/token-dialog.component';
 import { TokenDialogModel } from './token-dialog/token-dialog.model';
@@ -13,11 +12,11 @@ import { Token } from '@shared/models/token.model';
 import { TokenService } from '@shared/services/token.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/stores/space.store';
-import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { MatTooltip } from '@angular/material/tooltip';
 import { DatePipe } from '@angular/common';
 
@@ -30,12 +29,11 @@ import { DatePipe } from '@angular/common';
   imports: [
     MatToolbarModule,
     MatIcon,
-    MatButton,
+    MatButtonModule,
     MatProgressBar,
     MatTableModule,
     MatSortModule,
-    MatIconButton,
-    CdkCopyToClipboard,
+    ClipboardModule,
     MatTooltip,
     DatePipe,
     MatPaginator,

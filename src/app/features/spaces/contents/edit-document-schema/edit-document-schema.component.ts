@@ -43,7 +43,7 @@ import { MatError, MatFormField, MatHint, MatSuffix } from '@angular/material/fo
 import { MatInput } from '@angular/material/input';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AsyncPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -74,7 +74,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatInput,
     CanUserPerformPipe,
     AsyncPipe,
-    MatIconButton,
+    MatButtonModule,
     MatTooltip,
     MatIcon,
     MatMenuModule,

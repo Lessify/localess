@@ -16,7 +16,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatePipe } from '@angular/common';
 
@@ -31,7 +31,7 @@ import { DatePipe } from '@angular/common';
     MatIconModule,
     MatButtonModule,
     MatProgressBarModule,
-    CdkCopyToClipboard,
+    ClipboardModule,
     MatTooltipModule,
     DatePipe,
     MatTableModule,
@@ -54,8 +54,7 @@ export class SpacesComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadData();

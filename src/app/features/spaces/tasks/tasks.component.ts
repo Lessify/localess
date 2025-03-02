@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, viewChild } from '@angular/core';
-import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -7,18 +7,17 @@ import { MatPaginator } from '@angular/material/paginator';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
 import { Task } from '@shared/models/task.model';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { saveAs } from 'file-saver-es';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { DatePipe } from '@angular/common';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'll-tasks',
@@ -36,7 +35,7 @@ import { MatIconButton } from '@angular/material/button';
     FormatFileSizePipe,
     DatePipe,
     TimeDurationPipe,
-    MatIconButton,
+    MatButtonModule,
     MatPaginator,
   ],
 })

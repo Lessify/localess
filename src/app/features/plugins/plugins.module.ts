@@ -9,5 +9,4 @@ import { PluginService } from '@shared/services/plugin.service';
   imports: [SharedModule, PluginsRoutingModule],
   providers: [PluginService],
 })
-export class PluginsModule {
-}
+export class PluginsModule {}

@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogContent, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { ExportDialogModel } from './export-dialog.model';
 import { ContentService } from '@shared/services/content.service';
 import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
 import { Content } from '@shared/models/content.model';
-import { MatAutocomplete, MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 
 @Component({
@@ -18,17 +18,7 @@ import { MatIcon } from '@angular/material/icon';
   templateUrl: './export-dialog.component.html',
   styleUrls: ['./export-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatDialogModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatAutocompleteModule,
-    MatInput,
-    AsyncPipe,
-    MatIconButton,
-    MatIcon,
-    MatButton,
-  ],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatAutocompleteModule, MatInput, AsyncPipe, MatButtonModule, MatIcon],
 })
 export class ExportDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

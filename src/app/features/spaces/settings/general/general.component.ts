@@ -12,11 +12,11 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatFormField } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatOption, MatSelect } from '@angular/material/select';
+import { MatSelectModule } from '@angular/material/select';
 import { AsyncPipe } from '@angular/common';
 
 @Component({
@@ -25,7 +25,19 @@ import { AsyncPipe } from '@angular/common';
   templateUrl: './general.component.html',
   styleUrls: ['./general.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatProgressBar, MatFormField, MatInput, MatIconButton, MatIcon, CdkCopyToClipboard, ReactiveFormsModule, MatTooltip, MatSelect, MatOption, AsyncPipe],
+  imports: [
+    MatToolbarModule,
+    MatProgressBar,
+    MatFormField,
+    MatInput,
+    MatButtonModule,
+    MatIcon,
+    ClipboardModule,
+    ReactiveFormsModule,
+    MatTooltip,
+    MatSelectModule,
+    AsyncPipe,
+  ],
 })
 export class GeneralComponent {
   isLoading = signal(true);

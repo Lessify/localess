@@ -13,7 +13,7 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { MatCardModule } from '@angular/material/card';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDivider } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
@@ -32,7 +32,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatCardModule,
     MatIcon,
     MatTooltip,
-    MatIconButton,
+    MatButtonModule,
     MatDivider,
     MatListModule,
     CdkDropList,
@@ -63,8 +63,7 @@ export class AssetsSelectComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly assetService: AssetService,
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
     //console.group('AssetsSelectComponent:ngOnInit')

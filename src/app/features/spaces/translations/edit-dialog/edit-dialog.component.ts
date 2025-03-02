@@ -5,9 +5,9 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { TranslationValidator } from '@shared/validators/translation.validator';
 import { Translation } from '@shared/models/translation.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { TextFieldModule } from '@angular/cdk/text-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton } from '@angular/material/button';
 
@@ -17,7 +17,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './edit-dialog.component.html',
   styleUrls: ['./edit-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, CdkTextareaAutosize, MatChipsModule, MatIcon, MatButton],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, TextFieldModule, MatChipsModule, MatIcon, MatButton],
 })
 export class EditDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

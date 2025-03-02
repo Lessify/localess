@@ -22,7 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { DatePipe, NgIf } from '@angular/common';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDivider } from '@angular/material/divider';
 
@@ -41,7 +41,7 @@ import { MatDivider } from '@angular/material/divider';
     MatTooltip,
     NgIf,
     DatePipe,
-    MatIconButton,
+    MatButtonModule,
     MatMenuModule,
     MatDivider,
     MatPaginatorModule,

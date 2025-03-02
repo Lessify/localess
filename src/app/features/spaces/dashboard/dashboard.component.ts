@@ -8,7 +8,7 @@ import { SpaceStore } from '@shared/stores/space.store';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AsyncPipe } from '@angular/common';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 
@@ -18,7 +18,7 @@ import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, CanUserPerformPipe, AsyncPipe, MatIconButton, MatIcon, FormatFileSizePipe],
+  imports: [MatToolbarModule, CanUserPerformPipe, AsyncPipe, MatButtonModule, MatIcon, FormatFileSizePipe],
 })
 export class DashboardComponent {
   // Input

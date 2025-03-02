@@ -62,7 +62,7 @@ import { TranslationArrayViewComponent } from './translation-array-view/translat
 import { TranslationStringEditComponent } from './translation-string-edit/translation-string-edit.component';
 import { TranslationPluralEditComponent } from './translation-plural-edit/translation-plural-edit.component';
 import { TranslationArrayEditComponent } from './translation-array-edit/translation-array-edit.component';
-import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'll-translations',
@@ -100,7 +100,7 @@ import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
     TranslationStringEditComponent,
     TranslationPluralEditComponent,
     TranslationArrayEditComponent,
-    CdkCopyToClipboard,
+    ClipboardModule,
     DatePipe,
   ],
 })

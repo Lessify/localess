@@ -8,10 +8,7 @@ import { NgClass } from '@angular/common';
   templateUrl: './icon.component.html',
   styleUrls: ['./icon.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatIcon,
-    NgClass,
-  ],
+  imports: [MatIcon, NgClass],
 })
 export class IconComponent {
   // Input

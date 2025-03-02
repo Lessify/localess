@@ -10,7 +10,7 @@ import { NameUtils } from '@core/utils/name-utils.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -21,17 +21,7 @@ import { MatTooltip } from '@angular/material/tooltip';
   templateUrl: './add-dialog.component.html',
   styleUrls: ['./add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatDialogModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInput,
-    MatIconButton,
-    MatIcon,
-    MatSelectModule,
-    MatTooltip,
-    MatButton,
-  ],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, MatButtonModule, MatIcon, MatSelectModule, MatTooltip],
 })
 export class AddDialogComponent {
   schemaTypeDescriptions = schemaTypeDescriptions;

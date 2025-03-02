@@ -13,5 +13,4 @@ import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components
   imports: [SharedModule, AssetsRoutingModule, BreadcrumbComponent, BreadcrumbItemComponent],
   providers: [SpaceService, AssetService, TaskService, UnsplashPluginService],
 })
-export class AssetsModule {
-}
+export class AssetsModule {}

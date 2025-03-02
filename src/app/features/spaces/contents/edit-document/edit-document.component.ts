@@ -36,12 +36,12 @@ import { ContentHistoryService } from '@shared/services/content-history.service'
 import { SpaceStore } from '@shared/stores/space.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
-import { MatButtonToggleGroup, MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatButton, MatIconButton } from '@angular/material/button';
-import { MatMenu, MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatBadge } from '@angular/material/badge';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AsyncPipe, DatePipe, JsonPipe, NgClass } from '@angular/common';
@@ -49,11 +49,11 @@ import { IconComponent } from '@shared/components/icon/icon.component';
 import { StatusComponent } from '@shared/components/status';
 import { MatDivider } from '@angular/material/divider';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatSidenavContainer, MatSidenavModule } from '@angular/material/sidenav';
-import { MatCard, MatCardModule } from '@angular/material/card';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatCardModule } from '@angular/material/card';
 import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
-import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -66,9 +66,8 @@ import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansi
     MatIcon,
     MatButtonToggleModule,
     MatTooltip,
-    MatButton,
+    MatButtonModule,
     MatMenuModule,
-    MatIconButton,
     MatBadge,
     CanUserPerformPipe,
     AsyncPipe,

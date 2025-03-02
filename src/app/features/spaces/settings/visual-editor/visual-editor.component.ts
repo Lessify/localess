@@ -6,16 +6,16 @@ import { NotificationService } from '@shared/services/notification.service';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/stores/space.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatAccordion, MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
-import { MatFormField } from '@angular/material/form-field';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { JsonPipe } from '@angular/common';
 
@@ -28,16 +28,12 @@ import { JsonPipe } from '@angular/common';
   imports: [
     MatToolbarModule,
     MatIcon,
-    MatButton,
+    MatButtonModule,
     MatProgressBar,
     ReactiveFormsModule,
-    MatAccordion,
     MatExpansionModule,
-    CdkDropList,
-    CdkDrag,
-    CdkDragHandle,
-    MatIconButton,
-    MatFormField,
+    DragDropModule,
+    MatFormFieldModule,
     MatInput,
     JsonPipe,
   ],

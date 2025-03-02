@@ -42,7 +42,7 @@ import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service'
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { IconComponent } from '@shared/components/icon/icon.component';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -77,9 +77,8 @@ import { MatListModule } from '@angular/material/list';
     MatBadge,
     CanUserPerformPipe,
     AsyncPipe,
-    MatButton,
+    MatButtonModule,
     MatMenuModule,
-    MatIconButton,
     MatDivider,
     MatProgressBar,
     BreadcrumbComponent,

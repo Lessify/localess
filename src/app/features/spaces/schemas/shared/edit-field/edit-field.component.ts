@@ -11,26 +11,21 @@ import {
   SchemaType,
   sortSchema,
 } from '@shared/models/schema.model';
-import { MatFormField, MatOption, MatSelect, MatSelectChange } from '@angular/material/select';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
-import {
-  MatListModule,
-  MatListOption,
-  MatListSubheaderCssMatStyler,
-  MatSelectionList,
-  MatSelectionListChange,
-} from '@angular/material/list';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { MatInput } from '@angular/material/input';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { TextFieldModule } from '@angular/cdk/text-field';
 import { MatDivider } from '@angular/material/divider';
-import { MatAccordion, MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { JsonPipe } from '@angular/common';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectionListChange } from '@angular/material/list';
 
 @Component({
   selector: 'll-schema-field-edit',
@@ -40,23 +35,17 @@ import { JsonPipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
-    MatIconButton,
+    MatButtonModule,
     MatIcon,
-    MatSelect,
-    MatOption,
+    MatSelectModule,
     MatTooltip,
     MatSlideToggle,
-    CdkTextareaAutosize,
+    TextFieldModule,
     MatDivider,
-    MatAccordion,
-    CdkDropList,
-    CdkDrag,
+    DragDropModule,
     MatExpansionModule,
-    CdkDragHandle,
-    MatSelectionList,
-    MatListModule,
     JsonPipe,
   ],
 })

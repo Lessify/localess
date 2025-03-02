@@ -9,5 +9,4 @@ import { UserService } from '@shared/services/user.service';
   imports: [SharedModule, UsersRoutingModule],
   providers: [UserService],
 })
-export class UsersModule {
-}
+export class UsersModule {}

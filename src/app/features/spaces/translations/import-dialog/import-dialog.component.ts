@@ -4,7 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { ImportDialogModel } from './import-dialog.model';
 import { KeyValue } from '@angular/common';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
-import { MatButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -14,14 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatDialogModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatButton,
-    MatIconModule
-  ],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatIconModule],
 })
 export class ImportDialogComponent {
   exportKinds: KeyValue<string, string>[] = [
@@ -42,8 +35,7 @@ export class ImportDialogComponent {
     private readonly cd: ChangeDetectorRef,
     private readonly fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: ImportDialogModel,
-  ) {
-  }
+  ) {}
 
   async onFileChange(event: Event): Promise<void> {
     if (event.target && event.target instanceof HTMLInputElement) {

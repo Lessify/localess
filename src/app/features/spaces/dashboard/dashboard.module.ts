@@ -9,5 +9,4 @@ import { SpaceService } from '@shared/services/space.service';
   imports: [SharedModule, DashboardRoutingModule],
   providers: [SpaceService],
 })
-export class DashboardModule {
-}
+export class DashboardModule {}

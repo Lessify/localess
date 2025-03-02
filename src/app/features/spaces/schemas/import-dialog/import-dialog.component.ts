@@ -11,13 +11,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatDialogModule,
-    ReactiveFormsModule,
-    MatIcon,
-    MatError,
-    MatButton,
-  ],
+  imports: [MatDialogModule, ReactiveFormsModule, MatIcon, MatError, MatButton],
 })
 export class ImportDialogComponent {
   fileWrong = false;
@@ -30,8 +24,7 @@ export class ImportDialogComponent {
   constructor(
     private readonly cd: ChangeDetectorRef,
     private readonly fb: FormBuilder,
-  ) {
-  }
+  ) {}
 
   async onFileChange(event: Event): Promise<void> {
     if (event.target && event.target instanceof HTMLInputElement) {

@@ -5,20 +5,14 @@ import { SetupService } from './setup.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { MatButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'll-setup',
   standalone: true,
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.scss'],
-  imports: [
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInput,
-    MatButton,
-    RouterLink,
-  ],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInput, MatButtonModule, RouterLink],
 })
 export class SetupComponent {
   redirect = ['/features'];
@@ -38,8 +32,7 @@ export class SetupComponent {
     private readonly setupService: SetupService,
     private readonly notificationService: NotificationService,
     private readonly cd: ChangeDetectorRef,
-  ) {
-  }
+  ) {}
 
   setup(): void {
     this.setupService.init(this.form.value).subscribe({

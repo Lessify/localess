@@ -10,7 +10,7 @@ import { AssetFolder } from '@shared/models/asset.model';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 
 @Component({
@@ -19,17 +19,7 @@ import { MatIcon } from '@angular/material/icon';
   templateUrl: './move-dialog.component.html',
   styleUrls: ['./move-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatDialogModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatAutocompleteModule,
-    MatInput,
-    AsyncPipe,
-    MatIconButton,
-    MatIcon,
-    MatButton,
-  ],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatAutocompleteModule, MatInput, AsyncPipe, MatButtonModule, MatIcon],
 })
 export class MoveDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

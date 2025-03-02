@@ -8,15 +8,15 @@ import { Space } from '@shared/models/space.model';
 import { MatDialog } from '@angular/material/dialog';
 import { ContentService } from '@shared/services/content.service';
 import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '@shared/components/references-select-dialog';
-import { MatCard, MatCardModule } from '@angular/material/card';
-import { MatIconButton } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDivider } from '@angular/material/divider';
-import { MatList, MatListModule } from '@angular/material/list';
+import { MatListModule } from '@angular/material/list';
 import { StatusComponent } from '@shared/components/status';
 import { MatError } from '@angular/material/form-field';
-import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { JsonPipe } from '@angular/common';
 
 @Component({
@@ -28,7 +28,7 @@ import { JsonPipe } from '@angular/common';
   imports: [
     ReactiveFormsModule,
     MatCardModule,
-    MatIconButton,
+    MatButtonModule,
     MatIcon,
     MatTooltip,
     MatDivider,

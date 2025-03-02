@@ -15,7 +15,7 @@ import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/
 import { NotificationService } from '@shared/services/notification.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { IconComponent } from '@shared/components/icon/icon.component';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -32,7 +32,6 @@ import { DatePipe, UpperCasePipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatButton,
     MatTooltip,
     MatTableModule,
     IconComponent,
@@ -43,7 +42,7 @@ import { DatePipe, UpperCasePipe } from '@angular/common';
     MatIcon,
     UpperCasePipe,
     DatePipe,
-    MatIconButton,
+    MatButtonModule,
     MatPaginator,
   ],
 })

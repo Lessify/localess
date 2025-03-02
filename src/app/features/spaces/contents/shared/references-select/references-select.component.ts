@@ -8,16 +8,16 @@ import { MatDialog } from '@angular/material/dialog';
 import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '@shared/components/references-select-dialog';
 import { Space } from '@shared/models/space.model';
 import { ContentService } from '@shared/services/content.service';
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
-import { MatCard, MatCardModule } from '@angular/material/card';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { MatCardModule } from '@angular/material/card';
 import { MatIcon } from '@angular/material/icon';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDivider } from '@angular/material/divider';
-import { MatList, MatListModule } from '@angular/material/list';
+import { MatListModule } from '@angular/material/list';
 import { StatusComponent } from '@shared/components/status';
 import { MatError } from '@angular/material/form-field';
-import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { JsonPipe } from '@angular/common';
 
 @Component({
@@ -29,14 +29,12 @@ import { JsonPipe } from '@angular/common';
   imports: [
     MatCardModule,
     MatIcon,
-    MatIconButton,
+    MatButtonModule,
     MatTooltip,
     MatDivider,
     MatListModule,
-    CdkDropList,
-    CdkDrag,
+    DragDropModule,
     StatusComponent,
-    CdkDragHandle,
     MatError,
     MatExpansionModule,
     JsonPipe,

@@ -10,10 +10,7 @@ import { MatProgressBar } from '@angular/material/progress-bar';
   templateUrl: './open-api.component.html',
   styleUrl: './open-api.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    AsyncPipe,
-    MatProgressBar,
-  ],
+  imports: [AsyncPipe, MatProgressBar],
 })
 export class OpenApiComponent implements OnInit {
   // Input

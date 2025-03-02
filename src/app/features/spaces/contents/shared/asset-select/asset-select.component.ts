@@ -9,17 +9,17 @@ import { Space } from '@shared/models/space.model';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatCard, MatCardModule } from '@angular/material/card';
+import { MatCardModule } from '@angular/material/card';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDivider } from '@angular/material/divider';
-import { MatList, MatListModule } from '@angular/material/list';
+import { MatListModule } from '@angular/material/list';
 import { JsonPipe, NgOptimizedImage } from '@angular/common';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { MatError } from '@angular/material/form-field';
-import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-asset-select',
@@ -32,7 +32,7 @@ import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansi
     MatCardModule,
     MatIcon,
     MatTooltip,
-    MatIconButton,
+    MatButtonModule,
     MatDivider,
     MatListModule,
     NgOptimizedImage,

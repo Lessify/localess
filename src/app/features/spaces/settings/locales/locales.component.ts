@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
-import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { LocaleService } from '@shared/services/locale.service';
 import { Locale } from '@shared/models/locale.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -15,7 +14,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/stores/space.store';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTooltip } from '@angular/material/tooltip';
 
@@ -25,17 +24,7 @@ import { MatTooltip } from '@angular/material/tooltip';
   templateUrl: './locales.component.html',
   styleUrls: ['./locales.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatToolbarModule,
-    MatIcon,
-    MatButton,
-    MatProgressBar,
-    MatTableModule,
-    MatSortModule,
-    MatTooltip,
-    MatIconButton,
-    MatPaginator,
-  ],
+  imports: [MatToolbarModule, MatIcon, MatButtonModule, MatProgressBar, MatTableModule, MatSortModule, MatTooltip, MatPaginator],
 })
 export class LocalesComponent {
   sort = viewChild.required(MatSort);

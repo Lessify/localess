@@ -34,7 +34,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -58,9 +58,8 @@ import { StatusComponent } from '@shared/components/status';
     MatTooltip,
     CanUserPerformPipe,
     AsyncPipe,
-    MatButton,
+    MatButtonModule,
     MatMenuModule,
-    MatIconButton,
     MatDivider,
     MatProgressBar,
     BreadcrumbComponent,
