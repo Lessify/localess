@@ -36,7 +36,7 @@ import { ContentHistoryService } from '@shared/services/content-history.service'
 import { SpaceStore } from '@shared/stores/space.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { MatToolbar } from '@angular/material/toolbar';
+import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
 import { MatButtonToggleGroup, MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -62,7 +62,7 @@ import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansi
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbar,
+    MatToolbarModule,
     MatIcon,
     MatButtonToggleModule,
     MatTooltip,

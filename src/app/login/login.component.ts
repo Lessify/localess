@@ -16,7 +16,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { UserStore } from '@shared/stores/user.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { AsyncPipe, JsonPipe, NgOptimizedImage } from '@angular/common';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 
@@ -25,7 +25,7 @@ import { MatButton } from '@angular/material/button';
   standalone: true,
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
-  imports: [NgOptimizedImage, MatFormField, ReactiveFormsModule, MatInput, MatButton, RouterLink, AsyncPipe, JsonPipe],
+  imports: [NgOptimizedImage, MatFormFieldModule, ReactiveFormsModule, MatInput, MatButton, RouterLink, AsyncPipe, JsonPipe],
 })
 export class LoginComponent {
   redirectToFeatures = ['features'];

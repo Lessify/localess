@@ -13,7 +13,7 @@ import { Token } from '@shared/models/token.model';
 import { TokenService } from '@shared/services/token.service';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SpaceStore } from '@shared/stores/space.store';
-import { MatToolbar } from '@angular/material/toolbar';
+import { MatToolbar, MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -28,7 +28,7 @@ import { DatePipe } from '@angular/common';
   styleUrls: ['./tokens.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbar,
+    MatToolbarModule,
     MatIcon,
     MatButton,
     MatProgressBar,

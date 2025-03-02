@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MeDialogModel } from './me-dialog.model';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 
@@ -12,7 +12,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './me-dialog.component.html',
   styleUrls: ['./me-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogTitle, MatDialogContent, MatFormField, ReactiveFormsModule, MatInput, MatDialogActions, MatButton, MatDialogClose],
+  imports: [MatDialogModule, MatFormFieldModule, ReactiveFormsModule, MatInput, MatButton],
 })
 export class MeDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

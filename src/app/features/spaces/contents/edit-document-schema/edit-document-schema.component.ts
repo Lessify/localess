@@ -42,25 +42,25 @@ import { NotificationService } from '@shared/services/notification.service';
 import { MatError, MatFormField, MatHint, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe, JsonPipe, NgClass } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { MatMenu, MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule } from '@angular/material/menu';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
-import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MarkdownComponent } from 'ngx-markdown';
-import { MatSelect, MatSelectModule } from '@angular/material/select';
+import { MatSelectModule } from '@angular/material/select';
 import { LinkSelectComponent } from '../shared/link-select/link-select.component';
 import { ReferenceSelectComponent } from '../shared/reference-select/reference-select.component';
 import { ReferencesSelectComponent } from '../shared/references-select/references-select.component';
 import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
 import { AssetsSelectComponent } from '../shared/assets-select/assets-select.component';
-import { MatCard, MatCardModule } from '@angular/material/card';
+import { MatCardModule } from '@angular/material/card';
 import { MatDivider } from '@angular/material/divider';
-import { MatActionList, MatListModule } from '@angular/material/list';
-import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { MatListModule } from '@angular/material/list';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -101,6 +101,7 @@ import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansi
     CdkDragHandle,
     MatExpansionModule,
     JsonPipe,
+    NgIf,
   ],
 })
 export class EditDocumentSchemaComponent implements OnInit, OnChanges {

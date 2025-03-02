@@ -7,9 +7,9 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { AddDialogModel } from './add-dialog.model';
 import { CommonValidator } from '@shared/validators/common.validator';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { MatOption, MatSelect } from '@angular/material/select';
+import { MatOption, MatSelect, MatSelectModule } from '@angular/material/select';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -24,10 +24,9 @@ import { MatButton } from '@angular/material/button';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
-    MatSelect,
-    MatOption,
+    MatSelectModule,
     CdkTextareaAutosize,
     MatChipsModule,
     MatIcon,

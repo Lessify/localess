@@ -3,12 +3,12 @@ import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, Reactiv
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import {
   AssetFileType,
+  assetFileTypeDescriptions,
   Schema,
   SchemaComponentUpdate,
   SchemaField,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
-  assetFileTypeDescriptions,
   SchemaFieldOptionSelectable,
   SchemaType,
 } from '@shared/models/schema.model';
@@ -18,30 +18,30 @@ import { SchemaService } from '@shared/services/schema.service';
 import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { NotificationService } from '@shared/services/notification.service';
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatChipGrid, MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { MatToolbar } from '@angular/material/toolbar';
-import { MatButton, MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AsyncPipe, JsonPipe } from '@angular/common';
-import { MatTooltip } from '@angular/material/tooltip';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { IconComponent } from '@shared/components/icon/icon.component';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
-import { MatDrawerContainer } from '@angular/material/sidenav';
-import { MatActionList, MatListItem } from '@angular/material/list';
-import { MatFormField } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatDivider } from '@angular/material/divider';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule } from '@angular/material/list';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDividerModule } from '@angular/material/divider';
 import { SchemasModule } from '../schemas.module';
-import { CdkTextareaAutosize } from '@angular/cdk/text-field';
-import { MatOption, MatSelect } from '@angular/material/select';
-import { MatAccordion, MatExpansionPanel, MatExpansionPanelTitle } from '@angular/material/expansion';
+import { TextFieldModule } from '@angular/cdk/text-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-schema-edit-comp',
@@ -50,34 +50,27 @@ import { MatAccordion, MatExpansionPanel, MatExpansionPanelTitle } from '@angula
   styleUrl: './edit-comp.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbar,
-    MatIconButton,
-    MatIcon,
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule,
     CanUserPerformPipe,
     AsyncPipe,
-    MatButton,
-    MatTooltip,
+    MatTooltipModule,
     IconComponent,
-    MatProgressBar,
+    MatProgressBarModule,
     ReactiveFormsModule,
     MatTabsModule,
-    MatDrawerContainer,
-    MatActionList,
-    MatFormField,
-    CdkDropList,
-    MatInput,
-    MatListItem,
-    CdkDrag,
-    CdkDragHandle,
-    MatDivider,
+    MatSidenavModule,
+    MatListModule,
+    MatFormFieldModule,
+    DragDropModule,
+    MatInputModule,
+    MatDividerModule,
     SchemasModule,
-    CdkTextareaAutosize,
-    MatSelect,
-    MatOption,
+    TextFieldModule,
+    MatSelectModule,
     MatChipsModule,
-    MatAccordion,
-    MatExpansionPanel,
-    MatExpansionPanelTitle,
+    MatExpansionModule,
     JsonPipe,
   ],
 })

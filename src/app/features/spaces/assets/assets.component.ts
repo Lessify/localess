@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
-import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -41,16 +41,16 @@ import { ImagePreviewDialogModel } from './image-preview-dialog/image-preview-di
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
-import { MatToolbar } from '@angular/material/toolbar';
-import { MatButton, MatIconAnchor, MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { IconComponent } from '@shared/components/icon/icon.component';
-import { MatButtonToggleGroup, MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatBadge } from '@angular/material/badge';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AsyncPipe, DatePipe, NgOptimizedImage } from '@angular/common';
-import { MatMenu, MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDivider } from '@angular/material/divider';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
@@ -59,8 +59,8 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { MatCard, MatCardModule } from '@angular/material/card';
-import { MatList, MatListModule } from '@angular/material/list';
+import { MatCardModule } from '@angular/material/card';
+import { MatListModule } from '@angular/material/list';
 
 @Component({
   selector: 'll-assets',
@@ -69,9 +69,8 @@ import { MatList, MatListModule } from '@angular/material/list';
   styleUrls: ['./assets.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbar,
-    MatIconAnchor,
-    MatIcon,
+    MatToolbarModule,
+    MatIconModule,
     IconComponent,
     MatButtonToggleModule,
     MatTooltip,

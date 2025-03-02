@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { activate } from '@angular/fire/remote-config';
-import { MatToolbar } from '@angular/material/toolbar';
-import { MatTabLink, MatTabNav, MatTabNavPanel } from '@angular/material/tabs';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatIcon } from '@angular/material/icon';
 
 interface TabItem {
@@ -17,15 +17,7 @@ interface TabItem {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatToolbar,
-    MatTabNav,
-    MatTabLink,
-    RouterLink,
-    MatIcon,
-    MatTabNavPanel,
-    RouterOutlet,
-  ],
+  imports: [MatToolbarModule, MatTabsModule, RouterLink, MatIcon, RouterOutlet],
 })
 export class SettingsComponent {
   activeTab = 'ui';

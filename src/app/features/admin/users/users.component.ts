@@ -19,7 +19,7 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { IconComponent } from '@shared/components/icon/icon.component';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { DatePipe, UpperCasePipe } from '@angular/common';
@@ -37,7 +37,7 @@ import { DatePipe, UpperCasePipe } from '@angular/common';
     MatTableModule,
     IconComponent,
     MatProgressBar,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
     MatSortModule,
     MatIcon,
@@ -63,8 +63,7 @@ export class UsersComponent implements OnInit {
     private readonly cd: ChangeDetectorRef,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadData();

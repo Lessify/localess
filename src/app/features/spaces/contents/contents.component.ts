@@ -33,9 +33,9 @@ import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { MatToolbar } from '@angular/material/toolbar';
-import { MatButton, MatIconAnchor, MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AsyncPipe, DatePipe } from '@angular/common';
@@ -53,9 +53,8 @@ import { StatusComponent } from '@shared/components/status';
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbar,
-    MatIconAnchor,
-    MatIcon,
+    MatToolbarModule,
+    MatIconModule,
     MatTooltip,
     CanUserPerformPipe,
     AsyncPipe,

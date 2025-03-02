@@ -5,7 +5,7 @@ import { TranslationValidator } from '@shared/validators/translation.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { EditIdDialogModel } from './edit-id-dialog.model';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 
@@ -15,7 +15,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './edit-id-dialog.component.html',
   styleUrls: ['./edit-id-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormField, MatInput, MatButton],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, MatButton],
 })
 export class EditIdDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

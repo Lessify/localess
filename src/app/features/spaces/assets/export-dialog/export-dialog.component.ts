@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogContent, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { ExportDialogModel } from './export-dialog.model';
 import { AssetService } from '@shared/services/asset.service';
 import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
 import { Asset } from '@shared/models/asset.model';
-import { MatAutocomplete, MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatFormField } from '@angular/material/form-field';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe, NgForOf } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
@@ -21,7 +21,7 @@ import { MatButton, MatIconButton } from '@angular/material/button';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
     MatAutocompleteModule,
     AsyncPipe,

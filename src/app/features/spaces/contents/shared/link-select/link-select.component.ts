@@ -8,7 +8,7 @@ import { debounceTime, Observable, of, startWith } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuModule } from '@angular/material/menu';
@@ -24,7 +24,7 @@ import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansi
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatIconButton,
     MatIcon,
     MatMenuModule,

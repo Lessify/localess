@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, effect, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogContent, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AddDialogModel } from './add-dialog.model';
 import { SchemaValidator } from '@shared/validators/schema.validator';
@@ -8,11 +8,11 @@ import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaType, schemaTypeDescriptions } from '@shared/models/schema.model';
 import { NameUtils } from '@core/utils/name-utils.service';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { MatOption, MatSelect } from '@angular/material/select';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
@@ -24,12 +24,11 @@ import { MatTooltip } from '@angular/material/tooltip';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
     MatIconButton,
     MatIcon,
-    MatSelect,
-    MatOption,
+    MatSelectModule,
     MatTooltip,
     MatButton,
   ],

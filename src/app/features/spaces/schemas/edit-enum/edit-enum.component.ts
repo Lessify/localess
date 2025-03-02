@@ -8,29 +8,30 @@ import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { NotificationService } from '@shared/services/notification.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatChipGrid, MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { MatToolbar } from '@angular/material/toolbar';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AsyncPipe, JsonPipe } from '@angular/common';
 import { IconComponent } from '@shared/components/icon/icon.component';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
-import { MatDrawerContainer } from '@angular/material/sidenav';
-import { MatFormField } from '@angular/material/form-field';
-import { MatActionList, MatListItem } from '@angular/material/list';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatListModule } from '@angular/material/list';
 import { MatInput } from '@angular/material/input';
 import { MatDivider } from '@angular/material/divider';
 import { SchemasModule } from '../schemas.module';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
-import { MatAccordion, MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { EditValueComponent } from '../shared/edit-value/edit-value.component';
 
 @Component({
   selector: 'll-schema-edit-enum',
@@ -39,32 +40,28 @@ import { MatAccordion, MatExpansionModule, MatExpansionPanel } from '@angular/ma
   styleUrl: './edit-enum.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbar,
+    MatToolbarModule,
     MatIcon,
-    MatIconButton,
     CanUserPerformPipe,
     AsyncPipe,
-    MatButton,
+    MatButtonModule,
     IconComponent,
     MatTooltip,
     MatProgressBar,
     MatTabsModule,
     ReactiveFormsModule,
-    MatDrawerContainer,
-    MatFormField,
-    MatActionList,
-    CdkDropList,
+    MatSidenavModule,
+    MatFormFieldModule,
+    MatListModule,
+    DragDropModule,
     MatInput,
-    MatListItem,
-    CdkDrag,
-    CdkDragHandle,
     MatDivider,
     SchemasModule,
     CdkTextareaAutosize,
     MatChipsModule,
-    MatAccordion,
     MatExpansionModule,
     JsonPipe,
+    EditValueComponent,
   ],
 })
 export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input } 
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
 import { JsonPipe } from '@angular/common';
@@ -14,7 +14,7 @@ import { JsonPipe } from '@angular/common';
   styleUrls: ['./edit-value.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatFormField,
+    MatFormFieldModule,
     ReactiveFormsModule,
     MatInput,
     MatExpansionModule,

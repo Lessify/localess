@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDatepickerInputEvent, MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialogContent, MatDialogModule } from '@angular/material/dialog';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton } from '@angular/material/button';
@@ -16,7 +16,7 @@ import { MatButton } from '@angular/material/button';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
     MatDatepickerModule,
     MatIcon,

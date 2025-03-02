@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { UserDialogModel } from './user-dialog.model';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatFormField } from '@angular/material/form-field';
-import { MatOption, MatSelect } from '@angular/material/select';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatListModule, MatSelectionList } from '@angular/material/list';
+import { MatListModule } from '@angular/material/list';
 import { MatDivider } from '@angular/material/divider';
 import { MatButton } from '@angular/material/button';
 import { JsonPipe } from '@angular/common';
@@ -22,17 +22,13 @@ import { JsonPipe } from '@angular/common';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
-    MatSelect,
-    MatOption,
-    MatSlideToggle,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatSlideToggleModule,
     MatTooltip,
-    MatSelectionList,
     MatListModule,
     MatDivider,
-    MatDialogActions,
     MatButton,
-    MatDialogClose,
     JsonPipe,
   ],
 })
@@ -49,8 +45,7 @@ export class UserDialogComponent implements OnInit {
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: UserDialogModel,
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
     if (this.data != null) {

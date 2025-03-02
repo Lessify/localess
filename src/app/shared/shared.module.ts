@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -89,7 +89,7 @@ const MATERIAL_MODULES: any[] = [
     BreadcrumbItemComponent,
   ],
   declarations: [],
-  exports: [CommonModule, FormsModule, ReactiveFormsModule, NgOptimizedImage, MATERIAL_MODULES],
+  exports: [CommonModule],
   providers: [],
 })
 export class SharedModule {}

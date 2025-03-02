@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators';
 import { Locale } from '@shared/models/locale.model';
 import { LocaleValidator } from '@shared/validators/locale.validator';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatAutocomplete, MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
@@ -22,7 +22,7 @@ import { MatButton } from '@angular/material/button';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatAutocompleteModule,
     MatInput,
     AsyncPipe,

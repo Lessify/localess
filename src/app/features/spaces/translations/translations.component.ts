@@ -14,7 +14,7 @@ import { debounceTime, EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatOption } from '@angular/material/autocomplete';
 import { TranslationService } from '@shared/services/translation.service';
 import { SpaceService } from '@shared/services/space.service';
 import { Locale } from '@shared/models/locale.model';
@@ -42,18 +42,18 @@ import { AsyncPipe, DatePipe } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { MatButton, MatButtonModule, MatIconAnchor } from '@angular/material/button';
+import { MatButtonModule, MatIconAnchor } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { IconComponent } from '@shared/components/icon/icon.component';
-import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDivider } from '@angular/material/divider';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatSidenavContainer, MatSidenavModule } from '@angular/material/sidenav';
+import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatFormField } from '@angular/material/form-field';
 import { MatSelect } from '@angular/material/select';
 import { MatInput } from '@angular/material/input';
-import { MatChipGrid, MatChipsModule } from '@angular/material/chips';
-import { CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { MatChipsModule } from '@angular/material/chips';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 import { TranslationFilterPipe } from '@shared/pipes/translation-filter.pipe';
 import { StatusComponent } from '@shared/components/status';
 import { TranslationStringViewComponent } from './translation-string-view/translation-string-view.component';
@@ -91,9 +91,8 @@ import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
     MatChipsModule,
     FormsModule,
     MatAutocompleteModule,
-    CdkVirtualScrollViewport,
+    ScrollingModule,
     TranslationFilterPipe,
-    CdkVirtualForOf,
     StatusComponent,
     TranslationStringViewComponent,
     TranslationPluralViewComponent,
@@ -137,8 +136,8 @@ export class TranslationsComponent implements OnInit {
     const currentLabel = this.currentLabel()?.toLowerCase() || '';
     return currentLabel
       ? this.allLabels()
-        .filter(label => !this.filterLabels().includes(label))
-        .filter(label => label.toLowerCase().includes(currentLabel))
+          .filter(label => !this.filterLabels().includes(label))
+          .filter(label => label.toLowerCase().includes(currentLabel))
       : this.allLabels().filter(label => !this.filterLabels().includes(label));
   });
 
@@ -173,8 +172,7 @@ export class TranslationsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly translateService: TranslateService,
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
     this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({

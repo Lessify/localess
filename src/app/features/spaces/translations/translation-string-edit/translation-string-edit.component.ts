@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 
 @Component({
@@ -10,7 +10,7 @@ import { MatInput } from '@angular/material/input';
   templateUrl: './translation-string-edit.component.html',
   styleUrls: ['./translation-string-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatFormField, MatInput],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInput],
 })
 export class TranslationStringEditComponent implements OnInit, OnChanges {
   @Input() value = '';

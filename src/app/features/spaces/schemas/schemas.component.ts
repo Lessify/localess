@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -32,17 +32,17 @@ import { TaskService } from '@shared/services/task.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { MatToolbar } from '@angular/material/toolbar';
-import { MatButton, MatIconAnchor, MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { MatMenu, MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { MatChipSet, MatChipsModule } from '@angular/material/chips';
+import { MatChipsModule } from '@angular/material/chips';
 
 @Component({
   selector: 'll-schemas',
@@ -51,17 +51,15 @@ import { MatChipSet, MatChipsModule } from '@angular/material/chips';
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbar,
-    MatIconAnchor,
-    MatIcon,
+    MatToolbarModule,
+    MatIconModule,
     MatTooltip,
     CanUserPerformPipe,
     AsyncPipe,
-    MatButton,
-    MatIconButton,
+    MatButtonModule,
     MatMenuModule,
     MatProgressBar,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
     MatTableModule,
     MatSortModule,

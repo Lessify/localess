@@ -6,12 +6,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AppUiColor } from '@shared/models/settings.model';
 import { SettingsValidator } from '@shared/validators/settings.validator';
 import { SettingsService } from '@shared/services/settings.service';
-import { MatToolbar } from '@angular/material/toolbar';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField } from '@angular/material/form-field';
-import { MatOption, MatSelect } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { MatInput } from '@angular/material/input';
 
 @Component({
@@ -20,17 +20,7 @@ import { MatInput } from '@angular/material/input';
   templateUrl: './ui.component.html',
   styleUrls: ['./ui.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatToolbar,
-    MatIcon,
-    MatButton,
-    MatProgressBar,
-    ReactiveFormsModule,
-    MatFormField,
-    MatSelect,
-    MatOption,
-    MatInput,
-  ],
+  imports: [MatToolbarModule, MatIcon, MatButton, MatProgressBar, ReactiveFormsModule, MatFormFieldModule, MatSelectModule, MatInput],
 })
 export class UiComponent {
   private destroyRef = inject(DestroyRef);

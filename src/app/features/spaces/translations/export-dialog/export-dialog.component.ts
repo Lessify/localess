@@ -4,10 +4,10 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { ExportDialogModel } from './export-dialog.model';
 import { KeyValue } from '@angular/common';
 import { MatDatepickerInputEvent, MatDatepickerModule } from '@angular/material/datepicker';
-import { MatFormField } from '@angular/material/form-field';
-import { MatOption, MatSelect } from '@angular/material/select';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
+import { MatOption, MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatInput } from '@angular/material/input';
-import { MatIcon } from '@angular/material/icon';
+import { MatIcon, MatIconModule } from '@angular/material/icon';
 import { MatButton } from '@angular/material/button';
 
 @Component({
@@ -19,11 +19,10 @@ import { MatButton } from '@angular/material/button';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
-    MatSelect,
-    MatOption,
+    MatFormFieldModule,
+    MatSelectModule,
     MatInput,
-    MatIcon,
+    MatIconModule,
     MatDatepickerModule,
     MatButton,
   ],

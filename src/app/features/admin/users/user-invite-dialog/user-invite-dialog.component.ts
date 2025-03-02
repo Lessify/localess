@@ -2,14 +2,13 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
-import { MatFormField } from '@angular/material/form-field';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { MatOption } from '@angular/material/autocomplete';
-import { MatSelect } from '@angular/material/select';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatListOption, MatListSubheaderCssMatStyler, MatSelectionList } from '@angular/material/list';
+import { MatListModule, MatSelectionList } from '@angular/material/list';
 import { MatDivider } from '@angular/material/divider';
 import { MatButton } from '@angular/material/button';
 import { JsonPipe } from '@angular/common';
@@ -21,22 +20,17 @@ import { JsonPipe } from '@angular/common';
   styleUrls: ['./user-invite-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatDialogTitle,
-    MatDialogContent,
+    MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
-    MatOption,
-    MatSelect,
+    MatSelectModule,
     MatSlideToggle,
     MatTooltip,
     MatSelectionList,
-    MatListOption,
-    MatListSubheaderCssMatStyler,
+    MatListModule,
     MatDivider,
-    MatDialogActions,
     MatButton,
-    MatDialogClose,
     JsonPipe,
   ],
 })

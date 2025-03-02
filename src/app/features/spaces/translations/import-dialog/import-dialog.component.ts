@@ -3,8 +3,10 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { ImportDialogModel } from './import-dialog.model';
 import { KeyValue } from '@angular/common';
-import { MatError, MatFormField, MatOption, MatSelect, MatSelectChange } from '@angular/material/select';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatButton } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'll-translation-import-dialog',
@@ -15,11 +17,10 @@ import { MatButton } from '@angular/material/button';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormField,
-    MatSelect,
-    MatOption,
+    MatFormFieldModule,
+    MatSelectModule,
     MatButton,
-    MatError,
+    MatIconModule
   ],
 })
 export class ImportDialogComponent {

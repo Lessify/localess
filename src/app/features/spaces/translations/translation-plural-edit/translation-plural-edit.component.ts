@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs';
 import { TranslationValidator } from '@shared/validators/translation.validator';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { MatFormField, MatHint } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 
 @Component({
@@ -14,9 +14,8 @@ import { MatInput } from '@angular/material/input';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormField,
+    MatFormFieldModule,
     MatInput,
-    MatHint,
   ],
 })
 export class TranslationPluralEditComponent implements OnInit, OnChanges {
