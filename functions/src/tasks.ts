@@ -58,13 +58,13 @@ const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
 const onTaskCreate = onDocumentCreated(
   {
     document: 'spaces/{spaceId}/tasks/{taskId}',
-    memory: '512MiB',
+    memory: '1GiB',
   },
   async event => {
+    const { spaceId, taskId } = event.params;
     logger.info(`[Task:onCreate] eventId='${event.id}'`);
     logger.info(`[Task:onCreate] params='${JSON.stringify(event.params)}'`);
-    logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
-    const { spaceId, taskId } = event.params;
+    logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}-${taskId}'`);
     // No Data
     if (!event.data) return;
     const task = event.data.data() as Task;
@@ -249,19 +249,26 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
   const assetsExportZipFile = `${tmpdir()}/assets-${taskId}.zip`;
   mkdirSync(assetsTmpFolder);
 
-  await Promise.all(
-    exportAssets
-      .map(it => it!)
-      .filter(it => it.kind === AssetKind.FILE)
-      .map(asset =>
-        bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` })
-      )
-  );
-
+  logger.info('[Task:onCreate:assetsExport] downloading files');
+  for (const asset of exportAssets) {
+    if (asset && asset.kind === AssetKind.FILE) {
+      await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` });
+    }
+  }
+  logger.info('[Task:onCreate:assetsExport] all files downloaded');
+  logger.info('[Task:onCreate:assetsExport] zip started');
   await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
-
-  await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(assetsExportZipFile));
+  logger.info('[Task:onCreate:assetsExport] zip completed');
+  logger.info('[Task:onCreate:assetsExport] zip uploading');
+  // await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(assetsExportZipFile));
+  await bucket.upload(assetsExportZipFile, {
+    destination: `spaces/${spaceId}/tasks/${taskId}/original`,
+    resumable: false,
+    chunkSize: 5 * 1024 * 1024,
+  });
+  logger.info('[Task:onCreate:assetsExport] zip uploaded');
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
+  logger.info('[Task:onCreate:assetsExport] save metadata');
   return metadata;
 }
 

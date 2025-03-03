@@ -1,19 +1,8 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  input,
-  model,
-  OnInit,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { debounceTime, EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatOption } from '@angular/material/autocomplete';
 import { TranslationService } from '@shared/services/translation.service';
 import { SpaceService } from '@shared/services/space.service';
@@ -42,7 +31,7 @@ import { AsyncPipe, DatePipe } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { MatButtonModule, MatIconAnchor } from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { IconComponent } from '@shared/components/icon/icon.component';
 import { MatMenuModule } from '@angular/material/menu';
@@ -75,7 +64,6 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
     MatToolbarModule,
     MatIconModule,
     CanUserPerformPipe,
-    MatIconAnchor,
     MatButtonModule,
     MatTooltip,
     IconComponent,
@@ -117,11 +105,11 @@ export class TranslationsComponent implements OnInit {
   translationIds = computed(() => this.translations().map(it => it.id));
 
   //Search
-  searchCtrl: FormControl = new FormControl();
+  searchCtrl: FormControl = this.fb.control('');
   searchValue = '';
 
   //Labels
-  currentLabel = model('');
+  currentLabel = '';
   readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
   allLabels = computed(() => {
     const tmp = this.translations()
@@ -133,17 +121,17 @@ export class TranslationsComponent implements OnInit {
   });
   filterLabels = signal<string[]>([]);
   filteredLabels = computed(() => {
-    const currentLabel = this.currentLabel()?.toLowerCase() || '';
-    return currentLabel
-      ? this.allLabels()
-          .filter(label => !this.filterLabels().includes(label))
-          .filter(label => label.toLowerCase().includes(currentLabel))
-      : this.allLabels().filter(label => !this.filterLabels().includes(label));
+    const currentLabel = this.currentLabel.toLowerCase();
+    if (currentLabel) {
+      return this.allLabels()
+        .filter(label => !this.filterLabels().includes(label))
+        .filter(label => label.toLowerCase().includes(currentLabel));
+    }
+    return this.allLabels().filter(label => !this.filterLabels().includes(label));
   });
 
   selectedTranslation?: Translation;
   selectedTranslationLocaleValue?: string;
-  translateValue = signal<undefined | string>(undefined);
 
   selectedSearchLocale = '';
   selectedSourceLocale = '';
@@ -172,6 +160,7 @@ export class TranslationsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly translateService: TranslateService,
+    private readonly fb: FormBuilder,
   ) {}
 
   ngOnInit(): void {
@@ -420,7 +409,11 @@ export class TranslationsComponent implements OnInit {
 
   selectTranslation(translation: Translation): void {
     this.selectedTranslation = translation;
-    this.translateValue.set(undefined);
+    this.selectedTranslationLocaleValue = this.selectedTranslation.locales[this.selectedTargetLocale];
+  }
+
+  selectTargetLocale(): void {
+    this.selectedTranslationLocaleValue = this.selectedTranslation?.locales[this.selectedTargetLocale];
   }
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
@@ -445,7 +438,7 @@ export class TranslationsComponent implements OnInit {
   selectLabel(event: MatAutocompleteSelectedEvent): void {
     const { option } = event;
     this.filterLabels.update(it => [...it, option.viewValue]);
-    this.currentLabel.set('');
+    this.currentLabel = '';
     option.deselect();
     this.selectedTranslation = undefined;
   }
@@ -478,9 +471,8 @@ export class TranslationsComponent implements OnInit {
       .subscribe({
         next: value => {
           // make sure the component is updated
-          this.translateValue.set(undefined);
+          this.selectedTranslationLocaleValue = value;
           this.notificationService.info('Translated');
-          this.translateValue.set(value);
         },
         error: (err: unknown) => {
           console.error(err);
@@ -495,7 +487,7 @@ export class TranslationsComponent implements OnInit {
           console.log('complete');
           setTimeout(() => {
             this.isTranslateLoading.set(false);
-            this.cd.markForCheck();
+            this.cd.detectChanges();
           }, 1000);
         },
       });

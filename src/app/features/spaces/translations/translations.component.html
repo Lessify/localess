@@ -186,7 +186,7 @@
                     <div class="p-2">
                       <mat-form-field class="with-button">
                         <mat-label>Target Locale</mat-label>
-                        <mat-select [(value)]="selectedTargetLocale" (selectionChange)="translateValue.set(undefined)">
+                        <mat-select [(value)]="selectedTargetLocale" (selectionChange)="selectTargetLocale()">
                           @for (locale of space.locales; track locale.id) {
                             <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
                           }
@@ -204,9 +204,10 @@
                     <div class="p-2">
                       @switch (selectedTranslation.type) {
                         @case ('STRING') {
-                          <ll-translation-string-edit
-                            [value]="translateValue() || selectedTranslation.locales[selectedTargetLocale]"
-                            (valueChange)="selectedTranslationLocaleValue = $event" />
+                          <!--                          <ll-translation-string-edit-->
+                          <!--                            [value]="translateValue() || selectedTranslation.locales[selectedTargetLocale]"-->
+                          <!--                            (valueChange)="selectedTranslationLocaleValue = $event" />-->
+                          <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
                         }
                         @case ('PLURAL') {
                           <ll-translation-plural-edit
@@ -264,7 +265,7 @@
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ selectedTranslation.id }}
-                          <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.id" matTooltip="Copy Id">
+                          <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation?.id" matTooltip="Copy Id">
                             <mat-icon>content_copy</mat-icon>
                           </button>
                         </div>
