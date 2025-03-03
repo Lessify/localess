@@ -61,10 +61,10 @@ const onTaskCreate = onDocumentCreated(
     memory: '512MiB',
   },
   async event => {
+    const { spaceId, taskId } = event.params;
     logger.info(`[Task:onCreate] eventId='${event.id}'`);
     logger.info(`[Task:onCreate] params='${JSON.stringify(event.params)}'`);
-    logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}'`);
-    const { spaceId, taskId } = event.params;
+    logger.info(`[Task:onCreate] tmp-task-folder='${TMP_TASK_FOLDER}-${taskId}'`);
     // No Data
     if (!event.data) return;
     const task = event.data.data() as Task;
@@ -249,14 +249,19 @@ async function assetsExport(spaceId: string, taskId: string, task: Task): Promis
   const assetsExportZipFile = `${tmpdir()}/assets-${taskId}.zip`;
   mkdirSync(assetsTmpFolder);
 
-  await Promise.all(
-    exportAssets
-      .map(it => it!)
-      .filter(it => it.kind === AssetKind.FILE)
-      .map(asset =>
-        bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` })
-      )
-  );
+  for (const asset of exportAssets) {
+    if (asset && asset.kind === AssetKind.FILE) {
+      await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` });
+    }
+  }
+  // await Promise.all(
+  //   exportAssets
+  //     .map(it => it!)
+  //     .filter(it => it.kind === AssetKind.FILE)
+  //     .map(asset =>
+  //       bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` })
+  //     )
+  // );
 
   await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
 
