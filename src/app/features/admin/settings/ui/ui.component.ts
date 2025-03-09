@@ -1,18 +1,18 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
-import { NotificationService } from '@shared/services/notification.service';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AppUiColor } from '@shared/models/settings.model';
-import { SettingsValidator } from '@shared/validators/settings.validator';
-import { SettingsService } from '@shared/services/settings.service';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIcon } from '@angular/material/icon';
-import { MatButton } from '@angular/material/button';
-import { MatProgressBar } from '@angular/material/progress-bar';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { MatInput } from '@angular/material/input';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AppUiColor } from '@shared/models/settings.model';
+import { NotificationService } from '@shared/services/notification.service';
+import { SettingsService } from '@shared/services/settings.service';
+import { SettingsValidator } from '@shared/validators/settings.validator';
 
 @Component({
   selector: 'll-admin-settings-ui',
@@ -20,7 +20,16 @@ import { MatInput } from '@angular/material/input';
   templateUrl: './ui.component.html',
   styleUrls: ['./ui.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatIcon, MatButton, MatProgressBar, ReactiveFormsModule, MatFormFieldModule, MatSelectModule, MatInput],
+  imports: [
+    MatToolbarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatProgressBarModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+  ],
 })
 export class UiComponent {
   private destroyRef = inject(DestroyRef);

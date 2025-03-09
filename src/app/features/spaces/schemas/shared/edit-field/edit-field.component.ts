@@ -1,6 +1,19 @@
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { TextFieldModule } from '@angular/cdk/text-field';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, Input, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { SchemaValidator } from '@shared/validators/schema.validator';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectionListChange } from '@angular/material/list';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import {
   AssetFileType,
   assetFileTypeDescriptions,
@@ -11,21 +24,8 @@ import {
   SchemaType,
   sortSchema,
 } from '@shared/models/schema.model';
-import { MatSelectChange, MatSelectModule } from '@angular/material/select';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatInput } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { TextFieldModule } from '@angular/cdk/text-field';
-import { MatDivider } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { JsonPipe } from '@angular/common';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectionListChange } from '@angular/material/list';
+import { SchemaValidator } from '@shared/validators/schema.validator';
 
 @Component({
   selector: 'll-schema-field-edit',
@@ -36,17 +36,17 @@ import { MatSelectionListChange } from '@angular/material/list';
   imports: [
     ReactiveFormsModule,
     MatFormFieldModule,
-    MatInput,
+    MatInputModule,
     MatButtonModule,
-    MatIcon,
+    MatIconModule,
     MatSelectModule,
-    MatTooltip,
-    MatSlideToggle,
+    MatTooltipModule,
+    MatSlideToggleModule,
     TextFieldModule,
-    MatDivider,
+    MatDividerModule,
     DragDropModule,
     MatExpansionModule,
-    JsonPipe,
+    CommonModule,
   ],
 })
 export class EditFieldComponent implements OnInit {

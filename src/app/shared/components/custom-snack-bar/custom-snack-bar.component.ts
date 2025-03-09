@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, HostBinding, Inject, ViewEncapsulation } from '@angular/core';
-import { MAT_SNACK_BAR_DATA, MatSnackBarAction, MatSnackBarActions, MatSnackBarLabel } from '@angular/material/snack-bar';
-import { CustomSnackBarModel } from '@shared/components/custom-snack-bar/custom-snack-bar.model';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_SNACK_BAR_DATA, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { MatButton } from '@angular/material/button';
+import { CustomSnackBarModel } from '@shared/components/custom-snack-bar/custom-snack-bar.model';
 
 @Component({
   selector: 'll-custom-snack-bar',
@@ -11,7 +11,7 @@ import { MatButton } from '@angular/material/button';
   styleUrls: ['custom-snack-bar.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatSnackBarLabel, MatSnackBarActions, MatButton, MatSnackBarAction],
+  imports: [MatSnackBarModule, MatButtonModule],
 })
 export class CustomSnackBarComponent {
   @HostBinding('class') class = 'mat-mdc-simple-snack-bar';

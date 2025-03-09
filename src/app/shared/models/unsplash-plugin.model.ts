@@ -1,5 +1,5 @@
 export type UnsplashSearchParams = {
-  query?: string;
+  query: string;
   page?: number;
   perPage?: number;
   color?: 'black_and_white' | 'black' | 'white' | 'yellow' | 'orange' | 'red' | 'purple' | 'magenta' | 'green' | 'teal' | 'blue';

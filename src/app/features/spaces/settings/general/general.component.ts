@@ -1,23 +1,23 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
-import { filter, map } from 'rxjs/operators';
-import { SpaceService } from '@shared/services/space.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { SpaceValidator } from '@shared/validators/space.validator';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { SpaceStore } from '@shared/stores/space.store';
-import { MaterialService } from '@shared/services/material.service';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { MatTooltip } from '@angular/material/tooltip';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { AsyncPipe } from '@angular/common';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { MaterialService } from '@shared/services/material.service';
+import { NotificationService } from '@shared/services/notification.service';
+import { SpaceService } from '@shared/services/space.service';
+import { SpaceStore } from '@shared/stores/space.store';
+import { SpaceValidator } from '@shared/validators/space.validator';
+import { filter, map } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-general',
@@ -27,16 +27,16 @@ import { AsyncPipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatProgressBar,
-    MatFormField,
-    MatInput,
+    MatProgressBarModule,
+    MatFormFieldModule,
+    MatInputModule,
     MatButtonModule,
-    MatIcon,
+    MatIconModule,
     ClipboardModule,
     ReactiveFormsModule,
-    MatTooltip,
+    MatTooltipModule,
     MatSelectModule,
-    AsyncPipe,
+    CommonModule,
   ],
 })
 export class GeneralComponent {

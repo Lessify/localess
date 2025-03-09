@@ -24,9 +24,7 @@ const search = onCall<UnsplashSearchParams>(async request => {
     }
   }
   const url = new URL(`${API_DOMAIN}/search/photos`);
-  if (query) {
-    url.searchParams.append('query', query);
-  }
+  url.searchParams.append('query', query);
   if (perPage) {
     url.searchParams.append('per_page', perPage.toString());
   } else {

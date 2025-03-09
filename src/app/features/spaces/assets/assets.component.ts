@@ -1,16 +1,31 @@
+import { SelectionModel } from '@angular/cdk/collections';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
-import { NotificationService } from '@shared/services/notification.service';
-import { Subject } from 'rxjs';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ObjectUtils } from '@core/utils/object-utils.service';
+import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { ObjectUtils } from '@core/utils/object-utils.service';
-import { SelectionModel } from '@angular/cdk/collections';
-import { AssetService } from '@shared/services/asset.service';
+import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
+import { AnimateDirective } from '@shared/directives/animate.directive';
+import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
   Asset,
   AssetFile,
@@ -21,46 +36,31 @@ import {
   AssetFolderUpdate,
   AssetKind,
 } from '@shared/models/asset.model';
-import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
-import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
-import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
-import { EditFolderDialogModel } from './edit-folder-dialog/edit-folder-dialog.model';
-import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogReturn } from './import-dialog/import-dialog.model';
-import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
+import { AssetService } from '@shared/services/asset.service';
+import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
+import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { PathItem, SpaceStore } from '@shared/stores/space.store';
+import { Subject } from 'rxjs';
+import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
+import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
+import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
 import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { PathItem, SpaceStore } from '@shared/stores/space.store';
-import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
+import { EditFolderDialogModel } from './edit-folder-dialog/edit-folder-dialog.model';
+import { ExportDialogComponent } from './export-dialog/export-dialog.component';
+import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImagePreviewDialogComponent } from './image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogModel } from './image-preview-dialog/image-preview-dialog.model';
-import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
-import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
-import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { IconComponent } from '@shared/components/icon/icon.component';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatBadge } from '@angular/material/badge';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe, DatePipe, NgOptimizedImage } from '@angular/common';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDivider } from '@angular/material/divider';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
-import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
-import { MatCheckbox } from '@angular/material/checkbox';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
-import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { MatCardModule } from '@angular/material/card';
-import { MatListModule } from '@angular/material/list';
+import { ImportDialogComponent } from './import-dialog/import-dialog.component';
+import { ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 
 @Component({
   selector: 'll-assets',
@@ -71,30 +71,29 @@ import { MatListModule } from '@angular/material/list';
   imports: [
     MatToolbarModule,
     MatIconModule,
-    IconComponent,
     MatButtonToggleModule,
-    MatTooltip,
-    MatBadge,
+    MatTooltipModule,
+    MatBadgeModule,
     CanUserPerformPipe,
-    AsyncPipe,
+    CommonModule,
     MatButtonModule,
     MatMenuModule,
-    MatDivider,
-    MatProgressBar,
+    MatDividerModule,
+    MatProgressBarModule,
     BreadcrumbComponent,
     BreadcrumbItemComponent,
     FileDragAndDropDirective,
     MatTableModule,
-    MatCheckbox,
-    MatProgressSpinner,
-    NgOptimizedImage,
+    MatCheckboxModule,
+    MatProgressSpinnerModule,
     MatSortModule,
     TimeDurationPipe,
     FormatFileSizePipe,
-    DatePipe,
     MatCardModule,
-    MatPaginator,
+    MatPaginatorModule,
     MatListModule,
+    NgOptimizedImage,
+    AnimateDirective,
   ],
 })
 export class AssetsComponent implements OnInit {

@@ -1,3 +1,4 @@
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Component, effect, inject, Optional } from '@angular/core';
 import {
   Auth,
@@ -9,23 +10,22 @@ import {
   signOut,
   User,
 } from '@angular/fire/auth';
-import { Router, RouterLink } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { Router, RouterModule } from '@angular/router';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { UserStore } from '@shared/stores/user.store';
 import { EMPTY, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { UserStore } from '@shared/stores/user.store';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { AsyncPipe, JsonPipe, NgOptimizedImage } from '@angular/common';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-login',
   standalone: true,
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
-  imports: [NgOptimizedImage, MatFormFieldModule, ReactiveFormsModule, MatInput, MatButton, RouterLink, AsyncPipe, JsonPipe],
+  imports: [CommonModule, MatFormFieldModule, ReactiveFormsModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
 })
 export class LoginComponent {
   redirectToFeatures = ['features'];

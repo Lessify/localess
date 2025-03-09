@@ -1,9 +1,9 @@
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom, provideExperimentalZonelessChangeDetection } from '@angular/core';
-import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAnalytics, provideAnalytics, ScreenTrackingService, UserTrackingService } from '@angular/fire/analytics';
-import { getPerformance, providePerformance } from '@angular/fire/performance';
-import { environment } from '../environments/environment';
+import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import {
   browserPopupRedirectResolver,
   connectAuthEmulator,
@@ -11,21 +11,21 @@ import {
   initializeAuth,
   provideAuth,
 } from '@angular/fire/auth';
+import { AuthGuardModule } from '@angular/fire/auth-guard';
 import { connectFirestoreEmulator, initializeFirestore, provideFirestore } from '@angular/fire/firestore';
-import { connectStorageEmulator, getStorage, provideStorage } from '@angular/fire/storage';
 import { connectFunctionsEmulator, getFunctions, provideFunctions } from '@angular/fire/functions';
+import { getPerformance, providePerformance } from '@angular/fire/performance';
 import { getRemoteConfig, provideRemoteConfig } from '@angular/fire/remote-config';
-import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
+import { connectStorageEmulator, getStorage, provideStorage } from '@angular/fire/storage';
+import { MAT_CHIPS_DEFAULT_OPTIONS } from '@angular/material/chips';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
-import { MAT_CHIPS_DEFAULT_OPTIONS } from '@angular/material/chips';
-import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
-import { routes } from './app-routing';
-import { provideMarkdown } from 'ngx-markdown';
 import { CoreModule } from '@core/core.module';
-import { AuthGuardModule } from '@angular/fire/auth-guard';
+import { provideMarkdown } from 'ngx-markdown';
+import { environment } from '../environments/environment';
+import { routes } from './app-routing';
 
 export const appConfig: ApplicationConfig = {
   providers: [

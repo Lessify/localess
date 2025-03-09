@@ -20,7 +20,7 @@
             matTooltip="Publish Translations to be available via API call"
             [disabled]="isPublishLoading()"
             (click)="publish()">
-            <ll-icon [animate]="isPublishLoading()" start="publish" end="sync" />
+            <mat-icon [llAnimate]="isPublishLoading()">{{ isPublishLoading() ? 'sync' : 'publish' }}</mat-icon>
             Publish
           </button>
         }
@@ -197,7 +197,7 @@
                         matTooltip="Translate"
                         (click)="translate()"
                         [disabled]="!isLocaleTranslatable(selectedSourceLocale, selectedTargetLocale)">
-                        <ll-icon [animate]="isTranslateLoading()" start="translate" end="sync" />
+                        <mat-icon [llAnimate]="isTranslateLoading()">{{ isTranslateLoading() ? 'sync' : 'translate' }}</mat-icon>
                       </button>
                     </div>
                     <mat-divider></mat-divider>
@@ -230,7 +230,7 @@
                           isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue
                         "
                         (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue!)">
-                        <ll-icon [animate]="isLocaleUpdateLoading()" start="save" end="sync" />
+                        <mat-icon [llAnimate]="isLocaleUpdateLoading()">{{ isLocaleUpdateLoading() ? 'sync' : 'save' }}</mat-icon>
                         Save
                       </button>
                     </div>
@@ -261,7 +261,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> ID </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> ID</div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ selectedTranslation.id }}
@@ -274,7 +274,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Status </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Status</div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ identifyStatus(selectedTranslation) }}
@@ -284,7 +284,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Description </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Description</div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           @if (selectedTranslation.description) {
@@ -298,7 +298,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Labels </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Labels</div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
@@ -316,7 +316,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Created At </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Created At</div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ selectedTranslation.createdAt?.toMillis() | date: 'medium' }}
@@ -326,7 +326,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Updated At </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Updated At</div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                           {{ selectedTranslation.updatedAt?.toMillis() | date: 'medium' }}
@@ -336,7 +336,7 @@
                     <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
                       <div class="min-w-0 flex-auto">
                         <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Updated By </div>
+                          <div class="text-sm font-semibold leading-6 break-all"> Updated By</div>
                         </div>
                         <div
                           class="flex items-center gap-x-2.5 text-xs leading-5 break-words"

@@ -1,16 +1,16 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Timestamp } from '@angular/fire/firestore';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpaceService } from '@shared/services/space.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { SpaceStore } from '@shared/stores/space.store';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { NotificationService } from '@shared/services/notification.service';
+import { SpaceService } from '@shared/services/space.service';
+import { SpaceStore } from '@shared/stores/space.store';
 
 @Component({
   selector: 'll-dashboard',
@@ -18,7 +18,7 @@ import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, CanUserPerformPipe, AsyncPipe, MatButtonModule, MatIcon, FormatFileSizePipe],
+  imports: [MatToolbarModule, CanUserPerformPipe, CommonModule, MatButtonModule, MatIconModule, FormatFileSizePipe],
 })
 export class DashboardComponent {
   // Input

@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { TokenValidator } from '@shared/validators/token.validator';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatButton } from '@angular/material/button';
-import { MatInput } from '@angular/material/input';
 
 @Component({
   selector: 'll-token-dialog',
@@ -13,7 +13,7 @@ import { MatInput } from '@angular/material/input';
   templateUrl: './token-dialog.component.html',
   styleUrls: ['./token-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatButton, MatInput],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatButtonModule, MatInputModule],
 })
 export class TokenDialogComponent {
   form: FormGroup = this.fb.group({

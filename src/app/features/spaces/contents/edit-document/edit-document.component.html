@@ -60,7 +60,7 @@
           matTooltip="Save the changes."
           [disabled]="isSaveLoading() || isPublishLoading()"
           (click)="save()">
-          <ll-icon [animate]="isSaveLoading()" start="save" end="sync" />
+          <mat-icon [llAnimate]="isSaveLoading()">{{ isSaveLoading() ? 'sync' : 'save' }}</mat-icon>
           Save
         </button>
       }
@@ -71,7 +71,7 @@
           matTooltip="Publish to be available via API call"
           [disabled]="isPublishLoading() || isSaveLoading()"
           (click)="publish()">
-          <ll-icon [animate]="isPublishLoading()" start="publish" end="sync" />
+          <mat-icon [llAnimate]="isPublishLoading()">{{ isPublishLoading() ? 'sync' : 'publish' }}</mat-icon>
           Publish
         </button>
       }

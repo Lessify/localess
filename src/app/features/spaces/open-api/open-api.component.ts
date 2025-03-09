@@ -1,8 +1,8 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, OnInit, ViewEncapsulation } from '@angular/core';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { OpenApiService } from '@shared/services/open-api.service';
 import { Observable } from 'rxjs';
-import { AsyncPipe } from '@angular/common';
-import { MatProgressBar } from '@angular/material/progress-bar';
 
 @Component({
   selector: 'll-open-api',
@@ -11,7 +11,7 @@ import { MatProgressBar } from '@angular/material/progress-bar';
   styleUrl: './open-api.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, MatProgressBar],
+  imports: [CommonModule, MatProgressBarModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class OpenApiComponent implements OnInit {

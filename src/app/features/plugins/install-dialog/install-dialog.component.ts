@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder } from '@angular/forms';
-import { InstallDialogModel } from './install-dialog.model';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { PluginDefinition } from '@shared/models/plugin.model';
-import { MatSortModule } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { PluginDefinition } from '@shared/models/plugin.model';
+import { InstallDialogModel } from './install-dialog.model';
 
 @Component({
   selector: 'll-plugin-install-dialog',

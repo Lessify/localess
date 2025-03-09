@@ -16,9 +16,9 @@ import {
   updateDoc,
   where,
 } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { map, switchMap } from 'rxjs/operators';
+import { ObjectUtils } from '@core/utils/object-utils.service';
+import { WithFieldValue } from '@firebase/firestore';
 import {
   Schema,
   SchemaComponent,
@@ -31,10 +31,10 @@ import {
   SchemaEnumUpdateIdFS,
   SchemaType,
 } from '@shared/models/schema.model';
-import { ObjectUtils } from '@core/utils/object-utils.service';
-import { WithFieldValue } from '@firebase/firestore';
+import { from, Observable } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class SchemaService {
   constructor(private readonly firestore: Firestore) {}
 

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Auth } from '@angular/fire/auth';
 import {
   addDoc,
   collection,
@@ -19,9 +20,9 @@ import {
   updateDoc,
   where,
 } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
+import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { map } from 'rxjs/operators';
+import { NameUtils } from '@core/utils/name-utils.service';
 import {
   Content,
   ContentData,
@@ -34,12 +35,11 @@ import {
   ContentKind,
   ContentUpdate,
 } from '@shared/models/content.model';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { ContentHelperService } from '@shared/services/content-helper.service';
-import { NameUtils } from '@core/utils/name-utils.service';
-import { Auth } from '@angular/fire/auth';
+import { from, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class ContentService {
   constructor(
     private readonly firestore: Firestore,

@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { SchemasComponent } from './schemas.component';
-import { EditEnumComponent } from './edit-enum/edit-enum.component';
-import { EditCompComponent } from './edit-comp/edit-comp.component';
 import { isFormDirtyGuard } from '@shared/guards/dirty-form.guard';
+import { EditCompComponent } from './edit-comp/edit-comp.component';
+import { EditEnumComponent } from './edit-enum/edit-enum.component';
+import { SchemasComponent } from './schemas.component';
 
 const routes: Routes = [
   {

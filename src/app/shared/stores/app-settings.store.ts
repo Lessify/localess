@@ -1,10 +1,10 @@
 import { inject } from '@angular/core';
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { tapResponse } from '@ngrx/operators';
-import { combineLatest, pipe, switchMap } from 'rxjs';
-import { SettingsService } from '@shared/services/settings.service';
 import { AppUi } from '@shared/models/settings.model';
+import { SettingsService } from '@shared/services/settings.service';
+import { combineLatest, pipe, switchMap } from 'rxjs';
 
 export type AppSettingsState = {
   ui: AppUi | undefined;

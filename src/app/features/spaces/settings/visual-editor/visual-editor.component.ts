@@ -1,23 +1,23 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
-import { filter } from 'rxjs/operators';
-import { SpaceService } from '@shared/services/space.service';
-import { SpaceEnvironment } from '@shared/models/space.model';
-import { NotificationService } from '@shared/services/notification.service';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { SpaceValidator } from '@shared/validators/space.validator';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { SpaceStore } from '@shared/stores/space.store';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIcon } from '@angular/material/icon';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { JsonPipe } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { SpaceEnvironment } from '@shared/models/space.model';
+import { NotificationService } from '@shared/services/notification.service';
+import { SpaceService } from '@shared/services/space.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { SpaceStore } from '@shared/stores/space.store';
+import { SpaceValidator } from '@shared/validators/space.validator';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-visual-editor',
@@ -27,15 +27,15 @@ import { JsonPipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatIcon,
+    MatIconModule,
     MatButtonModule,
-    MatProgressBar,
+    MatProgressBarModule,
     ReactiveFormsModule,
     MatExpansionModule,
     DragDropModule,
     MatFormFieldModule,
-    MatInput,
-    JsonPipe,
+    MatInputModule,
+    CommonModule,
   ],
 })
 export class VisualEditorComponent {

@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { collection, collectionData, Firestore, orderBy, query, QueryConstraint } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { map } from 'rxjs/operators';
-import { TranslationHistory } from '@shared/models/translation-history.model';
 import { limit } from '@firebase/firestore';
+import { TranslationHistory } from '@shared/models/translation-history.model';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class TranslationHistoryService {
   constructor(private readonly firestore: Firestore) {}
 

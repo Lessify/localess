@@ -1,19 +1,19 @@
 import { ChangeDetectionStrategy, Component, effect, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { AddDialogModel } from './add-dialog.model';
-import { SchemaValidator } from '@shared/validators/schema.validator';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CommonValidator } from '@shared/validators/common.validator';
-import { SchemaType, schemaTypeDescriptions } from '@shared/models/schema.model';
-import { NameUtils } from '@core/utils/name-utils.service';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatTooltip } from '@angular/material/tooltip';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { NameUtils } from '@core/utils/name-utils.service';
+import { SchemaType, schemaTypeDescriptions } from '@shared/models/schema.model';
+import { CommonValidator } from '@shared/validators/common.validator';
+import { SchemaValidator } from '@shared/validators/schema.validator';
+import { AddDialogModel } from './add-dialog.model';
 
 @Component({
   selector: 'll-schema-add-dialog',
@@ -21,7 +21,16 @@ import { MatTooltip } from '@angular/material/tooltip';
   templateUrl: './add-dialog.component.html',
   styleUrls: ['./add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, MatButtonModule, MatIcon, MatSelectModule, MatTooltip],
+  imports: [
+    MatDialogModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSelectModule,
+    MatTooltipModule,
+  ],
 })
 export class AddDialogComponent {
   schemaTypeDescriptions = schemaTypeDescriptions;

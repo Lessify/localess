@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { FeaturesComponent } from './features.component';
 import { AuthGuard, customClaims } from '@angular/fire/auth-guard';
+import { RouterModule, Routes } from '@angular/router';
+import { UserPermission } from '@shared/models/user.model';
 import { pipe } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { UserPermission } from '@shared/models/user.model';
+import { FeaturesComponent } from './features.component';
 
 const ROLE_ADMIN = 'admin';
 const ROLE_CUSTOM = 'custom';

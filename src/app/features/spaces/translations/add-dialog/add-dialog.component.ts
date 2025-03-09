@@ -1,19 +1,19 @@
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { TextFieldModule } from '@angular/cdk/text-field';
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
-import { COMMA, ENTER } from '@angular/cdk/keycodes';
-import { TranslationValidator } from '@shared/validators/translation.validator';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { AddDialogModel } from './add-dialog.model';
-import { CommonValidator } from '@shared/validators/common.validator';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { TextFieldModule } from '@angular/cdk/text-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatCheckbox } from '@angular/material/checkbox';
-import { MatButton } from '@angular/material/button';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { CommonValidator } from '@shared/validators/common.validator';
+import { TranslationValidator } from '@shared/validators/translation.validator';
+import { AddDialogModel } from './add-dialog.model';
 
 @Component({
   selector: 'll-translation-add-dialog',
@@ -25,13 +25,13 @@ import { MatButton } from '@angular/material/button';
     MatDialogModule,
     ReactiveFormsModule,
     MatFormFieldModule,
-    MatInput,
+    MatInputModule,
     MatSelectModule,
     TextFieldModule,
     MatChipsModule,
-    MatIcon,
-    MatCheckbox,
-    MatButton,
+    MatIconModule,
+    MatCheckboxModule,
+    MatButtonModule,
   ],
 })
 export class AddDialogComponent {

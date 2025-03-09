@@ -1,14 +1,14 @@
+import { KeyValue } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { ExportDialogModel } from './export-dialog.model';
-import { KeyValue } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerInputEvent, MatDatepickerModule } from '@angular/material/datepicker';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInput } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButton } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { ExportDialogModel } from './export-dialog.model';
 
 @Component({
   selector: 'll-translation-export-dialog',
@@ -21,10 +21,10 @@ import { MatButton } from '@angular/material/button';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatInput,
+    MatInputModule,
     MatIconModule,
     MatDatepickerModule,
-    MatButton,
+    MatButtonModule,
   ],
 })
 export class ExportDialogComponent {

@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, input } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
-import { Space } from '@shared/models/space.model';
 import { activate } from '@angular/fire/remote-config';
-import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatIcon } from '@angular/material/icon';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Space } from '@shared/models/space.model';
 
 interface TabItem {
   icon: string;
@@ -18,7 +18,7 @@ interface TabItem {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatTabsModule, MatIcon, RouterOutlet, RouterLink],
+  imports: [MatToolbarModule, MatTabsModule, MatIconModule, RouterModule],
 })
 export class SettingsComponent {
   // Input

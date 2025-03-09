@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormRecord, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
-import { ConfigDialogModel } from './config-dialog.model';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { PluginConfiguration } from '@shared/models/plugin.model';
-import { MatFormField } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInput } from '@angular/material/input';
-import { MatButton } from '@angular/material/button';
+import { ConfigDialogModel } from './config-dialog.model';
 
 @Component({
   selector: 'll-plugin-config-dialog',
@@ -15,7 +15,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './config-dialog.component.html',
   styleUrls: ['./config-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormField, MatSelectModule, MatInput, MatButton],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatButtonModule],
 })
 export class ConfigDialogComponent {
   form: FormRecord = this.fb.record({});

@@ -1,3 +1,5 @@
+import { SelectionModel } from '@angular/cdk/collections';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -11,30 +13,28 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { ReferencesSelectDialogModel } from './references-select-dialog.model';
+import { MatIconModule } from '@angular/material/icon';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { SelectionModel } from '@angular/cdk/collections';
-import { switchMap } from 'rxjs/operators';
-import { BehaviorSubject, combineLatest } from 'rxjs';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PathItem } from '@shared/stores/space.store';
+import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { StatusComponent } from '@shared/components/status';
 import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
+import { Schema, SchemaType } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
 import { SchemaService } from '@shared/services/schema.service';
-import { Schema, SchemaType } from '@shared/models/schema.model';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
-import { MatCheckbox } from '@angular/material/checkbox';
-import { StatusComponent } from '@shared/components/status';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatIconModule } from '@angular/material/icon';
-import { DatePipe } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
+import { PathItem } from '@shared/stores/space.store';
+import { BehaviorSubject, combineLatest } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { ReferencesSelectDialogModel } from './references-select-dialog.model';
 
 @Component({
   selector: 'll-references-select-dialog',
@@ -44,17 +44,17 @@ import { MatButtonModule } from '@angular/material/button';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatDialogModule,
-    MatProgressBar,
+    MatProgressBarModule,
     BreadcrumbComponent,
     BreadcrumbItemComponent,
     MatTableModule,
     MatSortModule,
-    MatCheckbox,
+    MatCheckboxModule,
     StatusComponent,
-    MatTooltip,
+    MatTooltipModule,
     MatIconModule,
-    DatePipe,
-    MatPaginator,
+    CommonModule,
+    MatPaginatorModule,
     MatButtonModule,
   ],
 })

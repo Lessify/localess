@@ -14,12 +14,12 @@ import {
   QueryConstraint,
   serverTimestamp,
 } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { Token, TokenCreateFS } from '@shared/models/token.model';
+import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class TokenService {
   constructor(private firestore: Firestore) {}
 

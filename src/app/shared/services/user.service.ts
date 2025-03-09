@@ -1,7 +1,4 @@
 import { Injectable } from '@angular/core';
-import { from, Observable } from 'rxjs';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { User, UserInvite, UserUpdate } from '../models/user.model';
 import {
   collection,
   collectionData,
@@ -14,10 +11,13 @@ import {
   UpdateData,
   updateDoc,
 } from '@angular/fire/firestore';
+import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
+import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { User, UserInvite, UserUpdate } from '../models/user.model';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class UserService {
   constructor(
     private readonly firestore: Firestore,

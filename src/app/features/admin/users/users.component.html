@@ -4,7 +4,7 @@
     <span class="spacer"></span>
     <div class="actions">
       <button mat-stroked-button color="accent" matTooltip="Synchronize Users with Database." (click)="sync()">
-        <ll-icon [animate]="isSyncLoading()" start="sync" end="sync" />
+        <mat-icon [llAnimate]="isSyncLoading()">sync</mat-icon>
         Sync
       </button>
 

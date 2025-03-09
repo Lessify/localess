@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { traceUntilFirst } from '@angular/fire/performance';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
+import { traceUntilFirst } from '@angular/fire/performance';
+import { Observable } from 'rxjs';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class OpenApiService {
   constructor(private readonly functions: Functions) {}
 

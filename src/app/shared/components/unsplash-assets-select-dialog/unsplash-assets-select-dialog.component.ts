@@ -1,22 +1,22 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Inject, OnInit, signal } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog.model';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SelectionModel } from '@angular/cdk/collections';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatButton } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { MatCheckbox } from '@angular/material/checkbox';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog.model';
 
 @Component({
   selector: 'll-unsplash-assets-select-dialog',
@@ -26,17 +26,17 @@ import { MatCheckbox } from '@angular/material/checkbox';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatDialogModule,
-    MatProgressBar,
+    MatProgressBarModule,
     MatFormFieldModule,
-    MatInput,
-    MatIcon,
+    MatInputModule,
+    MatIconModule,
     MatButtonToggleModule,
-    MatTooltip,
-    MatButton,
-    NgOptimizedImage,
+    MatTooltipModule,
+    MatButtonModule,
+    CommonModule,
     MatCardModule,
-    DatePipe,
-    MatCheckbox,
+    MatCheckboxModule,
+    NgOptimizedImage,
   ],
 })
 export class UnsplashAssetsSelectDialogComponent implements OnInit {
@@ -81,6 +81,7 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
   }
 
   search(searchTerm: string, page?: number | undefined): void {
+    if (searchTerm.length < 1) return;
     this.isLoading.set(true);
     this.unsplashPluginService
       .search({ query: searchTerm, orientation: this.orientation(), page: page })

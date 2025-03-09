@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
-import { MatIcon } from '@angular/material/icon';
 import { MatError } from '@angular/material/form-field';
-import { MatButton } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'll-content-import-dialog',
@@ -11,7 +11,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatIcon, MatError, MatButton],
+  imports: [MatDialogModule, ReactiveFormsModule, MatIconModule, MatError, MatButtonModule],
 })
 export class ImportDialogComponent {
   fileWrong = false;

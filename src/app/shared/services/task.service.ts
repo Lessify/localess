@@ -13,10 +13,9 @@ import {
   QueryConstraint,
   serverTimestamp,
 } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { ref, Storage, uploadBytes } from '@angular/fire/storage';
-import { map, switchMap } from 'rxjs/operators';
+import { getDownloadURL } from '@firebase/storage';
 import {
   Task,
   TaskAssetExportCreateFS,
@@ -31,9 +30,10 @@ import {
   TaskTranslationExportCreateFS,
   TaskTranslationImportCreateFS,
 } from '@shared/models/task.model';
-import { getDownloadURL } from '@firebase/storage';
+import { from, Observable } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class TaskService {
   constructor(
     private readonly firestore: Firestore,

@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, effect, model, untracked } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime } from 'rxjs';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'll-translation-string-edit',
@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './translation-string-edit.component.html',
   styleUrls: ['./translation-string-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInput],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule],
 })
 export class TranslationStringEditComponent {
   value = model('');

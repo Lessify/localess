@@ -1,17 +1,17 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { UserDialogModel } from './user-dialog.model';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatListModule } from '@angular/material/list';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatListModule } from '@angular/material/list';
-import { MatDivider } from '@angular/material/divider';
-import { MatButton } from '@angular/material/button';
-import { JsonPipe } from '@angular/common';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { UserDialogModel } from './user-dialog.model';
 
 @Component({
   selector: 'll-user-dialog',
@@ -25,11 +25,11 @@ import { JsonPipe } from '@angular/common';
     MatFormFieldModule,
     MatSelectModule,
     MatSlideToggleModule,
-    MatTooltip,
+    MatTooltipModule,
     MatListModule,
-    MatDivider,
-    MatButton,
-    JsonPipe,
+    MatDividerModule,
+    MatButtonModule,
+    CommonModule,
   ],
 })
 export class UserDialogComponent implements OnInit {

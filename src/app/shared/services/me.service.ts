@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-import { from, Observable } from 'rxjs';
 import { Auth, updateEmail, updatePassword, updateProfile } from '@angular/fire/auth';
-import { MeUpdate } from '../models/me.model';
 import { traceUntilFirst } from '@angular/fire/performance';
+import { from, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { MeUpdate } from '../models/me.model';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class MeService {
   constructor(private readonly auth: Auth) {}
 

@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { arrayRemove, arrayUnion, doc, Firestore, serverTimestamp, UpdateData, updateDoc } from '@angular/fire/firestore';
-import { from, Observable, of } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
+import { from, Observable, of } from 'rxjs';
 import { Locale } from '../models/locale.model';
 import { Space } from '../models/space.model';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class LocaleService {
   constructor(private firestore: Firestore) {}
 

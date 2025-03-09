@@ -1,19 +1,19 @@
+import { CommonModule } from '@angular/common';
 import { Component, Optional } from '@angular/core';
 import { Auth, sendPasswordResetEmail, User } from '@angular/fire/auth';
-import { Router, RouterLink } from '@angular/router';
-import { EMPTY, Observable } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgOptimizedImage } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatButton } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { Router, RouterModule } from '@angular/router';
+import { EMPTY, Observable } from 'rxjs';
 
 @Component({
   selector: 'll-reset',
   standalone: true,
   templateUrl: './reset.component.html',
   styleUrls: ['./reset.component.scss'],
-  imports: [NgOptimizedImage, ReactiveFormsModule, MatFormFieldModule, MatInput, MatButton, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule],
 })
 export class ResetComponent {
   redirect = ['/login'];

@@ -24,7 +24,7 @@
         <mat-icon>crop_portrait</mat-icon>
       </mat-button-toggle>
     </mat-button-toggle-group>
-    <button mat-stroked-button matTextSuffix color="accent" (click)="search(si.value)">
+    <button mat-stroked-button matTextSuffix color="accent" (click)="search(si.value)" [disabled]="si.value.length < 1">
       <mat-icon>search</mat-icon>
       Search
     </button>

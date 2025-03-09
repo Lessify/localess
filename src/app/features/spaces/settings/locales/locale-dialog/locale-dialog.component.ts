@@ -1,17 +1,17 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Observable, startWith } from 'rxjs';
-import { LocaleService } from '@shared/services/locale.service';
-import { map } from 'rxjs/operators';
-import { Locale } from '@shared/models/locale.model';
-import { LocaleValidator } from '@shared/validators/locale.validator';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatInput } from '@angular/material/input';
-import { AsyncPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { Locale } from '@shared/models/locale.model';
+import { LocaleService } from '@shared/services/locale.service';
+import { LocaleValidator } from '@shared/validators/locale.validator';
+import { Observable, startWith } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'll-locale-dialog',
@@ -19,7 +19,7 @@ import { MatButtonModule } from '@angular/material/button';
   templateUrl: './locale-dialog.component.html',
   styleUrls: ['./locale-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatAutocompleteModule, MatInput, AsyncPipe, MatButtonModule],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatAutocompleteModule, MatInputModule, CommonModule, MatButtonModule],
 })
 export class LocaleDialogComponent implements OnInit {
   locales: Locale[] = [];

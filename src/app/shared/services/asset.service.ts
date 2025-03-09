@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
   addDoc,
@@ -19,10 +20,8 @@ import {
   updateDoc,
   where,
 } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { ref, Storage, uploadBytes } from '@angular/fire/storage';
-import { map, switchMap } from 'rxjs/operators';
 import {
   Asset,
   AssetFile,
@@ -36,9 +35,10 @@ import {
   AssetKind,
 } from '@shared/models/asset.model';
 import { AssetFileType } from '@shared/models/schema.model';
-import { HttpClient } from '@angular/common/http';
+import { from, Observable } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class AssetService {
   constructor(
     private readonly httpClient: HttpClient,

@@ -1,16 +1,16 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { ExportDialogModel } from './export-dialog.model';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { Asset } from '@shared/models/asset.model';
 import { AssetService } from '@shared/services/asset.service';
 import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
-import { Asset } from '@shared/models/asset.model';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { AsyncPipe, NgForOf } from '@angular/common';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
+import { ExportDialogModel } from './export-dialog.model';
 
 @Component({
   selector: 'll-asset-export-dialog',
@@ -22,11 +22,10 @@ import { MatButtonModule } from '@angular/material/button';
     MatDialogModule,
     ReactiveFormsModule,
     MatFormFieldModule,
-    MatInput,
+    MatInputModule,
     MatAutocompleteModule,
-    AsyncPipe,
-    NgForOf,
-    MatIcon,
+    CommonModule,
+    MatIconModule,
     MatButtonModule,
   ],
 })

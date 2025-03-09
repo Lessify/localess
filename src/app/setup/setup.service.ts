@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Firestore } from '@angular/fire/firestore';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
+import { traceUntilFirst } from '@angular/fire/performance';
 import { Observable } from 'rxjs';
 import { Setup } from './setup.model';
-import { traceUntilFirst } from '@angular/fire/performance';
 
 @Injectable()
 export class SetupService {

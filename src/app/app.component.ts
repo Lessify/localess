@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
-import { Performance } from '@angular/fire/performance';
 import { Analytics } from '@angular/fire/analytics';
+import { Performance } from '@angular/fire/performance';
 import { MatIconRegistry } from '@angular/material/icon';
-import { RouterOutlet } from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'll-root',
   standalone: true,
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [RouterOutlet],
+  imports: [RouterModule],
 })
 export class AppComponent {
   constructor(

@@ -1,16 +1,16 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { ExportDialogModel } from './export-dialog.model';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { Content } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
-import { Content } from '@shared/models/content.model';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { AsyncPipe } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { ExportDialogModel } from './export-dialog.model';
 
 @Component({
   selector: 'll-content-export-dialog',
@@ -18,7 +18,16 @@ import { MatIcon } from '@angular/material/icon';
   templateUrl: './export-dialog.component.html',
   styleUrls: ['./export-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatAutocompleteModule, MatInput, AsyncPipe, MatButtonModule, MatIcon],
+  imports: [
+    MatDialogModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatAutocompleteModule,
+    MatInputModule,
+    CommonModule,
+    MatButtonModule,
+    MatIconModule,
+  ],
 })
 export class ExportDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

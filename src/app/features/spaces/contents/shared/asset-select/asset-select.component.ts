@@ -1,25 +1,25 @@
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { SchemaFieldAsset, SchemaFieldKind } from '@shared/models/schema.model';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { Asset } from '@shared/models/asset.model';
-import { AssetService } from '@shared/services/asset.service';
-import { Space } from '@shared/models/space.model';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatError } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatCardModule } from '@angular/material/card';
-import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDivider } from '@angular/material/divider';
-import { MatListModule } from '@angular/material/list';
-import { JsonPipe, NgOptimizedImage } from '@angular/common';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
+import { Asset } from '@shared/models/asset.model';
+import { SchemaFieldAsset, SchemaFieldKind } from '@shared/models/schema.model';
+import { Space } from '@shared/models/space.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { MatError } from '@angular/material/form-field';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { AssetService } from '@shared/services/asset.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-asset-select',
@@ -30,17 +30,17 @@ import { MatExpansionModule } from '@angular/material/expansion';
   imports: [
     ReactiveFormsModule,
     MatCardModule,
-    MatIcon,
-    MatTooltip,
+    MatIconModule,
+    MatTooltipModule,
     MatButtonModule,
-    MatDivider,
+    MatDividerModule,
     MatListModule,
-    NgOptimizedImage,
+    CommonModule,
     ImagePreviewDirective,
     FormatFileSizePipe,
     MatError,
     MatExpansionModule,
-    JsonPipe,
+    NgOptimizedImage,
   ],
 })
 export class AssetSelectComponent implements OnInit {

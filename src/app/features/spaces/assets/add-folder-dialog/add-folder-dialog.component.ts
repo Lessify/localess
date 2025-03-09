@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { AddFolderDialogModel } from './add-folder-dialog.model';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CommonValidator } from '@shared/validators/common.validator';
-import { AssetValidator } from '@shared/validators/asset.validator';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatButton } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AssetValidator } from '@shared/validators/asset.validator';
+import { CommonValidator } from '@shared/validators/common.validator';
+import { AddFolderDialogModel } from './add-folder-dialog.model';
 
 @Component({
   selector: 'll-asset-add-folder-dialog',
@@ -15,7 +15,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './add-folder-dialog.component.html',
   styleUrls: ['./add-folder-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, MatButton],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
 })
 export class AddFolderDialogComponent {
   form: FormGroup = this.fb.group({

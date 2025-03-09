@@ -1,30 +1,30 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap } from 'rxjs/operators';
-import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { Space } from '@shared/models/space.model';
-import { NotificationService } from '@shared/services/notification.service';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ObjectUtils } from '@core/utils/object-utils.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { SpaceService } from '@shared/services/space.service';
-import { PluginService } from '@shared/services/plugin.service';
 import { Plugin, PluginActionDefinition, PluginConfiguration, PluginDefinition } from '@shared/models/plugin.model';
-import { InstallDialogComponent } from './install-dialog/install-dialog.component';
-import { InstallDialogModel } from './install-dialog/install-dialog.model';
+import { Space } from '@shared/models/space.model';
+import { NotificationService } from '@shared/services/notification.service';
+import { PluginService } from '@shared/services/plugin.service';
+import { SpaceService } from '@shared/services/space.service';
+import { filter, switchMap } from 'rxjs/operators';
 import { ConfigDialogComponent } from './config-dialog/config-dialog.component';
 import { ConfigDialogModel } from './config-dialog/config-dialog.model';
-import { ObjectUtils } from '@core/utils/object-utils.service';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatTooltip } from '@angular/material/tooltip';
-import { DatePipe, NgIf } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDivider } from '@angular/material/divider';
+import { InstallDialogComponent } from './install-dialog/install-dialog.component';
+import { InstallDialogModel } from './install-dialog/install-dialog.model';
 
 @Component({
   selector: 'll-plugins',
@@ -35,15 +35,14 @@ import { MatDivider } from '@angular/material/divider';
   imports: [
     MatToolbarModule,
     MatIconModule,
-    MatProgressBar,
+    MatProgressBarModule,
     MatTableModule,
     MatSortModule,
-    MatTooltip,
-    NgIf,
-    DatePipe,
+    MatTooltipModule,
+    CommonModule,
     MatButtonModule,
     MatMenuModule,
-    MatDivider,
+    MatDividerModule,
     MatPaginatorModule,
   ],
 })

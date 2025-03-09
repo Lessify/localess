@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { SpaceDialogModel } from './space-dialog.model';
-import { SpaceValidator } from '@shared/validators/space.validator';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatButton } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { SpaceValidator } from '@shared/validators/space.validator';
+import { SpaceDialogModel } from './space-dialog.model';
 
 @Component({
   selector: 'll-space-dialog',
@@ -14,7 +14,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './space-dialog.component.html',
   styleUrls: ['./space-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, MatButton],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
 })
 export class SpaceDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

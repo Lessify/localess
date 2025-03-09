@@ -3,6 +3,8 @@ import { setGlobalOptions } from 'firebase-functions/v2';
 setGlobalOptions({
   timeoutSeconds: 540,
   region: 'europe-west6',
+  concurrency: 200,
+  cpu: 1,
 });
 
 export { asset } from './assets';

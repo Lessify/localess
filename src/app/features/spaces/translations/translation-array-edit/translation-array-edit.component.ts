@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime } from 'rxjs';
-import { TranslationValidator } from '@shared/validators/translation.validator';
-import { MatFormField, MatHint } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatInput } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { TranslationValidator } from '@shared/validators/translation.validator';
+import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'll-translation-array-edit',
@@ -13,7 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
   templateUrl: './translation-array-edit.component.html',
   styleUrls: ['./translation-array-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatFormField, MatIcon, MatInput, MatButtonModule, MatHint],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatIconModule, MatInputModule, MatButtonModule],
 })
 export class TranslationArrayEditComponent implements OnInit, OnChanges {
   @Input() value = '';

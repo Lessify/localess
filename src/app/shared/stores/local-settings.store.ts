@@ -1,5 +1,5 @@
-import { getState, patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { computed } from '@angular/core';
+import { getState, patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 
 const LS_KEY = 'LL-SETTINGS-STATE';
 

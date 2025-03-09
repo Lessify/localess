@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { TranslationValidator } from '@shared/validators/translation.validator';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CommonValidator } from '@shared/validators/common.validator';
+import { TranslationValidator } from '@shared/validators/translation.validator';
 import { EditIdDialogModel } from './edit-id-dialog.model';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'll-translation-edit-id-dialog',
@@ -15,7 +15,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './edit-id-dialog.component.html',
   styleUrls: ['./edit-id-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, MatButton],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
 })
 export class EditIdDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

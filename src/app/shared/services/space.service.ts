@@ -4,6 +4,7 @@ import {
   collection,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   DocumentReference,
@@ -14,14 +15,13 @@ import {
   serverTimestamp,
   UpdateData,
   updateDoc,
-  deleteField,
 } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { map } from 'rxjs/operators';
-import { Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUpdate } from '../models/space.model';
-import { Locale } from '../models/locale.model';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
+import { traceUntilFirst } from '@angular/fire/performance';
+import { from, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { Locale } from '../models/locale.model';
+import { Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUpdate } from '../models/space.model';
 
 @Injectable({ providedIn: 'root' })
 export class SpaceService {

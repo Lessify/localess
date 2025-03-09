@@ -1,24 +1,24 @@
+import { ClipboardModule } from '@angular/cdk/clipboard';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { Space } from '@shared/models/space.model';
+import { NotificationService } from '@shared/services/notification.service';
+import { SpaceService } from '@shared/services/space.service';
 import { filter, switchMap } from 'rxjs/operators';
 import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
 import { SpaceDialogModel } from './space-dialog/space-dialog.model';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { SpaceService } from '@shared/services/space.service';
-import { Space } from '@shared/models/space.model';
-import { NotificationService } from '@shared/services/notification.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { ClipboardModule } from '@angular/cdk/clipboard';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'll-spaces',
@@ -33,7 +33,7 @@ import { DatePipe } from '@angular/common';
     MatProgressBarModule,
     ClipboardModule,
     MatTooltipModule,
-    DatePipe,
+    CommonModule,
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,

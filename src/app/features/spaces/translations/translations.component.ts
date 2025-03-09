@@ -1,57 +1,57 @@
+import { ClipboardModule } from '@angular/cdk/clipboard';
+import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
+import { ScrollingModule } from '@angular/cdk/scrolling';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
-import { debounceTime, EMPTY, Observable } from 'rxjs';
-import { filter, switchMap, tap } from 'rxjs/operators';
-import { MatDialog } from '@angular/material/dialog';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatOption } from '@angular/material/autocomplete';
-import { TranslationService } from '@shared/services/translation.service';
-import { SpaceService } from '@shared/services/space.service';
-import { Locale } from '@shared/models/locale.model';
-import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
-import { Space } from '@shared/models/space.model';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { TranslateService } from '@shared/services/translate.service';
+import { StatusComponent } from '@shared/components/status';
+import { AnimateDirective } from '@shared/directives/animate.directive';
+import { Locale } from '@shared/models/locale.model';
+import { Space } from '@shared/models/space.model';
+import { TranslationHistory } from '@shared/models/translation-history.model';
+import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { TranslationFilterPipe } from '@shared/pipes/translation-filter.pipe';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
+import { SpaceService } from '@shared/services/space.service';
 import { TaskService } from '@shared/services/task.service';
+import { TranslateService } from '@shared/services/translate.service';
+import { TranslationHistoryService } from '@shared/services/translation-history.service';
+import { TranslationService } from '@shared/services/translation.service';
+import { debounceTime, EMPTY, Observable } from 'rxjs';
+import { filter, switchMap, tap } from 'rxjs/operators';
+import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
+import { EditDialogComponent, EditDialogModel } from './edit-dialog';
+import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { TranslationHistory } from '@shared/models/translation-history.model';
-import { TranslationHistoryService } from '@shared/services/translation-history.service';
-import { EditDialogComponent, EditDialogModel } from './edit-dialog';
-import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
-import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
-import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { AsyncPipe, DatePipe } from '@angular/common';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIconModule } from '@angular/material/icon';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { MatButtonModule } from '@angular/material/button';
-import { MatTooltip } from '@angular/material/tooltip';
-import { IconComponent } from '@shared/components/icon/icon.component';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDivider } from '@angular/material/divider';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatFormField } from '@angular/material/form-field';
-import { MatSelect } from '@angular/material/select';
-import { MatInput } from '@angular/material/input';
-import { MatChipsModule } from '@angular/material/chips';
-import { ScrollingModule } from '@angular/cdk/scrolling';
-import { TranslationFilterPipe } from '@shared/pipes/translation-filter.pipe';
-import { StatusComponent } from '@shared/components/status';
-import { TranslationStringViewComponent } from './translation-string-view/translation-string-view.component';
-import { TranslationPluralViewComponent } from './translation-plural-view/translation-plural-view.component';
-import { TranslationArrayViewComponent } from './translation-array-view/translation-array-view.component';
-import { TranslationStringEditComponent } from './translation-string-edit/translation-string-edit.component';
-import { TranslationPluralEditComponent } from './translation-plural-edit/translation-plural-edit.component';
 import { TranslationArrayEditComponent } from './translation-array-edit/translation-array-edit.component';
-import { ClipboardModule } from '@angular/cdk/clipboard';
+import { TranslationArrayViewComponent } from './translation-array-view/translation-array-view.component';
+import { TranslationPluralEditComponent } from './translation-plural-edit/translation-plural-edit.component';
+import { TranslationPluralViewComponent } from './translation-plural-view/translation-plural-view.component';
+import { TranslationStringEditComponent } from './translation-string-edit/translation-string-edit.component';
+import { TranslationStringViewComponent } from './translation-string-view/translation-string-view.component';
 
 @Component({
   selector: 'll-translations',
@@ -60,21 +60,19 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    AsyncPipe,
+    CommonModule,
     MatToolbarModule,
     MatIconModule,
     CanUserPerformPipe,
     MatButtonModule,
-    MatTooltip,
-    IconComponent,
+    MatTooltipModule,
     MatMenuModule,
-    MatDivider,
-    MatProgressBar,
+    MatDividerModule,
+    MatProgressBarModule,
     MatSidenavModule,
-    MatFormField,
-    MatSelect,
-    MatOption,
-    MatInput,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
     ReactiveFormsModule,
     MatChipsModule,
     FormsModule,
@@ -89,7 +87,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
     TranslationPluralEditComponent,
     TranslationArrayEditComponent,
     ClipboardModule,
-    DatePipe,
+    AnimateDirective,
   ],
 })
 export class TranslationsComponent implements OnInit {

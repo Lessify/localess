@@ -1,14 +1,25 @@
+import { SelectionModel } from '@angular/cdk/collections';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
-import { Router } from '@angular/router';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
-import { NotificationService } from '@shared/services/notification.service';
-import { Schema, SchemaType, sortSchema } from '@shared/models/schema.model';
-import { SchemaService } from '@shared/services/schema.service';
-import { combineLatest } from 'rxjs';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
+import { ObjectUtils } from '@core/utils/object-utils.service';
+import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { StatusComponent } from '@shared/components/status';
 import {
   Content,
   ContentDocument,
@@ -18,33 +29,22 @@ import {
   ContentUpdate,
   sortContent,
 } from '@shared/models/content.model';
+import { Schema, SchemaType, sortSchema } from '@shared/models/schema.model';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentService } from '@shared/services/content.service';
-import { ObjectUtils } from '@core/utils/object-utils.service';
-import { SelectionModel } from '@angular/cdk/collections';
+import { NotificationService } from '@shared/services/notification.service';
+import { SchemaService } from '@shared/services/schema.service';
+import { TaskService } from '@shared/services/task.service';
+import { TokenService } from '@shared/services/token.service';
+import { PathItem, SpaceStore } from '@shared/stores/space.store';
+import { combineLatest } from 'rxjs';
+import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
 import { AddFolderDialogComponent, AddFolderDialogModel } from './add-folder-dialog';
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { ExportDialogComponent, ExportDialogModel, ExportDialogReturn } from './export-dialog';
-import { TaskService } from '@shared/services/task.service';
 import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
-import { TokenService } from '@shared/services/token.service';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe, DatePipe } from '@angular/common';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDivider } from '@angular/material/divider';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
-import { MatCheckbox } from '@angular/material/checkbox';
-import { StatusComponent } from '@shared/components/status';
 
 @Component({
   selector: 'll-contents',
@@ -55,21 +55,20 @@ import { StatusComponent } from '@shared/components/status';
   imports: [
     MatToolbarModule,
     MatIconModule,
-    MatTooltip,
+    MatTooltipModule,
     CanUserPerformPipe,
-    AsyncPipe,
+    CommonModule,
     MatButtonModule,
     MatMenuModule,
-    MatDivider,
-    MatProgressBar,
+    MatDividerModule,
+    MatProgressBarModule,
     BreadcrumbComponent,
     BreadcrumbItemComponent,
     MatTableModule,
     MatSortModule,
-    MatCheckbox,
+    MatCheckboxModule,
     StatusComponent,
-    DatePipe,
-    MatPaginator,
+    MatPaginatorModule,
   ],
 })
 export class ContentsComponent {

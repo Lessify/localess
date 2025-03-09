@@ -1,22 +1,22 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { Locale } from '@shared/models/locale.model';
+import { LocaleService } from '@shared/services/locale.service';
+import { NotificationService } from '@shared/services/notification.service';
+import { SpaceStore } from '@shared/stores/space.store';
 import { filter, switchMap } from 'rxjs/operators';
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
-import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
-import { LocaleService } from '@shared/services/locale.service';
-import { Locale } from '@shared/models/locale.model';
-import { NotificationService } from '@shared/services/notification.service';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { SpaceStore } from '@shared/stores/space.store';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'll-space-settings-locales',
@@ -24,7 +24,16 @@ import { MatTooltip } from '@angular/material/tooltip';
   templateUrl: './locales.component.html',
   styleUrls: ['./locales.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatIcon, MatButtonModule, MatProgressBar, MatTableModule, MatSortModule, MatTooltip, MatPaginator],
+  imports: [
+    MatToolbarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatProgressBarModule,
+    MatTableModule,
+    MatSortModule,
+    MatTooltipModule,
+    MatPaginatorModule,
+  ],
 })
 export class LocalesComponent {
   sort = viewChild.required(MatSort);

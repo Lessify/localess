@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { doc, docData, Firestore, serverTimestamp, setDoc, UpdateData } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { map, tap } from 'rxjs/operators';
-import { ObjectUtils } from '@core/utils/object-utils.service';
 import { Functions } from '@angular/fire/functions';
-import { AppSettings, AppSettingsUiUpdate } from '@shared/models/settings.model';
+import { traceUntilFirst } from '@angular/fire/performance';
 import { getAllChanges, RemoteConfig } from '@angular/fire/remote-config';
+import { ObjectUtils } from '@core/utils/object-utils.service';
+import { AppSettings, AppSettingsUiUpdate } from '@shared/models/settings.model';
 import { AllParameters } from 'rxfire/remote-config';
+import { from, Observable } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {

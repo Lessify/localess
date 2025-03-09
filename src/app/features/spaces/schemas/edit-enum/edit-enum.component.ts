@@ -1,35 +1,35 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { SchemaValidator } from '@shared/validators/schema.validator';
-import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { Router } from '@angular/router';
-import { combineLatest } from 'rxjs';
-import { NotificationService } from '@shared/services/notification.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { CommonValidator } from '@shared/validators/common.validator';
-import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe, JsonPipe } from '@angular/common';
-import { IconComponent } from '@shared/components/icon/icon.component';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatListModule } from '@angular/material/list';
-import { MatInput } from '@angular/material/input';
-import { MatDivider } from '@angular/material/divider';
 import { TextFieldModule } from '@angular/cdk/text-field';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AnimateDirective } from '@shared/directives/animate.directive';
+import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
+import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { NotificationService } from '@shared/services/notification.service';
+import { SchemaService } from '@shared/services/schema.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { CommonValidator } from '@shared/validators/common.validator';
+import { SchemaValidator } from '@shared/validators/schema.validator';
+import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
 
 @Component({
@@ -40,26 +40,25 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatIcon,
+    MatIconModule,
     CanUserPerformPipe,
-    AsyncPipe,
+    CommonModule,
     MatButtonModule,
-    IconComponent,
-    MatTooltip,
-    MatProgressBar,
+    MatTooltipModule,
+    MatProgressBarModule,
     MatTabsModule,
     ReactiveFormsModule,
     MatSidenavModule,
     MatFormFieldModule,
     MatListModule,
     DragDropModule,
-    MatInput,
-    MatDivider,
+    MatInputModule,
+    MatDividerModule,
     TextFieldModule,
     MatChipsModule,
     MatExpansionModule,
-    JsonPipe,
     EditValueComponent,
+    AnimateDirective,
   ],
 })
 export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
@@ -76,8 +75,8 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   newFieldName = this.fb.control('', [...SchemaValidator.FIELD_OPTION_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
 
   //Loadings
-  isLoading = true;
-  isSaveLoading = false;
+  isLoading = signal(true);
+  isSaveLoading = signal(false);
   // Subscriptions
   private destroyRef = inject(DestroyRef);
   settingsStore = inject(LocalSettingsStore);
@@ -119,7 +118,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
             this.values.clear();
             schema.values?.forEach(it => this.addValueForm(it));
           }
-          this.isLoading = false;
+          this.isLoading.set(false);
           this.cd.markForCheck();
         },
       });
@@ -154,7 +153,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
 
   save(): void {
     //console.group('save')
-    this.isSaveLoading = true;
+    this.isSaveLoading.set(true);
     this.schemaService.updateEnum(this.spaceId(), this.schemaId(), this.form.value as SchemaEnumUpdate).subscribe({
       next: () => {
         this.notificationService.success('Schema has been updated.');
@@ -164,7 +163,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
       },
       complete: () => {
         setTimeout(() => {
-          this.isSaveLoading = false;
+          this.isSaveLoading.set(false);
           this.cd.markForCheck();
         }, 1000);
       },

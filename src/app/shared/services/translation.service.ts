@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Auth } from '@angular/fire/auth';
 import {
   collection,
   collectionCount,
@@ -12,15 +13,14 @@ import {
   UpdateData,
   updateDoc,
 } from '@angular/fire/firestore';
-import { from, Observable } from 'rxjs';
-import { Translation, TranslationCreate, TranslationCreateFS, TranslationType, TranslationUpdate } from '../models/translation.model';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { map, switchMap } from 'rxjs/operators';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
+import { traceUntilFirst } from '@angular/fire/performance';
 import { deleteField } from '@firebase/firestore';
-import { Auth } from '@angular/fire/auth';
+import { from, Observable } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
+import { Translation, TranslationCreate, TranslationCreateFS, TranslationType, TranslationUpdate } from '../models/translation.model';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class TranslationService {
   constructor(
     private readonly firestore: Firestore,

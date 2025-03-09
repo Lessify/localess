@@ -1,4 +1,4 @@
-import browser from 'browser-detect';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -12,30 +12,30 @@ import {
   signal,
   Signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Auth, signOut } from '@angular/fire/auth';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { Space } from '@shared/models/space.model';
-import { environment } from '../../environments/environment';
-import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
-import { ReposService } from '@shared/generated/github/services/repos.service';
-import { Release } from '@shared/generated/github/models/release';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
-import { SpaceStore } from '@shared/stores/space.store';
-import { UserStore } from '@shared/stores/user.store';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { AppSettingsStore } from '@shared/stores/app-settings.store';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIcon } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTooltip } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatListModule, MatNavList } from '@angular/material/list';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router, RouterModule } from '@angular/router';
+import { Release } from '@shared/generated/github/models/release';
+import { ReposService } from '@shared/generated/github/services/repos.service';
+import { Space } from '@shared/models/space.model';
+import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe } from '@angular/common';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { AppSettingsStore } from '@shared/stores/app-settings.store';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { SpaceStore } from '@shared/stores/space.store';
+import { UserStore } from '@shared/stores/user.store';
+import browser from 'browser-detect';
+import { environment } from '../../environments/environment';
 
 interface SideMenuItem {
   icon: string;
@@ -54,18 +54,15 @@ interface SideMenuItem {
   imports: [
     MatToolbarModule,
     MatButtonModule,
-    MatIcon,
-    MatTooltip,
+    MatIconModule,
+    MatTooltipModule,
     MatMenuModule,
-    RouterLink,
+    RouterModule,
     MatSidenavModule,
-    MatNavList,
     CanUserPerformPipe,
-    AsyncPipe,
+    CommonModule,
     MatListModule,
-    RouterLinkActive,
-    MatSlideToggle,
-    RouterOutlet,
+    MatSlideToggleModule,
   ],
 })
 export class FeaturesComponent implements OnInit {

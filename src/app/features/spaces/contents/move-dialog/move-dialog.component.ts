@@ -1,17 +1,17 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MoveDialogModel } from './move-dialog.model';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
 import { ContentFolder } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { AsyncPipe } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
+import { MoveDialogModel } from './move-dialog.model';
 
 @Component({
   selector: 'll-content-move-dialog',
@@ -19,7 +19,16 @@ import { MatIcon } from '@angular/material/icon';
   templateUrl: './move-dialog.component.html',
   styleUrls: ['./move-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInput, MatAutocompleteModule, AsyncPipe, MatButtonModule, MatIcon],
+  imports: [
+    MatDialogModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatAutocompleteModule,
+    CommonModule,
+    MatButtonModule,
+    MatIconModule,
+  ],
 })
 export class MoveDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({

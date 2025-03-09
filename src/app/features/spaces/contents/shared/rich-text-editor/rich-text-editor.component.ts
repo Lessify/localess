@@ -1,30 +1,30 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, OnDestroy } from '@angular/core';
 import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SchemaFieldRichText } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { Editor, Extension } from '@tiptap/core';
 import Bold from '@tiptap/extension-bold';
-import Italic from '@tiptap/extension-italic';
-import Strike from '@tiptap/extension-strike';
-import Underline from '@tiptap/extension-underline';
-import Document from '@tiptap/extension-document';
-import Text from '@tiptap/extension-text';
-import Paragraph from '@tiptap/extension-paragraph';
-import Placeholder from '@tiptap/extension-placeholder';
-import History from '@tiptap/extension-history';
-import ListItem from '@tiptap/extension-list-item';
-import OrderedList from '@tiptap/extension-ordered-list';
 import BulletList from '@tiptap/extension-bullet-list';
 import Code from '@tiptap/extension-code';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import Link from '@tiptap/extension-link';
+import Document from '@tiptap/extension-document';
 import Heading from '@tiptap/extension-heading';
+import History from '@tiptap/extension-history';
+import Italic from '@tiptap/extension-italic';
+import Link from '@tiptap/extension-link';
+import ListItem from '@tiptap/extension-list-item';
+import OrderedList from '@tiptap/extension-ordered-list';
+import Paragraph from '@tiptap/extension-paragraph';
+import Placeholder from '@tiptap/extension-placeholder';
+import Strike from '@tiptap/extension-strike';
+import Text from '@tiptap/extension-text';
+import Underline from '@tiptap/extension-underline';
 import { common, createLowlight } from 'lowlight';
-import { MatFormField } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatTooltip } from '@angular/material/tooltip';
-import { NgClass } from '@angular/common';
 import { NgxTiptapModule } from 'ngx-tiptap';
 
 @Component({
@@ -33,7 +33,7 @@ import { NgxTiptapModule } from 'ngx-tiptap';
   templateUrl: './rich-text-editor.component.html',
   styleUrls: ['./rich-text-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatFormField, MatInput, MatTooltip, NgClass, NgxTiptapModule, ReactiveFormsModule],
+  imports: [MatFormFieldModule, MatInputModule, MatTooltipModule, CommonModule, NgxTiptapModule, ReactiveFormsModule],
 })
 export class RichTextEditorComponent implements OnDestroy {
   // Input

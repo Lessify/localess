@@ -1,6 +1,6 @@
 import { Timestamp } from '@angular/fire/firestore';
-import { Schema } from '@shared/models/schema.model';
 import { Content } from '@shared/models/content.model';
+import { Schema } from '@shared/models/schema.model';
 
 export interface Plugin {
   id: string;

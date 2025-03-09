@@ -1,23 +1,23 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, viewChild } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap } from 'rxjs/operators';
+import { MatIconModule } from '@angular/material/icon';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { Task } from '@shared/models/task.model';
+import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
-import { Task } from '@shared/models/task.model';
-import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { saveAs } from 'file-saver-es';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { DatePipe } from '@angular/common';
-import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
-import { MatButtonModule } from '@angular/material/button';
+import { filter, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'll-tasks',
@@ -27,16 +27,16 @@ import { MatButtonModule } from '@angular/material/button';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatProgressBar,
+    MatProgressBarModule,
     MatTableModule,
     MatSortModule,
-    MatIcon,
-    MatTooltip,
+    MatIconModule,
+    MatTooltipModule,
     FormatFileSizePipe,
-    DatePipe,
+    CommonModule,
     TimeDurationPipe,
     MatButtonModule,
-    MatPaginator,
+    MatPaginatorModule,
   ],
 })
 export class TasksComponent implements OnInit {

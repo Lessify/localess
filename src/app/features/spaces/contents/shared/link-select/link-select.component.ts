@@ -1,20 +1,20 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
-import { ContentDocument, LinkContent } from '@shared/models/content.model';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { ContentDocument, LinkContent } from '@shared/models/content.model';
+import { SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { debounceTime, Observable, of, startWith } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatInput } from '@angular/material/input';
-import { AsyncPipe, JsonPipe } from '@angular/common';
-import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'll-link-select',
@@ -26,14 +26,13 @@ import { MatExpansionModule } from '@angular/material/expansion';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatButtonModule,
-    MatIcon,
+    MatIconModule,
     MatMenuModule,
-    MatInput,
+    MatInputModule,
     MatAutocompleteModule,
-    AsyncPipe,
+    CommonModule,
     MatSlideToggleModule,
     MatExpansionModule,
-    JsonPipe,
   ],
 })
 export class LinkSelectComponent implements OnInit {

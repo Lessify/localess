@@ -1,24 +1,24 @@
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { SchemaFieldKind, SchemaFieldReferences } from '@shared/models/schema.model';
-import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatError } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '@shared/components/references-select-dialog';
+import { StatusComponent } from '@shared/components/status';
+import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
+import { SchemaFieldKind, SchemaFieldReferences } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
 import { ContentService } from '@shared/services/content.service';
-import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { MatCardModule } from '@angular/material/card';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatDivider } from '@angular/material/divider';
-import { MatListModule } from '@angular/material/list';
-import { StatusComponent } from '@shared/components/status';
-import { MatError } from '@angular/material/form-field';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { JsonPipe } from '@angular/common';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-references-select',
@@ -28,16 +28,16 @@ import { JsonPipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatCardModule,
-    MatIcon,
+    MatIconModule,
     MatButtonModule,
-    MatTooltip,
-    MatDivider,
+    MatTooltipModule,
+    MatDividerModule,
     MatListModule,
     DragDropModule,
     StatusComponent,
     MatError,
     MatExpansionModule,
-    JsonPipe,
+    CommonModule,
   ],
 })
 export class ReferencesSelectComponent implements OnInit {

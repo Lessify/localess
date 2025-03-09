@@ -1,18 +1,18 @@
 import { ChangeDetectorRef, Component } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SetupService } from './setup.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { Router, RouterModule } from '@angular/router';
+import { NotificationService } from '@shared/services/notification.service';
+import { SetupService } from './setup.service';
 
 @Component({
   selector: 'll-setup',
   standalone: true,
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.scss'],
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInput, MatButtonModule, RouterLink],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule],
 })
 export class SetupComponent {
   redirect = ['/features'];

@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { Observable } from 'rxjs';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { UnsplashRandomResult, UnsplashSearchParams, UnsplashSearchResult } from '@shared/models/unsplash-plugin.model';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class UnsplashPluginService {
   constructor(private readonly functions: Functions) {}
 

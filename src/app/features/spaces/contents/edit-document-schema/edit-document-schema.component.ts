@@ -1,3 +1,6 @@
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { TextFieldModule } from '@angular/cdk/text-field';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -12,7 +15,24 @@ import {
   output,
   SimpleChanges,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
+import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import {
   Schema,
   SchemaComponent,
@@ -24,43 +44,23 @@ import {
   SchemaType,
   sortSchemaEnumValue,
 } from '@shared/models/schema.model';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
-import { filter } from 'rxjs/operators';
-import { debounceTime } from 'rxjs';
-import { v4 } from 'uuid';
-import { ContentHelperService } from '@shared/services/content-helper.service';
 import { Space } from '@shared/models/space.model';
-import { SchemaSelectChange } from './edit-document-schema.model';
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
-import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { TranslateService } from '@shared/services/translate.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { MatError, MatFormField, MatHint, MatSuffix } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatIcon } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { CdkTextareaAutosize } from '@angular/cdk/text-field';
-import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
-import { MatTabsModule } from '@angular/material/tabs';
+import { ContentHelperService } from '@shared/services/content-helper.service';
+import { NotificationService } from '@shared/services/notification.service';
+import { TranslateService } from '@shared/services/translate.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { MarkdownComponent } from 'ngx-markdown';
-import { MatSelectModule } from '@angular/material/select';
+import { debounceTime } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { v4 } from 'uuid';
+import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
+import { AssetsSelectComponent } from '../shared/assets-select/assets-select.component';
 import { LinkSelectComponent } from '../shared/link-select/link-select.component';
 import { ReferenceSelectComponent } from '../shared/reference-select/reference-select.component';
 import { ReferencesSelectComponent } from '../shared/references-select/references-select.component';
-import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
-import { AssetsSelectComponent } from '../shared/assets-select/assets-select.component';
-import { MatCardModule } from '@angular/material/card';
-import { MatDivider } from '@angular/material/divider';
-import { MatListModule } from '@angular/material/list';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
+import { SchemaSelectChange } from './edit-document-schema.model';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -70,22 +70,19 @@ import { MatExpansionModule } from '@angular/material/expansion';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormField,
-    MatInput,
+    MatFormFieldModule,
+    MatInputModule,
     CanUserPerformPipe,
-    AsyncPipe,
+    CommonModule,
     MatButtonModule,
-    MatTooltip,
-    MatIcon,
+    MatTooltipModule,
+    MatIconModule,
     MatMenuModule,
-    CdkTextareaAutosize,
+    TextFieldModule,
     RichTextEditorComponent,
     MatTabsModule,
     MarkdownComponent,
-    MatSlideToggle,
-    MatSuffix,
-    MatHint,
-    MatError,
+    MatSlideToggleModule,
     MatSelectModule,
     LinkSelectComponent,
     ReferenceSelectComponent,
@@ -93,15 +90,11 @@ import { MatExpansionModule } from '@angular/material/expansion';
     AssetSelectComponent,
     AssetsSelectComponent,
     MatCardModule,
-    MatDivider,
+    MatDividerModule,
     MatListModule,
-    NgClass,
-    CdkDropList,
-    CdkDrag,
-    CdkDragHandle,
+    CommonModule,
+    DragDropModule,
     MatExpansionModule,
-    JsonPipe,
-    NgIf,
   ],
 })
 export class EditDocumentSchemaComponent implements OnInit, OnChanges {

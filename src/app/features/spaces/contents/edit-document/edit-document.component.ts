@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -11,49 +12,48 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { SchemaService } from '@shared/services/schema.service';
-import { ContentService } from '@shared/services/content.service';
-import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
-import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
-import { combineLatest, Observable } from 'rxjs';
-import { SpaceService } from '@shared/services/space.service';
-import { Space, SpaceEnvironment } from '@shared/models/space.model';
-import { NotificationService } from '@shared/services/notification.service';
-import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { v4 } from 'uuid';
-import { ContentHelperService } from '@shared/services/content-helper.service';
-import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
-import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { TokenService } from '@shared/services/token.service';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { ContentHistory } from '@shared/models/content-history.model';
-import { ContentHistoryService } from '@shared/services/content-history.service';
-import { SpaceStore } from '@shared/stores/space.store';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatBadge } from '@angular/material/badge';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe, DatePipe, JsonPipe, NgClass } from '@angular/common';
-import { IconComponent } from '@shared/components/icon/icon.component';
-import { StatusComponent } from '@shared/components/status';
-import { MatDivider } from '@angular/material/divider';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatCardModule } from '@angular/material/card';
 import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { StatusComponent } from '@shared/components/status';
+import { AnimateDirective } from '@shared/directives/animate.directive';
+import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
+import { ContentHistory } from '@shared/models/content-history.model';
+import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
+import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { Space, SpaceEnvironment } from '@shared/models/space.model';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { ContentHelperService } from '@shared/services/content-helper.service';
+import { ContentHistoryService } from '@shared/services/content-history.service';
+import { ContentService } from '@shared/services/content.service';
+import { NotificationService } from '@shared/services/notification.service';
+import { SchemaService } from '@shared/services/schema.service';
+import { SpaceService } from '@shared/services/space.service';
+import { TokenService } from '@shared/services/token.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { SpaceStore } from '@shared/stores/space.store';
+import { combineLatest, Observable } from 'rxjs';
+import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
+import { v4 } from 'uuid';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
+import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -63,27 +63,24 @@ import { MatExpansionModule } from '@angular/material/expansion';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatIcon,
+    MatIconModule,
     MatButtonToggleModule,
-    MatTooltip,
+    MatTooltipModule,
     MatButtonModule,
     MatMenuModule,
-    MatBadge,
+    MatBadgeModule,
     CanUserPerformPipe,
-    AsyncPipe,
-    IconComponent,
+    CommonModule,
     StatusComponent,
-    MatDivider,
-    MatProgressBar,
+    MatDividerModule,
+    MatProgressBarModule,
     MatSidenavModule,
     MatCardModule,
-    NgClass,
     BreadcrumbComponent,
     BreadcrumbItemComponent,
     EditDocumentSchemaComponent,
     MatExpansionModule,
-    JsonPipe,
-    DatePipe,
+    AnimateDirective,
   ],
 })
 export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {

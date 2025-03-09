@@ -1,8 +1,8 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { UserStore } from '@shared/stores/user.store';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { UserStore } from '@shared/stores/user.store';
-import { toObservable } from '@angular/core/rxjs-interop';
 
 @Pipe({
   name: 'canUserPerform',

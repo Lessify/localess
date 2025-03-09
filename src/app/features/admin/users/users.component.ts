@@ -1,28 +1,28 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
-import { UserService } from '@shared/services/user.service';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { AnimateDirective } from '@shared/directives/animate.directive';
 import { User } from '@shared/models/user.model';
+import { NotificationService } from '@shared/services/notification.service';
+import { UserService } from '@shared/services/user.service';
 import { filter, switchMap } from 'rxjs/operators';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogModel } from './user-dialog/user-dialog.model';
 import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';
 import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialog.model';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { NotificationService } from '@shared/services/notification.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatTooltip } from '@angular/material/tooltip';
-import { IconComponent } from '@shared/components/icon/icon.component';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatIcon } from '@angular/material/icon';
-import { DatePipe, UpperCasePipe } from '@angular/common';
 
 @Component({
   selector: 'll-users',
@@ -32,18 +32,17 @@ import { DatePipe, UpperCasePipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatTooltip,
+    MatTooltipModule,
     MatTableModule,
-    IconComponent,
-    MatProgressBar,
+    MatProgressBarModule,
     MatFormFieldModule,
-    MatInput,
+    MatInputModule,
     MatSortModule,
-    MatIcon,
-    UpperCasePipe,
-    DatePipe,
+    MatIconModule,
+    CommonModule,
     MatButtonModule,
-    MatPaginator,
+    MatPaginatorModule,
+    AnimateDirective,
   ],
 })
 export class UsersComponent implements OnInit {

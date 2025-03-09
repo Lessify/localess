@@ -1,3 +1,5 @@
+import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -11,38 +13,36 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Router } from '@angular/router';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap } from 'rxjs/operators';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
-import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { NotificationService } from '@shared/services/notification.service';
+import { SchemaService } from '@shared/services/schema.service';
+import { TaskService } from '@shared/services/task.service';
+import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
-import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ExportDialogReturn } from './export-dialog/export-dialog.model';
-import { ImportDialogReturn } from './import-dialog/import-dialog.model';
-import { TaskService } from '@shared/services/task.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
-import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe, DatePipe } from '@angular/common';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatChipsModule } from '@angular/material/chips';
+import { ExportDialogComponent } from './export-dialog/export-dialog.component';
+import { ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { ImportDialogComponent } from './import-dialog/import-dialog.component';
+import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 
 @Component({
   selector: 'll-schemas',
@@ -53,19 +53,18 @@ import { MatChipsModule } from '@angular/material/chips';
   imports: [
     MatToolbarModule,
     MatIconModule,
-    MatTooltip,
+    MatTooltipModule,
     CanUserPerformPipe,
-    AsyncPipe,
+    CommonModule,
     MatButtonModule,
     MatMenuModule,
-    MatProgressBar,
+    MatProgressBarModule,
     MatFormFieldModule,
-    MatInput,
+    MatInputModule,
     MatTableModule,
     MatSortModule,
     MatChipsModule,
-    DatePipe,
-    MatPaginator,
+    MatPaginatorModule,
   ],
 })
 export class SchemasComponent implements OnInit {

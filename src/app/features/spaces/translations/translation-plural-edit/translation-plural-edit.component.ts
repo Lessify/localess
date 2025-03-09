@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime } from 'rxjs';
-import { TranslationValidator } from '@shared/validators/translation.validator';
-import { ObjectUtils } from '@core/utils/object-utils.service';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
+import { MatInputModule } from '@angular/material/input';
+import { ObjectUtils } from '@core/utils/object-utils.service';
+import { TranslationValidator } from '@shared/validators/translation.validator';
+import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'll-translation-plural-edit',
@@ -12,7 +12,7 @@ import { MatInput } from '@angular/material/input';
   templateUrl: './translation-plural-edit.component.html',
   styleUrls: ['./translation-plural-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInput],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule],
 })
 export class TranslationPluralEditComponent implements OnInit, OnChanges {
   @Input() value = '';

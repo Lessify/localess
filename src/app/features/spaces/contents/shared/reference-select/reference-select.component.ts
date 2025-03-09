@@ -1,23 +1,23 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { SchemaFieldKind, SchemaFieldReference } from '@shared/models/schema.model';
-import { Content, ContentDocument } from '@shared/models/content.model';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { Space } from '@shared/models/space.model';
-import { MatDialog } from '@angular/material/dialog';
-import { ContentService } from '@shared/services/content.service';
-import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '@shared/components/references-select-dialog';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatDivider } from '@angular/material/divider';
-import { MatListModule } from '@angular/material/list';
-import { StatusComponent } from '@shared/components/status';
-import { MatError } from '@angular/material/form-field';
+import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { JsonPipe } from '@angular/common';
+import { MatError } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '@shared/components/references-select-dialog';
+import { StatusComponent } from '@shared/components/status';
+import { Content, ContentDocument } from '@shared/models/content.model';
+import { SchemaFieldKind, SchemaFieldReference } from '@shared/models/schema.model';
+import { Space } from '@shared/models/space.model';
+import { ContentService } from '@shared/services/content.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-reference-select',
@@ -29,14 +29,14 @@ import { JsonPipe } from '@angular/common';
     ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
-    MatIcon,
-    MatTooltip,
-    MatDivider,
+    MatIconModule,
+    MatTooltipModule,
+    MatDividerModule,
     MatListModule,
     StatusComponent,
     MatError,
     MatExpansionModule,
-    JsonPipe,
+    CommonModule,
   ],
 })
 export class ReferenceSelectComponent implements OnInit {

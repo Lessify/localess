@@ -14,15 +14,15 @@ import {
   UpdateData,
   updateDoc,
 } from '@angular/fire/firestore';
-import { from, Observable, of } from 'rxjs';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { map } from 'rxjs/operators';
-import { Plugin, PluginConfiguration, PluginDefinition } from '@shared/models/plugin.model';
-import { PartialWithFieldValue } from '@firebase/firestore';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
+import { traceUntilFirst } from '@angular/fire/performance';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { PartialWithFieldValue } from '@firebase/firestore';
+import { Plugin, PluginConfiguration, PluginDefinition } from '@shared/models/plugin.model';
+import { from, Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class PluginService {
   constructor(
     private readonly firestore: Firestore,

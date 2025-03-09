@@ -1,24 +1,24 @@
+import { ClipboardModule } from '@angular/cdk/clipboard';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { filter, switchMap } from 'rxjs/operators';
+import { MatIconModule } from '@angular/material/icon';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { Token } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
+import { TokenService } from '@shared/services/token.service';
+import { SpaceStore } from '@shared/stores/space.store';
+import { filter, switchMap } from 'rxjs/operators';
 import { TokenDialogComponent } from './token-dialog/token-dialog.component';
 import { TokenDialogModel } from './token-dialog/token-dialog.model';
-import { Token } from '@shared/models/token.model';
-import { TokenService } from '@shared/services/token.service';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { SpaceStore } from '@shared/stores/space.store';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { ClipboardModule } from '@angular/cdk/clipboard';
-import { MatTooltip } from '@angular/material/tooltip';
-import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'll-space-settings-tokens',
@@ -28,15 +28,15 @@ import { DatePipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatIcon,
+    MatIconModule,
     MatButtonModule,
-    MatProgressBar,
+    MatProgressBarModule,
     MatTableModule,
     MatSortModule,
     ClipboardModule,
-    MatTooltip,
-    DatePipe,
-    MatPaginator,
+    MatTooltipModule,
+    CommonModule,
+    MatPaginatorModule,
   ],
 })
 export class TokensComponent {

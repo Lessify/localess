@@ -1,10 +1,10 @@
 import { computed, inject } from '@angular/core';
+import { Auth, user } from '@angular/fire/auth';
+import { tapResponse } from '@ngrx/operators';
 import { getState, patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { tapResponse } from '@ngrx/operators';
-import { from, pipe, switchMap } from 'rxjs';
 import { UserRole } from '@shared/models/user.model';
-import { Auth, user } from '@angular/fire/auth';
+import { from, pipe, switchMap } from 'rxjs';
 
 const LS_KEY = 'LL-USER-STATE';
 

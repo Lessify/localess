@@ -1,20 +1,20 @@
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MeService } from '@shared/services/me.service';
+import { NotificationService } from '@shared/services/notification.service';
+import { UserStore } from '@shared/stores/user.store';
 import { filter, switchMap } from 'rxjs/operators';
 import { MeDialogComponent } from './me-dialog/me-dialog.component';
 import { MeDialogModel } from './me-dialog/me-dialog.model';
-import { MeService } from '@shared/services/me.service';
-import { MePasswordDialogComponent } from './me-password-dialog/me-password-dialog.component';
-import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.model';
 import { MeEmailDialogComponent } from './me-email-dialog/me-email-dialog.component';
 import { MeEmailDialogModel } from './me-email-dialog/me-email-dialog.model';
-import { NotificationService } from '@shared/services/notification.service';
-import { UserStore } from '@shared/stores/user.store';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatCardModule } from '@angular/material/card';
-import { NgOptimizedImage, UpperCasePipe } from '@angular/common';
-import { MatDivider } from '@angular/material/divider';
-import { MatButton } from '@angular/material/button';
+import { MePasswordDialogComponent } from './me-password-dialog/me-password-dialog.component';
+import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.model';
 
 @Component({
   selector: 'll-me',
@@ -22,7 +22,7 @@ import { MatButton } from '@angular/material/button';
   templateUrl: './me.component.html',
   styleUrls: ['./me.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatCardModule, NgOptimizedImage, MatDivider, UpperCasePipe, MatButton],
+  imports: [MatToolbarModule, MatCardModule, CommonModule, MatDividerModule, MatButtonModule, NgOptimizedImage],
 })
 export class MeComponent {
   userStore = inject(UserStore);

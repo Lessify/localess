@@ -1,6 +1,28 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit } from '@angular/core';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
+import { TextFieldModule } from '@angular/cdk/text-field';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { SchemaValidator } from '@shared/validators/schema.validator';
+import { MatButtonModule } from '@angular/material/button';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AnimateDirective } from '@shared/directives/animate.directive';
+import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import {
   AssetFileType,
   assetFileTypeDescriptions,
@@ -12,35 +34,13 @@ import {
   SchemaFieldOptionSelectable,
   SchemaType,
 } from '@shared/models/schema.model';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CommonValidator } from '@shared/validators/common.validator';
-import { SchemaService } from '@shared/services/schema.service';
-import { Router } from '@angular/router';
-import { combineLatest } from 'rxjs';
-import { NotificationService } from '@shared/services/notification.service';
-import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
-import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AsyncPipe, JsonPipe } from '@angular/common';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { IconComponent } from '@shared/components/icon/icon.component';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatListModule } from '@angular/material/list';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatDividerModule } from '@angular/material/divider';
-import { TextFieldModule } from '@angular/cdk/text-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { NotificationService } from '@shared/services/notification.service';
+import { SchemaService } from '@shared/services/schema.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { CommonValidator } from '@shared/validators/common.validator';
+import { SchemaValidator } from '@shared/validators/schema.validator';
+import { combineLatest } from 'rxjs';
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
 
 @Component({
@@ -54,9 +54,8 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     MatButtonModule,
     MatIconModule,
     CanUserPerformPipe,
-    AsyncPipe,
+    CommonModule,
     MatTooltipModule,
-    IconComponent,
     MatProgressBarModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -70,8 +69,8 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     MatSelectModule,
     MatChipsModule,
     MatExpansionModule,
-    JsonPipe,
     EditFieldComponent,
+    AnimateDirective,
   ],
 })
 export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
@@ -90,8 +89,8 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   newFieldName = this.fb.control('', [...SchemaValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
 
   //Loadings
-  isLoading = true;
-  isSaveLoading = false;
+  isLoading = signal(true);
+  isSaveLoading = signal(false);
   // Subscriptions
   private destroyRef = inject(DestroyRef);
   settingsStore = inject(LocalSettingsStore);
@@ -136,7 +135,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
             schema.fields?.forEach(it => this.addField(it));
           }
 
-          this.isLoading = false;
+          this.isLoading.set(false);
           this.cd.markForCheck();
         },
       });
@@ -352,7 +351,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
 
   save(): void {
     //console.group('save')
-    this.isSaveLoading = true;
+    this.isSaveLoading.set(true);
 
     this.schemaService.updateComponent(this.spaceId(), this.schemaId(), this.form.value as SchemaComponentUpdate).subscribe({
       next: () => {
@@ -363,7 +362,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
       },
       complete: () => {
         setTimeout(() => {
-          this.isSaveLoading = false;
+          this.isSaveLoading.set(false);
           this.cd.markForCheck();
         }, 1000);
       },

@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
 import {
   AssetContent,
@@ -10,11 +9,12 @@ import {
   isReferenceContent,
   ReferenceContent,
 } from '@shared/models/content.model';
+import { DEFAULT_LOCALE } from '@shared/models/locale.model';
+import { Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { v4 } from 'uuid';
-import { DEFAULT_LOCALE } from '@shared/models/locale.model';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class ContentHelperService {
   constructor(private readonly fb: FormBuilder) {}
 
