@@ -23,7 +23,7 @@
   function createCSS() {
     const style = document.createElement('style');
     style.id = 'localess-css-sync';
-    style.textContent = `[data-ll-id]{outline:#74777f dashed 1px;display:block;}[data-ll-id]:hover{outline-style:solid;outline-color:#005cbb;}`;
+    style.textContent = `[data-ll-id]{outline: 2px dashed rgba(0,92,187,0.5);transition: box-shadow ease-out 150ms;}[data-ll-id]:hover{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
     document.head.appendChild(style);
   }
 
