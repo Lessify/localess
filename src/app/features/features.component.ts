@@ -47,7 +47,6 @@ interface SideMenuItem {
 
 @Component({
   selector: 'll-features',
-  standalone: true,
   templateUrl: './features.component.html',
   styleUrl: './features.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -8,7 +8,7 @@ mat-card {
     background-color: transparent;
   }
   &.invalid {
-    border: solid 2px var(--sys-error);
+    border: solid 2px var(--mat-sys-error);
   }
   &.digital-asset-card {
     max-width: 240px;

@@ -22,7 +22,6 @@ import { TokenDialogModel } from './token-dialog/token-dialog.model';
 
 @Component({
   selector: 'll-space-settings-tokens',
-  standalone: true,
   templateUrl: './tokens.component.html',
   styleUrls: ['./tokens.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

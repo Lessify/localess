@@ -15,7 +15,6 @@ import { AddDocumentDialogModel } from './add-document-dialog.model';
 
 @Component({
   selector: 'll-content-add-document-dialog',
-  standalone: true,
   templateUrl: './add-document-dialog.component.html',
   styleUrls: ['./add-document-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

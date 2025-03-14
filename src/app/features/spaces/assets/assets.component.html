@@ -21,7 +21,7 @@
         </mat-button-toggle>
       </mat-button-toggle-group>
       @if ('ASSET_CREATE' | canUserPerform | async) {
-        <button mat-stroked-button color="primary" [matMenuTriggerFor]="uploadExtraMenu">
+        <button mat-flat-button [matMenuTriggerFor]="uploadExtraMenu">
           <mat-icon>upload_file</mat-icon>
           Upload Assets
         </button>
@@ -47,7 +47,7 @@
           }
         </mat-menu>
 
-        <button mat-stroked-button color="primary" (click)="openAddFolderDialog()">
+        <button mat-stroked-button (click)="openAddFolderDialog()">
           <mat-icon>add</mat-icon>
           Create Folder
         </button>

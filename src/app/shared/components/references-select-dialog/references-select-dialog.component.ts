@@ -38,7 +38,6 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
 
 @Component({
   selector: 'll-references-select-dialog',
-  standalone: true,
   templateUrl: './references-select-dialog.component.html',
   styleUrls: ['./references-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

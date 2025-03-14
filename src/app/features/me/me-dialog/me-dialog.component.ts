@@ -8,7 +8,6 @@ import { MeDialogModel } from './me-dialog.model';
 
 @Component({
   selector: 'll-me-dialog',
-  standalone: true,
   templateUrl: './me-dialog.component.html',
   styleUrls: ['./me-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

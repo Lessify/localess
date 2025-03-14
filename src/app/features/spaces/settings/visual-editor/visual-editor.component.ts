@@ -21,7 +21,6 @@ import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-visual-editor',
-  standalone: true,
   templateUrl: './visual-editor.component.html',
   styleUrls: ['./visual-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

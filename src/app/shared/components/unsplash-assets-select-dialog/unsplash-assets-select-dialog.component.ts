@@ -20,7 +20,6 @@ import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog
 
 @Component({
   selector: 'll-unsplash-assets-select-dialog',
-  standalone: true,
   templateUrl: './unsplash-assets-select-dialog.component.html',
   styleUrls: ['./unsplash-assets-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

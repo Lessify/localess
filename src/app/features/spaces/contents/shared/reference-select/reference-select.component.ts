@@ -21,7 +21,6 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-reference-select',
-  standalone: true,
   templateUrl: './reference-select.component.html',
   styleUrls: ['./reference-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

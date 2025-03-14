@@ -9,7 +9,6 @@ import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'll-translation-array-edit',
-  standalone: true,
   templateUrl: './translation-array-edit.component.html',
   styleUrls: ['./translation-array-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

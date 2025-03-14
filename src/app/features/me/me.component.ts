@@ -18,7 +18,6 @@ import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.m
 
 @Component({
   selector: 'll-me',
-  standalone: true,
   templateUrl: './me.component.html',
   styleUrls: ['./me.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

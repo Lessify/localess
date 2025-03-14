@@ -8,7 +8,7 @@
       <span class="spacer"></span>
       <div class="actions">
         @if ('TRANSLATION_CREATE' | canUserPerform | async) {
-          <button mat-stroked-button color="primary" (click)="openAddDialog()">
+          <button mat-flat-button (click)="openAddDialog()">
             <mat-icon>add</mat-icon>
             Add Translation
           </button>
@@ -16,7 +16,6 @@
         @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
           <button
             mat-stroked-button
-            color="accent"
             matTooltip="Publish Translations to be available via API call"
             [disabled]="isPublishLoading()"
             (click)="publish()">

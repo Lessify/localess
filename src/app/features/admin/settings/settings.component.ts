@@ -13,7 +13,6 @@ interface TabItem {
 
 @Component({
   selector: 'll-admin-settings',
-  standalone: true,
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

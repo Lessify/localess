@@ -55,7 +55,6 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
 
 @Component({
   selector: 'll-translations',
-  standalone: true,
   templateUrl: './translations.component.html',
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

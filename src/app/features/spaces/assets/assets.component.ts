@@ -64,7 +64,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
 
 @Component({
   selector: 'll-assets',
-  standalone: true,
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

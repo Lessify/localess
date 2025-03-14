@@ -10,7 +10,6 @@ import { InstallDialogModel } from './install-dialog.model';
 
 @Component({
   selector: 'll-plugin-install-dialog',
-  standalone: true,
   templateUrl: './install-dialog.component.html',
   styleUrls: ['./install-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -7,7 +7,6 @@ import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'll-me-email-dialog',
-  standalone: true,
   templateUrl: './me-email-dialog.component.html',
   styleUrls: ['./me-email-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

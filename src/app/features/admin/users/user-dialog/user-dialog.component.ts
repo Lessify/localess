@@ -15,7 +15,6 @@ import { UserDialogModel } from './user-dialog.model';
 
 @Component({
   selector: 'll-user-dialog',
-  standalone: true,
   templateUrl: './user-dialog.component.html',
   styleUrls: ['./user-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

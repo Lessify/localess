@@ -11,7 +11,6 @@ import { AddFolderDialogModel } from './add-folder-dialog.model';
 
 @Component({
   selector: 'll-asset-add-folder-dialog',
-  standalone: true,
   templateUrl: './add-folder-dialog.component.html',
   styleUrls: ['./add-folder-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

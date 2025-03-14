@@ -9,7 +9,6 @@ import { TokenValidator } from '@shared/validators/token.validator';
 
 @Component({
   selector: 'll-token-dialog',
-  standalone: true,
   templateUrl: './token-dialog.component.html',
   styleUrls: ['./token-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

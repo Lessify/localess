@@ -14,7 +14,6 @@ import { SpaceStore } from '@shared/stores/space.store';
 
 @Component({
   selector: 'll-dashboard',
-  standalone: true,
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

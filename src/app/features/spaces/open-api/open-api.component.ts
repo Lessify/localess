@@ -6,7 +6,6 @@ import { Observable } from 'rxjs';
 
 @Component({
   selector: 'll-open-api',
-  standalone: true,
   templateUrl: './open-api.component.html',
   styleUrl: './open-api.component.scss',
   encapsulation: ViewEncapsulation.None,

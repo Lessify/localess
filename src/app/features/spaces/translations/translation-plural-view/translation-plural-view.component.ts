@@ -12,7 +12,6 @@ interface Plural {
 
 @Component({
   selector: 'll-translation-plural-view',
-  standalone: true,
   templateUrl: './translation-plural-view.component.html',
   styleUrls: ['./translation-plural-view.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

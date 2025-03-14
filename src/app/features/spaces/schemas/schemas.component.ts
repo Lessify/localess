@@ -46,7 +46,6 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 
 @Component({
   selector: 'll-schemas',
-  standalone: true,
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

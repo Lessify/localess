@@ -64,7 +64,6 @@ import { SchemaSelectChange } from './edit-document-schema.model';
 
 @Component({
   selector: 'll-content-document-schema-edit',
-  standalone: true,
   templateUrl: './edit-document-schema.component.html',
   styleUrls: ['./edit-document-schema.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -118,9 +117,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   availableLocales = input.required<Locale[]>();
   hoverSchemaPath = input<string[]>();
   // Outputs
-  onSchemaChange = output<SchemaSelectChange>();
-  onFormChange = output<string>();
-  onStructureChange = output<string>();
+  schemaChange = output<SchemaSelectChange>();
+  formChange = output<string>();
+  structureChange = output<string>();
 
   rootSchema?: SchemaComponent;
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
@@ -258,7 +257,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                 }
               }
             }
-            this.onFormChange.emit(JSON.stringify(formValue));
+            this.formChange.emit(JSON.stringify(formValue));
             //console.log('After data', ObjectUtils.clone(this.data));
             //console.groupEnd();
           },
@@ -347,12 +346,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         schema: schema.id,
       };
     }
-    this.onStructureChange.emit(`addSchemaOne ${field.name} ${schema.id}`);
+    this.structureChange.emit(`addSchemaOne ${field.name} ${schema.id}`);
   }
 
   removeSchemaOne(field: SchemaField): void {
     delete this.data[field.name];
-    this.onStructureChange.emit(`removeSchemaOne ${field.name}`);
+    this.structureChange.emit(`removeSchemaOne ${field.name}`);
   }
 
   addSchemaMany(field: SchemaField, schema: Schema, index?: number): void {
@@ -378,14 +377,14 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         },
       ];
     }
-    this.onStructureChange.emit(`addSchemaMany ${field.name} ${schema.id}`);
+    this.structureChange.emit(`addSchemaMany ${field.name} ${schema.id}`);
   }
 
   duplicateSchemaMany(data: any[], item: ContentData, idx: number): void {
     const clone = this.contentHelperService.clone(item, true);
     data.splice(idx + 1, 0, clone);
     //console.log(data)
-    this.onStructureChange.emit(`duplicateSchemaMany ${item.schema} ${item._id}`);
+    this.structureChange.emit(`duplicateSchemaMany ${item.schema} ${item._id}`);
   }
 
   removeSchemaMany(field: SchemaField, schemaId: string): void {
@@ -399,11 +398,11 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         delete this.data[field.name];
       }
     }
-    this.onStructureChange.emit(`removeSchemaMany ${field.name}`);
+    this.structureChange.emit(`removeSchemaMany ${field.name}`);
   }
 
   navigationTo(contentId: string, fieldName: string, schemaName: string): void {
-    this.onSchemaChange.emit({ contentId, fieldName, schemaName: schemaName });
+    this.schemaChange.emit({ contentId, fieldName, schemaName: schemaName });
   }
 
   onAssetsChange() {
@@ -414,7 +413,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   schemaDropDrop(event: CdkDragDrop<string[], any>, data: any[]): void {
     if (event.previousIndex === event.currentIndex) return;
     moveItemInArray(data, event.previousIndex, event.currentIndex);
-    this.onStructureChange.emit(`schemaDropDrop from-${event.previousIndex} to-${event.currentIndex}`);
+    this.structureChange.emit(`schemaDropDrop from-${event.previousIndex} to-${event.currentIndex}`);
   }
 
   previewText(content: ContentData, schema: SchemaComponent, localeId: string): string | undefined {

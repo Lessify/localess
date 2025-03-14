@@ -42,7 +42,7 @@
       }
     }
     @if (form().value.type === 'content') {
-      <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
+      <button mat-icon-button matIconSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
         <mat-icon>clear</mat-icon>
       </button>
     }

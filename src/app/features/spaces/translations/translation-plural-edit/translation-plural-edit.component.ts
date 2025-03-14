@@ -8,7 +8,6 @@ import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'll-translation-plural-edit',
-  standalone: true,
   templateUrl: './translation-plural-edit.component.html',
   styleUrls: ['./translation-plural-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

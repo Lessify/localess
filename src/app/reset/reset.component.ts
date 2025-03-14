@@ -10,7 +10,6 @@ import { EMPTY, Observable } from 'rxjs';
 
 @Component({
   selector: 'll-reset',
-  standalone: true,
   templateUrl: './reset.component.html',
   styleUrls: ['./reset.component.scss'],
   imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule],

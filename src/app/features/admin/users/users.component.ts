@@ -26,7 +26,6 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
 
 @Component({
   selector: 'll-users',
-  standalone: true,
   templateUrl: './users.component.html',
   styleUrls: ['./users.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

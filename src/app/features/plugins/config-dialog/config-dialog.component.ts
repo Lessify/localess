@@ -11,7 +11,6 @@ import { ConfigDialogModel } from './config-dialog.model';
 
 @Component({
   selector: 'll-plugin-config-dialog',
-  standalone: true,
   templateUrl: './config-dialog.component.html',
   styleUrls: ['./config-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

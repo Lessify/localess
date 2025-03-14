@@ -57,7 +57,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
 
 @Component({
   selector: 'll-content-document-edit',
-  standalone: true,
   templateUrl: './edit-document.component.html',
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

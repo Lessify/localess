@@ -22,7 +22,6 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-references-select',
-  standalone: true,
   templateUrl: './references-select.component.html',
   styleUrls: ['./references-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,7 +45,7 @@ export class ReferencesSelectComponent implements OnInit {
   component = input.required<SchemaFieldReferences>();
   space = input.required<Space>();
   // Outputs
-  onReferencesChange = output<string[]>();
+  referencesChange = output<string[]>();
 
   contents: ContentDocument[] = [];
   // Settings
@@ -97,7 +96,7 @@ export class ReferencesSelectComponent implements OnInit {
             this.contents.push(...selectedDocuments);
             this.form().clear();
             this.contents.forEach(it => this.form().push(this.documentToForm(it)));
-            this.onReferencesChange.emit(this.contents.map(it => it.id));
+            this.referencesChange.emit(this.contents.map(it => it.id));
           }
           this.cd.markForCheck();
         },
@@ -114,7 +113,7 @@ export class ReferencesSelectComponent implements OnInit {
   deleteReference(idx: number) {
     this.contents.splice(idx, 1);
     this.form().removeAt(idx);
-    this.onReferencesChange.emit(this.contents.map(it => it.id));
+    this.referencesChange.emit(this.contents.map(it => it.id));
   }
 
   referenceDropDrop(event: CdkDragDrop<string[]>) {
@@ -124,7 +123,7 @@ export class ReferencesSelectComponent implements OnInit {
       this.form().removeAt(event.previousIndex);
       this.form().insert(event.currentIndex, tmp);
       moveItemInArray(this.contents, event.previousIndex, event.currentIndex);
-      this.onReferencesChange.emit(this.contents.map(it => it.id));
+      this.referencesChange.emit(this.contents.map(it => it.id));
     }
   }
 }

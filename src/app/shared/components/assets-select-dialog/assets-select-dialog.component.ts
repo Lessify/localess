@@ -43,7 +43,6 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
 
 @Component({
   selector: 'll-assets-select-dialog',
-  standalone: true,
   templateUrl: './assets-select-dialog.component.html',
   styleUrls: ['./assets-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

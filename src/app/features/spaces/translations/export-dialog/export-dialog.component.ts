@@ -12,7 +12,6 @@ import { ExportDialogModel } from './export-dialog.model';
 
 @Component({
   selector: 'll-translation-export-dialog',
-  standalone: true,
   templateUrl: './export-dialog.component.html',
   styleUrls: ['./export-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

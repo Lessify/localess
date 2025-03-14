@@ -22,7 +22,6 @@ import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'll-login',
-  standalone: true,
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
   imports: [CommonModule, MatFormFieldModule, ReactiveFormsModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],

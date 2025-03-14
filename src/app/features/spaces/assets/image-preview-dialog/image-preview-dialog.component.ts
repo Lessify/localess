@@ -8,7 +8,6 @@ import { ImagePreviewDialogModel } from './image-preview-dialog.model';
 
 @Component({
   selector: 'll-asset-image-preview-dialog',
-  standalone: true,
   templateUrl: './image-preview-dialog.component.html',
   styleUrls: ['./image-preview-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

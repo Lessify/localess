@@ -9,7 +9,6 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-schema-value-edit',
-  standalone: true,
   templateUrl: './edit-value.component.html',
   styleUrls: ['./edit-value.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

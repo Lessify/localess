@@ -34,7 +34,6 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
 
 @Component({
   selector: 'll-schema-edit-enum',
-  standalone: true,
   templateUrl: './edit-enum.component.html',
   styleUrl: './edit-enum.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

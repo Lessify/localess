@@ -9,7 +9,6 @@ import { SetupService } from './setup.service';
 
 @Component({
   selector: 'll-setup',
-  standalone: true,
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.scss'],
   imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule],

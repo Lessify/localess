@@ -8,12 +8,7 @@
     <span class="subtitle">#{{ entity?.id }}</span>
     <span class="spacer"></span>
     @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-      <button
-        mat-stroked-button
-        color="primary"
-        matTooltip="Save the changes."
-        [disabled]="!form.valid || isSaveLoading()"
-        (click)="save()">
+      <button mat-flat-button matTooltip="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
         <mat-icon [llAnimate]="isSaveLoading()">{{ isSaveLoading() ? 'sync' : 'save' }}</mat-icon>
         Save
       </button>
