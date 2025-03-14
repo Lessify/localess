@@ -1,7 +1,9 @@
-import { logger } from 'firebase-functions/v2';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
+import { logger } from 'firebase-functions/v2';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { authService, firestoreService } from './config';
+import { DEFAULT_LOCALE } from './models';
+import { createSpace } from './services';
 
 interface Setup {
   displayName?: string | null;
@@ -37,6 +39,15 @@ export const setup = onCall<Setup>(async request => {
 
     // TODO update user role in firestore
 
-    return true;
+    // Create first Space
+    await createSpace({
+      name: 'Hello World',
+      locales: [DEFAULT_LOCALE],
+      localeFallback: DEFAULT_LOCALE,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    // Create token for the first user
+    return await authService.createCustomToken(adminUser.uid);
   }
 });

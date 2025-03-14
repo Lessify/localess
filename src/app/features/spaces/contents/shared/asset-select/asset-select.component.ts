@@ -23,7 +23,6 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-asset-select',
-  standalone: true,
   templateUrl: './asset-select.component.html',
   styleUrls: ['./asset-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

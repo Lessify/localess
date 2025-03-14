@@ -11,7 +11,6 @@ import { EditFolderDialogModel } from './edit-folder-dialog.model';
 
 @Component({
   selector: 'll-asset-edit-folder-dialog',
-  standalone: true,
   templateUrl: './edit-folder-dialog.component.html',
   styleUrls: ['./edit-folder-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

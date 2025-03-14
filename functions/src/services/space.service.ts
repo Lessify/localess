@@ -1,5 +1,5 @@
 import { firestoreService } from '../config';
-import { CollectionReference, DocumentReference } from 'firebase-admin/firestore';
+import { CollectionReference, DocumentReference, WithFieldValue } from 'firebase-admin/firestore';
 import { Space } from '../models';
 
 /**
@@ -15,8 +15,17 @@ export function findSpaceById(id: string): DocumentReference {
  * find Spaces
  * @return {CollectionReference} collection
  */
-export function findSpaces(): CollectionReference {
+export function findAllSpaces(): CollectionReference {
   return firestoreService.collection('spaces');
+}
+
+/**
+ * create a Spaces
+ * @param {Space} space Space entity
+ * @return {CollectionReference} collection
+ */
+export function createSpace(space: WithFieldValue<Space>): Promise<DocumentReference> {
+  return firestoreService.collection('spaces').add(space);
 }
 
 /**

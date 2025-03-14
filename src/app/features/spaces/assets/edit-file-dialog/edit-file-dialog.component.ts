@@ -11,7 +11,6 @@ import { EditFileDialogModel } from './edit-file-dialog.model';
 
 @Component({
   selector: 'll-asset-edit-file-dialog',
-  standalone: true,
   templateUrl: './edit-file-dialog.component.html',
   styleUrls: ['./edit-file-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

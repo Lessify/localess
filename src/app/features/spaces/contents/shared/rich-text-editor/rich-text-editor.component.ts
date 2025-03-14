@@ -25,15 +25,14 @@ import Strike from '@tiptap/extension-strike';
 import Text from '@tiptap/extension-text';
 import Underline from '@tiptap/extension-underline';
 import { common, createLowlight } from 'lowlight';
-import { NgxTiptapModule } from 'ngx-tiptap';
+import { TiptapEditorDirective } from 'ngx-tiptap';
 
 @Component({
   selector: 'll-rich-text-editor',
-  standalone: true,
   templateUrl: './rich-text-editor.component.html',
   styleUrls: ['./rich-text-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatFormFieldModule, MatInputModule, MatTooltipModule, CommonModule, NgxTiptapModule, ReactiveFormsModule],
+  imports: [MatFormFieldModule, MatInputModule, MatTooltipModule, CommonModule, TiptapEditorDirective, ReactiveFormsModule],
 })
 export class RichTextEditorComponent implements OnDestroy {
   // Input

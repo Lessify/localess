@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { collection, collectionData, Firestore, orderBy, query, QueryConstraint } from '@angular/fire/firestore';
+import { collection, collectionData, Firestore, limit, orderBy, query, QueryConstraint } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { limit } from '@firebase/firestore';
 import { ContentHistory } from '@shared/models/content-history.model';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';

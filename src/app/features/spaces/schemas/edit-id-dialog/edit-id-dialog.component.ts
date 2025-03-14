@@ -13,7 +13,6 @@ import { EditIdDialogModel } from './edit-id-dialog.model';
 
 @Component({
   selector: 'll-schema-edit-id-dialog',
-  standalone: true,
   templateUrl: './edit-id-dialog.component.html',
   styleUrls: ['./edit-id-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -22,17 +22,17 @@ export const routes: Routes = [
   {
     path: 'login',
     title: 'Login',
-    loadChildren: () => import('./login/login.module').then(m => m.LoginModule),
+    loadComponent: () => import('./login/login.component').then(m => m.LoginComponent),
   },
   {
     path: 'reset',
     title: 'Forgot Password',
-    loadChildren: () => import('./reset/reset.module').then(m => m.ResetModule),
+    loadComponent: () => import('./reset/reset.component').then(m => m.ResetComponent),
   },
   {
     path: 'setup',
     title: 'Initial Setup',
-    loadChildren: () => import('./setup/setup.module').then(m => m.SetupModule),
+    loadComponent: () => import('./setup/setup.component').then(m => m.SetupComponent),
   },
   {
     path: 'features',

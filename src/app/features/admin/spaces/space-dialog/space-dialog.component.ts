@@ -10,7 +10,6 @@ import { SpaceDialogModel } from './space-dialog.model';
 
 @Component({
   selector: 'll-space-dialog',
-  standalone: true,
   templateUrl: './space-dialog.component.html',
   styleUrls: ['./space-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

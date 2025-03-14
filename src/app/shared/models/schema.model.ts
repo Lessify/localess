@@ -267,14 +267,14 @@ export enum AssetFileType {
 }
 
 // Service
-export interface SchemaCreate extends Omit<Schema, 'createdAt' | 'updatedAt'> {}
+export type SchemaCreate = Omit<Schema, 'createdAt' | 'updatedAt'>;
 
-export interface SchemaComponentUpdate extends Omit<SchemaComponent, 'id' | 'type' | 'createdAt' | 'updatedAt'> {}
+export type SchemaComponentUpdate = Omit<SchemaComponent, 'id' | 'type' | 'createdAt' | 'updatedAt'>;
 
-export interface SchemaEnumUpdate extends Omit<SchemaEnum, 'id' | 'type' | 'createdAt' | 'updatedAt'> {}
+export type SchemaEnumUpdate = Omit<SchemaEnum, 'id' | 'type' | 'createdAt' | 'updatedAt'>;
 
 // Firestore
-export interface SchemaCreateFS extends Omit<Schema, 'id'> {}
+export type SchemaCreateFS = Omit<Schema, 'id'>;
 
-export interface SchemaComponentUpdateIdFS extends Omit<SchemaComponent, 'id'> {}
-export interface SchemaEnumUpdateIdFS extends Omit<SchemaEnum, 'id'> {}
+export type SchemaComponentUpdateIdFS = Omit<SchemaComponent, 'id'>;
+export type SchemaEnumUpdateIdFS = Omit<SchemaEnum, 'id'>;

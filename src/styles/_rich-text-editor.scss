@@ -2,11 +2,11 @@
 
 ll-rich-text-editor {
   .border-color {
-    border-color: var(--sys-outline);
+    border-color: var(--mat-sys-outline);
   }
   .tool-bar-sticky {
-    background-color: var(--sys-surface);
-    border-color: var(--sys-outline);
+    background-color: var(--mat-sys-surface);
+    border-color: var(--mat-sys-outline);
     @apply sticky top-0 z-10 border-b border-x p-1 flex;
   }
 
@@ -31,18 +31,18 @@ ll-rich-text-editor {
 
     /* Code and preformatted text styles */
     code {
-      background: color-mix(in srgb, var(--sys-primary-container) 50%, transparent);
+      background: color-mix(in srgb, var(--mat-sys-primary-container) 50%, transparent);
       border-radius: 0.5rem;
-      color: var(--sys-on-surface);
+      color: var(--mat-sys-on-surface);
       font-size: 0.85rem;
       padding: 0.3em 0.3em;
     }
     /* Code Block */
     pre {
-      //background: var(--sys-background);
+      //background: var(--mat-sys-background);
       border-radius: 0.5rem;
-      border: 1px solid var(--sys-outline-variant);
-      color: var(--sys-on-surface);
+      border: 1px solid var(--mat-sys-outline-variant);
+      color: var(--mat-sys-on-surface);
       font-family: 'JetBrainsMono', monospace;
       margin: 1.5rem 0;
       padding: 0.75rem 1rem;
@@ -56,7 +56,7 @@ ll-rich-text-editor {
     }
     /* Link styles */
     a {
-      color: var(--sys-primary);
+      color: var(--mat-sys-primary);
       cursor: pointer;
 
       &:hover {

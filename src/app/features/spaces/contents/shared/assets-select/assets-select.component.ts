@@ -24,7 +24,6 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-assets-select',
-  standalone: true,
   templateUrl: './assets-select.component.html',
   styleUrls: ['./assets-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,7 +49,7 @@ export class AssetsSelectComponent implements OnInit {
   component = input.required<SchemaFieldAssets>();
   space = input.required<Space>();
   // Outputs
-  onAssetsChange = output<string[]>();
+  assetsChange = output<string[]>();
 
   assets: AssetFile[] = [];
   // Settings
@@ -105,7 +104,7 @@ export class AssetsSelectComponent implements OnInit {
             this.assets.push(...selectedAssets);
             this.form().clear();
             this.assets.forEach(it => this.form().push(this.assetToForm(it)));
-            this.onAssetsChange.emit(this.assets.map(it => it.id));
+            this.assetsChange.emit(this.assets.map(it => it.id));
             //this.form?.root.updateValueAndValidity()
             //this.cd.markForCheck();
           }
@@ -123,7 +122,7 @@ export class AssetsSelectComponent implements OnInit {
   deleteAsset(idx: number) {
     this.assets.splice(idx, 1);
     this.form().removeAt(idx);
-    this.onAssetsChange.emit(this.assets.map(it => it.id));
+    this.assetsChange.emit(this.assets.map(it => it.id));
     //this.form?.root.updateValueAndValidity()
   }
 
@@ -134,7 +133,7 @@ export class AssetsSelectComponent implements OnInit {
       this.form().removeAt(event.previousIndex);
       this.form().insert(event.currentIndex, tmp);
       moveItemInArray(this.assets, event.previousIndex, event.currentIndex);
-      this.onAssetsChange.emit(this.assets.map(it => it.id));
+      this.assetsChange.emit(this.assets.map(it => it.id));
     }
   }
 }

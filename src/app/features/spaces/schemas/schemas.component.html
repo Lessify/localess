@@ -7,7 +7,7 @@
     <span class="spacer"></span>
     <div class="actions">
       @if ('SCHEMA_CREATE' | canUserPerform | async) {
-        <button mat-stroked-button color="primary" (click)="openAddDialog()">
+        <button mat-flat-button (click)="openAddDialog()">
           <mat-icon>add</mat-icon>
           Add Schema
         </button>

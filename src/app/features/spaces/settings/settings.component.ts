@@ -14,7 +14,6 @@ interface TabItem {
 
 @Component({
   selector: 'll-spaces-settings',
-  standalone: true,
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -5,7 +5,6 @@ import { ConfirmationDialogModel } from './confirmation-dialog.model';
 
 @Component({
   selector: 'll-confirmation-dialog',
-  standalone: true,
   templateUrl: './confirmation-dialog.component.html',
   styleUrls: ['./confirmation-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -17,7 +17,6 @@ import { AddDialogModel } from './add-dialog.model';
 
 @Component({
   selector: 'll-translation-add-dialog',
-  standalone: true,
   templateUrl: './add-dialog.component.html',
   styleUrls: ['./add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -15,7 +15,6 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 
 @Component({
   selector: 'll-user-invite-dialog',
-  standalone: true,
   templateUrl: './user-invite-dialog.component.html',
   styleUrls: ['./user-invite-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

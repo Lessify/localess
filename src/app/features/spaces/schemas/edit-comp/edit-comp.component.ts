@@ -45,7 +45,6 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
 
 @Component({
   selector: 'll-schema-edit-comp',
-  standalone: true,
   templateUrl: './edit-comp.component.html',
   styleUrl: './edit-comp.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,13 @@
+h2 {
+  @apply text-center;
+  font: var(--mat-sys-headline-small);
+}
+
+h3 {
+  font: var(--mat-sys-title-small);
+}
+
+a {
+  color: var(--mat-sys-primary);
+  text-decoration: underline;
+}

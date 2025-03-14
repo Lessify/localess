@@ -15,7 +15,6 @@ import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'll-locale-dialog',
-  standalone: true,
   templateUrl: './locale-dialog.component.html',
   styleUrls: ['./locale-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

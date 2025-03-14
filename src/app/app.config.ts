@@ -18,6 +18,7 @@ import { getPerformance, providePerformance } from '@angular/fire/performance';
 import { getRemoteConfig, provideRemoteConfig } from '@angular/fire/remote-config';
 import { connectStorageEmulator, getStorage, provideStorage } from '@angular/fire/storage';
 import { MAT_CHIPS_DEFAULT_OPTIONS } from '@angular/material/chips';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -33,6 +34,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding(), withNavigationErrorHandler(console.error)),
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
     provideAnimations(),
+    provideNativeDateAdapter(),
     provideMarkdown(),
     importProvidersFrom(CoreModule, AuthGuardModule),
     // Firebase

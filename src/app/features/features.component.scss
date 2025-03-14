@@ -1,5 +1,3 @@
-@use '@angular/material' as mat;
-
 .wrapper {
   height: calc(100% - 64px);
 }
@@ -9,7 +7,7 @@ mat-sidenav-container {
   // when side-nav is collapsed
   mat-sidenav {
     width: 200px;
-    border-right: 1px solid var(--sys-outline-variant);
+    border-right: 1px solid var(--mat-sys-outline-variant);
     border-radius: 0;
     &.collapsed {
       width: 56px;
@@ -26,7 +24,7 @@ mat-sidenav-container {
 }
 
 .vertical-divider {
-  border-right: 1px solid var(--sys-outline);
+  border-right: 1px solid var(--mat-sys-outline);
   @apply mx-1;
 }
 
@@ -35,5 +33,5 @@ mat-form-field {
 }
 
 mat-icon.flash {
-  color: var(--sys-primary)
+  color: var(--mat-sys-primary)
 }

@@ -9,7 +9,6 @@ import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'll-content-export-dialog',
-  standalone: true,
   templateUrl: './export-dialog.component.html',
   styleUrls: ['./export-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

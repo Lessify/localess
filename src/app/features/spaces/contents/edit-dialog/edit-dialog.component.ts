@@ -11,7 +11,6 @@ import { EditDialogModel } from './edit-dialog.model';
 
 @Component({
   selector: 'll-content-edit-dialog',
-  standalone: true,
   templateUrl: './edit-dialog.component.html',
   styleUrls: ['./edit-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

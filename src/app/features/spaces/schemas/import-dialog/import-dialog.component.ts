@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'll-content-import-dialog',
-  standalone: true,
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

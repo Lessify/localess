@@ -16,7 +16,6 @@ import { SettingsValidator } from '@shared/validators/settings.validator';
 
 @Component({
   selector: 'll-admin-settings-ui',
-  standalone: true,
   templateUrl: './ui.component.html',
   styleUrls: ['./ui.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

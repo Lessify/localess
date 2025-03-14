@@ -3,12 +3,12 @@
     Users
     <span class="spacer"></span>
     <div class="actions">
-      <button mat-stroked-button color="accent" matTooltip="Synchronize Users with Database." (click)="sync()">
+      <button mat-stroked-button matTooltip="Synchronize Users with Database." (click)="sync()">
         <mat-icon [llAnimate]="isSyncLoading()">sync</mat-icon>
         Sync
       </button>
 
-      <button mat-stroked-button color="primary" (click)="inviteDialog()">
+      <button mat-flat-button (click)="inviteDialog()">
         <mat-icon>person_add</mat-icon>
         Invite
       </button>

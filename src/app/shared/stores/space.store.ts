@@ -2,7 +2,7 @@ import { computed, inject } from '@angular/core';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { Space } from '@shared/models/space.model';
+import { Space, SpaceEnvironment } from '@shared/models/space.model';
 import { SpaceService } from '@shared/services/space.service';
 import { pipe, switchMap } from 'rxjs';
 
@@ -14,6 +14,7 @@ export type SpaceState = {
   selectedSpaceId: string | undefined;
   contentPath: PathItem[];
   assetPath: PathItem[];
+  environment: SpaceEnvironment | undefined;
 };
 
 export type PathItem = {
@@ -26,6 +27,7 @@ const initialState: SpaceState = {
   selectedSpaceId: undefined,
   contentPath: DEFAULT_PATH,
   assetPath: DEFAULT_PATH,
+  environment: undefined,
 };
 
 const initialStateFactory = (): SpaceState => {
@@ -49,19 +51,33 @@ export const SpaceStore = signalStore(
             next: response => {
               console.log('Loaded spaces', response);
               if (response.length === 0) {
-                patchState(state, { spaces: [], selectedSpaceId: undefined, assetPath: DEFAULT_PATH, contentPath: DEFAULT_PATH });
+                patchState(state, {
+                  spaces: [],
+                  selectedSpaceId: undefined,
+                  assetPath: DEFAULT_PATH,
+                  contentPath: DEFAULT_PATH,
+                  environment: undefined,
+                });
               } else {
                 const selectedSpaceId = state.selectedSpaceId();
                 if (selectedSpaceId) {
                   const foundSpace = response.find(space => space.id === selectedSpaceId);
                   if (foundSpace) {
-                    patchState(state, { spaces: response, selectedSpaceId: selectedSpaceId });
-                  } else {
                     patchState(state, {
                       spaces: response,
-                      selectedSpaceId: response[0].id,
+                      selectedSpaceId: selectedSpaceId,
                       assetPath: DEFAULT_PATH,
                       contentPath: DEFAULT_PATH,
+                      environment: foundSpace.environments && foundSpace.environments[0] ? foundSpace.environments[0] : undefined,
+                    });
+                  } else {
+                    const space = response[0];
+                    patchState(state, {
+                      spaces: response,
+                      selectedSpaceId: space.id,
+                      assetPath: DEFAULT_PATH,
+                      contentPath: DEFAULT_PATH,
+                      environment: space.environments && space.environments[0] ? space.environments[0] : undefined,
                     });
                   }
                 } else {
@@ -85,9 +101,19 @@ export const SpaceStore = signalStore(
         console.log('changeSpace', space);
         const foundSpace = state.spaces().find(it => it.id === space.id);
         if (foundSpace) {
-          patchState(state, { selectedSpaceId: space.id, assetPath: DEFAULT_PATH, contentPath: DEFAULT_PATH });
+          patchState(state, {
+            selectedSpaceId: space.id,
+            assetPath: DEFAULT_PATH,
+            contentPath: DEFAULT_PATH,
+            environment: space.environments && space.environments[0] ? space.environments[0] : undefined,
+          });
         } else {
-          patchState(state, { selectedSpaceId: state.spaces()[0].id, assetPath: DEFAULT_PATH, contentPath: DEFAULT_PATH });
+          patchState(state, {
+            selectedSpaceId: state.spaces()[0].id,
+            assetPath: DEFAULT_PATH,
+            contentPath: DEFAULT_PATH,
+            environment: undefined,
+          });
         }
         localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: space.id }));
       },
@@ -99,6 +125,10 @@ export const SpaceStore = signalStore(
         console.log('changeContentPath', assetPath);
         patchState(state, { assetPath });
       },
+      changeEnvironment: (environment: SpaceEnvironment) => {
+        console.log('changeEnvironment', environment);
+        patchState(state, { environment });
+      },
     };
   }),
   withComputed(state => {
@@ -106,6 +136,7 @@ export const SpaceStore = signalStore(
       spaces: computed(() => state.spaces()),
       contentPath: computed(() => state.contentPath()),
       assetPath: computed(() => state.assetPath()),
+      environment: computed(() => state.environment()),
       selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),
     };
   }),

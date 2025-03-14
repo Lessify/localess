@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, Optional } from '@angular/core';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Optional } from '@angular/core';
 import { Auth, sendPasswordResetEmail, User } from '@angular/fire/auth';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,10 +10,10 @@ import { EMPTY, Observable } from 'rxjs';
 
 @Component({
   selector: 'll-reset',
-  standalone: true,
   templateUrl: './reset.component.html',
   styleUrls: ['./reset.component.scss'],
-  imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
 })
 export class ResetComponent {
   redirect = ['/login'];

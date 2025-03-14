@@ -3,8 +3,8 @@
 @import './styles-variables';
 
 .file-drag-and-drop-wrapper {
-  background-color: var(--sys-primary-container) !important;
-  outline: var(--sys-primary) solid 3px !important;
+  background-color: var(--mat-sys-primary-container) !important;
+  outline: var(--mat-sys-primary) solid 3px !important;
   opacity: 0.5;
 }
 

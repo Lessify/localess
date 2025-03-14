@@ -21,7 +21,6 @@ import { filter, map } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-general',
-  standalone: true,
   templateUrl: './general.component.html',
   styleUrls: ['./general.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

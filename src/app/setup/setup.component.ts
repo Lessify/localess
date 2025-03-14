@@ -1,23 +1,26 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject, Optional, signal } from '@angular/core';
+import { Auth, signInWithCustomToken } from '@angular/fire/auth';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterModule } from '@angular/router';
 import { NotificationService } from '@shared/services/notification.service';
+import { UserStore } from '@shared/stores/user.store';
 import { SetupService } from './setup.service';
 
 @Component({
   selector: 'll-setup',
-  standalone: true,
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.scss'],
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [SetupService],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
 })
 export class SetupComponent {
-  redirect = ['/features'];
-  isLoading = false;
-  backCounter = -1;
+  redirectToFeatures = ['features', 'welcome'];
+  backCounter = signal(-1);
 
   //Form
   form: FormGroup = this.fb.group({
@@ -26,35 +29,47 @@ export class SetupComponent {
     displayName: this.fb.control(undefined),
   });
 
+  userStore = inject(UserStore);
+
   constructor(
+    @Optional() public readonly auth: Auth,
     private readonly router: Router,
     private readonly fb: FormBuilder,
     private readonly setupService: SetupService,
     private readonly notificationService: NotificationService,
     private readonly cd: ChangeDetectorRef,
-  ) {}
+  ) {
+    effect(async () => {
+      if (this.userStore.isAuthenticated()) {
+        await this.router.navigate(this.redirectToFeatures);
+        window.location.reload();
+      }
+    });
+  }
 
   setup(): void {
     this.setupService.init(this.form.value).subscribe({
-      next: () => {
-        this.backTimer();
-        this.notificationService.success('Setup has been finished, you will be redirected in 5 seconds.');
+      next: async token => {
+        //this.backTimer();
+        this.notificationService.success('Setup has been finished, you will be redirected in few seconds.');
+        await signInWithCustomToken(this.auth, token);
+        this.userStore.setAuthenticated(true);
       },
       error: () => {
-        this.backTimer();
-        this.notificationService.error('Setup can not be finished, you will be redirected in 5 seconds.');
+        this.backToLoginTimer();
+        this.notificationService.error('Setup can not be finished, you will be redirected in few seconds.');
       },
     });
   }
 
-  backTimer(): void {
-    this.backCounter = 5;
+  backToLoginTimer(): void {
+    this.backCounter.set(5);
     const timer = setInterval(() => {
+      this.backCounter.update(it => it - 1);
       this.cd.markForCheck();
-      this.backCounter--;
-      if (this.backCounter === -1) {
+      if (this.backCounter() === -1) {
         clearInterval(timer);
-        this.router.navigate(this.redirect);
+        this.router.navigate(this.redirectToFeatures);
       }
     }, 1000);
   }

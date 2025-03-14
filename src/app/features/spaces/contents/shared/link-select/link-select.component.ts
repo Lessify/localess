@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ContentDocument, LinkContent } from '@shared/models/content.model';
 import { SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
@@ -18,7 +19,6 @@ import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'll-link-select',
-  standalone: true,
   templateUrl: './link-select.component.html',
   styleUrls: ['./link-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +33,7 @@ import { map } from 'rxjs/operators';
     CommonModule,
     MatSlideToggleModule,
     MatExpansionModule,
+    MatTooltipModule,
   ],
 })
 export class LinkSelectComponent implements OnInit {

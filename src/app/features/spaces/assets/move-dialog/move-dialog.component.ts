@@ -15,7 +15,6 @@ import { MoveDialogModel } from './move-dialog.model';
 
 @Component({
   selector: 'll-asset-move-dialog',
-  standalone: true,
   templateUrl: './move-dialog.component.html',
   styleUrls: ['./move-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -21,7 +21,6 @@ import { filter, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'll-tasks',
-  standalone: true,
   templateUrl: './tasks.component.html',
   styleUrls: ['./tasks.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

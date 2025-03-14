@@ -22,7 +22,6 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
 
 @Component({
   selector: 'll-spaces',
-  standalone: true,
   templateUrl: './spaces.component.html',
   styleUrls: ['./spaces.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

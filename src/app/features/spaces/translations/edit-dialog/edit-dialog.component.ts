@@ -13,7 +13,6 @@ import { TranslationValidator } from '@shared/validators/translation.validator';
 
 @Component({
   selector: 'll-translation-edit-dialog',
-  standalone: true,
   templateUrl: './edit-dialog.component.html',
   styleUrls: ['./edit-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

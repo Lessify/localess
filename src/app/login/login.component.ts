@@ -1,5 +1,5 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { Component, effect, inject, Optional } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, Optional } from '@angular/core';
 import {
   Auth,
   GoogleAuthProvider,
@@ -22,14 +22,13 @@ import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'll-login',
-  standalone: true,
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatFormFieldModule, ReactiveFormsModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
 })
 export class LoginComponent {
   redirectToFeatures = ['features'];
-  isLoading = false;
 
   //Form
   form: FormGroup = this.fb.group({

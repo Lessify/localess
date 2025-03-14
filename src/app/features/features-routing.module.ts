@@ -151,6 +151,11 @@ const routes: Routes = [
         loadChildren: () => import('./me/me.module').then(m => m.MeModule),
       },
       {
+        path: 'welcome',
+        title: 'Welcome',
+        loadComponent: () => import('./welcome/welcome.component').then(m => m.WelcomeComponent),
+      },
+      {
         path: 'spaces/:spaceId/dashboard',
         title: 'Dashboard',
         loadChildren: () => import('./spaces/dashboard/dashboard.module').then(m => m.DashboardModule),

@@ -29,7 +29,6 @@ import { SchemaValidator } from '@shared/validators/schema.validator';
 
 @Component({
   selector: 'll-schema-field-edit',
-  standalone: true,
   templateUrl: './edit-field.component.html',
   styleUrls: ['./edit-field.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

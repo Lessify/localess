@@ -10,7 +10,6 @@ import { ImportDialogModel } from './import-dialog.model';
 
 @Component({
   selector: 'll-translation-import-dialog',
-  standalone: true,
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

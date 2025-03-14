@@ -21,8 +21,8 @@
     }
 
     mat-toolbar-row.second {
-      border-bottom: 1px solid var(--sys-outline-variant);
-      border-top: 1px solid var(--sys-outline-variant);
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      border-top: 1px solid var(--mat-sys-outline-variant);
       font: mat.get-theme-typography($theme, title-medium, font);
       font-size: mat.get-theme-typography($theme, title-medium, font-size);
       font-weight: mat.get-theme-typography($theme, title-medium, font-weight);

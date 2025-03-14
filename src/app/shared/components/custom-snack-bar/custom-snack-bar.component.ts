@@ -6,7 +6,6 @@ import { CustomSnackBarModel } from '@shared/components/custom-snack-bar/custom-
 
 @Component({
   selector: 'll-custom-snack-bar',
-  standalone: true,
   templateUrl: 'custom-snack-bar.component.html',
   styleUrls: ['custom-snack-bar.component.scss'],
   encapsulation: ViewEncapsulation.None,

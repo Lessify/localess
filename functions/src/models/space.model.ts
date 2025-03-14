@@ -1,8 +1,9 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { Locale } from './locale.model';
 
+export const DEFAULT_LOCALE: Locale = { id: 'en', name: 'English' };
+
 export interface Space {
-  id: string;
   name: string;
   locales: Locale[];
   localeFallback: Locale;

@@ -3,7 +3,7 @@
 @if (data.actions) {
   <div matSnackBarActions>
     @for (action of data.actions; track action.label) {
-      <button mat-stroked-button matSnackBarAction (click)="navigate(action.link)">
+      <button mat-flat-button matSnackBarAction (click)="navigate(action.link)">
         {{ action.label }}
       </button>
     }

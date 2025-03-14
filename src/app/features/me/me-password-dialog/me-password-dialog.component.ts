@@ -7,7 +7,6 @@ import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'll-me-password-dialog',
-  standalone: true,
   templateUrl: './me-password-dialog.component.html',
   styleUrls: ['./me-password-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

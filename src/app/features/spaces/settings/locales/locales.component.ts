@@ -20,7 +20,6 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
 
 @Component({
   selector: 'll-space-settings-locales',
-  standalone: true,
   templateUrl: './locales.component.html',
   styleUrls: ['./locales.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

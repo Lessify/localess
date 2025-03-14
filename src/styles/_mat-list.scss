@@ -5,12 +5,12 @@
 mat-list, mat-nav-list, mat-action-list {
   mat-list-item {
     &.schema-hover {
-      border-left: solid 5px var(--sys-primary);
+      border-left: solid 5px var(--mat-sys-primary);
       padding-left: 11px !important;
     }
 
     &.invalid {
-      border: dashed 1px var(--sys-error);
+      border: dashed 1px var(--mat-sys-error);
       @apply bg-stripes-red
     }
 

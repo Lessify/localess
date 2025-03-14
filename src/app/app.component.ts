@@ -6,7 +6,6 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'll-root',
-  standalone: true,
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   imports: [RouterModule],

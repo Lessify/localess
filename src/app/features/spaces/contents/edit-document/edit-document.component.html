@@ -8,17 +8,30 @@
     <span class="subtitle">#{{ document?.slug }}</span>
     <span class="spacer"></span>
     <div class="actions">
-      <mat-button-toggle-group
-        hideSingleSelectionIndicator="true"
-        (change)="settingsStore.setEditorEnabled(!settingsStore.editorEnabled())"
-        [value]="settingsStore.editorEnabled()">
-        <mat-button-toggle [value]="true" matTooltip="Design Mode">
-          <mat-icon>design_services</mat-icon>
-        </mat-button-toggle>
-        <mat-button-toggle [value]="false" matTooltip="Form Mode">
+      <button mat-stroked-button [matMenuTriggerFor]="modeMenu" matTooltip="Select Mode">
+        @if (settingsStore.editorEnabled()) {
+          <mat-icon>format_shapes</mat-icon>
+        } @else {
           <mat-icon>edit_note</mat-icon>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
+        }
+        @if (settingsStore.editorEnabled()) {
+          Visual Editor
+        } @else {
+          Form Mode
+        }
+        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+      </button>
+
+      <mat-menu #modeMenu="matMenu">
+        <button mat-menu-item (click)="settingsStore.setEditorEnabled(true)">
+          <mat-icon>format_shapes</mat-icon>
+          <span [ngClass]="{ 'font-semibold': settingsStore.editorEnabled() === true }"> Visual Editor </span>
+        </button>
+        <button mat-menu-item (click)="settingsStore.setEditorEnabled(false)">
+          <mat-icon>edit_note</mat-icon>
+          <span [ngClass]="{ 'font-semibold': settingsStore.editorEnabled() === false }"> Form Mode </span>
+        </button>
+      </mat-menu>
 
       <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
         {{ selectedLocale.name }}
@@ -28,7 +41,7 @@
       <mat-menu #localesMenu="matMenu">
         @for (locale of availableLocales; track locale.id) {
           <button mat-menu-item (click)="onLocaleChanged(locale)">
-            <span [class.fw-semibold]="locale.id === selectedLocale.id">
+            <span [ngClass]="{ 'font-semibold': locale.id === selectedLocale.id }">
               {{ locale.name }}
             </span>
           </button>
@@ -54,12 +67,7 @@
         </div>
       </mat-menu>
       @if ('CONTENT_UPDATE' | canUserPerform | async) {
-        <button
-          mat-stroked-button
-          color="primary"
-          matTooltip="Save the changes."
-          [disabled]="isSaveLoading() || isPublishLoading()"
-          (click)="save()">
+        <button mat-flat-button matTooltip="Save the changes." [disabled]="isSaveLoading() || isPublishLoading()" (click)="save()">
           <mat-icon [llAnimate]="isSaveLoading()">{{ isSaveLoading() ? 'sync' : 'save' }}</mat-icon>
           Save
         </button>
@@ -67,7 +75,6 @@
       @if ('CONTENT_PUBLISH' | canUserPerform | async) {
         <button
           mat-stroked-button
-          color="accent"
           matTooltip="Publish to be available via API call"
           [disabled]="isPublishLoading() || isSaveLoading()"
           (click)="publish()">
@@ -193,9 +200,9 @@
                 [hoverSchemaPath]="hoverSchemaPath()"
                 [documents]="documents"
                 [space]="selectedSpace"
-                (onSchemaChange)="onSchemaChange($event)"
-                (onFormChange)="onFormChange($event)"
-                (onStructureChange)="onStructureChange($event)" />
+                (schemaChange)="onSchemaChange($event)"
+                (formChange)="onFormChange($event)"
+                (structureChange)="onStructureChange($event)" />
             </div>
           }
         </mat-drawer-content>

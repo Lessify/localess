@@ -21,11 +21,7 @@
         </mat-form-field>
 
         <div>
-          <button
-            mat-stroked-button
-            color="primary"
-            class="w-full"
-            (click)="loginWithEmailAndPassword(form.value.email, form.value.password)">
+          <button mat-flat-button class="w-full" (click)="loginWithEmailAndPassword(form.value.email, form.value.password)">
             Sign in
           </button>
         </div>
@@ -44,10 +40,10 @@
 
           <div class="mt-6 grid grid-cols-2 gap-4">
             @if (isGoogleAuthEnabled) {
-              <button mat-stroked-button color="warn" (click)="loginWithGoogle()">Google</button>
+              <button mat-flat-button (click)="loginWithGoogle()">Google</button>
             }
             @if (isMicrosoftAuthEnabled) {
-              <button mat-stroked-button color="warn" (click)="loginWithMicrosoft()"> Microsoft</button>
+              <button mat-flat-button (click)="loginWithMicrosoft()"> Microsoft</button>
             }
           </div>
         </div>

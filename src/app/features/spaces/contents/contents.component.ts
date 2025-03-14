@@ -48,7 +48,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
 
 @Component({
   selector: 'll-contents',
-  standalone: true,
   templateUrl: './contents.component.html',
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -378,7 +377,6 @@ export class ContentsComponent {
   onRowSelect(element: Content): void {
     this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {
-      element.publishedAt;
       if (this.schemasMapById.has(element.schema)) {
         this.router.navigate(['features', 'spaces', this.spaceId(), 'contents', element.id]);
       } else {
