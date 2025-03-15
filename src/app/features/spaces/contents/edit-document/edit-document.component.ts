@@ -203,6 +203,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   get isFormDirty(): boolean {
+    if (this.document && this.document.data && typeof this.document.data === 'string') {
+      return this.document?.data !== JSON.stringify(this.contentHelperService.clone(this.documentData));
+    }
     return JSON.stringify(this.document?.data) !== JSON.stringify(this.contentHelperService.clone(this.documentData));
   }
 
