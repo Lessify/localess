@@ -5,7 +5,6 @@ import { traceUntilFirst } from '@angular/fire/performance';
 import { getAllChanges, RemoteConfig } from '@angular/fire/remote-config';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { AppSettings, AppSettingsUiUpdate } from '@shared/models/settings.model';
-import { AllParameters } from 'rxfire/remote-config';
 import { from, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 
@@ -24,7 +23,7 @@ export class SettingsService {
     );
   }
 
-  config(): Observable<AllParameters> {
+  config(): Observable<any> {
     return getAllChanges(this.remoteConfig).pipe(
       traceUntilFirst('remote-config'),
       tap(it => console.log('REMOTE CONFIG', it)),

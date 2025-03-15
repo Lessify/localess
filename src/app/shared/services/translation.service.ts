@@ -5,6 +5,7 @@ import {
   collectionCount,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   Firestore,
@@ -15,7 +16,6 @@ import {
 } from '@angular/fire/firestore';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { deleteField } from '@firebase/firestore';
 import { from, Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { Translation, TranslationCreate, TranslationCreateFS, TranslationType, TranslationUpdate } from '../models/translation.model';

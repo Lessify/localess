@@ -14,8 +14,7 @@ import {
   serverTimestamp,
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { ref, Storage, uploadBytes } from '@angular/fire/storage';
-import { getDownloadURL } from '@firebase/storage';
+import { getDownloadURL, ref, Storage, uploadBytes } from '@angular/fire/storage';
 import {
   Task,
   TaskAssetExportCreateFS,
