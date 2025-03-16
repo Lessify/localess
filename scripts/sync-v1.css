@@ -1,22 +1,11 @@
-[data-ll-id] {
+[data-ll-id], [data-ll-field] {
   outline: 2px dashed rgba(0,92,187,0.5);
   transition: box-shadow ease-out 150ms;
   display: block;
 }
 
-[data-ll-id]:hover {
+[data-ll-id]:hover, [data-ll-field]:hover {
   box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);
   outline: 2px solid rgba(0,92,187,1);
-  cursor: pointer;
-}
-
-
-[data-tina-field] {
-  outline: 2px dashed rgba(34,150,254,0.5);
-  transition: box-shadow ease-out 150ms;
-}
-[data-tina-field]:hover {
-  box-shadow: inset 100vi 100vh rgba(34,150,254,0.3);
-  outline: 2px solid rgba(34,150,254,1);
   cursor: pointer;
 }

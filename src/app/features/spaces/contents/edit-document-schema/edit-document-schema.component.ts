@@ -91,7 +91,6 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     MatCardModule,
     MatDividerModule,
     MatListModule,
-    CommonModule,
     DragDropModule,
     MatExpansionModule,
   ],

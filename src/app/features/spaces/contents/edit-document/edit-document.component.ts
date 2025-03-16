@@ -324,7 +324,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.selectedDocumentData = field;
     }
     // Send Message to iFrame about Schema Selection
-    this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId });
+    this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
     //console.groupEnd()
   }
 
@@ -354,7 +354,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.selectedDocumentData = localSelectedContent;
     }
     // Send Message to iFrame about Schema Selection
-    this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId });
+    this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
     //console.groupEnd()
   }
 
@@ -397,8 +397,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   @HostListener('window:message', ['$event'])
   contentIdLink(event: MessageEvent<EventToEditor>): void {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
-      console.log('MessageEvent', event);
-      const { id, type } = event.data;
+      //console.log('MessageEvent', event);
+      const { id, type, schema, field } = event.data;
+      console.log('llve', id, type, schema, field);
       // find element path
       const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(id)) || [];
       if (type === 'selectSchema') {

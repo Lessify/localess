@@ -6,13 +6,13 @@ export interface SchemaPathItem {
 
 // Events
 
-// Event emitted to Visual Editor
+// Event emitted from Application to Visual Editor
 export type EventToEditorType = 'selectSchema' | 'hoverSchema' | 'leaveSchema';
-export type EventToEditor = { owner: 'LOCALESS'; type: EventToEditorType; id: string };
+export type EventToEditor = { owner: 'LOCALESS'; type: EventToEditorType; id: string; schema: string; field?: string };
 
-// Event emitted by Visual Editor
+// Event emitted from Visual Editor to Application
 export type EventToAppType = 'save' | 'publish' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
 export type EventToApp =
   | { type: 'save' | 'publish' }
   | { type: 'input' | 'change'; data: any }
-  | { type: 'enterSchema' | 'hoverSchema'; id: string };
+  | { type: 'enterSchema' | 'hoverSchema'; id: string; schema: string; field?: string };

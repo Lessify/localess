@@ -1,15 +1,15 @@
-(function() {
-  // Event emitted to Visual Editor
+(function () {
+  // Event emitted from Application to Visual Editor
   type EventToEditorType = 'selectSchema' | 'hoverSchema' | 'leaveSchema';
-  type EventToEditor = { owner: 'LOCALESS'; type: EventToEditorType; id: string; }
+  type EventToEditor = { owner: 'LOCALESS'; type: EventToEditorType; id: string; schema: string; field?: string };
 
-  // Event emitted by Visual Editor
+  // Event emitted from Visual Editor to Application
   type EventToAppType = 'save' | 'publish' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
   type EventCallback = (event: EventToApp) => void;
   type EventToApp =
-    { type: 'save' | 'publish' } |
-    { type: 'input' | 'change'; data: any } |
-    { type: 'enterSchema' | 'hoverSchema', id: string };
+    | { type: 'save' | 'publish' }
+    | { type: 'input' | 'change'; data: any }
+    | { type: 'enterSchema' | 'hoverSchema'; id: string; schema: string; field?: string };
 
   function isInIframe() {
     return window.top !== window.self;
@@ -23,30 +23,52 @@
   function createCSS() {
     const style = document.createElement('style');
     style.id = 'localess-css-sync';
-    style.textContent = `[data-ll-id]{outline: 2px dashed rgba(0,92,187,0.5);transition: box-shadow ease-out 150ms;}[data-ll-id]:hover{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
+    style.textContent = `[data-ll-id],[data-ll-field]{outline: 2px dashed rgba(0,92,187,0.5);transition: box-shadow ease-out 150ms;}[data-ll-id]:hover,[data-ll-field]:hover{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
     document.head.appendChild(style);
   }
 
   function markVisualEditorElements() {
-    document.querySelectorAll<HTMLElement>('[data-ll-id]').forEach(element => {
+    document.querySelectorAll<HTMLElement>('[data-ll-id]:not([data-ll-hook])').forEach(element => {
       const id = element.getAttribute('data-ll-id')!;
+      const schema = element.getAttribute('data-ll-schema')!;
       if (element.offsetHeight < 5) {
         element.style.minHeight = '5px';
       }
+      element.setAttribute('data-ll-hook', 'true');
+      // Schema Events
       element.addEventListener('click', event => {
+        event.preventDefault();
         event.stopPropagation();
         // Send Message with Selected Schema
-        sendEditorData({ owner: 'LOCALESS', type: 'selectSchema', id: id });
+        sendEditorData({ owner: 'LOCALESS', type: 'selectSchema', id: id, schema: schema });
       });
       element.addEventListener('mouseenter', event => {
         // Send Message with Hover Schema
-        sendEditorData({ owner: 'LOCALESS', type: 'hoverSchema', id: id });
-        // TODO Create Overlay
+        sendEditorData({ owner: 'LOCALESS', type: 'hoverSchema', id: id, schema: schema });
       });
       element.addEventListener('mouseleave', event => {
         // Send Message with Leave Schema
-        sendEditorData({ owner: 'LOCALESS', type: 'leaveSchema', id: id });
-        // TODO Remove Overlay
+        sendEditorData({ owner: 'LOCALESS', type: 'leaveSchema', id: id, schema: schema });
+      });
+      // Field Events
+      element.querySelectorAll<HTMLElement>('[data-ll-field]').forEach(field => {
+        const fieldName = field.getAttribute('data-ll-field')!;
+        if (field.closest('[data-ll-id]') !== element) return;
+        //field.setAttribute('data-ll-hook', 'true');
+        field.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          // Send Message with Selected Schema with field
+          sendEditorData({ owner: 'LOCALESS', type: 'selectSchema', id: id, schema: schema, field: fieldName });
+        });
+        field.addEventListener('mouseenter', event => {
+          // Send Message with Hover Schema with field
+          sendEditorData({ owner: 'LOCALESS', type: 'hoverSchema', id: id, schema: schema, field: fieldName });
+        });
+        field.addEventListener('mouseleave', event => {
+          // Send Message with Leave Schema with field
+          sendEditorData({ owner: 'LOCALESS', type: 'leaveSchema', id: id, schema: schema, field: fieldName });
+        });
       });
     });
   }
