@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   HostListener,
@@ -94,6 +95,14 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
   hoverSchemaPath = signal<string[] | undefined>(undefined);
+  hoverSchemaField = signal<string | undefined>(undefined);
+  clickSchemaField = signal<string | undefined>(undefined);
+  schemaPath = signal<SchemaPathItem[]>([]);
+  isSamePath = computed(() => {
+    console.log('isSamePath');
+    const uiPath = this.schemaPath().map(it => it.contentId);
+    return ObjectUtils.isEqual(uiPath, this.hoverSchemaPath());
+  });
   selectedEnvironment?: SpaceEnvironment;
   iframeUrl?: SafeUrl;
   availableLocales: Locale[] = [];
@@ -104,7 +113,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
   rootSchema?: Schema;
   schemaMapById: Map<string, Schema> = new Map<string, Schema>();
-  schemaPath: SchemaPathItem[] = [];
   schemas: Schema[] = [];
   contentErrors: ContentError[] = [];
   documents: ContentDocument[] = [];
@@ -173,18 +181,18 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           }
 
           // Generate initial path only once
-          if (this.rootSchema && this.schemaPath.length == 0) {
-            this.schemaPath = [
+          if (this.rootSchema && this.schemaPath().length == 0) {
+            this.schemaPath.set([
               {
                 contentId: this.documentData._id,
                 schemaName: this.documentData.schema,
                 fieldName: '',
               },
-            ];
+            ]);
           }
 
           // Select content base on path
-          this.navigateToSchemaBackwards(this.schemaPath[this.schemaPath.length - 1]);
+          this.navigateToSchemaBackwards(this.schemaPath()[this.schemaPath().length - 1]);
           // Select Environment
           if (this.selectedEnvironment === undefined && space.environments && space.environments.length > 0) {
             this.changeEnvironment(space.environments[0]);
@@ -316,7 +324,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   navigateToSchemaForwards(pathItem: SchemaPathItem): void {
     //console.group('navigateToSchemaForwards')
     //console.log(pathItem)
-    this.schemaPath.push(pathItem);
+    this.schemaPath.update(it => [...it, pathItem]);
     const field = this.selectedDocumentData[pathItem.fieldName];
     if (Array.isArray(field)) {
       this.selectedDocumentData = field.find((it: ContentData) => it._id == pathItem.contentId);
@@ -329,19 +337,22 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
-    //console.group('navigateToSchemaBackwards')
-    //console.log('pathItem', pathItem)
-    const idx = this.schemaPath.findIndex(it => it.contentId == pathItem.contentId);
-    this.schemaPath.splice(idx + 1);
+    //console.group('navigateToSchemaBackwards');
+    //console.log('pathItem', pathItem);
+    const idx = this.schemaPath().findIndex(it => it.contentId == pathItem.contentId);
+    this.schemaPath.update(it => {
+      it.splice(idx + 1);
+      return it;
+    });
     // Select Root
     if (idx == 0) {
-      //console.log(`Navigate to Root idx=${idx}`)
+      //console.log(`Navigate to Root idx=${idx}`);
       //console.log('documentData', ObjectUtils.clone(this.documentData))
       this.selectedDocumentData = this.documentData;
     } else {
-      //console.log(`Navigate to Child idx=${idx}`)
+      //console.log(`Navigate to Child idx=${idx}`);
       let localSelectedContent = this.documentData;
-      for (const path of this.schemaPath) {
+      for (const path of this.schemaPath()) {
         if (path.fieldName === '') continue;
         const field = localSelectedContent[path.fieldName];
         if (Array.isArray(field)) {
@@ -350,12 +361,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           localSelectedContent = field;
         }
       }
-      //console.log('localSelectedContent', localSelectedContent)
+      //console.log('localSelectedContent', localSelectedContent);
       this.selectedDocumentData = localSelectedContent;
     }
     // Send Message to iFrame about Schema Selection
     this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
-    //console.groupEnd()
+    //console.groupEnd();
   }
 
   changeEnvironment(env: SpaceEnvironment): void {
@@ -456,6 +467,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
               }
             }
             selectedContentId = contentIdIteration.shift();
+            this.clickSchemaField.set(field);
           } else {
             console.log(`schema ${this.selectedDocumentData.schema} not-found`);
             return;
@@ -464,8 +476,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         console.log(`id ${selectedContentId} not-found`);
       } else if (type === 'hoverSchema') {
         this.hoverSchemaPath.set(contentIdIteration);
+        this.hoverSchemaField.set(field);
       } else if (type === 'leaveSchema') {
         this.hoverSchemaPath.set(undefined);
+        this.hoverSchemaField.set(undefined);
       }
     }
   }

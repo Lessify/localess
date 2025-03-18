@@ -7,6 +7,8 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
+  ElementRef,
   inject,
   input,
   Input,
@@ -14,6 +16,7 @@ import {
   OnInit,
   output,
   SimpleChanges,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
@@ -99,6 +102,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   // Form
   form: FormRecord = this.fb.record({});
 
+  schemaForm = viewChild<ElementRef<HTMLFormElement>>('schemaForm');
+
   isDefaultLocale = computed(() => this.selectedLocale().id === DEFAULT_LOCALE.id);
   selectedLocaleId = computed(() => this.selectedLocale().id);
   // Subscriptions
@@ -114,7 +119,11 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   schemas = input.required<Schema[]>();
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();
+  // Form Highlight
   hoverSchemaPath = input<string[]>();
+  hoverSchemaField = input<string>();
+  // Handle on Click Focus Event
+  clickSchemaField = input<string>();
   // Outputs
   schemaChange = output<SchemaSelectChange>();
   formChange = output<string>();
@@ -160,7 +169,26 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     private readonly translateService: TranslateService,
     private readonly notificationService: NotificationService,
     readonly fe: FormErrorHandlerService,
-  ) {}
+  ) {
+    effect(() => {
+      const element = this.schemaForm()?.nativeElement;
+      const field = this.hoverSchemaField();
+      if (element && field) {
+        element
+          .querySelector<HTMLElement>(`.mat-mdc-text-field-wrapper:has(#schema-field-${field})`)
+          ?.classList.add('mdc-text-field--focused');
+      } else {
+        element?.querySelector('.mdc-text-field--focused')?.classList.remove('mdc-text-field--focused');
+      }
+    });
+    effect(() => {
+      const element = this.schemaForm()?.nativeElement;
+      const field = this.clickSchemaField();
+      if (element && field) {
+        element.querySelector<HTMLElement>(`#schema-field-${field}`)?.focus();
+      }
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     //console.group('EditDocumentSchemaComponent:ngOnChanges')

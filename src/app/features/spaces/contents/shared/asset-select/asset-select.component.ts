@@ -47,6 +47,7 @@ export class AssetSelectComponent implements OnInit {
   form = input.required<FormGroup>();
   component = input.required<SchemaFieldAsset>();
   space = input.required<Space>();
+  hover = input(false);
   asset?: Asset;
 
   //Settings

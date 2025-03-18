@@ -1,5 +1,5 @@
 @if (rootSchema) {
-  <form [formGroup]="form" *ngIf="!isFormLoading">
+  <form [formGroup]="form" *ngIf="!isFormLoading" #schemaForm>
     @for (field of rootSchema.fields; track field.name) {
       @switch (field.kind) {
         <!--TEXT-->
@@ -7,6 +7,7 @@
           <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
+              [id]="'schema-field-' + field.name"
               matInput
               type="text"
               [formControlName]="field.name"
@@ -49,6 +50,7 @@
           <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <textarea
+              [id]="'schema-field-' + field.name"
               matInput
               cdkTextareaAutosize
               cdkAutosizeMinRows="6"
@@ -134,6 +136,7 @@
           <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
+              [id]="'schema-field-' + field.name"
               matInput
               type="number"
               [formControlName]="field.name"
@@ -157,6 +160,7 @@
           <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
+              [id]="'schema-field-' + field.name"
               matInput
               type="color"
               [formControlName]="field.name"
@@ -180,6 +184,7 @@
           <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
+              [id]="'schema-field-' + field.name"
               matInput
               type="date"
               [formControlName]="field.name"
@@ -201,6 +206,7 @@
           <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <input
+              [id]="'schema-field-' + field.name"
               matInput
               type="datetime-local"
               [formControlName]="field.name"
@@ -320,7 +326,11 @@
         }
         <!--ASSET-->
         @case ('ASSET') {
-          <ll-asset-select [component]="field" [form]="form.controls[field.name]" [space]="space" />
+          <ll-asset-select
+            [component]="field"
+            [form]="form.controls[field.name]"
+            [space]="space"
+            [hover]="hoverSchemaField() === field.name" />
         }
         <!--ASSETS-->
         @case ('ASSETS') {

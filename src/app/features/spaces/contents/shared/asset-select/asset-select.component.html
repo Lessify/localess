@@ -20,7 +20,7 @@
     <mat-card-content>
       @if (asset && asset.kind === 'FILE') {
         <mat-list>
-          <mat-list-item>
+          <mat-list-item [ngClass]="{ 'schema-hover': hover() }">
             @if (asset.type.startsWith('image/')) {
               <img
                 matListItemAvatar

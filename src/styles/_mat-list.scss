@@ -5,8 +5,8 @@
 mat-list, mat-nav-list, mat-action-list {
   mat-list-item {
     &.schema-hover {
-      border-left: solid 5px var(--mat-sys-primary);
-      padding-left: 11px !important;
+      outline: solid 2px var(--mat-sys-primary);
+      border-radius: 4px;
     }
 
     &.invalid {
