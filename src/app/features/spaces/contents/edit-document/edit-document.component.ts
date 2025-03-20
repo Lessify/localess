@@ -99,7 +99,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   clickSchemaField = signal<string | undefined>(undefined);
   schemaPath = signal<SchemaPathItem[]>([]);
   isSamePath = computed(() => {
-    console.log('isSamePath');
     const uiPath = this.schemaPath().map(it => it.contentId);
     return ObjectUtils.isEqual(uiPath, this.hoverSchemaPath());
   });
@@ -267,7 +266,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         },
       });
     } else {
-      this.notificationService.warn('Content is not valid. Please check all fields are filled correctly.');
+      this.notificationService.error('Content is not valid. Please check all fields are filled correctly.');
       this.isSaveLoading.set(false);
     }
     //console.groupEnd()
@@ -287,7 +286,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           url.searchParams.set('token', tokens[0].id);
           window.open(url, '_blank');
         } else {
-          this.notificationService.warn('Please create Access Token in your Space Settings');
+          this.notificationService.error('Please create Access Token in your Space Settings');
         }
       },
     });
@@ -302,7 +301,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           url.searchParams.set('token', tokens[0].id);
           window.open(url, '_blank');
         } else {
-          this.notificationService.warn('Please create Access Token in your Space Settings');
+          this.notificationService.error('Please create Access Token in your Space Settings');
         }
       },
     });

@@ -380,7 +380,7 @@ export class ContentsComponent {
       if (this.schemasMapById.has(element.schema)) {
         this.router.navigate(['features', 'spaces', this.spaceId(), 'contents', element.id]);
       } else {
-        this.notificationService.warn(`Content Schema can not be found.`);
+        this.notificationService.error(`Content Schema can not be found.`);
       }
       return;
     }
@@ -413,7 +413,7 @@ export class ContentsComponent {
           url.searchParams.set('token', tokens[0].id);
           window.open(url, '_blank');
         } else {
-          this.notificationService.warn('Please create Access Token in your Space Settings');
+          this.notificationService.error('Please create Access Token in your Space Settings');
         }
       },
     });

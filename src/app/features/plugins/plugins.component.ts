@@ -116,7 +116,7 @@ export class PluginsComponent implements OnInit {
           if (value) {
             this.notificationService.success(`Plugin has been installed.`);
           } else {
-            this.notificationService.warn(`Plugin can not be installed.`);
+            this.notificationService.error(`Plugin can not be installed.`);
           }
         },
         error: (err: unknown) => {
@@ -144,7 +144,7 @@ export class PluginsComponent implements OnInit {
           if (value) {
             this.notificationService.success(`Plugin '${element.name}' has been updated.`);
           } else {
-            this.notificationService.warn(`Plugin '${element.name}' can not be updated.`);
+            this.notificationService.error(`Plugin '${element.name}' can not be updated.`);
           }
         },
         error: (err: unknown) => {

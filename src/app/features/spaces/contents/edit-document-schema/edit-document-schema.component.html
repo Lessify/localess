@@ -416,7 +416,7 @@
             <mat-divider></mat-divider>
             <mat-card-content>
               <mat-action-list cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
-                @for (item of data[field.name]; track item; let index = $index; let last = $last) {
+                @for (item of data[field.name]; track item; let index = $index) {
                   <mat-list-item
                     [id]="item._id"
                     [ngClass]="{ 'schema-hover': hoverSchemaPath()?.includes(item._id) }"
@@ -470,9 +470,6 @@
                       <mat-icon cdkDragHandle>drag_indicator</mat-icon>
                     </mat-action-list>
                   </mat-list-item>
-                  @if (!last) {
-                    <mat-divider />
-                  }
                 }
               </mat-action-list>
             </mat-card-content>
