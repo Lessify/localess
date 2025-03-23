@@ -102,17 +102,17 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     const uiPath = this.schemaPath().map(it => it.contentId);
     return ObjectUtils.isEqual(uiPath, this.hoverSchemaPath());
   });
+  schemas = signal<Schema[]>([]);
+  schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
   selectedEnvironment?: SpaceEnvironment;
   iframeUrl?: SafeUrl;
-  availableLocales: Locale[] = [];
-  availableLocalesMap: Map<string, string> = new Map<string, string>();
+  availableLocales = signal<Locale[]>([DEFAULT_LOCALE]);
+  availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
   document?: ContentDocument;
   documentData: ContentData = { _id: '', schema: '' };
   selectedDocumentData: ContentData = { _id: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
   rootSchema?: Schema;
-  schemaMapById: Map<string, Schema> = new Map<string, Schema>();
-  schemas: Schema[] = [];
   contentErrors: ContentError[] = [];
   documents: ContentDocument[] = [];
 
@@ -158,9 +158,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       .subscribe({
         next: ([space, document, documents, schemas]) => {
           this.selectedSpace = space;
-          //this.selectedLocale = space.localeFallback;
-          this.availableLocales = [DEFAULT_LOCALE, ...space.locales];
-          this.availableLocalesMap = new Map<string, string>(this.availableLocales.map(it => [it.id, it.name]));
+          this.availableLocales.set([DEFAULT_LOCALE, ...space.locales]);
           this.documents = documents;
           //console.log(ObjectUtils.clone(document))
 
@@ -196,8 +194,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           if (this.selectedEnvironment === undefined && space.environments && space.environments.length > 0) {
             this.changeEnvironment(space.environments[0]);
           }
-          this.schemas = schemas;
-          this.schemaMapById = new Map<string, Schema>(this.schemas?.map(it => [it.id, it]));
+          this.schemas.set(schemas);
           this.generateDocumentIdsTree();
           this.isLoading.set(false);
           this.cd.markForCheck();
@@ -242,9 +239,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     //console.log('documentData', this.documentData)
     //console.log('document', this.document)
     this.contentErrors = [];
-    this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas, DEFAULT_LOCALE.id));
+    this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), DEFAULT_LOCALE.id));
     for (const locale of this.selectedSpace?.locales || []) {
-      this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas, locale.id));
+      this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), locale.id));
     }
 
     //console.log(this.contentErrors)
@@ -379,7 +376,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     let node = nodeIterator.shift();
     while (node) {
       this.documentIdsTree.set(node.data._id, node.path);
-      const schema = this.schemaMapById.get(node.data.schema);
+      const schema = this.schemaMapById().get(node.data.schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         for (const field of schema.fields || []) {
           if (field.kind === SchemaFieldKind.SCHEMA) {
@@ -418,7 +415,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         // check Root Schema
         if (this.documentData._id === selectedContentId) {
           console.log('root', selectedContentId);
-          const schema = this.schemaMapById.get(this.documentData.schema);
+          const schema = this.schemaMapById().get(this.documentData.schema);
           if (schema) {
             this.navigateToSchemaBackwards({
               contentId: this.documentData._id,
@@ -437,7 +434,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         // Navigate to child
         while (selectedContentId) {
           console.log('child', selectedContentId);
-          const schema = this.schemaMapById.get(this.selectedDocumentData.schema);
+          const schema = this.schemaMapById().get(this.selectedDocumentData.schema);
           if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
             schemaFieldsLoop: for (const field of schema.fields || []) {
               if (field.kind === SchemaFieldKind.SCHEMA) {

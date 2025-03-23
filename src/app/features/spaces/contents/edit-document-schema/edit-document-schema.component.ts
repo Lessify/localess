@@ -350,18 +350,23 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     //console.groupEnd()
   }
 
-  filterSchema(ids?: string[]): SchemaComponent[] {
-    if (ids) {
-      const result: SchemaComponent[] = [];
-      for (const id of ids) {
-        const r = this.schemaCompNodeById().get(id);
-        if (r) {
-          result.push(r);
+  filterSchema(ids: string[]): SchemaComponent[] {
+    return ids
+      .map(id => this.schemaCompNodeById().get(id))
+      .filter(it => it !== undefined)
+      .sort((a, b) => {
+        if (a.displayName) {
+          if (b.displayName) {
+            return a.displayName.localeCompare(b.displayName);
+          }
+          return a.displayName.localeCompare(b.id);
+        } else {
+          if (b.displayName) {
+            return a.id.localeCompare(b.displayName);
+          }
+          return a.id.localeCompare(b.id);
         }
-      }
-      return result;
-    }
-    return this.schemaCompNodeList();
+      });
   }
 
   addSchemaOne(field: SchemaField, schema: Schema): void {

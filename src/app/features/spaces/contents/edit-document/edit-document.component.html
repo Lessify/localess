@@ -39,7 +39,7 @@
       </button>
 
       <mat-menu #localesMenu="matMenu">
-        @for (locale of availableLocales; track locale.id) {
+        @for (locale of availableLocales(); track locale.id) {
           <button mat-menu-item (click)="onLocaleChanged(locale)">
             <span [ngClass]="{ 'font-semibold': locale.id === selectedLocale.id }">
               {{ locale.name }}
@@ -61,7 +61,7 @@
               <mat-icon color="accent">warning</mat-icon>
               In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for
               Locale
-              {{ availableLocalesMap.get(error.locale) }}
+              {{ availableLocalesMap().get(error.locale) }}
             </div>
           }
         </div>
@@ -185,18 +185,17 @@
               <ll-breadcrumb>
                 @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isFirst = $first) {
                   <ll-breadcrumb-item (click)="navigateToSchemaBackwards(schemaPathItem)" [home]="isFirst">
-                    @if (schemaMapById.get(schemaPathItem.schemaName); as sch) {
+                    @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
                       {{ sch.displayName || sch.id }}
                     }
                   </ll-breadcrumb-item>
                 }
               </ll-breadcrumb>
-
               <ll-content-document-schema-edit
                 [data]="selectedDocumentData"
-                [schemas]="schemas"
+                [schemas]="schemas()"
                 [selectedLocale]="selectedLocale"
-                [availableLocales]="availableLocales"
+                [availableLocales]="availableLocales()"
                 [hoverSchemaPath]="hoverSchemaPath()"
                 [hoverSchemaField]="isSamePath() ? hoverSchemaField() : undefined"
                 [clickSchemaField]="clickSchemaField()"
