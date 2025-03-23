@@ -205,12 +205,12 @@ export class AssetsComponent implements OnInit {
     }
     // empty
     if (urlStr === '') {
-      this.notificationService.warn('URL is empty.');
+      this.notificationService.error('URL is empty.');
       return;
     }
     // value is present
     if (!URL.canParse(urlStr)) {
-      this.notificationService.warn('Not a valid URL.');
+      this.notificationService.error('Not a valid URL.');
       return;
     }
     const url = new URL(urlStr);

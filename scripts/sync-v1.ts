@@ -23,7 +23,15 @@
   function createCSS() {
     const style = document.createElement('style');
     style.id = 'localess-css-sync';
-    style.textContent = `[data-ll-id],[data-ll-field]{outline: 2px dashed rgba(0,92,187,0.5);transition: box-shadow ease-out 150ms;}[data-ll-id]:hover,[data-ll-field]:hover{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
+    // Highlight Visual Editor Elements
+    style.textContent = `
+    [data-ll-id],[data-ll-field]{outline: 2px dashed rgba(0,92,187,0.5);transition: box-shadow ease-out 150ms;}
+    [data-ll-id]:hover,[data-ll-field]:hover{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
+    // Snackbar
+    style.textContent += `
+    .ll-snackbar-container{position: fixed;bottom: 20px;display: flex;flex-direction: column-reverse;left: 50%;gap: 10px;}
+    .ll-snackbar{min-width: 250px;background-color: #333;color: #fff;text-align: center;border-radius: 4px;padding: 16px;transform: translateX(-50%);box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);animation: ll-fadein 0.5s, ll-fadeout 0.5s 2.5s;}
+    @keyframes ll-fadein {from {bottom: 0; opacity: 0;}to {bottom: 30px; opacity: 1;}}@keyframes ll-fadeout {from {bottom: 30px; opacity: 1;}to {bottom: 0; opacity: 0;}}`;
     document.head.appendChild(style);
   }
 
@@ -73,6 +81,22 @@
     });
   }
 
+  function addMessageContainer() {
+    const snackbarContainer = document.createElement('div');
+    snackbarContainer.className = 'll-snackbar-container';
+    document.body.appendChild(snackbarContainer);
+  }
+
+  function addMessage(message: string) {
+    const snackbar = document.createElement('div');
+    snackbar.className = 'll-snackbar';
+    snackbar.textContent = message;
+    document.body.querySelector('.ll-snackbar-container')?.appendChild(snackbar);
+    setTimeout(() => {
+      snackbar.remove();
+    }, 3000);
+  }
+
   if (isInIframe()) {
     createCSS();
     setTimeout(() => markVisualEditorElements(), 1000);
@@ -93,6 +117,8 @@
           `%c🚀🚀🚀LOCALESS: Sync version ${this.version} initialized🚀🚀🚀`,
           'background: #222; color: #0063EB; font-size: 2rem;',
         );
+        addMessageContainer()
+        addMessage('Localess: Sync initialized.');
         // Receive message from Visual Editor
         addEventListener('message', event => {
           if (event.origin === location.ancestorOrigins.item(0)) {
@@ -140,8 +166,10 @@
           for (const e of type) {
             this.addEvent(e, callback);
           }
+          addMessage(`Localess: Sync event added [${type.join(', ')}].`);
         } else {
           this.addEvent(type, callback);
+          addMessage(`Localess: Sync event added [${type}].`);
         }
       }
 

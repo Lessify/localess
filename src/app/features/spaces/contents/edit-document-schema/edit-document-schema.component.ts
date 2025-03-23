@@ -177,8 +177,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         element
           .querySelector<HTMLElement>(`.mat-mdc-text-field-wrapper:has(#schema-field-${field})`)
           ?.classList.add('mdc-text-field--focused');
-      } else {
-        element?.querySelector('.mdc-text-field--focused')?.classList.remove('mdc-text-field--focused');
+      } else if (element) {
+        element.querySelectorAll<HTMLElement>(`[id^="schema-field-"]`).forEach(item => {
+          if (item !== document.activeElement) {
+            item.closest('.mat-mdc-text-field-wrapper')?.classList.remove('mdc-text-field--focused');
+          }
+        });
       }
     });
     effect(() => {
@@ -496,7 +500,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
       content = this.data[`${fieldName}_i18n_${sourceLocale}`];
     }
     if (content === undefined || content === null || content === '') {
-      this.notificationService.warn('No content to translate');
+      this.notificationService.error('No content to translate');
     } else {
       this.translateService
         .translate({
@@ -509,7 +513,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
             if (this.form.contains(fieldName)) {
               this.form.controls[fieldName].setValue(result);
             }
-            this.notificationService.info('Translated');
+            this.notificationService.success('Translated');
           },
           error: err => {
             console.error(err);

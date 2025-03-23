@@ -1,14 +1,11 @@
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
 import { CustomSnackBarComponent } from '@shared/components/custom-snack-bar/custom-snack-bar.component';
 import { ActionRoute, CustomSnackBarModel } from '@shared/components/custom-snack-bar/custom-snack-bar.model';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  constructor(
-    private readonly snackBar: MatSnackBar,
-    private readonly zone: NgZone,
-  ) {}
+  constructor(private readonly snackBar: MatSnackBar) {}
 
   default(message: string, actions?: ActionRoute[]) {
     this.show({
@@ -21,32 +18,10 @@ export class NotificationService {
     });
   }
 
-  info(message: string, actions?: ActionRoute[]) {
-    this.show({
-      duration: 2000,
-      panelClass: 'info-notification-overlay',
-      data: {
-        message: message,
-        actions: actions,
-      },
-    });
-  }
-
   success(message: string, actions?: ActionRoute[]) {
     this.show({
       duration: 2000,
       panelClass: 'success-notification-overlay',
-      data: {
-        message: message,
-        actions: actions,
-      },
-    });
-  }
-
-  warn(message: string, actions?: ActionRoute[]) {
-    this.show({
-      duration: 2500,
-      panelClass: 'warning-notification-overlay',
       data: {
         message: message,
         actions: actions,
@@ -67,11 +42,5 @@ export class NotificationService {
 
   private show(configuration: MatSnackBarConfig<CustomSnackBarModel>) {
     this.snackBar.openFromComponent<CustomSnackBarComponent, CustomSnackBarModel>(CustomSnackBarComponent, configuration);
-  }
-
-  private _show(message: string, configuration: MatSnackBarConfig) {
-    // Need to open snackBar from Angular zone to prevent issues with its position per
-    // https://stackoverflow.com/questions/50101912/snackbar-position-wrong-when-use-errorhandler-in-angular-5-and-material
-    this.zone.run(() => this.snackBar.open(message, undefined, configuration));
   }
 }

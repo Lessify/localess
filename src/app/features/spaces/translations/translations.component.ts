@@ -469,7 +469,7 @@ export class TranslationsComponent implements OnInit {
         next: value => {
           // make sure the component is updated
           this.selectedTranslationLocaleValue = value;
-          this.notificationService.info('Translated');
+          this.notificationService.success('Translated');
         },
         error: (err: unknown) => {
           console.error(err);

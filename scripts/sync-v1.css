@@ -9,3 +9,34 @@
   outline: 2px solid rgba(0,92,187,1);
   cursor: pointer;
 }
+
+.ll-snackbar-container {
+  position: fixed;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column-reverse;
+  left: 50%;
+  gap: 10px;
+}
+
+.ll-snackbar {
+  min-width: 250px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 16px;
+  transform: translateX(-50%);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+  animation: ll-fadein 0.5s, ll-fadeout 0.5s 2.5s;
+}
+
+@keyframes ll-fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes ll-fadeout {
+  from {bottom: 30px; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
