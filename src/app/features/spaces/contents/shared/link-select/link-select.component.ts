@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,7 +12,7 @@ import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/sl
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ContentDocument, LinkContent } from '@shared/models/content.model';
-import { SchemaField, SchemaFieldKind } from '@shared/models/schema.model';
+import { SchemaFieldKind, SchemaFieldLink } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { debounceTime, Observable, of, startWith } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -39,9 +39,17 @@ import { map } from 'rxjs/operators';
 export class LinkSelectComponent implements OnInit {
   // Input
   form = input.required<FormGroup>();
-  component = input.required<SchemaField>();
+  component = input.required<SchemaFieldLink>();
   documents = input.required<ContentDocument[]>();
-  @Input({ required: false }) default?: LinkContent;
+  default = input<LinkContent>();
+
+  defaultDocument = computed(() => {
+    const defaultUri = this.default()?.uri;
+    if (defaultUri) {
+      return this.documents().find(it => it.id === defaultUri);
+    }
+    return undefined;
+  });
 
   // Search
   searchCtrl: FormControl = new FormControl();
@@ -50,12 +58,24 @@ export class LinkSelectComponent implements OnInit {
   // Subscriptions
   settingsStore = inject(LocalSettingsStore);
 
-  constructor(readonly fe: FormErrorHandlerService) {}
+  constructor(readonly fe: FormErrorHandlerService) {
+    effect(() => {
+      if (this.default() && !this.component().translatable) {
+        this.searchCtrl.disable();
+      } else {
+        this.searchCtrl.enable();
+      }
+    });
+  }
 
   ngOnInit(): void {
     // Data init in case everything is null
     if (this.form().value.kind === null || this.form().value.type === null) {
-      this.form().patchValue({ kind: SchemaFieldKind.LINK, type: 'url', target: '_self' });
+      this.form().patchValue({
+        kind: SchemaFieldKind.LINK,
+        type: this.default()?.type || 'url',
+        target: this.default()?.target || '_self',
+      });
     }
     if (this.form().value.type === 'content' && this.form().value.uri !== null) {
       this.searchCtrl.patchValue(this.documents().find(it => it.id === this.form().value.uri));

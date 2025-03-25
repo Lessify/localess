@@ -309,7 +309,7 @@
               [form]="control"
               [component]="field"
               [documents]="documents"
-              [default]="!isDefaultLocale() && data[field.name]" />
+              [default]="isDefaultLocale() ? undefined : data[field.name]" />
           }
         }
         <!--REFERENCE-->
@@ -483,13 +483,18 @@
   </form>
 }
 @if (settingsStore.debugEnabled()) {
+  <br />
+  <mat-divider />
+  <br />
   <mat-accordion>
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
       </mat-expansion-panel-header>
       <pre>isDefaultLocale = {{ isDefaultLocale() }}</pre>
+      Value :
       <pre>{{ form.value | json }}</pre>
+      Error :
       <pre>{{ form.errors | json }}</pre>
     </mat-expansion-panel>
   </mat-accordion>
