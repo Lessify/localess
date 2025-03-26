@@ -3,9 +3,9 @@
     <button mat-icon-button (click)="back()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <span class="title">{{ document?.name }}</span>
+    <span class="title">{{ document()?.name }}</span>
     &nbsp;
-    <span class="subtitle">#{{ document?.slug }}</span>
+    <span class="subtitle">#{{ document()?.slug }}</span>
     <span class="spacer"></span>
     <div class="actions">
       <button mat-stroked-button [matMenuTriggerFor]="modeMenu" matTooltip="Select Mode">
@@ -82,11 +82,11 @@
           Publish
         </button>
       }
-      @if (document?.publishedAt === undefined) {
+      @if (document()?.publishedAt === undefined) {
         <ll-status mode="offline" matTooltip="Not published" />
-      } @else if (document?.publishedAt?.seconds > document?.updatedAt?.seconds) {
+      } @else if (document()?.publishedAt?.seconds > document()?.updatedAt?.seconds) {
         <ll-status mode="online" matTooltip="Published" />
-      } @else if (document?.publishedAt && document?.publishedAt?.seconds < document?.updatedAt?.seconds) {
+      } @else if (document()?.publishedAt && document()?.publishedAt?.seconds < document()?.updatedAt?.seconds) {
         <ll-status mode="away" matTooltip="Draft" />
       }
 

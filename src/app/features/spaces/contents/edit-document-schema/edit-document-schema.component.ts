@@ -114,7 +114,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   // Inputs
   @Input() documents: ContentDocument[] = [];
   @Input() space?: Space;
-  @Input() data: ContentData = { _id: '', schema: '' };
+  @Input() data: ContentData = { _id: '', _schema: '', schema: '' };
   //data = input.required<ContentData>();
   schemas = input.required<Schema[]>();
   selectedLocale = input.required<Locale>();
@@ -374,11 +374,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     if (sch) {
       this.data[field.name] = {
         _id: v4(),
+        _schema: schema.id,
         schema: schema.id,
       };
     } else {
       this.data[field.name] = {
         _id: v4(),
+        _schema: schema.id,
         schema: schema.id,
       };
     }
@@ -397,11 +399,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         // add at index
         fieldData.splice(index, 0, {
           _id: v4(),
+          _schema: schema.id,
           schema: schema.id,
         });
       } else {
         fieldData.push({
           _id: v4(),
+          _schema: schema.id,
           schema: schema.id,
         });
       }
@@ -409,6 +413,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
       this.data[field.name] = [
         {
           _id: v4(),
+          _schema: schema.id,
           schema: schema.id,
         },
       ];

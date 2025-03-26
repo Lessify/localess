@@ -108,9 +108,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   iframeUrl?: SafeUrl;
   availableLocales = signal<Locale[]>([DEFAULT_LOCALE]);
   availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
-  document?: ContentDocument;
-  documentData: ContentData = { _id: '', schema: '' };
-  selectedDocumentData: ContentData = { _id: '', schema: '' };
+  document = signal<ContentDocument | undefined>(undefined);
+  documentData: ContentData = { _id: '', _schema: '', schema: '' };
+  selectedDocumentData: ContentData = { _id: '', _schema: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
   rootSchema?: Schema;
   contentErrors: ContentError[] = [];
@@ -147,7 +147,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         filter(it => it !== undefined), // Skip initial data
         switchMap(it =>
           combineLatest([
-            this.spaceService.findById(it!),
+            this.spaceService.findById(it!).pipe(filter(it => it !== undefined)),
             this.contentService.findById(it!, this.contentId()),
             this.contentService.findAllDocuments(it!),
             this.schemaService.findAll(it!),
@@ -163,11 +163,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           //console.log(ObjectUtils.clone(document))
 
           if (document.kind === ContentKind.DOCUMENT) {
-            this.document = document;
+            this.document.set(document);
             this.rootSchema = schemas.find(it => it.id === document.schema);
             if (document.data === undefined) {
               this.documentData = {
                 _id: v4(),
+                _schema: this.rootSchema?.id || '',
                 schema: this.rootSchema?.id || '',
               };
             } else if (typeof document.data === 'string') {
@@ -207,10 +208,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   get isFormDirty(): boolean {
-    if (this.document && this.document.data && typeof this.document.data === 'string') {
-      return this.document?.data !== JSON.stringify(this.contentHelperService.clone(this.documentData));
+    const data = this.document()?.data;
+    if (data === undefined) {
+      return false;
+    } else if (typeof data === 'string') {
+      return data !== JSON.stringify(this.contentHelperService.clone(this.documentData));
     }
-    return JSON.stringify(this.document?.data) !== JSON.stringify(this.contentHelperService.clone(this.documentData));
+    return JSON.stringify(data) !== JSON.stringify(this.contentHelperService.clone(this.documentData));
   }
 
   publish(): void {
@@ -247,7 +251,19 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     //console.log(this.contentErrors)
 
     if (this.contentErrors.length === 0) {
-      this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData).subscribe({
+      const refs = this.availableLocales()
+        .map(it => this.contentHelperService.extractReferences(this.documentData, this.schemas(), it.id))
+        .reduce(
+          (acc, val) => {
+            const inUseAssets = acc[0];
+            const inUseReferences = acc[1];
+            val[0].forEach(it => inUseAssets.add(it));
+            val[1].forEach(it => inUseReferences.add(it));
+            return [inUseAssets, inUseReferences];
+          },
+          [new Set<string>(), new Set<string>()],
+        );
+      this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData, refs).subscribe({
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
           this.sendEventToApp({ type: 'save' });
@@ -367,7 +383,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   changeEnvironment(env: SpaceEnvironment): void {
     this.selectedEnvironment = env;
-    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document?.fullSlug || '');
+    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document()?.fullSlug || '');
   }
 
   generateDocumentIdsTree() {

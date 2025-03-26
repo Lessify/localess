@@ -215,10 +215,12 @@ export class ContentService {
     );
   }
 
-  updateDocumentData(spaceId: string, id: string, data: ContentData): Observable<void> {
+  updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>]): Observable<void> {
     const update: UpdateData<ContentDocument> = {
       data: JSON.stringify(this.contentHelperService.clone(data)),
       updatedAt: serverTimestamp(),
+      assets: Array.from(refs[0]),
+      references: Array.from(refs[1]),
     };
     if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
       update.updatedBy = {

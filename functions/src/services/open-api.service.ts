@@ -768,10 +768,15 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
         description: 'Unique identifier of a component in a content.',
         example: 'a8ca3ed3-6613-4fb6-ae4e-5b846eb5775c',
       },
-      schema: {
+      _schema: {
         type: 'string',
         enum: [id],
         description: 'Unique identifier for the Schema object.',
+      },
+      schema: {
+        type: 'string',
+        enum: [id],
+        description: 'Unique identifier for the Schema object. Will be deprecated in future in favor of `_schema`.',
       },
     };
     for (const item of schema.fields?.sort((a, b) => a.name.localeCompare(b.name)) || []) {

@@ -3,6 +3,7 @@ import { ContentKind } from './content.model';
 
 export const contentDataSchema = z.object({
   _id: z.string(),
+  _schema: z.string().optional(),
   schema: z.string(),
 });
 

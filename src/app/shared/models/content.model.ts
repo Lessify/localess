@@ -18,6 +18,7 @@ export interface ContentError {
 
 export interface ContentData extends Record<string, any> {
   _id: string;
+  _schema?: string;
   schema: string;
 }
 
@@ -51,6 +52,8 @@ export interface ContentDocument<T extends ContentData = ContentData> extends Co
   schema: string;
   data?: T | string;
   publishedAt?: Timestamp;
+  assets?: string[];
+  references?: string[];
 }
 
 export interface ContentFolder extends ContentBase {

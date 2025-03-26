@@ -29,6 +29,8 @@ export interface ContentDocument<T extends ContentData = ContentData> extends Co
   schema: string;
   data?: T | string;
   publishedAt?: Timestamp;
+  assets?: string[];
+  references?: string[];
 }
 
 export interface ContentFolder extends ContentBase {
@@ -62,6 +64,7 @@ export interface ContentDocumentStorage {
 
 export interface ContentData extends Record<string, any | ContentData | ContentData[]> {
   _id: string;
+  _schema?: string;
   schema: string;
 }
 

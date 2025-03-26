@@ -152,6 +152,73 @@ export class ContentHelperService {
     return errors;
   }
 
+  /**
+   * Extract References to other Content or Asset
+   * @param {ContentData} data - document
+   * @param {Schema[]} schemas
+   * @param {string} locale
+   */
+  extractReferences(data: ContentData | undefined, schemas: Schema[], locale: string): [Set<string>, Set<string>] {
+    //console.group('extractReferences', locale);
+    const inUseAssets = new Set<string>();
+    const inUseReferences = new Set<string>();
+    const schemasById = new Map<string, Schema>(schemas.map(it => [it.id, it]));
+    if (data === undefined) return [inUseAssets, inUseReferences];
+    const contentIteration = [data];
+    // Iterative traversing content and extracting references.
+    let selectedContent = contentIteration.pop();
+    while (selectedContent) {
+      const schema = schemasById.get(selectedContent.schema);
+      if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
+        const extractSchemaContent = this.extractSchemaContent(selectedContent, schema, locale, true);
+        // handle array like Asset/Reference Array
+        Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
+          const content = extractSchemaContent[fieldName];
+          //console.log(fieldName, content);
+          if (content instanceof Array) {
+            if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
+              // Assets
+              const assets: AssetContent[] = content;
+              assets.forEach(it => inUseAssets.add(it.uri));
+            } else if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
+              // References
+              const references: ReferenceContent[] = content;
+              references.forEach(it => inUseReferences.add(it.uri));
+            }
+          } else {
+            if (isAssetContent(content)) {
+              inUseAssets.add(content.uri);
+            } else if (isReferenceContent(content)) {
+              inUseReferences.add(content.uri);
+            } else if (isLinkContent(content) && content.type === 'content') {
+              inUseReferences.add(content.uri);
+            }
+          }
+        });
+
+        //console.log(extractSchemaContent);
+        schema.fields
+          ?.filter(it => it.kind === SchemaFieldKind.SCHEMA)
+          .forEach(field => {
+            const sch: ContentData | undefined = selectedContent && selectedContent[field.name];
+            if (sch) {
+              contentIteration.push(sch);
+            }
+          });
+        schema.fields
+          ?.filter(it => it.kind === SchemaFieldKind.SCHEMAS)
+          .forEach(field => {
+            const sch: ContentData[] | undefined = selectedContent![field.name];
+            sch?.forEach(it => contentIteration.push(it));
+          });
+      }
+      selectedContent = contentIteration.pop();
+    }
+    //console.log(inUseAssets, inUseReferences);
+    //console.groupEnd();
+    return [inUseAssets, inUseReferences];
+  }
+
   extractSchemaContent(data: ContentData, schema: SchemaComponent, locale: string, full: boolean): Record<string, any> {
     //console.group('extractSchemaContent')
     //console.log('data',data)
@@ -205,6 +272,9 @@ export class ContentHelperService {
         }
         if (generateNewID && fieldName === '_id') {
           target[fieldName] = v4();
+        }
+        if (fieldName === 'schema' && target['_schema'] === undefined) {
+          target['_schema'] = target['schema'];
         }
         if (value == null) {
           delete target[fieldName];
