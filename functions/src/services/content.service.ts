@@ -155,6 +155,7 @@ export function contentCachePath(spaceId: string, contentId: string, version: st
 export function extractContent(content: ContentData, schemas: Map<string, Schema>, locale: string): ContentData {
   const extractedContentData: ContentData = {
     _id: content._id,
+    _schema: content._schema || content.schema,
     schema: content.schema,
   };
   const schema = schemas.get(content.schema);
