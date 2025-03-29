@@ -13,7 +13,7 @@ const SCHEMA_RESERVED_IDS = [
   'Content',
 ];
 
-const SCHEMA_RESERVED_FIELD_NAMES = ['_id', 'schema'];
+const SCHEMA_RESERVED_FIELD_NAMES = ['_id', '_schema', 'schema'];
 
 export class SchemaValidator {
   public static ID: ValidatorFn[] = [

@@ -1,7 +1,7 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, Input, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -78,7 +78,6 @@ export class EditFieldComponent implements OnInit {
   constructor(
     readonly fe: FormErrorHandlerService,
     private readonly fb: FormBuilder,
-    private readonly cd: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
