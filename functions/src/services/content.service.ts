@@ -146,6 +146,15 @@ export function contentCachePath(spaceId: string, contentId: string, version: st
 }
 
 /**
+ * construct content cache path, will return url to the cache file for cache version identifier
+ * @param {string} spaceId
+ * @return {string} path
+ */
+export function spaceContentCachePath(spaceId: string): string {
+  return `spaces/${spaceId}/contents/cache.json`;
+}
+
+/**
  * extract Locale Content
  * @param {ContentData} content content
  * @param {Schema[]} schemas schema

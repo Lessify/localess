@@ -145,6 +145,15 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             },
           },
         },
+        {
+          type: 'object',
+          description: 'References of all links used in the content.',
+          properties: {
+            links: {
+              $ref: '#/components/schemas/Links',
+            },
+          },
+        },
       ],
       example: {
         id: 'WLWc4vOACzG1QjK9AEo9',
@@ -315,7 +324,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       },
     },
     externalDocs: {
-      url: 'https://github.com/Lessify/localess/wiki',
+      url: 'https://localess.org/docs/api/overview',
       description: 'Localess Documentation',
     },
     paths: {
@@ -359,6 +368,16 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
                 example: '1706217382028',
               },
             },
+            {
+              name: 'token',
+              in: 'query',
+              description: 'Authentication Token.',
+              required: true,
+              schema: {
+                type: 'string',
+                example: 'fb6oTcVjbnyLCMhO2iLY',
+              },
+            },
           ],
           responses: {
             '200': {
@@ -372,6 +391,11 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               },
             },
           },
+          security: [
+            {
+              apikey: [],
+            },
+          ],
         },
       },
       '/api/v1/spaces/{spaceId}/links': {

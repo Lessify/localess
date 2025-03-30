@@ -34,6 +34,7 @@ import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { TaskService } from '@shared/services/task.service';
+import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
@@ -134,6 +135,8 @@ export class TranslationsComponent implements OnInit {
   selectedSourceLocale = '';
   selectedTargetLocale = '';
 
+  availableToken?: string = undefined;
+
   // Subscriptions
   history$?: Observable<TranslationHistory[]>;
   space$?: Observable<Space>;
@@ -157,6 +160,7 @@ export class TranslationsComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly cd: ChangeDetectorRef,
     private readonly translateService: TranslateService,
+    private readonly tokenService: TokenService,
     private readonly fb: FormBuilder,
   ) {}
 
@@ -452,9 +456,27 @@ export class TranslationsComponent implements OnInit {
     this.selectedTranslation = undefined;
   }
 
-  openPublishedInNewTab(locale: string): void {
-    const url = `${location.origin}/api/v1/spaces/${this.spaceId()}/translations/${locale}`;
+  openApiV1InNewTab(locale: string, token: string): void {
+    const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/translations/${locale}`);
+    url.searchParams.set('token', token);
     window.open(url, '_blank');
+  }
+
+  openPublishedV1InNewTab(locale: string): void {
+    if (this.availableToken) {
+      this.openApiV1InNewTab(locale, this.availableToken);
+    } else {
+      this.tokenService.findFirst(this.spaceId()).subscribe({
+        next: tokens => {
+          if (tokens.length === 1) {
+            this.availableToken = tokens[0].id;
+            this.openApiV1InNewTab(locale, this.availableToken);
+          } else {
+            this.notificationService.error('Please create Access Token in your Space Settings');
+          }
+        },
+      });
+    }
   }
 
   translate(): void {

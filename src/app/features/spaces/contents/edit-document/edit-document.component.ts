@@ -116,6 +116,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   contentErrors: ContentError[] = [];
   documents: ContentDocument[] = [];
 
+  availableToken?: string = undefined;
+
   //Loadings
   isLoading = signal(true);
   isPublishLoading = signal(false);
@@ -289,35 +291,48 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.router.navigate(['features', 'spaces', this.spaceId(), 'contents']);
   }
 
-  openDraftInNewTab(locale: string): void {
-    this.tokenService.findFirst(this.spaceId()).subscribe({
-      next: tokens => {
-        if (tokens.length === 1) {
-          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/contents/${this.contentId()}`);
-          url.searchParams.set('locale', locale);
-          url.searchParams.set('version', 'draft');
-          url.searchParams.set('token', tokens[0].id);
-          window.open(url, '_blank');
-        } else {
-          this.notificationService.error('Please create Access Token in your Space Settings');
-        }
-      },
-    });
+  openApiV1InNewTab(locale: string, token: string, version?: 'draft'): void {
+    const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/contents/${this.contentId()}`);
+    url.searchParams.set('locale', locale);
+    if (version) {
+      url.searchParams.set('version', version);
+    }
+    url.searchParams.set('token', token);
+    window.open(url, '_blank');
   }
 
-  openPublishedInNewTab(locale: string): void {
-    this.tokenService.findFirst(this.spaceId()).subscribe({
-      next: tokens => {
-        if (tokens.length === 1) {
-          const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/contents/${this.contentId()}`);
-          url.searchParams.set('locale', locale);
-          url.searchParams.set('token', tokens[0].id);
-          window.open(url, '_blank');
-        } else {
-          this.notificationService.error('Please create Access Token in your Space Settings');
-        }
-      },
-    });
+  openDraftV1InNewTab(locale: string): void {
+    if (this.availableToken) {
+      this.openApiV1InNewTab(locale, this.availableToken, 'draft');
+    } else {
+      this.tokenService.findFirst(this.spaceId()).subscribe({
+        next: tokens => {
+          if (tokens.length === 1) {
+            this.availableToken = tokens[0].id;
+            this.openApiV1InNewTab(locale, this.availableToken, 'draft');
+          } else {
+            this.notificationService.error('Please create Access Token in your Space Settings');
+          }
+        },
+      });
+    }
+  }
+
+  openPublishedV1InNewTab(locale: string): void {
+    if (this.availableToken) {
+      this.openApiV1InNewTab(locale, this.availableToken);
+    } else {
+      this.tokenService.findFirst(this.spaceId()).subscribe({
+        next: tokens => {
+          if (tokens.length === 1) {
+            this.availableToken = tokens[0].id;
+            this.openApiV1InNewTab(locale, this.availableToken);
+          } else {
+            this.notificationService.error('Please create Access Token in your Space Settings');
+          }
+        },
+      });
+    }
   }
 
   onLocaleChanged(locale: Locale): void {

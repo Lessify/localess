@@ -28,24 +28,25 @@
       </button>
 
       <mat-menu #extraMenu="matMenu">
-        <button mat-menu-item (click)="openLinksInNewTab()">
+        @if (['CONTENT_IMPORT', 'CONTENT_EXPORT'] | canUserPerform | async) {
+          @if ('CONTENT_IMPORT' | canUserPerform | async) {
+            <button mat-menu-item (click)="openImportDialog()">
+              <mat-icon>cloud_upload</mat-icon>
+              <span>Import</span>
+            </button>
+          }
+          @if ('CONTENT_EXPORT' | canUserPerform | async) {
+            <button mat-menu-item (click)="openExportDialog()">
+              <mat-icon>cloud_download</mat-icon>
+              <span>Export</span>
+            </button>
+          }
+          <mat-divider></mat-divider>
+        }
+        <button mat-menu-item (click)="openLinksV1InNewTab()">
           <mat-icon>link</mat-icon>
           <span>Links</span>
         </button>
-
-        <mat-divider></mat-divider>
-        @if ('CONTENT_IMPORT' | canUserPerform | async) {
-          <button mat-menu-item (click)="openImportDialog()">
-            <mat-icon>cloud_upload</mat-icon>
-            <span>Import</span>
-          </button>
-        }
-        @if ('CONTENT_EXPORT' | canUserPerform | async) {
-          <button mat-menu-item (click)="openExportDialog()">
-            <mat-icon>cloud_download</mat-icon>
-            <span>Export</span>
-          </button>
-        }
       </mat-menu>
     </div>
   </mat-toolbar-row>

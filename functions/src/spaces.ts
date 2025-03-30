@@ -6,7 +6,6 @@ import { AssetKind, ContentKind, Space, SpaceOverviewData } from './models';
 import {
   findAssets,
   findContents,
-  findPlugins,
   findSchemas,
   findSpaceById,
   findTasks,
@@ -52,23 +51,6 @@ const onSpaceDelete = onDocumentDeleted('spaces/{spaceId}', async event => {
     const contentsSnapshot = await findContents(spaceId).get();
     logger.info(`[Space::onDelete] Contents size='${contentsSnapshot.docs.length}'`);
     for (const item of contentsSnapshot.docs) {
-      batch.delete(item.ref);
-      count++;
-      if (count === BATCH_MAX) {
-        await batch.commit();
-        batch = firestoreService.batch();
-        count = 0;
-      }
-    }
-    if (count > 0) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-    // Plugins
-    const pluginsSnapshot = await findPlugins(spaceId).get();
-    logger.info(`[Space::onDelete] plugins size='${pluginsSnapshot.docs.length}'`);
-    for (const item of pluginsSnapshot.docs) {
       batch.delete(item.ref);
       count++;
       if (count === BATCH_MAX) {

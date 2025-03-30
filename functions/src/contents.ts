@@ -1,7 +1,7 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten, DocumentSnapshot } from 'firebase-functions/v2/firestore';
-import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
+import { FieldValue, UpdateData, WithFieldValue, FieldPath } from 'firebase-admin/firestore';
 import { canPerform } from './utils/security-utils';
 import { BATCH_MAX, bucket, firestoreService } from './config';
 import {
@@ -11,6 +11,7 @@ import {
   ContentHistory,
   ContentHistoryType,
   ContentKind,
+  ContentLink,
   PublishContentData,
   Schema,
   Space,
@@ -24,6 +25,7 @@ import {
   findDocumentsToPublishByStartFullSlug,
   findSchemas,
   findSpaceById,
+  spaceContentCachePath,
 } from './services';
 import { AuthData } from 'firebase-functions/lib/common/providers/https';
 
@@ -81,6 +83,39 @@ async function publishDocument(
   schemas: Map<string, Schema>,
   auth?: AuthData
 ) {
+  let aggReferences: Record<string, ContentLink> | undefined;
+  if (document.references && document.references.length > 0) {
+    const contentsSnapshot = await firestoreService
+      .collection(`spaces/${spaceId}/contents`)
+      .where(FieldPath.documentId(), 'in', document.references)
+      .get();
+    aggReferences = contentsSnapshot.docs
+      .map(contentSnapshot => {
+        const content = contentSnapshot.data() as Content;
+        const link: ContentLink = {
+          id: contentSnapshot.id,
+          kind: content.kind,
+          name: content.name,
+          slug: content.slug,
+          fullSlug: content.fullSlug,
+          parentSlug: content.parentSlug,
+          createdAt: content.createdAt.toDate().toISOString(),
+          updatedAt: content.updatedAt.toDate().toISOString(),
+        };
+        if (content.kind === ContentKind.DOCUMENT) {
+          link.publishedAt = content.publishedAt?.toDate().toISOString();
+        }
+        return link;
+      })
+      .reduce(
+        (acc, item) => {
+          acc[item.id] = item;
+          return acc;
+        },
+        {} as Record<string, ContentLink>
+      );
+  }
+
   for (const locale of space.locales) {
     const documentStorage: ContentDocumentStorage = {
       id: documentId,
@@ -100,6 +135,9 @@ async function publishDocument(
       } else {
         documentStorage.data = extractContent(document.data, schemas, locale.id);
       }
+    }
+    if (aggReferences) {
+      documentStorage.links = aggReferences;
     }
     // Save generated JSON
     logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
@@ -143,6 +181,38 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
       const space: Space = spaceSnapshot.data() as Space;
       const content: ContentDocument = contentAfter;
       const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
+      let aggReferences: Record<string, ContentLink> | undefined;
+      if (content.references && content.references.length > 0) {
+        const contentsSnapshot = await firestoreService
+          .collection(`spaces/${spaceId}/contents`)
+          .where(FieldPath.documentId(), 'in', content.references)
+          .get();
+        aggReferences = contentsSnapshot.docs
+          .map(contentSnapshot => {
+            const content = contentSnapshot.data() as Content;
+            const link: ContentLink = {
+              id: contentSnapshot.id,
+              kind: content.kind,
+              name: content.name,
+              slug: content.slug,
+              fullSlug: content.fullSlug,
+              parentSlug: content.parentSlug,
+              createdAt: content.createdAt.toDate().toISOString(),
+              updatedAt: content.updatedAt.toDate().toISOString(),
+            };
+            if (content.kind === ContentKind.DOCUMENT) {
+              link.publishedAt = content.publishedAt?.toDate().toISOString();
+            }
+            return link;
+          })
+          .reduce(
+            (acc, item) => {
+              acc[item.id] = item;
+              return acc;
+            },
+            {} as Record<string, ContentLink>
+          );
+      }
       for (const locale of space.locales) {
         const documentStorage: ContentDocumentStorage = {
           id: event.data.after.id,
@@ -161,6 +231,9 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
           } else {
             documentStorage.data = extractContent(content.data, schemas, locale.id);
           }
+        }
+        if (aggReferences) {
+          documentStorage.links = aggReferences;
         }
         // Save generated JSON
         logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);
@@ -261,8 +334,8 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
   logger.info(`[Content::onWrite] params='${JSON.stringify(event.params)}'`);
   const { spaceId, contentId } = event.params;
   // Save Cache, to make sure LINKS are cached correctly with cache version
-  logger.info(`[Content::onWrite] Save file to spaces/${spaceId}/contents/cache.json`);
-  await bucket.file(`spaces/${spaceId}/contents/cache.json`).save('');
+  logger.info(`[Content::onWrite] Save file to ${spaceContentCachePath(spaceId)}`);
+  await bucket.file(spaceContentCachePath(spaceId)).save('');
   // History
   // No Data
   if (!event.data) return;

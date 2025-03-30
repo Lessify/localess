@@ -246,15 +246,6 @@ const routes: Routes = [
           authGuardPipe: hasPermissionSettingsManagement,
         },
       },
-      {
-        path: 'plugins',
-        title: 'Plugins',
-        loadChildren: () => import('./plugins/plugins.module').then(m => m.PluginsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionSpaceManagement,
-        },
-      },
     ],
   },
 ];

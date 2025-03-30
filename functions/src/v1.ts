@@ -1,10 +1,10 @@
-import express from 'express';
 import cors from 'cors';
-import os from 'os';
-import sharp from 'sharp';
+import express from 'express';
+import { Query } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
 import { HttpsError, onRequest } from 'firebase-functions/v2/https';
-import { Query } from 'firebase-admin/firestore';
+import os from 'os';
+import sharp from 'sharp';
 import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService, TEN_MINUTES } from './config';
 import { AssetFile, Content, ContentKind, ContentLink, Space } from './models';
 import {
@@ -15,6 +15,7 @@ import {
   findSpaceById,
   findTokenById,
   identifySpaceLocale,
+  spaceContentCachePath,
   validateToken,
 } from './services';
 
@@ -26,7 +27,32 @@ expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) 
   logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
   logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
   const { spaceId, locale } = req.params;
-  const { cv } = req.query;
+  const { cv, token } = req.query;
+
+  if (!validateToken(token)) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (!spaceSnapshot.exists) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+
+  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
+  if (!tokenSnapshot.exists) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
 
   const cachePath = `spaces/${spaceId}/translations/cache.json`;
   const [exists] = await bucket.file(cachePath).exists();
@@ -34,17 +60,14 @@ expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) 
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
-      res.redirect(`/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`);
+      let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`;
+      if (token) {
+        url += `&token=${token}`;
+      }
+      logger.info(`v1 spaces translate redirect to => ${url}`);
+      res.redirect(url);
       return;
     } else {
-      const spaceSnapshot = await findSpaceById(spaceId).get();
-      if (!spaceSnapshot.exists) {
-        res
-          .status(404)
-          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .send(new HttpsError('not-found', 'Space not found'));
-        return;
-      }
       const space = spaceSnapshot.data() as Space;
       let actualLocale = locale;
       if (!space.locales.some(it => it.id === locale)) {
@@ -97,7 +120,7 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
       .send(new HttpsError('not-found', 'Not found'));
     return;
   }
-  const cachePath = `spaces/${spaceId}/contents/cache.json`;
+  const cachePath = spaceContentCachePath(spaceId);
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
@@ -173,14 +196,15 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   }
 });
 
-expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*', async (req, res) => {
+expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) => {
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
   logger.info('v1 spaces content url: ' + req.url);
   const { spaceId } = req.params;
   const { cv, locale, version, token } = req.query;
-  const params: Record<string, string> = req.params;
-  const fullSlug = params['0'];
+  const params: Record<string, unknown> = req.params;
+  const slug = params['slug'] as string[];
+  const fullSlug = slug.join('/');
   let contentId = '';
   if (!validateToken(token)) {
     res

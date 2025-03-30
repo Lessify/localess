@@ -11,10 +11,6 @@ export interface ContentBase {
   parentSlug: string;
   fullSlug: string;
 
-  // Lock
-  locked?: boolean;
-  lockedBy?: string;
-
   updatedBy?: {
     name: string;
     email: string;
@@ -60,6 +56,7 @@ export interface ContentDocumentStorage {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  links?: Record<string, ContentLink>;
 }
 
 export interface ContentData extends Record<string, any | ContentData | ContentData[]> {

@@ -100,14 +100,14 @@
 
       <mat-menu #importMenu="matMenu">
         @for (locale of selectedSpace?.locales; track locale.id) {
-          <button mat-menu-item (click)="openDraftInNewTab(locale.id)">
+          <button mat-menu-item (click)="openDraftV1InNewTab(locale.id)">
             <mat-icon>mode_edit</mat-icon>
             <span>Draft {{ locale.name }} JSON</span>
           </button>
         }
         <mat-divider />
         @for (locale of selectedSpace?.locales; track locale.id) {
-          <button mat-menu-item (click)="openPublishedInNewTab(locale.id)">
+          <button mat-menu-item (click)="openPublishedV1InNewTab(locale.id)">
             <mat-icon>public</mat-icon>
             <span>Published {{ locale.name }} JSON</span>
           </button>

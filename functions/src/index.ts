@@ -13,8 +13,6 @@ export { content } from './contents';
 
 export { openapi } from './open-api';
 
-// export { plugin } from './plugins';
-
 export { setup } from './setup';
 
 export { space } from './spaces';
@@ -32,5 +30,4 @@ export { user } from './users';
 export { v1 as publicv1 } from './v1';
 
 // Plugins API
-// export { stripe } from './plugins/stripe/stripe';
 export { unsplash } from './plugins/unsplash/api';

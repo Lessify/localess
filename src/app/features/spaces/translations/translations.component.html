@@ -30,14 +30,7 @@
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #importMenu="matMenu">
-          @for (locale of space.locales; track locale.id) {
-            <button mat-menu-item (click)="openPublishedInNewTab(locale.id)">
-              <mat-icon>public</mat-icon>
-              <span>Published {{ locale.name }} JSON</span>
-            </button>
-          }
           @if (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async) {
-            <mat-divider></mat-divider>
             @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
               <button mat-menu-item (click)="openImportDialog(space.locales)">
                 <mat-icon>cloud_upload</mat-icon>
@@ -50,6 +43,13 @@
                 <span>Export</span>
               </button>
             }
+            <mat-divider />
+          }
+          @for (locale of space.locales; track locale.id) {
+            <button mat-menu-item (click)="openPublishedV1InNewTab(locale.id)">
+              <mat-icon>public</mat-icon>
+              <span>Published {{ locale.name }} JSON</span>
+            </button>
           }
         </mat-menu>
       </div>
