@@ -9,6 +9,7 @@ export interface Space {
   localeFallback: Locale;
   // overview
   overview?: SpaceOverview;
+  progress?: ProgressOverview;
   // timestamp
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -27,4 +28,8 @@ export interface SpaceOverview {
   contentSize: number;
   schemasCount: number;
   updatedAt: Timestamp;
+}
+
+export interface ProgressOverview {
+  translations: Record<string, number>;
 }

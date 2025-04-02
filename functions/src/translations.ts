@@ -1,12 +1,12 @@
-import { logger } from 'firebase-functions/v2';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { FieldValue, WithFieldValue } from 'firebase-admin/firestore';
-import { canPerform } from './utils/security-utils';
+import { logger } from 'firebase-functions/v2';
+import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { bucket, firestoreService } from './config';
 import { PublishTranslationsData, Space, Translation, TranslationHistory, TranslationHistoryType, UserPermission } from './models';
 import { findSpaceById, findTranslations, findTranslationsHistory } from './services';
 import { translateCloud } from './services/translate.service';
+import { canPerform } from './utils/security-utils';
 
 // Publish
 const publish = onCall<PublishTranslationsData>(async request => {
@@ -19,13 +19,15 @@ const publish = onCall<PublishTranslationsData>(async request => {
   const translationsSnapshot = await findTranslations(spaceId).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {
     const space: Space = spaceSnapshot.data() as Space;
-
+    const progress: Record<string, number> = {};
     for (const locale of space.locales) {
+      let counter = 0;
       const localeStorage: Record<string, string> = {};
       for (const translation of translationsSnapshot.docs) {
         const tr = translation.data() as Translation;
         let value = tr.locales[locale.id];
         if (value) {
+          counter++;
           // check the value is not empty string
           value = value || tr.locales[space.localeFallback.id];
         } else {
@@ -33,6 +35,7 @@ const publish = onCall<PublishTranslationsData>(async request => {
         }
         localeStorage[translation.id] = value;
       }
+      progress[locale.id] = counter;
       // Save generated JSON
       logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
       bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`).save(JSON.stringify(localeStorage), (err?: Error | null) => {
@@ -42,6 +45,7 @@ const publish = onCall<PublishTranslationsData>(async request => {
         }
       });
     }
+    await spaceSnapshot.ref.update('progress.translations', progress);
     // Save Cache
     logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/cache.json`);
     await bucket.file(`spaces/${spaceId}/translations/cache.json`).save('');

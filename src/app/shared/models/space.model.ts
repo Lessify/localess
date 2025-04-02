@@ -12,6 +12,7 @@ export interface Space {
   environments?: SpaceEnvironment[];
   // overview
   overview?: SpaceOverview;
+  progress?: ProgressOverview;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -48,4 +49,8 @@ export interface SpaceOverview {
   contentSize: number;
   schemasCount: number;
   updatedAt: Timestamp;
+}
+
+export interface ProgressOverview {
+  translations: Record<string, number>;
 }

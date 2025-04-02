@@ -4,8 +4,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Timestamp } from '@angular/fire/firestore';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { NotificationService } from '@shared/services/notification.service';
@@ -17,7 +20,17 @@ import { SpaceStore } from '@shared/stores/space.store';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, CanUserPerformPipe, CommonModule, MatButtonModule, MatIconModule, FormatFileSizePipe],
+  imports: [
+    MatToolbarModule,
+    CanUserPerformPipe,
+    CommonModule,
+    MatButtonModule,
+    MatIconModule,
+    FormatFileSizePipe,
+    MatProgressBarModule,
+    MatCardModule,
+    MatTooltipModule,
+  ],
 })
 export class DashboardComponent {
   // Input
