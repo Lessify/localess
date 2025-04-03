@@ -14,97 +14,111 @@
 <div class="container-full-screen">
   @if (space(); as space) {
     <div class="grid grid-rows-1 gap-4 max-w-7xl">
-      <section id="overview">
-        <h3 class="text-base font-semibold leading-6">Overview</h3>
-        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Locales</mat-card-title>
-            </mat-card-header>
-            <mat-card-content> {{ space.locales.length }} / ∞</mat-card-content>
-          </mat-card>
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Translations</mat-card-title>
-            </mat-card-header>
-            <mat-card-content> {{ space.overview?.translationsCount || 0 }} / ∞</mat-card-content>
-          </mat-card>
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Asset Files</mat-card-title>
-            </mat-card-header>
-            <mat-card-content> {{ space.overview?.assetsCount || 0 }} / ∞</mat-card-content>
-          </mat-card>
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Content Documents</mat-card-title>
-            </mat-card-header>
-            <mat-card-content> {{ space.overview?.contentsCount || 0 }} / ∞</mat-card-content>
-          </mat-card>
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Schemas</mat-card-title>
-            </mat-card-header>
-            <mat-card-content> {{ space.overview?.schemasCount || 0 }} / ∞ </mat-card-content>
-          </mat-card>
-        </div>
-      </section>
-      <section id="storage">
-        <h3 class="text-base font-semibold leading-6">Storage</h3>
-        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Total</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              {{ space.overview?.translationSize + space?.overview?.assetsSize + space?.overview?.contentSize | formatFileSize }} / ∞
-            </mat-card-content>
-          </mat-card>
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Translations</mat-card-title>
-            </mat-card-header>
-            <mat-card-content> {{ space.overview?.translationSize || 0 | formatFileSize }} / ∞ </mat-card-content>
-          </mat-card>
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Asset Files</mat-card-title>
-            </mat-card-header>
-            <mat-card-content> {{ space.overview?.assetsSize || 0 | formatFileSize }} / ∞ </mat-card-content>
-          </mat-card>
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>Content Documents</mat-card-title>
-            </mat-card-header>
-            <mat-card-content> {{ space.overview?.contentSize || 0 | formatFileSize }} / ∞ </mat-card-content>
-          </mat-card>
-        </div>
-      </section>
-      <section id="translations">
-        <h3 class="text-base font-semibold leading-6">Translations</h3>
-        @if (space.progress?.translations) {
-          @let translationsCount = space.overview?.translationsCount || 0;
-          <dl class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            @for (locale of space.locales; track locale.id) {
-              @let localeCount = space.progress?.translations[locale.id] || 0;
-              @let localeProgress = translationsCount === 0 || localeCount === 0 ? 0 : localeCount / translationsCount;
-              <mat-card appearance="outlined">
-                <mat-card-header>
-                  <mat-card-title>
-                    {{ locale.name }}
-                  </mat-card-title>
-                  <mat-card-subtitle> {{ localeProgress | percent }} - {{ localeCount }} from {{ translationsCount }} </mat-card-subtitle>
-                </mat-card-header>
-                <mat-card-content class="my-5">
-                  <mat-progress-bar mode="determinate" [value]="localeProgress === 0 ? 0 : localeProgress * 100" />
-                </mat-card-content>
-              </mat-card>
+      @if (space.overview; as overview) {
+        <section id="overview">
+          <h3 class="text-base font-semibold leading-6">Overview</h3>
+          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Locales</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ space.locales.length }} / ∞</mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Translations</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.translationsCount }} / ∞</mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Asset Files</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.assetsCount }} / ∞</mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Content Documents</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.contentsCount }} / ∞</mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Schemas</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.schemasCount }} / ∞ </mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Tasks</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.tasksCount }} / ∞ </mat-card-content>
+            </mat-card>
+          </div>
+        </section>
+        <section id="storage">
+          <h3 class="text-base font-semibold leading-6">Storage</h3>
+          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Total</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.totalSize | formatFileSize }} / ∞ </mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Translations</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.translationsSize | formatFileSize }} / ∞ </mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Asset Files</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.assetsSize | formatFileSize }} / ∞ </mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Content Documents</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.contentsSize | formatFileSize }} / ∞ </mat-card-content>
+            </mat-card>
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Task Files</mat-card-title>
+              </mat-card-header>
+              <mat-card-content> {{ overview.tasksSize | formatFileSize }} / ∞ </mat-card-content>
+            </mat-card>
+          </div>
+        </section>
+        @if (space.progress; as progress) {
+          <section id="translations">
+            <h3 class="text-base font-semibold leading-6">Translations</h3>
+            @if (progress.translations) {
+              <dl class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                @for (locale of space.locales; track locale.id) {
+                  @let translationsCount = overview.translationsCount;
+                  @let localeCount = progress.translations[locale.id] || 0;
+                  @let localeProgress = translationsCount === 0 || localeCount === 0 ? 0 : localeCount / translationsCount;
+                  <mat-card appearance="outlined">
+                    <mat-card-header>
+                      <mat-card-title>
+                        {{ locale.name }}
+                      </mat-card-title>
+                      <mat-card-subtitle>
+                        {{ localeProgress | percent:'1.0-2' }} - {{ localeCount }} from {{ overview.translationsCount }}
+                      </mat-card-subtitle>
+                    </mat-card-header>
+                    <mat-card-content class="my-5">
+                      <mat-progress-bar mode="determinate" [value]="localeProgress === 0 ? 0 : localeProgress * 100" />
+                    </mat-card-content>
+                  </mat-card>
+                }
+              </dl>
             }
-          </dl>
-        } @else {
-          No Progress yet published.
+          </section>
         }
-      </section>
+      }
     </div>
   }
 </div>

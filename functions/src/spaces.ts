@@ -165,9 +165,10 @@ const calculateOverview = onCall<SpaceOverviewData>(async request => {
   const assetsCount = await findAssets(spaceId, AssetKind.FILE).count().get();
   const contentsCount = await findContents(spaceId, ContentKind.DOCUMENT).count().get();
   const schemasCount = await findSchemas(spaceId).count().get();
+  const tasksCount = await findTasks(spaceId).count().get();
   // Store
   const [translationFiles] = await bucket.getFiles({ prefix: `spaces/${spaceId}/translations` });
-  const translationSize = translationFiles
+  const translationsSize = translationFiles
     .map(it => it.metadata['size'] as string)
     .map(it => Number.parseInt(it))
     .reduce((acc, item) => acc + item, 0);
@@ -177,20 +178,30 @@ const calculateOverview = onCall<SpaceOverviewData>(async request => {
     .map(it => Number.parseInt(it))
     .reduce((acc, item) => acc + item, 0);
   const [contentFiles] = await bucket.getFiles({ prefix: `spaces/${spaceId}/contents` });
-  const contentSize = contentFiles
+  const contentsSize = contentFiles
+    .map(it => it.metadata['size'] as string)
+    .map(it => Number.parseInt(it))
+    .reduce((acc, item) => acc + item, 0);
+  const [taskFiles] = await bucket.getFiles({ prefix: `spaces/${spaceId}/tasks` });
+  const taskSize = taskFiles
     .map(it => it.metadata['size'] as string)
     .map(it => Number.parseInt(it))
     .reduce((acc, item) => acc + item, 0);
 
+  const totalSize = [translationsSize, assetsSize, contentsSize, taskSize].reduce((acc, item) => acc + item, 0);
+
   const update: UpdateData<Space> = {
     overview: {
       translationsCount: translationsCount.data().count,
-      translationSize: translationSize,
+      translationsSize: translationsSize,
       assetsCount: assetsCount.data().count,
       assetsSize: assetsSize,
       contentsCount: contentsCount.data().count,
-      contentSize: contentSize,
+      contentsSize: contentsSize,
+      tasksCount: tasksCount.data().count,
+      tasksSize: taskSize,
       schemasCount: schemasCount.data().count,
+      totalSize: totalSize,
       updatedAt: FieldValue.serverTimestamp(),
     },
   };

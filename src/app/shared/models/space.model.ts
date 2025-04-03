@@ -42,12 +42,15 @@ export interface SpaceUpdate {
 
 export interface SpaceOverview {
   translationsCount: number;
-  translationSize: number;
+  translationsSize: number;
   assetsCount: number;
   assetsSize: number;
   contentsCount: number;
-  contentSize: number;
+  contentsSize: number;
   schemasCount: number;
+  tasksCount: number;
+  tasksSize: number;
+  totalSize: number;
   updatedAt: Timestamp;
 }
 
