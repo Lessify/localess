@@ -185,6 +185,7 @@ export class TranslationsComponent implements OnInit {
           this.selectedTargetLocale = space.localeFallback.id;
         }
       }),
+      takeUntilDestroyed(this.destroyRef),
     );
     this.translations$ = this.translationService.findAll(this.spaceId()).pipe(
       tap(translations => {
@@ -203,8 +204,9 @@ export class TranslationsComponent implements OnInit {
         }
         this.isLoading.set(false);
       }),
+      takeUntilDestroyed(this.destroyRef),
     );
-    this.history$ = this.translateHistoryService.findAll(this.spaceId());
+    this.history$ = this.translateHistoryService.findAll(this.spaceId()).pipe(takeUntilDestroyed(this.destroyRef));
   }
 
   publish(): void {
