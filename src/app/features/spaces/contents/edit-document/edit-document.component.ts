@@ -55,6 +55,7 @@ import { v4 } from 'uuid';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
 import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
+import { CdkDragMove, DragDropModule } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -81,6 +82,7 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     EditDocumentSchemaComponent,
     MatExpansionModule,
     AnimateDirective,
+    DragDropModule,
   ],
 })
 export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
@@ -129,6 +131,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   history$?: Observable<ContentHistory[]>;
 
   private destroyRef = inject(DestroyRef);
+
+  // Resize
+  inResizeMode = signal(false);
+  editorFormWidth = signal(this.settingsStore.editorFormWidth());
 
   constructor(
     private readonly router: Router,
@@ -403,7 +409,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   generateDocumentIdsTree() {
     //console.group('generateDocumentIdsTree')
-    const nodeIterator: { path: string[]; data: ContentData }[] = [{ path: [this.documentData._id], data: this.documentData }];
+    const nodeIterator: { path: string[]; data: ContentData }[] = [
+      {
+        path: [this.documentData._id],
+        data: this.documentData,
+      },
+    ];
     let node = nodeIterator.shift();
     while (node) {
       this.documentIdsTree.set(node.data._id, node.path);
@@ -528,5 +539,24 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       const url = new URL(this.selectedEnvironment.url);
       contentWindow.postMessage(event, url.origin);
     }
+  }
+
+  protected onDragMoved(event: CdkDragMove) {
+    const newFormWidth = Math.trunc(this.editorFormWidth() - event.delta.x * 4);
+    if (newFormWidth <= 1000 && newFormWidth >= 700) {
+      this.editorFormWidth.set(newFormWidth);
+    }
+    // Reset transform so the resizer stays positioned at the sidebar edge
+    const element = event.source.element.nativeElement;
+    element.style.transform = 'none';
+  }
+
+  onDragStarted() {
+    this.inResizeMode.set(true);
+  }
+
+  onDragEnded() {
+    this.inResizeMode.set(false);
+    this.settingsStore.setEditorFormWidth(this.editorFormWidth());
   }
 }

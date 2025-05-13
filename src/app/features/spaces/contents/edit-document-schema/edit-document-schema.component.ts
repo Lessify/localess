@@ -196,7 +196,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     //console.group('EditDocumentSchemaComponent:ngOnChanges')
-    console.log(changes);
+    //console.log(changes);
 
     const dataChange = changes['data'];
     if (dataChange) {

@@ -56,11 +56,11 @@ import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dial
 import { EditFolderDialogModel } from './edit-folder-dialog/edit-folder-dialog.model';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
-import { ImagePreviewDialogComponent } from './image-preview-dialog/image-preview-dialog.component';
-import { ImagePreviewDialogModel } from './image-preview-dialog/image-preview-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
+import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 
 @Component({
   selector: 'll-assets',

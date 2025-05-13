@@ -13,6 +13,7 @@ export interface LocalSettingsState {
   debugEnabled: boolean;
   editorEnabled: boolean;
   editorSize: EditorSize;
+  editorFormWidth: number;
   assetLayout: DataLayout;
   assetDialogLayout: DataLayout;
 }
@@ -23,6 +24,7 @@ export const initialState: LocalSettingsState = {
   debugEnabled: false,
   editorEnabled: false,
   editorSize: '',
+  editorFormWidth: 700,
   assetLayout: 'list',
   assetDialogLayout: 'list',
 };
@@ -88,6 +90,10 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { editorSize });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), editorSize }));
       },
+      setEditorFormWidth: (editorFormWidth: number): void => {
+        patchState(store, { editorFormWidth });
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), editorFormWidth }));
+      },
       setAssetLayout: (assetLayout: DataLayout): void => {
         patchState(store, { assetLayout });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), assetLayout }));
@@ -105,6 +111,7 @@ export const LocalSettingsStore = signalStore(
       mainMenuExpended: computed(() => store.mainMenuExpended()),
       editorEnabled: computed(() => store.editorEnabled()),
       editorSize: computed(() => store.editorSize()),
+      editorFormWidth: computed(() => store.editorFormWidth()),
       assetLayout: computed(() => store.assetLayout()),
       assetDialogLayout: computed(() => store.assetDialogLayout()),
     };

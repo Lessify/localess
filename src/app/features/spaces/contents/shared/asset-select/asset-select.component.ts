@@ -14,12 +14,14 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
-import { Asset } from '@shared/models/asset.model';
+import { AssetFile } from '@shared/models/asset.model';
 import { SchemaFieldAsset, SchemaFieldKind } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { AssetService } from '@shared/services/asset.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
+import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 
 @Component({
   selector: 'll-asset-select',
@@ -48,7 +50,7 @@ export class AssetSelectComponent implements OnInit {
   component = input.required<SchemaFieldAsset>();
   space = input.required<Space>();
   hover = input(false);
-  asset?: Asset;
+  asset?: AssetFile;
 
   //Settings
   settingsStore = inject(LocalSettingsStore);
@@ -72,16 +74,33 @@ export class AssetSelectComponent implements OnInit {
     if (id) {
       this.assetService.findById(this.space().id, id).subscribe({
         next: asset => {
-          this.asset = asset;
+          this.asset = asset as AssetFile;
           this.cd.markForCheck();
         },
       });
     }
   }
 
+  openImagePreview(element: AssetFile): void {
+    this.dialog
+      .open<ImagePreviewDialogComponent, ImagePreviewDialogModel, void>(ImagePreviewDialogComponent, {
+        panelClass: 'image-preview',
+        data: {
+          spaceId: this.space().id,
+          asset: element,
+        },
+      })
+      .afterClosed()
+      .subscribe({
+        next: () => {
+          console.log('close');
+        },
+      });
+  }
+
   openAssetSelectDialog(): void {
     this.dialog
-      .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, Asset[] | undefined>(AssetsSelectDialogComponent, {
+      .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, AssetFile[] | undefined>(AssetsSelectDialogComponent, {
         panelClass: 'full-screen',
         data: {
           spaceId: this.space().id,

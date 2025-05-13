@@ -21,6 +21,8 @@ import { Space } from '@shared/models/space.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { AssetService } from '@shared/services/asset.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
+import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 
 @Component({
   selector: 'll-assets-select',
@@ -85,6 +87,23 @@ export class AssetsSelectComponent implements OnInit {
         },
       });
     }
+  }
+
+  openImagePreview(element: AssetFile): void {
+    this.dialog
+      .open<ImagePreviewDialogComponent, ImagePreviewDialogModel, void>(ImagePreviewDialogComponent, {
+        panelClass: 'image-preview',
+        data: {
+          spaceId: this.space().id,
+          asset: element,
+        },
+      })
+      .afterClosed()
+      .subscribe({
+        next: () => {
+          console.log('close');
+        },
+      });
   }
 
   openAssetSelectDialog(): void {

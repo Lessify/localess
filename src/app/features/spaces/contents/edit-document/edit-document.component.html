@@ -124,64 +124,78 @@
 <mat-sidenav-container>
   <mat-sidenav-content>
     <div class="full-screen container-fluid">
-      <mat-drawer-container autosize="true">
-        <mat-drawer mode="side" [opened]="settingsStore.editorEnabled()">
-          @if (selectedEnvironment) {
-            <mat-card appearance="outlined" class="browser">
-              <mat-card-header>
-                <mat-card-title>{{ selectedEnvironment?.name }}</mat-card-title>
-                <mat-card-subtitle>{{ selectedEnvironment?.url }}</mat-card-subtitle>
-                <span class="spacer"></span>
-                <mat-button-toggle-group
-                  hideSingleSelectionIndicator="true"
-                  (change)="settingsStore.setEditorSize($event.value)"
-                  [value]="settingsStore.editorSize()"
-                  style="height: 42px">
-                  <mat-button-toggle value="" matTooltip="Fullscreen">
-                    <mat-icon>screenshot_monitor</mat-icon>
-                  </mat-button-toggle>
-                  <mat-button-toggle value="sm" matTooltip="Smartphone: 640px">
-                    <mat-icon>smartphone</mat-icon>
-                  </mat-button-toggle>
-                  <mat-button-toggle value="md" matTooltip="Tablet: 768px">
-                    <mat-icon>tablet</mat-icon>
-                  </mat-button-toggle>
-                  <mat-button-toggle value="lg" matTooltip="Laptop: 1024px">
-                    <mat-icon>laptop_windows</mat-icon>
-                  </mat-button-toggle>
-                  <mat-button-toggle value="xl" matTooltip="Desktop: 1280px">
-                    <mat-icon>desktop_windows</mat-icon>
-                  </mat-button-toggle>
-                </mat-button-toggle-group>
-                <button mat-icon-button matTooltip="Reload" (click)="changeEnvironment(selectedEnvironment)">
-                  <mat-icon>refresh</mat-icon>
-                </button>
-                <button mat-icon-button [matMenuTriggerFor]="envMenu">
-                  <mat-icon>arrow_drop_down</mat-icon>
-                </button>
-                <mat-menu #envMenu="matMenu">
-                  @for (env of selectedSpace?.environments; track env.name) {
-                    <button mat-menu-item (click)="changeEnvironment(env)" [disabled]="env === selectedEnvironment">
-                      {{ env.name }} | {{ env.url }}
-                    </button>
-                  }
-                </mat-menu>
-              </mat-card-header>
-              <mat-divider />
-              <mat-card-content [ngClass]="{ center: settingsStore.editorSize() !== '' }">
-                <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()"></iframe>
-              </mat-card-content>
-            </mat-card>
-          } @else {
-            <div class="text-center">
-              No Configured Environments.<br />
-              You can configure them in Settings.
-            </div>
-          }
-        </mat-drawer>
-        <mat-drawer-content>
+      <div class="flex justify-center h-full">
+        @if (settingsStore.editorEnabled()) {
+          <div [ngClass]="{ 'block-dragging': inResizeMode() }" class="browser flex flex-col h-full flex-grow overflow-hidden border">
+            @if (selectedEnvironment; as environment) {
+              <div class="flex flex-wrap border-b py-1">
+                <div class="flex flex-col grow px-2">
+                  <div class="truncate">{{ environment.name }}</div>
+                  <div class="truncate">{{ environment.url }}</div>
+                </div>
+                <div class="flex self-center">
+                  <mat-button-toggle-group
+                    hideSingleSelectionIndicator="true"
+                    (change)="settingsStore.setEditorSize($event.value)"
+                    [value]="settingsStore.editorSize()"
+                    style="height: 42px">
+                    <mat-button-toggle value="" matTooltip="Fullscreen">
+                      <mat-icon>screenshot_monitor</mat-icon>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="sm" matTooltip="Smartphone: 640px">
+                      <mat-icon>smartphone</mat-icon>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="md" matTooltip="Tablet: 768px">
+                      <mat-icon>tablet</mat-icon>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="lg" matTooltip="Laptop: 1024px">
+                      <mat-icon>laptop_windows</mat-icon>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="xl" matTooltip="Desktop: 1280px">
+                      <mat-icon>desktop_windows</mat-icon>
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
+                  <button mat-icon-button matTooltip="Reload" (click)="changeEnvironment(environment)">
+                    <mat-icon>refresh</mat-icon>
+                  </button>
+                  <button mat-icon-button [matMenuTriggerFor]="envMenu">
+                    <mat-icon>arrow_drop_down</mat-icon>
+                  </button>
+                  <mat-menu #envMenu="matMenu">
+                    @for (env of selectedSpace?.environments; track env.name) {
+                      <button mat-menu-item (click)="changeEnvironment(env)" [disabled]="env === selectedEnvironment">
+                        {{ env.name }} | {{ env.url }}
+                      </button>
+                    }
+                  </mat-menu>
+                </div>
+              </div>
+              <div class="flex h-full overflow-auto">
+                <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()"> </iframe>
+              </div>
+            } @else {
+              <div class="text-center">
+                No Configured Environments.<br />
+                You can configure them in Settings.
+              </div>
+            }
+          </div>
+          <div
+            cdkDragLockAxis="x"
+            cdkDrag
+            (cdkDragMoved)="onDragMoved($event)"
+            (cdkDragStarted)="onDragStarted()"
+            (cdkDragEnded)="onDragEnded()"
+            class="relative inset-y-0 cursor-ew-resize items-center px-2 sm:flex">
+            <div class="h-8 w-1.5 rounded-full bg-gray-400"></div>
+          </div>
+        }
+        <div
+          [ngClass]="{ 'block-dragging': inResizeMode() }"
+          [style.width.px]="settingsStore.editorEnabled() ? editorFormWidth() : undefined"
+          class="flex overflow-auto h-full flex-col min-w-[700px] max-w-[1000px]">
           @if (rootSchema) {
-            <div class="flex flex-col mx-auto max-w-screen-lg p-4">
+            <div class="flex flex-col max-w-screen-lg p-2">
               <ll-breadcrumb>
                 @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isFirst = $first) {
                   <ll-breadcrumb-item (click)="navigateToSchemaBackwards(schemaPathItem)" [home]="isFirst">
@@ -206,8 +220,8 @@
                 (structureChange)="onStructureChange($event)" />
             </div>
           }
-        </mat-drawer-content>
-      </mat-drawer-container>
+        </div>
+      </div>
 
       @if (settingsStore.debugEnabled()) {
         <mat-accordion>
