@@ -263,7 +263,7 @@
                           <div class="text-sm font-semibold leading-6 break-all"> ID</div>
                         </div>
                         <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                          {{ selectedTranslation.id }}
+                          <code>{{ selectedTranslation.id }}</code>
                           <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation?.id" matTooltip="Copy Id">
                             <mat-icon>content_copy</mat-icon>
                           </button>
