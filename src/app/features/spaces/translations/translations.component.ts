@@ -2,11 +2,23 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  OnInit,
+  signal,
+  TrackByFunction,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -19,6 +31,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTreeModule } from '@angular/material/tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -38,6 +51,7 @@ import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { debounceTime, EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
@@ -53,6 +67,35 @@ import { TranslationPluralEditComponent } from './translation-plural-edit/transl
 import { TranslationPluralViewComponent } from './translation-plural-view/translation-plural-view.component';
 import { TranslationStringEditComponent } from './translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from './translation-string-view/translation-string-view.component';
+
+interface TranslationNode {
+  name: string;
+  key: string;
+  children?: TranslationNode[];
+}
+
+function buildTree(translations: Translation[]): TranslationNode[] {
+  const tTree: Record<string, any> = {};
+  for (const translation of translations) {
+    const keys = translation.id.split('.');
+    let currentNode = tTree;
+    // construct shape
+    for (const key of keys) {
+      if (!currentNode[key]) {
+        currentNode[key] = {};
+      }
+      currentNode = currentNode[key];
+    }
+  }
+  function convertTree(node: Record<string, any>, prefix?: string): TranslationNode[] {
+    return Object.entries(node).map(([key, value]) => ({
+      name: key,
+      key: prefix ? `${prefix}.${key}` : key,
+      ...(Object.keys(value).length > 0 && { children: convertTree(value, prefix ? `${prefix}.${key}` : key) }),
+    }));
+  }
+  return convertTree(tTree);
+}
 
 @Component({
   selector: 'll-translations',
@@ -88,6 +131,8 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     TranslationArrayEditComponent,
     ClipboardModule,
     AnimateDirective,
+    MatButtonToggleModule,
+    MatTreeModule,
   ],
 })
 export class TranslationsComponent implements OnInit {
@@ -101,7 +146,8 @@ export class TranslationsComponent implements OnInit {
 
   translations = signal<Translation[]>([]);
   translationIds = computed(() => this.translations().map(it => it.id));
-
+  translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.id, it])));
+  translationTree = computed(() => buildTree(this.translations()));
   //Search
   searchCtrl: FormControl = this.fb.control('');
   searchValue = '';
@@ -149,6 +195,8 @@ export class TranslationsComponent implements OnInit {
   isTranslateLoading = signal(false);
 
   private destroyRef = inject(DestroyRef);
+  // Local Settings
+  settingsStore = inject(LocalSettingsStore);
 
   constructor(
     private readonly translationService: TranslationService,
@@ -163,6 +211,10 @@ export class TranslationsComponent implements OnInit {
     private readonly tokenService: TokenService,
     private readonly fb: FormBuilder,
   ) {}
+
+  childrenAccessor = (node: TranslationNode) => node.children ?? [];
+  hasChild = (_: number, node: TranslationNode) => !!node.children && node.children.length > 0;
+  trackBy = (_: number, item: TranslationNode) => item.key;
 
   ngOnInit(): void {
     this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({

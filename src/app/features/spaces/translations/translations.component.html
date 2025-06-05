@@ -7,6 +7,17 @@
       </a>
       <span class="spacer"></span>
       <div class="actions">
+        <mat-button-toggle-group
+          hideSingleSelectionIndicator="true"
+          (change)="settingsStore.setTranslationLayout($event.value)"
+          [value]="settingsStore.translationLayout()">
+          <mat-button-toggle value="list" matTooltip="List Layout">
+            <mat-icon>view_list</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle value="tree" matTooltip="Tree Layout">
+            <mat-icon>account_tree</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
         @if ('TRANSLATION_CREATE' | canUserPerform | async) {
           <button mat-flat-button (click)="openAddDialog()">
             <mat-icon>add</mat-icon>
@@ -61,8 +72,8 @@
   <mat-sidenav-container>
     <mat-sidenav-content>
       <div class="container-full-screen">
-        <div class="flex flex-row gap-2">
-          <div class="basis-1/4">
+        <div class="grid grid-cols-4 gap-2">
+          <div class="">
             <mat-form-field>
               <mat-label>Search Locale</mat-label>
               <mat-select [(value)]="selectedSearchLocale">
@@ -72,14 +83,14 @@
               </mat-select>
             </mat-form-field>
           </div>
-          <div class="basis-1/4">
+          <div class="">
             <mat-form-field>
               <mat-label>Search</mat-label>
               <input matInput [formControl]="searchCtrl" autocomplete="off" />
               <mat-icon matIconSuffix>search</mat-icon>
             </mat-form-field>
           </div>
-          <div class="basis-1/2">
+          <div class="col-span-2">
             <mat-form-field>
               <mat-chip-grid #chipGrid aria-label="Enter Labels">
                 @for (label of filterLabels(); track label) {
@@ -108,51 +119,84 @@
         </div>
 
         @if (translations$ | async; as translations) {
-          <div class="flex">
-            <cdk-virtual-scroll-viewport [itemSize]="55" class="basis-1/4 overlay container">
-              <ul role="list" class="divide-y divide-gray-300">
-                <li
-                  role="listitem"
-                  class="flex p-2 cursor-pointer relative items-center"
-                  *cdkVirtualFor="let translation of translations | translationFilter: searchValue : selectedSearchLocale : filterLabels()"
-                  (click)="selectTranslation(translation)"
-                  (keyup.enter)="selectTranslation(translation)"
-                  [class.selected]="translation.id === selectedTranslation?.id">
-                  <div class="min-w-0 flex-auto">
-                    <div class="flex items-center gap-x-3">
-                      @switch (identifyStatus(translation)) {
-                        @case ('TRANSLATED') {
-                          <ll-status mode="online" matTooltip="Translated" />
+          <div class="grid grid-cols-4 gap-2">
+            @if (settingsStore.translationLayout() === 'list') {
+              <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay">
+                <ul role="list" class="divide-y divide-gray-300">
+                  <li
+                    role="listitem"
+                    class="flex p-2 cursor-pointer relative items-center"
+                    *cdkVirtualFor="
+                      let translation of translations | translationFilter: searchValue : selectedSearchLocale : filterLabels()
+                    "
+                    (click)="selectTranslation(translation)"
+                    (keyup.enter)="selectTranslation(translation)"
+                    [class.selected]="translation.id === selectedTranslation?.id">
+                    <div class="min-w-0 flex-auto">
+                      <div class="flex items-center gap-x-3">
+                        @switch (identifyStatus(translation)) {
+                          @case ('TRANSLATED') {
+                            <ll-status mode="online" matTooltip="Translated" />
+                          }
+                          @case ('PARTIALLY_TRANSLATED') {
+                            <ll-status mode="away" matTooltip="Partially Translated" />
+                          }
+                          @case ('UNTRANSLATED') {
+                            <ll-status mode="offline" matTooltip="Untranslated" />
+                          }
                         }
-                        @case ('PARTIALLY_TRANSLATED') {
-                          <ll-status mode="away" matTooltip="Partially Translated" />
+                        <div class="text-sm font-semibold leading-6 break-all">
+                          {{ translation.id }}
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                        @switch (translation.type) {
+                          @case ('STRING') {
+                            <ll-translation-string-view [value]="translation.locales[selectedSearchLocale]" />
+                          }
+                          @case ('PLURAL') {
+                            <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale]" />
+                          }
+                          @case ('ARRAY') {
+                            <ll-translation-array-view [value]="translation.locales[selectedSearchLocale]" />
+                          }
                         }
-                        @case ('UNTRANSLATED') {
-                          <ll-status mode="offline" matTooltip="Untranslated" />
-                        }
-                      }
-                      <div class="text-sm font-semibold leading-6 break-all">
-                        {{ translation.id }}
                       </div>
                     </div>
-                    <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                      @switch (translation.type) {
-                        @case ('STRING') {
-                          <ll-translation-string-view [value]="translation.locales[selectedSearchLocale]" />
-                        }
-                        @case ('PLURAL') {
-                          <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale]" />
-                        }
-                        @case ('ARRAY') {
-                          <ll-translation-array-view [value]="translation.locales[selectedSearchLocale]" />
-                        }
-                      }
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </cdk-virtual-scroll-viewport>
-            <div class="basis-1/2 overlay">
+                  </li>
+                </ul>
+              </cdk-virtual-scroll-viewport>
+            } @else {
+              <div class="overlay overflow-auto">
+                <mat-tree #tree [dataSource]="translationTree()" [childrenAccessor]="childrenAccessor" [trackBy]="trackBy">
+                  <!-- This is the tree node template for leaf nodes -->
+                  <mat-tree-node
+                    *matTreeNodeDef="let node"
+                    matTreeNodePadding
+                    class="cursor-pointer"
+                    [class.selected]="node.key === selectedTranslation?.id"
+                    (click)="selectTranslation(translationMap().get(node.key))">
+                    <button matIconButton disabled> </button>
+                    {{ node.name }}
+                  </mat-tree-node>
+                  <!-- This is the tree node template for expandable nodes -->
+                  <mat-tree-node
+                    class="cursor-pointer"
+                    *matTreeNodeDef="let node; when: hasChild"
+                    matTreeNodePadding
+                    matTreeNodeToggle
+                    [cdkTreeNodeTypeaheadLabel]="node.name">
+                    <button matIconButton matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
+                      <mat-icon class="mat-icon-rtl-mirror">
+                        {{ tree.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
+                      </mat-icon>
+                    </button>
+                    {{ node.name }}
+                  </mat-tree-node>
+                </mat-tree>
+              </div>
+            }
+            <div class="col-span-2 overlay">
               @if (selectedTranslation) {
                 <div class="flex flex-col h-full">
                   <div class="p-2">
@@ -237,7 +281,7 @@
                 </div>
               }
             </div>
-            <div class="basis-1/4 overlay break-all">
+            <div class="overlay break-all">
               @if (selectedTranslation) {
                 <div class="d-flex flex-column">
                   <div class="p-2 align-items-start">
