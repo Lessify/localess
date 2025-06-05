@@ -18,7 +18,7 @@
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> ID</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{ element.id }}
+        <code>{{ element.id }}</code>
         <button mat-icon-button [cdkCopyToClipboard]="element.id" matTooltip="Copy Id">
           <mat-icon>content_copy</mat-icon>
         </button>

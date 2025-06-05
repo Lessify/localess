@@ -6,6 +6,7 @@ const LS_KEY = 'LL-SETTINGS-STATE';
 export type Theme = 'light' | 'dark' | 'auto';
 export type EditorSize = '' | 'sm' | 'md' | 'lg';
 export type DataLayout = 'list' | 'grid';
+export type TranslationLayout = 'list' | 'tree';
 
 export interface LocalSettingsState {
   theme: Theme;
@@ -16,6 +17,7 @@ export interface LocalSettingsState {
   editorFormWidth: number;
   assetLayout: DataLayout;
   assetDialogLayout: DataLayout;
+  translationLayout: TranslationLayout;
 }
 
 export const initialState: LocalSettingsState = {
@@ -27,6 +29,7 @@ export const initialState: LocalSettingsState = {
   editorFormWidth: 700,
   assetLayout: 'list',
   assetDialogLayout: 'list',
+  translationLayout: 'list',
 };
 
 function setDocumentTheme(theme: Theme) {
@@ -102,6 +105,10 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { assetDialogLayout });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), assetDialogLayout }));
       },
+      setTranslationLayout: (translationLayout: TranslationLayout): void => {
+        patchState(store, { translationLayout });
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), translationLayout }));
+      },
     };
   }),
   withComputed(store => {
@@ -114,6 +121,7 @@ export const LocalSettingsStore = signalStore(
       editorFormWidth: computed(() => store.editorFormWidth()),
       assetLayout: computed(() => store.assetLayout()),
       assetDialogLayout: computed(() => store.assetDialogLayout()),
+      translationLayout: computed(() => store.translationLayout()),
     };
   }),
   withHooks({
