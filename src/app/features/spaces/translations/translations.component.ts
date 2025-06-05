@@ -183,6 +183,8 @@ export class TranslationsComponent implements OnInit {
   isLocaleUpdateLoading = signal(false);
   isTranslateLoading = signal(false);
 
+  translationUpdateId = signal<string | undefined>(undefined);
+
   private destroyRef = inject(DestroyRef);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
@@ -203,7 +205,8 @@ export class TranslationsComponent implements OnInit {
 
   childrenAccessor = (node: TranslationNode) => node.children ?? [];
   hasChild = (_: number, node: TranslationNode) => !!node.children && node.children.length > 0;
-  trackBy = (_: number, item: TranslationNode) => item.key;
+  trackBy = (_: number, node: TranslationNode) => this.expansionKey(node);
+  expansionKey = (node: TranslationNode) => node.key;
 
   ngOnInit(): void {
     this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -462,6 +465,7 @@ export class TranslationsComponent implements OnInit {
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
     this.isLocaleUpdateLoading.set(true);
+    this.translationUpdateId.set(transaction.id);
     this.translationService.updateLocale(this.spaceId(), transaction.id, locale, value).subscribe({
       next: () => {
         this.notificationService.success('Translation has been updated.');
@@ -472,6 +476,7 @@ export class TranslationsComponent implements OnInit {
       complete: () => {
         setTimeout(() => {
           this.isLocaleUpdateLoading.set(false);
+          this.translationUpdateId.set(undefined);
           this.cd.markForCheck();
         }, 1000);
       },

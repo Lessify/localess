@@ -134,15 +134,19 @@
                     [class.selected]="translation.id === selectedTranslation?.id">
                     <div class="min-w-0 flex-auto">
                       <div class="flex items-center gap-x-3">
-                        @switch (identifyStatus(translation)) {
-                          @case ('TRANSLATED') {
-                            <ll-status mode="online" matTooltip="Translated" />
-                          }
-                          @case ('PARTIALLY_TRANSLATED') {
-                            <ll-status mode="away" matTooltip="Partially Translated" />
-                          }
-                          @case ('UNTRANSLATED') {
-                            <ll-status mode="offline" matTooltip="Untranslated" />
+                        @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
+                          <mat-icon class="animate-spin min-w-6">sync</mat-icon>
+                        } @else {
+                          @switch (identifyStatus(translation)) {
+                            @case ('TRANSLATED') {
+                              <ll-status mode="online" matTooltip="Translated" />
+                            }
+                            @case ('PARTIALLY_TRANSLATED') {
+                              <ll-status mode="away" matTooltip="Partially Translated" />
+                            }
+                            @case ('UNTRANSLATED') {
+                              <ll-status mode="offline" matTooltip="Untranslated" />
+                            }
                           }
                         }
                         <div class="text-sm font-semibold leading-6 break-all">
@@ -168,29 +172,38 @@
               </cdk-virtual-scroll-viewport>
             } @else {
               <div class="overlay overflow-auto">
-                <mat-tree #tree [dataSource]="translationTree()" [childrenAccessor]="childrenAccessor" [trackBy]="trackBy">
+                <mat-tree
+                  #tree
+                  [dataSource]="translationTree()"
+                  [expansionKey]="expansionKey"
+                  [childrenAccessor]="childrenAccessor"
+                  [trackBy]="trackBy">
                   <!-- This is the tree node template for leaf nodes -->
                   <mat-tree-node
                     *matTreeNodeDef="let node"
                     matTreeNodePadding
                     class="cursor-pointer"
-                    [class.selected]="node.key === selectedTranslation?.id"
-                    (click)="selectTranslation(translationMap().get(node.key))">
-                    <div class="flex items-center gap-x-3">
-                      @let translation = translationMap().get(node.key);
-                      @switch (identifyStatus(translation)) {
-                        @case ('TRANSLATED') {
-                          <ll-status mode="online" matTooltip="Translated" />
+                    [class.selected]="node.key === selectedTranslation?.id">
+                    @if (translationMap().get(node.key); as translation) {
+                      <div aria-hidden="true" class="flex items-center gap-x-3" (click)="selectTranslation(translation)">
+                        @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
+                          <mat-icon class="animate-spin">sync</mat-icon>
+                        } @else {
+                          @switch (identifyStatus(translation)) {
+                            @case ('TRANSLATED') {
+                              <ll-status mode="online" matTooltip="Translated" />
+                            }
+                            @case ('PARTIALLY_TRANSLATED') {
+                              <ll-status mode="away" matTooltip="Partially Translated" />
+                            }
+                            @case ('UNTRANSLATED') {
+                              <ll-status mode="offline" matTooltip="Untranslated" />
+                            }
+                          }
                         }
-                        @case ('PARTIALLY_TRANSLATED') {
-                          <ll-status mode="away" matTooltip="Partially Translated" />
-                        }
-                        @case ('UNTRANSLATED') {
-                          <ll-status mode="offline" matTooltip="Untranslated" />
-                        }
-                      }
-                      <div>{{ node.name }}</div>
-                    </div>
+                        <div>{{ node.name }}</div>
+                      </div>
+                    }
                   </mat-tree-node>
                   <!-- This is the tree node template for expandable nodes -->
                   <mat-tree-node
@@ -200,7 +213,7 @@
                     matTreeNodeToggle
                     [cdkTreeNodeTypeaheadLabel]="node.name">
                     <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
-                      <mat-icon class="mat-icon-rtl-mirror">
+                      <mat-icon>
                         {{ tree.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
                       </mat-icon>
                     </button>

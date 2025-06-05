@@ -49,9 +49,7 @@ export class AddDialogComponent {
     private readonly fb: FormBuilder,
     readonly fe: FormErrorHandlerService,
     @Inject(MAT_DIALOG_DATA) public data: AddDialogModel,
-  ) {
-    this.form.valueChanges.subscribe(it => console.log(it));
-  }
+  ) {}
 
   addLabel(event: MatChipInputEvent): void {
     const input = event.chipInput?.inputElement;
