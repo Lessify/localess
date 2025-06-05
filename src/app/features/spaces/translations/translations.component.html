@@ -176,8 +176,21 @@
                     class="cursor-pointer"
                     [class.selected]="node.key === selectedTranslation?.id"
                     (click)="selectTranslation(translationMap().get(node.key))">
-                    <button matIconButton disabled> </button>
-                    {{ node.name }}
+                    <div class="flex items-center gap-x-3">
+                      @let translation = translationMap().get(node.key);
+                      @switch (identifyStatus(translation)) {
+                        @case ('TRANSLATED') {
+                          <ll-status mode="online" matTooltip="Translated" />
+                        }
+                        @case ('PARTIALLY_TRANSLATED') {
+                          <ll-status mode="away" matTooltip="Partially Translated" />
+                        }
+                        @case ('UNTRANSLATED') {
+                          <ll-status mode="offline" matTooltip="Untranslated" />
+                        }
+                      }
+                      <div>{{ node.name }}</div>
+                    </div>
                   </mat-tree-node>
                   <!-- This is the tree node template for expandable nodes -->
                   <mat-tree-node
@@ -186,7 +199,7 @@
                     matTreeNodePadding
                     matTreeNodeToggle
                     [cdkTreeNodeTypeaheadLabel]="node.name">
-                    <button matIconButton matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
+                    <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
                       <mat-icon class="mat-icon-rtl-mirror">
                         {{ tree.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
                       </mat-icon>
