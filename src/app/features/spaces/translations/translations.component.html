@@ -117,307 +117,304 @@
             </mat-form-field>
           </div>
         </div>
-
-        @if (translations$ | async; as translations) {
-          <div class="grid grid-cols-4 gap-2">
-            @if (settingsStore.translationLayout() === 'list') {
-              <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay">
-                <ul role="list" class="divide-y divide-gray-300">
-                  <li
-                    role="listitem"
-                    class="flex p-2 cursor-pointer relative items-center"
-                    *cdkVirtualFor="let translation of translationsFiltered()"
-                    (click)="selectTranslation(translation)"
-                    (keyup.enter)="selectTranslation(translation)"
-                    [class.selected]="translation.id === selectedTranslation?.id">
-                    <div class="min-w-0 flex-auto">
-                      <div class="flex items-center gap-x-3">
-                        @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
-                          <mat-icon class="animate-spin min-w-6">sync</mat-icon>
-                        } @else {
-                          @switch (identifyStatus(translation)) {
-                            @case ('TRANSLATED') {
-                              <ll-status mode="online" matTooltip="Translated" />
-                            }
-                            @case ('PARTIALLY_TRANSLATED') {
-                              <ll-status mode="away" matTooltip="Partially Translated" />
-                            }
-                            @case ('UNTRANSLATED') {
-                              <ll-status mode="offline" matTooltip="Untranslated" />
-                            }
+        <div class="grid grid-cols-4 gap-2">
+          @if (settingsStore.translationLayout() === 'list') {
+            <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay">
+              <ul role="list" class="divide-y divide-gray-300">
+                <li
+                  role="listitem"
+                  class="flex p-2 cursor-pointer relative items-center"
+                  *cdkVirtualFor="let translation of translationsFiltered()"
+                  (click)="selectTranslation(translation)"
+                  (keyup.enter)="selectTranslation(translation)"
+                  [class.selected]="translation.id === selectedTranslation?.id">
+                  <div class="min-w-0 flex-auto">
+                    <div class="flex items-center gap-x-3">
+                      @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
+                        <mat-icon class="animate-spin min-w-6">sync</mat-icon>
+                      } @else {
+                        @switch (identifyStatus(translation)) {
+                          @case ('TRANSLATED') {
+                            <ll-status mode="online" matTooltip="Translated" />
+                          }
+                          @case ('PARTIALLY_TRANSLATED') {
+                            <ll-status mode="away" matTooltip="Partially Translated" />
+                          }
+                          @case ('UNTRANSLATED') {
+                            <ll-status mode="offline" matTooltip="Untranslated" />
                           }
                         }
-                        <div class="text-sm font-semibold leading-6 break-all">
-                          {{ translation.id }}
-                        </div>
-                      </div>
-                      <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                        @switch (translation.type) {
-                          @case ('STRING') {
-                            <ll-translation-string-view [value]="translation.locales[selectedSearchLocale()]" />
-                          }
-                          @case ('PLURAL') {
-                            <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale()]" />
-                          }
-                          @case ('ARRAY') {
-                            <ll-translation-array-view [value]="translation.locales[selectedSearchLocale()]" />
-                          }
-                        }
+                      }
+                      <div class="text-sm font-semibold leading-6 break-all">
+                        {{ translation.id }}
                       </div>
                     </div>
-                  </li>
-                </ul>
-              </cdk-virtual-scroll-viewport>
-            } @else {
-              <div class="overlay overflow-auto">
-                <mat-tree
-                  #tree
-                  [dataSource]="translationTreeFiltered()"
-                  [expansionKey]="expansionKey"
-                  [childrenAccessor]="childrenAccessor"
-                  [trackBy]="trackBy">
-                  <!-- This is the tree node template for leaf nodes -->
-                  <mat-tree-node
-                    *matTreeNodeDef="let node"
-                    matTreeNodePadding
-                    class="cursor-pointer"
-                    [class.selected]="node.key === selectedTranslation?.id">
-                    @if (translationMap().get(node.key); as translation) {
-                      <div aria-hidden="true" class="flex items-center gap-x-3" (click)="selectTranslation(translation)">
-                        @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
-                          <mat-icon class="animate-spin">sync</mat-icon>
-                        } @else {
-                          @switch (identifyStatus(translation)) {
-                            @case ('TRANSLATED') {
-                              <ll-status mode="online" matTooltip="Translated" />
-                            }
-                            @case ('PARTIALLY_TRANSLATED') {
-                              <ll-status mode="away" matTooltip="Partially Translated" />
-                            }
-                            @case ('UNTRANSLATED') {
-                              <ll-status mode="offline" matTooltip="Untranslated" />
-                            }
+                    <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                      @switch (translation.type) {
+                        @case ('STRING') {
+                          <ll-translation-string-view [value]="translation.locales[selectedSearchLocale()]" />
+                        }
+                        @case ('PLURAL') {
+                          <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale()]" />
+                        }
+                        @case ('ARRAY') {
+                          <ll-translation-array-view [value]="translation.locales[selectedSearchLocale()]" />
+                        }
+                      }
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </cdk-virtual-scroll-viewport>
+          } @else {
+            <div class="overlay overflow-auto">
+              <mat-tree
+                #tree
+                [dataSource]="translationTreeFiltered()"
+                [expansionKey]="expansionKey"
+                [childrenAccessor]="childrenAccessor"
+                [trackBy]="trackBy">
+                <!-- This is the tree node template for leaf nodes -->
+                <mat-tree-node
+                  *matTreeNodeDef="let node"
+                  matTreeNodePadding
+                  class="cursor-pointer"
+                  [class.selected]="node.key === selectedTranslation?.id">
+                  @if (translationMap().get(node.key); as translation) {
+                    <div aria-hidden="true" class="flex items-center gap-x-3" (click)="selectTranslation(translation)">
+                      @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
+                        <mat-icon class="animate-spin">sync</mat-icon>
+                      } @else {
+                        @switch (identifyStatus(translation)) {
+                          @case ('TRANSLATED') {
+                            <ll-status mode="online" matTooltip="Translated" />
+                          }
+                          @case ('PARTIALLY_TRANSLATED') {
+                            <ll-status mode="away" matTooltip="Partially Translated" />
+                          }
+                          @case ('UNTRANSLATED') {
+                            <ll-status mode="offline" matTooltip="Untranslated" />
                           }
                         }
-                        <div>{{ node.name }}</div>
-                      </div>
+                      }
+                      <div>{{ node.name }}</div>
+                    </div>
+                  }
+                </mat-tree-node>
+                <!-- This is the tree node template for expandable nodes -->
+                <mat-tree-node
+                  class="cursor-pointer"
+                  *matTreeNodeDef="let node; when: hasChild"
+                  matTreeNodePadding
+                  matTreeNodeToggle
+                  [cdkTreeNodeTypeaheadLabel]="node.name">
+                  <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
+                    <mat-icon>
+                      {{ tree.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
+                    </mat-icon>
+                  </button>
+                  {{ node.name }}
+                </mat-tree-node>
+              </mat-tree>
+            </div>
+          }
+          <div class="col-span-2 overlay">
+            @if (selectedTranslation) {
+              <div class="flex flex-col h-full">
+                <div class="p-2">
+                  <mat-form-field>
+                    <mat-label>Source Locale</mat-label>
+                    <mat-select [(value)]="selectedSourceLocale">
+                      @for (locale of space.locales; track locale.id) {
+                        <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <mat-divider></mat-divider>
+                <div class="p-2 mb-auto">
+                  @switch (selectedTranslation.type) {
+                    @case ('STRING') {
+                      <ll-translation-string-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
                     }
-                  </mat-tree-node>
-                  <!-- This is the tree node template for expandable nodes -->
-                  <mat-tree-node
-                    class="cursor-pointer"
-                    *matTreeNodeDef="let node; when: hasChild"
-                    matTreeNodePadding
-                    matTreeNodeToggle
-                    [cdkTreeNodeTypeaheadLabel]="node.name">
-                    <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
-                      <mat-icon>
-                        {{ tree.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
-                      </mat-icon>
-                    </button>
-                    {{ node.name }}
-                  </mat-tree-node>
-                </mat-tree>
-              </div>
-            }
-            <div class="col-span-2 overlay">
-              @if (selectedTranslation) {
-                <div class="flex flex-col h-full">
+                    @case ('PLURAL') {
+                      <ll-translation-plural-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
+                    }
+                    @case ('ARRAY') {
+                      <ll-translation-array-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
+                    }
+                  }
+                </div>
+
+                @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+                  <mat-divider></mat-divider>
                   <div class="p-2">
-                    <mat-form-field>
-                      <mat-label>Source Locale</mat-label>
-                      <mat-select [(value)]="selectedSourceLocale">
+                    <mat-form-field class="with-button">
+                      <mat-label>Target Locale</mat-label>
+                      <mat-select [(value)]="selectedTargetLocale" (selectionChange)="selectTargetLocale()">
                         @for (locale of space.locales; track locale.id) {
                           <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
                         }
                       </mat-select>
                     </mat-form-field>
+                    <button
+                      mat-icon-button
+                      matTooltip="Translate"
+                      (click)="translate()"
+                      [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
+                      <mat-icon [llAnimate]="isTranslateLoading()">{{ isTranslateLoading() ? 'sync' : 'translate' }}</mat-icon>
+                    </button>
                   </div>
                   <mat-divider></mat-divider>
-                  <div class="p-2 mb-auto">
+                  <div class="p-2">
                     @switch (selectedTranslation.type) {
                       @case ('STRING') {
-                        <ll-translation-string-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
+                        <!--                          <ll-translation-string-edit-->
+                        <!--                            [value]="translateValue() || selectedTranslation.locales[selectedTargetLocale]"-->
+                        <!--                            (valueChange)="selectedTranslationLocaleValue = $event" />-->
+                        <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
                       }
                       @case ('PLURAL') {
-                        <ll-translation-plural-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
+                        <ll-translation-plural-edit
+                          [value]="selectedTranslation.locales[selectedTargetLocale()]"
+                          (valueChange)="selectedTranslationLocaleValue = $event" />
                       }
                       @case ('ARRAY') {
-                        <ll-translation-array-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
+                        <ll-translation-array-edit
+                          [value]="selectedTranslation.locales[selectedTargetLocale()]"
+                          (valueChange)="selectedTranslationLocaleValue = $event" />
                       }
-                    }
-                  </div>
-
-                  @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-                    <mat-divider></mat-divider>
-                    <div class="p-2">
-                      <mat-form-field class="with-button">
-                        <mat-label>Target Locale</mat-label>
-                        <mat-select [(value)]="selectedTargetLocale" (selectionChange)="selectTargetLocale()">
-                          @for (locale of space.locales; track locale.id) {
-                            <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
-                          }
-                        </mat-select>
-                      </mat-form-field>
-                      <button
-                        mat-icon-button
-                        matTooltip="Translate"
-                        (click)="translate()"
-                        [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
-                        <mat-icon [llAnimate]="isTranslateLoading()">{{ isTranslateLoading() ? 'sync' : 'translate' }}</mat-icon>
-                      </button>
-                    </div>
-                    <mat-divider></mat-divider>
-                    <div class="p-2">
-                      @switch (selectedTranslation.type) {
-                        @case ('STRING') {
-                          <!--                          <ll-translation-string-edit-->
-                          <!--                            [value]="translateValue() || selectedTranslation.locales[selectedTargetLocale]"-->
-                          <!--                            (valueChange)="selectedTranslationLocaleValue = $event" />-->
-                          <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
-                        }
-                        @case ('PLURAL') {
-                          <ll-translation-plural-edit
-                            [value]="selectedTranslation.locales[selectedTargetLocale()]"
-                            (valueChange)="selectedTranslationLocaleValue = $event" />
-                        }
-                        @case ('ARRAY') {
-                          <ll-translation-array-edit
-                            [value]="selectedTranslation.locales[selectedTargetLocale()]"
-                            (valueChange)="selectedTranslationLocaleValue = $event" />
-                        }
-                      }
-                    </div>
-                    <mat-divider></mat-divider>
-                    <div class="p-2 flex flex-row-reverse">
-                      <button
-                        mat-stroked-button
-                        color="primary"
-                        [disabled]="
-                          isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale()] === selectedTranslationLocaleValue
-                        "
-                        (click)="updateLocale(selectedTranslation, selectedTargetLocale(), selectedTranslationLocaleValue!)">
-                        <mat-icon [llAnimate]="isLocaleUpdateLoading()">{{ isLocaleUpdateLoading() ? 'sync' : 'save' }}</mat-icon>
-                        Save
-                      </button>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-            <div class="overlay break-all">
-              @if (selectedTranslation) {
-                <div class="d-flex flex-column">
-                  <div class="p-2 align-items-start">
-                    @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-                      <button mat-icon-button matTooltip="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
-                        <mat-icon>rebase_edit</mat-icon>
-                      </button>
-                      <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(selectedTranslation)">
-                        <mat-icon>edit</mat-icon>
-                      </button>
-                    }
-                    @if ('TRANSLATION_DELETE' | canUserPerform | async) {
-                      <button mat-icon-button matTooltip="Delete" (click)="openDeleteDialog(selectedTranslation)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
                     }
                   </div>
                   <mat-divider></mat-divider>
-                  <ul role="list" class="divide-y divide-gray-300">
-                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                      <div class="min-w-0 flex-auto">
-                        <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> ID</div>
-                        </div>
-                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                          <code>{{ selectedTranslation.id }}</code>
-                          <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation?.id" matTooltip="Copy Id">
-                            <mat-icon>content_copy</mat-icon>
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                      <div class="min-w-0 flex-auto">
-                        <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Status</div>
-                        </div>
-                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                          {{ identifyStatus(selectedTranslation) }}
-                        </div>
-                      </div>
-                    </li>
-                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                      <div class="min-w-0 flex-auto">
-                        <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Description</div>
-                        </div>
-                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                          @if (selectedTranslation.description) {
-                            {{ selectedTranslation.description }}
-                          } @else {
-                            No description available.
-                          }
-                        </div>
-                      </div>
-                    </li>
-                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                      <div class="min-w-0 flex-auto">
-                        <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Labels</div>
-                        </div>
-                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                          @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
-                            <mat-chip-set>
-                              @for (label of selectedTranslation.labels; track label) {
-                                <mat-chip [highlighted]="filterLabels().includes(label)">{{ label }}</mat-chip>
-                              }
-                            </mat-chip-set>
-                          } @else {
-                            No label available.
-                          }
-                        </div>
-                      </div>
-                    </li>
-                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                      <div class="min-w-0 flex-auto">
-                        <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Created At</div>
-                        </div>
-                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                          {{ selectedTranslation.createdAt?.toMillis() | date: 'medium' }}
-                        </div>
-                      </div>
-                    </li>
-                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                      <div class="min-w-0 flex-auto">
-                        <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Updated At</div>
-                        </div>
-                        <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                          {{ selectedTranslation.updatedAt?.toMillis() | date: 'medium' }}
-                        </div>
-                      </div>
-                    </li>
-                    <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
-                      <div class="min-w-0 flex-auto">
-                        <div class="flex items-center gap-x-3">
-                          <div class="text-sm font-semibold leading-6 break-all"> Updated By</div>
-                        </div>
-                        <div
-                          class="flex items-center gap-x-2.5 text-xs leading-5 break-words"
-                          [matTooltip]="selectedTranslation.updatedBy?.email || 'Unknown'">
-                          {{ selectedTranslation.updatedBy?.name || 'Unknown' }}
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              }
-            </div>
+                  <div class="p-2 flex flex-row-reverse">
+                    <button
+                      mat-stroked-button
+                      color="primary"
+                      [disabled]="
+                        isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale()] === selectedTranslationLocaleValue
+                      "
+                      (click)="updateLocale(selectedTranslation, selectedTargetLocale(), selectedTranslationLocaleValue!)">
+                      <mat-icon [llAnimate]="isLocaleUpdateLoading()">{{ isLocaleUpdateLoading() ? 'sync' : 'save' }}</mat-icon>
+                      Save
+                    </button>
+                  </div>
+                }
+              </div>
+            }
           </div>
-        }
+          <div class="overlay break-all">
+            @if (selectedTranslation) {
+              <div class="d-flex flex-column">
+                <div class="p-2 align-items-start">
+                  @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+                    <button mat-icon-button matTooltip="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
+                      <mat-icon>rebase_edit</mat-icon>
+                    </button>
+                    <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(selectedTranslation)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  }
+                  @if ('TRANSLATION_DELETE' | canUserPerform | async) {
+                    <button mat-icon-button matTooltip="Delete" (click)="openDeleteDialog(selectedTranslation)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </div>
+                <mat-divider></mat-divider>
+                <ul role="list" class="divide-y divide-gray-300">
+                  <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                    <div class="min-w-0 flex-auto">
+                      <div class="flex items-center gap-x-3">
+                        <div class="text-sm font-semibold leading-6 break-all"> ID</div>
+                      </div>
+                      <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                        <code>{{ selectedTranslation.id }}</code>
+                        <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation?.id" matTooltip="Copy Id">
+                          <mat-icon>content_copy</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                  <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                    <div class="min-w-0 flex-auto">
+                      <div class="flex items-center gap-x-3">
+                        <div class="text-sm font-semibold leading-6 break-all"> Status</div>
+                      </div>
+                      <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                        {{ identifyStatus(selectedTranslation) }}
+                      </div>
+                    </div>
+                  </li>
+                  <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                    <div class="min-w-0 flex-auto">
+                      <div class="flex items-center gap-x-3">
+                        <div class="text-sm font-semibold leading-6 break-all"> Description</div>
+                      </div>
+                      <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                        @if (selectedTranslation.description) {
+                          {{ selectedTranslation.description }}
+                        } @else {
+                          No description available.
+                        }
+                      </div>
+                    </div>
+                  </li>
+                  <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                    <div class="min-w-0 flex-auto">
+                      <div class="flex items-center gap-x-3">
+                        <div class="text-sm font-semibold leading-6 break-all"> Labels</div>
+                      </div>
+                      <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                        @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
+                          <mat-chip-set>
+                            @for (label of selectedTranslation.labels; track label) {
+                              <mat-chip [highlighted]="filterLabels().includes(label)">{{ label }}</mat-chip>
+                            }
+                          </mat-chip-set>
+                        } @else {
+                          No label available.
+                        }
+                      </div>
+                    </div>
+                  </li>
+                  <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                    <div class="min-w-0 flex-auto">
+                      <div class="flex items-center gap-x-3">
+                        <div class="text-sm font-semibold leading-6 break-all"> Created At</div>
+                      </div>
+                      <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                        {{ selectedTranslation.createdAt?.toMillis() | date: 'medium' }}
+                      </div>
+                    </div>
+                  </li>
+                  <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                    <div class="min-w-0 flex-auto">
+                      <div class="flex items-center gap-x-3">
+                        <div class="text-sm font-semibold leading-6 break-all"> Updated At</div>
+                      </div>
+                      <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+                        {{ selectedTranslation.updatedAt?.toMillis() | date: 'medium' }}
+                      </div>
+                    </div>
+                  </li>
+                  <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+                    <div class="min-w-0 flex-auto">
+                      <div class="flex items-center gap-x-3">
+                        <div class="text-sm font-semibold leading-6 break-all"> Updated By</div>
+                      </div>
+                      <div
+                        class="flex items-center gap-x-2.5 text-xs leading-5 break-words"
+                        [matTooltip]="selectedTranslation.updatedBy?.email || 'Unknown'">
+                        {{ selectedTranslation.updatedBy?.name || 'Unknown' }}
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            }
+          </div>
+        </div>
       </div>
     </mat-sidenav-content>
     <mat-sidenav position="end" [opened]="showHistory" (openedChange)="showHistory = $event">
