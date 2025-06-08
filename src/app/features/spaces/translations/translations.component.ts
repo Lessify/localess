@@ -202,10 +202,12 @@ export class TranslationsComponent implements OnInit {
     private readonly fb: FormBuilder,
   ) {}
 
+  // Tree features
   childrenAccessor = (node: TranslationNode) => node.children ?? [];
   hasChild = (_: number, node: TranslationNode) => !!node.children && node.children.length > 0;
   trackBy = (_: number, node: TranslationNode) => this.expansionKey(node);
   expansionKey = (node: TranslationNode) => node.key;
+  treeSearch = (node: TranslationNode, search: string, locale: string, labels: string[]) => node.name;
 
   ngOnInit(): void {
     this.space$ = this.spaceService.findById(this.spaceId()).pipe(
