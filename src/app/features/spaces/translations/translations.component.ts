@@ -147,7 +147,6 @@ export class TranslationsComponent implements OnInit {
   // Subscriptions
   history$?: Observable<TranslationHistory[]>;
   space$?: Observable<Space>;
-  translations$?: Observable<Translation[]>;
 
   //Loadings
   isLoading = signal(true);
@@ -198,25 +197,27 @@ export class TranslationsComponent implements OnInit {
       }),
       takeUntilDestroyed(this.destroyRef),
     );
-    this.translations$ = this.translationService.findAll(this.spaceId()).pipe(
-      tap(translations => {
-        this.translations.set(translations);
-        if (translations.length > 0) {
-          if (this.selectedTranslation) {
-            const tr = translations.find(it => it.id === this.selectedTranslation?.id);
-            if (tr) {
-              this.selectTranslation(tr);
+    this.translationService
+      .findAll(this.spaceId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: translations => {
+          this.translations.set(translations);
+          if (translations.length > 0) {
+            if (this.selectedTranslation) {
+              const tr = translations.find(it => it.id === this.selectedTranslation?.id);
+              if (tr) {
+                this.selectTranslation(tr);
+              } else {
+                this.selectTranslation(translations[0]);
+              }
             } else {
               this.selectTranslation(translations[0]);
             }
-          } else {
-            this.selectTranslation(translations[0]);
           }
-        }
-        this.isLoading.set(false);
-      }),
-      takeUntilDestroyed(this.destroyRef),
-    );
+          this.isLoading.set(false);
+        },
+      });
     this.history$ = this.translateHistoryService.findAll(this.spaceId()).pipe(takeUntilDestroyed(this.destroyRef));
   }
 
