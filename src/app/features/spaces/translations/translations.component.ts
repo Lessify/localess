@@ -31,7 +31,6 @@ import { Space } from '@shared/models/space.model';
 import { TranslationHistory } from '@shared/models/translation-history.model';
 import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { TranslationFilterPipe } from '@shared/pipes/translation-filter.pipe';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
@@ -50,41 +49,13 @@ import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { TranslationNode } from './shared/models/translation.model';
 import { TranslationArrayEditComponent } from './translation-array-edit/translation-array-edit.component';
 import { TranslationArrayViewComponent } from './translation-array-view/translation-array-view.component';
 import { TranslationPluralEditComponent } from './translation-plural-edit/translation-plural-edit.component';
 import { TranslationPluralViewComponent } from './translation-plural-view/translation-plural-view.component';
 import { TranslationStringEditComponent } from './translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from './translation-string-view/translation-string-view.component';
-
-interface TranslationNode {
-  name: string;
-  key: string;
-  children?: TranslationNode[];
-}
-
-function buildTree(translations: Translation[]): TranslationNode[] {
-  const tTree: Record<string, any> = {};
-  for (const translation of translations) {
-    const keys = translation.id.split('.');
-    let currentNode = tTree;
-    // construct shape
-    for (const key of keys) {
-      if (!currentNode[key]) {
-        currentNode[key] = {};
-      }
-      currentNode = currentNode[key];
-    }
-  }
-  function convertTree(node: Record<string, any>, prefix?: string): TranslationNode[] {
-    return Object.entries(node).map(([key, value]) => ({
-      name: key,
-      key: prefix ? `${prefix}.${key}` : key,
-      ...(Object.keys(value).length > 0 && { children: convertTree(value, prefix ? `${prefix}.${key}` : key) }),
-    }));
-  }
-  return convertTree(tTree);
-}
 
 @Component({
   selector: 'll-translations',
@@ -110,7 +81,6 @@ function buildTree(translations: Translation[]): TranslationNode[] {
     FormsModule,
     MatAutocompleteModule,
     ScrollingModule,
-    TranslationFilterPipe,
     StatusComponent,
     TranslationStringViewComponent,
     TranslationPluralViewComponent,
@@ -134,14 +104,17 @@ export class TranslationsComponent implements OnInit {
   DEFAULT_LOCALE = 'en';
 
   translations = signal<Translation[]>([]);
+  translationsFiltered = computed(() =>
+    this.filterTranslations(this.translations(), this.searchValue(), this.selectedSearchLocale(), this.filterLabels()),
+  );
+  translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
   translationIds = computed(() => this.translations().map(it => it.id));
   translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.id, it])));
-  translationTree = computed(() => buildTree(this.translations()));
   //Search
   searchValue = signal('');
 
   //Labels
-  currentLabel = '';
+  currentLabel = signal('');
   readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
   allLabels = computed(() => {
     const tmp = this.translations()
@@ -153,7 +126,7 @@ export class TranslationsComponent implements OnInit {
   });
   filterLabels = signal<string[]>([]);
   filteredLabels = computed(() => {
-    const currentLabel = this.currentLabel.toLowerCase();
+    const currentLabel = this.currentLabel().toLowerCase();
     if (currentLabel) {
       return this.allLabels()
         .filter(label => !this.filterLabels().includes(label))
@@ -207,7 +180,6 @@ export class TranslationsComponent implements OnInit {
   hasChild = (_: number, node: TranslationNode) => !!node.children && node.children.length > 0;
   trackBy = (_: number, node: TranslationNode) => this.expansionKey(node);
   expansionKey = (node: TranslationNode) => node.key;
-  treeSearch = (node: TranslationNode, search: string, locale: string, labels: string[]) => node.name;
 
   ngOnInit(): void {
     this.space$ = this.spaceService.findById(this.spaceId()).pipe(
@@ -449,8 +421,50 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
+  filterTranslations(items: Translation[], filter: string, locale: string, labels: string[]): Translation[] {
+    const lcFilter = filter.toLowerCase();
+    if (!items || (!filter && !labels.length)) {
+      return items;
+    }
+    return items.filter(it => {
+      const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.every(label => it.labels?.includes(label)));
+      if (it.id.toLowerCase().indexOf(lcFilter) !== -1 && matchByLabel) {
+        return true;
+      } else {
+        if (it.locales[locale]) {
+          return it.locales[locale].indexOf(lcFilter) !== -1 && matchByLabel;
+        }
+        return false;
+      }
+    });
+  }
+
+  buildTranslationTree(translations: Translation[]): TranslationNode[] {
+    const tTree: Record<string, any> = {};
+    for (const translation of translations) {
+      const keys = translation.id.split('.');
+      let currentNode = tTree;
+      // construct shape
+      for (const key of keys) {
+        if (!currentNode[key]) {
+          currentNode[key] = {};
+        }
+        currentNode = currentNode[key];
+      }
+    }
+
+    function convertTree(node: Record<string, any>, prefix?: string): TranslationNode[] {
+      return Object.entries(node).map(([key, value]) => ({
+        name: key,
+        key: prefix ? `${prefix}.${key}` : key,
+        ...(Object.keys(value).length > 0 && { children: convertTree(value, prefix ? `${prefix}.${key}` : key) }),
+      }));
+    }
+
+    return convertTree(tTree);
+  }
+
   selectTranslation(translation: Translation): void {
-    console.log(translation);
     this.selectedTranslation = translation;
     this.selectedTranslationLocaleValue = this.selectedTranslation.locales[this.selectedTargetLocale()];
   }
@@ -483,7 +497,7 @@ export class TranslationsComponent implements OnInit {
   selectLabel(event: MatAutocompleteSelectedEvent): void {
     const { option } = event;
     this.filterLabels.update(it => [...it, option.viewValue]);
-    this.currentLabel = '';
+    this.currentLabel.set('');
     option.deselect();
     this.selectedTranslation = undefined;
   }

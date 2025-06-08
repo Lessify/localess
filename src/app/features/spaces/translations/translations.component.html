@@ -126,9 +126,7 @@
                   <li
                     role="listitem"
                     class="flex p-2 cursor-pointer relative items-center"
-                    *cdkVirtualFor="
-                      let translation of translations | translationFilter: searchValue() : selectedSearchLocale() : filterLabels()
-                    "
+                    *cdkVirtualFor="let translation of translationsFiltered()"
                     (click)="selectTranslation(translation)"
                     (keyup.enter)="selectTranslation(translation)"
                     [class.selected]="translation.id === selectedTranslation?.id">
@@ -174,7 +172,7 @@
               <div class="overlay overflow-auto">
                 <mat-tree
                   #tree
-                  [dataSource]="translationTree()"
+                  [dataSource]="translationTreeFiltered()"
                   [expansionKey]="expansionKey"
                   [childrenAccessor]="childrenAccessor"
                   [trackBy]="trackBy">
