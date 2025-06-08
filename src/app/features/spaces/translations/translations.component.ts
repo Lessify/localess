@@ -4,7 +4,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -41,7 +41,7 @@ import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { debounceTime, EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
@@ -138,8 +138,7 @@ export class TranslationsComponent implements OnInit {
   translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.id, it])));
   translationTree = computed(() => buildTree(this.translations()));
   //Search
-  searchCtrl: FormControl = this.fb.control('');
-  searchValue = '';
+  searchValue = signal('');
 
   //Labels
   currentLabel = '';
@@ -166,9 +165,9 @@ export class TranslationsComponent implements OnInit {
   selectedTranslation?: Translation;
   selectedTranslationLocaleValue?: string;
 
-  selectedSearchLocale = '';
-  selectedSourceLocale = '';
-  selectedTargetLocale = '';
+  selectedSearchLocale = signal('');
+  selectedSourceLocale = signal('');
+  selectedTargetLocale = signal('');
 
   availableToken?: string = undefined;
 
@@ -209,24 +208,18 @@ export class TranslationsComponent implements OnInit {
   expansionKey = (node: TranslationNode) => node.key;
 
   ngOnInit(): void {
-    this.searchCtrl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: value => {
-        this.searchValue = value;
-        this.cd.markForCheck();
-      },
-    });
     this.space$ = this.spaceService.findById(this.spaceId()).pipe(
       tap(space => {
         this.selectedSpace = space;
         //this.locales = space.locales;
-        if (this.selectedSearchLocale === '') {
-          this.selectedSearchLocale = space.localeFallback.id;
+        if (this.selectedSearchLocale() === '') {
+          this.selectedSearchLocale.set(space.localeFallback.id);
         }
-        if (this.selectedSourceLocale === '') {
-          this.selectedSourceLocale = space.localeFallback.id;
+        if (this.selectedSourceLocale() === '') {
+          this.selectedSourceLocale.set(space.localeFallback.id);
         }
-        if (this.selectedTargetLocale === '') {
-          this.selectedTargetLocale = space.localeFallback.id;
+        if (this.selectedTargetLocale() === '') {
+          this.selectedTargetLocale.set(space.localeFallback.id);
         }
       }),
       takeUntilDestroyed(this.destroyRef),
@@ -455,12 +448,13 @@ export class TranslationsComponent implements OnInit {
   }
 
   selectTranslation(translation: Translation): void {
+    console.log(translation);
     this.selectedTranslation = translation;
-    this.selectedTranslationLocaleValue = this.selectedTranslation.locales[this.selectedTargetLocale];
+    this.selectedTranslationLocaleValue = this.selectedTranslation.locales[this.selectedTargetLocale()];
   }
 
   selectTargetLocale(): void {
-    this.selectedTranslationLocaleValue = this.selectedTranslation?.locales[this.selectedTargetLocale];
+    this.selectedTranslationLocaleValue = this.selectedTranslation?.locales[this.selectedTargetLocale()];
   }
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
@@ -531,9 +525,9 @@ export class TranslationsComponent implements OnInit {
     this.isTranslateLoading.set(true);
     this.translateService
       .translate({
-        content: this.selectedTranslation?.locales[this.selectedSourceLocale] || '',
-        sourceLocale: this.selectedSourceLocale,
-        targetLocale: this.selectedTargetLocale,
+        content: this.selectedTranslation?.locales[this.selectedSourceLocale()] || '',
+        sourceLocale: this.selectedSourceLocale(),
+        targetLocale: this.selectedTargetLocale(),
       })
       .subscribe({
         next: value => {

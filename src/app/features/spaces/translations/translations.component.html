@@ -86,7 +86,7 @@
           <div class="">
             <mat-form-field>
               <mat-label>Search</mat-label>
-              <input matInput [formControl]="searchCtrl" autocomplete="off" />
+              <input matInput [(ngModel)]="searchValue" autocomplete="off" />
               <mat-icon matIconSuffix>search</mat-icon>
             </mat-form-field>
           </div>
@@ -127,7 +127,7 @@
                     role="listitem"
                     class="flex p-2 cursor-pointer relative items-center"
                     *cdkVirtualFor="
-                      let translation of translations | translationFilter: searchValue : selectedSearchLocale : filterLabels()
+                      let translation of translations | translationFilter: searchValue() : selectedSearchLocale() : filterLabels()
                     "
                     (click)="selectTranslation(translation)"
                     (keyup.enter)="selectTranslation(translation)"
@@ -156,13 +156,13 @@
                       <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                         @switch (translation.type) {
                           @case ('STRING') {
-                            <ll-translation-string-view [value]="translation.locales[selectedSearchLocale]" />
+                            <ll-translation-string-view [value]="translation.locales[selectedSearchLocale()]" />
                           }
                           @case ('PLURAL') {
-                            <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale]" />
+                            <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale()]" />
                           }
                           @case ('ARRAY') {
-                            <ll-translation-array-view [value]="translation.locales[selectedSearchLocale]" />
+                            <ll-translation-array-view [value]="translation.locales[selectedSearchLocale()]" />
                           }
                         }
                       </div>
@@ -239,13 +239,13 @@
                   <div class="p-2 mb-auto">
                     @switch (selectedTranslation.type) {
                       @case ('STRING') {
-                        <ll-translation-string-view [value]="selectedTranslation.locales[selectedSourceLocale]" />
+                        <ll-translation-string-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
                       }
                       @case ('PLURAL') {
-                        <ll-translation-plural-view [value]="selectedTranslation.locales[selectedSourceLocale]" />
+                        <ll-translation-plural-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
                       }
                       @case ('ARRAY') {
-                        <ll-translation-array-view [value]="selectedTranslation.locales[selectedSourceLocale]" />
+                        <ll-translation-array-view [value]="selectedTranslation.locales[selectedSourceLocale()]" />
                       }
                     }
                   </div>
@@ -265,7 +265,7 @@
                         mat-icon-button
                         matTooltip="Translate"
                         (click)="translate()"
-                        [disabled]="!isLocaleTranslatable(selectedSourceLocale, selectedTargetLocale)">
+                        [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
                         <mat-icon [llAnimate]="isTranslateLoading()">{{ isTranslateLoading() ? 'sync' : 'translate' }}</mat-icon>
                       </button>
                     </div>
@@ -280,12 +280,12 @@
                         }
                         @case ('PLURAL') {
                           <ll-translation-plural-edit
-                            [value]="selectedTranslation.locales[selectedTargetLocale]"
+                            [value]="selectedTranslation.locales[selectedTargetLocale()]"
                             (valueChange)="selectedTranslationLocaleValue = $event" />
                         }
                         @case ('ARRAY') {
                           <ll-translation-array-edit
-                            [value]="selectedTranslation.locales[selectedTargetLocale]"
+                            [value]="selectedTranslation.locales[selectedTargetLocale()]"
                             (valueChange)="selectedTranslationLocaleValue = $event" />
                         }
                       }
@@ -296,9 +296,9 @@
                         mat-stroked-button
                         color="primary"
                         [disabled]="
-                          isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale] === selectedTranslationLocaleValue
+                          isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale()] === selectedTranslationLocaleValue
                         "
-                        (click)="updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue!)">
+                        (click)="updateLocale(selectedTranslation, selectedTargetLocale(), selectedTranslationLocaleValue!)">
                         <mat-icon [llAnimate]="isLocaleUpdateLoading()">{{ isLocaleUpdateLoading() ? 'sync' : 'save' }}</mat-icon>
                         Save
                       </button>
