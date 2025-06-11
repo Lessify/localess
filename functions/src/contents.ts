@@ -1,7 +1,7 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten, DocumentSnapshot } from 'firebase-functions/v2/firestore';
-import { FieldValue, UpdateData, WithFieldValue, FieldPath } from 'firebase-admin/firestore';
+import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
 import { canPerform } from './utils/security-utils';
 import { BATCH_MAX, bucket, firestoreService } from './config';
 import {
@@ -85,35 +85,25 @@ async function publishDocument(
 ) {
   let aggReferences: Record<string, ContentLink> | undefined;
   if (document.references && document.references.length > 0) {
-    const contentsSnapshot = await firestoreService
-      .collection(`spaces/${spaceId}/contents`)
-      .where(FieldPath.documentId(), 'in', document.references)
-      .get();
-    aggReferences = contentsSnapshot.docs
-      .map(contentSnapshot => {
-        const content = contentSnapshot.data() as Content;
-        const link: ContentLink = {
-          id: contentSnapshot.id,
-          kind: content.kind,
-          name: content.name,
-          slug: content.slug,
-          fullSlug: content.fullSlug,
-          parentSlug: content.parentSlug,
-          createdAt: content.createdAt.toDate().toISOString(),
-          updatedAt: content.updatedAt.toDate().toISOString(),
-        };
-        if (content.kind === ContentKind.DOCUMENT) {
-          link.publishedAt = content.publishedAt?.toDate().toISOString();
-        }
-        return link;
-      })
-      .reduce(
-        (acc, item) => {
-          acc[item.id] = item;
-          return acc;
-        },
-        {} as Record<string, ContentLink>
-      );
+    aggReferences = {};
+    for (const refId of document.references) {
+      const contentSnapshot = await findContentById(spaceId, refId).get();
+      const content = contentSnapshot.data() as Content;
+      const link: ContentLink = {
+        id: contentSnapshot.id,
+        kind: content.kind,
+        name: content.name,
+        slug: content.slug,
+        fullSlug: content.fullSlug,
+        parentSlug: content.parentSlug,
+        createdAt: content.createdAt.toDate().toISOString(),
+        updatedAt: content.updatedAt.toDate().toISOString(),
+      };
+      if (content.kind === ContentKind.DOCUMENT) {
+        link.publishedAt = content.publishedAt?.toDate().toISOString();
+      }
+      aggReferences[refId] = link;
+    }
   }
 
   for (const locale of space.locales) {
@@ -179,57 +169,47 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
       const spaceSnapshot = await findSpaceById(spaceId).get();
       const schemasSnapshot = await findSchemas(spaceId).get();
       const space: Space = spaceSnapshot.data() as Space;
-      const content: ContentDocument = contentAfter;
+      const document: ContentDocument = contentAfter;
       const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
       let aggReferences: Record<string, ContentLink> | undefined;
-      if (content.references && content.references.length > 0) {
-        const contentsSnapshot = await firestoreService
-          .collection(`spaces/${spaceId}/contents`)
-          .where(FieldPath.documentId(), 'in', content.references)
-          .get();
-        aggReferences = contentsSnapshot.docs
-          .map(contentSnapshot => {
-            const content = contentSnapshot.data() as Content;
-            const link: ContentLink = {
-              id: contentSnapshot.id,
-              kind: content.kind,
-              name: content.name,
-              slug: content.slug,
-              fullSlug: content.fullSlug,
-              parentSlug: content.parentSlug,
-              createdAt: content.createdAt.toDate().toISOString(),
-              updatedAt: content.updatedAt.toDate().toISOString(),
-            };
-            if (content.kind === ContentKind.DOCUMENT) {
-              link.publishedAt = content.publishedAt?.toDate().toISOString();
-            }
-            return link;
-          })
-          .reduce(
-            (acc, item) => {
-              acc[item.id] = item;
-              return acc;
-            },
-            {} as Record<string, ContentLink>
-          );
+      if (document.references && document.references.length > 0) {
+        aggReferences = {};
+        for (const refId of document.references) {
+          const contentSnapshot = await findContentById(spaceId, refId).get();
+          const content = contentSnapshot.data() as Content;
+          const link: ContentLink = {
+            id: contentSnapshot.id,
+            kind: content.kind,
+            name: content.name,
+            slug: content.slug,
+            fullSlug: content.fullSlug,
+            parentSlug: content.parentSlug,
+            createdAt: content.createdAt.toDate().toISOString(),
+            updatedAt: content.updatedAt.toDate().toISOString(),
+          };
+          if (content.kind === ContentKind.DOCUMENT) {
+            link.publishedAt = content.publishedAt?.toDate().toISOString();
+          }
+          aggReferences[refId] = link;
+        }
       }
       for (const locale of space.locales) {
         const documentStorage: ContentDocumentStorage = {
           id: event.data.after.id,
-          name: content.name,
-          kind: content.kind,
+          name: document.name,
+          kind: document.kind,
           locale: locale.id,
-          slug: content.slug,
-          fullSlug: content.fullSlug,
-          parentSlug: content.parentSlug,
-          createdAt: content.createdAt.toDate().toISOString(),
-          updatedAt: content.updatedAt.toDate().toISOString(),
+          slug: document.slug,
+          fullSlug: document.fullSlug,
+          parentSlug: document.parentSlug,
+          createdAt: document.createdAt.toDate().toISOString(),
+          updatedAt: document.updatedAt.toDate().toISOString(),
         };
-        if (content.data) {
-          if (typeof content.data === 'string') {
-            documentStorage.data = extractContent(JSON.parse(content.data), schemas, locale.id);
+        if (document.data) {
+          if (typeof document.data === 'string') {
+            documentStorage.data = extractContent(JSON.parse(document.data), schemas, locale.id);
           } else {
-            documentStorage.data = extractContent(content.data, schemas, locale.id);
+            documentStorage.data = extractContent(document.data, schemas, locale.id);
           }
         }
         if (aggReferences) {
