@@ -152,6 +152,7 @@
             }
           }
         });
+        window.dispatchEvent(new Event('[Localess]:initialized'));
       }
 
       emit(event: EventToApp) {
