@@ -1,13 +1,18 @@
 (function () {
+  const FG_YELLOW = "\x1b[33m"
+  const RESET = "\x1b[0m"
+  const LOG_GROUP = `${FG_YELLOW}[Localess:Sync]${RESET}`
   // Event emitted from Application to Visual Editor
-  type EventToEditorType = 'selectSchema' | 'hoverSchema' | 'leaveSchema';
-  type EventToEditor = { owner: 'LOCALESS'; type: EventToEditorType; id: string; schema: string; field?: string };
+  type EventToEditorType = 'ping' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
+  type EventToEditor =
+    | { type: 'ping' }
+    | { type: 'selectSchema' | 'hoverSchema' | 'leaveSchema'; id: string; schema: string; field?: string };
 
   // Event emitted from Visual Editor to Application
-  type EventToAppType = 'save' | 'publish' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
+  type EventToAppType = 'save' | 'publish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
   type EventCallback = (event: EventToApp) => void;
   type EventToApp =
-    | { type: 'save' | 'publish' }
+    | { type: 'save' | 'publish' | 'pong' }
     | { type: 'input' | 'change'; data: any }
     | { type: 'enterSchema' | 'hoverSchema'; id: string; schema: string; field?: string };
 
@@ -16,8 +21,8 @@
   }
 
   function sendEditorData(data: EventToEditor) {
-    console.log('sendEditorData', data);
-    window.parent.postMessage(data, '*');
+    console.log(LOG_GROUP,'SyncToEditorEvent', data);
+    window.parent.postMessage({ owner: 'LOCALESS', ...data }, '*');
   }
 
   function createCSS() {
@@ -35,7 +40,8 @@
     document.head.appendChild(style);
   }
 
-  function markVisualEditorElements() {
+  function markVisualEditorElements(source: string) {
+    console.log(LOG_GROUP,'markVisualEditorElements', source);
     document.querySelectorAll<HTMLElement>('[data-ll-id]:not([data-ll-hook])').forEach(element => {
       const id = element.getAttribute('data-ll-id')!;
       const schema = element.getAttribute('data-ll-schema')!;
@@ -48,15 +54,15 @@
         event.preventDefault();
         event.stopPropagation();
         // Send Message with Selected Schema
-        sendEditorData({ owner: 'LOCALESS', type: 'selectSchema', id: id, schema: schema });
+        sendEditorData({ type: 'selectSchema', id: id, schema: schema });
       });
       element.addEventListener('mouseenter', event => {
         // Send Message with Hover Schema
-        sendEditorData({ owner: 'LOCALESS', type: 'hoverSchema', id: id, schema: schema });
+        sendEditorData({ type: 'hoverSchema', id: id, schema: schema });
       });
       element.addEventListener('mouseleave', event => {
         // Send Message with Leave Schema
-        sendEditorData({ owner: 'LOCALESS', type: 'leaveSchema', id: id, schema: schema });
+        sendEditorData({ type: 'leaveSchema', id: id, schema: schema });
       });
       // Field Events
       element.querySelectorAll<HTMLElement>('[data-ll-field]').forEach(field => {
@@ -67,15 +73,15 @@
           event.preventDefault();
           event.stopPropagation();
           // Send Message with Selected Schema with field
-          sendEditorData({ owner: 'LOCALESS', type: 'selectSchema', id: id, schema: schema, field: fieldName });
+          sendEditorData({ type: 'selectSchema', id: id, schema: schema, field: fieldName });
         });
         field.addEventListener('mouseenter', event => {
           // Send Message with Hover Schema with field
-          sendEditorData({ owner: 'LOCALESS', type: 'hoverSchema', id: id, schema: schema, field: fieldName });
+          sendEditorData({ type: 'hoverSchema', id: id, schema: schema, field: fieldName });
         });
         field.addEventListener('mouseleave', event => {
           // Send Message with Leave Schema with field
-          sendEditorData({ owner: 'LOCALESS', type: 'leaveSchema', id: id, schema: schema, field: fieldName });
+          sendEditorData({ type: 'leaveSchema', id: id, schema: schema, field: fieldName });
         });
       });
     });
@@ -98,11 +104,12 @@
   }
 
   if (isInIframe()) {
-    createCSS();
-    setTimeout(() => markVisualEditorElements(), 1000);
+    //createCSS();
+    //setTimeout(() => markVisualEditorElements(), 1000);
 
     class Sync {
       version = 'v1';
+      inEditor = false;
       events: Record<EventToAppType, EventCallback[]> = {
         save: [],
         publish: [],
@@ -110,6 +117,7 @@
         change: [],
         enterSchema: [],
         hoverSchema: [],
+        pong: [],
       };
 
       constructor() {
@@ -122,7 +130,7 @@
         // Receive message from Visual Editor
         addEventListener('message', event => {
           if (event.origin === location.ancestorOrigins.item(0)) {
-            setTimeout(() => markVisualEditorElements(), 1000);
+            console.log(LOG_GROUP,'EditorToSyncEvent', event.data)
             const data = event.data as EventToApp;
             switch (data.type) {
               case 'save': {
@@ -135,10 +143,12 @@
               }
               case 'input': {
                 this.emit(data);
+                setTimeout(() => markVisualEditorElements('input'), 1000);
                 break;
               }
               case 'change': {
                 this.emit(data);
+                setTimeout(() => markVisualEditorElements('change'), 1000);
                 break;
               }
               case 'enterSchema': {
@@ -149,9 +159,14 @@
                 this.emit(data);
                 break;
               }
+              case 'pong': {
+                this.emit(data);
+                break;
+              }
             }
           }
         });
+        this.pingEditor()
       }
 
       emit(event: EventToApp) {
@@ -177,6 +192,17 @@
         if (this.events[type].indexOf(callback) === -1) {
           this.events[type].push(callback);
         }
+      }
+
+      private pingEditor() {
+        sendEditorData({ type: 'ping' });
+        this.on('pong', this.pingBack)
+      }
+
+      private pingBack() {
+        this.inEditor = true;
+        createCSS();
+        markVisualEditorElements('pong');
       }
     }
 

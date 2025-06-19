@@ -447,6 +447,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   contentIdLink(event: MessageEvent<EventToEditor>): void {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       //console.log('MessageEvent', event);
+      if (event.data.type === 'ping') {
+        this.sendEventToApp({ type: 'pong' });
+        return;
+      }
       const { id, type, schema, field } = event.data;
       console.log('llve', id, type, schema, field);
       // find element path
