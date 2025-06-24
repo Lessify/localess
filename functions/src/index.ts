@@ -5,6 +5,8 @@ setGlobalOptions({
   region: 'europe-west6',
   concurrency: 600,
   cpu: 1,
+  minInstances: 0,
+  maxInstances: 1,
 });
 
 export { asset } from './assets';
