@@ -1,7 +1,7 @@
 (function () {
-  const FG_YELLOW = "\x1b[33m"
-  const RESET = "\x1b[0m"
-  const LOG_GROUP = `${FG_YELLOW}[Localess:Sync]${RESET}`
+  const FG_BLUE = "\x1b[34m"
+  const RESET = '\x1b[0m';
+  const LOG_GROUP = `${FG_BLUE}[Localess:Sync]${RESET}`;
   // Event emitted from Application to Visual Editor
   type EventToEditorType = 'ping' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
   type EventToEditor =
@@ -21,7 +21,7 @@
   }
 
   function sendEditorData(data: EventToEditor) {
-    console.log(LOG_GROUP,'SyncToEditorEvent', data);
+    console.log(LOG_GROUP, 'SyncToEditorEvent', data);
     window.parent.postMessage({ owner: 'LOCALESS', ...data }, '*');
   }
 
@@ -32,16 +32,16 @@
     style.textContent = `
     [data-ll-id],[data-ll-field]{outline: 2px dashed rgba(0,92,187,0.5);transition: box-shadow ease-out 150ms;}
     [data-ll-id]:hover,[data-ll-field]:hover{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
-    // Snackbar
+    // Snackbar KeyFames
     style.textContent += `
-    .ll-snackbar-container{position: fixed;bottom: 20px;display: flex;flex-direction: column-reverse;left: 50%;gap: 10px;}
-    .ll-snackbar{min-width: 250px;background-color: #333;color: #fff;text-align: center;border-radius: 4px;padding: 16px;transform: translateX(-50%);box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);animation: ll-fadein 0.5s, ll-fadeout 0.5s 2.5s;}
-    @keyframes ll-fadein {from {bottom: 0; opacity: 0;}to {bottom: 30px; opacity: 1;}}@keyframes ll-fadeout {from {bottom: 30px; opacity: 1;}to {bottom: 0; opacity: 0;}}`;
+      @keyframes ll-fadein {from {bottom: 0; opacity: 0;}to {bottom: 30px; opacity: 1;}}
+      @keyframes ll-fadeout {from {bottom: 30px; opacity: 1;}to {bottom: 0; opacity: 0;}}
+    `;
     document.head.appendChild(style);
   }
 
   function markVisualEditorElements(source: string) {
-    console.log(LOG_GROUP,'markVisualEditorElements', source);
+    console.log(LOG_GROUP, 'markVisualEditorElements', source);
     document.querySelectorAll<HTMLElement>('[data-ll-id]:not([data-ll-hook])').forEach(element => {
       const id = element.getAttribute('data-ll-id')!;
       const schema = element.getAttribute('data-ll-schema')!;
@@ -90,12 +90,15 @@
   function addMessageContainer() {
     const snackbarContainer = document.createElement('div');
     snackbarContainer.className = 'll-snackbar-container';
+    snackbarContainer.style = 'position: fixed;bottom: 20px;display: flex;flex-direction: column-reverse;left: 50%;gap: 10px;';
     document.body.appendChild(snackbarContainer);
   }
 
   function addMessage(message: string) {
     const snackbar = document.createElement('div');
     snackbar.className = 'll-snackbar';
+    snackbar.style =
+      'min-width: 250px;background-color: #333;color: #fff;text-align: center;border-radius: 4px;padding: 16px;transform: translateX(-50%);box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);animation: ll-fadein 0.5s, ll-fadeout 0.5s 2.5s;';
     snackbar.textContent = message;
     document.body.querySelector('.ll-snackbar-container')?.appendChild(snackbar);
     setTimeout(() => {
@@ -125,12 +128,12 @@
           `%c🚀🚀🚀LOCALESS: Sync version ${this.version} initialized🚀🚀🚀`,
           'background: #222; color: #0063EB; font-size: 2rem;',
         );
-        addMessageContainer()
+        addMessageContainer();
         addMessage('Localess: Sync initialized.');
         // Receive message from Visual Editor
         addEventListener('message', event => {
           if (event.origin === location.ancestorOrigins.item(0)) {
-            console.log(LOG_GROUP,'EditorToSyncEvent', event.data)
+            console.log(LOG_GROUP, 'EditorToSyncEvent', event.data);
             const data = event.data as EventToApp;
             switch (data.type) {
               case 'save': {
@@ -166,7 +169,7 @@
             }
           }
         });
-        this.pingEditor()
+        this.pingEditor();
       }
 
       emit(event: EventToApp) {
@@ -174,6 +177,10 @@
         for (const cb of cbList) {
           cb.apply(this, [event]);
         }
+      }
+
+      onChange(callback: EventCallback) {
+        this.on(['input', 'change'], callback);
       }
 
       on(type: EventToAppType | EventToAppType[], callback: EventCallback) {
@@ -196,13 +203,14 @@
 
       private pingEditor() {
         sendEditorData({ type: 'ping' });
-        this.on('pong', this.pingBack)
+        this.on('pong', this.pingBack);
       }
 
       private pingBack() {
         this.inEditor = true;
         createCSS();
         markVisualEditorElements('pong');
+        addMessage('Localess: Sync connected to Visual Editor.');
       }
     }
 

@@ -429,11 +429,12 @@ export class TranslationsComponent implements OnInit {
     }
     return items.filter(it => {
       const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.every(label => it.labels?.includes(label)));
-      if (it.id.toLowerCase().indexOf(lcFilter) !== -1 && matchByLabel) {
+      if (it.id.toLowerCase().includes(lcFilter) && matchByLabel) {
         return true;
       } else {
-        if (it.locales[locale]) {
-          return it.locales[locale].indexOf(lcFilter) !== -1 && matchByLabel;
+        const localeValue = it.locales[locale];
+        if (localeValue) {
+          return localeValue.toLowerCase().includes(lcFilter) && matchByLabel;
         }
         return false;
       }
