@@ -35,3 +35,9 @@ mat-form-field {
 mat-icon.flash {
   color: var(--mat-sys-primary)
 }
+
+mat-list-item {
+  &.active {
+    background: var(--mat-sys-primary-container);
+  }
+}
