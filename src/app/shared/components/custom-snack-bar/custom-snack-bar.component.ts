@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, Inject, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_SNACK_BAR_DATA, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -13,12 +13,10 @@ import { CustomSnackBarModel } from '@shared/components/custom-snack-bar/custom-
   imports: [MatSnackBarModule, MatButtonModule],
 })
 export class CustomSnackBarComponent {
-  @HostBinding('class') class = 'mat-mdc-simple-snack-bar';
+  private readonly router = inject(Router);
+  readonly data = inject<CustomSnackBarModel>(MAT_SNACK_BAR_DATA);
 
-  constructor(
-    private readonly router: Router,
-    @Inject(MAT_SNACK_BAR_DATA) public readonly data: CustomSnackBarModel,
-  ) {}
+  @HostBinding('class') class = 'mat-mdc-simple-snack-bar';
 
   navigate(link: string): void {
     if (link.startsWith('https://') || link.startsWith('http://')) {

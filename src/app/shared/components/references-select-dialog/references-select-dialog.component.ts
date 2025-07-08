@@ -7,7 +7,6 @@ import {
   computed,
   DestroyRef,
   inject,
-  Inject,
   OnDestroy,
   OnInit,
   signal,
@@ -58,6 +57,12 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
   ],
 })
 export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
+  private readonly schemasService = inject(SchemaService);
+  private readonly contentService = inject(ContentService);
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly cd = inject(ChangeDetectorRef);
+  data = inject<ReferencesSelectDialogModel>(MAT_DIALOG_DATA);
+
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -87,15 +92,6 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
   private destroyRef = inject(DestroyRef);
   // Loading
   isLoading = signal(true);
-
-  constructor(
-    private readonly schemasService: SchemaService,
-    private readonly contentService: ContentService,
-    readonly fe: FormErrorHandlerService,
-    private readonly cd: ChangeDetectorRef,
-    @Inject(MAT_DIALOG_DATA)
-    public data: ReferencesSelectDialogModel,
-  ) {}
 
   ngOnInit(): void {
     this.loadData();

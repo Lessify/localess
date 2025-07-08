@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { activate } from '@angular/fire/remote-config';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -19,14 +19,16 @@ interface TabItem {
   imports: [MatToolbarModule, MatTabsModule, RouterModule, MatIconModule],
 })
 export class SettingsComponent {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly cd = inject(ChangeDetectorRef);
+
   activeTab = 'ui';
   tabItems: TabItem[] = [{ icon: 'palette', label: 'UI', link: 'ui' }];
 
-  constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly cd: ChangeDetectorRef,
-  ) {
+  constructor() {
+    const router = this.router;
+
     const idx = router.url.lastIndexOf('/');
     this.activeTab = router.url.substring(idx + 1);
   }

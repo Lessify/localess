@@ -1,5 +1,5 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, Optional } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import {
   Auth,
   GoogleAuthProvider,
@@ -28,6 +28,10 @@ import { environment } from '../../environments/environment';
   imports: [CommonModule, MatFormFieldModule, ReactiveFormsModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
 })
 export class LoginComponent {
+  readonly auth = inject(Auth);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+
   redirectToFeatures = ['features'];
 
   //Form
@@ -47,11 +51,7 @@ export class LoginComponent {
   userStore = inject(UserStore);
   settingsStore = inject(LocalSettingsStore);
 
-  constructor(
-    @Optional() public readonly auth: Auth,
-    private readonly router: Router,
-    private readonly fb: FormBuilder,
-  ) {
+  constructor() {
     effect(
       async () => {
         console.log('Login User Authenticated Effect :', this.userStore.isAuthenticated());

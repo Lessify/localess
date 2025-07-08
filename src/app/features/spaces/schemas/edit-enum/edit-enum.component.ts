@@ -61,6 +61,13 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
   ],
 })
 export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
+  private readonly schemaService = inject(SchemaService);
+  private readonly notificationService = inject(NotificationService);
+
   // Input
   spaceId = input.required<string>();
   schemaId = input.required<string>();
@@ -88,15 +95,6 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   });
 
   readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
-
-  constructor(
-    readonly fe: FormErrorHandlerService,
-    private readonly fb: FormBuilder,
-    private readonly cd: ChangeDetectorRef,
-    private readonly router: Router,
-    private readonly schemaService: SchemaService,
-    private readonly notificationService: NotificationService,
-  ) {}
 
   ngOnInit(): void {
     this.loadData(this.spaceId(), this.schemaId());

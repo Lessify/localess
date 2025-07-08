@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { doc, docData, Firestore, serverTimestamp, setDoc, UpdateData } from '@angular/fire/firestore';
 import { Functions } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
@@ -10,11 +10,9 @@ import { map, tap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
-  constructor(
-    private readonly firestore: Firestore,
-    private readonly functions: Functions,
-    private readonly remoteConfig: RemoteConfig,
-  ) {}
+  private readonly firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
+  private readonly remoteConfig = inject(RemoteConfig);
 
   find(): Observable<AppSettings> {
     return docData(doc(this.firestore, `configs/settings`), { idField: 'id' }).pipe(

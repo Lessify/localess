@@ -39,6 +39,13 @@ import { filter, map } from 'rxjs/operators';
   ],
 })
 export class GeneralComponent {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly spaceService = inject(SpaceService);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+  private readonly materialService = inject(MaterialService);
+
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
@@ -54,14 +61,7 @@ export class GeneralComponent {
   );
   private destroyRef = inject(DestroyRef);
 
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    private readonly spaceService: SpaceService,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    private readonly materialService: MaterialService,
-  ) {
+  constructor() {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined), // Skip initial data

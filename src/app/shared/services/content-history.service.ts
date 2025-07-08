@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { collection, collectionData, Firestore, limit, orderBy, query, QueryConstraint } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { ContentHistory } from '@shared/models/content-history.model';
@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class ContentHistoryService {
-  constructor(private readonly firestore: Firestore) {}
+  private readonly firestore = inject(Firestore);
 
   findAll(spaceId: string, id: string): Observable<ContentHistory[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(30)];

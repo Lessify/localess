@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,6 +14,8 @@ import { debounceTime } from 'rxjs';
   imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule],
 })
 export class TranslationPluralEditComponent implements OnInit, OnChanges {
+  private readonly fb = inject(FormBuilder);
+
   @Input() value = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
   form: FormGroup = this.fb.group({
@@ -24,8 +26,6 @@ export class TranslationPluralEditComponent implements OnInit, OnChanges {
     4: this.fb.control(null, TranslationValidator.PLURAL_VALUE),
     5: this.fb.control(null, TranslationValidator.PLURAL_VALUE),
   });
-
-  constructor(private readonly fb: FormBuilder) {}
 
   ngOnInit(): void {
     this.form.valueChanges.pipe(debounceTime(200)).subscribe(val => {

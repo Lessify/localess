@@ -45,6 +45,11 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
   ],
 })
 export class UsersComponent implements OnInit {
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+  private readonly userService = inject(UserService);
+
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -54,13 +59,6 @@ export class UsersComponent implements OnInit {
   displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'createdAt', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
-
-  constructor(
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    private readonly userService: UserService,
-  ) {}
 
   ngOnInit(): void {
     this.loadData();

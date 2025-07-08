@@ -50,6 +50,9 @@ import { SchemaValidator } from '@shared/validators/schema.validator';
   ],
 })
 export class EditFieldComponent implements OnInit {
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly fb = inject(FormBuilder);
+
   // Input
   @Input() form: FormGroup = this.fb.group({});
   schemas = input.required<Schema[]>();
@@ -74,11 +77,6 @@ export class EditFieldComponent implements OnInit {
   );
 
   settingsStore = inject(LocalSettingsStore);
-
-  constructor(
-    readonly fe: FormErrorHandlerService,
-    private readonly fb: FormBuilder,
-  ) {}
 
   ngOnInit(): void {
     this.selectedFieldKind = this.schemaFieldKindDescriptions[this.form.value.kind as SchemaFieldKind];

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   collection,
   collectionCount,
@@ -36,7 +36,7 @@ import { map, switchMap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class SchemaService {
-  constructor(private readonly firestore: Firestore) {}
+  private readonly firestore = inject(Firestore);
 
   findAll(spaceId: string, type?: SchemaType): Observable<Schema[]> {
     const queryConstrains: QueryConstraint[] = [];

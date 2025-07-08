@@ -39,6 +39,11 @@ import { filter, switchMap } from 'rxjs/operators';
   ],
 })
 export class TasksComponent implements OnInit {
+  private readonly taskService = inject(TaskService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -51,13 +56,6 @@ export class TasksComponent implements OnInit {
   displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
-
-  constructor(
-    private readonly taskService: TaskService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-  ) {}
 
   ngOnInit(): void {
     this.loadData(this.spaceId());

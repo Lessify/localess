@@ -1,4 +1,4 @@
-import { Directive, effect, ElementRef, input } from '@angular/core';
+import { Directive, effect, ElementRef, input, inject } from '@angular/core';
 
 type AnimationClass = 'animate-spin' | 'animate-ping' | 'animate-pulse' | 'animate-bounce' | 'animate-none';
 
@@ -7,10 +7,12 @@ type AnimationClass = 'animate-spin' | 'animate-ping' | 'animate-pulse' | 'anima
   standalone: true,
 })
 export class AnimateDirective {
+  private hostElement = inject<ElementRef<HTMLImageElement>>(ElementRef);
+
   animate = input<boolean>(false, { alias: 'llAnimate' });
   class = input<AnimationClass>('animate-spin', { alias: 'llAnimateClass' });
 
-  constructor(private hostElement: ElementRef<HTMLImageElement>) {
+  constructor() {
     effect(() => {
       if (this.animate()) {
         this.hostElement.nativeElement.classList.add(this.class());

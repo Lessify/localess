@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Auth, updateEmail, updatePassword, updateProfile } from '@angular/fire/auth';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable } from 'rxjs';
@@ -7,7 +7,7 @@ import { MeUpdate } from '../models/me.model';
 
 @Injectable({ providedIn: 'root' })
 export class MeService {
-  constructor(private readonly auth: Auth) {}
+  private readonly auth = inject(Auth);
 
   updateProfile(model: MeUpdate): Observable<void> {
     return from(updateProfile(this.auth.currentUser!, model)).pipe(

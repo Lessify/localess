@@ -35,6 +35,8 @@ import { TiptapEditorDirective } from 'ngx-tiptap';
   imports: [MatFormFieldModule, MatInputModule, MatTooltipModule, CommonModule, TiptapEditorDirective, ReactiveFormsModule],
 })
 export class RichTextEditorComponent implements OnDestroy {
+  readonly fe = inject(FormErrorHandlerService);
+
   // Input
   form = input.required<AbstractControl>();
   component = input.required<SchemaFieldRichText>();
@@ -88,8 +90,6 @@ export class RichTextEditorComponent implements OnDestroy {
       },
     },
   });
-
-  constructor(readonly fe: FormErrorHandlerService) {}
 
   setLink(): void {
     const previousUrl = this.editor.getAttributes('link')['href'];

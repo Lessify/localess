@@ -1,6 +1,6 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -39,6 +39,11 @@ import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog
   ],
 })
 export class UnsplashAssetsSelectDialogComponent implements OnInit {
+  private readonly unsplashPluginService = inject(UnsplashPluginService);
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly cd = inject(ChangeDetectorRef);
+  data = inject<UnsplashAssetsSelectDialogModel>(MAT_DIALOG_DATA);
+
   assets = signal<UnsplashPhoto[]>([]);
   limit = signal<number | undefined>(undefined);
   remaining = signal<number | undefined>(undefined);
@@ -56,14 +61,6 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
   isLoading = signal(true);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
-
-  constructor(
-    private readonly unsplashPluginService: UnsplashPluginService,
-    readonly fe: FormErrorHandlerService,
-    private readonly cd: ChangeDetectorRef,
-    @Inject(MAT_DIALOG_DATA)
-    public data: UnsplashAssetsSelectDialogModel,
-  ) {}
 
   ngOnInit(): void {
     this.unsplashPluginService

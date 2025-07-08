@@ -31,6 +31,12 @@ import { SettingsValidator } from '@shared/validators/settings.validator';
   ],
 })
 export class UiComponent {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly settingService = inject(SettingsService);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+
   private destroyRef = inject(DestroyRef);
 
   isLoading = signal(true);
@@ -41,13 +47,7 @@ export class UiComponent {
     color: this.fb.control<AppUiColor | undefined>(undefined, SettingsValidator.UI_COLOR),
   });
 
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    private readonly settingService: SettingsService,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-  ) {
+  constructor() {
     this.settingService
       .find()
       .pipe(takeUntilDestroyed(this.destroyRef))

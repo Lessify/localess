@@ -1,16 +1,6 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  DestroyRef,
-  inject,
-  Inject,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -71,6 +61,12 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
   ],
 })
 export class AssetsSelectDialogComponent implements OnInit {
+  private readonly assetService = inject(AssetService);
+  private readonly notificationService = inject(NotificationService);
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly cd = inject(ChangeDetectorRef);
+  data = inject<AssetsSelectDialogModel>(MAT_DIALOG_DATA);
+
   sort = viewChild(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -105,14 +101,7 @@ export class AssetsSelectDialogComponent implements OnInit {
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
 
-  constructor(
-    private readonly assetService: AssetService,
-    private readonly notificationService: NotificationService,
-    readonly fe: FormErrorHandlerService,
-    private readonly cd: ChangeDetectorRef,
-    @Inject(MAT_DIALOG_DATA)
-    public data: AssetsSelectDialogModel,
-  ) {
+  constructor() {
     this.path$
       .asObservable()
       .pipe(

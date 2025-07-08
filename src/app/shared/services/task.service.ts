@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   addDoc,
   collection,
@@ -34,10 +34,8 @@ import { map, switchMap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class TaskService {
-  constructor(
-    private readonly firestore: Firestore,
-    private readonly storage: Storage,
-  ) {}
+  private readonly firestore = inject(Firestore);
+  private readonly storage = inject(Storage);
 
   findAll(spaceId: string): Observable<Task[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc')];

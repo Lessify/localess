@@ -8,7 +8,6 @@ import {
   effect,
   inject,
   OnInit,
-  Optional,
   signal,
   Signal,
 } from '@angular/core';
@@ -65,6 +64,12 @@ interface SideMenuItem {
   ],
 })
 export class FeaturesComponent implements OnInit {
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
+  private readonly reposService = inject(ReposService);
+  private readonly dialog = inject(MatDialog);
+  private auth = inject(Auth);
+
   // Settings
   isSettingsMenuExpended = signal(false);
   isDebug = environment.debug;
@@ -117,13 +122,9 @@ export class FeaturesComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
   appSettingsStore = inject(AppSettingsStore);
 
-  constructor(
-    private readonly cd: ChangeDetectorRef,
-    private readonly router: Router,
-    private readonly reposService: ReposService,
-    private readonly dialog: MatDialog,
-    @Optional() private auth: Auth,
-  ) {
+  constructor() {
+    const reposService = this.reposService;
+
     reposService
       .reposGetLatestRelease({ owner: 'Lessify', repo: 'localess' })
       .pipe(takeUntilDestroyed(this.destroyRef))

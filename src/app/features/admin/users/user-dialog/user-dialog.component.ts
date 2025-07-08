@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -32,6 +32,10 @@ import { UserDialogModel } from './user-dialog.model';
   ],
 })
 export class UserDialogComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  data = inject<UserDialogModel>(MAT_DIALOG_DATA);
+
   form: FormGroup = this.fb.group({
     role: this.fb.control<string | undefined>(undefined),
     permissions: this.fb.control<string[] | undefined>(undefined),
@@ -39,12 +43,6 @@ export class UserDialogComponent implements OnInit {
   });
 
   settingsStore = inject(LocalSettingsStore);
-
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: UserDialogModel,
-  ) {}
 
   ngOnInit(): void {
     if (this.data != null) {

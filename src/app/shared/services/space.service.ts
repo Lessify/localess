@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   addDoc,
   collection,
@@ -25,10 +25,8 @@ import { Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUpdate } from
 
 @Injectable({ providedIn: 'root' })
 export class SpaceService {
-  constructor(
-    private firestore: Firestore,
-    private readonly functions: Functions,
-  ) {}
+  private firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
 
   findAll(): Observable<Space[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')];

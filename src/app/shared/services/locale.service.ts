@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { arrayRemove, arrayUnion, doc, Firestore, serverTimestamp, UpdateData, updateDoc } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable, of } from 'rxjs';
@@ -7,7 +7,7 @@ import { Space } from '../models/space.model';
 
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
-  constructor(private firestore: Firestore) {}
+  private firestore = inject(Firestore);
 
   markAsFallback(spaceId: string, entity: Locale): Observable<void> {
     const update: UpdateData<Space> = {

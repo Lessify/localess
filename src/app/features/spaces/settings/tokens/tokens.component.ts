@@ -39,6 +39,11 @@ import { TokenDialogModel } from './token-dialog/token-dialog.model';
   ],
 })
 export class TokensComponent {
+  private readonly tokenService = inject(TokenService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -50,12 +55,7 @@ export class TokensComponent {
 
   private destroyRef = inject(DestroyRef);
 
-  constructor(
-    private readonly tokenService: TokenService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-  ) {
+  constructor() {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined), // Skip initial data

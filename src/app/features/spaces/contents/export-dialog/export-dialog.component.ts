@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,6 +29,10 @@ import { ExportDialogModel } from './export-dialog.model';
   ],
 })
 export class ExportDialogComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly contentService = inject(ContentService);
+  data = inject<ExportDialogModel>(MAT_DIALOG_DATA);
+
   form: FormGroup = this.fb.group({
     path: this.fb.control(undefined),
   });
@@ -36,12 +40,6 @@ export class ExportDialogComponent implements OnInit {
   //Search
   searchCtrl: FormControl = new FormControl();
   filteredContent: Observable<Content[]> = of([]);
-
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly contentService: ContentService,
-    @Inject(MAT_DIALOG_DATA) public data: ExportDialogModel,
-  ) {}
 
   ngOnInit(): void {
     this.filteredContent = this.searchCtrl.valueChanges.pipe(
