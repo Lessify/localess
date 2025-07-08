@@ -8,6 +8,6 @@ mat-form-field {
 }
 
 button.selected {
-  color: var(--mat-standard-button-toggle-selected-state-text-color, var(--mat-sys-on-secondary-container));
-  background-color: var(--mat-standard-button-toggle-selected-state-background-color, var(--mat-sys-secondary-container));
+  color: var(--mat-button-toggle-selected-state-text-color, var(--mat-sys-on-secondary-container));
+  background-color: var(--mat-button-toggle-selected-state-background-color, var(--mat-sys-secondary-container));
 }
