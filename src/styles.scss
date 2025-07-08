@@ -1,10 +1,6 @@
 @use '@angular/material' as mat;
 @use './app-theme';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @import 'styles/styles-variables';
 
 markdown {

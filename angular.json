@@ -41,6 +41,7 @@
               "src/scripts"
             ],
             "styles": [
+              "src/tailwind.css",
               "src/styles.scss"
             ],
             "scripts": [
@@ -121,7 +122,10 @@
             "karmaConfig": "karma.conf.js",
             "inlineStyleLanguage": "scss",
             "assets": ["src/favicon.ico", "src/assets"],
-            "styles": ["src/styles.scss"],
+            "styles": [
+              "src/tailwind.css",
+              "src/styles.scss"
+            ],
             "scripts": []
           }
         },
