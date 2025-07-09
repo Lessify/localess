@@ -69,7 +69,7 @@
         <mat-cell *matCellDef="let element">
           @if (element.kind === 'FILE' && filePreview(element.type)) {
             <img
-              class="border object-contain rounded bg-stripes-gray"
+              class="border object-contain rounded image-bg"
               width="200"
               height="200"
               alt="thumbnail"
@@ -139,7 +139,7 @@
             </div>
           } @else if (item.kind === 'FILE' && filePreview(item.type)) {
             <img
-              class="object-contain bg-stripes-gray"
+              class="object-contain image-bg"
               width="600"
               height="600"
               loading="lazy"

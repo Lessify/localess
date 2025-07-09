@@ -35,7 +35,7 @@
   <div class="flex flex-wrap gap-2 justify-start">
     @for (item of assets(); track item.id) {
       <mat-card class="digital-asset-card cursor-pointer" appearance="outlined" (click)="selection.toggle(item)">
-        <img class="object-contain bg-stripes-gray" width="600" height="600" loading="lazy" alt="thumbnail" [ngSrc]="item.urls.regular" />
+        <img class="object-contain image-bg" width="600" height="600" loading="lazy" alt="thumbnail" [ngSrc]="item.urls.regular" />
         <mat-card-header>
           <mat-card-subtitle class="break-all">{{ item.description || item.alt_description }}</mat-card-subtitle>
         </mat-card-header>
