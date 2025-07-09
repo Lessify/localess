@@ -16,6 +16,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth, signOut } from '@angular/fire/auth';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
@@ -61,6 +62,7 @@ interface SideMenuItem {
     CommonModule,
     MatListModule,
     MatSlideToggleModule,
+    MatDividerModule,
   ],
 })
 export class FeaturesComponent implements OnInit {

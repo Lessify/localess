@@ -6,7 +6,7 @@
     <img src="assets/logo-adaptive.svg" class="h-8 ml-2" alt="Logo" />
     @if (appSettingsStore.ui(); as ui) {
       @if (ui.text) {
-        <span class="vertical-divider">&nbsp; </span>
+        <mat-divider [vertical]="true" class="middle" />
         <span class="ml-2 post-logo-text-{{ ui.color }}">
           {{ ui.text }}
         </span>
@@ -39,7 +39,7 @@
     }
 
     <span class="spacer"></span>
-    <span class="vertical-divider">&nbsp; </span>
+    <mat-divider [vertical]="true" class="middle" />
     <button mat-icon-button routerLink="/features/welcome" matTooltip="Welcome">
       <mat-icon>waving_hand</mat-icon>
     </button>
@@ -60,7 +60,7 @@
         </button>
       }
     </mat-menu>
-    <span class="vertical-divider">&nbsp; </span>
+    <mat-divider [vertical]="true" class="middle" />
     <button mat-icon-button (click)="switchTheme()" aria-label="Switch theme" matTooltip="Switch theme">
       <mat-icon class="dark:!hidden">dark_mode</mat-icon>
       <mat-icon class="!hidden dark:!block">light_mode</mat-icon>
