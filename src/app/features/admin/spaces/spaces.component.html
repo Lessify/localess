@@ -13,7 +13,7 @@
 @if (isLoading) {
   <mat-progress-bar mode="query" />
 }
-<div class="container-full-screen">
+<div class="px-2 mx-auto mt-3">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> ID</mat-header-cell>

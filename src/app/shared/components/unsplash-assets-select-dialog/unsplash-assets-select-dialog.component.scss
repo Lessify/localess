@@ -1,10 +1,6 @@
-.header-actions {
-  @apply mt-1 float-right flex gap-4 items-center;
-}
-
 mat-dialog-content {
-  @apply pt-0 #{!important};
-  @apply pb-1 #{!important};
+  padding-top: 0 !important;
+  padding-bottom: 0.25rem !important;/* 4px */;
 }
 
 mat-form-field {

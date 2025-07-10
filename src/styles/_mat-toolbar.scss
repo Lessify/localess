@@ -1,6 +1,8 @@
 mat-toolbar-row {
   .actions {
-    @apply flex gap-2 items-center;
+    display: flex;
+    gap: 0.5rem /* 8px */;
+    align-items: center;
   }
 }
 
@@ -26,9 +28,6 @@ mat-toolbar {
   mat-toolbar-row.second {
     border-bottom: 1px solid var(--mat-sys-outline-variant);
     border-top: 1px solid var(--mat-sys-outline-variant);
-    font: var(--mat-sys-title-medium-font);
-    font-size: var(--mat-sys-title-medium-size);
-    font-weight: var(--mat-sys-title-medium-weight);
-    line-height: var(--mat-sys-title-medium-line-height);
+    font: var(--mat-sys-title-medium);
   }
 }

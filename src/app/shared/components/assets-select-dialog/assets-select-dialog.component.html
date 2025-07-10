@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>
   <span>Assets</span>
-  <div class="header-actions">
+  <div class="mt-1 float-right flex gap-4 items-center">
     @if (fileUploadQueue().length > 0) {
       <mat-icon [llAnimate]="true" [matBadge]="fileUploadQueue().length">progress_activity</mat-icon>
     }
