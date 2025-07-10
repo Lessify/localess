@@ -94,7 +94,7 @@ export class RichTextEditorComponent implements OnDestroy {
     ],
     editorProps: {
       attributes: {
-        class: 'p-2 border-color rounded-b-md outline-none',
+        class: 'p-2 border-color rounded-b-md outline-hidden',
         spellcheck: 'false',
       },
     },
