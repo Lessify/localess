@@ -3,7 +3,7 @@
     <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
       <mat-icon>{{ settingsStore.mainMenuExpended() ? 'menu_open' : 'menu' }}</mat-icon>
     </button>
-    <img src="assets/logo-adaptive.svg" class="h-8 ml-2" alt="Logo" />
+    <img src="assets/logo-adaptive.svg" class="h-8! ml-2" alt="Logo" />
     @if (appSettingsStore.ui(); as ui) {
       @if (ui.text) {
         <mat-divider [vertical]="true" class="middle" />
