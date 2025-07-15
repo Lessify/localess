@@ -1,7 +1,7 @@
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom, provideExperimentalZonelessChangeDetection } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, provideZonelessChangeDetection } from '@angular/core';
 import { getAnalytics, provideAnalytics, ScreenTrackingService, UserTrackingService } from '@angular/fire/analytics';
 import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import {
@@ -30,7 +30,7 @@ import { routes } from './app-routing';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideExperimentalZonelessChangeDetection(),
+    provideZonelessChangeDetection(),
     provideRouter(routes, withComponentInputBinding(), withNavigationErrorHandler(console.error)),
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
     provideAnimations(),

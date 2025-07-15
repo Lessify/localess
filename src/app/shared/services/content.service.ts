@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import {
   addDoc,
@@ -41,12 +41,10 @@ import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class ContentService {
-  constructor(
-    private readonly firestore: Firestore,
-    private readonly functions: Functions,
-    private readonly auth: Auth,
-    private readonly contentHelperService: ContentHelperService,
-  ) {}
+  private readonly firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
+  private readonly auth = inject(Auth);
+  private readonly contentHelperService = inject(ContentHelperService);
 
   findAll(spaceId: string, parentSlug?: string): Observable<Content[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('kind', 'desc'), orderBy('name', 'asc')];

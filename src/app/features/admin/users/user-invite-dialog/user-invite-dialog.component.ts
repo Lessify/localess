@@ -33,6 +33,9 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
   ],
 })
 export class UserInviteDialogComponent {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+
   form: FormGroup = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.minLength(2), Validators.email]),
     password: this.fb.control('', [Validators.required, Validators.minLength(6)]),
@@ -43,9 +46,4 @@ export class UserInviteDialogComponent {
   });
 
   settingsStore = inject(LocalSettingsStore);
-
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-  ) {}
 }

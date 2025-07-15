@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,6 +30,11 @@ import { MoveDialogModel } from './move-dialog.model';
   ],
 })
 export class MoveDialogComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly assetService = inject(AssetService);
+  readonly fe = inject(FormErrorHandlerService);
+  data = inject<MoveDialogModel>(MAT_DIALOG_DATA);
+
   form: FormGroup = this.fb.group({
     path: this.fb.control(null, Validators.required),
   });
@@ -37,14 +42,6 @@ export class MoveDialogComponent implements OnInit {
   //Search
   searchCtrl: FormControl = new FormControl();
   filteredFolders: Observable<AssetFolder[]> = of([]);
-
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly assetService: AssetService,
-    readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA)
-    public data: MoveDialogModel,
-  ) {}
 
   ngOnInit(): void {
     this.filteredFolders = this.searchCtrl.valueChanges.pipe(

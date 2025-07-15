@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   addDoc,
   collection,
@@ -21,7 +21,7 @@ import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class TokenService {
-  constructor(private firestore: Firestore) {}
+  private firestore = inject(Firestore);
 
   findAll(spaceId: string): Observable<Token[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc')];

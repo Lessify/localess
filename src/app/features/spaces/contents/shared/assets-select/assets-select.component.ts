@@ -46,6 +46,12 @@ import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog
   ],
 })
 export class AssetsSelectComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly assetService = inject(AssetService);
+
   // Inputs
   form = input.required<FormArray>();
   component = input.required<SchemaFieldAssets>();
@@ -56,14 +62,6 @@ export class AssetsSelectComponent implements OnInit {
   assets: AssetFile[] = [];
   // Settings
   settingsStore = inject(LocalSettingsStore);
-
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly assetService: AssetService,
-  ) {}
 
   ngOnInit(): void {
     //console.group('AssetsSelectComponent:ngOnInit')

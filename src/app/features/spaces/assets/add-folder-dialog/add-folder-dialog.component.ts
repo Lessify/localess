@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -17,13 +17,11 @@ import { AddFolderDialogModel } from './add-folder-dialog.model';
   imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
 })
 export class AddFolderDialogComponent {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  data = inject<AddFolderDialogModel>(MAT_DIALOG_DATA);
+
   form: FormGroup = this.fb.group({
     name: this.fb.control('', [...AssetValidator.NAME, CommonValidator.reservedName(this.data.reservedNames)]),
   });
-
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: AddFolderDialogModel,
-  ) {}
 }

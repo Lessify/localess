@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, model, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, model, untracked, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,13 +13,15 @@ import { debounceTime } from 'rxjs';
   imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule],
 })
 export class TranslationStringEditComponent {
+  private readonly fb = inject(FormBuilder);
+
   value = model('');
 
   readonly form: FormGroup = this.fb.group({
     value: this.fb.control(null),
   });
 
-  constructor(private readonly fb: FormBuilder) {
+  constructor() {
     effect(() => {
       const value = this.value() || '';
       untracked(() => this.form.controls['value'].setValue(value));

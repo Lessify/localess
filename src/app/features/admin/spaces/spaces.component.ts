@@ -39,6 +39,11 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
   ],
 })
 export class SpacesComponent implements OnInit {
+  private readonly spaceService = inject(SpaceService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -47,13 +52,6 @@ export class SpacesComponent implements OnInit {
   displayedColumns: string[] = ['id', 'name', /*'createdAt',*/ 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
-
-  constructor(
-    private readonly spaceService: SpaceService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-  ) {}
 
   ngOnInit(): void {
     this.loadData();

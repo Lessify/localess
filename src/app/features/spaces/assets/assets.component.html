@@ -86,7 +86,7 @@
 @if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
-<div class="container-full-screen">
+<div class="px-2 mx-auto mt-3">
   <ll-breadcrumb>
     @for (pathItem of spaceStore.assetPath(); track pathItem.fullSlug; let isFirst = $first) {
       <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">
@@ -135,7 +135,7 @@
                 <mat-progress-spinner mode="indeterminate" />
               } @else {
                 <img
-                  class="border object-contain rounded bg-stripes-gray"
+                  class="border object-contain rounded-sm image-bg"
                   width="200"
                   height="200"
                   loading="lazy"
@@ -275,7 +275,7 @@
               </div>
             } @else if (item.kind === 'FILE' && filePreview(item.type)) {
               <img
-                class="object-contain bg-stripes-gray cursor-zoom-in"
+                class="object-contain image-bg cursor-zoom-in"
                 width="600"
                 height="600"
                 loading="lazy"

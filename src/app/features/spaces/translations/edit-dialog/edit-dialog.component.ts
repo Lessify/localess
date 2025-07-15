@@ -1,5 +1,5 @@
 import { TextFieldModule } from '@angular/cdk/text-field';
-import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
@@ -28,16 +28,14 @@ import { TranslationValidator } from '@shared/validators/translation.validator';
   ],
 })
 export class EditDialogComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  data = inject<Translation>(MAT_DIALOG_DATA);
+
   form: FormGroup = this.fb.group({
     description: this.fb.control('', TranslationValidator.DESCRIPTION),
     labels: this.fb.control([], TranslationValidator.DESCRIPTION),
   });
-
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: Translation,
-  ) {}
 
   ngOnInit(): void {
     if (this.data != null) {

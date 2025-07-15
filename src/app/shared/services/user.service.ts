@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   collection,
   collectionData,
@@ -19,10 +19,8 @@ import { User, UserInvite, UserUpdate } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  constructor(
-    private readonly firestore: Firestore,
-    private readonly functions: Functions,
-  ) {}
+  private readonly firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
 
   findAll(): Observable<User[]> {
     return collectionData(collection(this.firestore, 'users'), { idField: 'id' }).pipe(

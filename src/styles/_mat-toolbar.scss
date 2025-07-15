@@ -1,7 +1,33 @@
-@use '@angular/material' as mat;
-
 mat-toolbar-row {
   .actions {
-    @apply flex gap-2 items-center;
+    display: flex;
+    gap: 0.5rem /* 8px */;
+    align-items: center;
+  }
+}
+
+mat-toolbar {
+  &.main {
+    color: var(--mat-sys-primary);
+    background-color:var(--mat-sys-primary-container);
+
+    .post-logo-text-primary {
+      color: var(--mat-sys-primary);
+    }
+    .post-logo-text-secondary {
+      color: var(--mat-sys-secondary);
+    }
+    .post-logo-text-tertiary {
+      color: var(--mat-sys-tertiary);
+    }
+    .post-logo-text-error {
+      color: var(--mat-sys-error);
+    }
+  }
+
+  mat-toolbar-row.second {
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    font: var(--mat-sys-title-medium);
   }
 }

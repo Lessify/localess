@@ -55,7 +55,7 @@
   <mat-progress-bar mode="query" />
 }
 
-<div class="container-full-screen">
+<div class="px-2 mx-auto mt-3">
   <ll-breadcrumb>
     @for (pathItem of spaceStore.contentPath(); track pathItem.fullSlug; let isFirst = $first) {
       <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">

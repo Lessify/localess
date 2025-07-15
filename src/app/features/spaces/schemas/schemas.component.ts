@@ -67,6 +67,13 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
   ],
 })
 export class SchemasComponent implements OnInit {
+  private readonly router = inject(Router);
+  private readonly schemaService = inject(SchemaService);
+  private readonly taskService = inject(TaskService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -106,15 +113,6 @@ export class SchemasComponent implements OnInit {
           .filter(label => label.toLowerCase().includes(currentLabel))
       : this.allLabels().filter(label => !this.filterLabels().includes(label));
   });
-
-  constructor(
-    private readonly router: Router,
-    private readonly schemaService: SchemaService,
-    private readonly taskService: TaskService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-  ) {}
 
   ngOnInit(): void {
     this.loadData(this.spaceId());

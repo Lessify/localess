@@ -96,6 +96,13 @@ import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog
   ],
 })
 export class AssetsComponent implements OnInit {
+  private readonly assetService = inject(AssetService);
+  private readonly taskService = inject(TaskService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+  readonly unsplashPluginService = inject(UnsplashPluginService);
+
   sort = viewChild(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -128,14 +135,7 @@ export class AssetsComponent implements OnInit {
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
 
-  constructor(
-    private readonly assetService: AssetService,
-    private readonly taskService: TaskService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-    readonly unsplashPluginService: UnsplashPluginService,
-  ) {
+  constructor() {
     toObservable(this.spaceStore.assetPath)
       .pipe(
         filter(it => it !== undefined), // Skip initial data

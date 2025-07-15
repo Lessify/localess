@@ -39,6 +39,11 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
   ],
 })
 export class ReferenceSelectComponent implements OnInit {
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly contentService = inject(ContentService);
+
   // Input
   form = input.required<FormGroup>();
   component = input.required<SchemaFieldReference>();
@@ -48,13 +53,6 @@ export class ReferenceSelectComponent implements OnInit {
 
   // Settings
   settingsStore = inject(LocalSettingsStore);
-
-  constructor(
-    readonly fe: FormErrorHandlerService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly contentService: ContentService,
-  ) {}
 
   ngOnInit(): void {
     if (this.form().value.kind === null) {

@@ -33,6 +33,9 @@ import { SpaceStore } from '@shared/stores/space.store';
   ],
 })
 export class DashboardComponent {
+  private readonly notificationService = inject(NotificationService);
+  private readonly spaceService = inject(SpaceService);
+
   // Input
   spaceId = input.required<string>();
 
@@ -42,10 +45,7 @@ export class DashboardComponent {
   spaceStore = inject(SpaceStore);
   space = this.spaceStore.selectedSpace;
 
-  constructor(
-    private readonly notificationService: NotificationService,
-    private readonly spaceService: SpaceService,
-  ) {
+  constructor() {
     effect(() => {
       const selectedSpace = this.spaceStore.selectedSpace();
       if (selectedSpace) {

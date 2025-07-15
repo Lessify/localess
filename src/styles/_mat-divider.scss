@@ -1,0 +1,8 @@
+.mat-divider {
+  &.mat-divider-vertical {
+    height: inherit;
+  }
+  &.middle {
+    height: 50%;
+  }
+}

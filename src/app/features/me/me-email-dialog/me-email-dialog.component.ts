@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -13,9 +13,9 @@ import { MatInputModule } from '@angular/material/input';
   imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
 })
 export class MeEmailDialogComponent {
+  private readonly fb = inject(FormBuilder);
+
   form: FormGroup = this.fb.group({
     newEmail: this.fb.control('', [Validators.required, Validators.minLength(3)]),
   });
-
-  constructor(private readonly fb: FormBuilder) {}
 }

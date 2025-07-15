@@ -1,6 +1,6 @@
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { TextFieldModule } from '@angular/cdk/text-field';
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -34,6 +34,10 @@ import { AddDialogModel } from './add-dialog.model';
   ],
 })
 export class AddDialogComponent {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  data = inject<AddDialogModel>(MAT_DIALOG_DATA);
+
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
   translationTypes: string[] = ['STRING', 'PLURAL', 'ARRAY'];
   form: FormGroup = this.fb.group({
@@ -44,12 +48,6 @@ export class AddDialogComponent {
     labels: this.fb.control([], TranslationValidator.LABEL),
     autoTranslate: this.fb.control(undefined),
   });
-
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: AddDialogModel,
-  ) {}
 
   addLabel(event: MatChipInputEvent): void {
     const input = event.chipInput?.inputElement;

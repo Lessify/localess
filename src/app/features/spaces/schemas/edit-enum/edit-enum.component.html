@@ -19,13 +19,13 @@
 @if (isLoading()) {
   <mat-progress-bar mode="query" />
 } @else {
-  <div class="full-screen">
+  <div class="mx-auto">
     <form [formGroup]="form">
       <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
         <mat-tab label="Values">
           <mat-drawer-container (backdropClick)="selectedFieldIdx = undefined">
             <mat-drawer-content>
-              <div class="flex flex-col mx-auto max-w-screen-lg gap-6 p-8" style="height: calc(100vh - 177px)">
+              <div class="flex flex-col mx-auto max-w-(--breakpoint-lg) gap-6 p-8" style="height: calc(100vh - 177px)">
                 <mat-action-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
                   <mat-form-field>
                     <mat-label>Name</mat-label>
@@ -72,7 +72,7 @@
           </mat-drawer-container>
         </mat-tab>
         <mat-tab label="Settings">
-          <div class="flex flex-col mx-auto max-w-screen-md gap-6 p-8">
+          <div class="flex flex-col mx-auto max-w-(--breakpoint-md) gap-6 p-8">
             <mat-form-field>
               <mat-label>Display Name</mat-label>
               <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />

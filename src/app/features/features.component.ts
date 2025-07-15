@@ -8,7 +8,6 @@ import {
   effect,
   inject,
   OnInit,
-  Optional,
   signal,
   Signal,
 } from '@angular/core';
@@ -17,6 +16,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth, signOut } from '@angular/fire/auth';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
@@ -62,9 +62,16 @@ interface SideMenuItem {
     CommonModule,
     MatListModule,
     MatSlideToggleModule,
+    MatDividerModule,
   ],
 })
 export class FeaturesComponent implements OnInit {
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
+  private readonly reposService = inject(ReposService);
+  private readonly dialog = inject(MatDialog);
+  private auth = inject(Auth);
+
   // Settings
   isSettingsMenuExpended = signal(false);
   isDebug = environment.debug;
@@ -117,13 +124,9 @@ export class FeaturesComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
   appSettingsStore = inject(AppSettingsStore);
 
-  constructor(
-    private readonly cd: ChangeDetectorRef,
-    private readonly router: Router,
-    private readonly reposService: ReposService,
-    private readonly dialog: MatDialog,
-    @Optional() private auth: Auth,
-  ) {
+  constructor() {
+    const reposService = this.reposService;
+
     reposService
       .reposGetLatestRelease({ owner: 'Lessify', repo: 'localess' })
       .pipe(takeUntilDestroyed(this.destroyRef))

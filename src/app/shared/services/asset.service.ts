@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   addDoc,
   collection,
@@ -40,11 +40,9 @@ import { map, switchMap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class AssetService {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly firestore: Firestore,
-    private readonly storage: Storage,
-  ) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly firestore = inject(Firestore);
+  private readonly storage = inject(Storage);
 
   findAll(spaceId: string, parentPath?: string, fileType?: AssetFileType): Observable<Asset[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('kind', 'desc'), orderBy('name', 'asc')];

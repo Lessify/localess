@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, OnDestroy } from '@angular/core';
 import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -32,9 +33,19 @@ import { TiptapEditorDirective } from 'ngx-tiptap';
   templateUrl: './rich-text-editor.component.html',
   styleUrls: ['./rich-text-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatFormFieldModule, MatInputModule, MatTooltipModule, CommonModule, TiptapEditorDirective, ReactiveFormsModule],
+  imports: [
+    MatFormFieldModule,
+    MatInputModule,
+    MatTooltipModule,
+    CommonModule,
+    TiptapEditorDirective,
+    ReactiveFormsModule,
+    MatDividerModule,
+  ],
 })
 export class RichTextEditorComponent implements OnDestroy {
+  readonly fe = inject(FormErrorHandlerService);
+
   // Input
   form = input.required<AbstractControl>();
   component = input.required<SchemaFieldRichText>();
@@ -83,13 +94,11 @@ export class RichTextEditorComponent implements OnDestroy {
     ],
     editorProps: {
       attributes: {
-        class: 'p-2 border-color rounded-b-md outline-none',
+        class: 'p-2 border-color rounded-b-md outline-hidden',
         spellcheck: 'false',
       },
     },
   });
-
-  constructor(readonly fe: FormErrorHandlerService) {}
 
   setLink(): void {
     const previousUrl = this.editor.getAttributes('link')['href'];

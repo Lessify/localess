@@ -3,7 +3,18 @@ mat-form-field {
 }
 
 .badge {
-  @apply inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 mx-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10
+  background-color: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-small);
+  border-color: var(--mat-sys-outline);
+  border-style: solid;
+  border-width: 1px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.375rem /* 6px */;
+  padding: 0.25rem 0.5rem;;
+  margin-left: 0.25rem /* 4px */;
+  margin-right: 0.25rem /* 4px */;
 }
 
 .title {

@@ -17,7 +17,7 @@
     <mat-list cdkDropList (cdkDropListDropped)="referenceDropDrop($event)">
       @for (content of contents; track content.id; let index = $index) {
         <mat-list-item cdkDrag cdkDragPreviewContainer="parent">
-          <div matListItemIcon class="!self-center">
+          <div matListItemIcon class="self-center!">
             @if (content?.publishedAt === undefined) {
               <ll-status mode="offline" matTooltip="Not published" />
             } @else if (content?.publishedAt?.seconds > content?.updatedAt?.seconds) {

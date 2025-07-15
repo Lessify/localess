@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import {
   collection,
@@ -22,11 +22,9 @@ import { Translation, TranslationCreate, TranslationCreateFS, TranslationType, T
 
 @Injectable({ providedIn: 'root' })
 export class TranslationService {
-  constructor(
-    private readonly firestore: Firestore,
-    private readonly functions: Functions,
-    private readonly auth: Auth,
-  ) {}
+  private readonly firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
+  private readonly auth = inject(Auth);
 
   findAll(spaceId: string): Observable<Translation[]> {
     return collectionData(collection(this.firestore, `spaces/${spaceId}/translations`), { idField: 'id' }).pipe(

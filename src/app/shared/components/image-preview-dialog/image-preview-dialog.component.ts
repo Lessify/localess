@@ -1,5 +1,5 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
@@ -14,5 +14,5 @@ import { ImagePreviewDialogModel } from './image-preview-dialog.model';
   imports: [MatDialogModule, CommonModule, FormatFileSizePipe, TimeDurationPipe, MatButtonModule, NgOptimizedImage],
 })
 export class ImagePreviewDialogComponent {
-  constructor(@Inject(MAT_DIALOG_DATA) public data: ImagePreviewDialogModel) {}
+  data = inject<ImagePreviewDialogModel>(MAT_DIALOG_DATA);
 }

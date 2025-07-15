@@ -71,6 +71,15 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   ],
 })
 export class ContentsComponent {
+  private readonly router = inject(Router);
+  private readonly schemasService = inject(SchemaService);
+  private readonly contentService = inject(ContentService);
+  private readonly tokenService = inject(TokenService);
+  private readonly taskService = inject(TaskService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -100,16 +109,7 @@ export class ContentsComponent {
 
   private destroyRef = inject(DestroyRef);
 
-  constructor(
-    private readonly router: Router,
-    private readonly schemasService: SchemaService,
-    private readonly contentService: ContentService,
-    private readonly tokenService: TokenService,
-    private readonly taskService: TaskService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-  ) {
+  constructor() {
     toObservable(this.spaceStore.contentPath)
       .pipe(
         filter(it => it !== undefined), // Skip initial data

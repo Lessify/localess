@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { collection, collectionData, Firestore, limit, orderBy, query, QueryConstraint } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { TranslationHistory } from '@shared/models/translation-history.model';
@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class TranslationHistoryService {
-  constructor(private readonly firestore: Firestore) {}
+  private readonly firestore = inject(Firestore);
 
   findAll(spaceId: string): Observable<TranslationHistory[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(30)];

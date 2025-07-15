@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Analytics } from '@angular/fire/analytics';
 import { Performance } from '@angular/fire/performance';
 import { MatIconRegistry } from '@angular/material/icon';
@@ -11,11 +11,13 @@ import { RouterModule } from '@angular/router';
   imports: [RouterModule],
 })
 export class AppComponent {
-  constructor(
-    private readonly performance: Performance,
-    private readonly analytics: Analytics,
-    private readonly iconRegistry: MatIconRegistry,
-  ) {
+  private readonly performance = inject(Performance);
+  private readonly analytics = inject(Analytics);
+  private readonly iconRegistry = inject(MatIconRegistry);
+
+  constructor() {
+    const iconRegistry = this.iconRegistry;
+
     iconRegistry.setDefaultFontSetClass('material-symbols-outlined');
   }
 }

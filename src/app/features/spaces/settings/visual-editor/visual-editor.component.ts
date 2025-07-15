@@ -38,6 +38,12 @@ import { filter } from 'rxjs/operators';
   ],
 })
 export class VisualEditorComponent {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly spaceService = inject(SpaceService);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
@@ -50,13 +56,7 @@ export class VisualEditorComponent {
   settingsStore = inject(LocalSettingsStore);
   private destroyRef = inject(DestroyRef);
 
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    private readonly spaceService: SpaceService,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-  ) {
+  constructor() {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined),

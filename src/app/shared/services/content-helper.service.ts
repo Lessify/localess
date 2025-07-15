@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
 import {
   AssetContent,
@@ -16,7 +16,7 @@ import { v4 } from 'uuid';
 
 @Injectable({ providedIn: 'root' })
 export class ContentHelperService {
-  constructor(private readonly fb: FormBuilder) {}
+  private readonly fb = inject(FormBuilder);
 
   validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] {
     //console.group('validateContent');

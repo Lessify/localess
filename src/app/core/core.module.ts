@@ -1,5 +1,5 @@
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { ErrorHandler, NgModule, Optional, SkipSelf } from '@angular/core';
+import { ErrorHandler, NgModule, inject } from '@angular/core';
 import { TitleStrategy } from '@angular/router';
 
 import { AppErrorHandler } from './error-handler/app-error-handler.service';
@@ -17,11 +17,9 @@ import { PageTitleStrategy } from './title/page-title.strategy';
   ],
 })
 export class CoreModule {
-  constructor(
-    @Optional()
-    @SkipSelf()
-    parentModule: CoreModule,
-  ) {
+  constructor() {
+    const parentModule = inject(CoreModule, { optional: true, skipSelf: true });
+
     if (parentModule) {
       throw new Error('CoreModule is already loaded. Import only in AppModule');
     }

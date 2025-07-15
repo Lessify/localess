@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -13,17 +13,15 @@ import { MatIconModule } from '@angular/material/icon';
   imports: [MatDialogModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatError],
 })
 export class ImportDialogComponent {
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly fb = inject(FormBuilder);
+
   fileWrong = false;
   fileName = '';
 
   form: FormGroup = this.fb.group({
     file: this.fb.control<File | undefined>(undefined, [Validators.required]),
   });
-
-  constructor(
-    private readonly cd: ChangeDetectorRef,
-    private readonly fb: FormBuilder,
-  ) {}
 
   async onFileChange(event: Event): Promise<void> {
     if (event.target && event.target instanceof HTMLInputElement) {

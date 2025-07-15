@@ -95,6 +95,18 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
   ],
 })
 export class TranslationsComponent implements OnInit {
+  private readonly translationService = inject(TranslationService);
+  private readonly translateHistoryService = inject(TranslationHistoryService);
+  private readonly localeService = inject(LocaleService);
+  private readonly spaceService = inject(SpaceService);
+  private readonly taskService = inject(TaskService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly translateService = inject(TranslateService);
+  private readonly tokenService = inject(TokenService);
+  private readonly fb = inject(FormBuilder);
+
   // Input
   spaceId = input.required<string>();
 
@@ -159,20 +171,6 @@ export class TranslationsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
-
-  constructor(
-    private readonly translationService: TranslationService,
-    private readonly translateHistoryService: TranslationHistoryService,
-    private readonly localeService: LocaleService,
-    private readonly spaceService: SpaceService,
-    private readonly taskService: TaskService,
-    private readonly notificationService: NotificationService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly translateService: TranslateService,
-    private readonly tokenService: TokenService,
-    private readonly fb: FormBuilder,
-  ) {}
 
   // Tree features
   childrenAccessor = (node: TranslationNode) => node.children ?? [];

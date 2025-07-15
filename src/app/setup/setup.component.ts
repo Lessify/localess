@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject, Optional, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject, signal } from '@angular/core';
 import { Auth, signInWithCustomToken } from '@angular/fire/auth';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,6 +19,13 @@ import { SetupService } from './setup.service';
   imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
 })
 export class SetupComponent {
+  readonly auth = inject(Auth);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly setupService = inject(SetupService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly cd = inject(ChangeDetectorRef);
+
   redirectToFeatures = ['features', 'welcome'];
   backCounter = signal(-1);
 
@@ -31,14 +38,7 @@ export class SetupComponent {
 
   userStore = inject(UserStore);
 
-  constructor(
-    @Optional() public readonly auth: Auth,
-    private readonly router: Router,
-    private readonly fb: FormBuilder,
-    private readonly setupService: SetupService,
-    private readonly notificationService: NotificationService,
-    private readonly cd: ChangeDetectorRef,
-  ) {
+  constructor() {
     effect(async () => {
       if (this.userStore.isAuthenticated()) {
         await this.router.navigate(this.redirectToFeatures);

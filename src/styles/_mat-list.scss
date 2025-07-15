@@ -1,7 +1,3 @@
-@use '@angular/material' as mat;
-
-@import './styles-variables';
-
 mat-list, mat-nav-list, mat-action-list {
   mat-list-item {
     &.schema-hover {
@@ -10,8 +6,8 @@ mat-list, mat-nav-list, mat-action-list {
     }
 
     &.invalid {
-      border: dashed 1px var(--mat-sys-error);
-      @apply bg-stripes-red
+      //border: solid 1px var(--mat-sys-error);
+      background-color:var(--mat-sys-error-container);
     }
 
     .mat-mdc-list-item-meta {

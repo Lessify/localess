@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,13 +15,13 @@ import { debounceTime } from 'rxjs';
   imports: [ReactiveFormsModule, MatFormFieldModule, MatIconModule, MatInputModule, MatButtonModule],
 })
 export class TranslationArrayEditComponent implements OnInit, OnChanges {
+  private readonly fb = inject(FormBuilder);
+
   @Input() value = '';
   @Output() valueChange: EventEmitter<string> = new EventEmitter<string>();
   form: FormGroup = this.fb.group({
     values: this.fb.array([]),
   });
-
-  constructor(private readonly fb: FormBuilder) {}
 
   ngOnInit(): void {
     this.form.valueChanges.pipe(debounceTime(200)).subscribe(val => {

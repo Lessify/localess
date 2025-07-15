@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { OpenApiService } from '@shared/services/open-api.service';
 import { Observable } from 'rxjs';
@@ -14,12 +14,12 @@ import { Observable } from 'rxjs';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class OpenApiComponent implements OnInit {
+  private readonly openApiService = inject(OpenApiService);
+
   // Input
   spaceId = input.required<string>();
 
   openApiDocument$?: Observable<string>;
-
-  constructor(private readonly openApiService: OpenApiService) {}
 
   ngOnInit(): void {
     this.openApiDocument$ = this.openApiService.generate(this.spaceId());

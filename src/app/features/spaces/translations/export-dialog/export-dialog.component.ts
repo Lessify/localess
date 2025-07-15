@@ -1,5 +1,5 @@
 import { KeyValue } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerInputEvent, MatDatepickerModule } from '@angular/material/datepicker';
@@ -27,6 +27,9 @@ import { ExportDialogModel } from './export-dialog.model';
   ],
 })
 export class ExportDialogComponent {
+  private readonly fb = inject(FormBuilder);
+  data = inject<ExportDialogModel>(MAT_DIALOG_DATA);
+
   today = new Date();
 
   exportKinds: KeyValue<string, string>[] = [
@@ -39,11 +42,6 @@ export class ExportDialogComponent {
     locale: this.fb.control(undefined),
     fromDate: this.fb.control(undefined),
   });
-
-  constructor(
-    private readonly fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: ExportDialogModel,
-  ) {}
 
   dateChange(event: MatDatepickerInputEvent<unknown>): void {
     if (event.value instanceof Date) {

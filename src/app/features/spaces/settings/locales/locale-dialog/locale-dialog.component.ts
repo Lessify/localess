@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,6 +21,11 @@ import { map } from 'rxjs/operators';
   imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatAutocompleteModule, MatInputModule, CommonModule, MatButtonModule],
 })
 export class LocaleDialogComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly localeService = inject(LocaleService);
+  readonly fe = inject(FormErrorHandlerService);
+  data = inject<Locale[]>(MAT_DIALOG_DATA);
+
   locales: Locale[] = [];
   form: FormGroup = this.fb.group({
     locale: this.fb.control(null, LocaleValidator.LOCALE),
@@ -30,13 +35,6 @@ export class LocaleDialogComponent implements OnInit {
     map(value => (typeof value === 'string' ? value : value.name)),
     map(value => this._filter(value)),
   );
-
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly localeService: LocaleService,
-    readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: Locale[],
-  ) {}
 
   ngOnInit(): void {
     this.localeService.findAllLocales().subscribe(response => {

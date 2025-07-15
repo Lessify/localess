@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ErrorHandler, Injectable } from '@angular/core';
+import { ErrorHandler, Injectable, inject } from '@angular/core';
 import { NotificationService } from '@shared/services/notification.service';
 
 import { environment } from '../../../environments/environment';
@@ -9,9 +9,7 @@ import { environment } from '../../../environments/environment';
  */
 @Injectable()
 export class AppErrorHandler extends ErrorHandler {
-  constructor(private notificationsService: NotificationService) {
-    super();
-  }
+  private notificationsService = inject(NotificationService);
 
   override handleError(error: Error | HttpErrorResponse) {
     let displayMessage = 'An error occurred.';

@@ -86,6 +86,18 @@ import { CdkDragMove, DragDropModule } from '@angular/cdk/drag-drop';
   ],
 })
 export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
+  private readonly router = inject(Router);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly spaceService = inject(SpaceService);
+  private readonly schemaService = inject(SchemaService);
+  private readonly contentService = inject(ContentService);
+  private readonly contentHistoryService = inject(ContentHistoryService);
+  private readonly tokenService = inject(TokenService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly contentHelperService = inject(ContentHelperService);
+  private readonly sanitizer = inject(DomSanitizer);
+  readonly fe = inject(FormErrorHandlerService);
+
   // Input
   spaceId = input.required<string>();
   contentId = input.required<string>();
@@ -136,19 +148,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   inResizeMode = signal(false);
   editorFormWidth = signal(this.settingsStore.editorFormWidth());
 
-  constructor(
-    private readonly router: Router,
-    private readonly cd: ChangeDetectorRef,
-    private readonly spaceService: SpaceService,
-    private readonly schemaService: SchemaService,
-    private readonly contentService: ContentService,
-    private readonly contentHistoryService: ContentHistoryService,
-    private readonly tokenService: TokenService,
-    private readonly notificationService: NotificationService,
-    private readonly contentHelperService: ContentHelperService,
-    private readonly sanitizer: DomSanitizer,
-    readonly fe: FormErrorHandlerService,
-  ) {
+  constructor() {
     toObservable(this.spaceStore.selectedSpaceId)
       .pipe(
         distinctUntilChanged(),

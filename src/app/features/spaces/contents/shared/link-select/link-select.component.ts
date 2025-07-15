@@ -37,6 +37,8 @@ import { map } from 'rxjs/operators';
   ],
 })
 export class LinkSelectComponent implements OnInit {
+  readonly fe = inject(FormErrorHandlerService);
+
   // Input
   form = input.required<FormGroup>();
   component = input.required<SchemaFieldLink>();
@@ -58,7 +60,7 @@ export class LinkSelectComponent implements OnInit {
   // Subscriptions
   settingsStore = inject(LocalSettingsStore);
 
-  constructor(readonly fe: FormErrorHandlerService) {
+  constructor() {
     effect(() => {
       if (this.default() && !this.component().translatable) {
         this.searchCtrl.disable();

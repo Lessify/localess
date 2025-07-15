@@ -99,6 +99,13 @@ import { SchemaSelectChange } from './edit-document-schema.model';
   ],
 })
 export class EditDocumentSchemaComponent implements OnInit, OnChanges {
+  private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly contentHelperService = inject(ContentHelperService);
+  private readonly translateService = inject(TranslateService);
+  private readonly notificationService = inject(NotificationService);
+  readonly fe = inject(FormErrorHandlerService);
+
   // Form
   form: FormRecord = this.fb.record({});
 
@@ -162,14 +169,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   //Loadings
   isFormLoading = true;
 
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly cd: ChangeDetectorRef,
-    private readonly contentHelperService: ContentHelperService,
-    private readonly translateService: TranslateService,
-    private readonly notificationService: NotificationService,
-    readonly fe: FormErrorHandlerService,
-  ) {
+  constructor() {
     effect(() => {
       const element = this.schemaForm()?.nativeElement;
       const field = this.hoverSchemaField();

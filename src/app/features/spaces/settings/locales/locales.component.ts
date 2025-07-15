@@ -35,6 +35,11 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
   ],
 })
 export class LocalesComponent {
+  readonly localeService = inject(LocaleService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cd = inject(ChangeDetectorRef);
+  private readonly notificationService = inject(NotificationService);
+
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
 
@@ -46,12 +51,7 @@ export class LocalesComponent {
 
   private destroyRef = inject(DestroyRef);
 
-  constructor(
-    readonly localeService: LocaleService,
-    private readonly dialog: MatDialog,
-    private readonly cd: ChangeDetectorRef,
-    private readonly notificationService: NotificationService,
-  ) {
+  constructor() {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined), // Skip initial data

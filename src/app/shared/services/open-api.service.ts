@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class OpenApiService {
-  constructor(private readonly functions: Functions) {}
+  private readonly functions = inject(Functions);
 
   generate(spaceId: string): Observable<string> {
     const openApiGenerate = httpsCallableData<{ spaceId: string }, string>(this.functions, 'openapi-generate');

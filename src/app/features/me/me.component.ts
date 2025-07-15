@@ -24,13 +24,11 @@ import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.m
   imports: [MatToolbarModule, MatCardModule, CommonModule, MatDividerModule, MatButtonModule, NgOptimizedImage],
 })
 export class MeComponent {
-  userStore = inject(UserStore);
+  private readonly dialog = inject(MatDialog);
+  private readonly notificationService = inject(NotificationService);
+  private readonly meService = inject(MeService);
 
-  constructor(
-    private readonly dialog: MatDialog,
-    private readonly notificationService: NotificationService,
-    private readonly meService: MeService,
-  ) {}
+  userStore = inject(UserStore);
 
   openEditDialog(): void {
     this.dialog

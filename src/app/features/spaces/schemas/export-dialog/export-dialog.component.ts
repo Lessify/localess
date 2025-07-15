@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerInputEvent, MatDatepickerModule } from '@angular/material/datepicker';
@@ -15,13 +15,13 @@ import { MatInputModule } from '@angular/material/input';
   imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatIconModule, MatButtonModule],
 })
 export class ExportDialogComponent {
+  private readonly fb = inject(FormBuilder);
+
   today = new Date();
 
   form: FormGroup = this.fb.group({
     fromDate: this.fb.control(undefined),
   });
-
-  constructor(private readonly fb: FormBuilder) {}
 
   dateChange(event: MatDatepickerInputEvent<unknown>): void {
     if (event.value instanceof Date) {

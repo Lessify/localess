@@ -18,7 +18,7 @@
       @if (content && content.kind === 'DOCUMENT') {
         <mat-list>
           <mat-list-item>
-            <div matListItemIcon class="!self-center">
+            <div matListItemIcon class="self-center!">
               @if (content?.publishedAt === undefined) {
                 <ll-status mode="offline" matTooltip="Not published" />
               } @else if (content?.publishedAt?.seconds > content?.updatedAt?.seconds) {

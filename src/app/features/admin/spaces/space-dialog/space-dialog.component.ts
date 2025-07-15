@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -16,15 +16,13 @@ import { SpaceDialogModel } from './space-dialog.model';
   imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
 })
 export class SpaceDialogComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
+  data = inject<SpaceDialogModel>(MAT_DIALOG_DATA);
+
   form: FormGroup = this.fb.group({
     name: this.fb.control('', SpaceValidator.NAME),
   });
-
-  constructor(
-    private readonly fb: FormBuilder,
-    readonly fe: FormErrorHandlerService,
-    @Inject(MAT_DIALOG_DATA) public data: SpaceDialogModel,
-  ) {}
 
   ngOnInit(): void {
     if (this.data != null) {

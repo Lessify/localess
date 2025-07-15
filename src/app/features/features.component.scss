@@ -23,15 +23,16 @@ mat-sidenav-container {
   }
 }
 
-.vertical-divider {
-  border-right: 1px solid var(--mat-sys-outline);
-  @apply mx-1;
-}
-
 mat-form-field {
   width: 100%;
 }
 
 mat-icon.flash {
   color: var(--mat-sys-primary)
+}
+
+mat-list-item {
+  &.active {
+    background: var(--mat-sys-primary-container);
+  }
 }

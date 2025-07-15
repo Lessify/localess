@@ -15,14 +15,12 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
   imports: [MatFormFieldModule, ReactiveFormsModule, MatInputModule, MatExpansionModule, CommonModule],
 })
 export class EditValueComponent {
+  readonly fe = inject(FormErrorHandlerService);
+  private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
+
   // Input
   @Input() form: FormGroup = this.fb.group({});
 
   settingsStore = inject(LocalSettingsStore);
-
-  constructor(
-    readonly fe: FormErrorHandlerService,
-    private readonly fb: FormBuilder,
-    private readonly cd: ChangeDetectorRef,
-  ) {}
 }
