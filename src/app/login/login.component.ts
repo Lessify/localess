@@ -52,16 +52,13 @@ export class LoginComponent {
   settingsStore = inject(LocalSettingsStore);
 
   constructor() {
-    effect(
-      async () => {
-        console.log('Login User Authenticated Effect :', this.userStore.isAuthenticated());
-        if (this.userStore.isAuthenticated()) {
-          await this.router.navigate(this.redirectToFeatures);
-          window.location.reload();
-        }
-      },
-      { allowSignalWrites: true },
-    );
+    effect(async () => {
+      console.log('Login User Authenticated Effect :', this.userStore.isAuthenticated());
+      if (this.userStore.isAuthenticated()) {
+        await this.router.navigate(this.redirectToFeatures);
+        window.location.reload();
+      }
+    });
   }
 
   async loginWithEmailAndPassword(email: string, password: string): Promise<void> {

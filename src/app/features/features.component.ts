@@ -135,16 +135,13 @@ export class FeaturesComponent implements OnInit {
           this.latestRelease = value;
         },
       });
-    effect(
-      () => {
-        console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
-        console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
-        if (!this.userStore.isAuthenticated()) {
-          this.router.navigate(['login']);
-        }
-      },
-      { allowSignalWrites: true },
-    );
+    effect(async () => {
+      console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
+      console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
+      if (!this.userStore.isAuthenticated()) {
+        await this.router.navigate(['login']);
+      }
+    });
   }
 
   private static isIEorEdgeOrSafari(): boolean {
