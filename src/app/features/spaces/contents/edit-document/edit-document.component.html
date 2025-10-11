@@ -183,9 +183,9 @@
           <div
             cdkDragLockAxis="x"
             cdkDrag
+            (cdkDragStarted)="onDragStarted($event)"
             (cdkDragMoved)="onDragMoved($event)"
-            (cdkDragStarted)="onDragStarted()"
-            (cdkDragEnded)="onDragEnded()"
+            (cdkDragEnded)="onDragEnded($event)"
             class="relative inset-y-0 cursor-ew-resize items-center px-2 sm:flex">
             <div class="h-8 w-1.5 rounded-full bg-gray-400"></div>
           </div>
@@ -193,7 +193,7 @@
         <div
           [ngClass]="{ 'block-dragging': inResizeMode() }"
           [style.width.px]="settingsStore.editorEnabled() ? editorFormWidth() : undefined"
-          class="flex overflow-auto h-full flex-col min-w-[700px] max-w-[1000px]">
+          class="flex overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
           @if (rootSchema) {
             <div class="flex flex-col max-w-(--breakpoint-lg) p-2">
               <ll-breadcrumb>

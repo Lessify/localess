@@ -55,7 +55,7 @@ import { v4 } from 'uuid';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
 import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
-import { CdkDragMove, DragDropModule } from '@angular/cdk/drag-drop';
+import { CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -147,6 +147,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   // Resize
   inResizeMode = signal(false);
   editorFormWidth = signal(this.settingsStore.editorFormWidth());
+  private dragStartX: number = 0;
+  private dragStartW: number = 0;
 
   constructor() {
     toObservable(this.spaceStore.selectedSpaceId)
@@ -527,12 +529,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   onFormChange(event: string) {
-    console.log('onFormChange', event);
+    console.debug('onFormChange', event);
     this.sendEventToApp({ type: 'input', data: this.documentData });
   }
 
   onStructureChange(event: string) {
-    console.log('onStructureChange', event);
+    console.debug('onStructureChange', event);
     this.generateDocumentIdsTree();
     this.sendEventToApp({ type: 'change', data: this.documentData });
   }
@@ -545,21 +547,29 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
   }
 
-  protected onDragMoved(event: CdkDragMove) {
-    const newFormWidth = Math.trunc(this.editorFormWidth() - event.delta.x * 4);
-    if (newFormWidth <= 1000 && newFormWidth >= 700) {
-      this.editorFormWidth.set(newFormWidth);
+  onDragStarted(event: CdkDragStart) {
+    if (event.event instanceof MouseEvent) {
+      this.dragStartX = event.event.clientX;
+    }
+    this.dragStartW = this.editorFormWidth();
+    this.inResizeMode.set(true);
+  }
+
+  onDragMoved(event: CdkDragMove) {
+    console.debug('onDragMoved', event);
+    if (event.event instanceof MouseEvent) {
+      const newFormWidth = this.dragStartW - event.distance.x;
+      if (newFormWidth <= 1000 && newFormWidth >= 400) {
+        this.editorFormWidth.set(newFormWidth);
+      }
     }
     // Reset transform so the resizer stays positioned at the sidebar edge
     const element = event.source.element.nativeElement;
     element.style.transform = 'none';
   }
 
-  onDragStarted() {
-    this.inResizeMode.set(true);
-  }
-
-  onDragEnded() {
+  onDragEnded(event: CdkDragEnd) {
+    console.debug('onDragEnded', event);
     this.inResizeMode.set(false);
     this.settingsStore.setEditorFormWidth(this.editorFormWidth());
   }
