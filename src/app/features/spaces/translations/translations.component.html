@@ -19,12 +19,6 @@
           </mat-button-toggle>
         </mat-button-toggle-group>
         @if ('TRANSLATION_CREATE' | canUserPerform | async) {
-          <button mat-flat-button (click)="openAddDialog()">
-            <mat-icon>add</mat-icon>
-            Add Translation
-          </button>
-        }
-        @if ('TRANSLATION_CREATE' | canUserPerform | async) {
           <button z-button zType="destructive" (click)="openAddDialog()">
             <mat-icon>add</mat-icon>
             Add Translation

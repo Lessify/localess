@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'lucide-static/font/lucide.css';
 @plugin "tailwindcss-animate";
 @custom-variant dark (&:where(.dark, .dark *));
 @source './**/*.{html,scss,ts}';
