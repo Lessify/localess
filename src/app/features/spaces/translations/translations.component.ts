@@ -25,6 +25,7 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { StatusComponent } from '@shared/components/status';
+import { ZardButtonComponent } from '@shared/components/ui/button/button.component';
 import { AnimateDirective } from '@shared/directives/animate.directive';
 import { Locale } from '@shared/models/locale.model';
 import { Space } from '@shared/models/space.model';
@@ -92,6 +93,7 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     AnimateDirective,
     MatButtonToggleModule,
     MatTreeModule,
+    ZardButtonComponent,
   ],
 })
 export class TranslationsComponent implements OnInit {

@@ -1,0 +1,13 @@
+{
+  "style": "css",
+  "packageManager": "npm",
+  "tailwind": {
+    "css": "src/styles.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "src/app/shared/components/ui",
+    "utils": "src/app/shared/utils"
+  }
+}

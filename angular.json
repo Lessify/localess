@@ -41,7 +41,7 @@
               "src/scripts"
             ],
             "styles": [
-              "src/tailwind.css",
+              "src/styles.css",
               "src/styles.scss"
             ],
             "scripts": [
@@ -123,7 +123,7 @@
             "inlineStyleLanguage": "scss",
             "assets": ["src/favicon.ico", "src/assets"],
             "styles": [
-              "src/tailwind.css",
+              "src/styles.css",
               "src/styles.scss"
             ],
             "scripts": []

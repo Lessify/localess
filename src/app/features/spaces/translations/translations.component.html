@@ -24,6 +24,12 @@
             Add Translation
           </button>
         }
+        @if ('TRANSLATION_CREATE' | canUserPerform | async) {
+          <button z-button zType="destructive" (click)="openAddDialog()">
+            <mat-icon>add</mat-icon>
+            Add Translation
+          </button>
+        }
         @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
           <button
             mat-stroked-button

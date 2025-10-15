@@ -38,12 +38,14 @@ function setDocumentTheme(theme: Theme) {
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
       document.documentElement.style.colorScheme = 'light';
+      document.documentElement.setAttribute('data-theme', 'light');
       break;
     }
     case 'dark': {
       document.documentElement.classList.remove('light');
       document.documentElement.classList.add('dark');
       document.documentElement.style.colorScheme = 'dark';
+      document.documentElement.setAttribute('data-theme', 'dark');
       break;
     }
   }

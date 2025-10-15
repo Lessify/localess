@@ -21,7 +21,6 @@ import { MAT_CHIPS_DEFAULT_OPTIONS } from '@angular/material/chips';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
 import { CoreModule } from '@core/core.module';
 import { provideMarkdown } from 'ngx-markdown';
@@ -33,7 +32,6 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes, withComponentInputBinding(), withNavigationErrorHandler(console.error)),
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
-    provideAnimations(),
     provideNativeDateAdapter(),
     provideMarkdown(),
     importProvidersFrom(CoreModule, AuthGuardModule),
