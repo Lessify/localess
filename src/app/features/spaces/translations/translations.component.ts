@@ -41,6 +41,7 @@ import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmButton } from '@spartan-ng/helm/button';
 import { EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
@@ -94,6 +95,7 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     MatButtonToggleModule,
     MatTreeModule,
     ZardButtonComponent,
+    HlmButton,
   ],
 })
 export class TranslationsComponent implements OnInit {

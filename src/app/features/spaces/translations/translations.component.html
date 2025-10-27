@@ -24,10 +24,29 @@
             Add Translation
           </button>
         }
+        @if ('TRANSLATION_CREATE' | canUserPerform | async) {
+          <button hlmBtn (click)="openAddDialog()" matTooltip="Add Translation">
+            <mat-icon>add</mat-icon>
+            Add Translation
+          </button>
+        }
         @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
           <button
             z-button
             zType="secondary"
+            class="p-4"
+            matTooltip="Publish Translations to be available via API call"
+            [disabled]="isPublishLoading()"
+            (click)="publish()">
+            <mat-icon [llAnimate]="isPublishLoading()">{{ isPublishLoading() ? 'sync' : 'publish' }}</mat-icon>
+            Publish
+          </button>
+        }
+        @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
+          <button
+            hlmBtn
+            variant="secondary"
+            class="p-4"
             matTooltip="Publish Translations to be available via API call"
             [disabled]="isPublishLoading()"
             (click)="publish()">
