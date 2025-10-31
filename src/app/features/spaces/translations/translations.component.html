@@ -1,4 +1,11 @@
 @if (space$ | async; as space) {
+  <div>
+
+  </div>
+  <h1 hlmH1>hlmH1</h1>
+  <h2 hlmH2>hlmH2</h2>
+  <h3 hlmH3>hlmH3</h3>
+  <h4 hlmH4>hlmH4</h4>
   <mat-toolbar>
     <mat-toolbar-row>
       Translations
@@ -19,12 +26,10 @@
           </mat-button-toggle>
         </mat-button-toggle-group>
         @if ('TRANSLATION_CREATE' | canUserPerform | async) {
-          <button z-button zType="default" (click)="openAddDialog()" matTooltip="Add Translation">
+          <button mat-flat-button (click)="openAddDialog()">
             <mat-icon>add</mat-icon>
             Add Translation
           </button>
-        }
-        @if ('TRANSLATION_CREATE' | canUserPerform | async) {
           <button hlmBtn (click)="openAddDialog()" matTooltip="Add Translation">
             <mat-icon>add</mat-icon>
             Add Translation
@@ -32,17 +37,13 @@
         }
         @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
           <button
-            z-button
-            zType="secondary"
-            class="p-4"
+            mat-stroked-button
             matTooltip="Publish Translations to be available via API call"
             [disabled]="isPublishLoading()"
             (click)="publish()">
             <mat-icon [llAnimate]="isPublishLoading()">{{ isPublishLoading() ? 'sync' : 'publish' }}</mat-icon>
             Publish
           </button>
-        }
-        @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
           <button
             hlmBtn
             variant="secondary"

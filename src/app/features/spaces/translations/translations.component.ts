@@ -25,7 +25,6 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { StatusComponent } from '@shared/components/status';
-import { ZardButtonComponent } from '@shared/components/ui/button/button.component';
 import { AnimateDirective } from '@shared/directives/animate.directive';
 import { Locale } from '@shared/models/locale.model';
 import { Space } from '@shared/models/space.model';
@@ -42,6 +41,7 @@ import { TranslationHistoryService } from '@shared/services/translation-history.
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { HlmTypographyImports } from '@spartan-ng/helm/typography';
 import { EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
@@ -94,8 +94,8 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     AnimateDirective,
     MatButtonToggleModule,
     MatTreeModule,
-    ZardButtonComponent,
     HlmButton,
+    HlmTypographyImports,
   ],
 })
 export class TranslationsComponent implements OnInit {

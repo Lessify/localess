@@ -9,6 +9,8 @@ node_modules
 dist
 package-lock.json
 
+libs/
+
 src/app/shared/generated/
 
 functions
