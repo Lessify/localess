@@ -78,6 +78,8 @@
 
   <div hlmSidebarWrapper>
     <hlm-sidebar collapsible="icon" variant="sidebar">
+      <div hlmSidebarHeader>
+      </div>
       <div hlmSidebarContent>
         @if (spaceStore.selectedSpace(); as selectedSpace) {
           <div hlmSidebarGroup>
@@ -87,7 +89,7 @@
                 @for (item of userSideMenu(); track item.label) {
                   @if (item.permission | canUserPerform | async) {
                     <li hlmSidebarMenuItem>
-                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive="active">
+                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
                         <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
                         <span>{{ item.label }}</span>
                       </a>
