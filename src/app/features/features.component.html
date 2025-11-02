@@ -79,6 +79,7 @@
   <div hlmSidebarWrapper>
     <hlm-sidebar collapsible="icon" variant="sidebar">
       <div hlmSidebarHeader>
+        <ll-logo [open]="sidebarService.open()" />
       </div>
       <div hlmSidebarContent>
         @if (spaceStore.selectedSpace(); as selectedSpace) {
@@ -108,7 +109,7 @@
                 @for (item of adminSideMenu; track item.label) {
                   @if (item.permission | canUserPerform | async) {
                     <li hlmSidebarMenuItem>
-                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive="active">
+                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
                         <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
                         <span>{{ item.label }}</span>
                       </a>
@@ -119,6 +120,47 @@
             </div>
           </div>
         }
+      </div>
+      <div hlmSidebarFooter>
+        <ul hlmSidebarMenu>
+          <li hlmSidebarMenuItem>
+            <button hlmSidebarMenuButton [brnMenuTriggerFor]="menu" class="flex gap-2 p-2">
+              <hlm-avatar>
+                <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+                <span class="text-white bg-destructive" hlmAvatarFallback>{{ userStore.initials() }}</span>
+              </hlm-avatar>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-medium">{{ userStore.displayName() }}</span>
+                <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
+              </div>
+              <ng-icon hlm name="lucideChevronsUpDown" class="ml-auto" />
+            </button>
+            <ng-template #menu>
+              <hlm-menu class="w-60">
+                <div class="flex gap-2 p-2">
+                  <hlm-avatar>
+                    <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+                    <span class="text-white bg-destructive" hlmAvatarFallback>{{ userStore.initials() }}</span>
+                  </hlm-avatar>
+                  <div class="grid flex-1 text-left text-sm leading-tight">
+                    <span class="truncate font-medium">{{ userStore.displayName() }}</span>
+                    <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
+                  </div>
+                </div>
+                <hlm-menu-separator />
+                <button hlmMenuItem routerLink="/features/me" brnTooltipTrigger="Profile">
+                  <ng-icon hlm name="lucideUserCircle" />
+                  Profile
+                </button>
+                <hlm-menu-separator />
+                <button hlmMenuItem (click)="onLogoutClick()" brnTooltipTrigger="Log Out">
+                  <ng-icon hlm name="lucideLogOut" />
+                  Log out
+                </button>
+              </hlm-menu>
+            </ng-template>
+          </li>
+        </ul>
       </div>
     </hlm-sidebar>
     <main hlmSidebarInset>

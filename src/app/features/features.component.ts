@@ -27,23 +27,21 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterModule } from '@angular/router';
 import { IconType, NgIcon, provideIcons } from '@ng-icons/core';
 import {
-  lucideBlocks,
-  lucideCalendar,
+  lucideChevronsUpDown,
   lucideFileCheck,
   lucideGalleryHorizontal,
   lucideGauge,
-  lucideHouse,
   lucideImage,
-  lucideInbox,
   lucideLanguages,
-  lucideLayoutDashboard,
+  lucideLogOut,
   lucidePackage,
-  lucideSearch,
   lucideSettings,
   lucideToyBrick,
+  lucideUserCircle,
   lucideUsers,
   lucideWebhook,
 } from '@ng-icons/lucide';
+import { LogoComponent } from '@shared/components/logo';
 import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
 import { Space } from '@shared/models/space.model';
@@ -53,8 +51,12 @@ import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
+import { BrnMenuImports } from '@spartan-ng/brain/menu';
+import { BrnTooltipImports } from '@spartan-ng/brain/tooltip';
+import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmIcon } from '@spartan-ng/helm/icon';
-import { HlmSidebarImports } from '@spartan-ng/helm/sidebar';
+import { HlmMenuImports } from '@spartan-ng/helm/menu';
+import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import browser from 'browser-detect';
 import { environment } from '../../environments/environment';
@@ -89,6 +91,11 @@ interface SideMenuItem {
     NgIcon,
     HlmIcon,
     HlmTooltipImports,
+    LogoComponent,
+    BrnMenuImports,
+    HlmMenuImports,
+    HlmAvatarImports,
+    BrnTooltipImports,
   ],
   providers: [
     provideIcons({
@@ -102,6 +109,9 @@ interface SideMenuItem {
       lucideSettings,
       lucideUsers,
       lucidePackage,
+      lucideChevronsUpDown,
+      lucideLogOut,
+      lucideUserCircle,
     }),
   ],
 })
@@ -111,6 +121,8 @@ export class FeaturesComponent implements OnInit {
   private readonly reposService = inject(ReposService);
   private readonly dialog = inject(MatDialog);
   private auth = inject(Auth);
+
+  public readonly sidebarService = inject(HlmSidebarService);
 
   // Settings
   isSettingsMenuExpended = signal(false);

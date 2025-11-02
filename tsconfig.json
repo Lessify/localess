@@ -58,6 +58,12 @@
       ],
       "@spartan-ng/helm/skeleton": [
         "./libs/ui/skeleton/src/index.ts"
+      ],
+      "@spartan-ng/helm/menu": [
+        "./libs/ui/menu/src/index.ts"
+      ],
+      "@spartan-ng/helm/avatar": [
+        "./libs/ui/avatar/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

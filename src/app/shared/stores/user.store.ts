@@ -11,12 +11,13 @@ const LS_KEY = 'LL-USER-STATE';
 export interface UserState {
   id: string;
   displayName: string | undefined | null;
+  initials: string | undefined | null;
   email: string | undefined | null;
   emailVerified: boolean;
   role: UserRole | undefined;
   permissions: string[] | undefined;
   lock: boolean | undefined;
-  photoURL: string | undefined | null;
+  photoURL: string | undefined;
   // Provider Data
   isPasswordProvider: boolean;
   isGoogleProvider: boolean;
@@ -29,6 +30,7 @@ export interface UserState {
 export const initialState: UserState = {
   id: '',
   displayName: undefined,
+  initials: undefined,
   email: undefined,
   emailVerified: false,
   role: undefined,
@@ -66,9 +68,16 @@ export const UserStore = signalStore(
                 patchState(state, {
                   id: user.uid,
                   displayName: user.displayName,
+                  initials: user.displayName
+                    ? user.displayName
+                        .split(' ')
+                        .map(n => n[0])
+                        .join('')
+                        .toUpperCase()
+                    : undefined,
                   email: user.email,
                   emailVerified: user.emailVerified,
-                  photoURL: user.photoURL,
+                  photoURL: user.photoURL || undefined,
                   numberProviders: user.providerData.length || 0,
                   isPasswordProvider: user.providerData.some(it => it.providerId === 'password') || false,
                   isGoogleProvider: user.providerData.some(it => it.providerId === 'google.com') || false,
