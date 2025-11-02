@@ -25,6 +25,25 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterModule } from '@angular/router';
+import { IconType, NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  lucideBlocks,
+  lucideCalendar,
+  lucideFileCheck,
+  lucideGalleryHorizontal,
+  lucideGauge,
+  lucideHouse,
+  lucideImage,
+  lucideInbox,
+  lucideLanguages,
+  lucideLayoutDashboard,
+  lucidePackage,
+  lucideSearch,
+  lucideSettings,
+  lucideToyBrick,
+  lucideUsers,
+  lucideWebhook,
+} from '@ng-icons/lucide';
 import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
 import { Space } from '@shared/models/space.model';
@@ -34,11 +53,14 @@ import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
+import { HlmIcon } from '@spartan-ng/helm/icon';
+import { HlmSidebarImports } from '@spartan-ng/helm/sidebar';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import browser from 'browser-detect';
 import { environment } from '../../environments/environment';
 
 interface SideMenuItem {
-  icon: string;
+  icon: IconType;
   link: string;
   label: string;
   permission?: UserPermission | UserPermission[];
@@ -63,6 +85,24 @@ interface SideMenuItem {
     MatListModule,
     MatSlideToggleModule,
     MatDividerModule,
+    HlmSidebarImports,
+    NgIcon,
+    HlmIcon,
+    HlmTooltipImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideGauge,
+      lucideLanguages,
+      lucideGalleryHorizontal,
+      lucideImage,
+      lucideToyBrick,
+      lucideFileCheck,
+      lucideWebhook,
+      lucideSettings,
+      lucideUsers,
+      lucidePackage,
+    }),
   ],
 })
 export class FeaturesComponent implements OnInit {
@@ -87,19 +127,29 @@ export class FeaturesComponent implements OnInit {
     console.log('User Side Menu Computed : User Permissions :', this.userStore.permissions());
     if (selectedSpaceId) {
       return [
-        { link: `spaces/${selectedSpaceId}/dashboard`, label: 'Dashboard', icon: 'dashboard' },
+        { link: `spaces/${selectedSpaceId}/dashboard`, label: 'Dashboard', icon: 'lucideGauge' },
         {
           link: `spaces/${selectedSpaceId}/translations`,
           label: 'Translations',
-          icon: 'translate',
+          icon: 'lucideLanguages',
           permission: UserPermission.TRANSLATION_READ,
         },
-        { link: `spaces/${selectedSpaceId}/contents`, label: 'Content', icon: 'web_stories', permission: UserPermission.CONTENT_READ },
-        { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'attachment', permission: UserPermission.ASSET_READ },
-        { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'schema', permission: UserPermission.SCHEMA_READ },
-        { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'task', permission: USER_PERMISSIONS_IMPORT_EXPORT },
-        { link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'api', permission: UserPermission.DEV_OPEN_API },
-        { link: `spaces/${selectedSpaceId}/settings`, label: 'Settings', icon: 'settings', permission: UserPermission.SPACE_MANAGEMENT },
+        {
+          link: `spaces/${selectedSpaceId}/contents`,
+          label: 'Content',
+          icon: 'lucideGalleryHorizontal',
+          permission: UserPermission.CONTENT_READ,
+        },
+        { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', permission: UserPermission.ASSET_READ },
+        { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', permission: UserPermission.SCHEMA_READ },
+        { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'lucideFileCheck', permission: USER_PERMISSIONS_IMPORT_EXPORT },
+        { link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'lucideWebhook', permission: UserPermission.DEV_OPEN_API },
+        {
+          link: `spaces/${selectedSpaceId}/settings`,
+          label: 'Settings',
+          icon: 'lucideSettings',
+          permission: UserPermission.SPACE_MANAGEMENT,
+        },
       ];
     } else {
       return [];
@@ -107,9 +157,9 @@ export class FeaturesComponent implements OnInit {
   });
 
   adminSideMenu: SideMenuItem[] = [
-    { link: 'admin/users', label: 'Users', icon: 'people', permission: UserPermission.USER_MANAGEMENT },
-    { link: 'admin/spaces', label: 'Spaces', icon: 'space_dashboard', permission: UserPermission.SPACE_MANAGEMENT },
-    { link: 'admin/settings', label: 'Settings', icon: 'settings', permission: UserPermission.SETTINGS_MANAGEMENT },
+    { link: 'admin/users', label: 'Users', icon: 'lucideUsers', permission: UserPermission.USER_MANAGEMENT },
+    { link: 'admin/spaces', label: 'Spaces', icon: 'lucidePackage', permission: UserPermission.SPACE_MANAGEMENT },
+    { link: 'admin/settings', label: 'Settings', icon: 'lucideSettings', permission: UserPermission.SETTINGS_MANAGEMENT },
   ];
 
   communitySideMenu: SideMenuItem[] = [

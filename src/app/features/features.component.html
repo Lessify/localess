@@ -76,6 +76,57 @@
     </button>
   </mat-toolbar>
 
+  <div hlmSidebarWrapper>
+    <hlm-sidebar collapsible="icon" variant="sidebar">
+      <div hlmSidebarContent>
+        @if (spaceStore.selectedSpace(); as selectedSpace) {
+          <div hlmSidebarGroup>
+            <div hlmSidebarGroupLabel>Space</div>
+            <div hlmSidebarGroupContent>
+              <ul hlmSidebarMenu>
+                @for (item of userSideMenu(); track item.label) {
+                  @if (item.permission | canUserPerform | async) {
+                    <li hlmSidebarMenuItem>
+                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive="active">
+                        <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
+                        <span>{{ item.label }}</span>
+                      </a>
+                    </li>
+                  }
+                }
+              </ul>
+            </div>
+          </div>
+        }
+        @if (['USER_MANAGEMENT', 'SPACE_MANAGEMENT'] | canUserPerform | async) {
+          <div hlmSidebarGroup>
+            <div hlmSidebarGroupLabel>Admin</div>
+            <div hlmSidebarGroupContent>
+              <ul hlmSidebarMenu>
+                @for (item of adminSideMenu; track item.label) {
+                  @if (item.permission | canUserPerform | async) {
+                    <li hlmSidebarMenuItem>
+                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive="active">
+                        <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
+                        <span>{{ item.label }}</span>
+                      </a>
+                    </li>
+                  }
+                }
+              </ul>
+            </div>
+          </div>
+        }
+      </div>
+    </hlm-sidebar>
+    <main hlmSidebarInset>
+      <header class="flex h-12 items-center justify-between px-4">
+        <button hlmSidebarTrigger><span class="sr-only"></span></button>
+      </header>
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
   <mat-sidenav-container autosize="true">
     <mat-sidenav mode="side" opened="true" position="start" [class.collapsed]="!settingsStore.mainMenuExpended()">
       <mat-nav-list>
