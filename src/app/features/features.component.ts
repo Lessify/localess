@@ -36,6 +36,8 @@ import {
   lucideLogOut,
   lucidePackage,
   lucideSettings,
+  lucideShieldAlert,
+  lucideShieldCheck,
   lucideToyBrick,
   lucideUserCircle,
   lucideUsers,
@@ -56,6 +58,7 @@ import { BrnTooltipImports } from '@spartan-ng/brain/tooltip';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmIcon } from '@spartan-ng/helm/icon';
 import { HlmMenuImports } from '@spartan-ng/helm/menu';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import browser from 'browser-detect';
@@ -96,6 +99,8 @@ interface SideMenuItem {
     HlmMenuImports,
     HlmAvatarImports,
     BrnTooltipImports,
+    HlmSeparatorImports,
+
   ],
   providers: [
     provideIcons({
@@ -112,6 +117,8 @@ interface SideMenuItem {
       lucideChevronsUpDown,
       lucideLogOut,
       lucideUserCircle,
+      lucideShieldAlert,
+      lucideShieldCheck,
     }),
   ],
 })

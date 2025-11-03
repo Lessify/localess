@@ -79,7 +79,18 @@
   <div hlmSidebarWrapper>
     <hlm-sidebar collapsible="icon" variant="sidebar">
       <div hlmSidebarHeader>
-        <ll-logo [open]="sidebarService.open()" />
+        <a routerLink="/">
+          <ll-logo [open]="sidebarService.open() || sidebarService.openMobile()" />
+        </a>
+        @if (sidebarService.open() || sidebarService.openMobile()) {
+          @if (appSettingsStore.ui(); as ui) {
+            @if (ui.text) {
+              <span class="text-center post-logo-text-{{ ui.color }}">
+                {{ ui.text }}
+              </span>
+            }
+          }
+        }
       </div>
       <div hlmSidebarContent>
         @if (spaceStore.selectedSpace(); as selectedSpace) {
@@ -120,14 +131,35 @@
             </div>
           </div>
         }
+        <div hlmSidebarGroup class="mt-auto">
+          <div hlmSidebarGroupContent>
+            <ul hlmSidebarMenu>
+              @if (latestRelease && latestRelease.tag_name > 'v' + version) {
+                <li hlmSidebarMenuItem [hlmTooltipTrigger]="'A new version is available : ' + latestRelease.name">
+                  <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
+                    <ng-icon hlm name="lucideShieldAlert" class="motion-safe:animate-pulse flash" />
+                    Version : {{ version }}
+                  </button>
+                </li>
+              } @else {
+                <li hlmSidebarMenuItem hlmTooltipTrigger="You are on the latest version.">
+                  <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2')">
+                    <ng-icon hlm name="lucideShieldCheck" />
+                    Version : {{ version }}
+                  </button>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
       </div>
       <div hlmSidebarFooter>
         <ul hlmSidebarMenu>
           <li hlmSidebarMenuItem>
-            <button hlmSidebarMenuButton [brnMenuTriggerFor]="menu" class="flex gap-2 p-2">
-              <hlm-avatar>
+            <button hlmSidebarMenuButton [brnMenuTriggerFor]="menu" side="right" class="flex gap-2 p-2">
+              <hlm-avatar [class]="sidebarService.open() || sidebarService.openMobile() ? '' : 'size-4'">
                 <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
-                <span class="text-white bg-destructive" hlmAvatarFallback>{{ userStore.initials() }}</span>
+                <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
               </hlm-avatar>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-medium">{{ userStore.displayName() }}</span>
@@ -167,82 +199,10 @@
       <header class="flex h-12 items-center justify-between px-4">
         <button hlmSidebarTrigger><span class="sr-only"></span></button>
       </header>
-      <router-outlet></router-outlet>
-    </main>
-  </div>
-
-  <mat-sidenav-container autosize="true">
-    <mat-sidenav mode="side" opened="true" position="start" [class.collapsed]="!settingsStore.mainMenuExpended()">
-      <mat-nav-list>
-        @if (spaceStore.selectedSpace(); as selectedSpace) {
-          @for (item of userSideMenu(); track item.label) {
-            @if (item.permission | canUserPerform | async) {
-              <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
-                <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
-                @if (settingsStore.mainMenuExpended()) {
-                  <div matListItemTitle>{{ item.label }}</div>
-                }
-              </mat-list-item>
-            }
-          }
-        }
-
-        @if (['USER_MANAGEMENT', 'SPACE_MANAGEMENT'] | canUserPerform | async) {
-          <mat-divider />
-          @if (settingsStore.mainMenuExpended()) {
-            <div mat-subheader>Admin</div>
-          }
-          @for (item of adminSideMenu; track item.label) {
-            @if (item.permission | canUserPerform | async) {
-              <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
-                <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
-                @if (settingsStore.mainMenuExpended()) {
-                  <div matListItemTitle>{{ item.label }}</div>
-                }
-              </mat-list-item>
-            }
-          }
-        }
-
-        <mat-divider />
-        @if (latestRelease?.tag_name > 'v' + version) {
-          <mat-list-item
-            (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)"
-            [matTooltip]="'A new version is available : ' + latestRelease.name">
-            <mat-icon matListItemIcon class="motion-safe:animate-pulse flash"> release_alert </mat-icon>
-            @if (settingsStore.mainMenuExpended()) {
-              Version : {{ version }}
-            }
-          </mat-list-item>
-        } @else {
-          <mat-list-item matTooltip="You are on the latest version." (click)="openNewTab('https://localess.org/changelog/v2')">
-            <mat-icon matListItemIcon> new_releases </mat-icon>
-            @if (settingsStore.mainMenuExpended()) {
-              Version : {{ version }}
-            }
-          </mat-list-item>
-        }
-      </mat-nav-list>
-    </mat-sidenav>
-
-    <mat-sidenav mode="over" [opened]="isSettingsMenuExpended()" position="end" (openedChange)="isSettingsMenuExpended.set($event)">
-      <mat-list>
-        <div mat-subheader>Settings</div>
-        @if (isDebug) {
-          <mat-list-item>
-            <mat-slide-toggle [checked]="settingsStore.debugEnabled()" (change)="onDebugEnabledChangeState()">
-              Enable Debug
-            </mat-slide-toggle>
-          </mat-list-item>
-        }
-      </mat-list>
-    </mat-sidenav>
-
-    <mat-sidenav-content>
       @if (userStore.role() === undefined) {
         Please contact your administrator to grant you access to resources.
       }
       <router-outlet></router-outlet>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
+    </main>
+  </div>
 </div>
