@@ -85,14 +85,41 @@
         @if (sidebarService.open() || sidebarService.openMobile()) {
           @if (appSettingsStore.ui(); as ui) {
             @if (ui.text) {
-              <span class="text-center post-logo-text-{{ ui.color }}">
-                {{ ui.text }}
-              </span>
+              <div class="flex justify-center">
+                <span [class]="appTextClass()">
+                  {{ ui.text }}
+                </span>
+              </div>
             }
           }
         }
       </div>
       <div hlmSidebarContent>
+        @if (spaceStore.spaces().length > 0) {
+          <div hlmSidebarGroup>
+            <div hlmSidebarGroupContent>
+              <ul hlmSidebarMenu>
+                <li hlmSidebarMenuItem>
+                  <button hlmSidebarMenuButton [brnMenuTriggerFor]="spaceMenu" side="bottom">
+                    <ng-icon hlm [name]="spaceStore.selectedSpace()?.icon || 'tablerSpaces'" />
+                    <span>{{ spaceStore.selectedSpace()?.name }}</span>
+                    <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
+                  </button>
+                  <ng-template #spaceMenu>
+                    <hlm-menu class="w-60">
+                      @for (space of spaceStore.spaces(); track space.id) {
+                        <button hlmMenuItem (click)="onSpaceSelection(space)">
+                          <ng-icon hlm [name]="space.icon || 'tablerSpaces'" />
+                          <span> {{ space.name }} </span>
+                        </button>
+                      }
+                    </hlm-menu>
+                  </ng-template>
+                </li>
+              </ul>
+            </div>
+          </div>
+        }
         @if (spaceStore.selectedSpace(); as selectedSpace) {
           <div hlmSidebarGroup>
             <div hlmSidebarGroupLabel>Space</div>
@@ -156,8 +183,8 @@
       <div hlmSidebarFooter>
         <ul hlmSidebarMenu>
           <li hlmSidebarMenuItem>
-            <button hlmSidebarMenuButton [brnMenuTriggerFor]="menu" side="right" class="flex gap-2 p-2">
-              <hlm-avatar [class]="sidebarService.open() || sidebarService.openMobile() ? '' : 'size-4'">
+            <button hlmSidebarMenuButton size="lg" [brnMenuTriggerFor]="menu" side="right" class="flex gap-2">
+              <hlm-avatar>
                 <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
                 <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
               </hlm-avatar>

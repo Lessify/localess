@@ -64,6 +64,9 @@
       ],
       "@spartan-ng/helm/avatar": [
         "./libs/ui/avatar/src/index.ts"
+      ],
+      "@spartan-ng/helm/badge": [
+        "./libs/ui/badge/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

@@ -27,6 +27,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterModule } from '@angular/router';
 import { IconType, NgIcon, provideIcons } from '@ng-icons/core';
 import {
+  lucideChevronDown,
   lucideChevronsUpDown,
   lucideFileCheck,
   lucideGalleryHorizontal,
@@ -34,15 +35,14 @@ import {
   lucideImage,
   lucideLanguages,
   lucideLogOut,
-  lucidePackage,
   lucideSettings,
   lucideShieldAlert,
   lucideShieldCheck,
   lucideToyBrick,
   lucideUserCircle,
   lucideUsers,
-  lucideWebhook,
 } from '@ng-icons/lucide';
+import { tablerApi, tablerSpaces } from '@ng-icons/tabler-icons';
 import { LogoComponent } from '@shared/components/logo';
 import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
@@ -58,11 +58,30 @@ import { BrnTooltipImports } from '@spartan-ng/brain/tooltip';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmIcon } from '@spartan-ng/helm/icon';
 import { HlmMenuImports } from '@spartan-ng/helm/menu';
-import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { HlmTypographyImports } from '@spartan-ng/helm/typography';
 import browser from 'browser-detect';
+import { cva } from 'class-variance-authority';
 import { environment } from '../../environments/environment';
+
+const appTextVariants = cva(
+  'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xl font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] ',
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary text-primary-foreground [a&]:hover:bg-primary/90 border-transparent',
+        secondary: 'bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90 border-transparent',
+        destructive:
+          'bg-destructive [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 border-transparent text-white',
+        outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+    },
+  },
+);
 
 interface SideMenuItem {
   icon: IconType;
@@ -99,8 +118,7 @@ interface SideMenuItem {
     HlmMenuImports,
     HlmAvatarImports,
     BrnTooltipImports,
-    HlmSeparatorImports,
-
+    HlmTypographyImports,
   ],
   providers: [
     provideIcons({
@@ -110,11 +128,12 @@ interface SideMenuItem {
       lucideImage,
       lucideToyBrick,
       lucideFileCheck,
-      lucideWebhook,
+      tablerApi,
       lucideSettings,
       lucideUsers,
-      lucidePackage,
+      tablerSpaces,
       lucideChevronsUpDown,
+      lucideChevronDown,
       lucideLogOut,
       lucideUserCircle,
       lucideShieldAlert,
@@ -135,9 +154,10 @@ export class FeaturesComponent implements OnInit {
   isSettingsMenuExpended = signal(false);
   isDebug = environment.debug;
 
-  logo = 'assets/logo.png';
   version = environment.version;
   latestRelease?: Release;
+
+  appTextClass = computed(() => appTextVariants({ variant: this.appSettingsStore.ui()?.color }));
 
   userSideMenu: Signal<SideMenuItem[]> = computed(() => {
     const selectedSpaceId = this.spaceStore.selectedSpaceId();
@@ -162,7 +182,7 @@ export class FeaturesComponent implements OnInit {
         { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', permission: UserPermission.ASSET_READ },
         { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', permission: UserPermission.SCHEMA_READ },
         { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'lucideFileCheck', permission: USER_PERMISSIONS_IMPORT_EXPORT },
-        { link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'lucideWebhook', permission: UserPermission.DEV_OPEN_API },
+        { link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'tablerApi', permission: UserPermission.DEV_OPEN_API },
         {
           link: `spaces/${selectedSpaceId}/settings`,
           label: 'Settings',
@@ -177,7 +197,7 @@ export class FeaturesComponent implements OnInit {
 
   adminSideMenu: SideMenuItem[] = [
     { link: 'admin/users', label: 'Users', icon: 'lucideUsers', permission: UserPermission.USER_MANAGEMENT },
-    { link: 'admin/spaces', label: 'Spaces', icon: 'lucidePackage', permission: UserPermission.SPACE_MANAGEMENT },
+    { link: 'admin/spaces', label: 'Spaces', icon: 'tablerSpaces', permission: UserPermission.SPACE_MANAGEMENT },
     { link: 'admin/settings', label: 'Settings', icon: 'lucideSettings', permission: UserPermission.SETTINGS_MANAGEMENT },
   ];
 

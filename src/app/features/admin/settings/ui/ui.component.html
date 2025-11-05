@@ -22,8 +22,8 @@
       <mat-select formControlName="color">
         <mat-option value="primary">Primary</mat-option>
         <mat-option value="secondary">Secondary</mat-option>
-        <mat-option value="tertiary">Tertiary</mat-option>
-        <mat-option value="error">Error</mat-option>
+        <mat-option value="outline">Outline</mat-option>
+        <mat-option value="destructive">Destructive</mat-option>
       </mat-select>
       @if (form.controls['color'].errors; as errors) {
         <mat-error>{{ fe.errors(errors) }}</mat-error>
