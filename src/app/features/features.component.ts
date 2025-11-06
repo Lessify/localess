@@ -27,6 +27,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterModule } from '@angular/router';
 import { IconType, NgIcon, provideIcons } from '@ng-icons/core';
 import {
+  lucideBookOpen,
   lucideChevronDown,
   lucideChevronsUpDown,
   lucideFileCheck,
@@ -35,6 +36,7 @@ import {
   lucideImage,
   lucideLanguages,
   lucideLogOut,
+  lucideSend,
   lucideSettings,
   lucideShieldAlert,
   lucideShieldCheck,
@@ -138,6 +140,8 @@ interface SideMenuItem {
       lucideUserCircle,
       lucideShieldAlert,
       lucideShieldCheck,
+      lucideBookOpen,
+      lucideSend,
     }),
   ],
 })

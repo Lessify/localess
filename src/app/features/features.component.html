@@ -17,18 +17,12 @@
     @if (spaceStore.spaces(); as spaces) {
       @if (spaceStore.selectedSpace(); as selectedSpace) {
         <button mat-flat-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
-          @if (selectedSpace.icon) {
-            <mat-icon>{{ selectedSpace.icon }}</mat-icon>
-          }
           {{ selectedSpace.name }}
           <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
         </button>
         <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
           @for (space of spaces; track space.id) {
             <button mat-menu-item (click)="onSpaceSelection(space)">
-              @if (space.icon) {
-                <mat-icon>{{ space.icon }}</mat-icon>
-              }
               <span [class.font-semibold]="space.id === selectedSpace.id"> {{ space.name }} </span>
             </button>
           }
@@ -101,15 +95,15 @@
               <ul hlmSidebarMenu>
                 <li hlmSidebarMenuItem>
                   <button hlmSidebarMenuButton [brnMenuTriggerFor]="spaceMenu" side="bottom">
-                    <ng-icon hlm [name]="spaceStore.selectedSpace()?.icon || 'tablerSpaces'" />
+                    <ng-icon hlm name="tablerSpaces" />
                     <span>{{ spaceStore.selectedSpace()?.name }}</span>
                     <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
                   </button>
                   <ng-template #spaceMenu>
                     <hlm-menu class="w-60">
                       @for (space of spaceStore.spaces(); track space.id) {
-                        <button hlmMenuItem (click)="onSpaceSelection(space)">
-                          <ng-icon hlm [name]="space.icon || 'tablerSpaces'" />
+                        <button hlmMenuItemRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
+                          <hlm-menu-item-radio />
                           <span> {{ space.name }} </span>
                         </button>
                       }
@@ -161,6 +155,18 @@
         <div hlmSidebarGroup class="mt-auto">
           <div hlmSidebarGroupContent>
             <ul hlmSidebarMenu>
+              <li hlmSidebarMenuItem hlmTooltipTrigger="Documentation">
+                <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/docs/introduction')">
+                  <ng-icon hlm name="lucideBookOpen" />
+                  Documentation
+                </button>
+              </li>
+              <li hlmSidebarMenuItem hlmTooltipTrigger="Feedback">
+                <button hlmSidebarMenuButton (click)="openNewTab('https://github.com/Lessify/localess/issues')">
+                  <ng-icon hlm name="lucideSend" />
+                  Feedback
+                </button>
+              </li>
               @if (latestRelease && latestRelease.tag_name > 'v' + version) {
                 <li hlmSidebarMenuItem [hlmTooltipTrigger]="'A new version is available : ' + latestRelease.name">
                   <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">

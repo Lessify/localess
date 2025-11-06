@@ -12,12 +12,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { MaterialService } from '@shared/services/material.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
-import { filter, map } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-general',
@@ -44,7 +43,6 @@ export class GeneralComponent {
   private readonly spaceService = inject(SpaceService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
-  private readonly materialService = inject(MaterialService);
 
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
@@ -52,13 +50,8 @@ export class GeneralComponent {
   // Form
   form: FormGroup = this.fb.group({
     name: this.fb.control('', SpaceValidator.NAME),
-    icon: this.fb.control<string | undefined>(undefined),
   });
 
-  icons$ = this.materialService.findAllIcons().pipe(
-    map(it => it.icons),
-    map(it => it.filter(icon => !icon.unsupported_families.includes('Material Icons'))),
-  );
   private destroyRef = inject(DestroyRef);
 
   constructor() {
