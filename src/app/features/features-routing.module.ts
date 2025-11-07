@@ -1,10 +1,11 @@
 import { NgModule } from '@angular/core';
 import { AuthGuard, customClaims } from '@angular/fire/auth-guard';
 import { RouterModule, Routes } from '@angular/router';
+import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { UserPermission } from '@shared/models/user.model';
 import { pipe } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { FeaturesComponent } from './features.component';
+import FeaturesComponent from './features.component';
 
 const ROLE_ADMIN = 'admin';
 const ROLE_CUSTOM = 'custom';
@@ -154,6 +155,12 @@ const routes: Routes = [
         path: 'welcome',
         title: 'Welcome',
         loadComponent: () => import('./welcome/welcome.component').then(m => m.WelcomeComponent),
+        data: {
+          breadcrumb: {
+            label: 'Welcome',
+            route: '/welcome',
+          } satisfies BreadcrumbItem,
+        },
       },
       {
         path: 'spaces/:spaceId/dashboard',

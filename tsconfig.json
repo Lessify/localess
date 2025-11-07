@@ -67,6 +67,9 @@
       ],
       "@spartan-ng/helm/badge": [
         "./libs/ui/badge/src/index.ts"
+      ],
+      "@spartan-ng/helm/breadcrumb": [
+        "./libs/ui/breadcrumb/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

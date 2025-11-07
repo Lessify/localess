@@ -1,21 +1,9 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  OnInit,
-  signal,
-  Signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, signal, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Auth, signOut } from '@angular/fire/auth';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -24,7 +12,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { IconType, NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideBookOpen,
@@ -55,6 +43,7 @@ import { tablerApi, tablerSpaces } from '@ng-icons/tabler-icons';
 import { LogoComponent } from '@shared/components/logo';
 import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
+import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { Space } from '@shared/models/space.model';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -65,13 +54,15 @@ import { UserStore } from '@shared/stores/user.store';
 import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { BrnTooltipImports } from '@spartan-ng/brain/tooltip';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIcon } from '@spartan-ng/helm/icon';
 import { HlmMenuImports } from '@spartan-ng/helm/menu';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import browser from 'browser-detect';
 import { cva } from 'class-variance-authority';
+import { filter } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 const appTextVariants = cva(
@@ -128,6 +119,8 @@ interface SideMenuItem {
     HlmAvatarImports,
     BrnTooltipImports,
     HlmButtonImports,
+    HlmSeparatorImports,
+    HlmBreadCrumbImports,
   ],
   providers: [
     provideIcons({
@@ -159,12 +152,11 @@ interface SideMenuItem {
     }),
   ],
 })
-export class FeaturesComponent implements OnInit {
-  private readonly cd = inject(ChangeDetectorRef);
+class FeaturesComponent {
   private readonly router = inject(Router);
   private readonly reposService = inject(ReposService);
-  private readonly dialog = inject(MatDialog);
   private auth = inject(Auth);
+  private route = inject(ActivatedRoute);
 
   public readonly sidebarService = inject(HlmSidebarService);
 
@@ -231,6 +223,8 @@ export class FeaturesComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
   appSettingsStore = inject(AppSettingsStore);
 
+  breadcrumbs = signal<BreadcrumbItem[]>([]);
+
   constructor() {
     const reposService = this.reposService;
 
@@ -249,16 +243,16 @@ export class FeaturesComponent implements OnInit {
         await this.router.navigate(['login']);
       }
     });
-  }
 
-  private static isIEorEdgeOrSafari(): boolean {
-    return ['ie', 'edge', 'safari'].includes(browser().name || '');
-  }
-
-  ngOnInit(): void {
-    if (FeaturesComponent.isIEorEdgeOrSafari()) {
-      console.log('IE, Edge or Safari detected');
-    }
+    this.router.events
+      .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        console.log('buildBreadcrumbs', this.buildBreadcrumbs(this.route.root));
+        this.breadcrumbs.set(this.buildBreadcrumbs(this.route.root));
+      });
   }
 
   onSpaceSelection(space: Space): void {
@@ -285,4 +279,34 @@ export class FeaturesComponent implements OnInit {
   switchTheme() {
     this.settingsStore.setTheme(this.settingsStore.theme() === 'dark' ? 'light' : 'dark');
   }
+
+  private buildBreadcrumbs(route: ActivatedRoute, url: string = '', breadcrumbs: BreadcrumbItem[] = []): BreadcrumbItem[] {
+    const children: ActivatedRoute[] = route.children;
+
+    if (children.length === 0) {
+      return breadcrumbs;
+    }
+
+    for (const child of children) {
+      const routeURL: string = child.snapshot.url.map(segment => segment.path).join('/');
+      if (routeURL !== '') {
+        url += `/${routeURL}`;
+      }
+
+      const breadcrumb = child.snapshot.data['breadcrumb'] as BreadcrumbItem | undefined;
+      if (breadcrumb) {
+        const resolvedBreadcrumb: BreadcrumbItem = {
+          label: breadcrumb.label,
+          route: breadcrumb.route || url,
+        };
+        breadcrumbs.push(resolvedBreadcrumb);
+      }
+
+      return this.buildBreadcrumbs(child, url, breadcrumbs);
+    }
+
+    return breadcrumbs;
+  }
 }
+
+export default FeaturesComponent;

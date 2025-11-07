@@ -182,12 +182,32 @@
     </div>
   </hlm-sidebar>
   <main hlmSidebarInset>
-    <header class="flex h-12 items-center justify-between px-4">
-      <button hlmSidebarTrigger><span class="sr-only"></span></button>
-      <button hlmBtn size="icon-sm" variant="ghost" (click)="switchTheme()" aria-label="Switch theme" hlmTooltipTrigger="Switch theme">
-        <ng-icon hlm class="dark:!hidden" name="lucideMoon" size="sm" />
-        <ng-icon hlm class="!hidden dark:!block" name="lucideSun" size="sm" />
-      </button>
+    <header class="flex h-12 items-center justify-between border-b">
+      <div id="header-breadcrumbs" class="h-5 flex w-full items-center gap-2 px-4">
+        <button hlmSidebarTrigger><span class="sr-only"></span></button>
+        <hlm-separator orientation="vertical" />
+        <nav hlmBreadcrumb>
+          <ol hlmBreadcrumbList>
+            @for (breadcrumb of breadcrumbs(); track breadcrumb.route; let isLast = $last; let isFirst = $first) {
+              @if (!isFirst) {
+                <li hlmBreadcrumbSeparator></li>
+              }
+              <li hlmBreadcrumbItem>
+                @if (isLast) {
+                  <span hlmBreadcrumbPage>{{ breadcrumb.label }}</span>
+                } @else {
+                  <a hlmBreadcrumbLink [link]="breadcrumb.route">{{ breadcrumb.label }}</a>
+                }
+              </li>
+            }
+          </ol>
+        </nav>
+      </div>
+      <div id="header-actions">
+        <button hlmBtn size="icon-sm" variant="ghost" (click)="switchTheme()" aria-label="Switch theme" hlmTooltipTrigger="Switch theme">
+          <ng-icon hlm [name]="settingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
+        </button>
+      </div>
     </header>
     @if (userStore.role() === undefined) {
       Please contact your administrator to grant you access to resources.
