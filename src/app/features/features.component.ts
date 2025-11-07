@@ -30,16 +30,23 @@ import {
   lucideBookOpen,
   lucideChevronDown,
   lucideChevronsUpDown,
+  lucideCircleQuestionMark,
+  lucideEarth,
+  lucideExternalLink,
   lucideFileCheck,
   lucideGalleryHorizontal,
   lucideGauge,
+  lucideHeartHandshake,
   lucideImage,
   lucideLanguages,
+  lucideLifeBuoy,
   lucideLogOut,
+  lucideMoon,
   lucideSend,
   lucideSettings,
   lucideShieldAlert,
   lucideShieldCheck,
+  lucideSun,
   lucideToyBrick,
   lucideUserCircle,
   lucideUsers,
@@ -58,11 +65,11 @@ import { UserStore } from '@shared/stores/user.store';
 import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { BrnTooltipImports } from '@spartan-ng/brain/tooltip';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIcon } from '@spartan-ng/helm/icon';
 import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { HlmTypographyImports } from '@spartan-ng/helm/typography';
 import browser from 'browser-detect';
 import { cva } from 'class-variance-authority';
 import { environment } from '../../environments/environment';
@@ -120,7 +127,7 @@ interface SideMenuItem {
     HlmMenuImports,
     HlmAvatarImports,
     BrnTooltipImports,
-    HlmTypographyImports,
+    HlmButtonImports,
   ],
   providers: [
     provideIcons({
@@ -142,6 +149,13 @@ interface SideMenuItem {
       lucideShieldCheck,
       lucideBookOpen,
       lucideSend,
+      lucideCircleQuestionMark,
+      lucideHeartHandshake,
+      lucideEarth,
+      lucideLifeBuoy,
+      lucideExternalLink,
+      lucideMoon,
+      lucideSun,
     }),
   ],
 })
@@ -254,10 +268,6 @@ export class FeaturesComponent implements OnInit {
 
   async onLogoutClick(): Promise<void> {
     return await signOut(this.auth);
-  }
-
-  onMainMenuExpendedChangeState(): void {
-    this.settingsStore.setMainMenuExpended(!this.settingsStore.mainMenuExpended());
   }
 
   onSettingsMenuExpendedChangeState(): void {

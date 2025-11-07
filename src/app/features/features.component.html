@@ -1,241 +1,197 @@
-<div class="wrapper">
-  <mat-toolbar class="main">
-    <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
-      <mat-icon>{{ settingsStore.mainMenuExpended() ? 'menu_open' : 'menu' }}</mat-icon>
-    </button>
-    <img src="assets/logo-adaptive.svg" class="h-8! ml-2" alt="Logo" />
-    @if (appSettingsStore.ui(); as ui) {
-      @if (ui.text) {
-        <mat-divider [vertical]="true" class="middle" />
-        <span class="ml-2 post-logo-text-{{ ui.color }}">
-          {{ ui.text }}
-        </span>
-      }
-    }
-    <span class="spacer"></span>
-
-    @if (spaceStore.spaces(); as spaces) {
-      @if (spaceStore.selectedSpace(); as selectedSpace) {
-        <button mat-flat-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
-          {{ selectedSpace.name }}
-          <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
-        </button>
-        <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
-          @for (space of spaces; track space.id) {
-            <button mat-menu-item (click)="onSpaceSelection(space)">
-              <span [class.font-semibold]="space.id === selectedSpace.id"> {{ space.name }} </span>
-            </button>
+<div hlmSidebarWrapper>
+  <hlm-sidebar collapsible="icon" variant="sidebar">
+    <div hlmSidebarHeader>
+      <a routerLink="/">
+        <ll-logo [open]="sidebarService.open() || sidebarService.openMobile()" />
+      </a>
+      @if (sidebarService.open() || sidebarService.openMobile()) {
+        @if (appSettingsStore.ui(); as ui) {
+          @if (ui.text) {
+            <div class="flex justify-center">
+              <span [class]="appTextClass()">
+                {{ ui.text }}
+              </span>
+            </div>
           }
-        </mat-menu>
+        }
       }
-    } @else {
-      <button mat-stroked-button color="warn" routerLink="/features/spaces">No Spaces. Click here to create one.</button>
-    }
-
-    <span class="spacer"></span>
-    <mat-divider [vertical]="true" class="middle" />
-    <button mat-icon-button routerLink="/features/welcome" matTooltip="Welcome">
-      <mat-icon>waving_hand</mat-icon>
-    </button>
-    <button mat-icon-button (click)="openNewTab('https://localess.org/sponsoring')" matTooltip="Sponsor Us">
-      <mat-icon class="motion-safe:animate-bounce">volunteer_activism</mat-icon>
-    </button>
-    <button mat-icon-button (click)="openNewTab('https://localess.org/home')" matTooltip="Visit Localess.ORG">
-      <mat-icon>public</mat-icon>
-    </button>
-    <button mat-icon-button [matMenuTriggerFor]="supportMenu" matTooltip="Documentation and Support">
-      <mat-icon>help_center</mat-icon>
-    </button>
-    <mat-menu #supportMenu="matMenu">
-      @for (item of communitySideMenu; track item.label) {
-        <button mat-menu-item (click)="openNewTab(item.link)">
-          <mat-icon>{{ item.icon }}</mat-icon>
-          <span>{{ item.label }}</span>
-        </button>
-      }
-    </mat-menu>
-    <mat-divider [vertical]="true" class="middle" />
-    <button mat-icon-button (click)="switchTheme()" aria-label="Switch theme" matTooltip="Switch theme">
-      <mat-icon class="dark:!hidden">dark_mode</mat-icon>
-      <mat-icon class="!hidden dark:!block">light_mode</mat-icon>
-    </button>
-    <button mat-icon-button (click)="onSettingsMenuExpendedChangeState()" matTooltip="Settings">
-      <mat-icon>settings</mat-icon>
-    </button>
-    <button mat-icon-button routerLink="/features/me" matTooltip="My Profile">
-      <mat-icon>account_circle</mat-icon>
-    </button>
-    <button mat-icon-button (click)="onLogoutClick()" matTooltip="LogOut">
-      <mat-icon>logout</mat-icon>
-    </button>
-  </mat-toolbar>
-
-  <div hlmSidebarWrapper>
-    <hlm-sidebar collapsible="icon" variant="sidebar">
-      <div hlmSidebarHeader>
-        <a routerLink="/">
-          <ll-logo [open]="sidebarService.open() || sidebarService.openMobile()" />
-        </a>
-        @if (sidebarService.open() || sidebarService.openMobile()) {
-          @if (appSettingsStore.ui(); as ui) {
-            @if (ui.text) {
-              <div class="flex justify-center">
-                <span [class]="appTextClass()">
-                  {{ ui.text }}
-                </span>
-              </div>
+    </div>
+    <div hlmSidebarContent>
+      <div hlmSidebarGroup>
+        <div hlmSidebarGroupContent>
+          <ul hlmSidebarMenu>
+            @if (spaceStore.spaces().length > 0) {
+              <li hlmSidebarMenuItem>
+                <button hlmSidebarMenuButton [brnMenuTriggerFor]="spaceMenu" side="bottom">
+                  <ng-icon hlm name="tablerSpaces" />
+                  <span>{{ spaceStore.selectedSpace()?.name }}</span>
+                  <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
+                </button>
+                <ng-template #spaceMenu>
+                  <hlm-menu class="w-60">
+                    @for (space of spaceStore.spaces(); track space.id) {
+                      <button hlmMenuItemRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
+                        <hlm-menu-item-radio />
+                        <span> {{ space.name }} </span>
+                      </button>
+                    }
+                  </hlm-menu>
+                </ng-template>
+              </li>
             }
-          }
-        }
+            @if (spaceStore.selectedSpace()) {
+              @for (item of userSideMenu(); track item.label) {
+                @if (item.permission | canUserPerform | async) {
+                  <li hlmSidebarMenuItem>
+                    <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
+                      <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
+                      <span>{{ item.label }}</span>
+                    </a>
+                  </li>
+                }
+              }
+            }
+          </ul>
+        </div>
       </div>
-      <div hlmSidebarContent>
-        @if (spaceStore.spaces().length > 0) {
-          <div hlmSidebarGroup>
-            <div hlmSidebarGroupContent>
-              <ul hlmSidebarMenu>
-                <li hlmSidebarMenuItem>
-                  <button hlmSidebarMenuButton [brnMenuTriggerFor]="spaceMenu" side="bottom">
-                    <ng-icon hlm name="tablerSpaces" />
-                    <span>{{ spaceStore.selectedSpace()?.name }}</span>
-                    <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
-                  </button>
-                  <ng-template #spaceMenu>
-                    <hlm-menu class="w-60">
-                      @for (space of spaceStore.spaces(); track space.id) {
-                        <button hlmMenuItemRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
-                          <hlm-menu-item-radio />
-                          <span> {{ space.name }} </span>
-                        </button>
-                      }
-                    </hlm-menu>
-                  </ng-template>
-                </li>
-              </ul>
-            </div>
-          </div>
-        }
-        @if (spaceStore.selectedSpace(); as selectedSpace) {
-          <div hlmSidebarGroup>
-            <div hlmSidebarGroupLabel>Space</div>
-            <div hlmSidebarGroupContent>
-              <ul hlmSidebarMenu>
-                @for (item of userSideMenu(); track item.label) {
-                  @if (item.permission | canUserPerform | async) {
-                    <li hlmSidebarMenuItem>
-                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
-                        <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
-                        <span>{{ item.label }}</span>
-                      </a>
-                    </li>
-                  }
-                }
-              </ul>
-            </div>
-          </div>
-        }
-        @if (['USER_MANAGEMENT', 'SPACE_MANAGEMENT'] | canUserPerform | async) {
-          <div hlmSidebarGroup>
-            <div hlmSidebarGroupLabel>Admin</div>
-            <div hlmSidebarGroupContent>
-              <ul hlmSidebarMenu>
-                @for (item of adminSideMenu; track item.label) {
-                  @if (item.permission | canUserPerform | async) {
-                    <li hlmSidebarMenuItem>
-                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
-                        <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
-                        <span>{{ item.label }}</span>
-                      </a>
-                    </li>
-                  }
-                }
-              </ul>
-            </div>
-          </div>
-        }
-        <div hlmSidebarGroup class="mt-auto">
+      @if (['USER_MANAGEMENT', 'SPACE_MANAGEMENT'] | canUserPerform | async) {
+        <div hlmSidebarGroup>
+          <div hlmSidebarGroupLabel>Admin</div>
           <div hlmSidebarGroupContent>
             <ul hlmSidebarMenu>
-              <li hlmSidebarMenuItem hlmTooltipTrigger="Documentation">
-                <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/docs/introduction')">
-                  <ng-icon hlm name="lucideBookOpen" />
-                  Documentation
-                </button>
-              </li>
-              <li hlmSidebarMenuItem hlmTooltipTrigger="Feedback">
-                <button hlmSidebarMenuButton (click)="openNewTab('https://github.com/Lessify/localess/issues')">
-                  <ng-icon hlm name="lucideSend" />
-                  Feedback
-                </button>
-              </li>
-              @if (latestRelease && latestRelease.tag_name > 'v' + version) {
-                <li hlmSidebarMenuItem [hlmTooltipTrigger]="'A new version is available : ' + latestRelease.name">
-                  <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
-                    <ng-icon hlm name="lucideShieldAlert" class="motion-safe:animate-pulse flash" />
-                    Version : {{ version }}
-                  </button>
-                </li>
-              } @else {
-                <li hlmSidebarMenuItem hlmTooltipTrigger="You are on the latest version.">
-                  <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2')">
-                    <ng-icon hlm name="lucideShieldCheck" />
-                    Version : {{ version }}
-                  </button>
-                </li>
+              @for (item of adminSideMenu; track item.label) {
+                @if (item.permission | canUserPerform | async) {
+                  <li hlmSidebarMenuItem>
+                    <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
+                      <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
+                      <span>{{ item.label }}</span>
+                    </a>
+                  </li>
+                }
               }
             </ul>
           </div>
         </div>
-      </div>
-      <div hlmSidebarFooter>
-        <ul hlmSidebarMenu>
-          <li hlmSidebarMenuItem>
-            <button hlmSidebarMenuButton size="lg" [brnMenuTriggerFor]="menu" side="right" class="flex gap-2">
-              <hlm-avatar>
-                <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
-                <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
-              </hlm-avatar>
-              <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-medium">{{ userStore.displayName() }}</span>
-                <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
-              </div>
-              <ng-icon hlm name="lucideChevronsUpDown" class="ml-auto" />
-            </button>
+      }
+      <div hlmSidebarGroup class="mt-auto">
+        <div hlmSidebarGroupContent>
+          <ul hlmSidebarMenu>
+            <li hlmSidebarMenuItem hlmTooltipTrigger="Welcome">
+              <button
+                hlmSidebarMenuButton
+                routerLink="/features/welcome"
+                routerLinkActive
+                #rla="routerLinkActive"
+                [isActive]="rla.isActive">
+                <ng-icon hlm name="lucideCircleQuestionMark" />
+                Welcome
+              </button>
+            </li>
+            <li hlmSidebarMenuItem hlmTooltipTrigger="Support">
+              <button hlmSidebarMenuButton [brnMenuTriggerFor]="menu" side="right">
+                <ng-icon hlm name="lucideLifeBuoy" />
+                Support
+                <hlm-menu-item-sub-indicator />
+              </button>
+            </li>
             <ng-template #menu>
-              <hlm-menu class="w-60">
-                <div class="flex gap-2 p-2">
-                  <hlm-avatar>
-                    <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
-                    <span class="text-white bg-destructive" hlmAvatarFallback>{{ userStore.initials() }}</span>
-                  </hlm-avatar>
-                  <div class="grid flex-1 text-left text-sm leading-tight">
-                    <span class="truncate font-medium">{{ userStore.displayName() }}</span>
-                    <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
-                  </div>
-                </div>
-                <hlm-menu-separator />
-                <button hlmMenuItem routerLink="/features/me" brnTooltipTrigger="Profile">
-                  <ng-icon hlm name="lucideUserCircle" />
-                  Profile
+              <hlm-menu>
+                <button hlmMenuItem (click)="openNewTab('https://localess.org/home')">
+                  <ng-icon hlmMenuIcon name="lucideEarth" />
+                  Visit Localess.ORG
+                  <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
                 </button>
-                <hlm-menu-separator />
-                <button hlmMenuItem (click)="onLogoutClick()" brnTooltipTrigger="Log Out">
-                  <ng-icon hlm name="lucideLogOut" />
-                  Log out
+                <button hlmMenuItem (click)="openNewTab('https://localess.org/docs/introduction')">
+                  <ng-icon hlmMenuIcon name="lucideBookOpen" />
+                  Documentation
+                  <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
+                </button>
+                <button hlmMenuItem (click)="openNewTab('https://github.com/Lessify/localess/issues')">
+                  <ng-icon hlmMenuIcon name="lucideSend" />
+                  Feedback
+                  <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
                 </button>
               </hlm-menu>
             </ng-template>
-          </li>
-        </ul>
+
+            <li hlmSidebarMenuItem hlmTooltipTrigger="Sponsor Us">
+              <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/sponsoring')">
+                <ng-icon hlm name="lucideHeartHandshake" />
+                Sponsor Us
+              </button>
+            </li>
+            @if (latestRelease && latestRelease.tag_name > 'v' + version) {
+              <li hlmSidebarMenuItem [hlmTooltipTrigger]="'A new version is available : ' + latestRelease.name">
+                <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
+                  <ng-icon hlm name="lucideShieldAlert" class="motion-safe:animate-pulse flash" />
+                  Version : {{ version }}
+                </button>
+              </li>
+            } @else {
+              <li hlmSidebarMenuItem hlmTooltipTrigger="You are on the latest version.">
+                <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2')">
+                  <ng-icon hlm name="lucideShieldCheck" />
+                  Version : {{ version }}
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
       </div>
-    </hlm-sidebar>
-    <main hlmSidebarInset>
-      <header class="flex h-12 items-center justify-between px-4">
-        <button hlmSidebarTrigger><span class="sr-only"></span></button>
-      </header>
-      @if (userStore.role() === undefined) {
-        Please contact your administrator to grant you access to resources.
-      }
-      <router-outlet></router-outlet>
-    </main>
-  </div>
+    </div>
+    <div hlmSidebarFooter>
+      <ul hlmSidebarMenu>
+        <li hlmSidebarMenuItem>
+          <button hlmSidebarMenuButton size="lg" [brnMenuTriggerFor]="userMenu" side="right" class="flex gap-2">
+            <hlm-avatar>
+              <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+              <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
+            </hlm-avatar>
+            <div class="grid flex-1 text-left text-sm leading-tight">
+              <span class="truncate font-medium">{{ userStore.displayName() }}</span>
+              <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
+            </div>
+            <ng-icon hlm name="lucideChevronsUpDown" class="ml-auto" />
+          </button>
+          <ng-template #userMenu>
+            <hlm-menu class="w-60">
+              <div class="flex gap-2 p-2">
+                <hlm-avatar>
+                  <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+                  <span class="text-white bg-destructive" hlmAvatarFallback>{{ userStore.initials() }}</span>
+                </hlm-avatar>
+                <div class="grid flex-1 text-left text-sm leading-tight">
+                  <span class="truncate font-medium">{{ userStore.displayName() }}</span>
+                  <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
+                </div>
+              </div>
+              <hlm-menu-separator />
+              <button hlmMenuItem routerLink="/features/me" brnTooltipTrigger="Profile">
+                <ng-icon hlm name="lucideUserCircle" />
+                Profile
+              </button>
+              <hlm-menu-separator />
+              <button hlmMenuItem (click)="onLogoutClick()" brnTooltipTrigger="Log Out">
+                <ng-icon hlm name="lucideLogOut" />
+                Log out
+              </button>
+            </hlm-menu>
+          </ng-template>
+        </li>
+      </ul>
+    </div>
+  </hlm-sidebar>
+  <main hlmSidebarInset>
+    <header class="flex h-12 items-center justify-between px-4">
+      <button hlmSidebarTrigger><span class="sr-only"></span></button>
+      <button hlmBtn size="icon-sm" variant="ghost" (click)="switchTheme()" aria-label="Switch theme" hlmTooltipTrigger="Switch theme">
+        <ng-icon hlm class="dark:!hidden" name="lucideMoon" size="sm" />
+        <ng-icon hlm class="!hidden dark:!block" name="lucideSun" size="sm" />
+      </button>
+    </header>
+    @if (userStore.role() === undefined) {
+      Please contact your administrator to grant you access to resources.
+    }
+    <router-outlet></router-outlet>
+  </main>
 </div>
