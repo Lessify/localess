@@ -253,8 +253,10 @@ class FeaturesComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
-        console.log('buildBreadcrumbs', this.buildBreadcrumbs(this.route.root));
-        this.breadcrumbs.set(this.buildBreadcrumbs(this.route.root));
+        console.log('NavigationEnd:root', this.route.root);
+        const breadcrumbs = this.buildBreadcrumbs(this.route.root);
+        console.log('NavigationEnd:breadcrumbs', breadcrumbs);
+        this.breadcrumbs.set(breadcrumbs);
       });
   }
 
@@ -283,9 +285,15 @@ class FeaturesComponent {
     this.settingsStore.setTheme(this.settingsStore.theme() === 'dark' ? 'light' : 'dark');
   }
 
-  private buildBreadcrumbs(route: ActivatedRoute, url: string = '', breadcrumbs: BreadcrumbItem[] = []): BreadcrumbItem[] {
+  private buildBreadcrumbs(
+    route: ActivatedRoute,
+    url: string = '',
+    breadcrumbs: BreadcrumbItem[] = [],
+    parent: string = '',
+  ): BreadcrumbItem[] {
+    const parentName = parent + '>' + route.component?.name;
+    console.log('buildBreadcrumbs:component', parentName);
     const children: ActivatedRoute[] = route.children;
-
     if (children.length === 0) {
       return breadcrumbs;
     }
@@ -298,6 +306,7 @@ class FeaturesComponent {
 
       const breadcrumb = child.snapshot.data['breadcrumb'] as BreadcrumbItem | undefined;
       if (breadcrumb) {
+        console.log('buildBreadcrumbs:child', child.outlet, child.component?.name, breadcrumb);
         const resolvedBreadcrumb: BreadcrumbItem = {
           label: breadcrumb.label,
           route: breadcrumb.route || url,
@@ -305,7 +314,7 @@ class FeaturesComponent {
         breadcrumbs.push(resolvedBreadcrumb);
       }
 
-      return this.buildBreadcrumbs(child, url, breadcrumbs);
+      return this.buildBreadcrumbs(child, url, breadcrumbs, parentName || '');
     }
 
     return breadcrumbs;
