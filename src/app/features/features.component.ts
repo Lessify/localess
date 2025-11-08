@@ -285,38 +285,27 @@ class FeaturesComponent {
     this.settingsStore.setTheme(this.settingsStore.theme() === 'dark' ? 'light' : 'dark');
   }
 
-  private buildBreadcrumbs(
-    route: ActivatedRoute,
-    url: string = '',
-    breadcrumbs: BreadcrumbItem[] = [],
-    parent: string = '',
-  ): BreadcrumbItem[] {
-    const parentName = parent + '>' + route.component?.name;
-    console.log('buildBreadcrumbs:component', parentName);
-    const children: ActivatedRoute[] = route.children;
-    if (children.length === 0) {
-      return breadcrumbs;
-    }
-
-    for (const child of children) {
-      const routeURL: string = child.snapshot.url.map(segment => segment.path).join('/');
-      if (routeURL !== '') {
-        url += `/${routeURL}`;
+  private buildBreadcrumbs(route: ActivatedRoute): BreadcrumbItem[] {
+    const breadcrumbs: BreadcrumbItem[] = [];
+    let currentRoute: ActivatedRoute | null = route;
+    while (currentRoute) {
+      if (currentRoute.routeConfig && currentRoute.routeConfig.data && currentRoute.routeConfig.data['breadcrumb']) {
+        const currentItem = currentRoute.routeConfig.data['breadcrumb'] as BreadcrumbItem | undefined;
+        if (currentItem) {
+          if (currentItem.route) {
+            // If route is defined in breadcrumb data, use it
+            breadcrumbs.push(currentItem);
+          } else {
+            // Otherwise, build the route from the current route snapshot
+            const urlSegments = currentRoute.snapshot.url.map(segment => segment.path).join('/');
+            const parentUrl = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].route || '' : '';
+            const fullPath = parentUrl.endsWith('/') || parentUrl === '' ? `${parentUrl}${urlSegments}` : `${parentUrl}/${urlSegments}`;
+            breadcrumbs.push({ ...currentItem, route: fullPath });
+          }
+        }
       }
-
-      const breadcrumb = child.snapshot.data['breadcrumb'] as BreadcrumbItem | undefined;
-      if (breadcrumb) {
-        console.log('buildBreadcrumbs:child', child.outlet, child.component?.name, breadcrumb);
-        const resolvedBreadcrumb: BreadcrumbItem = {
-          label: breadcrumb.label,
-          route: breadcrumb.route || url,
-        };
-        breadcrumbs.push(resolvedBreadcrumb);
-      }
-
-      return this.buildBreadcrumbs(child, url, breadcrumbs, parentName || '');
+      currentRoute = currentRoute.firstChild;
     }
-
     return breadcrumbs;
   }
 }

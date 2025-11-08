@@ -1,4 +1,4 @@
 export type BreadcrumbItem = {
   label: string;
-  route: string;
+  route?: string;
 };

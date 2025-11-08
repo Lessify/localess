@@ -185,7 +185,6 @@ const routes: Routes = [
           authGuardPipe: hasPermissionContentRead,
           breadcrumb: {
             label: 'Contents',
-            route: '',
           } satisfies BreadcrumbItem,
         },
       },
@@ -196,6 +195,9 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionAssetRead,
+          breadcrumb: {
+            label: 'Assets',
+          } satisfies BreadcrumbItem,
         },
       },
       {
