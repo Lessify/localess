@@ -150,7 +150,7 @@
               <div class="flex gap-2 p-2">
                 <hlm-avatar>
                   <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
-                  <span class="text-white bg-destructive" hlmAvatarFallback>{{ userStore.initials() }}</span>
+                  <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
                 </hlm-avatar>
                 <div class="grid flex-1 text-left text-sm leading-tight">
                   <span class="truncate font-medium">{{ userStore.displayName() }}</span>
@@ -187,6 +187,11 @@
               <li hlmBreadcrumbItem>
                 @if (isLast) {
                   <span hlmBreadcrumbPage>{{ breadcrumb.label }}</span>
+                  @if (breadcrumb.helpUrl) {
+                    <a hlmBtn variant="link" size="icon-sm" [href]="breadcrumb.helpUrl" target="_blank" hlmTooltipTrigger="Help Article">
+                      <ng-icon name="lucideBadgeInfo" />
+                    </a>
+                  }
                 } @else {
                   <a hlmBreadcrumbLink [link]="breadcrumb.route">{{ breadcrumb.label }}</a>
                 }

@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { IconType, NgIcon, provideIcons } from '@ng-icons/core';
 import {
+  lucideBadgeInfo,
   lucideBookOpen,
   lucideChevronDown,
   lucideChevronsUpDown,
@@ -151,6 +152,7 @@ interface SideMenuItem {
       lucideMoon,
       lucideSun,
       lucideCode,
+      lucideBadgeInfo,
     }),
   ],
 })
@@ -253,9 +255,7 @@ class FeaturesComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
-        console.log('NavigationEnd:root', this.route.root);
         const breadcrumbs = this.buildBreadcrumbs(this.route.root);
-        console.log('NavigationEnd:breadcrumbs', breadcrumbs);
         this.breadcrumbs.set(breadcrumbs);
       });
   }

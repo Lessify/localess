@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@
 import { activate } from '@angular/fire/remote-config';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 interface TabItem {
@@ -16,7 +15,7 @@ interface TabItem {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatTabsModule, RouterModule, MatIconModule],
+  imports: [MatTabsModule, RouterModule, MatIconModule],
 })
 export class SettingsComponent {
   private readonly route = inject(ActivatedRoute);
