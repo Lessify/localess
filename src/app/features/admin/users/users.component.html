@@ -1,20 +1,14 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    Users
-    <span class="spacer"></span>
-    <div class="actions">
-      <button mat-stroked-button matTooltip="Synchronize Users with Database." (click)="sync()">
-        <mat-icon [llAnimate]="isSyncLoading()">sync</mat-icon>
-        Sync
-      </button>
+<div class="p-2 flex justify-end gap-2">
+  <button hlmBtn (click)="sync()" hlmTooltipTrigger="Synchronize Users with Database">
+    <ng-icon hlm name="lucideRefreshCcw" [class.animate-spin]="isSyncLoading()" />
+    Sync
+  </button>
+  <button hlmBtn (click)="inviteDialog()">
+    <ng-icon hlm name="lucideUserPlus" />
+    Invite
+  </button>
+</div>
 
-      <button mat-flat-button (click)="inviteDialog()">
-        <mat-icon>person_add</mat-icon>
-        Invite
-      </button>
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
 @if (isLoading()) {
   <mat-progress-bar mode="query" />
 }

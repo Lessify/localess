@@ -10,11 +10,15 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { provideIcons } from '@ng-icons/core';
+import { lucidePlus } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { filter, switchMap } from 'rxjs/operators';
 import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
 import { SpaceDialogModel } from './space-dialog/space-dialog.model';
@@ -34,6 +38,13 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
+    HlmButtonImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+    }),
   ],
 })
 export class SpacesComponent implements OnInit {

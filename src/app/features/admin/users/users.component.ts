@@ -10,14 +10,18 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideRefreshCcw, lucideUserPlus } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { AnimateDirective } from '@shared/directives/animate.directive';
 import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
+import { HlmButton } from '@spartan-ng/helm/button';
+import { HlmIcon } from '@spartan-ng/helm/icon';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap } from 'rxjs/operators';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogModel } from './user-dialog/user-dialog.model';
@@ -30,7 +34,6 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
   styleUrls: ['./users.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     MatTooltipModule,
     MatTableModule,
     MatProgressBarModule,
@@ -42,6 +45,16 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
     MatButtonModule,
     MatPaginatorModule,
     AnimateDirective,
+    HlmButton,
+    HlmIcon,
+    NgIcon,
+    HlmTooltipImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideUserPlus,
+      lucideRefreshCcw,
+    }),
   ],
 })
 export class UsersComponent implements OnInit {
