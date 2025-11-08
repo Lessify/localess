@@ -4,7 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MeService } from '@shared/services/me.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserStore } from '@shared/stores/user.store';
@@ -21,7 +20,7 @@ import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.m
   templateUrl: './me.component.html',
   styleUrls: ['./me.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatCardModule, CommonModule, MatDividerModule, MatButtonModule, NgOptimizedImage],
+  imports: [MatCardModule, CommonModule, MatDividerModule, MatButtonModule, NgOptimizedImage],
 })
 export class MeComponent {
   private readonly dialog = inject(MatDialog);

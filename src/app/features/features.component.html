@@ -96,21 +96,13 @@
             </li>
             <ng-template #menu>
               <hlm-menu>
-                <button hlmMenuItem (click)="openNewTab('https://localess.org/home')">
-                  <ng-icon hlmMenuIcon name="lucideEarth" />
-                  Visit Localess.ORG
-                  <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
-                </button>
-                <button hlmMenuItem (click)="openNewTab('https://localess.org/docs/introduction')">
-                  <ng-icon hlmMenuIcon name="lucideBookOpen" />
-                  Documentation
-                  <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
-                </button>
-                <button hlmMenuItem (click)="openNewTab('https://github.com/Lessify/localess/issues')">
-                  <ng-icon hlmMenuIcon name="lucideSend" />
-                  Feedback
-                  <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
-                </button>
+                @for (menuItem of communitySideMenu; track menuItem.label) {
+                  <button hlmMenuItem (click)="openNewTab(menuItem.link)">
+                    <ng-icon hlmMenuIcon [name]="menuItem.icon" />
+                    {{ menuItem.label }}
+                    <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
+                  </button>
+                }
               </hlm-menu>
             </ng-template>
 

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, signal, Signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Auth, signOut } from '@angular/fire/auth';
@@ -19,6 +19,7 @@ import {
   lucideChevronDown,
   lucideChevronsUpDown,
   lucideCircleQuestionMark,
+  lucideCode,
   lucideEarth,
   lucideExternalLink,
   lucideFileCheck,
@@ -149,6 +150,7 @@ interface SideMenuItem {
       lucideExternalLink,
       lucideMoon,
       lucideSun,
+      lucideCode,
     }),
   ],
 })
@@ -212,9 +214,10 @@ class FeaturesComponent {
   ];
 
   communitySideMenu: SideMenuItem[] = [
-    { link: 'https://localess.org/docs/introduction', label: 'Documentation', icon: 'help' },
-    { link: 'https://github.com/Lessify/localess', label: 'Code', icon: 'code' },
-    { link: 'https://github.com/Lessify/localess/issues', label: 'Feedback', icon: 'forum' },
+    { link: 'https://localess.org/home', label: 'Visit Localess.ORG', icon: 'lucideEarth' },
+    { link: 'https://localess.org/docs/introduction', label: 'Documentation', icon: 'lucideBookOpen' },
+    { link: 'https://github.com/Lessify/localess', label: 'Code', icon: 'lucideCode' },
+    { link: 'https://github.com/Lessify/localess/issues', label: 'Feedback', icon: 'lucideSend' },
   ];
 
   private destroyRef = inject(DestroyRef);

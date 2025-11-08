@@ -183,6 +183,10 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionContentRead,
+          breadcrumb: {
+            label: 'Contents',
+            route: '',
+          } satisfies BreadcrumbItem,
         },
       },
       {
