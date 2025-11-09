@@ -1,88 +1,81 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    Assets
-    <a mat-icon-button target="_blank" href="https://localess.org/docs/assets/overview" matTooltip="Help Article">
-      <mat-icon>help</mat-icon>
-    </a>
-    <span class="spacer"></span>
-    <div class="actions">
-      @if (fileUploadQueue().length > 0) {
-        <mat-icon [llAnimate]="true" [matBadge]="fileUploadQueue().length">progress_activity</mat-icon>
-      }
-      <mat-button-toggle-group
-        hideSingleSelectionIndicator="true"
-        (change)="settingsStore.setAssetLayout($event.value)"
-        [value]="settingsStore.assetLayout()">
-        <mat-button-toggle value="list" matTooltip="List Layout">
-          <mat-icon>view_list</mat-icon>
-        </mat-button-toggle>
-        <mat-button-toggle value="grid" matTooltip="Grid Layout">
-          <mat-icon>grid_view</mat-icon>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
-      @if ('ASSET_CREATE' | canUserPerform | async) {
-        <button mat-flat-button [matMenuTriggerFor]="uploadExtraMenu">
-          <mat-icon>upload_file</mat-icon>
-          Upload Assets
-        </button>
-        <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
-        <mat-menu #uploadExtraMenu="matMenu">
-          <button mat-menu-item (click)="fileInput.click()">
-            <mat-icon>attach_file_add</mat-icon>
-            <span>From Local</span>
-          </button>
-          <button mat-menu-item (click)="openUrlPrompt()">
-            <mat-icon>add_link</mat-icon>
-            <span>From Link</span>
-          </button>
-          @if (unsplashPluginService.enabled()) {
-            <button mat-menu-item (click)="openUnsplashDialog()">
-              <mat-icon>
-                <svg role="img" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor">
-                  <path d="M9 9V4h7v5H9Zm7 3h5v9H4v-9h5v5h7v-5Z" />
-                </svg>
-              </mat-icon>
-              <span>From Unsplash</span>
-            </button>
-          }
-        </mat-menu>
-
-        <button mat-stroked-button (click)="openAddFolderDialog()">
-          <mat-icon>add</mat-icon>
-          Create Folder
+<div class="p-2 flex items-center justify-end gap-2">
+  @if (fileUploadQueue().length > 0) {
+    <span hlmBadge class="h-6">
+      <ng-icon hlm [llAnimate]="true" name="lucideLoaderCircle" />
+      Uploading ... ({{ fileUploadQueue().length }})
+    </span>
+  }
+  <mat-button-toggle-group
+    hideSingleSelectionIndicator="true"
+    (change)="settingsStore.setAssetLayout($event.value)"
+    [value]="settingsStore.assetLayout()">
+    <mat-button-toggle value="list" matTooltip="List Layout">
+      <mat-icon>view_list</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle value="grid" matTooltip="Grid Layout">
+      <mat-icon>grid_view</mat-icon>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  @if ('ASSET_CREATE' | canUserPerform | async) {
+    <button hlmBtn [matMenuTriggerFor]="uploadExtraMenu">
+      <ng-icon hlm name="lucideFileUp" />
+      Upload Assets
+    </button>
+    <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
+    <mat-menu #uploadExtraMenu="matMenu">
+      <button mat-menu-item (click)="fileInput.click()">
+        <mat-icon>attach_file_add</mat-icon>
+        <span>From Local</span>
+      </button>
+      <button mat-menu-item (click)="openUrlPrompt()">
+        <mat-icon>add_link</mat-icon>
+        <span>From Link</span>
+      </button>
+      @if (unsplashPluginService.enabled()) {
+        <button mat-menu-item (click)="openUnsplashDialog()">
+          <mat-icon>
+            <svg role="img" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor">
+              <path d="M9 9V4h7v5H9Zm7 3h5v9H4v-9h5v5h7v-5Z" />
+            </svg>
+          </mat-icon>
+          <span>From Unsplash</span>
         </button>
       }
+    </mat-menu>
 
-      @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
-        <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-          <mat-icon>more_vert</mat-icon>
+    <button hlmBtn variant="outline" (click)="openAddFolderDialog()">
+      <ng-icon hlm name="lucideFolderPlus" />
+      Create Folder
+    </button>
+  }
+
+  @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
+    <button mat-icon-button [matMenuTriggerFor]="extraMenu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #extraMenu="matMenu">
+      @if ('ASSET_IMPORT' | canUserPerform | async) {
+        <button mat-menu-item (click)="openImportDialog()">
+          <mat-icon>cloud_upload</mat-icon>
+          <span>Import</span>
         </button>
       }
-
-      <mat-menu #extraMenu="matMenu">
-        @if ('ASSET_IMPORT' | canUserPerform | async) {
-          <button mat-menu-item (click)="openImportDialog()">
-            <mat-icon>cloud_upload</mat-icon>
-            <span>Import</span>
-          </button>
-        }
-        @if ('ASSET_EXPORT' | canUserPerform | async) {
-          <button mat-menu-item (click)="openExportDialog()">
-            <mat-icon>cloud_download</mat-icon>
-            <span>Export</span>
-          </button>
-        }
-        @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
-          <mat-divider />
-          <button mat-menu-item (click)="openRegenerateMetadataDialog()">
-            <mat-icon>sync_alt</mat-icon>
-            <span>Regenerate Metadata</span>
-          </button>
-        }
-      </mat-menu>
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+      @if ('ASSET_EXPORT' | canUserPerform | async) {
+        <button mat-menu-item (click)="openExportDialog()">
+          <mat-icon>cloud_download</mat-icon>
+          <span>Export</span>
+        </button>
+      }
+      @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
+        <mat-divider />
+        <button mat-menu-item (click)="openRegenerateMetadataDialog()">
+          <mat-icon>sync_alt</mat-icon>
+          <span>Regenerate Metadata</span>
+        </button>
+      }
+    </mat-menu>
+  }
+</div>
 @if (isLoading()) {
   <mat-progress-bar mode="query" />
 }

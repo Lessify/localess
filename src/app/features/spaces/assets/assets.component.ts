@@ -17,9 +17,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideFileUp, lucideFolderPlus, lucideLoaderCircle } from '@ng-icons/lucide';
 import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -46,6 +47,9 @@ import { TaskService } from '@shared/services/task.service';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { HlmButton } from '@spartan-ng/helm/button';
+import { HlmIcon } from '@spartan-ng/helm/icon';
 import { Subject } from 'rxjs';
 import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
@@ -68,7 +72,6 @@ import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog
   styleUrls: ['./assets.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     MatIconModule,
     MatButtonToggleModule,
     MatTooltipModule,
@@ -93,6 +96,17 @@ import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog
     MatListModule,
     NgOptimizedImage,
     AnimateDirective,
+    HlmButton,
+    HlmIcon,
+    NgIcon,
+    HlmBadgeImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideLoaderCircle,
+      lucideFileUp,
+      lucideFolderPlus,
+    }),
   ],
 })
 export class AssetsComponent implements OnInit {

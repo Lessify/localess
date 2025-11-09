@@ -44,11 +44,11 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
     CommonModule,
     MatButtonModule,
     MatPaginatorModule,
-    AnimateDirective,
     HlmButton,
     HlmIcon,
     NgIcon,
     HlmTooltipImports,
+    AnimateDirective,
   ],
   providers: [
     provideIcons({

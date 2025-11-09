@@ -70,7 +70,10 @@
       ],
       "@spartan-ng/helm/breadcrumb": [
         "./libs/ui/breadcrumb/src/index.ts"
-      ]
+      ],
+      "@spartan-ng/helm/spinner": [
+        "./libs/ui/spinner/src/index.ts"
+      ],
     },
     "useDefineForClassFields": false
   },

@@ -1,6 +1,6 @@
 <div class="p-2 flex justify-end gap-2">
   <button hlmBtn (click)="sync()" hlmTooltipTrigger="Synchronize Users with Database">
-    <ng-icon hlm name="lucideRefreshCcw" [class.animate-spin]="isSyncLoading()" />
+    <ng-icon hlm name="lucideRefreshCcw" [llAnimate]="isSyncLoading()" />
     Sync
   </button>
   <button hlmBtn (click)="inviteDialog()">
