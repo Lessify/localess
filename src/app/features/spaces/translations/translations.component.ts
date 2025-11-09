@@ -18,10 +18,18 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTreeModule } from '@angular/material/tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideCloudDownload,
+  lucideEllipsisVertical,
+  lucidePlus,
+  lucideRefreshCcw,
+  lucideUpload,
+  lucideUploadCloud,
+} from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { StatusComponent } from '@shared/components/status';
@@ -40,7 +48,9 @@ import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { HlmButton } from '@spartan-ng/helm/button';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
@@ -65,7 +75,6 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    MatToolbarModule,
     MatIconModule,
     CanUserPerformPipe,
     MatButtonModule,
@@ -93,7 +102,19 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     AnimateDirective,
     MatButtonToggleModule,
     MatTreeModule,
-    HlmButton,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmTooltipImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+      lucideEllipsisVertical,
+      lucideCloudDownload,
+      lucideUploadCloud,
+      lucideUpload,
+      lucideRefreshCcw,
+    }),
   ],
 })
 export class TranslationsComponent implements OnInit {
