@@ -25,9 +25,10 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCloudDownload, lucideEllipsisVertical, lucidePlus, lucideUploadCloud } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
@@ -35,6 +36,10 @@ import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
+import { BrnMenuImports } from '@spartan-ng/brain/menu';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
@@ -50,7 +55,6 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     MatIconModule,
     MatTooltipModule,
     CanUserPerformPipe,
@@ -64,6 +68,18 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
     MatSortModule,
     MatChipsModule,
     MatPaginatorModule,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmMenuImports,
+    BrnMenuImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+      lucideEllipsisVertical,
+      lucideCloudDownload,
+      lucideUploadCloud,
+    }),
   ],
 })
 export class SchemasComponent implements OnInit {

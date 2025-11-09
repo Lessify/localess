@@ -1,39 +1,33 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    Schemas
-    <a mat-icon-button target="_blank" href="https://localess.org/docs/schemas/overview" matTooltip="Help Article">
-      <mat-icon>help</mat-icon>
-    </a>
-    <span class="spacer"></span>
-    <div class="actions">
-      @if ('SCHEMA_CREATE' | canUserPerform | async) {
-        <button mat-flat-button (click)="openAddDialog()">
-          <mat-icon>add</mat-icon>
-          Add Schema
-        </button>
-      }
-      @if (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async) {
-        <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #extraMenu="matMenu">
-          @if ('SCHEMA_IMPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openImportDialog()">
-              <mat-icon>cloud_upload</mat-icon>
-              <span>Import</span>
-            </button>
-          }
-          @if ('SCHEMA_EXPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openExportDialog()">
-              <mat-icon>cloud_download</mat-icon>
-              <span>Export</span>
-            </button>
-          }
-        </mat-menu>
-      }
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+<div class="p-2 flex items-center justify-end gap-2">
+  @if ('SCHEMA_CREATE' | canUserPerform | async) {
+    <button hlmBtn (click)="openAddDialog()">
+      <ng-icon hlm name="lucidePlus" />
+      Add Schema
+    </button>
+  }
+  @if (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async) {
+    <button hlmBtn size="icon" variant="ghost" [brnMenuTriggerFor]="extraMenu">
+      <ng-icon hlm name="lucideEllipsisVertical" />
+    </button>
+    <ng-template #extraMenu>
+      <hlm-menu class="w-50">
+        @if ('SCHEMA_IMPORT' | canUserPerform | async) {
+          <button hlmMenuItem (click)="openImportDialog()">
+            <ng-icon hlmMenuIcon name="lucideUploadCloud" />
+            Import
+          </button>
+        }
+        @if ('SCHEMA_EXPORT' | canUserPerform | async) {
+          <button hlmMenuItem (click)="openExportDialog()">
+            <ng-icon hlmMenuIcon name="lucideCloudDownload" />
+            Export
+          </button>
+        }
+      </hlm-menu>
+    </ng-template>
+  }
+</div>
+
 @if (isLoading) {
   <mat-progress-bar mode="query" />
 }

@@ -1,56 +1,48 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    Content
-    <a mat-icon-button target="_blank" href="https://localess.org/docs/content/overview" matTooltip="Help Article">
-      <mat-icon>help</mat-icon>
-    </a>
-    <span class="spacer"></span>
-    <div class="actions">
-      @if ('CONTENT_CREATE' | canUserPerform | async) {
-        <button mat-flat-button [matMenuTriggerFor]="contentCreateMenu">
-          <mat-icon>add</mat-icon>
-          Add Content
+<div class="p-2 flex items-center justify-end gap-2">
+  @if ('CONTENT_CREATE' | canUserPerform | async) {
+    <button hlmBtn [brnMenuTriggerFor]="contentCreateMenu">
+      <ng-icon hlm name="lucidePlus" />
+      Add Content
+    </button>
+    <ng-template #contentCreateMenu>
+      <hlm-menu>
+        <button hlmMenuItem (click)="openAddDocumentDialog()">
+          <ng-icon hlmMenuIcon name="lucideFilePlus" />
+          Document
         </button>
-        <mat-menu #contentCreateMenu="matMenu">
-          <button mat-menu-item (click)="openAddDocumentDialog()">
-            <mat-icon>post_add</mat-icon>
-            <span>Document</span>
-          </button>
-          <button mat-menu-item (click)="openAddFolderDialog()">
-            <mat-icon>create_new_folder</mat-icon>
-            <span>Folder</span>
-          </button>
-        </mat-menu>
+        <button hlmMenuItem (click)="openAddFolderDialog()">
+          <ng-icon hlmMenuIcon name="lucideFolderPlus" />
+          Folder
+        </button>
+      </hlm-menu>
+    </ng-template>
+  }
+  <button hlmBtn size="icon" variant="ghost" [brnMenuTriggerFor]="extraMenu">
+    <ng-icon hlm name="lucideEllipsisVertical" />
+  </button>
+  <ng-template #extraMenu>
+    <hlm-menu>
+      @if ('CONTENT_IMPORT' | canUserPerform | async) {
+        <button hlmMenuItem (click)="openImportDialog()">
+          <ng-icon hlmMenuIcon name="lucideUploadCloud" />
+          Import
+        </button>
       }
-
-      <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-
-      <mat-menu #extraMenu="matMenu">
-        @if (['CONTENT_IMPORT', 'CONTENT_EXPORT'] | canUserPerform | async) {
-          @if ('CONTENT_IMPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openImportDialog()">
-              <mat-icon>cloud_upload</mat-icon>
-              <span>Import</span>
-            </button>
-          }
-          @if ('CONTENT_EXPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openExportDialog()">
-              <mat-icon>cloud_download</mat-icon>
-              <span>Export</span>
-            </button>
-          }
-          <mat-divider></mat-divider>
-        }
-        <button mat-menu-item (click)="openLinksV1InNewTab()">
-          <mat-icon>link</mat-icon>
-          <span>Links</span>
+      @if ('CONTENT_EXPORT' | canUserPerform | async) {
+        <button hlmMenuItem (click)="openExportDialog()">
+          <ng-icon hlmMenuIcon name="lucideCloudDownload" />
+          Export
         </button>
-      </mat-menu>
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+      }
+      <hlm-menu-separator />
+      <button hlmMenuItem (click)="openLinksV1InNewTab()">
+        <ng-icon hlmMenuIcon name="lucideLink" />
+        Links
+        <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
+      </button>
+    </hlm-menu>
+  </ng-template>
+</div>
 @if (isLoading()) {
   <mat-progress-bar mode="query" />
 }

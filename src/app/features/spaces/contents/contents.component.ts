@@ -12,10 +12,20 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideCloudDownload,
+  lucideEllipsisVertical,
+  lucideExternalLink,
+  lucideFilePlus,
+  lucideFolderPlus,
+  lucideLink,
+  lucidePlus,
+  lucideUploadCloud,
+} from '@ng-icons/lucide';
 import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -37,6 +47,10 @@ import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
+import { BrnMenuImports } from '@spartan-ng/brain/menu';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { combineLatest } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
@@ -52,7 +66,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     MatIconModule,
     MatTooltipModule,
     CanUserPerformPipe,
@@ -68,6 +81,22 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     MatCheckboxModule,
     StatusComponent,
     MatPaginatorModule,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmMenuImports,
+    BrnMenuImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+      lucideEllipsisVertical,
+      lucideCloudDownload,
+      lucideUploadCloud,
+      lucideLink,
+      lucideFolderPlus,
+      lucideFilePlus,
+      lucideExternalLink,
+    }),
   ],
 })
 export class ContentsComponent {
