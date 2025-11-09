@@ -26,15 +26,12 @@ import {
   lucideFileSymlink,
   lucideFileUp,
   lucideFolderPlus,
-  lucideHardDriveDownload,
-  lucideHardDriveUpload,
-  lucideImport,
   lucideLoaderCircle,
   lucideRefreshCcwDot,
   lucideUpload,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
-import { tablerBrandUnsplash, tablerDotsVertical } from '@ng-icons/tabler-icons';
+import { tablerBrandUnsplash } from '@ng-icons/tabler-icons';
 import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
