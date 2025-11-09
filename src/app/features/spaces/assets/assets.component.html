@@ -17,31 +17,29 @@
     </mat-button-toggle>
   </mat-button-toggle-group>
   @if ('ASSET_CREATE' | canUserPerform | async) {
-    <button hlmBtn [matMenuTriggerFor]="uploadExtraMenu">
-      <ng-icon hlm name="lucideFileUp" />
+    <button hlmBtn [brnMenuTriggerFor]="uploadExtraMenu">
+      <ng-icon hlm name="lucideUpload" />
       Upload Assets
     </button>
     <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
-    <mat-menu #uploadExtraMenu="matMenu">
-      <button mat-menu-item (click)="fileInput.click()">
-        <mat-icon>attach_file_add</mat-icon>
-        <span>From Local</span>
-      </button>
-      <button mat-menu-item (click)="openUrlPrompt()">
-        <mat-icon>add_link</mat-icon>
-        <span>From Link</span>
-      </button>
-      @if (unsplashPluginService.enabled()) {
-        <button mat-menu-item (click)="openUnsplashDialog()">
-          <mat-icon>
-            <svg role="img" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor">
-              <path d="M9 9V4h7v5H9Zm7 3h5v9H4v-9h5v5h7v-5Z" />
-            </svg>
-          </mat-icon>
-          <span>From Unsplash</span>
+    <ng-template #uploadExtraMenu>
+      <hlm-menu>
+        <button hlmMenuItem (click)="fileInput.click()">
+          <ng-icon hlmMenuIcon name="lucideFileUp" />
+          From Local
         </button>
-      }
-    </mat-menu>
+        <button hlmMenuItem (click)="openUrlPrompt()">
+          <ng-icon hlmMenuIcon name="lucideFileSymlink" />
+          From Link
+        </button>
+        @if (unsplashPluginService.enabled()) {
+          <button hlmMenuItem (click)="openUnsplashDialog()">
+            <ng-icon hlmMenuIcon name="tablerBrandUnsplash" />
+            From Unsplash
+          </button>
+        }
+      </hlm-menu>
+    </ng-template>
 
     <button hlmBtn variant="outline" (click)="openAddFolderDialog()">
       <ng-icon hlm name="lucideFolderPlus" />
@@ -50,30 +48,32 @@
   }
 
   @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
-    <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-      <mat-icon>more_vert</mat-icon>
+    <button hlmBtn size="icon" variant="ghost" [brnMenuTriggerFor]="extraMenu">
+      <ng-icon hlm name="lucideEllipsisVertical" />
     </button>
-    <mat-menu #extraMenu="matMenu">
-      @if ('ASSET_IMPORT' | canUserPerform | async) {
-        <button mat-menu-item (click)="openImportDialog()">
-          <mat-icon>cloud_upload</mat-icon>
-          <span>Import</span>
-        </button>
-      }
-      @if ('ASSET_EXPORT' | canUserPerform | async) {
-        <button mat-menu-item (click)="openExportDialog()">
-          <mat-icon>cloud_download</mat-icon>
-          <span>Export</span>
-        </button>
-      }
-      @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
-        <mat-divider />
-        <button mat-menu-item (click)="openRegenerateMetadataDialog()">
-          <mat-icon>sync_alt</mat-icon>
-          <span>Regenerate Metadata</span>
-        </button>
-      }
-    </mat-menu>
+    <ng-template #extraMenu>
+      <hlm-menu class="w-50">
+        @if ('ASSET_IMPORT' | canUserPerform | async) {
+          <button hlmMenuItem (click)="openImportDialog()">
+            <ng-icon hlmMenuIcon name="lucideUploadCloud" />
+            Import
+          </button>
+        }
+        @if ('ASSET_EXPORT' | canUserPerform | async) {
+          <button hlmMenuItem (click)="openExportDialog()">
+            <ng-icon hlmMenuIcon name="lucideCloudDownload" />
+            Export
+          </button>
+        }
+        @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
+          <hlm-menu-separator />
+          <button hlmMenuItem (click)="openRegenerateMetadataDialog()">
+            <ng-icon hlmMenuIcon name="lucideRefreshCcwDot" />
+            Regenerate Metadata
+          </button>
+        }
+      </hlm-menu>
+    </ng-template>
   }
 </div>
 @if (isLoading()) {

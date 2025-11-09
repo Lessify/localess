@@ -19,11 +19,27 @@ import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideFileUp, lucideFolderPlus, lucideLoaderCircle } from '@ng-icons/lucide';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideCloudDownload,
+  lucideEllipsisVertical,
+  lucideFileSymlink,
+  lucideFileUp,
+  lucideFolderPlus,
+  lucideHardDriveDownload,
+  lucideHardDriveUpload,
+  lucideImport,
+  lucideLoaderCircle,
+  lucideRefreshCcwDot,
+  lucideUpload,
+  lucideUploadCloud,
+} from '@ng-icons/lucide';
+import { tablerBrandUnsplash, tablerDotsVertical } from '@ng-icons/tabler-icons';
 import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
+import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
 import { AnimateDirective } from '@shared/directives/animate.directive';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
@@ -47,9 +63,11 @@ import { TaskService } from '@shared/services/task.service';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
+import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
-import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmIcon } from '@spartan-ng/helm/icon';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { Subject } from 'rxjs';
 import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
@@ -63,8 +81,6 @@ import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-di
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
-import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
-import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 
 @Component({
   selector: 'll-assets',
@@ -96,16 +112,24 @@ import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog
     MatListModule,
     NgOptimizedImage,
     AnimateDirective,
-    HlmButton,
-    HlmIcon,
-    NgIcon,
+    HlmButtonImports,
+    HlmIconImports,
     HlmBadgeImports,
+    HlmMenuImports,
+    BrnMenuImports,
   ],
   providers: [
     provideIcons({
       lucideLoaderCircle,
       lucideFileUp,
       lucideFolderPlus,
+      lucideUpload,
+      lucideFileSymlink,
+      tablerBrandUnsplash,
+      lucideEllipsisVertical,
+      lucideCloudDownload,
+      lucideUploadCloud,
+      lucideRefreshCcwDot,
     }),
   ],
 })
