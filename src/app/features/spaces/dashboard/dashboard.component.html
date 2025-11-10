@@ -1,16 +1,10 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    Dashboard
-    <span class="spacer"></span>
-    <div class="actions">
-      @if ('SPACE_MANAGEMENT' | canUserPerform | async) {
-        <button mat-icon-button (click)="calculateOverview()">
-          <mat-icon>refresh</mat-icon>
-        </button>
-      }
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+<div class="p-2 flex items-center justify-end gap-2">
+  @if ('SPACE_MANAGEMENT' | canUserPerform | async) {
+    <button hlmBtn size="icon" variant="ghost" (click)="calculateOverview()">
+      <ng-icon hlm name="lucideRotateCw" />
+    </button>
+  }
+</div>
 <div class="px-2 mx-auto mt-3">
   @if (space(); as space) {
     <div class="grid grid-rows-1 gap-4 max-w-7xl">

@@ -24,7 +24,9 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
+  lucideEarth,
   lucideEllipsisVertical,
+  lucideHistory,
   lucidePlus,
   lucideRefreshCcw,
   lucideUpload,
@@ -48,8 +50,10 @@ import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
@@ -105,6 +109,8 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     HlmButtonImports,
     HlmIconImports,
     HlmTooltipImports,
+    HlmMenuImports,
+    BrnMenuImports,
   ],
   providers: [
     provideIcons({
@@ -114,6 +120,8 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
       lucideUploadCloud,
       lucideUpload,
       lucideRefreshCcw,
+      lucideHistory,
+      lucideEarth,
     }),
   ],
 })

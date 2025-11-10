@@ -28,12 +28,43 @@
         Publish
       </button>
     }
-    <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
-      <mat-icon>history</mat-icon>
+    <button hlmBtn size="icon" variant="ghost" (click)="showHistory = !showHistory">
+      <ng-icon hlm name="lucideHistory" />
     </button>
-    <button mat-icon-button [matMenuTriggerFor]="importMenu" matTooltip="Import and Export">
-      <mat-icon>more_vert</mat-icon>
+    <button hlmBtn size="icon" variant="ghost" [brnMenuTriggerFor]="extraMenu">
+      <ng-icon hlm name="lucideEllipsisVertical" />
     </button>
+    <ng-template #extraMenu>
+      <hlm-menu class="w-60">
+        @if (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async) {
+          <hlm-menu-group>
+            @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
+              <button hlmMenuItem (click)="openImportDialog(space.locales)">
+                <ng-icon hlmMenuIcon name="lucideUploadCloud" />
+                Import
+              </button>
+            }
+            @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
+              <button hlmMenuItem (click)="openExportDialog(space.locales)">
+                <ng-icon hlmMenuIcon name="lucideCloudDownload" />
+                Export
+              </button>
+            }
+          </hlm-menu-group>
+          <hlm-menu-separator />
+        }
+
+        <hlm-menu-group>
+          @for (locale of space.locales; track locale.id) {
+            <button hlmMenuItem (click)="openPublishedV1InNewTab(locale.id)">
+              <ng-icon hlmMenuIcon name="lucideEarth" />
+              <span>Published {{ locale.name }} JSON</span>
+              <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
+            </button>
+          }
+        </hlm-menu-group>
+      </hlm-menu>
+    </ng-template>
     <mat-menu #importMenu="matMenu">
       @if (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async) {
         @if ('TRANSLATION_IMPORT' | canUserPerform | async) {

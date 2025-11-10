@@ -7,13 +7,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { provideIcons } from '@ng-icons/core';
+import { lucideRotateCw } from '@ng-icons/lucide';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceStore } from '@shared/stores/space.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 @Component({
   selector: 'll-dashboard',
@@ -21,7 +24,6 @@ import { SpaceStore } from '@shared/stores/space.store';
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     CanUserPerformPipe,
     CommonModule,
     MatButtonModule,
@@ -30,6 +32,13 @@ import { SpaceStore } from '@shared/stores/space.store';
     MatProgressBarModule,
     MatCardModule,
     MatTooltipModule,
+    HlmButtonImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideRotateCw,
+    }),
   ],
 })
 export class DashboardComponent {

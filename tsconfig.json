@@ -30,13 +30,13 @@
         "src/app/core/*"
       ],
       "@spartan-ng/helm/button": [
-        "./libs/ui/ui-button-helm/src/index.ts"
+        "./libs/ui/button/src/index.ts"
       ],
       "@spartan-ng/helm/utils": [
-        "./libs/ui/ui-utils-helm/src/index.ts"
+        "./libs/ui/utils/src/index.ts"
       ],
       "@spartan-ng/helm/typography": [
-        "./libs/ui/ui-typography-helm/src/index.ts"
+        "./libs/ui/typography/src/index.ts"
       ],
       "@spartan-ng/helm/sidebar": [
         "./libs/ui/sidebar/src/index.ts"
