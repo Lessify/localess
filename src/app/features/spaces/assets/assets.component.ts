@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,6 +25,8 @@ import {
   lucideFileSymlink,
   lucideFileUp,
   lucideFolderPlus,
+  lucideLayoutGrid,
+  lucideLayoutList,
   lucideLoaderCircle,
   lucideRefreshCcwDot,
   lucideUpload,
@@ -65,6 +66,8 @@ import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmMenuImports } from '@spartan-ng/helm/menu';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
+import { HlmTooltipTrigger } from '@spartan-ng/helm/tooltip';
 import { Subject } from 'rxjs';
 import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
@@ -86,7 +89,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatIconModule,
-    MatButtonToggleModule,
     MatTooltipModule,
     MatBadgeModule,
     CanUserPerformPipe,
@@ -114,6 +116,8 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmBadgeImports,
     HlmMenuImports,
     BrnMenuImports,
+    HlmToggleGroupImports,
+    HlmTooltipTrigger,
   ],
   providers: [
     provideIcons({
@@ -127,6 +131,8 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
       lucideCloudDownload,
       lucideUploadCloud,
       lucideRefreshCcwDot,
+      lucideLayoutGrid,
+      lucideLayoutList,
     }),
   ],
 })

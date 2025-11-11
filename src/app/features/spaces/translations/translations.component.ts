@@ -7,7 +7,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -27,6 +26,8 @@ import {
   lucideEarth,
   lucideEllipsisVertical,
   lucideHistory,
+  lucideLayoutList,
+  lucideListTree,
   lucidePlus,
   lucideRefreshCcw,
   lucideUpload,
@@ -54,6 +55,7 @@ import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmMenuImports } from '@spartan-ng/helm/menu';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
@@ -104,13 +106,13 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     TranslationArrayEditComponent,
     ClipboardModule,
     AnimateDirective,
-    MatButtonToggleModule,
     MatTreeModule,
     HlmButtonImports,
     HlmIconImports,
     HlmTooltipImports,
     HlmMenuImports,
     BrnMenuImports,
+    HlmToggleGroupImports,
   ],
   providers: [
     provideIcons({
@@ -122,6 +124,8 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
       lucideRefreshCcw,
       lucideHistory,
       lucideEarth,
+      lucideLayoutList,
+      lucideListTree,
     }),
   ],
 })

@@ -1,16 +1,17 @@
 @if (space$ | async; as space) {
   <div class="p-2 flex items-center justify-end gap-2">
-    <mat-button-toggle-group
-      hideSingleSelectionIndicator="true"
-      (change)="settingsStore.setTranslationLayout($event.value)"
-      [value]="settingsStore.translationLayout()">
-      <mat-button-toggle value="list" matTooltip="List Layout">
-        <mat-icon>view_list</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="tree" matTooltip="Tree Layout">
-        <mat-icon>account_tree</mat-icon>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
+    <hlm-toggle-group
+      type="single"
+      variant="outline"
+      [value]="settingsStore.translationLayout()"
+      (valueChange)="settingsStore.setTranslationLayout($event!)">
+      <button hlmToggleGroupItem value="list" aria-label="List Layout" hlmTooltipTrigger="List Layout">
+        <ng-icon hlm size="sm" name="lucideLayoutList" />
+      </button>
+      <button hlmToggleGroupItem value="tree" aria-label="Tree Layout" hlmTooltipTrigger="Tree Layout">
+        <ng-icon hlm size="sm" name="lucideListTree" />
+      </button>
+    </hlm-toggle-group>
     @if ('TRANSLATION_CREATE' | canUserPerform | async) {
       <button hlmBtn (click)="openAddDialog()">
         <ng-icon hlm name="lucidePlus" />

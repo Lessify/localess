@@ -5,17 +5,18 @@
       Uploading ... ({{ fileUploadQueue().length }})
     </span>
   }
-  <mat-button-toggle-group
-    hideSingleSelectionIndicator="true"
-    (change)="settingsStore.setAssetLayout($event.value)"
-    [value]="settingsStore.assetLayout()">
-    <mat-button-toggle value="list" matTooltip="List Layout">
-      <mat-icon>view_list</mat-icon>
-    </mat-button-toggle>
-    <mat-button-toggle value="grid" matTooltip="Grid Layout">
-      <mat-icon>grid_view</mat-icon>
-    </mat-button-toggle>
-  </mat-button-toggle-group>
+  <hlm-toggle-group
+    type="single"
+    variant="outline"
+    [value]="settingsStore.assetLayout()"
+    (valueChange)="settingsStore.setAssetLayout($event!)">
+    <button hlmToggleGroupItem value="list" aria-label="List Layout" hlmTooltipTrigger="List Layout">
+      <ng-icon hlm size="sm" name="lucideLayoutList" />
+    </button>
+    <button hlmToggleGroupItem value="grid" aria-label="Grid Layout" hlmTooltipTrigger="Grid Layout">
+      <ng-icon hlm size="sm" name="lucideLayoutGrid" />
+    </button>
+  </hlm-toggle-group>
   @if ('ASSET_CREATE' | canUserPerform | async) {
     <button hlmBtn [brnMenuTriggerFor]="uploadExtraMenu">
       <ng-icon hlm name="lucideUpload" />
