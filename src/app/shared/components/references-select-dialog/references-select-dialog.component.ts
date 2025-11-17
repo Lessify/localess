@@ -24,13 +24,16 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFolderRoot } from '@ng-icons/lucide';
 import { StatusComponent } from '@shared/components/status';
 import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
 import { Schema, SchemaType } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { PathItem } from '@shared/stores/space.store';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { BehaviorSubject, combineLatest } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ReferencesSelectDialogModel } from './references-select-dialog.model';
@@ -43,8 +46,6 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
   imports: [
     MatDialogModule,
     MatProgressBarModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
     MatTableModule,
     MatSortModule,
     MatCheckboxModule,
@@ -54,6 +55,13 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
     CommonModule,
     MatPaginatorModule,
     MatButtonModule,
+    HlmBreadCrumbImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideFolderRoot,
+    }),
   ],
 })
 export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {

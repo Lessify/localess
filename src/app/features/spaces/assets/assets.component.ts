@@ -25,6 +25,7 @@ import {
   lucideFileSymlink,
   lucideFileUp,
   lucideFolderPlus,
+  lucideFolderRoot,
   lucideLayoutGrid,
   lucideLayoutList,
   lucideLoaderCircle,
@@ -33,7 +34,6 @@ import {
   lucideUploadCloud,
 } from '@ng-icons/lucide';
 import { tablerBrandUnsplash } from '@ng-icons/tabler-icons';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
@@ -63,11 +63,12 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
-import { HlmTooltipTrigger } from '@spartan-ng/helm/tooltip';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Subject } from 'rxjs';
 import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
@@ -97,8 +98,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     MatMenuModule,
     MatDividerModule,
     MatProgressBarModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
     FileDragAndDropDirective,
     MatTableModule,
     MatCheckboxModule,
@@ -117,7 +116,8 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmMenuImports,
     BrnMenuImports,
     HlmToggleGroupImports,
-    HlmTooltipTrigger,
+    HlmTooltipImports,
+    HlmBreadCrumbImports,
   ],
   providers: [
     provideIcons({
@@ -133,6 +133,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
       lucideRefreshCcwDot,
       lucideLayoutGrid,
       lucideLayoutList,
+      lucideFolderRoot,
     }),
   ],
 })

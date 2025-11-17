@@ -48,13 +48,28 @@
 }
 
 <div class="px-2 mx-auto mt-3">
-  <ll-breadcrumb>
-    @for (pathItem of spaceStore.contentPath(); track pathItem.fullSlug; let isFirst = $first) {
-      <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">
-        {{ pathItem.name }}
-      </ll-breadcrumb-item>
-    }
-  </ll-breadcrumb>
+  <nav hlmBreadcrumb class="p-2">
+    <ol hlmBreadcrumbList>
+      @for (pathItem of spaceStore.contentPath(); track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
+        @if (!isFirst) {
+          <li hlmBreadcrumbSeparator></li>
+        }
+        <li hlmBreadcrumbItem>
+          @if (isFirst) {
+            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
+              <ng-icon name="lucideFolderRoot" />
+            </button>
+          } @else if (isLast) {
+            <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
+          } @else {
+            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
+              {{ pathItem.name }}
+            </button>
+          }
+        </li>
+      }
+    </ol>
+  </nav>
 
   <mat-table [dataSource]="dataSource" matSort>
     <!-- Checkbox Column -->

@@ -22,11 +22,11 @@ import {
   lucideExternalLink,
   lucideFilePlus,
   lucideFolderPlus,
+  lucideFolderRoot,
   lucideLink,
   lucidePlus,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { StatusComponent } from '@shared/components/status';
@@ -48,6 +48,7 @@ import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { BrnMenuImports } from '@spartan-ng/brain/menu';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmMenuImports } from '@spartan-ng/helm/menu';
@@ -74,8 +75,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     MatMenuModule,
     MatDividerModule,
     MatProgressBarModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
     MatTableModule,
     MatSortModule,
     MatCheckboxModule,
@@ -85,6 +84,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmIconImports,
     HlmMenuImports,
     BrnMenuImports,
+    HlmBreadCrumbImports,
   ],
   providers: [
     provideIcons({
@@ -96,6 +96,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
       lucideFolderPlus,
       lucideFilePlus,
       lucideExternalLink,
+      lucideFolderRoot,
     }),
   ],
 })

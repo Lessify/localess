@@ -17,7 +17,8 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFolderRoot } from '@ng-icons/lucide';
 import { AnimateDirective } from '@shared/directives/animate.directive';
 import { Asset, AssetKind } from '@shared/models/asset.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -27,6 +28,8 @@ import { AssetService } from '@shared/services/asset.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem } from '@shared/stores/space.store';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { concatMap, switchMap, tap } from 'rxjs/operators';
 import { AssetsSelectDialogModel } from './assets-select-dialog.model';
@@ -42,8 +45,6 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     MatPaginatorModule,
     MatCheckboxModule,
     MatTooltipModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
     MatButtonToggleModule,
     MatIconModule,
     CanUserPerformPipe,
@@ -58,6 +59,13 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     NgOptimizedImage,
     AnimateDirective,
     MatCardModule,
+    HlmBreadCrumbImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideFolderRoot,
+    }),
   ],
 })
 export class AssetsSelectDialogComponent implements OnInit {

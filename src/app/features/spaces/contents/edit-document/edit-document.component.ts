@@ -1,3 +1,4 @@
+import { CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -30,6 +31,8 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFolderRoot } from '@ng-icons/lucide';
 import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { StatusComponent } from '@shared/components/status';
 import { AnimateDirective } from '@shared/directives/animate.directive';
@@ -49,13 +52,14 @@ import { SpaceService } from '@shared/services/space.service';
 import { TokenService } from '@shared/services/token.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { combineLatest, Observable } from 'rxjs';
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
 import { v4 } from 'uuid';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
 import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
-import { CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -83,6 +87,13 @@ import { CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/
     MatExpansionModule,
     AnimateDirective,
     DragDropModule,
+    HlmBreadCrumbImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideFolderRoot,
+    }),
   ],
 })
 export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {

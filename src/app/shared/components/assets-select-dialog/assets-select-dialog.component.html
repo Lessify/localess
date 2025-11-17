@@ -27,14 +27,28 @@
 @if (isLoading()) {
   <mat-progress-bar mode="query" />
 }
-<ll-breadcrumb>
-  <span style="padding-left: 1rem">&nbsp;</span>
-  @for (pathItem of assetPath; track pathItem.fullSlug; let isFirst = $first) {
-    <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">
-      {{ pathItem.name }}
-    </ll-breadcrumb-item>
-  }
-</ll-breadcrumb>
+<nav hlmBreadcrumb class="px-6 py-2">
+  <ol hlmBreadcrumbList>
+    @for (pathItem of assetPath; track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
+      @if (!isFirst) {
+        <li hlmBreadcrumbSeparator></li>
+      }
+      <li hlmBreadcrumbItem>
+        @if (isFirst) {
+          <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
+            <ng-icon name="lucideFolderRoot" />
+          </button>
+        } @else if (isLast) {
+          <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
+        } @else {
+          <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
+            {{ pathItem.name }}
+          </button>
+        }
+      </li>
+    }
+  </ol>
+</nav>
 <mat-dialog-content>
   @if (settingsStore.assetDialogLayout() === 'list') {
     <mat-table [dataSource]="dataSource" matSort>

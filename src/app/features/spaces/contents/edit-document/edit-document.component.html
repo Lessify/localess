@@ -196,6 +196,34 @@
           class="flex overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
           @if (rootSchema) {
             <div class="flex flex-col max-w-(--breakpoint-lg) p-2">
+              <nav hlmBreadcrumb class="p-2">
+                <ol hlmBreadcrumbList>
+                  @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isLast = $last; let isFirst = $first) {
+                    @if (!isFirst) {
+                      <li hlmBreadcrumbSeparator></li>
+                    }
+                    <li hlmBreadcrumbItem>
+                      @if (isFirst) {
+                        <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
+                          <ng-icon name="lucideFolderRoot" />
+                        </button>
+                      } @else if (isLast) {
+                        <span hlmBreadcrumbPage>
+                          @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
+                            {{ sch.displayName || sch.id }}
+                          }
+                        </span>
+                      } @else {
+                        <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
+                          @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
+                            {{ sch.displayName || sch.id }}
+                          }
+                        </button>
+                      }
+                    </li>
+                  }
+                </ol>
+              </nav>
               <ll-breadcrumb>
                 @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isFirst = $first) {
                   <ll-breadcrumb-item (click)="navigateToSchemaBackwards(schemaPathItem)" [home]="isFirst">
