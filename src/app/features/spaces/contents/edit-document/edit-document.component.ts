@@ -33,7 +33,6 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolderRoot } from '@ng-icons/lucide';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
 import { StatusComponent } from '@shared/components/status';
 import { AnimateDirective } from '@shared/directives/animate.directive';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
@@ -81,8 +80,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     MatProgressBarModule,
     MatSidenavModule,
     MatCardModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
     EditDocumentSchemaComponent,
     MatExpansionModule,
     AnimateDirective,
