@@ -271,8 +271,8 @@
                 @switch (selectedTranslation.type) {
                   @case ('STRING') {
                     <!--                          <ll-translation-string-edit-->
-                      <!--                            [value]="translateValue() || selectedTranslation.locales[selectedTargetLocale]"-->
-                      <!--                            (valueChange)="selectedTranslationLocaleValue = $event" />-->
+                    <!--                            [value]="translateValue() || selectedTranslation.locales[selectedTargetLocale]"-->
+                    <!--                            (valueChange)="selectedTranslationLocaleValue = $event" />-->
                     <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
                   }
                   @case ('PLURAL') {
@@ -433,17 +433,17 @@
                       @switch (item.type) {
                         @case ('PUBLISHED') {
                           <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>publish</mat-icon>
-                          </span>
+                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                              <mat-icon>publish</mat-icon>
+                            </span>
                           </div>
                           <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                             <div>
                               <p class="text-sm">
                                 Published by
                                 <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                                {{ item.name || 'Unknown' }}
-                              </span>
+                                  {{ item.name || 'Unknown' }}
+                                </span>
                               </p>
                             </div>
                             <div class="whitespace-nowrap text-right text-sm">
@@ -453,17 +453,17 @@
                         }
                         @case ('CREATE') {
                           <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>add</mat-icon>
-                          </span>
+                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                              <mat-icon>add</mat-icon>
+                            </span>
                           </div>
                           <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                             <div>
                               <p class="text-sm">
                                 Add <span class="font-medium break-all">{{ item.key }}</span> by
                                 <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                                {{ item.name || 'Unknown' }}
-                              </span>
+                                  {{ item.name || 'Unknown' }}
+                                </span>
                               </p>
                             </div>
                             <div class="whitespace-nowrap text-right text-sm">
@@ -473,17 +473,17 @@
                         }
                         @case ('UPDATE') {
                           <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>edit</mat-icon>
-                          </span>
+                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                              <mat-icon>edit</mat-icon>
+                            </span>
                           </div>
                           <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                             <div>
                               <p class="text-sm">
                                 Edit <span class="font-medium break-all">{{ item.key }}</span> by
                                 <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                                {{ item.name || 'Unknown' }}
-                              </span>
+                                  {{ item.name || 'Unknown' }}
+                                </span>
                               </p>
                             </div>
                             <div class="whitespace-nowrap text-right text-sm">
@@ -493,17 +493,17 @@
                         }
                         @case ('DELETE') {
                           <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>delete</mat-icon>
-                          </span>
+                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                              <mat-icon>delete</mat-icon>
+                            </span>
                           </div>
                           <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                             <div>
                               <p class="text-sm">
                                 Delete <span class="font-medium break-all">{{ item.key }}</span> by
                                 <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                                {{ item.name || 'Unknown' }}
-                              </span>
+                                  {{ item.name || 'Unknown' }}
+                                </span>
                               </p>
                             </div>
                             <div class="whitespace-nowrap text-right text-sm">
@@ -513,9 +513,9 @@
                         }
                         @default {
                           <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>question_mark</mat-icon>
-                          </span>
+                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
+                              <mat-icon>question_mark</mat-icon>
+                            </span>
                           </div>
                           <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                             <div>
