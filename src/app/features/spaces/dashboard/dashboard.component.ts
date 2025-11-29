@@ -16,7 +16,9 @@ import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 
 @Component({
   selector: 'll-dashboard',
@@ -34,6 +36,8 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
     MatTooltipModule,
     HlmButtonImports,
     HlmIconImports,
+    HlmCardImports,
+    HlmProgressImports,
   ],
   providers: [
     provideIcons({

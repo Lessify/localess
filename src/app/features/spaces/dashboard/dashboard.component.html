@@ -12,77 +12,99 @@
         <section id="overview">
           <h3 class="text-base font-semibold leading-6">Overview</h3>
           <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Locales</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ space.locales.length }} / ∞</mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Translations</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.translationsCount }} / ∞</mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Asset Files</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.assetsCount }} / ∞</mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Content Documents</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.contentsCount }} / ∞</mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Schemas</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.schemasCount }} / ∞ </mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Tasks</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.tasksCount }} / ∞ </mat-card-content>
-            </mat-card>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Locales</h3>
+              </div>
+              <div hlmCardContent>
+                {{ space.locales.length }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Translations</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.translationsCount }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Asset Files</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.assetsCount }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Content Documents</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.contentsCount }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Schemas</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.schemasCount }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Tasks</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.tasksCount }} / ∞
+              </div>
+            </section>
           </div>
         </section>
         <section id="storage">
           <h3 class="text-base font-semibold leading-6">Storage</h3>
           <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Total</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.totalSize | formatFileSize }} / ∞ </mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Translations</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.translationsSize | formatFileSize }} / ∞ </mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Asset Files</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.assetsSize | formatFileSize }} / ∞ </mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Content Documents</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.contentsSize | formatFileSize }} / ∞ </mat-card-content>
-            </mat-card>
-            <mat-card appearance="outlined">
-              <mat-card-header>
-                <mat-card-title>Task Files</mat-card-title>
-              </mat-card-header>
-              <mat-card-content> {{ overview.tasksSize | formatFileSize }} / ∞ </mat-card-content>
-            </mat-card>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Total</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.totalSize | formatFileSize }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Translations</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.translationsSize | formatFileSize }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Asset Files</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.assetsSize | formatFileSize }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Content Documents</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.contentsSize | formatFileSize }} / ∞
+              </div>
+            </section>
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>Task Files</h3>
+              </div>
+              <div hlmCardContent>
+                {{ overview.tasksSize | formatFileSize }} / ∞
+              </div>
+            </section>
           </div>
         </section>
         @if (space.progress; as progress) {
@@ -94,19 +116,17 @@
                   @let translationsCount = overview.translationsCount;
                   @let localeCount = progress.translations[locale.id] || 0;
                   @let localeProgress = translationsCount === 0 || localeCount === 0 ? 0 : localeCount / translationsCount;
-                  <mat-card appearance="outlined">
-                    <mat-card-header>
-                      <mat-card-title>
-                        {{ locale.name }}
-                      </mat-card-title>
-                      <mat-card-subtitle>
-                        {{ localeProgress | percent: '1.0-2' }} - {{ localeCount }} from {{ overview.translationsCount }}
-                      </mat-card-subtitle>
-                    </mat-card-header>
-                    <mat-card-content class="my-5">
-                      <mat-progress-bar mode="determinate" [value]="localeProgress === 0 ? 0 : localeProgress * 100" />
-                    </mat-card-content>
-                  </mat-card>
+                  <section hlmCard>
+                    <div hlmCardHeader>
+                      <h3 hlmCardTitle> {{ locale.name }}</h3>
+                    </div>
+                    <div hlmCardContent>
+                      {{ localeProgress | percent: '1.0-2' }} - {{ localeCount }} from {{ overview.translationsCount }}
+                      <hlm-progress class="w-full" [value]="localeProgress === 0 ? 0 : localeProgress * 100">
+                        <hlm-progress-indicator />
+                      </hlm-progress>
+                    </div>
+                  </section>
                 }
               </dl>
             }

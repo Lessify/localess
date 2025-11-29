@@ -79,6 +79,12 @@
       ],
       "@spartan-ng/helm/dropdown-menu": [
         "./libs/ui/dropdown-menu/src/index.ts"
+      ],
+      "@spartan-ng/helm/card": [
+        "./libs/ui/card/src/index.ts"
+      ],
+      "@spartan-ng/helm/progress": [
+        "./libs/ui/progress/src/index.ts"
       ]
     },
     "useDefineForClassFields": false
