@@ -1,23 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronRight } from '@ng-icons/lucide';
-import { HlmIcon } from '@spartan-ng/helm/icon';
 import { hlm } from '@spartan-ng/helm/utils';
 import type { ClassValue } from 'clsx';
 
 @Component({
-	selector: 'hlm-menu-item-sub-indicator',
+	selector: 'hlm-dropdown-menu-item-sub-indicator',
+	imports: [NgIcon],
 	providers: [provideIcons({ lucideChevronRight })],
-	imports: [NgIcon, HlmIcon],
-	template: `
-		<ng-icon hlm size="sm" name="lucideChevronRight" class="text-popover-foreground" />
-	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'[class]': '_computedClass()',
 	},
-	changeDetection: ChangeDetectionStrategy.OnPush,
+	template: `
+		<ng-icon name="lucideChevronRight" class="text-base" />
+	`,
 })
-export class HlmMenuItemSubIndicator {
+export class HlmDropdownMenuItemSubIndicator {
 	public readonly userClass = input<ClassValue>('', { alias: 'class' });
 	protected readonly _computedClass = computed(() => hlm('ml-auto size-4', this.userClass()));
 }

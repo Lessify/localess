@@ -1,46 +1,46 @@
 <div class="p-2 flex items-center justify-end gap-2">
   @if ('CONTENT_CREATE' | canUserPerform | async) {
-    <button hlmBtn [brnMenuTriggerFor]="contentCreateMenu">
+    <button hlmBtn [hlmDropdownMenuTrigger]="contentCreateMenu">
       <ng-icon hlm name="lucidePlus" />
       Add Content
     </button>
     <ng-template #contentCreateMenu>
-      <hlm-menu>
-        <button hlmMenuItem (click)="openAddDocumentDialog()">
-          <ng-icon hlmMenuIcon name="lucideFilePlus" />
+      <hlm-dropdown-menu>
+        <button hlmDropdownMenuItem (click)="openAddDocumentDialog()">
+          <ng-icon name="lucideFilePlus" />
           Document
         </button>
-        <button hlmMenuItem (click)="openAddFolderDialog()">
-          <ng-icon hlmMenuIcon name="lucideFolderPlus" />
+        <button hlmDropdownMenuItem (click)="openAddFolderDialog()">
+          <ng-icon name="lucideFolderPlus" />
           Folder
         </button>
-      </hlm-menu>
+      </hlm-dropdown-menu>
     </ng-template>
   }
-  <button hlmBtn size="icon" variant="ghost" [brnMenuTriggerFor]="extraMenu">
+  <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
     <ng-icon hlm name="lucideEllipsisVertical" />
   </button>
   <ng-template #extraMenu>
-    <hlm-menu>
+    <hlm-dropdown-menu>
       @if ('CONTENT_IMPORT' | canUserPerform | async) {
-        <button hlmMenuItem (click)="openImportDialog()">
-          <ng-icon hlmMenuIcon name="lucideUploadCloud" />
+        <button hlmDropdownMenuItem (click)="openImportDialog()">
+          <ng-icon name="lucideUploadCloud" />
           Import
         </button>
       }
       @if ('CONTENT_EXPORT' | canUserPerform | async) {
-        <button hlmMenuItem (click)="openExportDialog()">
-          <ng-icon hlmMenuIcon name="lucideCloudDownload" />
+        <button hlmDropdownMenuItem (click)="openExportDialog()">
+          <ng-icon name="lucideCloudDownload" />
           Export
         </button>
       }
-      <hlm-menu-separator />
-      <button hlmMenuItem (click)="openLinksV1InNewTab()">
-        <ng-icon hlmMenuIcon name="lucideLink" />
+      <hlm-dropdown-menu-separator />
+      <button hlmDropdownMenuItem (click)="openLinksV1InNewTab()">
+        <ng-icon name="lucideLink" />
         Links
-        <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
+        <ng-icon name="lucideExternalLink" class="ml-auto" />
       </button>
-    </hlm-menu>
+    </hlm-dropdown-menu>
   </ng-template>
 </div>
 @if (isLoading()) {

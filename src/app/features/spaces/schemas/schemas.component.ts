@@ -36,10 +36,9 @@ import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
-import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
@@ -70,8 +69,7 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
     MatPaginatorModule,
     HlmButtonImports,
     HlmIconImports,
-    HlmMenuImports,
-    BrnMenuImports,
+    HlmDropdownMenuImports,
   ],
   providers: [
     provideIcons({

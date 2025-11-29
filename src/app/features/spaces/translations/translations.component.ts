@@ -51,10 +51,9 @@ import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, Observable } from 'rxjs';
@@ -110,8 +109,7 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     HlmButtonImports,
     HlmIconImports,
     HlmTooltipImports,
-    HlmMenuImports,
-    BrnMenuImports,
+    HlmDropdownMenuImports,
     HlmToggleGroupImports,
   ],
   providers: [

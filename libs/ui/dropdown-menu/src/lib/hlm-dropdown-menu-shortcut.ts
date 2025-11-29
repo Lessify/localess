@@ -1,18 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { computed, Directive, input } from '@angular/core';
 import { hlm } from '@spartan-ng/helm/utils';
 import type { ClassValue } from 'clsx';
 
-@Component({
-	selector: 'hlm-menu-shortcut',
-	template: `
-		<ng-content />
-	`,
+@Directive({
+	selector: '[hlmDropdownMenuShortcut],hlm-dropdown-menu-shortcut',
 	host: {
+		'data-slot': 'dropdown-menu-shortcut',
 		'[class]': '_computedClass()',
 	},
-	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HlmMenuShortcut {
+export class HlmDropdownMenuShortcut {
 	public readonly userClass = input<ClassValue>('', { alias: 'class' });
 	protected readonly _computedClass = computed(() =>
 		hlm('text-muted-foreground ml-auto text-xs tracking-widest', this.userClass()),

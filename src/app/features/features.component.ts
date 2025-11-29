@@ -53,13 +53,12 @@ import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
-import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { BrnTooltipImports } from '@spartan-ng/brain/tooltip';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIcon } from '@spartan-ng/helm/icon';
-import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
@@ -116,8 +115,7 @@ interface SideMenuItem {
     HlmIcon,
     HlmTooltipImports,
     LogoComponent,
-    BrnMenuImports,
-    HlmMenuImports,
+    HlmDropdownMenuImports,
     HlmAvatarImports,
     BrnTooltipImports,
     HlmButtonImports,

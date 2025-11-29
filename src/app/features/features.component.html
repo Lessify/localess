@@ -22,20 +22,20 @@
           <ul hlmSidebarMenu>
             @if (spaceStore.spaces().length > 0) {
               <li hlmSidebarMenuItem>
-                <button hlmSidebarMenuButton [brnMenuTriggerFor]="spaceMenu" side="bottom">
+                <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom">
                   <ng-icon hlm name="tablerSpaces" />
                   <span>{{ spaceStore.selectedSpace()?.name }}</span>
                   <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
                 </button>
                 <ng-template #spaceMenu>
-                  <hlm-menu class="w-60">
+                  <hlm-dropdown-menu class="w-60">
                     @for (space of spaceStore.spaces(); track space.id) {
-                      <button hlmMenuItemRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
-                        <hlm-menu-item-radio />
+                      <button hlmDropdownMenuRadio  [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
+                        <hlm-dropdown-menu-radio-indicator />
                         <span> {{ space.name }} </span>
                       </button>
                     }
-                  </hlm-menu>
+                  </hlm-dropdown-menu>
                 </ng-template>
               </li>
             }
@@ -88,22 +88,22 @@
               </button>
             </li>
             <li hlmSidebarMenuItem hlmTooltipTrigger="Support">
-              <button hlmSidebarMenuButton [brnMenuTriggerFor]="menu" side="right">
+              <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="menu" side="right">
                 <ng-icon hlm name="lucideLifeBuoy" />
                 Support
-                <hlm-menu-item-sub-indicator />
+                <hlm-dropdown-menu-item-sub-indicator />
               </button>
             </li>
             <ng-template #menu>
-              <hlm-menu>
+              <hlm-dropdown-menu>
                 @for (menuItem of communitySideMenu; track menuItem.label) {
-                  <button hlmMenuItem (click)="openNewTab(menuItem.link)">
-                    <ng-icon hlmMenuIcon [name]="menuItem.icon" />
+                  <button hlmDropdownMenuItem (click)="openNewTab(menuItem.link)">
+                    <ng-icon [name]="menuItem.icon" />
                     {{ menuItem.label }}
-                    <ng-icon hlmMenuIcon name="lucideExternalLink" class="ml-auto" />
+                    <ng-icon name="lucideExternalLink" class="ml-auto" />
                   </button>
                 }
-              </hlm-menu>
+              </hlm-dropdown-menu>
             </ng-template>
 
             <li hlmSidebarMenuItem hlmTooltipTrigger="Sponsor Us">
@@ -134,7 +134,7 @@
     <div hlmSidebarFooter>
       <ul hlmSidebarMenu>
         <li hlmSidebarMenuItem>
-          <button hlmSidebarMenuButton size="lg" [brnMenuTriggerFor]="userMenu" side="right" class="flex gap-2">
+          <button hlmSidebarMenuButton size="lg" [hlmDropdownMenuTrigger]="userMenu" side="right" class="flex gap-2">
             <hlm-avatar>
               <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
               <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
@@ -146,7 +146,7 @@
             <ng-icon hlm name="lucideChevronsUpDown" class="ml-auto" />
           </button>
           <ng-template #userMenu>
-            <hlm-menu class="w-60">
+            <hlm-dropdown-menu class="w-60">
               <div class="flex gap-2 p-2">
                 <hlm-avatar>
                   <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
@@ -157,17 +157,17 @@
                   <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
                 </div>
               </div>
-              <hlm-menu-separator />
-              <button hlmMenuItem routerLink="/features/me" brnTooltipTrigger="Profile">
-                <ng-icon hlmMenuIcon name="lucideUserCircle" />
+              <hlm-dropdown-menu-separator />
+              <button hlmDropdownMenuItem routerLink="/features/me" brnTooltipTrigger="Profile">
+                <ng-icon name="lucideUserCircle" />
                 Profile
               </button>
-              <hlm-menu-separator />
-              <button hlmMenuItem (click)="onLogoutClick()" brnTooltipTrigger="Log Out">
-                <ng-icon hlmMenuIcon name="lucideLogOut" />
+              <hlm-dropdown-menu-separator />
+              <button hlmDropdownMenuItem (click)="onLogoutClick()" brnTooltipTrigger="Log Out">
+                <ng-icon name="lucideLogOut" />
                 Log out
               </button>
-            </hlm-menu>
+            </hlm-dropdown-menu>
           </ng-template>
         </li>
       </ul>

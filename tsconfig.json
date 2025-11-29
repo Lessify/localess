@@ -59,9 +59,6 @@
       "@spartan-ng/helm/skeleton": [
         "./libs/ui/skeleton/src/index.ts"
       ],
-      "@spartan-ng/helm/menu": [
-        "./libs/ui/menu/src/index.ts"
-      ],
       "@spartan-ng/helm/avatar": [
         "./libs/ui/avatar/src/index.ts"
       ],
@@ -79,6 +76,9 @@
       ],
       "@spartan-ng/helm/toggle": [
         "./libs/ui/toggle/src/index.ts"
+      ],
+      "@spartan-ng/helm/dropdown-menu": [
+        "./libs/ui/dropdown-menu/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

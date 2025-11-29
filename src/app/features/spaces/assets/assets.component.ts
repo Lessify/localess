@@ -61,12 +61,11 @@ import { TaskService } from '@shared/services/task.service';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
-import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Subject } from 'rxjs';
@@ -113,8 +112,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmButtonImports,
     HlmIconImports,
     HlmBadgeImports,
-    HlmMenuImports,
-    BrnMenuImports,
+    HlmDropdownMenuImports,
     HlmToggleGroupImports,
     HlmTooltipImports,
     HlmBreadCrumbImports,

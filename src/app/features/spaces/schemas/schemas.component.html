@@ -6,24 +6,24 @@
     </button>
   }
   @if (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async) {
-    <button hlmBtn size="icon" variant="ghost" [brnMenuTriggerFor]="extraMenu">
+    <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
-      <hlm-menu class="w-50">
+      <hlm-dropdown-menu class="w-50">
         @if ('SCHEMA_IMPORT' | canUserPerform | async) {
-          <button hlmMenuItem (click)="openImportDialog()">
-            <ng-icon hlmMenuIcon name="lucideUploadCloud" />
+          <button hlmDropdownMenuItem (click)="openImportDialog()">
+            <ng-icon name="lucideUploadCloud" />
             Import
           </button>
         }
         @if ('SCHEMA_EXPORT' | canUserPerform | async) {
-          <button hlmMenuItem (click)="openExportDialog()">
-            <ng-icon hlmMenuIcon name="lucideCloudDownload" />
+          <button hlmDropdownMenuItem (click)="openExportDialog()">
+            <ng-icon name="lucideCloudDownload" />
             Export
           </button>
         }
-      </hlm-menu>
+      </hlm-dropdown-menu>
     </ng-template>
   }
 </div>

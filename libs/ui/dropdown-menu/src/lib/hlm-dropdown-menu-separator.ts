@@ -1,16 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { computed, Directive, input } from '@angular/core';
 import { hlm } from '@spartan-ng/helm/utils';
 import type { ClassValue } from 'clsx';
 
-@Component({
-	selector: 'hlm-menu-separator',
-	template: '',
+@Directive({
+	selector: '[hlmDropdownMenuSeparator],hlm-dropdown-menu-separator',
 	host: {
+		'data-slot': 'dropdown-menu-separator',
 		'[class]': '_computedClass()',
 	},
-	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HlmMenuSeparator {
+export class HlmDropdownMenuSeparator {
 	public readonly userClass = input<ClassValue>('', { alias: 'class' });
 	protected readonly _computedClass = computed(() => hlm('bg-border -mx-1 my-1 block h-px', this.userClass()));
 }

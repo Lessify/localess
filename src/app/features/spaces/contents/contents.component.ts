@@ -47,11 +47,10 @@ import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
-import { BrnMenuImports } from '@spartan-ng/brain/menu';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmMenuImports } from '@spartan-ng/helm/menu';
 import { combineLatest } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
@@ -82,8 +81,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     MatPaginatorModule,
     HlmButtonImports,
     HlmIconImports,
-    HlmMenuImports,
-    BrnMenuImports,
+    HlmDropdownMenuImports,
     HlmBreadCrumbImports,
   ],
   providers: [
