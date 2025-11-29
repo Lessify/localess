@@ -30,7 +30,7 @@
                 <ng-template #spaceMenu>
                   <hlm-dropdown-menu class="w-60">
                     @for (space of spaceStore.spaces(); track space.id) {
-                      <button hlmDropdownMenuRadio  [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
+                      <button hlmDropdownMenuRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
                         <hlm-dropdown-menu-radio-indicator />
                         <span> {{ space.name }} </span>
                       </button>
