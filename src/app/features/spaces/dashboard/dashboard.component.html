@@ -122,7 +122,7 @@
                     </div>
                     <div hlmCardContent>
                       {{ localeProgress | percent: '1.0-2' }} - {{ localeCount }} from {{ overview.translationsCount }}
-                      <hlm-progress class="w-full" [value]="localeProgress === 0 ? 0 : localeProgress * 100">
+                      <hlm-progress [value]="localeProgress === 0 ? 0 : localeProgress * 100">
                         <hlm-progress-indicator />
                       </hlm-progress>
                     </div>

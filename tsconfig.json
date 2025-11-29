@@ -85,6 +85,15 @@
       ],
       "@spartan-ng/helm/progress": [
         "./libs/ui/progress/src/index.ts"
+      ],
+      "@spartan-ng/helm/form-field": [
+        "./libs/ui/form-field/src/index.ts"
+      ],
+      "@spartan-ng/helm/select": [
+        "./libs/ui/select/src/index.ts"
+      ],
+      "@spartan-ng/helm/scroll-area": [
+        "./libs/ui/scroll-area/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

@@ -13,8 +13,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -51,11 +49,16 @@ import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { BrnSheetContent } from '@spartan-ng/brain/sheet';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { NgScrollbarModule } from 'ngx-scrollbar';
 import { EMPTY, Observable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
@@ -84,10 +87,7 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     CanUserPerformPipe,
     MatButtonModule,
     MatTooltipModule,
-    MatMenuModule,
     MatDividerModule,
-    MatProgressBarModule,
-    MatSidenavModule,
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
@@ -111,6 +111,11 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     HlmTooltipImports,
     HlmDropdownMenuImports,
     HlmToggleGroupImports,
+    HlmProgressImports,
+    HlmSheetImports,
+    BrnSheetContent,
+    HlmScrollAreaImports,
+    NgScrollbarModule,
   ],
   providers: [
     provideIcons({
@@ -144,7 +149,7 @@ export class TranslationsComponent implements OnInit {
   spaceId = input.required<string>();
 
   selectedSpace?: Space;
-  showHistory = false;
+  showHistory = signal(false);
 
   DEFAULT_LOCALE = 'en';
 
