@@ -17,24 +17,33 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFolderRoot } from '@ng-icons/lucide';
+import {
+  lucideAlertCircle,
+  lucideArrowLeft,
+  lucideEarth,
+  lucideEllipsisVertical,
+  lucideFolderRoot,
+  lucideFormInput,
+  lucideHistory,
+  lucidePencil,
+  lucideSave,
+  lucideTriangleAlert,
+  lucideUpload,
+  lucideVectorSquare,
+} from '@ng-icons/lucide';
 import { StatusComponent } from '@shared/components/status';
-import { AnimateDirective } from '@shared/directives/animate.directive';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentHistory } from '@shared/models/content-history.model';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
@@ -51,8 +60,19 @@ import { SpaceService } from '@shared/services/space.service';
 import { TokenService } from '@shared/services/token.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { BrnSheetContent } from '@spartan-ng/brain/sheet';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { NgScrollbarModule } from 'ngx-scrollbar';
 import { combineLatest, Observable } from 'rxjs';
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
 import { v4 } from 'uuid';
@@ -66,9 +86,7 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     MatIconModule,
-    MatButtonToggleModule,
     MatTooltipModule,
     MatButtonModule,
     MatMenuModule,
@@ -77,19 +95,39 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     CommonModule,
     StatusComponent,
     MatDividerModule,
-    MatProgressBarModule,
     MatSidenavModule,
     MatCardModule,
     EditDocumentSchemaComponent,
     MatExpansionModule,
-    AnimateDirective,
     DragDropModule,
     HlmBreadCrumbImports,
     HlmIconImports,
+    HlmButtonImports,
+    HlmToggleGroupImports,
+    HlmTooltipImports,
+    BrnSelectImports,
+    HlmDropdownMenuImports,
+    HlmSpinnerImports,
+    HlmProgressImports,
+    HlmSheetImports,
+    BrnSheetContent,
+    HlmScrollAreaImports,
+    NgScrollbarModule,
   ],
   providers: [
     provideIcons({
       lucideFolderRoot,
+      lucideArrowLeft,
+      lucideFormInput,
+      lucideVectorSquare,
+      lucideAlertCircle,
+      lucideTriangleAlert,
+      lucideSave,
+      lucideUpload,
+      lucideHistory,
+      lucideEllipsisVertical,
+      lucidePencil,
+      lucideEarth,
     }),
   ],
 })
@@ -112,7 +150,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   preview = viewChild<ElementRef<HTMLIFrameElement>>('preview');
 
-  showHistory = false;
+  showHistory = signal(false);
 
   selectedSpace?: Space;
   selectedLocale: Locale = DEFAULT_LOCALE;
@@ -581,4 +619,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.inResizeMode.set(false);
     this.settingsStore.setEditorFormWidth(this.editorFormWidth());
   }
+
+  protected readonly console = console;
 }

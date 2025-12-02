@@ -26,7 +26,6 @@ import {
   lucideLayoutList,
   lucideListTree,
   lucidePlus,
-  lucideRefreshCcw,
   lucideUpload,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
@@ -55,6 +54,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
@@ -115,6 +115,7 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     BrnSheetContent,
     HlmScrollAreaImports,
     NgScrollbarModule,
+    HlmSpinnerImports,
   ],
   providers: [
     provideIcons({
@@ -123,7 +124,6 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
       lucideCloudDownload,
       lucideUploadCloud,
       lucideUpload,
-      lucideRefreshCcw,
       lucideHistory,
       lucideEarth,
       lucideLayoutList,

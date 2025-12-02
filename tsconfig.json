@@ -94,6 +94,12 @@
       ],
       "@spartan-ng/helm/scroll-area": [
         "./libs/ui/scroll-area/src/index.ts"
+      ],
+      "@spartan-ng/helm/item": [
+        "./libs/ui/item/src/index.ts"
+      ],
+      "@spartan-ng/helm/kbd": [
+        "./libs/ui/kbd/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

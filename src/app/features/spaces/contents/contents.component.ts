@@ -51,6 +51,7 @@ import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { combineLatest } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
@@ -83,6 +84,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmIconImports,
     HlmDropdownMenuImports,
     HlmBreadCrumbImports,
+    HlmProgressImports,
   ],
   providers: [
     provideIcons({

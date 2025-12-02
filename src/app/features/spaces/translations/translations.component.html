@@ -1,14 +1,20 @@
 @if (space$ | async; as space) {
   <div class="p-2 flex items-center justify-end gap-2">
-    <hlm-toggle-group
-      type="single"
-      variant="outline"
-      [value]="settingsStore.translationLayout()"
-      (valueChange)="settingsStore.setTranslationLayout($event!)">
-      <button hlmToggleGroupItem value="list" aria-label="List Layout" hlmTooltipTrigger="List Layout">
+    <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.translationLayout()">
+      <button
+        hlmToggleGroupItem
+        value="list"
+        aria-label="List Layout"
+        hlmTooltipTrigger="List Layout"
+        (click)="settingsStore.setTranslationLayout('list')">
         <ng-icon hlm size="sm" name="lucideLayoutList" />
       </button>
-      <button hlmToggleGroupItem value="tree" aria-label="Tree Layout" hlmTooltipTrigger="Tree Layout">
+      <button
+        hlmToggleGroupItem
+        value="tree"
+        aria-label="Tree Layout"
+        hlmTooltipTrigger="Tree Layout"
+        (click)="settingsStore.setTranslationLayout('tree')">
         <ng-icon hlm size="sm" name="lucideListTree" />
       </button>
     </hlm-toggle-group>
@@ -25,11 +31,15 @@
         hlmTooltipTrigger="Publish Translations to be available via API call"
         [disabled]="isPublishLoading()"
         (click)="publish()">
-        <ng-icon [llAnimate]="isPublishLoading()" [name]="isPublishLoading() ? 'lucideRefreshCcw' : 'lucideUpload'" />
+        @if (isPublishLoading()) {
+          <hlm-spinner class="size-4" />
+        } @else {
+          <ng-icon hlm name="lucideUpload" />
+        }
         Publish
       </button>
     }
-    <button hlmBtn size="icon" variant="ghost" (click)="showHistory.set(!showHistory())">
+    <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Hisotry" (click)="showHistory.set(!showHistory())">
       <ng-icon hlm name="lucideHistory" />
     </button>
     <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
@@ -68,7 +78,7 @@
     </ng-template>
   </div>
   @if (isLoading()) {
-    <hlm-progress>
+    <hlm-progress class="h-0.5">
       <hlm-progress-indicator />
     </hlm-progress>
   }
