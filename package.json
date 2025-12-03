@@ -46,7 +46,7 @@
     "@ngrx/operators": "^20.1.0",
     "@ngrx/signals": "^20.1.0",
     "@ngrx/store-devtools": "^20.1.0",
-    "@spartan-ng/brain": "^0.0.1-alpha.570",
+    "@spartan-ng/brain": "^0.0.1-alpha.573",
     "@stoplight/elements": "^9.0.13",
     "@tiptap/core": "^2.7.1",
     "@tiptap/extension-bold": "^2.7.1",
