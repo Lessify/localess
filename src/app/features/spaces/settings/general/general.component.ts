@@ -7,7 +7,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -16,6 +15,7 @@ import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -25,7 +25,6 @@ import { filter } from 'rxjs/operators';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatToolbarModule,
-    MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -35,6 +34,7 @@ import { filter } from 'rxjs/operators';
     MatTooltipModule,
     MatSelectModule,
     CommonModule,
+    HlmProgressImports,
   ],
 })
 export class GeneralComponent {

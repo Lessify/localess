@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -19,6 +18,7 @@ import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter, switchMap } from 'rxjs/operators';
 import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
 import { SpaceDialogModel } from './space-dialog/space-dialog.model';
@@ -31,7 +31,6 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
   imports: [
     MatIconModule,
     MatButtonModule,
-    MatProgressBarModule,
     ClipboardModule,
     MatTooltipModule,
     CommonModule,
@@ -40,6 +39,7 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
     MatPaginatorModule,
     HlmButtonImports,
     HlmIconImports,
+    HlmProgressImports,
   ],
   providers: [
     provideIcons({

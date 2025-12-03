@@ -7,7 +7,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -15,12 +14,13 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideRefreshCcw, lucideUserPlus } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { AnimateDirective } from '@shared/directives/animate.directive';
 import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmIcon } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap } from 'rxjs/operators';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
@@ -36,7 +36,6 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
   imports: [
     MatTooltipModule,
     MatTableModule,
-    MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
     MatSortModule,
@@ -48,7 +47,8 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
     HlmIcon,
     NgIcon,
     HlmTooltipImports,
-    AnimateDirective,
+    HlmProgressImports,
+    HlmSpinnerImports,
   ],
   providers: [
     provideIcons({

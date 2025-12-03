@@ -78,7 +78,9 @@
   }
 </div>
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
 <div class="px-2 mx-auto mt-3">
   <nav hlmBreadcrumb class="p-2">

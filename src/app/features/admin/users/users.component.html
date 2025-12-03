@@ -1,6 +1,10 @@
 <div class="p-2 flex justify-end gap-2">
-  <button hlmBtn (click)="sync()" hlmTooltipTrigger="Synchronize Users with Database">
-    <ng-icon hlm name="lucideRefreshCcw" [llAnimate]="isSyncLoading()" />
+  <button hlmBtn (click)="sync()" [disabled]="isSyncLoading()" hlmTooltipTrigger="Synchronize Users with Database">
+    @if (isSyncLoading()) {
+      <hlm-spinner class="size-4" />
+    } @else {
+      <ng-icon hlm name="lucideRefreshCcw" />
+    }
     Sync
   </button>
   <button hlmBtn (click)="inviteDialog()">
@@ -10,7 +14,9 @@
 </div>
 
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
 
 <div class="px-2 mx-auto mt-3">

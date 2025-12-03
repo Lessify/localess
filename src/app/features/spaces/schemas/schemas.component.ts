@@ -22,7 +22,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -39,6 +38,7 @@ import { TaskService } from '@shared/services/task.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
@@ -60,7 +60,6 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
     CommonModule,
     MatButtonModule,
     MatMenuModule,
-    MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
     MatTableModule,
@@ -70,6 +69,7 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
     HlmButtonImports,
     HlmIconImports,
     HlmDropdownMenuImports,
+    HlmProgressImports,
   ],
   providers: [
     provideIcons({

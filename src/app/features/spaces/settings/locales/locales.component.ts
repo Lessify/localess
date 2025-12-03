@@ -4,7 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -14,6 +13,7 @@ import { Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceStore } from '@shared/stores/space.store';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter, switchMap } from 'rxjs/operators';
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
@@ -27,11 +27,11 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
-    MatProgressBarModule,
     MatTableModule,
     MatSortModule,
     MatTooltipModule,
     MatPaginatorModule,
+    HlmProgressImports,
   ],
 })
 export class LocalesComponent {

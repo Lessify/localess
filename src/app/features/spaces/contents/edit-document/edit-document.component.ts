@@ -32,17 +32,22 @@ import { provideIcons } from '@ng-icons/core';
 import {
   lucideAlertCircle,
   lucideArrowLeft,
+  lucideArrowRight,
+  lucideChevronDown,
   lucideEarth,
   lucideEllipsisVertical,
   lucideFolderRoot,
   lucideFormInput,
+  lucideFullscreen,
   lucideHistory,
   lucidePencil,
+  lucideRefreshCcw,
   lucideSave,
   lucideTriangleAlert,
   lucideUpload,
   lucideVectorSquare,
 } from '@ng-icons/lucide';
+import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
 import { StatusComponent } from '@shared/components/status';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentHistory } from '@shared/models/content-history.model';
@@ -64,8 +69,11 @@ import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { BrnSheetContent } from '@spartan-ng/brain/sheet';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
@@ -113,11 +121,15 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     BrnSheetContent,
     HlmScrollAreaImports,
     NgScrollbarModule,
+    HlmInputGroupImports,
+    HlmButtonGroupImports,
+    HlmLabelImports,
   ],
   providers: [
     provideIcons({
       lucideFolderRoot,
       lucideArrowLeft,
+      lucideArrowRight,
       lucideFormInput,
       lucideVectorSquare,
       lucideAlertCircle,
@@ -128,6 +140,13 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
       lucideEllipsisVertical,
       lucidePencil,
       lucideEarth,
+      lucideFullscreen,
+      tablerDeviceMobile,
+      tablerDeviceTablet,
+      tablerDeviceLaptop,
+      tablerDeviceDesktop,
+      lucideRefreshCcw,
+      lucideChevronDown,
     }),
   ],
 })

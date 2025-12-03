@@ -8,7 +8,6 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SpaceEnvironment } from '@shared/models/space.model';
@@ -17,6 +16,7 @@ import { SpaceService } from '@shared/services/space.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -28,13 +28,13 @@ import { filter } from 'rxjs/operators';
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
-    MatProgressBarModule,
     ReactiveFormsModule,
     MatExpansionModule,
     DragDropModule,
     MatFormFieldModule,
     MatInputModule,
     CommonModule,
+    HlmProgressImports,
   ],
 })
 export class VisualEditorComponent {

@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -16,6 +15,7 @@ import { Token } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
 import { SpaceStore } from '@shared/stores/space.store';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter, switchMap } from 'rxjs/operators';
 import { TokenDialogComponent } from './token-dialog/token-dialog.component';
 import { TokenDialogModel } from './token-dialog/token-dialog.model';
@@ -29,13 +29,13 @@ import { TokenDialogModel } from './token-dialog/token-dialog.model';
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
-    MatProgressBarModule,
     MatTableModule,
     MatSortModule,
     ClipboardModule,
     MatTooltipModule,
     CommonModule,
     MatPaginatorModule,
+    HlmProgressImports,
   ],
 })
 export class TokensComponent {

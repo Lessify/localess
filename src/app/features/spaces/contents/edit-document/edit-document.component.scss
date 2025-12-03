@@ -7,16 +7,8 @@ mat-form-field {
   width: 100%;
 }
 
-mat-drawer-container {
-  height: 100%;
-}
-
-mat-drawer {
-  width: calc(100% - 695px);
-}
-
 .container-fluid {
-  height: calc(100vh - 130px);
+  height: calc(100dvh - 100px);
 }
 div.browser {
   iframe {

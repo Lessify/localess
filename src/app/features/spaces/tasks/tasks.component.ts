@@ -5,7 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -15,6 +14,7 @@ import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { saveAs } from 'file-saver-es';
 import { filter, switchMap } from 'rxjs/operators';
 
@@ -24,7 +24,6 @@ import { filter, switchMap } from 'rxjs/operators';
   styleUrls: ['./tasks.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatProgressBarModule,
     MatTableModule,
     MatSortModule,
     MatIconModule,
@@ -34,6 +33,7 @@ import { filter, switchMap } from 'rxjs/operators';
     TimeDurationPipe,
     MatButtonModule,
     MatPaginatorModule,
+    HlmProgressImports,
   ],
 })
 export class TasksComponent implements OnInit {

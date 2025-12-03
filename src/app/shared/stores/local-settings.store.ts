@@ -4,7 +4,7 @@ import { getState, patchState, signalStore, withComputed, withHooks, withMethods
 const LS_KEY = 'LL-SETTINGS-STATE';
 
 export type Theme = 'light' | 'dark' | 'auto';
-export type EditorSize = '' | 'sm' | 'md' | 'lg';
+export type EditorSize = '' | 'sm' | 'md' | 'lg' | 'xl';
 export type DataLayout = 'list' | 'grid';
 export type TranslationLayout = 'list' | 'tree';
 

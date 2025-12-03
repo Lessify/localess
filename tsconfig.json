@@ -100,6 +100,18 @@
       ],
       "@spartan-ng/helm/kbd": [
         "./libs/ui/kbd/src/index.ts"
+      ],
+      "@spartan-ng/helm/input-group": [
+        "./libs/ui/input-group/src/index.ts"
+      ],
+      "@spartan-ng/helm/textarea": [
+        "./libs/ui/textarea/src/index.ts"
+      ],
+      "@spartan-ng/helm/button-group": [
+        "./libs/ui/button-group/src/index.ts"
+      ],
+      "@spartan-ng/helm/label": [
+        "./libs/ui/label/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

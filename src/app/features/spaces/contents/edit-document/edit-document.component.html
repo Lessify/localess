@@ -1,6 +1,6 @@
 <div class="p-2 flex items-center justify-between gap-2">
   <div>
-    <button hlmBtn size="icon" variant="ghost" (click)="back()">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Contents">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <span class="title">{{ document()?.name }}</span>
@@ -150,49 +150,92 @@
 <div class="mx-auto container-fluid">
   <div class="flex justify-center h-full">
     @if (settingsStore.editorEnabled()) {
-      <div [ngClass]="{ 'block-dragging': inResizeMode() }" class="browser flex flex-col h-full grow overflow-hidden border">
+      <div [ngClass]="{ 'block-dragging': inResizeMode() }" class="browser flex flex-col h-full grow overflow-hidden border rounded-t-xl">
         @if (selectedEnvironment; as environment) {
-          <div class="flex flex-wrap border-b py-1">
-            <div class="flex flex-col grow px-2">
-              <div class="truncate">{{ environment.name }}</div>
-              <div class="truncate">{{ environment.url }}</div>
+          <div class="flex flex-wrap p-2 items-center gap-1">
+            <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go back" (click)="preview.contentWindow?.history?.back()">
+              <ng-icon hlm name="lucideArrowLeft" />
+            </button>
+            <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go forward" (click)="preview.contentWindow?.history?.forward()">
+              <ng-icon hlm name="lucideArrowRight" />
+            </button>
+            <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Reload" (click)="changeEnvironment(environment)">
+              <ng-icon hlm name="lucideRefreshCcw" />
+            </button>
+            <div class="flex-grow">
+              <div class="min-w-80 w-full" hlmButtonGroup>
+                <div hlmButtonGroupText>
+                  <label hlmLabel for="url">{{ environment.name }}</label>
+                </div>
+                <div hlmInputGroup>
+                  <input
+                    class="truncate"
+                    hlmInputGroupInput
+                    readonly
+                    id="url"
+                    placeholder="Select Environment"
+                    [value]="environment.url"
+                    [title]="environment.url" />
+                  <div hlmInputGroupAddon align="inline-end">
+                    <button hlmBtn size="icon" variant="link" [hlmDropdownMenuTrigger]="envMenu">
+                      <ng-icon hlm name="lucideChevronDown" />
+                    </button>
+                    <ng-template #envMenu>
+                      <hlm-dropdown-menu>
+                        @for (env of selectedSpace?.environments; track env.name) {
+                          <button hlmDropdownMenuRadio (click)="changeEnvironment(env)" [checked]="env.name === selectedEnvironment.name">
+                            <hlm-dropdown-menu-radio-indicator />
+                            <span>{{ env.name }} | {{ env.url }}</span>
+                          </button>
+                        }
+                      </hlm-dropdown-menu>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="flex self-center">
-              <mat-button-toggle-group
-                hideSingleSelectionIndicator="true"
-                (change)="settingsStore.setEditorSize($event.value)"
-                [value]="settingsStore.editorSize()"
-                style="height: 42px">
-                <mat-button-toggle value="" matTooltip="Fullscreen">
-                  <mat-icon>screenshot_monitor</mat-icon>
-                </mat-button-toggle>
-                <mat-button-toggle value="sm" matTooltip="Smartphone: 640px">
-                  <mat-icon>smartphone</mat-icon>
-                </mat-button-toggle>
-                <mat-button-toggle value="md" matTooltip="Tablet: 768px">
-                  <mat-icon>tablet</mat-icon>
-                </mat-button-toggle>
-                <mat-button-toggle value="lg" matTooltip="Laptop: 1024px">
-                  <mat-icon>laptop_windows</mat-icon>
-                </mat-button-toggle>
-                <mat-button-toggle value="xl" matTooltip="Desktop: 1280px">
-                  <mat-icon>desktop_windows</mat-icon>
-                </mat-button-toggle>
-              </mat-button-toggle-group>
-              <button mat-icon-button matTooltip="Reload" (click)="changeEnvironment(environment)">
-                <mat-icon>refresh</mat-icon>
+            <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorSize()">
+              <button
+                hlmToggleGroupItem
+                value=""
+                aria-label="Fullscreen"
+                hlmTooltipTrigger="Fullscreen"
+                (click)="settingsStore.setEditorSize('')">
+                <ng-icon hlm size="sm" name="lucideFullscreen" />
               </button>
-              <button mat-icon-button [matMenuTriggerFor]="envMenu">
-                <mat-icon>arrow_drop_down</mat-icon>
+              <button
+                hlmToggleGroupItem
+                value="sm"
+                aria-label="Smartphone: 640px"
+                hlmTooltipTrigger="Smartphone: 640px"
+                (click)="settingsStore.setEditorSize('sm')">
+                <ng-icon hlm size="sm" name="tablerDeviceMobile" />
               </button>
-              <mat-menu #envMenu="matMenu">
-                @for (env of selectedSpace?.environments; track env.name) {
-                  <button mat-menu-item (click)="changeEnvironment(env)" [disabled]="env === selectedEnvironment">
-                    {{ env.name }} | {{ env.url }}
-                  </button>
-                }
-              </mat-menu>
-            </div>
+              <button
+                hlmToggleGroupItem
+                value="md"
+                aria-label="Tablet: 768px"
+                hlmTooltipTrigger="Tablet: 768px"
+                (click)="settingsStore.setEditorSize('md')">
+                <ng-icon hlm size="sm" name="tablerDeviceTablet" />
+              </button>
+              <button
+                hlmToggleGroupItem
+                value="lg"
+                aria-label="Laptop: 1024px"
+                hlmTooltipTrigger="Laptop: 1024px"
+                (click)="settingsStore.setEditorSize('lg')">
+                <ng-icon hlm size="sm" name="tablerDeviceLaptop" />
+              </button>
+              <button
+                hlmToggleGroupItem
+                value="xl"
+                aria-label="Desktop: 1280px"
+                hlmTooltipTrigger="Desktop: 1280px"
+                (click)="settingsStore.setEditorSize('xl')">
+                <ng-icon hlm size="sm" name="tablerDeviceDesktop" />
+              </button>
+            </hlm-toggle-group>
           </div>
           <div class="flex h-full overflow-auto">
             <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()"></iframe>
