@@ -112,6 +112,15 @@
       ],
       "@spartan-ng/helm/label": [
         "./libs/ui/label/src/index.ts"
+      ],
+      "@spartan-ng/helm/field": [
+        "./libs/ui/field/src/index.ts"
+      ],
+      "@spartan-ng/helm/command": [
+        "./libs/ui/command/src/index.ts"
+      ],
+      "@spartan-ng/helm/popover": [
+        "./libs/ui/popover/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

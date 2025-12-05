@@ -4,7 +4,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -47,12 +47,16 @@ import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { BrnSelect, BrnSelectImports } from '@spartan-ng/brain/select';
 import { BrnSheetContent } from '@spartan-ng/brain/sheet';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
@@ -116,6 +120,11 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     HlmScrollAreaImports,
     NgScrollbarModule,
     HlmSpinnerImports,
+    HlmSelectImports,
+    BrnSelectImports,
+    HlmFieldImports,
+    BrnSelect,
+    HlmInputImports,
   ],
   providers: [
     provideIcons({
@@ -147,10 +156,15 @@ export class TranslationsComponent implements OnInit {
   // Input
   spaceId = input.required<string>();
 
+  // Form
+  filterForm = this.fb.group({
+    locale: this.fb.control<string>('', [Validators.required]),
+    search: this.fb.control<string>('', []),
+    labels: this.fb.array<string>([], []),
+  });
+
   selectedSpace?: Space;
   showHistory = signal(false);
-
-  DEFAULT_LOCALE = 'en';
 
   translations = signal<Translation[]>([]);
   translationsFiltered = computed(() =>
@@ -216,6 +230,7 @@ export class TranslationsComponent implements OnInit {
   expansionKey = (node: TranslationNode) => node.key;
 
   ngOnInit(): void {
+    this.filterForm.valueChanges.subscribe(value => console.log(value));
     this.space$ = this.spaceService.findById(this.spaceId()).pipe(
       tap(space => {
         this.selectedSpace = space;

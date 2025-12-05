@@ -83,6 +83,29 @@
     </hlm-progress>
   }
   <div class="px-2 mx-auto mt-3">
+    <form [formGroup]="filterForm">
+      <fieldset hlmFieldSet>
+        <div hlmFieldGroup class="grid grid-cols-4 gap-2 mb-3">
+          <div hlmField>
+            <label hlmFieldLabel for="filterForm.locale">Search Locale</label>
+            <hlm-select id="filterForm.locale" formControlName="locale" placeholder="Search Locale">
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value />
+              </hlm-select-trigger>
+              <hlm-select-content>
+                @for (locale of space.locales; track locale.id) {
+                  <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </div>
+          <div hlmField>
+            <label hlmFieldLabel for="filterForm.search">Search</label>
+            <input hlmInput id="filterForm.search" formControlName="search" placeholder="Search Terms" />
+          </div>
+        </div>
+      </fieldset>
+    </form>
     <div class="grid grid-cols-4 gap-2">
       <div class="">
         <mat-form-field>
