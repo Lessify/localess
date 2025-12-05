@@ -63,6 +63,7 @@ export class FormErrorHandlerService {
       }
       console.log(errors);
     }
+    console.log('No matching error handler found for errors:', errors);
 
     return null;
   }
