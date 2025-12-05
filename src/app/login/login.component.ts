@@ -1,5 +1,5 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import {
   Auth,
   GoogleAuthProvider,
@@ -10,11 +10,12 @@ import {
   signOut,
   User,
 } from '@angular/fire/auth';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterModule } from '@angular/router';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { UserStore } from '@shared/stores/user.store';
 import { EMPTY, Observable } from 'rxjs';
@@ -31,13 +32,15 @@ export class LoginComponent {
   readonly auth = inject(Auth);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
 
   redirectToFeatures = ['features'];
+  hasAuthError = signal(false);
 
   //Form
-  form: FormGroup = this.fb.group({
-    email: this.fb.control('', [Validators.minLength(2)]),
-    password: this.fb.control('', [Validators.minLength(2)]),
+  form = this.fb.group({
+    email: this.fb.control<string>('', [Validators.required, Validators.minLength(2)]),
+    password: this.fb.control<string>('', [Validators.required, Validators.minLength(2)]),
   });
 
   //Login
@@ -61,9 +64,18 @@ export class LoginComponent {
     });
   }
 
-  async loginWithEmailAndPassword(email: string, password: string): Promise<void> {
-    await signInWithEmailAndPassword(this.auth, email, password);
-    this.userStore.setAuthenticated(true);
+  async loginWithEmailAndPassword(): Promise<void> {
+    const { email, password } = this.form.value;
+    if (!email || !password) return;
+    try {
+      await signInWithEmailAndPassword(this.auth, email, password);
+      this.userStore.setAuthenticated(true);
+    } catch (error) {
+      console.error(error);
+      if (error && typeof error === 'object' && 'code' in error && error.code) {
+        this.hasAuthError.set(true);
+      }
+    }
   }
 
   async loginWithGoogle(): Promise<void> {
