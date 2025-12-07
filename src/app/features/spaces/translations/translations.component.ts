@@ -2,7 +2,18 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -34,19 +45,18 @@ import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/
 import { StatusComponent } from '@shared/components/status';
 import { AnimateDirective } from '@shared/directives/animate.directive';
 import { Locale } from '@shared/models/locale.model';
-import { Space } from '@shared/models/space.model';
 import { TranslationHistory } from '@shared/models/translation-history.model';
 import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { SpaceService } from '@shared/services/space.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { SpaceStore } from '@shared/stores/space.store';
 import { BrnSelect, BrnSelectImports } from '@spartan-ng/brain/select';
 import { BrnSheetContent } from '@spartan-ng/brain/sheet';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -63,7 +73,7 @@ import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { EMPTY, Observable } from 'rxjs';
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
@@ -144,7 +154,6 @@ export class TranslationsComponent implements OnInit {
   private readonly translationService = inject(TranslationService);
   private readonly translateHistoryService = inject(TranslationHistoryService);
   private readonly localeService = inject(LocaleService);
-  private readonly spaceService = inject(SpaceService);
   private readonly taskService = inject(TaskService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
@@ -163,7 +172,7 @@ export class TranslationsComponent implements OnInit {
     labels: this.fb.array<string>([], []),
   });
 
-  selectedSpace?: Space;
+  selectedSpace = computed(() => this.spaceStore.selectedSpace());
   showHistory = signal(false);
 
   translations = signal<Translation[]>([]);
@@ -209,7 +218,6 @@ export class TranslationsComponent implements OnInit {
 
   // Subscriptions
   history$?: Observable<TranslationHistory[]>;
-  space$?: Observable<Space>;
 
   //Loadings
   isLoading = signal(true);
@@ -222,6 +230,7 @@ export class TranslationsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
+  spaceStore = inject(SpaceStore);
 
   // Tree features
   childrenAccessor = (node: TranslationNode) => node.children ?? [];
@@ -229,12 +238,13 @@ export class TranslationsComponent implements OnInit {
   trackBy = (_: number, node: TranslationNode) => this.expansionKey(node);
   expansionKey = (node: TranslationNode) => node.key;
 
-  ngOnInit(): void {
-    this.filterForm.valueChanges.subscribe(value => console.log(value));
-    this.space$ = this.spaceService.findById(this.spaceId()).pipe(
-      tap(space => {
-        this.selectedSpace = space;
-        //this.locales = space.locales;
+  constructor() {
+    effect(() => {
+      const space = this.selectedSpace();
+      if (space) {
+        if (this.filterForm.value.locale === '') {
+          this.filterForm.patchValue({ locale: space.localeFallback.id });
+        }
         if (this.selectedSearchLocale() === '') {
           this.selectedSearchLocale.set(space.localeFallback.id);
         }
@@ -244,9 +254,12 @@ export class TranslationsComponent implements OnInit {
         if (this.selectedTargetLocale() === '') {
           this.selectedTargetLocale.set(space.localeFallback.id);
         }
-      }),
-      takeUntilDestroyed(this.destroyRef),
-    );
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.filterForm.valueChanges.subscribe(value => console.log(value));
     this.translationService
       .findAll(this.spaceId())
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -290,6 +303,8 @@ export class TranslationsComponent implements OnInit {
   }
 
   openAddDialog(): void {
+    const space = this.selectedSpace();
+    if (!space) return;
     this.dialog
       .open<AddDialogComponent, AddDialogModel, AddDialogReturnModel>(AddDialogComponent, {
         panelClass: 'sm',
@@ -304,7 +319,7 @@ export class TranslationsComponent implements OnInit {
           const tc: TranslationCreate = {
             id: it!.id,
             type: it!.type,
-            locale: this.selectedSpace!.localeFallback.id,
+            locale: space.localeFallback.id,
             value: it!.value,
             labels: it?.labels,
             description: it?.description,
@@ -630,7 +645,8 @@ export class TranslationsComponent implements OnInit {
   }
 
   identifyStatus(translate: Translation): TranslationStatus {
-    const locales = this.selectedSpace?.locales || [];
+    const space = this.selectedSpace();
+    const locales = space?.locales || [];
     if (Object.getOwnPropertyNames(translate.locales).length === 0) return TranslationStatus.UNTRANSLATED;
     let translateCount = 0;
     for (const locale of locales) {

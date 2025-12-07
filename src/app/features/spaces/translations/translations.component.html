@@ -1,4 +1,4 @@
-@if (space$ | async; as space) {
+@if (selectedSpace(); as space) {
   <div class="p-2 flex items-center justify-end gap-2">
     <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.translationLayout()">
       <button
@@ -101,7 +101,7 @@
           </div>
           <div hlmField>
             <label hlmFieldLabel for="filterForm.search">Search</label>
-            <input hlmInput id="filterForm.search" formControlName="search" placeholder="Search Terms" />
+            <input hlmInput id="filterForm.search" formControlName="search" placeholder="Search in your translations" />
           </div>
         </div>
       </fieldset>
