@@ -87,7 +87,7 @@
       <fieldset hlmFieldSet>
         <div hlmFieldGroup class="grid grid-cols-4 gap-2 mb-3">
           <div hlmField>
-            <hlm-select id="filterForm.locale" formControlName="locale" placeholder="Search Locale">
+            <hlm-select formControlName="locale" placeholder="Search Locale">
               <hlm-select-trigger class="w-full">
                 <hlm-select-value />
               </hlm-select-trigger>
@@ -99,7 +99,7 @@
             </hlm-select>
           </div>
           <div hlmField>
-            <input hlmInput id="filterForm.search" formControlName="search" placeholder="Search in your translations" />
+            <input hlmInput formControlName="search" placeholder="Search in your translations" autocomplete="off" />
           </div>
           <div hlmField class="col-span-2">
             <hlm-popover sideOffset="5">
