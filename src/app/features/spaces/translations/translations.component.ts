@@ -1,5 +1,4 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import {
@@ -14,9 +13,9 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
@@ -30,6 +29,8 @@ import { MatTreeModule } from '@angular/material/tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
+  lucideCheck,
+  lucideCirclePlus,
   lucideCloudDownload,
   lucideEarth,
   lucideEllipsisVertical,
@@ -37,6 +38,7 @@ import {
   lucideLayoutList,
   lucideListTree,
   lucidePlus,
+  lucideSearch,
   lucideUpload,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
@@ -57,13 +59,18 @@ import { TranslationHistoryService } from '@shared/services/translation-history.
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
+import { BrnPopoverImports } from '@spartan-ng/brain/popover';
 import { BrnSelect, BrnSelectImports } from '@spartan-ng/brain/select';
 import { BrnSheetContent } from '@spartan-ng/brain/sheet';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
+import { HlmCommandImports } from '@spartan-ng/helm/command';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
@@ -72,7 +79,7 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { EMPTY, Observable } from 'rxjs';
+import { debounceTime, EMPTY, Observable } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
@@ -135,10 +142,17 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     HlmFieldImports,
     BrnSelect,
     HlmInputImports,
+    BrnPopoverImports,
+    HlmPopoverImports,
+    HlmCommandImports,
+    HlmButtonGroupImports,
+    HlmBadgeImports,
   ],
   providers: [
     provideIcons({
       lucidePlus,
+      lucideCirclePlus,
+      lucideCheck,
       lucideEllipsisVertical,
       lucideCloudDownload,
       lucideUploadCloud,
@@ -147,6 +161,7 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
       lucideEarth,
       lucideLayoutList,
       lucideListTree,
+      lucideSearch,
     }),
   ],
 })
@@ -169,25 +184,24 @@ export class TranslationsComponent implements OnInit {
   filterForm = this.fb.group({
     locale: this.fb.control<string>('', [Validators.required]),
     search: this.fb.control<string>('', []),
-    labels: this.fb.array<string>([], []),
+    labels: this.fb.control<string[]>([], []),
   });
+  $filterForm = toSignal(this.filterForm.valueChanges.pipe(debounceTime(500)));
 
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
   showHistory = signal(false);
 
+  // Translations
   translations = signal<Translation[]>([]);
-  translationsFiltered = computed(() =>
-    this.filterTranslations(this.translations(), this.searchValue(), this.selectedSearchLocale(), this.filterLabels()),
-  );
+  translationsFiltered = computed(() => {
+    const form = this.$filterForm();
+    return this.filterTranslations(this.translations(), form?.locale || 'en', form?.search || '', form?.labels || []);
+  });
   translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
   translationIds = computed(() => this.translations().map(it => it.id));
   translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.id, it])));
-  //Search
-  searchValue = signal('');
 
   //Labels
-  currentLabel = signal('');
-  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
   allLabels = computed(() => {
     const tmp = this.translations()
       .map(it => it.labels)
@@ -196,21 +210,10 @@ export class TranslationsComponent implements OnInit {
       .map(it => it!);
     return [...new Set<string>(tmp)];
   });
-  filterLabels = signal<string[]>([]);
-  filteredLabels = computed(() => {
-    const currentLabel = this.currentLabel().toLowerCase();
-    if (currentLabel) {
-      return this.allLabels()
-        .filter(label => !this.filterLabels().includes(label))
-        .filter(label => label.toLowerCase().includes(currentLabel));
-    }
-    return this.allLabels().filter(label => !this.filterLabels().includes(label));
-  });
 
   selectedTranslation?: Translation;
   selectedTranslationLocaleValue?: string;
 
-  selectedSearchLocale = signal('');
   selectedSourceLocale = signal('');
   selectedTargetLocale = signal('');
 
@@ -244,9 +247,6 @@ export class TranslationsComponent implements OnInit {
       if (space) {
         if (this.filterForm.value.locale === '') {
           this.filterForm.patchValue({ locale: space.localeFallback.id });
-        }
-        if (this.selectedSearchLocale() === '') {
-          this.selectedSearchLocale.set(space.localeFallback.id);
         }
         if (this.selectedSourceLocale() === '') {
           this.selectedSourceLocale.set(space.localeFallback.id);
@@ -487,13 +487,14 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  filterTranslations(items: Translation[], filter: string, locale: string, labels: string[]): Translation[] {
-    const lcFilter = filter.toLowerCase();
-    if (!items || (!filter && !labels.length)) {
+  filterTranslations(items: Translation[], locale: string, search: string, labels: string[]): Translation[] {
+    console.log('Filtering translations', locale, search, labels);
+    const lcFilter = search.trim().toLowerCase();
+    if (!items || (!search && !labels.length)) {
       return items;
     }
     return items.filter(it => {
-      const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.every(label => it.labels?.includes(label)));
+      const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.some(label => it.labels?.includes(label)));
       if (it.id.toLowerCase().includes(lcFilter) && matchByLabel) {
         return true;
       } else {
@@ -561,24 +562,13 @@ export class TranslationsComponent implements OnInit {
   }
 
   // Labels
-  selectLabel(event: MatAutocompleteSelectedEvent): void {
-    const { option } = event;
-    this.filterLabels.update(it => [...it, option.viewValue]);
-    this.currentLabel.set('');
-    option.deselect();
-    this.selectedTranslation = undefined;
-  }
-
-  removeLabel(label: string): void {
-    this.filterLabels.update(it => {
-      const idx = it.indexOf(label);
-      if (idx < 0) {
-        return it;
-      }
-      it.splice(idx, 1);
-      return [...it];
-    });
-    this.selectedTranslation = undefined;
+  selectLabel(label: string): void {
+    const current = this.filterForm.controls.labels.value || [];
+    if (current.includes(label)) {
+      this.filterForm.controls.labels.setValue(current.filter(l => l !== label));
+    } else {
+      this.filterForm.controls.labels.setValue([...current, label]);
+    }
   }
 
   openApiV1InNewTab(locale: string, token: string): void {

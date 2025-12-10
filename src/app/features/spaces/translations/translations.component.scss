@@ -1,7 +1,3 @@
-.search-buttons {
-  width: 10em;
-}
-
 .disabled {
   pointer-events: none;
   opacity: 0.5;
@@ -29,7 +25,7 @@ mat-form-field.with-button {
 }
 
 .overlay {
-  height: calc(100vh - 195px);
+  height: calc(100vh - 165px);
   padding: inherit;
   border: 1px solid #efefef;
 }

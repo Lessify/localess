@@ -87,7 +87,6 @@
       <fieldset hlmFieldSet>
         <div hlmFieldGroup class="grid grid-cols-4 gap-2 mb-3">
           <div hlmField>
-            <label hlmFieldLabel for="filterForm.locale">Search Locale</label>
             <hlm-select id="filterForm.locale" formControlName="locale" placeholder="Search Locale">
               <hlm-select-trigger class="w-full">
                 <hlm-select-value />
@@ -100,57 +99,51 @@
             </hlm-select>
           </div>
           <div hlmField>
-            <label hlmFieldLabel for="filterForm.search">Search</label>
             <input hlmInput id="filterForm.search" formControlName="search" placeholder="Search in your translations" />
+          </div>
+          <div hlmField class="col-span-2">
+            <hlm-popover sideOffset="5">
+              <div hlmButtonGroup>
+                <button class="justify-between" hlmPopoverTrigger hlmBtn variant="outline">
+                  <ng-icon hlm size="sm" name="lucideCirclePlus" class="opacity-50" />
+                  Labels
+                </button>
+                @let labels = filterForm.controls.labels.value;
+                @if (labels && labels.length > 0) {
+                  <div class="flex items-center gap-1 px-2 border shadow-xs rounded-md">
+                    @for (label of labels; track label) {
+                      <span hlmBadge variant="secondary">{{ label }}</span>
+                    }
+                  </div>
+                }
+              </div>
+              <hlm-command *brnPopoverContent="let ctx" hlmPopoverContent class="w-[200px] p-0">
+                <hlm-command-search>
+                  <ng-icon hlm name="lucideSearch" />
+                  <input placeholder="Search label..." hlm-command-search-input />
+                </hlm-command-search>
+                <div *brnCommandEmpty hlmCommandEmpty>No results found.</div>
+                <hlm-command-list>
+                  <hlm-command-group>
+                    @for (label of allLabels(); track label) {
+                      <button hlm-command-item [value]="label" (selected)="selectLabel(label)">
+                        <span>{{ label }}</span>
+                        <ng-icon
+                          hlm
+                          class="ml-auto"
+                          [class.opacity-0]="!filterForm.value.labels?.includes(label)"
+                          name="lucideCheck"
+                          hlmCommandIcon />
+                      </button>
+                    }
+                  </hlm-command-group>
+                </hlm-command-list>
+              </hlm-command>
+            </hlm-popover>
           </div>
         </div>
       </fieldset>
     </form>
-    <div class="grid grid-cols-4 gap-2">
-      <div class="">
-        <mat-form-field>
-          <mat-label>Search Locale</mat-label>
-          <mat-select [(value)]="selectedSearchLocale">
-            @for (locale of space.locales; track locale.id) {
-              <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      </div>
-      <div class="">
-        <mat-form-field>
-          <mat-label>Search</mat-label>
-          <input matInput [(ngModel)]="searchValue" autocomplete="off" />
-          <mat-icon matIconSuffix>search</mat-icon>
-        </mat-form-field>
-      </div>
-      <div class="col-span-2">
-        <mat-form-field>
-          <mat-chip-grid #chipGrid aria-label="Enter Labels">
-            @for (label of filterLabels(); track label) {
-              <mat-chip-row (removed)="removeLabel(label)">
-                {{ label }}
-                <button matChipRemove [attr.aria-label]="'Remove ' + label">
-                  <mat-icon>cancel</mat-icon>
-                </button>
-              </mat-chip-row>
-            }
-            <input
-              matInput
-              placeholder="Label Filter"
-              [(ngModel)]="currentLabel"
-              [matChipInputFor]="chipGrid"
-              [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-              [matAutocomplete]="auto" />
-          </mat-chip-grid>
-          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectLabel($event)">
-            @for (label of filteredLabels(); track label) {
-              <mat-option [value]="label"> {{ label }}</mat-option>
-            }
-          </mat-autocomplete>
-        </mat-form-field>
-      </div>
-    </div>
     <div class="grid grid-cols-4 gap-2">
       @if (settingsStore.translationLayout() === 'list') {
         <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay">
@@ -186,13 +179,13 @@
                 <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                   @switch (translation.type) {
                     @case ('STRING') {
-                      <ll-translation-string-view [value]="translation.locales[selectedSearchLocale()]" />
+                      <ll-translation-string-view [value]="translation.locales[filterForm.controls.locale.value]" />
                     }
                     @case ('PLURAL') {
-                      <ll-translation-plural-view [value]="translation.locales[selectedSearchLocale()]" />
+                      <ll-translation-plural-view [value]="translation.locales[filterForm.controls.locale.value]" />
                     }
                     @case ('ARRAY') {
-                      <ll-translation-array-view [value]="translation.locales[selectedSearchLocale()]" />
+                      <ll-translation-array-view [value]="translation.locales[filterForm.controls.locale.value]" />
                     }
                   }
                 </div>
@@ -403,7 +396,7 @@
                     @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
                       <mat-chip-set>
                         @for (label of selectedTranslation.labels; track label) {
-                          <mat-chip [highlighted]="filterLabels().includes(label)">{{ label }}</mat-chip>
+                          <mat-chip [highlighted]="filterForm.controls.labels.value?.includes(label)">{{ label }}</mat-chip>
                         }
                       </mat-chip-set>
                     } @else {
