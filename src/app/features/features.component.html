@@ -39,7 +39,14 @@
                 </ng-template>
               </li>
             }
-            @if (spaceStore.selectedSpace()) {
+          </ul>
+        </div>
+      </div>
+      @if (spaceStore.selectedSpace()) {
+        <div hlmSidebarGroup>
+          <div hlmSidebarGroupLabel>Space</div>
+          <div hlmSidebarGroupContent>
+            <ul hlmSidebarMenu>
               @for (item of userSideMenu(); track item.label) {
                 @if (item.permission | canUserPerform | async) {
                   <li hlmSidebarMenuItem>
@@ -50,10 +57,10 @@
                   </li>
                 }
               }
-            }
-          </ul>
+            </ul>
+          </div>
         </div>
-      </div>
+      }
       @if (['USER_MANAGEMENT', 'SPACE_MANAGEMENT'] | canUserPerform | async) {
         <div hlmSidebarGroup>
           <div hlmSidebarGroupLabel>Admin</div>
