@@ -1,6 +1,15 @@
-import { AuthData } from 'firebase-functions/lib/common/providers/https';
+import { DecodedIdToken } from 'firebase-admin/auth';
 import { ROLE_ADMIN, ROLE_CUSTOM } from '../config';
 import { UserPermission } from '../models';
+
+export interface AuthData {
+  /** The user's uid from the request's ID token. */
+  uid: string;
+  /** The decoded claims of the ID token after verification. */
+  token: DecodedIdToken;
+  /** The raw ID token as parsed from the header. */
+  rawToken: string;
+}
 
 /**
  * Check roles of authenticated user

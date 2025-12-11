@@ -2,7 +2,7 @@ import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten, DocumentSnapshot } from 'firebase-functions/v2/firestore';
 import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
-import { canPerform } from './utils/security-utils';
+import { AuthData, canPerform } from './utils/security-utils';
 import { BATCH_MAX, bucket, firestoreService } from './config';
 import {
   Content,
@@ -27,7 +27,6 @@ import {
   findSpaceById,
   spaceContentCachePath,
 } from './services';
-import { AuthData } from 'firebase-functions/lib/common/providers/https';
 
 // Publish
 const publish = onCall<PublishContentData>(async request => {
