@@ -26,8 +26,6 @@ mat-form-field.with-button {
 
 .overlay {
   height: calc(100vh - 165px);
-  padding: inherit;
-  border: 1px solid #efefef;
 }
 
 :host ::ng-deep .cdk-virtual-scroll-content-wrapper {

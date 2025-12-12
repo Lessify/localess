@@ -146,7 +146,7 @@
     </form>
     <div class="grid grid-cols-4 gap-2">
       @if (settingsStore.translationLayout() === 'list') {
-        <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay">
+        <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay border">
           <ul role="list" class="divide-y divide-gray-300">
             <li
               role="listitem"
@@ -194,7 +194,7 @@
           </ul>
         </cdk-virtual-scroll-viewport>
       } @else {
-        <div class="overlay overflow-auto">
+        <div class="overlay overflow-auto border">
           <mat-tree
             #tree
             [dataSource]="translationTreeFiltered()"
@@ -245,7 +245,7 @@
           </mat-tree>
         </div>
       }
-      <div class="col-span-2 overlay">
+      <div class="col-span-2 overlay border">
         @if (selectedTranslation) {
           <div class="flex flex-col h-full">
             <div class="p-2">
@@ -330,9 +330,9 @@
           </div>
         }
       </div>
-      <div class="overlay break-all">
+      <div class="overlay border break-all">
         @if (selectedTranslation) {
-          <div class="d-flex flex-column">
+          <div>
             <div class="p-2 align-items-start">
               @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
                 <button mat-icon-button matTooltip="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
@@ -349,8 +349,8 @@
               }
             </div>
             <mat-divider></mat-divider>
-            <ul role="list" class="divide-y divide-gray-300">
-              <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+            <ul role="list" class="divide-y">
+              <li role="listitem" class="flex p-2 relative items-center">
                 <div class="min-w-0 flex-auto">
                   <div class="flex items-center gap-x-3">
                     <div class="text-sm font-semibold leading-6 break-all"> ID</div>
@@ -363,7 +363,7 @@
                   </div>
                 </div>
               </li>
-              <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+              <li role="listitem" class="flex p-2 relative items-center">
                 <div class="min-w-0 flex-auto">
                   <div class="flex items-center gap-x-3">
                     <div class="text-sm font-semibold leading-6 break-all"> Status</div>
@@ -373,7 +373,7 @@
                   </div>
                 </div>
               </li>
-              <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+              <li role="listitem" class="flex p-2 relative items-center">
                 <div class="min-w-0 flex-auto">
                   <div class="flex items-center gap-x-3">
                     <div class="text-sm font-semibold leading-6 break-all"> Description</div>
@@ -387,7 +387,7 @@
                   </div>
                 </div>
               </li>
-              <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+              <li role="listitem" class="flex p-2 relative items-center">
                 <div class="min-w-0 flex-auto">
                   <div class="flex items-center gap-x-3">
                     <div class="text-sm font-semibold leading-6 break-all"> Labels</div>
@@ -405,7 +405,7 @@
                   </div>
                 </div>
               </li>
-              <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+              <li role="listitem" class="flex p-2 relative items-center">
                 <div class="min-w-0 flex-auto">
                   <div class="flex items-center gap-x-3">
                     <div class="text-sm font-semibold leading-6 break-all"> Created At</div>
@@ -415,7 +415,7 @@
                   </div>
                 </div>
               </li>
-              <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+              <li role="listitem" class="flex p-2 relative items-center">
                 <div class="min-w-0 flex-auto">
                   <div class="flex items-center gap-x-3">
                     <div class="text-sm font-semibold leading-6 break-all"> Updated At</div>
@@ -425,7 +425,7 @@
                   </div>
                 </div>
               </li>
-              <li role="listitem" class="flex p-2 cursor-pointer relative items-center">
+              <li role="listitem" class="flex p-2 relative items-center">
                 <div class="min-w-0 flex-auto">
                   <div class="flex items-center gap-x-3">
                     <div class="text-sm font-semibold leading-6 break-all"> Updated By</div>
