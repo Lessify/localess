@@ -24,7 +24,7 @@ export const initialState: LocalSettingsState = {
   debugEnabled: false,
   editorEnabled: false,
   editorSize: '',
-  editorFormWidth: 700,
+  editorFormWidth: 35,
   assetLayout: 'list',
   assetDialogLayout: 'list',
   translationLayout: 'list',

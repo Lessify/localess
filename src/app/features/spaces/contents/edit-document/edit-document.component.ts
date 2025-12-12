@@ -1,4 +1,3 @@
-import { CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -75,6 +74,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmResizableImports } from '@spartan-ng/helm/resizable';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
@@ -107,7 +107,7 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     MatCardModule,
     EditDocumentSchemaComponent,
     MatExpansionModule,
-    DragDropModule,
+    HlmResizableImports,
     HlmBreadCrumbImports,
     HlmIconImports,
     HlmButtonImports,
@@ -209,11 +209,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   private destroyRef = inject(DestroyRef);
 
-  // Resize
-  inResizeMode = signal(false);
-  editorFormWidth = signal(this.settingsStore.editorFormWidth());
-  private dragStartX: number = 0;
-  private dragStartW: number = 0;
+  isResizing = signal(false);
 
   constructor() {
     toObservable(this.spaceStore.selectedSpaceId)
@@ -610,33 +606,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       const url = new URL(this.selectedEnvironment.url);
       contentWindow.postMessage(event, url.origin);
     }
-  }
-
-  onDragStarted(event: CdkDragStart) {
-    if (event.event instanceof MouseEvent) {
-      this.dragStartX = event.event.clientX;
-    }
-    this.dragStartW = this.editorFormWidth();
-    this.inResizeMode.set(true);
-  }
-
-  onDragMoved(event: CdkDragMove) {
-    console.debug('onDragMoved', event);
-    if (event.event instanceof MouseEvent) {
-      const newFormWidth = this.dragStartW - event.distance.x;
-      if (newFormWidth <= 1000 && newFormWidth >= 400) {
-        this.editorFormWidth.set(newFormWidth);
-      }
-    }
-    // Reset transform so the resizer stays positioned at the sidebar edge
-    const element = event.source.element.nativeElement;
-    element.style.transform = 'none';
-  }
-
-  onDragEnded(event: CdkDragEnd) {
-    console.debug('onDragEnded', event);
-    this.inResizeMode.set(false);
-    this.settingsStore.setEditorFormWidth(this.editorFormWidth());
   }
 
   protected readonly console = console;

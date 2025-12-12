@@ -148,166 +148,159 @@
 }
 
 <div class="mx-auto container-fluid px-2">
-  <div class="flex justify-center h-full">
+  <hlm-resizable-group direction="horizontal" class="flex justify-center h-full w-full overflow-hidden">
     @if (settingsStore.editorEnabled()) {
-      <div [ngClass]="{ 'block-dragging': inResizeMode() }" class="browser flex flex-col h-full grow overflow-hidden border-2 rounded-t-xl">
-        @if (selectedEnvironment; as environment) {
-          <div class="flex flex-wrap p-2 items-center gap-1">
-            <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go back" (click)="preview.contentWindow?.history?.back()">
-              <ng-icon hlm name="lucideArrowLeft" />
-            </button>
-            <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go forward" (click)="preview.contentWindow?.history?.forward()">
-              <ng-icon hlm name="lucideArrowRight" />
-            </button>
-            <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Reload" (click)="changeEnvironment(environment)">
-              <ng-icon hlm name="lucideRefreshCcw" />
-            </button>
-            <div class="flex-grow">
-              <div class="min-w-80 w-full" hlmButtonGroup>
-                <div hlmButtonGroupText>
-                  <label hlmLabel for="url">{{ environment.name }}</label>
-                </div>
-                <div hlmInputGroup>
-                  <input
-                    class="truncate"
-                    hlmInputGroupInput
-                    readonly
-                    id="url"
-                    placeholder="Select Environment"
-                    [value]="environment.url"
-                    [title]="environment.url" />
-                  <div hlmInputGroupAddon align="inline-end">
-                    <button hlmBtn size="icon" variant="link" [hlmDropdownMenuTrigger]="envMenu">
-                      <ng-icon hlm name="lucideChevronDown" />
-                    </button>
-                    <ng-template #envMenu>
-                      <hlm-dropdown-menu>
-                        @for (env of selectedSpace?.environments; track env.name) {
-                          <button hlmDropdownMenuRadio (click)="changeEnvironment(env)" [checked]="env.name === selectedEnvironment.name">
-                            <hlm-dropdown-menu-radio-indicator />
-                            <span>{{ env.name }} | {{ env.url }}</span>
-                          </button>
-                        }
-                      </hlm-dropdown-menu>
-                    </ng-template>
+      <hlm-resizable-panel [defaultSize]="60" class="overflow-hidden">
+        <div class="browser flex flex-col h-full overflow-hidden border-2 rounded-t-xl">
+          @if (selectedEnvironment; as environment) {
+            <div class="flex flex-wrap p-2 items-center gap-1 border-b">
+              <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go back" (click)="preview.contentWindow?.history?.back()">
+                <ng-icon hlm name="lucideArrowLeft" />
+              </button>
+              <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go forward" (click)="preview.contentWindow?.history?.forward()">
+                <ng-icon hlm name="lucideArrowRight" />
+              </button>
+              <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Reload" (click)="changeEnvironment(environment)">
+                <ng-icon hlm name="lucideRefreshCcw" />
+              </button>
+              <div class="flex-grow">
+                <div class="min-w-80 w-full" hlmButtonGroup>
+                  <div hlmButtonGroupText>
+                    <label hlmLabel for="url">{{ environment.name }}</label>
+                  </div>
+                  <div hlmInputGroup>
+                    <input
+                      class="truncate"
+                      hlmInputGroupInput
+                      readonly
+                      id="url"
+                      placeholder="Select Environment"
+                      [value]="environment.url"
+                      [title]="environment.url" />
+                    <div hlmInputGroupAddon align="inline-end">
+                      <button hlmBtn size="icon" variant="link" [hlmDropdownMenuTrigger]="envMenu">
+                        <ng-icon hlm name="lucideChevronDown" />
+                      </button>
+                      <ng-template #envMenu>
+                        <hlm-dropdown-menu>
+                          @for (env of selectedSpace?.environments; track env.name) {
+                            <button hlmDropdownMenuRadio (click)="changeEnvironment(env)" [checked]="env.name === selectedEnvironment.name">
+                              <hlm-dropdown-menu-radio-indicator />
+                              <span>{{ env.name }} | {{ env.url }}</span>
+                            </button>
+                          }
+                        </hlm-dropdown-menu>
+                      </ng-template>
+                    </div>
                   </div>
                 </div>
               </div>
+              <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorSize()">
+                <button
+                  hlmToggleGroupItem
+                  value=""
+                  aria-label="Fullscreen"
+                  hlmTooltipTrigger="Fullscreen"
+                  (click)="settingsStore.setEditorSize('')">
+                  <ng-icon hlm size="sm" name="lucideFullscreen" />
+                </button>
+                <button
+                  hlmToggleGroupItem
+                  value="sm"
+                  aria-label="Smartphone: 640px"
+                  hlmTooltipTrigger="Smartphone: 640px"
+                  (click)="settingsStore.setEditorSize('sm')">
+                  <ng-icon hlm size="sm" name="tablerDeviceMobile" />
+                </button>
+                <button
+                  hlmToggleGroupItem
+                  value="md"
+                  aria-label="Tablet: 768px"
+                  hlmTooltipTrigger="Tablet: 768px"
+                  (click)="settingsStore.setEditorSize('md')">
+                  <ng-icon hlm size="sm" name="tablerDeviceTablet" />
+                </button>
+                <button
+                  hlmToggleGroupItem
+                  value="lg"
+                  aria-label="Laptop: 1024px"
+                  hlmTooltipTrigger="Laptop: 1024px"
+                  (click)="settingsStore.setEditorSize('lg')">
+                  <ng-icon hlm size="sm" name="tablerDeviceLaptop" />
+                </button>
+                <button
+                  hlmToggleGroupItem
+                  value="xl"
+                  aria-label="Desktop: 1280px"
+                  hlmTooltipTrigger="Desktop: 1280px"
+                  (click)="settingsStore.setEditorSize('xl')">
+                  <ng-icon hlm size="sm" name="tablerDeviceDesktop" />
+                </button>
+              </hlm-toggle-group>
             </div>
-            <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorSize()">
-              <button
-                hlmToggleGroupItem
-                value=""
-                aria-label="Fullscreen"
-                hlmTooltipTrigger="Fullscreen"
-                (click)="settingsStore.setEditorSize('')">
-                <ng-icon hlm size="sm" name="lucideFullscreen" />
-              </button>
-              <button
-                hlmToggleGroupItem
-                value="sm"
-                aria-label="Smartphone: 640px"
-                hlmTooltipTrigger="Smartphone: 640px"
-                (click)="settingsStore.setEditorSize('sm')">
-                <ng-icon hlm size="sm" name="tablerDeviceMobile" />
-              </button>
-              <button
-                hlmToggleGroupItem
-                value="md"
-                aria-label="Tablet: 768px"
-                hlmTooltipTrigger="Tablet: 768px"
-                (click)="settingsStore.setEditorSize('md')">
-                <ng-icon hlm size="sm" name="tablerDeviceTablet" />
-              </button>
-              <button
-                hlmToggleGroupItem
-                value="lg"
-                aria-label="Laptop: 1024px"
-                hlmTooltipTrigger="Laptop: 1024px"
-                (click)="settingsStore.setEditorSize('lg')">
-                <ng-icon hlm size="sm" name="tablerDeviceLaptop" />
-              </button>
-              <button
-                hlmToggleGroupItem
-                value="xl"
-                aria-label="Desktop: 1280px"
-                hlmTooltipTrigger="Desktop: 1280px"
-                (click)="settingsStore.setEditorSize('xl')">
-                <ng-icon hlm size="sm" name="tablerDeviceDesktop" />
-              </button>
-            </hlm-toggle-group>
-          </div>
-          <div class="flex h-full overflow-auto">
-            <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()"></iframe>
-          </div>
-        } @else {
-          <div class="text-center">
-            No Configured Environments.<br />
-            You can configure them in Settings.
+            <div class="flex h-full overflow-auto justify-center">
+              <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()" [class.resizing]="isResizing()"></iframe>
+            </div>
+          } @else {
+            <div class="text-center">
+              No Configured Environments.<br />
+              You can configure them in Settings.
+            </div>
+          }
+        </div>
+      </hlm-resizable-panel>
+      <hlm-resizable-handle withHandle (mousedown)="isResizing.set(true)" (mouseup)="isResizing.set(false)" />
+    }
+    <hlm-resizable-panel [defaultSize]="settingsStore.editorEnabled() ? 40 : 100" [minSize]="20" [maxSize]="80" class="overflow-hidden">
+      <div class="flex overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
+        @if (rootSchema) {
+          <div class="flex flex-col max-w-(--breakpoint-lg) p-2">
+            <nav hlmBreadcrumb class="pb-4">
+              <ol hlmBreadcrumbList>
+                @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isLast = $last; let isFirst = $first) {
+                  @if (!isFirst) {
+                    <li hlmBreadcrumbSeparator></li>
+                  }
+                  <li hlmBreadcrumbItem>
+                    @if (isFirst) {
+                      <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
+                        <ng-icon name="lucideFolderRoot" />
+                      </button>
+                    } @else if (isLast) {
+                      <span hlmBreadcrumbPage>
+                        @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
+                          {{ sch.displayName || sch.id }}
+                        }
+                      </span>
+                    } @else {
+                      <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
+                        @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
+                          {{ sch.displayName || sch.id }}
+                        }
+                      </button>
+                    }
+                  </li>
+                }
+              </ol>
+            </nav>
+            <ll-content-document-schema-edit
+              [data]="selectedDocumentData"
+              [schemas]="schemas()"
+              [selectedLocale]="selectedLocale"
+              [availableLocales]="availableLocales()"
+              [hoverSchemaPath]="hoverSchemaPath()"
+              [hoverSchemaField]="isSamePath() ? hoverSchemaField() : undefined"
+              [clickSchemaField]="clickSchemaField()"
+              [documents]="documents"
+              [space]="selectedSpace"
+              (schemaChange)="onSchemaChange($event)"
+              (formChange)="onFormChange($event)"
+              (structureChange)="onStructureChange($event)" />
           </div>
         }
       </div>
-      <div
-        cdkDragLockAxis="x"
-        cdkDrag
-        (cdkDragStarted)="onDragStarted($event)"
-        (cdkDragMoved)="onDragMoved($event)"
-        (cdkDragEnded)="onDragEnded($event)"
-        class="relative inset-y-0 cursor-ew-resize items-center px-2 sm:flex">
-        <div class="h-8 w-1.5 rounded-full bg-gray-400"></div>
-      </div>
-    }
-    <div
-      [ngClass]="{ 'block-dragging': inResizeMode() }"
-      [style.width.px]="settingsStore.editorEnabled() ? editorFormWidth() : undefined"
-      class="flex overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
-      @if (rootSchema) {
-        <div class="flex flex-col max-w-(--breakpoint-lg) p-2">
-          <nav hlmBreadcrumb class="pb-4">
-            <ol hlmBreadcrumbList>
-              @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isLast = $last; let isFirst = $first) {
-                @if (!isFirst) {
-                  <li hlmBreadcrumbSeparator></li>
-                }
-                <li hlmBreadcrumbItem>
-                  @if (isFirst) {
-                    <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
-                      <ng-icon name="lucideFolderRoot" />
-                    </button>
-                  } @else if (isLast) {
-                    <span hlmBreadcrumbPage>
-                      @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
-                        {{ sch.displayName || sch.id }}
-                      }
-                    </span>
-                  } @else {
-                    <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
-                      @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
-                        {{ sch.displayName || sch.id }}
-                      }
-                    </button>
-                  }
-                </li>
-              }
-            </ol>
-          </nav>
-          <ll-content-document-schema-edit
-            [data]="selectedDocumentData"
-            [schemas]="schemas()"
-            [selectedLocale]="selectedLocale"
-            [availableLocales]="availableLocales()"
-            [hoverSchemaPath]="hoverSchemaPath()"
-            [hoverSchemaField]="isSamePath() ? hoverSchemaField() : undefined"
-            [clickSchemaField]="clickSchemaField()"
-            [documents]="documents"
-            [space]="selectedSpace"
-            (schemaChange)="onSchemaChange($event)"
-            (formChange)="onFormChange($event)"
-            (structureChange)="onStructureChange($event)" />
-        </div>
-      }
-    </div>
-  </div>
+    </hlm-resizable-panel>
+  </hlm-resizable-group>
 
   @if (settingsStore.debugEnabled()) {
     <mat-accordion>

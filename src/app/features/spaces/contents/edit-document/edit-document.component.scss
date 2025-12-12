@@ -11,30 +11,30 @@ mat-form-field {
   height: calc(100dvh - 100px);
 }
 div.browser {
+  min-width: 0;
+  max-width: 100%;
   iframe {
     width: 100%;
-    min-width: 100%;
-    height: calc(100% - 5px);
+    height: 100%;
     border: none;
+    flex-shrink: 0;
+    &.resizing {
+      pointer-events: none;
+    }
     &.sm {
-      min-width: 640px;
-      max-width: 640px;
+      width: 640px;
     }
     &.md {
-      min-width: 768px;
-      max-width: 768px;
+      width: 768px;
     }
     &.lg {
-      min-width: 1024px;
-      max-width: 1024px;
+      width: 1024px;
     }
     &.xl {
-      min-width: 1280px;
-      max-width: 1280px;
+      width: 1280px;
     }
     &.xxl {
-      min-width: 1536px;
-      max-width: 1536px;
+      width: 1536px;
     }
   }
 }
@@ -47,10 +47,4 @@ div.browser {
 .subtitle {
   font: var(--mat-sys-title-medium);
   color: var(--mat-sys-secondary);
-}
-
-.block-dragging {
-  pointer-events: none;
-  -webkit-user-select: none;
-  user-select: none
 }

@@ -121,6 +121,9 @@
       ],
       "@spartan-ng/helm/popover": [
         "./libs/ui/popover/src/index.ts"
+      ],
+      "@spartan-ng/helm/resizable": [
+        "./libs/ui/resizable/src/index.ts"
       ]
     },
     "useDefineForClassFields": false
