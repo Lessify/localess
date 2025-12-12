@@ -239,7 +239,8 @@
               </hlm-toggle-group>
             </div>
             <div class="flex h-full overflow-auto justify-center">
-              <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()" [class.resizing]="isResizing()"></iframe>
+              <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()" [class.resizing]="isResizing()">
+              </iframe>
             </div>
           } @else {
             <div class="text-center">
