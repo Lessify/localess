@@ -17,7 +17,6 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -31,6 +30,7 @@ import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
   lucideCirclePlus,
+  lucideCircleSmall,
   lucideCloudDownload,
   lucideEarth,
   lucideEllipsisVertical,
@@ -60,8 +60,8 @@ import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { BrnPopoverImports } from '@spartan-ng/brain/popover';
-import { BrnSelect, BrnSelectImports } from '@spartan-ng/brain/select';
-import { BrnSheetContent } from '@spartan-ng/brain/sheet';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { BrnSheetImports } from '@spartan-ng/brain/sheet';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
@@ -70,6 +70,7 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
@@ -112,7 +113,6 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     MatSelectModule,
     MatInputModule,
     ReactiveFormsModule,
-    MatChipsModule,
     FormsModule,
     MatAutocompleteModule,
     ScrollingModule,
@@ -133,20 +133,20 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     HlmToggleGroupImports,
     HlmProgressImports,
     HlmSheetImports,
-    BrnSheetContent,
+    BrnSheetImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
     HlmSpinnerImports,
     HlmSelectImports,
     BrnSelectImports,
     HlmFieldImports,
-    BrnSelect,
     HlmInputImports,
     BrnPopoverImports,
     HlmPopoverImports,
     HlmCommandImports,
     HlmButtonGroupImports,
     HlmBadgeImports,
+    HlmItemImports,
   ],
   providers: [
     provideIcons({
@@ -162,6 +162,7 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
       lucideLayoutList,
       lucideListTree,
       lucideSearch,
+      lucideCircleSmall,
     }),
   ],
 })
@@ -212,7 +213,7 @@ export class TranslationsComponent implements OnInit {
   });
 
   selectedTranslation?: Translation;
-  selectedTranslationLocaleValue?: string;
+  selectedTranslationLocaleValue = signal<string | undefined>(undefined);
 
   selectedSourceLocale = signal('');
   selectedTargetLocale = signal('');
@@ -534,11 +535,11 @@ export class TranslationsComponent implements OnInit {
 
   selectTranslation(translation: Translation): void {
     this.selectedTranslation = translation;
-    this.selectedTranslationLocaleValue = this.selectedTranslation.locales[this.selectedTargetLocale()];
+    this.selectedTranslationLocaleValue.set(this.selectedTranslation.locales[this.selectedTargetLocale()]);
   }
 
   selectTargetLocale(): void {
-    this.selectedTranslationLocaleValue = this.selectedTranslation?.locales[this.selectedTargetLocale()];
+    this.selectedTranslationLocaleValue.set(this.selectedTranslation?.locales[this.selectedTargetLocale()]);
   }
 
   updateLocale(transaction: Translation, locale: string, value: string): void {
@@ -605,7 +606,7 @@ export class TranslationsComponent implements OnInit {
       .subscribe({
         next: value => {
           // make sure the component is updated
-          this.selectedTranslationLocaleValue = value;
+          this.selectedTranslationLocaleValue.set(value);
           this.notificationService.success('Translated');
         },
         error: (err: unknown) => {

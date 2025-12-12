@@ -147,51 +147,48 @@
     <div class="grid grid-cols-4 gap-2">
       @if (settingsStore.translationLayout() === 'list') {
         <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay border">
-          <ul role="list" class="divide-y divide-gray-300">
-            <li
-              role="listitem"
-              class="flex p-2 cursor-pointer relative items-center"
-              *cdkVirtualFor="let translation of translationsFiltered()"
-              (click)="selectTranslation(translation)"
-              (keyup.enter)="selectTranslation(translation)"
-              [class.selected]="translation.id === selectedTranslation?.id">
-              <div class="min-w-0 flex-auto">
-                <div class="flex items-center gap-x-3">
-                  @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
-                    <mat-icon class="animate-spin min-w-6">sync</mat-icon>
-                  } @else {
-                    @switch (identifyStatus(translation)) {
-                      @case ('TRANSLATED') {
-                        <ll-status mode="online" matTooltip="Translated" />
-                      }
-                      @case ('PARTIALLY_TRANSLATED') {
-                        <ll-status mode="away" matTooltip="Partially Translated" />
-                      }
-                      @case ('UNTRANSLATED') {
-                        <ll-status mode="offline" matTooltip="Untranslated" />
-                      }
+          <div
+            role="listitem"
+            hlmItem
+            class="p-2 rounded-b-none border-b-border cursor-pointer"
+            *cdkVirtualFor="let translation of translationsFiltered()"
+            [variant]="translation.id === selectedTranslation?.id ? 'muted' : 'default'"
+            (click)="selectTranslation(translation)"
+            (keyup.enter)="selectTranslation(translation)">
+            <div hlmItemContent>
+              <div hlmItemTitle class="break-all">
+                @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
+                  <hlm-spinner class="size-6" />
+                } @else {
+                  @switch (identifyStatus(translation)) {
+                    @case ('TRANSLATED') {
+                      <ll-status mode="online" matTooltip="Translated" />
+                    }
+                    @case ('PARTIALLY_TRANSLATED') {
+                      <ll-status mode="away" matTooltip="Partially Translated" />
+                    }
+                    @case ('UNTRANSLATED') {
+                      <ll-status mode="offline" matTooltip="Untranslated" />
                     }
                   }
-                  <div class="text-sm font-semibold leading-6 break-all">
-                    {{ translation.id }}
-                  </div>
-                </div>
-                <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                  @switch (translation.type) {
-                    @case ('STRING') {
-                      <ll-translation-string-view [value]="translation.locales[filterForm.controls.locale.value]" />
-                    }
-                    @case ('PLURAL') {
-                      <ll-translation-plural-view [value]="translation.locales[filterForm.controls.locale.value]" />
-                    }
-                    @case ('ARRAY') {
-                      <ll-translation-array-view [value]="translation.locales[filterForm.controls.locale.value]" />
-                    }
-                  }
-                </div>
+                }
+                {{ translation.id }}
               </div>
-            </li>
-          </ul>
+              <p hlmItemDescription class="break-all">
+                @switch (translation.type) {
+                  @case ('STRING') {
+                    <ll-translation-string-view [value]="translation.locales[filterForm.controls.locale.value || '']" />
+                  }
+                  @case ('PLURAL') {
+                    <ll-translation-plural-view [value]="translation.locales[filterForm.controls.locale.value || '']" />
+                  }
+                  @case ('ARRAY') {
+                    <ll-translation-array-view [value]="translation.locales[filterForm.controls.locale.value || '']" />
+                  }
+                }
+              </p>
+            </div>
+          </div>
         </cdk-virtual-scroll-viewport>
       } @else {
         <div class="overlay overflow-auto border">
@@ -296,20 +293,19 @@
               <div class="p-2">
                 @switch (selectedTranslation.type) {
                   @case ('STRING') {
-                    <!--                          <ll-translation-string-edit-->
-                    <!--                            [value]="translateValue() || selectedTranslation.locales[selectedTargetLocale]"-->
-                    <!--                            (valueChange)="selectedTranslationLocaleValue = $event" />-->
-                    <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
+                    <ll-translation-string-edit
+                      [value]="selectedTranslation.locales[selectedTargetLocale()]"
+                      (valueChange)="selectedTranslationLocaleValue.set($event)" />
                   }
                   @case ('PLURAL') {
                     <ll-translation-plural-edit
                       [value]="selectedTranslation.locales[selectedTargetLocale()]"
-                      (valueChange)="selectedTranslationLocaleValue = $event" />
+                      (valueChange)="selectedTranslationLocaleValue.set($event)" />
                   }
                   @case ('ARRAY') {
                     <ll-translation-array-edit
                       [value]="selectedTranslation.locales[selectedTargetLocale()]"
-                      (valueChange)="selectedTranslationLocaleValue = $event" />
+                      (valueChange)="selectedTranslationLocaleValue.set($event)" />
                   }
                 }
               </div>
@@ -319,9 +315,9 @@
                   mat-stroked-button
                   color="primary"
                   [disabled]="
-                    isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale()] === selectedTranslationLocaleValue
+                    isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale()] === selectedTranslationLocaleValue()
                   "
-                  (click)="updateLocale(selectedTranslation, selectedTargetLocale(), selectedTranslationLocaleValue!)">
+                  (click)="updateLocale(selectedTranslation, selectedTargetLocale(), selectedTranslationLocaleValue()!)">
                   <mat-icon [llAnimate]="isLocaleUpdateLoading()">{{ isLocaleUpdateLoading() ? 'sync' : 'save' }}</mat-icon>
                   Save
                 </button>
@@ -392,14 +388,12 @@
                   <div class="flex items-center gap-x-3">
                     <div class="text-sm font-semibold leading-6 break-all"> Labels</div>
                   </div>
-                  <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                    @if (selectedTranslation.labels && selectedTranslation.labels.length > 0) {
-                      <mat-chip-set>
-                        @for (label of selectedTranslation.labels; track label) {
-                          <mat-chip [highlighted]="filterForm.controls.labels.value?.includes(label)">{{ label }}</mat-chip>
-                        }
-                      </mat-chip-set>
-                    } @else {
+                  <div class="flex items-center gap-2 text-xs leading-5 break-words">
+                    @for (label of selectedTranslation.labels; track label) {
+                      <span hlmBadge [variant]="filterForm.controls.labels.value?.includes(label) ? 'secondary' : 'outline'">
+                        {{ label }}
+                      </span>
+                    } @empty {
                       No label available.
                     }
                   </div>
