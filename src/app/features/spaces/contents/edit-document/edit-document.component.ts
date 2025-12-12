@@ -66,7 +66,7 @@ import { TokenService } from '@shared/services/token.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
-import { BrnSheetContent } from '@spartan-ng/brain/sheet';
+import { BrnSheetImports } from '@spartan-ng/brain/sheet';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
@@ -118,7 +118,7 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     HlmSpinnerImports,
     HlmProgressImports,
     HlmSheetImports,
-    BrnSheetContent,
+    BrnSheetImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
     HlmInputGroupImports,
