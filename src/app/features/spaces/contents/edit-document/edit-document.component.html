@@ -239,7 +239,13 @@
               </hlm-toggle-group>
             </div>
             <div id="browser-content" class="flex h-full overflow-auto justify-center-safe bg-secondary">
-              <iframe id="previewId" class="shadow" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()" [class.resizing]="isResizing()">
+              <iframe
+                id="previewId"
+                class="shadow"
+                #preview
+                [src]="iframeUrl"
+                [class]="settingsStore.editorSize()"
+                [class.resizing]="isResizing()">
               </iframe>
             </div>
           } @else {
