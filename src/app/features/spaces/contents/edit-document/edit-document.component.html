@@ -151,9 +151,9 @@
   <hlm-resizable-group direction="horizontal" class="flex justify-center h-full w-full overflow-hidden">
     @if (settingsStore.editorEnabled()) {
       <hlm-resizable-panel [defaultSize]="60" class="overflow-hidden">
-        <div class="browser flex flex-col h-full overflow-hidden border-2 rounded-t-xl">
+        <div id="browser" class="browser flex flex-col h-full overflow-hidden border-2 rounded-t-xl">
           @if (selectedEnvironment; as environment) {
-            <div class="flex flex-wrap p-2 items-center gap-1 border-b">
+            <div id="browser-toolbar" class="flex flex-wrap p-2 items-center gap-1 border-b">
               <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go back" (click)="preview.contentWindow?.history?.back()">
                 <ng-icon hlm name="lucideArrowLeft" />
               </button>
@@ -238,7 +238,7 @@
                 </button>
               </hlm-toggle-group>
             </div>
-            <div class="flex h-full overflow-auto justify-center">
+            <div id="browser-content" class="flex h-full overflow-auto justify-center">
               <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()" [class.resizing]="isResizing()">
               </iframe>
             </div>
