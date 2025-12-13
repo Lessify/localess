@@ -252,8 +252,12 @@
       </hlm-resizable-panel>
       <hlm-resizable-handle withHandle (mousedown)="isResizing.set(true)" (mouseup)="isResizing.set(false)" />
     }
-    <hlm-resizable-panel [defaultSize]="settingsStore.editorEnabled() ? 40 : 100" [minSize]="20" [maxSize]="80" class="overflow-hidden">
-      <div class="flex overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
+    <hlm-resizable-panel
+      [defaultSize]="settingsStore.editorEnabled() ? 40 : 100"
+      [minSize]="20"
+      [maxSize]="80"
+      class="overflow-hidden flex justify-around">
+      <div class="flex justify-self-center overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
         @if (rootSchema) {
           <div class="flex flex-col max-w-(--breakpoint-lg) p-2">
             <nav hlmBreadcrumb class="pb-4">
