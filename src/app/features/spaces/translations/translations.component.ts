@@ -69,7 +69,7 @@ import { HlmCommandImports } from '@spartan-ng/helm/command';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
@@ -140,13 +140,13 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     HlmSelectImports,
     BrnSelectImports,
     HlmFieldImports,
-    HlmInputImports,
     BrnPopoverImports,
     HlmPopoverImports,
     HlmCommandImports,
     HlmButtonGroupImports,
     HlmBadgeImports,
     HlmItemImports,
+    HlmInputGroupImports,
   ],
   providers: [
     provideIcons({

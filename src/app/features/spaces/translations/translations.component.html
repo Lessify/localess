@@ -98,8 +98,11 @@
                 </hlm-select-content>
               </hlm-select>
             </div>
-            <div hlmField>
-              <input hlmInput formControlName="search" placeholder="Search in your translations" autocomplete="off" />
+            <div hlmInputGroup>
+              <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" />
+              <div hlmInputGroupAddon>
+                <ng-icon name="lucideSearch" />
+              </div>
             </div>
             <div hlmField class="col-span-2">
               <hlm-popover sideOffset="5">
