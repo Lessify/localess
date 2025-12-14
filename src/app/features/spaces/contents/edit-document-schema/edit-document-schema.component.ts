@@ -235,6 +235,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     //console.log(`locale : ${this.locale}`)
     //console.log(`localeFallback : ${this.localeFallback}`)
     //console.groupEnd()
+    console.log('ngOnInit');
 
     this.generateForm();
     if (this.data) {
@@ -322,31 +323,33 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   formPatch(): void {
     //console.group('formPatch')
     this.form.reset();
-    const extractSchemaContent = this.contentHelperService.extractSchemaContent(
-      this.data,
-      this.rootSchema!,
-      this.selectedLocaleId(),
-      false,
-    );
-    //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
-    this.form.patchValue(extractSchemaContent);
-    Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
-      const content = extractSchemaContent[fieldName];
-      if (content instanceof Array) {
-        // Assets
-        if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
-          const assets: AssetContent[] = content;
-          const fa = this.form.controls[fieldName] as FormArray;
-          assets.forEach(it => fa.push(this.contentHelperService.assetContentToForm(it)));
+    if (this.rootSchema) {
+      const extractSchemaContent = this.contentHelperService.extractSchemaContent(
+        this.data,
+        this.rootSchema,
+        this.selectedLocaleId(),
+        false,
+      );
+      //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
+      this.form.patchValue(extractSchemaContent);
+      Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
+        const content = extractSchemaContent[fieldName];
+        if (content instanceof Array) {
+          // Assets
+          if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
+            const assets: AssetContent[] = content;
+            const fa = this.form.controls[fieldName] as FormArray;
+            assets.forEach(it => fa.push(this.contentHelperService.assetContentToForm(it)));
+          }
+          // References
+          if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
+            const references: ReferenceContent[] = content;
+            const fa = this.form.controls[fieldName] as FormArray;
+            references.forEach(it => fa.push(this.contentHelperService.referenceContentToForm(it)));
+          }
         }
-        // References
-        if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
-          const references: ReferenceContent[] = content;
-          const fa = this.form.controls[fieldName] as FormArray;
-          references.forEach(it => fa.push(this.contentHelperService.referenceContentToForm(it)));
-        }
-      }
-    });
+      });
+    }
     //console.groupEnd()
   }
 

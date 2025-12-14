@@ -122,6 +122,13 @@ export class ContentService {
     );
   }
 
+  findDocumentById(spaceId: string, id: string): Observable<ContentDocument> {
+    return docData(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), { idField: 'id' }).pipe(
+      traceUntilFirst('Firestore:Contents:findDocumentById'),
+      map(it => it as ContentDocument),
+    );
+  }
+
   findByIds(spaceId: string, ids: string[]): Observable<Content[]> {
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), where(documentId(), 'in', ids)), {
       idField: 'id',

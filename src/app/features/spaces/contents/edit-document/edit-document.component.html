@@ -3,9 +3,9 @@
     <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Contents">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
-    <span class="title">{{ document()?.name }}</span>
+    <span class="title">{{ document().name }}</span>
     &nbsp;
-    <span class="subtitle">#{{ document()?.slug }}</span>
+    <span class="subtitle">#{{ document().slug }}</span>
   </div>
   <div class="flex items-center gap-2">
     <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorEnabled()">
@@ -100,11 +100,11 @@
       </button>
     }
 
-    @if (document()?.publishedAt === undefined) {
+    @if (document().publishedAt === undefined) {
       <ll-status mode="offline" matTooltip="Not published" />
-    } @else if (document()?.publishedAt?.seconds > document()?.updatedAt?.seconds) {
+    } @else if (document().publishedAt?.seconds > document().updatedAt?.seconds) {
       <ll-status mode="online" matTooltip="Published" />
-    } @else if (document()?.publishedAt && document()?.publishedAt?.seconds < document()?.updatedAt?.seconds) {
+    } @else if (document().publishedAt && document().publishedAt?.seconds < document().updatedAt?.seconds) {
       <ll-status mode="away" matTooltip="Draft" />
     }
 
@@ -118,7 +118,7 @@
     <ng-template #extraMenu>
       <hlm-dropdown-menu class="w-60">
         <hlm-dropdown-menu-group>
-          @for (locale of selectedSpace?.locales; track locale.id) {
+          @for (locale of selectedSpace()?.locales; track locale.id) {
             <button hlmDropdownMenuItem (click)="openDraftV1InNewTab(locale.id)">
               <ng-icon name="lucidePencil" />
               <span>Draft {{ locale.name }} JSON</span>
@@ -128,7 +128,7 @@
         </hlm-dropdown-menu-group>
         <hlm-dropdown-menu-separator />
         <hlm-dropdown-menu-group>
-          @for (locale of selectedSpace?.locales; track locale.id) {
+          @for (locale of selectedSpace()?.locales; track locale.id) {
             <button hlmDropdownMenuItem (click)="openPublishedV1InNewTab(locale.id)">
               <ng-icon name="lucideEarth" />
               <span>Published {{ locale.name }} JSON</span>
@@ -183,7 +183,7 @@
                       </button>
                       <ng-template #envMenu>
                         <hlm-dropdown-menu>
-                          @for (env of selectedSpace?.environments; track env.name) {
+                          @for (env of selectedSpace()?.environments; track env.name) {
                             <button hlmDropdownMenuRadio (click)="changeEnvironment(env)" [checked]="env.name === selectedEnvironment.name">
                               <hlm-dropdown-menu-radio-indicator />
                               <span>{{ env.name }} | {{ env.url }}</span>
@@ -264,7 +264,7 @@
       [maxSize]="80"
       class="overflow-hidden flex justify-around">
       <div class="flex justify-self-center overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
-        @if (rootSchema) {
+        @if (rootSchema()) {
           <div class="flex flex-col max-w-(--breakpoint-lg) p-2">
             <nav hlmBreadcrumb class="pb-4">
               <ol hlmBreadcrumbList>
@@ -302,8 +302,8 @@
               [hoverSchemaPath]="hoverSchemaPath()"
               [hoverSchemaField]="isSamePath() ? hoverSchemaField() : undefined"
               [clickSchemaField]="clickSchemaField()"
-              [documents]="documents"
-              [space]="selectedSpace"
+              [documents]="documents()"
+              [space]="selectedSpace()"
               (schemaChange)="onSchemaChange($event)"
               (formChange)="onFormChange($event)"
               (structureChange)="onStructureChange($event)" />

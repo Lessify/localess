@@ -13,7 +13,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -53,7 +52,7 @@ import { ContentHistory } from '@shared/models/content-history.model';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
 import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { Space, SpaceEnvironment } from '@shared/models/space.model';
+import { SpaceEnvironment } from '@shared/models/space.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { ContentHistoryService } from '@shared/services/content-history.service';
@@ -81,8 +80,7 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { combineLatest, Observable } from 'rxjs';
-import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { v4 } from 'uuid';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
@@ -166,12 +164,23 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   // Input
   spaceId = input.required<string>();
   contentId = input.required<string>();
+  document = input.required<ContentDocument>();
+  documents = input.required<ContentDocument[]>();
+  schemas = input.required<Schema[]>();
+  // Computed out of inputs
+  rootSchema = computed(() => this.schemas().find(it => it.id === this.document().schema));
+  //Store
+  spaceStore = inject(SpaceStore);
+  settingsStore = inject(LocalSettingsStore);
 
   preview = viewChild<ElementRef<HTMLIFrameElement>>('preview');
 
   showHistory = signal(false);
 
-  selectedSpace?: Space;
+  selectedSpace = computed(() => this.spaceStore.selectedSpace());
+  availableLocales = computed(() => [DEFAULT_LOCALE, ...(this.selectedSpace()?.locales || [])]);
+  availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
+
   selectedLocale: Locale = DEFAULT_LOCALE;
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);
@@ -181,29 +190,22 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     const uiPath = this.schemaPath().map(it => it.contentId);
     return ObjectUtils.isEqual(uiPath, this.hoverSchemaPath());
   });
-  schemas = signal<Schema[]>([]);
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
   selectedEnvironment?: SpaceEnvironment;
   iframeUrl?: SafeUrl;
-  availableLocales = signal<Locale[]>([DEFAULT_LOCALE]);
-  availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
-  document = signal<ContentDocument | undefined>(undefined);
   documentData: ContentData = { _id: '', _schema: '', schema: '' };
   selectedDocumentData: ContentData = { _id: '', _schema: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
-  rootSchema?: Schema;
+
   contentErrors: ContentError[] = [];
-  documents: ContentDocument[] = [];
 
   availableToken?: string = undefined;
 
   //Loadings
-  isLoading = signal(true);
+  isLoading = signal(false);
   isPublishLoading = signal(false);
   isSaveLoading = signal(false);
-  //Store
-  spaceStore = inject(SpaceStore);
-  settingsStore = inject(LocalSettingsStore);
+
   // Subscriptions
   history$?: Observable<ContentHistory[]>;
 
@@ -211,75 +213,48 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   isResizing = signal(false);
 
-  constructor() {
-    toObservable(this.spaceStore.selectedSpaceId)
-      .pipe(
-        distinctUntilChanged(),
-        filter(it => it !== undefined), // Skip initial data
-        switchMap(it =>
-          combineLatest([
-            this.spaceService.findById(it!).pipe(filter(it => it !== undefined)),
-            this.contentService.findById(it!, this.contentId()),
-            this.contentService.findAllDocuments(it!),
-            this.schemaService.findAll(it!),
-          ]),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: ([space, document, documents, schemas]) => {
-          this.selectedSpace = space;
-          this.availableLocales.set([DEFAULT_LOCALE, ...space.locales]);
-          this.documents = documents;
-          //console.log(ObjectUtils.clone(document))
-
-          if (document.kind === ContentKind.DOCUMENT) {
-            this.document.set(document);
-            this.rootSchema = schemas.find(it => it.id === document.schema);
-            if (document.data === undefined) {
-              this.documentData = {
-                _id: v4(),
-                _schema: this.rootSchema?.id || '',
-                schema: this.rootSchema?.id || '',
-              };
-            } else if (typeof document.data === 'string') {
-              this.documentData = JSON.parse(document.data);
-            } else {
-              this.documentData = ObjectUtils.clone(document.data);
-            }
-          }
-
-          // Generate initial path only once
-          if (this.rootSchema && this.schemaPath().length == 0) {
-            this.schemaPath.set([
-              {
-                contentId: this.documentData._id,
-                schemaName: this.documentData.schema,
-                fieldName: '',
-              },
-            ]);
-          }
-
-          // Select content base on path
-          this.navigateToSchemaBackwards(this.schemaPath()[this.schemaPath().length - 1]);
-          // Select Environment
-          if (this.selectedEnvironment === undefined && space.environments && space.environments.length > 0) {
-            this.changeEnvironment(space.environments[0]);
-          }
-          this.schemas.set(schemas);
-          this.generateDocumentIdsTree();
-          this.isLoading.set(false);
-          this.cd.markForCheck();
-        },
-      });
-  }
+  constructor() {}
 
   ngOnInit(): void {
     this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId());
+    console.log(this.documents());
+    const document = this.document();
+    // Initialize document data
+    if (document.kind === ContentKind.DOCUMENT) {
+      if (document.data === undefined) {
+        this.documentData = {
+          _id: v4(),
+          _schema: this.rootSchema()?.id || '',
+          schema: this.rootSchema()?.id || '',
+        };
+      } else if (typeof document.data === 'string') {
+        this.documentData = JSON.parse(document.data);
+      } else {
+        this.documentData = ObjectUtils.clone(document.data);
+      }
+    }
+    // Generate initial path only once
+    if (this.rootSchema() && this.schemaPath().length == 0) {
+      this.schemaPath.set([
+        {
+          contentId: this.documentData._id,
+          schemaName: this.documentData.schema,
+          fieldName: '',
+        },
+      ]);
+    }
+    // Select content base on path
+    this.navigateToSchemaBackwards(this.schemaPath()[this.schemaPath().length - 1]);
+    // Select Environment
+    const space = this.selectedSpace();
+    if (this.selectedEnvironment === undefined && space?.environments && space?.environments.length > 0) {
+      this.changeEnvironment(space.environments[0]);
+    }
+    this.generateDocumentIdsTree();
   }
 
   get isFormDirty(): boolean {
-    const data = this.document()?.data;
+    const data = this.document().data;
     if (data === undefined) {
       return false;
     } else if (typeof data === 'string') {
@@ -315,7 +290,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     //console.log('document', this.document)
     this.contentErrors = [];
     this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), DEFAULT_LOCALE.id));
-    for (const locale of this.selectedSpace?.locales || []) {
+    for (const locale of this.selectedSpace()?.locales || []) {
       this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), locale.id));
     }
 
@@ -467,7 +442,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   changeEnvironment(env: SpaceEnvironment): void {
     this.selectedEnvironment = env;
-    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document()?.fullSlug || '');
+    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document().fullSlug);
   }
 
   generateDocumentIdsTree() {
