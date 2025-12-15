@@ -50,7 +50,7 @@ export const appConfig: ApplicationConfig = {
       return auth;
     }),
     provideFirestore(() => {
-      const firestore = initializeFirestore(getApp(), { localCache: { kind: 'persistent' } });
+      const firestore = initializeFirestore(getApp(), { localCache: { kind: 'memory' } });
       if (environment.emulator.enabled) {
         connectFirestoreEmulator(firestore, 'localhost', 8080);
       }

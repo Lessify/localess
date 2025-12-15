@@ -5,15 +5,11 @@
       Uploading ... ({{ fileUploadQueue().length }})
     </span>
   }
-  <hlm-toggle-group
-    type="single"
-    variant="outline"
-    [value]="settingsStore.assetLayout()"
-    (valueChange)="settingsStore.setAssetLayout($event!)">
-    <button hlmToggleGroupItem value="list" aria-label="List Layout" hlmTooltipTrigger="List Layout">
+  <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.assetLayout()">
+    <button hlmToggleGroupItem value="list" hlmTooltipTrigger="List Layout" (click)="settingsStore.setAssetLayout('list')">
       <ng-icon hlm size="sm" name="lucideLayoutList" />
     </button>
-    <button hlmToggleGroupItem value="grid" aria-label="Grid Layout" hlmTooltipTrigger="Grid Layout">
+    <button hlmToggleGroupItem value="grid" hlmTooltipTrigger="Grid Layout" (click)="settingsStore.setAssetLayout('grid')">
       <ng-icon hlm size="sm" name="lucideLayoutGrid" />
     </button>
   </hlm-toggle-group>
@@ -164,10 +160,10 @@
               <div class="break-all">{{ element.name }}{{ element.extension }}</div>
               @if (element.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {
-                  <div> W{{ metadata.width }} x H{{ metadata.height }} </div>
+                  <div> W{{ metadata.width }} x H{{ metadata.height }}</div>
                 }
                 @if (metadata.duration; as duration) {
-                  <div> Duration: {{ duration | timeDuration }} </div>
+                  <div> Duration: {{ duration | timeDuration }}</div>
                 }
               }
             </div>
@@ -277,88 +273,126 @@
         }
       </mat-table>
     } @else {
-      <div class="flex flex-wrap gap-2 justify-start">
-        @for (item of dataSource.connect() | async; track item.id) {
-          <mat-card class="digital-asset-card cursor-pointer" appearance="outlined" (click)="onAssetSelect(item)">
-            @if (item.inProgress) {
-              <div class="progress">
-                <mat-progress-spinner mode="indeterminate" />
+      <div >
+        <div hlmItemGroup class="flex flex-row flex-wrap gap-4">
+          @for (item of dataSource.connect() | async; track item.id) {
+            <div
+              role="listitem"
+              hlmItem
+              variant="outline"
+              class="cursor-pointer p-0 overflow-hidden items-baseline content-start flex-1 min-w-48 max-w-60"
+              (click)="onAssetSelect(item)"
+              (keyup.enter)="onAssetSelect(item)">
+              <div hlmItemHeader class="border-b">
+                @if (item.kind === 'FILE' && item.inProgress) {
+                  <div class="aspect-square w-full flex justify-center place-items-center">
+                    <hlm-spinner />
+                  </div>
+                } @else if (item.kind === 'FILE' && filePreview(item.type)) {
+                  <div class="relative aspect-square w-full">
+                    @if (item.extension; as extension) {
+                      <span hlmBadge class="absolute top-5 left-5">{{ extension }}</span>
+                    }
+                    <img
+                      class="aspect-square w-full object-contain bg-primary-foreground cursor-zoom-in"
+                      ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ item.id }}"
+                      alt="thumbnail"
+                      width="600"
+                      height="600"
+                      loading="lazy"
+                      [loaderParams]="{ thumbnail: true }" />
+                  </div>
+                } @else if (item.kind === 'FILE') {
+                  <div class="relative aspect-square w-full">
+                    @if (item.extension; as extension) {
+                      <span hlmBadge class="absolute top-5 left-5">{{ extension }}</span>
+                    }
+                    <img
+                      class="aspect-square w-full object-contain p-4 bg-primary-foreground"
+                      ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg"
+                      alt="File"
+                      width="240"
+                      height="240" />
+                  </div>
+                } @else {
+                  <img
+                    ngSrc="assets/icons/folder.svg"
+                    alt="Folder"
+                    width="240"
+                    height="240"
+                    class="aspect-square w-full object-contain p-4 bg-primary-foreground" />
+                }
               </div>
-            } @else if (item.kind === 'FILE' && filePreview(item.type)) {
-              <img
-                class="object-contain image-bg cursor-zoom-in"
-                width="600"
-                height="600"
-                loading="lazy"
-                alt="thumbnail"
-                [loaderParams]="{ thumbnail: true }"
-                ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ item.id }}" />
-            } @else if (item.kind === 'FILE') {
-              <img mat-card-image ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg" alt="File" width="240" height="240" />
-            } @else {
-              <img mat-card-image ngSrc="assets/icons/folder.svg" alt="Folder" width="240" height="240" />
-            }
-            <mat-card-header>
-              <mat-card-subtitle class="break-all">{{ item.name }}{{ item.extension }}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              @if (item.kind === 'FILE') {
-                @if (item.size; as size) {
-                  <p>{{ size | formatFileSize }}</p>
-                }
-                @if (item.metadata; as metadata) {
-                  @if (metadata.width && metadata.height) {
-                    W{{ metadata.width }} x H{{ metadata.height }}
+              <div hlmItemContent class="px-4 pb-4">
+                <div hlmItemTitle class="line-clamp-2" hlmTooltipTrigger="{{ item.name }}{{ item.extension }}">
+                  {{ item.name }}{{ item.extension }}
+                </div>
+                <div hlmItemDescription>
+                  @if (item.kind === 'FILE') {
+                    @if (item.size; as size) {
+                      <p>{{ size | formatFileSize }}</p>
+                    }
+                    @if (item.metadata; as metadata) {
+                      @if (metadata.width && metadata.height) {
+                        W{{ metadata.width }} x H{{ metadata.height }}
+                      }
+                      @if (metadata.duration; as duration) {
+                        <div> Duration: {{ duration | timeDuration }}</div>
+                      }
+                    }
                   }
-                  @if (metadata.duration; as duration) {
-                    <div> Duration: {{ duration | timeDuration }} </div>
+                  <p [hlmTooltipTrigger]="item.updatedAt?.toDate() | date: 'medium'">
+                    {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
+                  </p>
+                </div>
+                <div class="flex justify-end">
+                  <button
+                    hlmBtn
+                    size="icon"
+                    variant="ghost"
+                    (click)="onDownload($event, item)"
+                    [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
+                    hlmTooltipTrigger="Download">
+                    <ng-icon hlm size="sm" name="lucideDownload" />
+                  </button>
+                  @if ('ASSET_UPDATE' | canUserPerform | async) {
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="ghost"
+                      (click)="openEditDialog($event, item)"
+                      [disabled]="item.inProgress === true"
+                      hlmTooltipTrigger="Edit">
+                      <ng-icon hlm size="sm" name="lucidePencil" />
+                    </button>
                   }
-                }
-              }
-              <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">
-                {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
-              </p>
-            </mat-card-content>
-            <span class="spacer"></span>
-            <mat-card-actions align="end">
-              <button
-                mat-icon-button
-                (click)="onDownload($event, item)"
-                [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
-                matTooltip="Download">
-                <mat-icon>download</mat-icon>
-              </button>
-              @if ('ASSET_UPDATE' | canUserPerform | async) {
-                <button mat-icon-button (click)="openEditDialog($event, item)" [disabled]="item.inProgress === true" matTooltip="Edit">
-                  <mat-icon>edit</mat-icon>
-                </button>
-              }
-              @if ('ASSET_UPDATE' | canUserPerform | async) {
-                <button mat-icon-button (click)="openMoveDialog($event, item)" [disabled]="item.kind === 'FOLDER'" matTooltip="Move">
-                  <mat-icon>drive_file_move</mat-icon>
-                </button>
-              }
-              @if ('ASSET_DELETE' | canUserPerform | async) {
-                <button
-                  mat-icon-button
-                  (click)="openDeleteDialog($event, item)"
-                  [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
-                  matTooltip="Delete">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              }
-            </mat-card-actions>
-          </mat-card>
-        } @empty {
-          <div class="basis-full text-center align-middle">
-            <br />
-            <br />
-            Drag and Drop a file here or use the "Upload Asset" button
-            <br />
-            <br />
-            <br />
-          </div>
-        }
+                  @if ('ASSET_UPDATE' | canUserPerform | async) {
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="ghost"
+                      (click)="openMoveDialog($event, item)"
+                      [disabled]="item.kind === 'FOLDER'"
+                      hlmTooltipTrigger="Move">
+                      <ng-icon hlm size="sm" name="lucideFolderInput" />
+                    </button>
+                  }
+                  @if ('ASSET_DELETE' | canUserPerform | async) {
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="ghost"
+                      (click)="openDeleteDialog($event, item)"
+                      [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
+                      hlmTooltipTrigger="Delete">
+                      <ng-icon hlm size="sm" name="lucideTrash" />
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
       </div>
     }
   </div>

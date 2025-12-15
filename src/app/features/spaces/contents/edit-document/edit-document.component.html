@@ -100,11 +100,11 @@
       </button>
     }
 
-    @if (document().publishedAt === undefined) {
+    @if (documentPublishedAt() === undefined) {
       <ll-status mode="offline" matTooltip="Not published" />
-    } @else if (document().publishedAt?.seconds > document().updatedAt?.seconds) {
+    } @else if (documentPublishedAt() > documentUpdatedAt()) {
       <ll-status mode="online" matTooltip="Published" />
-    } @else if (document().publishedAt && document().publishedAt?.seconds < document().updatedAt?.seconds) {
+    } @else if (documentPublishedAt() < documentUpdatedAt()) {
       <ll-status mode="away" matTooltip="Draft" />
     }
 
@@ -152,15 +152,30 @@
     @if (settingsStore.editorEnabled()) {
       <hlm-resizable-panel [defaultSize]="60" class="overflow-hidden">
         <div id="browser" class="browser flex flex-col h-full overflow-hidden border rounded-t-xl">
-          @if (selectedEnvironment; as environment) {
+          @if (selectedEnvironment(); as environment) {
             <div id="browser-toolbar" class="flex flex-wrap p-2 items-center gap-1 border-b">
-              <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go back" (click)="preview.contentWindow?.history?.back()">
+              <button
+                hlmBtn
+                size="icon"
+                variant="ghost"
+                hlmTooltipTrigger="Go back"
+                (click)="preview()?.nativeElement?.contentWindow?.history?.back()">
                 <ng-icon hlm name="lucideArrowLeft" />
               </button>
-              <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Go forward" (click)="preview.contentWindow?.history?.forward()">
+              <button
+                hlmBtn
+                size="icon"
+                variant="ghost"
+                hlmTooltipTrigger="Go forward"
+                (click)="preview()?.nativeElement?.contentWindow?.history?.forward()">
                 <ng-icon hlm name="lucideArrowRight" />
               </button>
-              <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Reload" (click)="changeEnvironment(environment)">
+              <button
+                hlmBtn
+                size="icon"
+                variant="ghost"
+                hlmTooltipTrigger="Reload"
+                (click)="preview()?.nativeElement?.contentWindow?.location?.reload()">
                 <ng-icon hlm name="lucideRefreshCcw" />
               </button>
               <div class="flex-grow">
@@ -183,8 +198,11 @@
                       </button>
                       <ng-template #envMenu>
                         <hlm-dropdown-menu>
-                          @for (env of selectedSpace()?.environments; track env.name) {
-                            <button hlmDropdownMenuRadio (click)="changeEnvironment(env)" [checked]="env.name === selectedEnvironment.name">
+                          @for (env of availableEnvironments(); track env.name) {
+                            <button
+                              hlmDropdownMenuRadio
+                              (click)="selectedEnvironment.set(env)"
+                              [checked]="env.name === selectedEnvironment()?.name">
                               <hlm-dropdown-menu-radio-indicator />
                               <span>{{ env.name }} | {{ env.url }}</span>
                             </button>
@@ -239,14 +257,16 @@
               </hlm-toggle-group>
             </div>
             <div id="browser-content" class="flex h-full overflow-auto justify-center-safe bg-secondary">
-              <iframe
-                id="previewId"
-                class="shadow"
-                #preview
-                [src]="iframeUrl"
-                [class]="settingsStore.editorSize()"
-                [class.resizing]="isResizing()">
-              </iframe>
+              @if (iframeUrl(); as url) {
+                <iframe
+                  id="previewId"
+                  class="shadow"
+                  #preview
+                  [src]="url"
+                  [class]="settingsStore.editorSize()"
+                  [class.resizing]="isResizing()">
+                </iframe>
+              }
             </div>
           } @else {
             <div class="text-center">
@@ -263,7 +283,7 @@
       [minSize]="20"
       [maxSize]="80"
       class="overflow-hidden flex justify-around">
-      <div class="flex justify-self-center overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
+      <div class="flex grow overflow-auto h-full flex-col min-w-96 max-w-5xl">
         @if (rootSchema()) {
           <div class="flex flex-col max-w-(--breakpoint-lg) p-2">
             <nav hlmBreadcrumb class="pb-4">

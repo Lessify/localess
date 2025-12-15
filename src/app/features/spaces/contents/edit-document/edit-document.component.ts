@@ -9,6 +9,7 @@ import {
   HostListener,
   inject,
   input,
+  linkedSignal,
   OnInit,
   signal,
   viewChild,
@@ -22,7 +23,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
@@ -58,8 +59,6 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { ContentHistoryService } from '@shared/services/content-history.service';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { SpaceService } from '@shared/services/space.service';
 import { TokenService } from '@shared/services/token.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -151,8 +150,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
 export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   private readonly router = inject(Router);
   private readonly cd = inject(ChangeDetectorRef);
-  private readonly spaceService = inject(SpaceService);
-  private readonly schemaService = inject(SchemaService);
   private readonly contentService = inject(ContentService);
   private readonly contentHistoryService = inject(ContentHistoryService);
   private readonly tokenService = inject(TokenService);
@@ -169,6 +166,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   schemas = input.required<Schema[]>();
   // Computed out of inputs
   rootSchema = computed(() => this.schemas().find(it => it.id === this.document().schema));
+  documentUpdatedAt = linkedSignal(() => this.document().updatedAt.seconds);
+  documentPublishedAt = linkedSignal(() => this.document().publishedAt?.seconds || 0);
   //Store
   spaceStore = inject(SpaceStore);
   settingsStore = inject(LocalSettingsStore);
@@ -178,7 +177,26 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   showHistory = signal(false);
 
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
-  availableLocales = computed(() => [DEFAULT_LOCALE, ...(this.selectedSpace()?.locales || [])]);
+  // Environments
+  availableEnvironments = computed(() => this.selectedSpace()?.environments || []);
+  selectedEnvironment = linkedSignal<SpaceEnvironment | undefined>(() => {
+    const envs = this.availableEnvironments();
+    if (envs.length > 0) {
+      return envs[0];
+    } else {
+      return undefined;
+    }
+  });
+  iframeUrl = computed(() => {
+    const env = this.selectedEnvironment();
+    if (env) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document().fullSlug);
+    } else {
+      return undefined;
+    }
+  });
+  // Locales
+  availableLocales = computed<Locale[]>(() => [DEFAULT_LOCALE, ...(this.selectedSpace()?.locales || [])]);
   availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
 
   selectedLocale: Locale = DEFAULT_LOCALE;
@@ -191,8 +209,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     return ObjectUtils.isEqual(uiPath, this.hoverSchemaPath());
   });
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
-  selectedEnvironment?: SpaceEnvironment;
-  iframeUrl?: SafeUrl;
+
   documentData: ContentData = { _id: '', _schema: '', schema: '' };
   selectedDocumentData: ContentData = { _id: '', _schema: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
@@ -217,7 +234,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   ngOnInit(): void {
     this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId());
-    console.log(this.documents());
     const document = this.document();
     // Initialize document data
     if (document.kind === ContentKind.DOCUMENT) {
@@ -245,11 +261,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
     // Select content base on path
     this.navigateToSchemaBackwards(this.schemaPath()[this.schemaPath().length - 1]);
-    // Select Environment
-    const space = this.selectedSpace();
-    if (this.selectedEnvironment === undefined && space?.environments && space?.environments.length > 0) {
-      this.changeEnvironment(space.environments[0]);
-    }
     this.generateDocumentIdsTree();
   }
 
@@ -269,6 +280,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       next: () => {
         this.notificationService.success('Content has been published.');
         this.sendEventToApp({ type: 'publish' });
+        this.documentPublishedAt.set(Date.now() / 100);
       },
       error: () => {
         this.notificationService.error('Content can not be published.');
@@ -313,6 +325,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
           this.sendEventToApp({ type: 'save' });
+          this.documentUpdatedAt.set(Date.now() / 100);
         },
         error: () => {
           this.notificationService.error('Content can not be saved.');
@@ -438,11 +451,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     // Send Message to iFrame about Schema Selection
     this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
     //console.groupEnd();
-  }
-
-  changeEnvironment(env: SpaceEnvironment): void {
-    this.selectedEnvironment = env;
-    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document().fullSlug);
   }
 
   generateDocumentIdsTree() {
@@ -577,11 +585,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   sendEventToApp(event: EventToApp) {
     const contentWindow = this.preview()?.nativeElement.contentWindow;
-    if (contentWindow && this.selectedEnvironment) {
-      const url = new URL(this.selectedEnvironment.url);
+    const selectedEnvironment = this.selectedEnvironment();
+    if (contentWindow && selectedEnvironment) {
+      const url = new URL(selectedEnvironment.url);
       contentWindow.postMessage(event, url.origin);
     }
   }
-
-  protected readonly console = console;
 }

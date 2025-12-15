@@ -2,7 +2,6 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -21,15 +20,19 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
+  lucideDownload,
   lucideEllipsisVertical,
   lucideFileSymlink,
   lucideFileUp,
+  lucideFolderInput,
   lucideFolderPlus,
   lucideFolderRoot,
   lucideLayoutGrid,
   lucideLayoutList,
   lucideLoaderCircle,
+  lucidePencil,
   lucideRefreshCcwDot,
+  lucideTrash,
   lucideUpload,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
@@ -66,7 +69,9 @@ import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Subject } from 'rxjs';
@@ -91,7 +96,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   imports: [
     MatIconModule,
     MatTooltipModule,
-    MatBadgeModule,
     CanUserPerformPipe,
     CommonModule,
     MatButtonModule,
@@ -118,6 +122,8 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmTooltipImports,
     HlmBreadCrumbImports,
     HlmProgressImports,
+    HlmItemImports,
+    HlmSpinnerImports,
   ],
   providers: [
     provideIcons({
@@ -134,6 +140,10 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
       lucideLayoutGrid,
       lucideLayoutList,
       lucideFolderRoot,
+      lucideDownload,
+      lucidePencil,
+      lucideFolderInput,
+      lucideTrash,
     }),
   ],
 })
@@ -635,5 +645,13 @@ export class AssetsComponent implements OnInit {
       });
       this.fileUploadQueue$.next(file);
     });
+  }
+
+  isFolder(asset: Asset): asset is AssetFolder {
+    return asset.kind === AssetKind.FOLDER;
+  }
+
+  isFile(asset: Asset): asset is AssetFile {
+    return asset.kind === AssetKind.FILE;
   }
 }

@@ -124,6 +124,9 @@
       ],
       "@spartan-ng/helm/resizable": [
         "./libs/ui/resizable/src/index.ts"
+      ],
+      "@spartan-ng/helm/aspect-ratio": [
+        "./libs/ui/aspect-ratio/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

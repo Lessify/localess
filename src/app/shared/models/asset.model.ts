@@ -136,3 +136,11 @@ export type AssetFileImport = {
   alt?: string;
   source?: string;
 };
+
+export function isFolder(asset: Asset): asset is AssetFolder {
+  return asset.kind === AssetKind.FOLDER;
+}
+
+export function isFile(asset: Asset): asset is AssetFile {
+  return asset.kind === AssetKind.FILE;
+}

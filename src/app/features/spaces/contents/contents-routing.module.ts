@@ -11,15 +11,18 @@ import { ContentsComponent } from './contents.component';
 import { EditDocumentComponent } from './edit-document/edit-document.component';
 
 const documentResolver: ResolveFn<ContentDocument> = route => {
-  return inject(ContentService).findDocumentById(route.paramMap.get('spaceId')!, route.paramMap.get('contentId')!);
+  const { spaceId, contentId } = route.params;
+  return inject(ContentService).findDocumentById(spaceId, contentId).pipe(tap(console.log));
 };
 
 const documentsResolver: ResolveFn<ContentDocument[]> = route => {
-  return inject(ContentService).findAllDocuments(route.paramMap.get('spaceId')!).pipe(tap(console.log));
+  const { spaceId } = route.params;
+  return inject(ContentService).findAllDocuments(spaceId).pipe(tap(console.log));
 };
 
 const schemasResolver: ResolveFn<Schema[]> = route => {
-  return inject(SchemaService).findAll(route.paramMap.get('spaceId')!);
+  const { spaceId } = route.params;
+  return inject(SchemaService).findAll(spaceId).pipe(tap(console.log));
 };
 
 const routes: Routes = [
@@ -37,8 +40,8 @@ const routes: Routes = [
       } satisfies BreadcrumbItem,
     },
     resolve: {
-      document: documentResolver,
       documents: documentsResolver,
+      document: documentResolver,
       schemas: schemasResolver,
     },
   },
