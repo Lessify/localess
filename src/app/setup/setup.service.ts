@@ -8,8 +8,8 @@ import { Setup } from './setup.model';
 export class SetupService {
   private readonly functions = inject(Functions);
 
-  init(setup: Setup): Observable<string> {
-    const setupFunction = httpsCallableData<Setup, string>(this.functions, 'setup');
+  init(setup: Setup): Observable<void> {
+    const setupFunction = httpsCallableData<Setup, void>(this.functions, 'setup');
     return setupFunction(setup).pipe(traceUntilFirst('Firestore:setup'));
   }
 }
