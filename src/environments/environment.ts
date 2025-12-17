@@ -1,18 +1,11 @@
+import config from './firebase-config.json'
 // This file can be replaced during build by using the `fileReplacements` array.
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
   appName: 'Localess [Dev]',
-  firebase: {
-    projectId: 'demo-localess-dev',
-    appId: '1:19232484518261:web:47779533df41508d8a706b',
-    storageBucket: 'demo-localess-dev.appspot.com',
-    locationId: 'europe-west6',
-    apiKey: 'AIzaSyAGDhKpaTfxnX7kLeXQiuD-1sBWw0z9b2g',
-    authDomain: 'demo-localess-dev.firebaseapp.com',
-    messagingSenderId: '19232484518261',
-  },
+  firebase: config,
   auth: {
     customDomain: '*',
     providers: 'GOOGLE,MICROSOFT',
@@ -26,7 +19,7 @@ export const environment = {
   production: false,
   test: true,
   debug: true,
-  emulator : {
+  emulator: {
     enabled: true,
   },
   version: '2.6.0',
