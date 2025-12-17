@@ -1,8 +1,5 @@
 steps:
   - name: 'node:22'
-    id: 'print-env'
-    entrypoint: 'printenv'
-  - name: 'node:22'
     id: 'install-deps'
     entrypoint: npm
     args: [ 'install' ]
@@ -11,10 +8,10 @@ steps:
     entrypoint: npm
     args: [ '--prefix', 'functions', 'install', '--platform=linuxmusl' ]
   - name: ghcr.io/lessify/firebase:edge
-    id: 'Initlialize Apps SDK Config'
+    id: 'Pull Firebase Apps SDK Config'
     args: [ 'apps:sdkconfig', '--project=$PROJECT_ID', 'web', '--out=src/environments/firebase-config-tmp.json' ]
   - name: 'node:22'
-    id: 'Copy SDK Config'
+    id: 'Copy Firebase Apps SDK Config'
     args: [ 'mv', '-f', 'src/environments/firebase-config-tmp.json', 'src/environments/firebase-config.json' ]
   - name: 'node:22'
     id: 'build-prod'
