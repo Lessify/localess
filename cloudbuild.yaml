@@ -1,5 +1,8 @@
 steps:
   - name: 'node:22'
+    id: 'print-env'
+    entrypoint: 'printenv'
+  - name: 'node:22'
     id: 'install-deps'
     entrypoint: npm
     args: ['install']
