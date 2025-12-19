@@ -2,6 +2,7 @@ steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'enable-apis'
     entrypoint: 'bash'
+    allowFailure: true
     args:
       - '-c'
       - |
