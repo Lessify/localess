@@ -123,7 +123,7 @@
               <li hlmSidebarMenuItem [hlmTooltipTrigger]="'A new version is available : ' + latestRelease.name">
                 <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
                   <ng-icon hlm name="lucideShieldAlert" class="motion-safe:animate-pulse flash" />
-                  Version : {{ version }}
+                  Version: {{ version }}
                 </button>
               </li>
             } @else {
