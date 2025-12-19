@@ -1,6 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject, signal } from '@angular/core';
-import { Auth, signInWithCustomToken } from '@angular/fire/auth';
+import { Auth } from '@angular/fire/auth';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -49,11 +49,11 @@ export class SetupComponent {
 
   setup(): void {
     this.setupService.init(this.form.value).subscribe({
-      next: async token => {
-        //this.backTimer();
+      next: () => {
+        this.backToLoginTimer();
         this.notificationService.success('Setup has been finished, you will be redirected in few seconds.');
-        await signInWithCustomToken(this.auth, token);
-        this.userStore.setAuthenticated(true);
+        //await signInWithCustomToken(this.auth, token);
+        //this.userStore.setAuthenticated(true);
       },
       error: () => {
         this.backToLoginTimer();

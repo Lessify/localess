@@ -67,5 +67,6 @@ export const setup = onCall<Setup>(async request => {
     updatedAt: FieldValue.serverTimestamp(),
   });
   // Create token for the first user
-  return await authService.createCustomToken(adminUser.uid);
+  // TODO: Not working as it require a special role
+  // return await authService.createCustomToken(adminUser.uid);
 });

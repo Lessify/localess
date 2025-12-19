@@ -1,4 +1,23 @@
 steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'enable-apis'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud services enable \
+          firebasestorage.googleapis.com \
+          firebaseextensions.googleapis.com \
+          cloudfunctions.googleapis.com \
+          cloudbuild.googleapis.com \
+          artifactregistry.googleapis.com \
+          run.googleapis.com \
+          eventarc.googleapis.com \
+          pubsub.googleapis.com \
+          storage.googleapis.com \
+          translate.googleapis.com \
+          cloudbilling.googleapis.com \
+          --project=$PROJECT_ID
   - name: 'node:22'
     id: 'install-deps'
     entrypoint: npm
