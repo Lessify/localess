@@ -30,8 +30,6 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideAlertCircle,
-  lucideArrowLeft,
-  lucideArrowRight,
   lucideChevronDown,
   lucideEarth,
   lucideEllipsisVertical,
@@ -125,8 +123,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
   providers: [
     provideIcons({
       lucideFolderRoot,
-      lucideArrowLeft,
-      lucideArrowRight,
       lucideFormInput,
       lucideVectorSquare,
       lucideAlertCircle,
@@ -590,5 +586,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       const url = new URL(selectedEnvironment.url);
       contentWindow.postMessage(event, url.origin);
     }
+  }
+
+  protected reloadEnvironment() {
+    const environment = this.selectedEnvironment();
+    this.selectedEnvironment.set(undefined);
+    this.selectedEnvironment.set(environment);
   }
 }

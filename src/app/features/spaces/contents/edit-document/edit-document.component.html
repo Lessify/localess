@@ -153,29 +153,8 @@
       <hlm-resizable-panel [defaultSize]="60" class="overflow-hidden">
         <div id="browser" class="browser flex flex-col h-full overflow-hidden border rounded-t-xl">
           @if (selectedEnvironment(); as environment) {
-            <div id="browser-toolbar" class="flex flex-wrap p-2 items-center gap-1 border-b">
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                hlmTooltipTrigger="Go back"
-                (click)="preview()?.nativeElement?.contentWindow?.history?.back()">
-                <ng-icon hlm name="lucideArrowLeft" />
-              </button>
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                hlmTooltipTrigger="Go forward"
-                (click)="preview()?.nativeElement?.contentWindow?.history?.forward()">
-                <ng-icon hlm name="lucideArrowRight" />
-              </button>
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                hlmTooltipTrigger="Reload"
-                (click)="preview()?.nativeElement?.contentWindow?.location?.reload()">
+            <div id="browser-toolbar" class="flex flex-wrap p-2 items-center gap-2 border-b">
+              <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Reload" (click)="reloadEnvironment()">
                 <ng-icon hlm name="lucideRefreshCcw" />
               </button>
               <div class="flex-grow">
