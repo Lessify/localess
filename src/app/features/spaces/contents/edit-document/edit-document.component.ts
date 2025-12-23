@@ -30,6 +30,7 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideAlertCircle,
+  lucideArrowLeft,
   lucideChevronDown,
   lucideEarth,
   lucideEllipsisVertical,
@@ -123,6 +124,7 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
   providers: [
     provideIcons({
       lucideFolderRoot,
+      lucideArrowLeft,
       lucideFormInput,
       lucideVectorSquare,
       lucideAlertCircle,
