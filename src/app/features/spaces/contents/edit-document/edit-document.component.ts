@@ -201,7 +201,19 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);
   clickSchemaField = signal<string | undefined>(undefined);
-  schemaPath = signal<SchemaPathItem[]>([]);
+  schemaPath = linkedSignal<SchemaPathItem[]>(() => {
+    const rootSchema = this.rootSchema();
+    if (rootSchema) {
+      return [
+        {
+          contentId: this.documentData._id,
+          schemaName: this.documentData.schema,
+          fieldName: '',
+        },
+      ];
+    }
+    return [];
+  });
   isSamePath = computed(() => {
     const uiPath = this.schemaPath().map(it => it.contentId);
     return ObjectUtils.isEqual(uiPath, this.hoverSchemaPath());
@@ -246,19 +258,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       } else {
         this.documentData = ObjectUtils.clone(document.data);
       }
+      this.selectedDocumentData = this.documentData;
     }
-    // Generate initial path only once
-    if (this.rootSchema() && this.schemaPath().length == 0) {
-      this.schemaPath.set([
-        {
-          contentId: this.documentData._id,
-          schemaName: this.documentData.schema,
-          fieldName: '',
-        },
-      ]);
-    }
-    // Select content base on path
-    this.navigateToSchemaBackwards(this.schemaPath()[this.schemaPath().length - 1]);
     this.generateDocumentIdsTree();
   }
 
@@ -420,7 +421,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
     //console.group('navigateToSchemaBackwards');
-    //console.log('pathItem', pathItem);
+    console.log('pathItem', pathItem);
     const idx = this.schemaPath().findIndex(it => it.contentId == pathItem.contentId);
     this.schemaPath.update(it => {
       it.splice(idx + 1);
