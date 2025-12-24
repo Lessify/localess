@@ -49,6 +49,8 @@ import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { Space } from '@shared/models/space.model';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { ContentService } from '@shared/services/content.service';
+import { SchemaService } from '@shared/services/schema.service';
 import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -159,6 +161,8 @@ class FeaturesComponent {
   private readonly reposService = inject(ReposService);
   private auth = inject(Auth);
   private route = inject(ActivatedRoute);
+  private readonly contentService = inject(ContentService);
+  private readonly schemaService = inject(SchemaService);
 
   public readonly sidebarService = inject(HlmSidebarService);
 
@@ -244,6 +248,28 @@ class FeaturesComponent {
       console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
       if (!this.userStore.isAuthenticated()) {
         await this.router.navigate(['login']);
+      }
+    });
+
+    effect(() => {
+      const selectedSpaceId = this.spaceStore.selectedSpaceId();
+      if (selectedSpaceId) {
+        this.contentService
+          .findAllDocuments(selectedSpaceId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: documents => {
+              this.spaceStore.updateDocuments(documents);
+            },
+          });
+        this.schemaService
+          .findAll(selectedSpaceId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: schemas => {
+              this.spaceStore.updateSchemas(schemas);
+            },
+          });
       }
     });
 

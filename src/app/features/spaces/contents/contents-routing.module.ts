@@ -5,7 +5,7 @@ import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { ContentDocument } from '@shared/models/content.model';
 import { Schema } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
-import { SchemaService } from '@shared/services/schema.service';
+import { SpaceStore } from '@shared/stores/space.store';
 import { tap } from 'rxjs/operators';
 import { ContentsComponent } from './contents.component';
 import { EditDocumentComponent } from './edit-document/edit-document.component';
@@ -15,14 +15,12 @@ const documentResolver: ResolveFn<ContentDocument> = route => {
   return inject(ContentService).findDocumentById(spaceId, contentId).pipe(tap(console.log));
 };
 
-const documentsResolver: ResolveFn<ContentDocument[]> = route => {
-  const { spaceId } = route.params;
-  return inject(ContentService).findAllDocuments(spaceId).pipe(tap(console.log));
+const documentsResolver: ResolveFn<ContentDocument[]> = () => {
+  return inject(SpaceStore).documents();
 };
 
-const schemasResolver: ResolveFn<Schema[]> = route => {
-  const { spaceId } = route.params;
-  return inject(SchemaService).findAll(spaceId).pipe(tap(console.log));
+const schemasResolver: ResolveFn<Schema[]> = () => {
+  return inject(SpaceStore).schemas();
 };
 
 const routes: Routes = [
