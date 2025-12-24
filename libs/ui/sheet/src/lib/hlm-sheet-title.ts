@@ -1,16 +1,16 @@
-import { Directive, computed, input } from '@angular/core';
+import { Directive } from '@angular/core';
 import { BrnSheetTitle } from '@spartan-ng/brain/sheet';
-import { hlm } from '@spartan-ng/helm/utils';
-import type { ClassValue } from 'clsx';
+import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
 	selector: '[hlmSheetTitle]',
-	host: {
-		'[class]': '_computedClass()',
-	},
 	hostDirectives: [BrnSheetTitle],
+	host: {
+		'data-slot': 'sheet-title',
+	},
 })
 export class HlmSheetTitle {
-	public readonly userClass = input<ClassValue>('', { alias: 'class' });
-	protected readonly _computedClass = computed(() => hlm('text-foreground font-semibold', this.userClass()));
+	constructor() {
+		classes(() => 'text-foreground font-semibold');
+	}
 }

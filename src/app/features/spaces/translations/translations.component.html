@@ -19,8 +19,8 @@
       </button>
     </hlm-toggle-group>
     @if ('TRANSLATION_CREATE' | canUserPerform | async) {
-      <button hlmBtn (click)="openAddDialog()">
-        <ng-icon hlm name="lucidePlus" />
+      <button hlmBtn size="sm" (click)="openAddDialog()">
+        <ng-icon hlm size="sm" name="lucidePlus" />
         Add Translation
       </button>
     }
@@ -28,22 +28,23 @@
       <button
         hlmBtn
         variant="outline"
+        size="sm"
         hlmTooltipTrigger="Publish Translations to be available via API call"
         [disabled]="isPublishLoading()"
         (click)="publish()">
         @if (isPublishLoading()) {
           <hlm-spinner class="size-4" />
         } @else {
-          <ng-icon hlm name="lucideUpload" />
+          <ng-icon hlm size="sm" name="lucideUpload" />
         }
         Publish
       </button>
     }
     <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Hisotry" (click)="showHistory.set(!showHistory())">
-      <ng-icon hlm name="lucideHistory" />
+      <ng-icon hlm size="sm" name="lucideHistory" />
     </button>
     <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
-      <ng-icon hlm name="lucideEllipsisVertical" />
+      <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
       <hlm-dropdown-menu class="w-60">
@@ -51,13 +52,13 @@
           <hlm-dropdown-menu-group>
             @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
               <button hlmDropdownMenuItem (click)="openImportDialog(space.locales)">
-                <ng-icon name="lucideUploadCloud" />
+                <ng-icon hlm size="sm" name="lucideUploadCloud" />
                 Import
               </button>
             }
             @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
               <button hlmDropdownMenuItem (click)="openExportDialog(space.locales)">
-                <ng-icon name="lucideCloudDownload" />
+                <ng-icon hlm size="sm" name="lucideCloudDownload" />
                 Export
               </button>
             }
@@ -68,9 +69,9 @@
         <hlm-dropdown-menu-group>
           @for (locale of space.locales; track locale.id) {
             <button hlmDropdownMenuItem (click)="openPublishedV1InNewTab(locale.id)">
-              <ng-icon name="lucideEarth" />
+              <ng-icon hlm size="sm" name="lucideEarth" />
               <span>Published {{ locale.name }} JSON</span>
-              <ng-icon name="lucideExternalLink" class="ml-auto" />
+              <ng-icon hlm size="sm" name="lucideExternalLink" class="ml-auto" />
             </button>
           }
         </hlm-dropdown-menu-group>
@@ -101,7 +102,7 @@
             <div hlmInputGroup>
               <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" />
               <div hlmInputGroupAddon>
-                <ng-icon name="lucideSearch" />
+                <ng-icon hlm size="sm" name="lucideSearch" />
               </div>
             </div>
             <div hlmField class="col-span-2">
@@ -122,7 +123,7 @@
                 </div>
                 <hlm-command *brnPopoverContent="let ctx" hlmPopoverContent class="w-[200px] p-0">
                   <hlm-command-search>
-                    <ng-icon hlm name="lucideSearch" />
+                    <ng-icon hlm size="sm" name="lucideSearch" />
                     <input placeholder="Search label..." hlm-command-search-input />
                   </hlm-command-search>
                   <div *brnCommandEmpty hlmCommandEmpty>No results found.</div>
@@ -133,6 +134,7 @@
                           <span>{{ label }}</span>
                           <ng-icon
                             hlm
+                            size="sm"
                             class="ml-auto"
                             [class.opacity-0]="!filterForm.value.labels?.includes(label)"
                             name="lucideCheck"
@@ -334,6 +336,9 @@
             <div>
               <div class="p-2 align-items-start">
                 @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
+                    <ng-icon hlm size="sm" name="lucideHistory" />
+                  </button>
                   <button mat-icon-button matTooltip="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
                     <mat-icon>rebase_edit</mat-icon>
                   </button>

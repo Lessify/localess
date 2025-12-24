@@ -1,27 +1,21 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { BrnAvatar } from '@spartan-ng/brain/avatar';
-import { hlm } from '@spartan-ng/helm/utils';
-import type { ClassValue } from 'clsx';
+import { classes } from '@spartan-ng/helm/utils';
 
 @Component({
-	selector: 'hlm-avatar',
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	encapsulation: ViewEncapsulation.None,
-	host: {
-		'[class]': '_computedClass()',
-	},
-	template: `
-		@if (_image()?.canShow()) {
-			<ng-content select="[hlmAvatarImage],[brnAvatarImage]" />
-		} @else {
-			<ng-content select="[hlmAvatarFallback],[brnAvatarFallback]" />
-		}
-	`,
+  selector: 'hlm-avatar',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (_image()?.canShow()) {
+      <ng-content select="[hlmAvatarImage],[brnAvatarImage]" />
+    } @else {
+      <ng-content select="[hlmAvatarFallback],[brnAvatarFallback]" />
+    }
+  `,
 })
 export class HlmAvatar extends BrnAvatar {
-	public readonly userClass = input<ClassValue>('', { alias: 'class' });
-
-	protected readonly _computedClass = computed(() =>
-		hlm('relative flex size-8 shrink-0 overflow-hidden rounded-full', this.userClass()),
-	);
+  constructor() {
+    super();
+    classes(() => 'relative flex size-8 shrink-0 overflow-hidden rounded-full');
+  }
 }

@@ -1,18 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { hlm } from '@spartan-ng/helm/utils';
-import type { ClassValue } from 'clsx';
+import { Directive } from '@angular/core';
+import { classes } from '@spartan-ng/helm/utils';
 
-@Component({
-	selector: 'hlm-sheet-footer',
-	template: `
-		<ng-content />
-	`,
+@Directive({
+	selector: '[hlmSheetFooter],hlm-sheet-footer',
 	host: {
-		'[class]': '_computedClass()',
+		'data-slot': 'sheet-footer',
 	},
-	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HlmSheetFooter {
-	public readonly userClass = input<ClassValue>('', { alias: 'class' });
-	protected readonly _computedClass = computed(() => hlm('mt-auto flex flex-col gap-2 p-4', this.userClass()));
+	constructor() {
+		classes(() => 'mt-auto flex flex-col gap-2 p-4');
+	}
 }
