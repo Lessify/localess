@@ -3,9 +3,7 @@ import { ResolveFn, RouterModule, Routes } from '@angular/router';
 import { isFormDirtyGuard } from '@shared/guards/dirty-form.guard';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { ContentDocument } from '@shared/models/content.model';
-import { Schema } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
-import { SpaceStore } from '@shared/stores/space.store';
 import { tap } from 'rxjs/operators';
 import { ContentsComponent } from './contents.component';
 import { EditDocumentComponent } from './edit-document/edit-document.component';
@@ -13,14 +11,6 @@ import { EditDocumentComponent } from './edit-document/edit-document.component';
 const documentResolver: ResolveFn<ContentDocument> = route => {
   const { spaceId, contentId } = route.params;
   return inject(ContentService).findDocumentById(spaceId, contentId).pipe(tap(console.log));
-};
-
-const documentsResolver: ResolveFn<ContentDocument[]> = () => {
-  return inject(SpaceStore).documents();
-};
-
-const schemasResolver: ResolveFn<Schema[]> = () => {
-  return inject(SpaceStore).schemas();
 };
 
 const routes: Routes = [
@@ -38,9 +28,7 @@ const routes: Routes = [
       } satisfies BreadcrumbItem,
     },
     resolve: {
-      documents: documentsResolver,
       document: documentResolver,
-      schemas: schemasResolver,
     },
   },
 ];
