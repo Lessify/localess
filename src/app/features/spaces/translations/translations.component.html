@@ -317,13 +317,18 @@
                 <mat-divider></mat-divider>
                 <div class="p-2 flex flex-row-reverse">
                   <button
-                    mat-stroked-button
-                    color="primary"
+                    hlmBtn
+                    variant="outline"
+                    size="sm"
                     [disabled]="
                       isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale()] === selectedTranslationLocaleValue()
                     "
                     (click)="updateLocale(selectedTranslation, selectedTargetLocale(), selectedTranslationLocaleValue()!)">
-                    <mat-icon [llAnimate]="isLocaleUpdateLoading()">{{ isLocaleUpdateLoading() ? 'sync' : 'save' }}</mat-icon>
+                    @if (isLocaleUpdateLoading()) {
+                      <hlm-spinner class="size-4" />
+                    } @else {
+                      <ng-icon hlm size="sm" name="lucideSave" />
+                    }
                     Save
                   </button>
                 </div>
@@ -337,18 +342,15 @@
               <div class="p-2 align-items-start">
                 @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
                   <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
-                    <ng-icon hlm size="sm" name="lucideHistory" />
+                    <ng-icon hlm size="sm" name="lucideReplace" />
                   </button>
-                  <button mat-icon-button matTooltip="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
-                    <mat-icon>rebase_edit</mat-icon>
-                  </button>
-                  <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(selectedTranslation)">
-                    <mat-icon>edit</mat-icon>
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit" (click)="openEditDialog(selectedTranslation)">
+                    <ng-icon hlm size="sm" name="lucidePencil" />
                   </button>
                 }
                 @if ('TRANSLATION_DELETE' | canUserPerform | async) {
-                  <button mat-icon-button matTooltip="Delete" (click)="openDeleteDialog(selectedTranslation)">
-                    <mat-icon>delete</mat-icon>
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Delete" (click)="openDeleteDialog(selectedTranslation)">
+                    <ng-icon hlm size="sm" name="lucideTrash" />
                   </button>
                 }
               </div>
@@ -357,12 +359,12 @@
                 <li role="listitem" class="flex p-2 relative items-center">
                   <div class="min-w-0 flex-auto">
                     <div class="flex items-center gap-x-3">
-                      <div class="text-sm font-semibold leading-6 break-all"> ID</div>
+                      <div class="text-sm font-semibold leading-6 break-all">ID</div>
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                       <code>{{ selectedTranslation.id }}</code>
-                      <button mat-icon-button [cdkCopyToClipboard]="selectedTranslation.id" matTooltip="Copy Id">
-                        <mat-icon>content_copy</mat-icon>
+                      <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Copy ID" [cdkCopyToClipboard]="selectedTranslation.id">
+                        <ng-icon hlm size="sm" name="lucideCopy" />
                       </button>
                     </div>
                   </div>
