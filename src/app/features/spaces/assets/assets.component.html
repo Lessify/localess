@@ -1,7 +1,7 @@
 <div class="p-2 flex items-center justify-end gap-2">
   @if (fileUploadQueue().length > 0) {
     <span hlmBadge class="h-6">
-      <ng-icon hlm [llAnimate]="true" name="lucideLoaderCircle" />
+      <ng-icon hlm size="sm" [llAnimate]="true" name="lucideLoaderCircle" />
       Uploading ... ({{ fileUploadQueue().length }})
     </span>
   }
@@ -15,23 +15,23 @@
   </hlm-toggle-group>
   @if ('ASSET_CREATE' | canUserPerform | async) {
     <button hlmBtn [hlmDropdownMenuTrigger]="uploadExtraMenu">
-      <ng-icon hlm name="lucideUpload" />
+      <ng-icon hlm size="sm" name="lucideUpload" />
       Upload Assets
     </button>
     <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
     <ng-template #uploadExtraMenu>
       <hlm-dropdown-menu>
         <button hlmDropdownMenuItem (click)="fileInput.click()">
-          <ng-icon name="lucideFileUp" />
+          <ng-icon hlm size="sm" name="lucideFileUp" />
           From Local
         </button>
         <button hlmDropdownMenuItem (click)="openUrlPrompt()">
-          <ng-icon name="lucideFileSymlink" />
+          <ng-icon hlm size="sm" name="lucideFileSymlink" />
           From Link
         </button>
         @if (unsplashPluginService.enabled()) {
           <button hlmDropdownMenuItem (click)="openUnsplashDialog()">
-            <ng-icon name="tablerBrandUnsplash" />
+            <ng-icon hlm size="sm" name="tablerBrandUnsplash" />
             From Unsplash
           </button>
         }
@@ -39,33 +39,33 @@
     </ng-template>
 
     <button hlmBtn variant="outline" (click)="openAddFolderDialog()">
-      <ng-icon hlm name="lucideFolderPlus" />
+      <ng-icon hlm size="sm" name="lucideFolderPlus" />
       Create Folder
     </button>
   }
 
   @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
     <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
-      <ng-icon hlm name="lucideEllipsisVertical" />
+      <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
       <hlm-dropdown-menu class="w-50">
         @if ('ASSET_IMPORT' | canUserPerform | async) {
           <button hlmDropdownMenuItem (click)="openImportDialog()">
-            <ng-icon name="lucideUploadCloud" />
+            <ng-icon hlm size="sm" name="lucideUploadCloud" />
             Import
           </button>
         }
         @if ('ASSET_EXPORT' | canUserPerform | async) {
           <button hlmDropdownMenuItem (click)="openExportDialog()">
-            <ng-icon name="lucideCloudDownload" />
+            <ng-icon hlm size="sm" name="lucideCloudDownload" />
             Export
           </button>
         }
         @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
           <hlm-dropdown-menu-separator />
           <button hlmDropdownMenuItem (click)="openRegenerateMetadataDialog()">
-            <ng-icon name="lucideRefreshCcwDot" />
+            <ng-icon hlm size="sm" name="lucideRefreshCcwDot" />
             Regenerate Metadata
           </button>
         }
@@ -88,7 +88,7 @@
         <li hlmBreadcrumbItem>
           @if (isFirst) {
             <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
-              <ng-icon name="lucideFolderRoot" />
+              <ng-icon hlm size="sm" name="lucideFolderRoot" />
             </button>
           } @else if (isLast) {
             <span hlmBreadcrumbPage>{{ pathItem.name }}</span>

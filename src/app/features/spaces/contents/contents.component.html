@@ -1,44 +1,44 @@
 <div class="p-2 flex items-center justify-end gap-2">
   @if ('CONTENT_CREATE' | canUserPerform | async) {
     <button hlmBtn [hlmDropdownMenuTrigger]="contentCreateMenu">
-      <ng-icon hlm name="lucidePlus" />
+      <ng-icon hlm size="sm" name="lucidePlus" />
       Add Content
     </button>
     <ng-template #contentCreateMenu>
       <hlm-dropdown-menu>
         <button hlmDropdownMenuItem (click)="openAddDocumentDialog()">
-          <ng-icon name="lucideFilePlus" />
+          <ng-icon hlm size="sm" name="lucideFilePlus" />
           Document
         </button>
         <button hlmDropdownMenuItem (click)="openAddFolderDialog()">
-          <ng-icon name="lucideFolderPlus" />
+          <ng-icon hlm size="sm" name="lucideFolderPlus" />
           Folder
         </button>
       </hlm-dropdown-menu>
     </ng-template>
   }
   <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
-    <ng-icon hlm name="lucideEllipsisVertical" />
+    <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
   </button>
   <ng-template #extraMenu>
     <hlm-dropdown-menu>
       @if ('CONTENT_IMPORT' | canUserPerform | async) {
         <button hlmDropdownMenuItem (click)="openImportDialog()">
-          <ng-icon name="lucideUploadCloud" />
+          <ng-icon hlm size="sm" name="lucideUploadCloud" />
           Import
         </button>
       }
       @if ('CONTENT_EXPORT' | canUserPerform | async) {
         <button hlmDropdownMenuItem (click)="openExportDialog()">
-          <ng-icon name="lucideCloudDownload" />
+          <ng-icon hlm size="sm" name="lucideCloudDownload" />
           Export
         </button>
       }
       <hlm-dropdown-menu-separator />
       <button hlmDropdownMenuItem (click)="openLinksV1InNewTab()">
-        <ng-icon name="lucideLink" />
+        <ng-icon hlm size="sm" name="lucideLink" />
         Links
-        <ng-icon name="lucideExternalLink" class="ml-auto" />
+        <ng-icon hlm size="sm" name="lucideExternalLink" class="ml-auto" />
       </button>
     </hlm-dropdown-menu>
   </ng-template>
