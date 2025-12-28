@@ -20,7 +20,6 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -30,7 +29,10 @@ import { provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeftRight,
   lucideCheck,
+  lucideChevronDown,
+  lucideChevronRight,
   lucideCirclePlus,
+  lucideCircleQuestionMark,
   lucideCircleSmall,
   lucideCloudDownload,
   lucideCopy,
@@ -111,7 +113,6 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    MatIconModule,
     CanUserPerformPipe,
     MatButtonModule,
     MatTooltipModule,
@@ -176,6 +177,9 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
       lucideSave,
       lucideArrowLeftRight,
       lucideLanguages,
+      lucideCircleQuestionMark,
+      lucideChevronRight,
+      lucideChevronDown,
     }),
   ],
 })

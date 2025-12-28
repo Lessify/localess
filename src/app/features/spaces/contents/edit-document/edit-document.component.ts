@@ -19,7 +19,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -32,6 +31,7 @@ import {
   lucideAlertCircle,
   lucideArrowLeft,
   lucideChevronDown,
+  lucideCircleQuestionMark,
   lucideEarth,
   lucideEllipsisVertical,
   lucideFolderRoot,
@@ -39,6 +39,7 @@ import {
   lucideFullscreen,
   lucideHistory,
   lucidePencil,
+  lucidePlus,
   lucideRefreshCcw,
   lucideSave,
   lucideTriangleAlert,
@@ -90,7 +91,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatIconModule,
     MatTooltipModule,
     MatButtonModule,
     MatMenuModule,
@@ -142,6 +142,8 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
       tablerDeviceDesktop,
       lucideRefreshCcw,
       lucideChevronDown,
+      lucidePlus,
+      lucideCircleQuestionMark,
     }),
   ],
 })

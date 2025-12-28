@@ -213,7 +213,7 @@
                 @if (translationMap().get(node.key); as translation) {
                   <div aria-hidden="true" class="flex items-center gap-x-3" (click)="selectTranslation(translation)">
                     @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
-                      <mat-icon class="animate-spin">sync</mat-icon>
+                      <hlm-spinner class="size-4" />
                     } @else {
                       @switch (identifyStatus(translation)) {
                         @case ('TRANSLATED') {
@@ -238,10 +238,8 @@
                 matTreeNodePadding
                 matTreeNodeToggle
                 [cdkTreeNodeTypeaheadLabel]="node.name">
-                <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
-                  <mat-icon>
-                    {{ tree.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
-                  </mat-icon>
+                <button hlmBtn size="icon" variant="ghost" matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
+                  <ng-icon hlm [name]="tree.isExpanded(node) ? 'lucideChevronDown' : 'lucideChevronRight'" />
                 </button>
                 {{ node.name }}
               </mat-tree-node>
@@ -485,19 +483,17 @@
       <ng-scrollbar hlm>
         @if (showHistory()) {
           <div class="flow-root m-4">
-            <ul role="list" class="-mb-8">
+            <ul role="list">
               @for (item of history$ | async; track item.id; let isLast = $last) {
                 <li>
                   <div class="relative pb-5">
-                    <div class="relative flex space-x-3">
+                    <div class="relative flex space-x-2">
                       @switch (item.type) {
                         @case ('PUBLISHED') {
-                          <div>
-                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                              <mat-icon>publish</mat-icon>
-                            </span>
+                          <div class="px-2">
+                            <ng-icon hlm size="sm" name="lucideUpload" />
                           </div>
-                          <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div class="flex min-w-0 flex-1 justify-between space-x-4">
                             <div>
                               <p class="text-sm">
                                 Published by
@@ -512,12 +508,10 @@
                           </div>
                         }
                         @case ('CREATE') {
-                          <div>
-                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                              <mat-icon>add</mat-icon>
-                            </span>
+                          <div class="px-2">
+                            <ng-icon hlm size="sm" name="lucidePlus" />
                           </div>
-                          <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div class="flex min-w-0 flex-1 justify-between space-x-4">
                             <div>
                               <p class="text-sm">
                                 Add <span class="font-medium break-all">{{ item.key }}</span> by
@@ -532,12 +526,10 @@
                           </div>
                         }
                         @case ('UPDATE') {
-                          <div>
-                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                              <mat-icon>edit</mat-icon>
-                            </span>
+                          <div class="px-2">
+                            <ng-icon hlm size="sm" name="lucidePencil" />
                           </div>
-                          <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div class="flex min-w-0 flex-1 justify-between space-x-4">
                             <div>
                               <p class="text-sm">
                                 Edit <span class="font-medium break-all">{{ item.key }}</span> by
@@ -552,12 +544,10 @@
                           </div>
                         }
                         @case ('DELETE') {
-                          <div>
-                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                              <mat-icon>delete</mat-icon>
-                            </span>
+                          <div class="px-2">
+                            <ng-icon hlm size="sm" name="lucideTrash" />
                           </div>
-                          <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div class="flex min-w-0 flex-1 justify-between space-x-4">
                             <div>
                               <p class="text-sm">
                                 Delete <span class="font-medium break-all">{{ item.key }}</span> by
@@ -572,12 +562,10 @@
                           </div>
                         }
                         @default {
-                          <div>
-                            <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                              <mat-icon>question_mark</mat-icon>
-                            </span>
+                          <div class="px-2">
+                            <ng-icon hlm size="sm" name="lucideCircleQuestionMark" />
                           </div>
-                          <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                          <div class="flex min-w-0 flex-1 justify-between space-x-4">
                             <div>
                               <p class="text-sm">Unknown</p>
                             </div>

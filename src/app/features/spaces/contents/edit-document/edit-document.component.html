@@ -331,19 +331,17 @@
     <ng-scrollbar hlm>
       @if (showHistory()) {
         <div class="flow-root m-4">
-          <ul role="list" class="-mb-8">
+          <ul role="list">
             @for (item of history$ | async; track item.id; let isLast = $last) {
               <li>
                 <div class="relative pb-5">
-                  <div class="relative flex space-x-3">
+                  <div class="relative flex space-x-2">
                     @switch (item.type) {
                       @case ('PUBLISHED') {
-                        <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>publish</mat-icon>
-                          </span>
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucideUpload" />
                         </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
                           <div>
                             <p class="text-sm">
                               Published by
@@ -358,12 +356,10 @@
                         </div>
                       }
                       @case ('CREATE') {
-                        <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>add</mat-icon>
-                          </span>
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucidePlus" />
                         </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
                           <div>
                             <p class="text-sm">
                               Created with name <span class="font-medium break-all">{{ item.cName }}</span> and slug
@@ -379,12 +375,10 @@
                         </div>
                       }
                       @case ('UPDATE') {
-                        <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>edit</mat-icon>
-                          </span>
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucidePencil" />
                         </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
                           <div>
                             <p class="text-sm">
                               Updated with
@@ -416,12 +410,10 @@
                         </div>
                       }
                       @default {
-                        <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                            <mat-icon>question_mark</mat-icon>
-                          </span>
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucidePencil" />
                         </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
                           <div>
                             <p class="text-sm">Unknown</p> by
                             <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
