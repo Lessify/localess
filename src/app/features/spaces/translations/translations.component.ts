@@ -28,6 +28,7 @@ import { MatTreeModule } from '@angular/material/tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
+  lucideArrowLeftRight,
   lucideCheck,
   lucideCirclePlus,
   lucideCircleSmall,
@@ -36,6 +37,7 @@ import {
   lucideEarth,
   lucideEllipsisVertical,
   lucideHistory,
+  lucideLanguages,
   lucideLayoutList,
   lucideListTree,
   lucidePencil,
@@ -173,6 +175,8 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
       lucideTrash,
       lucideCopy,
       lucideSave,
+      lucideArrowLeftRight,
+      lucideLanguages,
     }),
   ],
 })

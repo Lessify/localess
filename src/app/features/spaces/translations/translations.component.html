@@ -251,6 +251,51 @@
           @if (selectedTranslation) {
             <div class="flex flex-col h-full">
               <div class="p-2">
+                <fieldset hlmFieldSet>
+                  <div hlmFieldGroup class="flex justify-center flex-row gap-2">
+                    <div hlmField>
+                      <hlm-select placeholder="Search Locale">
+                        <hlm-select-trigger class="w-full">
+                          <hlm-select-value />
+                        </hlm-select-trigger>
+                        <hlm-select-content>
+                          @for (locale of space.locales; track locale.id) {
+                            <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
+                          }
+                        </hlm-select-content>
+                      </hlm-select>
+                    </div>
+                    <button hlmBtn size="icon" variant="ghost">
+                      <ng-icon hlm size="sm" name="lucideArrowLeftRight" />
+                    </button>
+                    <div hlmField>
+                      <hlm-select placeholder="Search Locale">
+                        <hlm-select-trigger class="w-full">
+                          <hlm-select-value />
+                        </hlm-select-trigger>
+                        <hlm-select-content>
+                          @for (locale of space.locales; track locale.id) {
+                            <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
+                          }
+                        </hlm-select-content>
+                      </hlm-select>
+                    </div>
+                    <button hlmBtn size="icon" variant="ghost">
+                      <ng-icon hlm size="sm" name="lucideLanguages" />
+                    </button>
+                  </div>
+                </fieldset>
+              </div>
+              <div>
+                <div class="flex items-center">
+                  <div aria-hidden="true" class="w-full border-t"></div>
+                  <div class="relative flex justify-center">
+                    <span class="bg-background px-2 text-sm">Continue</span>
+                  </div>
+                  <div aria-hidden="true" class="w-full border-t"></div>
+                </div>
+              </div>
+              <div class="p-2">
                 <mat-form-field>
                   <mat-label>Source Locale</mat-label>
                   <mat-select [(value)]="selectedSourceLocale">
