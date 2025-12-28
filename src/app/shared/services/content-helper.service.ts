@@ -9,7 +9,7 @@ import {
   isReferenceContent,
   ReferenceContent,
 } from '@shared/models/content.model';
-import { DEFAULT_LOCALE } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { v4 } from 'uuid';
@@ -20,7 +20,7 @@ export class ContentHelperService {
 
   validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] {
     //console.group('validateContent');
-    const isDefaultLocale = DEFAULT_LOCALE.id === locale;
+    const isDefaultLocale = CONTENT_DEFAULT_LOCALE.id === locale;
     const errors: ContentError[] = [];
     const schemasById = new Map<string, Schema>(schemas.map(it => [it.id, it]));
     const contentIteration = [data];
@@ -222,7 +222,7 @@ export class ContentHelperService {
   extractSchemaContent(data: ContentData, schema: SchemaComponent, locale: string, full: boolean): Record<string, any> {
     //console.group('extractSchemaContent')
     //console.log('data',data)
-    const isDefaultLocale = locale === DEFAULT_LOCALE.id;
+    const isDefaultLocale = locale === CONTENT_DEFAULT_LOCALE.id;
     const result: Record<string, any> = {};
     schema.fields
       ?.filter(it => full || ![SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS].includes(it.kind))

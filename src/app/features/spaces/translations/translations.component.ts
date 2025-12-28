@@ -9,7 +9,7 @@ import {
   DestroyRef,
   effect,
   inject,
-  input,
+  input, linkedSignal,
   OnInit,
   signal,
 } from '@angular/core';
@@ -53,7 +53,7 @@ import { ConfirmationDialogComponent } from '@shared/components/confirmation-dia
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { StatusComponent } from '@shared/components/status';
 import { AnimateDirective } from '@shared/directives/animate.directive';
-import { Locale } from '@shared/models/locale.model';
+import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { TranslationHistory } from '@shared/models/translation-history.model';
 import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -82,6 +82,7 @@ import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
@@ -131,7 +132,6 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     TranslationPluralEditComponent,
     TranslationArrayEditComponent,
     ClipboardModule,
-    AnimateDirective,
     MatTreeModule,
     HlmButtonImports,
     HlmIconImports,
@@ -154,6 +154,7 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     HlmBadgeImports,
     HlmItemImports,
     HlmInputGroupImports,
+    HlmSeparatorImports,
   ],
   providers: [
     provideIcons({
@@ -229,8 +230,14 @@ export class TranslationsComponent implements OnInit {
   selectedTranslation?: Translation;
   selectedTranslationLocaleValue = signal<string | undefined>(undefined);
 
-  selectedSourceLocale = signal('');
-  selectedTargetLocale = signal('');
+  selectedSourceLocale = linkedSignal(() => {
+    const space = this.selectedSpace();
+    return space ? space.localeFallback : TRANSLATION_DEFAULT_LOCALE;
+  });
+  selectedTargetLocale = linkedSignal(() => {
+    const space = this.selectedSpace();
+    return space ? space.localeFallback : TRANSLATION_DEFAULT_LOCALE;
+  });
 
   availableToken?: string = undefined;
 
@@ -262,12 +269,6 @@ export class TranslationsComponent implements OnInit {
       if (space) {
         if (this.filterForm.value.locale === '') {
           this.filterForm.patchValue({ locale: space.localeFallback.id });
-        }
-        if (this.selectedSourceLocale() === '') {
-          this.selectedSourceLocale.set(space.localeFallback.id);
-        }
-        if (this.selectedTargetLocale() === '') {
-          this.selectedTargetLocale.set(space.localeFallback.id);
         }
       }
     });
@@ -549,17 +550,13 @@ export class TranslationsComponent implements OnInit {
 
   selectTranslation(translation: Translation): void {
     this.selectedTranslation = translation;
-    this.selectedTranslationLocaleValue.set(this.selectedTranslation.locales[this.selectedTargetLocale()]);
+    this.selectedTranslationLocaleValue.set(this.selectedTranslation.locales[this.selectedTargetLocale().id]);
   }
 
-  selectTargetLocale(): void {
-    this.selectedTranslationLocaleValue.set(this.selectedTranslation?.locales[this.selectedTargetLocale()]);
-  }
-
-  updateLocale(transaction: Translation, locale: string, value: string): void {
+  updateLocale(transaction: Translation, locale: Locale, value: string): void {
     this.isLocaleUpdateLoading.set(true);
     this.translationUpdateId.set(transaction.id);
-    this.translationService.updateLocale(this.spaceId(), transaction.id, locale, value).subscribe({
+    this.translationService.updateLocale(this.spaceId(), transaction.id, locale.id, value).subscribe({
       next: () => {
         this.notificationService.success('Translation has been updated.');
       },
@@ -577,6 +574,10 @@ export class TranslationsComponent implements OnInit {
   }
 
   // Labels
+  compareLocale(a: Locale, b: Locale): boolean {
+    return a.id === b.id;
+  }
+
   selectLabel(label: string): void {
     const current = this.filterForm.controls.labels.value || [];
     if (current.includes(label)) {
@@ -613,12 +614,13 @@ export class TranslationsComponent implements OnInit {
     this.isTranslateLoading.set(true);
     this.translateService
       .translate({
-        content: this.selectedTranslation?.locales[this.selectedSourceLocale()] || '',
-        sourceLocale: this.selectedSourceLocale(),
-        targetLocale: this.selectedTargetLocale(),
+        content: this.selectedTranslation?.locales[this.selectedSourceLocale().id] || '',
+        sourceLocale: this.selectedSourceLocale().id,
+        targetLocale: this.selectedTargetLocale().id,
       })
       .subscribe({
         next: value => {
+          console.log('[translate]', value);
           // make sure the component is updated
           this.selectedTranslationLocaleValue.set(value);
           this.notificationService.success('Translated');
@@ -642,11 +644,11 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  isLocaleTranslatable(sourceLocale: string, targetLocale: string): boolean {
-    if (sourceLocale === targetLocale) {
+  isLocaleTranslatable(sourceLocale: Locale, targetLocale: Locale): boolean {
+    if (sourceLocale.id === targetLocale.id) {
       return false;
     }
-    return this.localeService.isLocaleTranslatable(sourceLocale) && this.localeService.isLocaleTranslatable(targetLocale);
+    return this.localeService.isLocaleTranslatable(sourceLocale.id) && this.localeService.isLocaleTranslatable(targetLocale.id);
   }
 
   identifyStatus(translate: Translation): TranslationStatus {

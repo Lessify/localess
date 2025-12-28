@@ -50,7 +50,7 @@ import { StatusComponent } from '@shared/components/status';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentHistory } from '@shared/models/content-history.model';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
-import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { SpaceEnvironment } from '@shared/models/space.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -194,10 +194,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
   });
   // Locales
-  availableLocales = computed<Locale[]>(() => [DEFAULT_LOCALE, ...(this.selectedSpace()?.locales || [])]);
+  availableLocales = computed<Locale[]>(() => [CONTENT_DEFAULT_LOCALE, ...(this.selectedSpace()?.locales || [])]);
   availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
 
-  selectedLocale: Locale = DEFAULT_LOCALE;
+  selectedLocale: Locale = CONTENT_DEFAULT_LOCALE;
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);
   clickSchemaField = signal<string | undefined>(undefined);
@@ -300,7 +300,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     //console.log('documentData', this.documentData)
     //console.log('document', this.document)
     this.contentErrors = [];
-    this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), DEFAULT_LOCALE.id));
+    this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), CONTENT_DEFAULT_LOCALE.id));
     for (const locale of this.selectedSpace()?.locales || []) {
       this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), locale.id));
     }

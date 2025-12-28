@@ -35,7 +35,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
-import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import {
   Schema,
   SchemaComponent,
@@ -111,7 +111,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   schemaForm = viewChild<ElementRef<HTMLFormElement>>('schemaForm');
 
-  isDefaultLocale = computed(() => this.selectedLocale().id === DEFAULT_LOCALE.id);
+  isDefaultLocale = computed(() => this.selectedLocale().id === CONTENT_DEFAULT_LOCALE.id);
   selectedLocaleId = computed(() => this.selectedLocale().id);
   // Subscriptions
   settingsStore = inject(LocalSettingsStore);
@@ -507,7 +507,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     // this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
     //debugger;
     let content = '';
-    if (sourceLocale === DEFAULT_LOCALE.id) {
+    if (sourceLocale === CONTENT_DEFAULT_LOCALE.id) {
       content = this.data[fieldName];
     } else {
       content = this.data[`${fieldName}_i18n_${sourceLocale}`];
@@ -518,7 +518,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
       this.translateService
         .translate({
           content: content,
-          sourceLocale: sourceLocale !== DEFAULT_LOCALE.id ? sourceLocale : null,
+          sourceLocale: sourceLocale !== CONTENT_DEFAULT_LOCALE.id ? sourceLocale : null,
           targetLocale: targetLocale,
         })
         .subscribe({

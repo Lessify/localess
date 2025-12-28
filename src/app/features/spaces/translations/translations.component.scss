@@ -1,29 +1,3 @@
-.disabled {
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-.selected {
-  //--mat-button-toggle-selected-state-background-color #dae2f9
-  background-color: var(--mat-sys-secondary-container);
-}
-
-mat-form-field {
-  width: 100%;
-
-  input {
-    width: 100%;
-  }
-}
-
-mat-form-field.with-button {
-  width: calc(100% - 50px);
-
-  input {
-    width: 100%;
-  }
-}
-
 .overlay {
   height: calc(100vh - 165px);
 }
