@@ -5,7 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -13,6 +12,7 @@ import { AppUiColor } from '@shared/models/settings.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SettingsService } from '@shared/services/settings.service';
 import { SettingsValidator } from '@shared/validators/settings.validator';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 
 @Component({
   selector: 'll-admin-settings-ui',
@@ -23,11 +23,11 @@ import { SettingsValidator } from '@shared/validators/settings.validator';
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
-    MatProgressBarModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
+    HlmProgressImports,
   ],
 })
 export class UiComponent {

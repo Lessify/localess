@@ -30,6 +30,7 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem } from '@shared/stores/space.store';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { concatMap, switchMap, tap } from 'rxjs/operators';
 import { AssetsSelectDialogModel } from './assets-select-dialog.model';
@@ -61,6 +62,7 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     MatCardModule,
     HlmBreadCrumbImports,
     HlmIconImports,
+    HlmProgressImports,
   ],
   providers: [
     provideIcons({

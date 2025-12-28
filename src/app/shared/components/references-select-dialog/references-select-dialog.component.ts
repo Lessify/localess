@@ -18,7 +18,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -34,6 +33,7 @@ import { SchemaService } from '@shared/services/schema.service';
 import { PathItem } from '@shared/stores/space.store';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { BehaviorSubject, combineLatest } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ReferencesSelectDialogModel } from './references-select-dialog.model';
@@ -45,7 +45,6 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatDialogModule,
-    MatProgressBarModule,
     MatTableModule,
     MatSortModule,
     MatCheckboxModule,
@@ -57,6 +56,7 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
     MatButtonModule,
     HlmBreadCrumbImports,
     HlmIconImports,
+    HlmProgressImports,
   ],
   providers: [
     provideIcons({

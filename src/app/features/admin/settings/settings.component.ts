@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
-import { activate } from '@angular/fire/remote-config';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -26,11 +25,7 @@ export class SettingsComponent {
   tabItems: TabItem[] = [{ icon: 'palette', label: 'UI', link: 'ui' }];
 
   constructor() {
-    const router = this.router;
-
-    const idx = router.url.lastIndexOf('/');
-    this.activeTab = router.url.substring(idx + 1);
+    const idx = this.router.url.lastIndexOf('/');
+    this.activeTab = this.router.url.substring(idx + 1);
   }
-
-  protected readonly activate = activate;
 }

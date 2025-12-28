@@ -25,7 +25,9 @@
   </div>
 </h2>
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
 <nav hlmBreadcrumb class="px-6 py-2">
   <ol hlmBreadcrumbList>

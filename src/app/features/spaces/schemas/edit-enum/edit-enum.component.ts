@@ -29,6 +29,7 @@ import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+import { HlmProgress, HlmProgressIndicator } from '@spartan-ng/helm/progress';
 import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
 
@@ -58,6 +59,8 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     MatExpansionModule,
     EditValueComponent,
     AnimateDirective,
+    HlmProgress,
+    HlmProgressIndicator,
   ],
 })
 export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {

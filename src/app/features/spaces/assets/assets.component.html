@@ -1,7 +1,7 @@
 <div class="p-2 flex items-center justify-end gap-2">
   @if (fileUploadQueue().length > 0) {
     <span hlmBadge class="h-6">
-      <ng-icon hlm size="sm" [llAnimate]="true" name="lucideLoaderCircle" />
+      <hlm-spinner />
       Uploading ... ({{ fileUploadQueue().length }})
     </span>
   }
@@ -292,7 +292,7 @@
                 } @else if (item.kind === 'FILE' && filePreview(item.type)) {
                   <div class="relative aspect-square w-full">
                     @if (item.extension; as extension) {
-                      <span hlmBadge class="absolute top-5 left-5">{{ extension }}</span>
+                      <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
                     }
                     <img
                       class="aspect-square w-full object-contain bg-primary-foreground cursor-zoom-in"

@@ -17,7 +17,9 @@
 </mat-toolbar>
 
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 } @else {
   <div class="mx-auto">
     <form [formGroup]="form">

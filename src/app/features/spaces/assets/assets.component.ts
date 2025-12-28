@@ -42,7 +42,6 @@ import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
-import { AnimateDirective } from '@shared/directives/animate.directive';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
   Asset,
@@ -113,7 +112,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     MatPaginatorModule,
     MatListModule,
     NgOptimizedImage,
-    AnimateDirective,
     HlmButtonImports,
     HlmIconImports,
     HlmBadgeImports,
