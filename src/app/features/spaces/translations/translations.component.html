@@ -157,7 +157,7 @@
               hlmItem
               class="p-2 rounded-b-none border-b-border cursor-pointer"
               *cdkVirtualFor="let translation of translationsFiltered()"
-              [variant]="translation.id === selectedTranslation?.id ? 'muted' : 'default'"
+              [variant]="translation.id === selectedTranslation()?.id ? 'muted' : 'default'"
               (click)="selectTranslation(translation)"
               (keyup.enter)="selectTranslation(translation)">
               <div hlmItemContent>
@@ -199,6 +199,7 @@
           <div class="overlay overflow-auto border">
             <mat-tree
               #tree
+              class="bg-background!"
               [dataSource]="translationTreeFiltered()"
               [expansionKey]="expansionKey"
               [childrenAccessor]="childrenAccessor"
@@ -208,7 +209,7 @@
                 *matTreeNodeDef="let node"
                 matTreeNodePadding
                 class="cursor-pointer"
-                [class.selected]="node.key === selectedTranslation?.id">
+                [class.selected]="node.key === selectedTranslation()?.id">
                 @if (translationMap().get(node.key); as translation) {
                   <div aria-hidden="true" class="flex items-center gap-x-3" (click)="selectTranslation(translation)">
                     @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
@@ -248,7 +249,7 @@
           </div>
         }
         <div class="col-span-2 overlay border">
-          @if (selectedTranslation) {
+          @if (selectedTranslation(); as translation) {
             <div class="flex flex-col h-full">
               <div class="p-2">
                 <fieldset hlmFieldSet>
@@ -280,7 +281,13 @@
                         </hlm-select-content>
                       </hlm-select>
                     </div>
-                    <button hlmBtn size="icon" variant="ghost" (click)="translate()" hlmTooltipTrigger="Translate" [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="ghost"
+                      (click)="translate()"
+                      hlmTooltipTrigger="Translate"
+                      [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
                       @if (isTranslateLoading()) {
                         <hlm-spinner class="size-4" />
                       } @else {
@@ -293,20 +300,20 @@
               <div class="flex items-center">
                 <div aria-hidden="true" class="w-full border-t"></div>
                 <div class="relative flex justify-center">
-                  <span class="bg-background px-2 text-sm">{{selectedSourceLocale().name}}</span>
+                  <span class="bg-background px-2 text-sm">{{ selectedSourceLocale().name }}</span>
                 </div>
                 <div aria-hidden="true" class="w-full border-t"></div>
               </div>
               <div class="p-2 mb-auto">
-                @switch (selectedTranslation.type) {
+                @switch (translation.type) {
                   @case ('STRING') {
-                    <ll-translation-string-view [value]="selectedTranslation.locales[selectedSourceLocale().id]" />
+                    <ll-translation-string-view [value]="translation.locales[selectedSourceLocale().id]" />
                   }
                   @case ('PLURAL') {
-                    <ll-translation-plural-view [value]="selectedTranslation.locales[selectedSourceLocale().id]" />
+                    <ll-translation-plural-view [value]="translation.locales[selectedSourceLocale().id]" />
                   }
                   @case ('ARRAY') {
-                    <ll-translation-array-view [value]="selectedTranslation.locales[selectedSourceLocale().id]" />
+                    <ll-translation-array-view [value]="translation.locales[selectedSourceLocale().id]" />
                   }
                 }
               </div>
@@ -315,25 +322,23 @@
                 <div class="flex items-center">
                   <div aria-hidden="true" class="w-full border-t"></div>
                   <div class="relative flex justify-center">
-                    <span class="bg-background px-2 text-sm">{{selectedTargetLocale().name}}</span>
+                    <span class="bg-background px-2 text-sm">{{ selectedTargetLocale().name }}</span>
                   </div>
                   <div aria-hidden="true" class="w-full border-t"></div>
                 </div>
                 <div class="p-2">
-                  @switch (selectedTranslation.type) {
+                  @switch (translation.type) {
                     @case ('STRING') {
-                      <ll-translation-string-edit
-                        [value]="selectedTranslation.locales[selectedTargetLocale().id]"
-                        (valueChange)="selectedTranslationLocaleValue.set($event)" />
+                      <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
                     }
                     @case ('PLURAL') {
                       <ll-translation-plural-edit
-                        [value]="selectedTranslation.locales[selectedTargetLocale().id]"
+                        [value]="translation.locales[selectedTargetLocale().id]"
                         (valueChange)="selectedTranslationLocaleValue.set($event)" />
                     }
                     @case ('ARRAY') {
                       <ll-translation-array-edit
-                        [value]="selectedTranslation.locales[selectedTargetLocale().id]"
+                        [value]="translation.locales[selectedTargetLocale().id]"
                         (valueChange)="selectedTranslationLocaleValue.set($event)" />
                     }
                   }
@@ -345,9 +350,9 @@
                     variant="outline"
                     size="sm"
                     [disabled]="
-                      isLocaleUpdateLoading() || selectedTranslation.locales[selectedTargetLocale().id] === selectedTranslationLocaleValue()
+                      isLocaleUpdateLoading() || translation.locales[selectedTargetLocale().id] === selectedTranslationLocaleValue()
                     "
-                    (click)="updateLocale(selectedTranslation, selectedTargetLocale(), selectedTranslationLocaleValue()!)">
+                    (click)="updateLocale(translation, selectedTargetLocale(), selectedTranslationLocaleValue()!)">
                     @if (isLocaleUpdateLoading()) {
                       <hlm-spinner class="size-4" />
                     } @else {
@@ -361,24 +366,24 @@
           }
         </div>
         <div class="overlay border break-all">
-          @if (selectedTranslation) {
+          @if (selectedTranslation(); as translation) {
             <div>
               <div class="p-2 align-items-start">
                 @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit ID" (click)="openEditIdDialog(selectedTranslation)">
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit ID" (click)="openEditIdDialog(translation)">
                     <ng-icon hlm size="sm" name="lucideReplace" />
                   </button>
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit" (click)="openEditDialog(selectedTranslation)">
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit" (click)="openEditDialog(translation)">
                     <ng-icon hlm size="sm" name="lucidePencil" />
                   </button>
                 }
                 @if ('TRANSLATION_DELETE' | canUserPerform | async) {
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Delete" (click)="openDeleteDialog(selectedTranslation)">
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Delete" (click)="openDeleteDialog(translation)">
                     <ng-icon hlm size="sm" name="lucideTrash" />
                   </button>
                 }
               </div>
-              <mat-divider></mat-divider>
+              <hlm-separator />
               <ul role="list" class="divide-y">
                 <li role="listitem" class="flex p-2 relative items-center">
                   <div class="min-w-0 flex-auto">
@@ -386,8 +391,8 @@
                       <div class="text-sm font-semibold leading-6 break-all">ID</div>
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                      <code>{{ selectedTranslation.id }}</code>
-                      <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Copy ID" [cdkCopyToClipboard]="selectedTranslation.id">
+                      <code>{{ translation.id }}</code>
+                      <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Copy ID" [cdkCopyToClipboard]="translation.id">
                         <ng-icon hlm size="sm" name="lucideCopy" />
                       </button>
                     </div>
@@ -399,7 +404,7 @@
                       <div class="text-sm font-semibold leading-6 break-all"> Status</div>
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                      {{ identifyStatus(selectedTranslation) }}
+                      {{ identifyStatus(translation) }}
                     </div>
                   </div>
                 </li>
@@ -409,8 +414,8 @@
                       <div class="text-sm font-semibold leading-6 break-all"> Description</div>
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                      @if (selectedTranslation.description) {
-                        {{ selectedTranslation.description }}
+                      @if (translation.description) {
+                        {{ translation.description }}
                       } @else {
                         No description available.
                       }
@@ -423,7 +428,7 @@
                       <div class="text-sm font-semibold leading-6 break-all"> Labels</div>
                     </div>
                     <div class="flex items-center gap-2 text-xs leading-5 break-words">
-                      @for (label of selectedTranslation.labels; track label) {
+                      @for (label of translation.labels; track label) {
                         <span hlmBadge [variant]="filterForm.controls.labels.value?.includes(label) ? 'secondary' : 'outline'">
                           {{ label }}
                         </span>
@@ -439,7 +444,7 @@
                       <div class="text-sm font-semibold leading-6 break-all"> Created At</div>
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                      {{ selectedTranslation.createdAt?.toMillis() | date: 'medium' }}
+                      {{ translation.createdAt?.toMillis() | date: 'medium' }}
                     </div>
                   </div>
                 </li>
@@ -449,7 +454,7 @@
                       <div class="text-sm font-semibold leading-6 break-all"> Updated At</div>
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                      {{ selectedTranslation.updatedAt?.toMillis() | date: 'medium' }}
+                      {{ translation.updatedAt?.toMillis() | date: 'medium' }}
                     </div>
                   </div>
                 </li>
@@ -460,8 +465,8 @@
                     </div>
                     <div
                       class="flex items-center gap-x-2.5 text-xs leading-5 break-words"
-                      [matTooltip]="selectedTranslation.updatedBy?.email || 'Unknown'">
-                      {{ selectedTranslation.updatedBy?.name || 'Unknown' }}
+                      [matTooltip]="translation.updatedBy?.email || 'Unknown'">
+                      {{ translation.updatedBy?.name || 'Unknown' }}
                     </div>
                   </div>
                 </li>

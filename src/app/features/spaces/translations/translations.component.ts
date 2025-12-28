@@ -9,7 +9,8 @@ import {
   DestroyRef,
   effect,
   inject,
-  input, linkedSignal,
+  input,
+  linkedSignal,
   OnInit,
   signal,
 } from '@angular/core';
@@ -18,7 +19,6 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -52,7 +52,6 @@ import {
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { StatusComponent } from '@shared/components/status';
-import { AnimateDirective } from '@shared/directives/animate.directive';
 import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { TranslationHistory } from '@shared/models/translation-history.model';
 import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
@@ -116,7 +115,6 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     CanUserPerformPipe,
     MatButtonModule,
     MatTooltipModule,
-    MatDividerModule,
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
@@ -227,8 +225,10 @@ export class TranslationsComponent implements OnInit {
     return [...new Set<string>(tmp)];
   });
 
-  selectedTranslation?: Translation;
-  selectedTranslationLocaleValue = signal<string | undefined>(undefined);
+  selectedTranslation = signal<Translation | undefined>(undefined);
+  selectedTranslationLocaleValue = linkedSignal(() => {
+    return this.selectedTranslation()?.locales[this.selectedTargetLocale().id] || '';
+  });
 
   selectedSourceLocale = linkedSignal(() => {
     const space = this.selectedSpace();
@@ -283,8 +283,8 @@ export class TranslationsComponent implements OnInit {
         next: translations => {
           this.translations.set(translations);
           if (translations.length > 0) {
-            if (this.selectedTranslation) {
-              const tr = translations.find(it => it.id === this.selectedTranslation?.id);
+            if (this.selectedTranslation()) {
+              const tr = translations.find(it => it.id === this.selectedTranslation()?.id);
               if (tr) {
                 this.selectTranslation(tr);
               } else {
@@ -549,8 +549,7 @@ export class TranslationsComponent implements OnInit {
   }
 
   selectTranslation(translation: Translation): void {
-    this.selectedTranslation = translation;
-    this.selectedTranslationLocaleValue.set(this.selectedTranslation.locales[this.selectedTargetLocale().id]);
+    this.selectedTranslation.set(translation);
   }
 
   updateLocale(transaction: Translation, locale: Locale, value: string): void {
@@ -614,7 +613,7 @@ export class TranslationsComponent implements OnInit {
     this.isTranslateLoading.set(true);
     this.translateService
       .translate({
-        content: this.selectedTranslation?.locales[this.selectedSourceLocale().id] || '',
+        content: this.selectedTranslation()?.locales[this.selectedSourceLocale().id] || '',
         sourceLocale: this.selectedSourceLocale().id,
         targetLocale: this.selectedTargetLocale().id,
       })

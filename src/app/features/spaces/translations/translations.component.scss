@@ -1,3 +1,8 @@
+.selected {
+  //--mat-button-toggle-selected-state-background-color #dae2f9
+  background-color: var(--mat-sys-secondary-container);
+}
+
 .overlay {
   height: calc(100vh - 165px);
 }
