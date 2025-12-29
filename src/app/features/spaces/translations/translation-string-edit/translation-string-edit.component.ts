@@ -1,10 +1,8 @@
-import { ChangeDetectionStrategy, Component, effect, model, untracked, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, model } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
-import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'll-translation-string-edit',
@@ -14,20 +12,5 @@ import { debounceTime } from 'rxjs';
   imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, HlmInputGroupImports],
 })
 export class TranslationStringEditComponent {
-  private readonly fb = inject(FormBuilder);
-
   value = model.required<string>();
-
-  readonly form: FormGroup = this.fb.group({
-    value: this.fb.control(null),
-  });
-
-  constructor() {
-    effect(() => {
-      const value = this.value() || '';
-      untracked(() => this.form.controls['value'].setValue(value));
-    });
-
-    this.form.valueChanges.pipe(debounceTime(200), takeUntilDestroyed()).subscribe(val => this.value.set(val.value));
-  }
 }
