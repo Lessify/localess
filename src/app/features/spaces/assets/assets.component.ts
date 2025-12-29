@@ -2,20 +2,12 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -94,23 +86,15 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatIconModule,
-    MatTooltipModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatMenuModule,
-    MatDividerModule,
-    MatProgressBarModule,
     FileDragAndDropDirective,
     MatTableModule,
     MatCheckboxModule,
-    MatProgressSpinnerModule,
     MatSortModule,
     TimeDurationPipe,
     FormatFileSizePipe,
-    MatCardModule,
     MatPaginatorModule,
-    MatListModule,
     NgOptimizedImage,
     HlmButtonImports,
     HlmIconImports,
@@ -643,13 +627,5 @@ export class AssetsComponent implements OnInit {
       });
       this.fileUploadQueue$.next(file);
     });
-  }
-
-  isFolder(asset: Asset): asset is AssetFolder {
-    return asset.kind === AssetKind.FOLDER;
-  }
-
-  isFile(asset: Asset): asset is AssetFile {
-    return asset.kind === AssetKind.FILE;
   }
 }
