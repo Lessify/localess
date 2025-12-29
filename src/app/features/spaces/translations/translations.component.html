@@ -167,13 +167,13 @@
                   } @else {
                     @switch (identifyStatus(translation)) {
                       @case ('TRANSLATED') {
-                        <ll-status mode="online" matTooltip="Translated" />
+                        <ll-status mode="online" hlmTooltipTrigger="Translated" />
                       }
                       @case ('PARTIALLY_TRANSLATED') {
-                        <ll-status mode="away" matTooltip="Partially Translated" />
+                        <ll-status mode="away" hlmTooltipTrigger="Partially Translated" />
                       }
                       @case ('UNTRANSLATED') {
-                        <ll-status mode="offline" matTooltip="Untranslated" />
+                        <ll-status mode="offline" hlmTooltipTrigger="Untranslated" />
                       }
                     }
                   }
@@ -217,13 +217,13 @@
                     } @else {
                       @switch (identifyStatus(translation)) {
                         @case ('TRANSLATED') {
-                          <ll-status mode="online" matTooltip="Translated" />
+                          <ll-status mode="online" hlmTooltipTrigger="Translated" />
                         }
                         @case ('PARTIALLY_TRANSLATED') {
-                          <ll-status mode="away" matTooltip="Partially Translated" />
+                          <ll-status mode="away" hlmTooltipTrigger="Partially Translated" />
                         }
                         @case ('UNTRANSLATED') {
-                          <ll-status mode="offline" matTooltip="Untranslated" />
+                          <ll-status mode="offline" hlmTooltipTrigger="Untranslated" />
                         }
                       }
                     }
@@ -463,7 +463,7 @@
                     </div>
                     <div
                       class="flex items-center gap-x-2.5 text-xs leading-5 break-words"
-                      [matTooltip]="translation.updatedBy?.email || 'Unknown'">
+                      [hlmTooltipTrigger]="translation.updatedBy?.email || 'Unknown'">
                       {{ translation.updatedBy?.name || 'Unknown' }}
                     </div>
                   </div>
@@ -497,7 +497,7 @@
                             <div>
                               <p class="text-sm">
                                 Published by
-                                <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                <span class="font-medium" [hlmTooltipTrigger]="item.email || 'Unknown'">
                                   {{ item.name || 'Unknown' }}
                                 </span>
                               </p>
@@ -515,7 +515,7 @@
                             <div>
                               <p class="text-sm">
                                 Add <span class="font-medium break-all">{{ item.key }}</span> by
-                                <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                <span class="font-medium" [hlmTooltipTrigger]="item.email || 'Unknown'">
                                   {{ item.name || 'Unknown' }}
                                 </span>
                               </p>
@@ -533,7 +533,7 @@
                             <div>
                               <p class="text-sm">
                                 Edit <span class="font-medium break-all">{{ item.key }}</span> by
-                                <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                <span class="font-medium" [hlmTooltipTrigger]="item.email || 'Unknown'">
                                   {{ item.name || 'Unknown' }}
                                 </span>
                               </p>
@@ -551,7 +551,7 @@
                             <div>
                               <p class="text-sm">
                                 Delete <span class="font-medium break-all">{{ item.key }}</span> by
-                                <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                <span class="font-medium" [hlmTooltipTrigger]="item.email || 'Unknown'">
                                   {{ item.name || 'Unknown' }}
                                 </span>
                               </p>
