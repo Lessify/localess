@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { debounceTime } from 'rxjs';
 
 @Component({
@@ -10,12 +11,12 @@ import { debounceTime } from 'rxjs';
   templateUrl: './translation-string-edit.component.html',
   styleUrls: ['./translation-string-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, HlmInputGroupImports],
 })
 export class TranslationStringEditComponent {
   private readonly fb = inject(FormBuilder);
 
-  value = model('');
+  value = model.required<string>();
 
   readonly form: FormGroup = this.fb.group({
     value: this.fb.control(null),

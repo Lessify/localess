@@ -1,6 +1,19 @@
-<form [formGroup]="form">
-  <mat-form-field class="edit">
-    <textarea matInput #input maxlength="1000" rows="6" formControlName="value"></textarea>
-    <mat-hint align="end">{{ input.value?.length || 0 }}/1000</mat-hint>
-  </mat-form-field>
-</form>
+<!--<form [formGroup]="form">-->
+<!--  <mat-form-field class="edit">-->
+<!--    <textarea matInput #input maxlength="1000" rows="6" formControlName="value"></textarea>-->
+<!--    <mat-hint align="end">{{ input.value?.length || 0 }}/1000</mat-hint>-->
+<!--  </mat-form-field>-->
+<!--</form>-->
+<div hlmInputGroup>
+  <textarea
+    hlmInputGroupTextarea
+    #input
+    class="min-h-0 max-h-80"
+    [value]="value()"
+    (input)="value.set(input.value)"
+    placeholder="Enter your content here..."
+    maxlength="1000"></textarea>
+  <div hlmInputGroupAddon align="block-end">
+    <span hlmInputGroupText class="text-muted-foreground text-xs">{{ 1000 - input.value.length }} characters left</span>
+  </div>
+</div>

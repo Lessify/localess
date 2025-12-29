@@ -127,6 +127,9 @@
       ],
       "@spartan-ng/helm/aspect-ratio": [
         "./libs/ui/aspect-ratio/src/index.ts"
+      ],
+      "@spartan-ng/helm/tabs": [
+        "./libs/ui/tabs/src/index.ts"
       ]
     },
     "useDefineForClassFields": false
