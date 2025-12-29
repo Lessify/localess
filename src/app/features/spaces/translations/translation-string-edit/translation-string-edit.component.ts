@@ -1,16 +1,37 @@
-import { ChangeDetectionStrategy, Component, model } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, model, viewChild } from '@angular/core';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 @Component({
   selector: 'll-translation-string-edit',
+  standalone: true,
   templateUrl: './translation-string-edit.component.html',
   styleUrls: ['./translation-string-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, HlmInputGroupImports],
+  imports: [HlmInputGroupImports],
 })
 export class TranslationStringEditComponent {
   value = model.required<string>();
+
+  readonly $backdrop = viewChild.required<ElementRef<HTMLDivElement>>('backdrop');
+  readonly $textarea = viewChild.required<ElementRef<HTMLTextAreaElement>>('textarea');
+  protected readonly highlightedText = computed(() => this.applyHighlights(this.value()));
+
+  private applyHighlights(text: string): string {
+    if (!text) {
+      return '';
+    }
+    // Add extra newline at end for proper display
+    let result = text.replace(/\n$/g, '\n\n');
+    // Highlight text between {{ and }} including the brackets
+    result = result.replace(/{{[^}]*}}/g, '<mark>$&</mark>');
+    return result;
+  }
+
+  protected handleScroll(): void {
+    const textarea = this.$textarea().nativeElement;
+    const backdrop = this.$backdrop().nativeElement;
+
+    backdrop.scrollTop = textarea.scrollTop;
+    backdrop.scrollLeft = textarea.scrollLeft;
+  }
 }

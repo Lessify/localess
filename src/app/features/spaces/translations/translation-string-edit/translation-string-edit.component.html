@@ -1,13 +1,18 @@
-<div hlmInputGroup>
+<div hlmInputGroup class="relative">
+  <div #backdrop class="backdrop">
+    <div class="highlights" [innerHTML]="highlightedText()"></div>
+  </div>
   <textarea
-    hlmInputGroupTextarea
-    #input
-    class="min-h-0 max-h-80"
+    #textarea
     [value]="value()"
-    (input)="value.set(input.value)"
+    (input)="value.set(textarea.value)"
+    (scroll)="handleScroll()"
+    hlmInputGroupTextarea
     placeholder="Enter your content here..."
-    maxlength="1000"></textarea>
+    maxlength="1000"
+    class="min-h-0 max-h-80">
+  </textarea>
   <div hlmInputGroupAddon align="block-end">
-    <span hlmInputGroupText class="text-muted-foreground text-xs">{{ 1000 - input.value.length }} characters left</span>
+    <span hlmInputGroupText class="text-muted-foreground text-xs">{{ 1000 - textarea.value.length }} characters left</span>
   </div>
 </div>
