@@ -2,29 +2,29 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
+  lucideCopy,
   lucideEllipsisVertical,
   lucideExternalLink,
   lucideFilePlus,
+  lucideFolderInput,
   lucideFolderPlus,
   lucideFolderRoot,
   lucideLink,
+  lucidePencil,
   lucidePlus,
+  lucideTrash,
+  lucideUpload,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
@@ -52,6 +52,7 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
@@ -68,13 +69,8 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatIconModule,
-    MatTooltipModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatMenuModule,
-    MatDividerModule,
-    MatProgressBarModule,
     MatTableModule,
     MatSortModule,
     MatCheckboxModule,
@@ -85,6 +81,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmDropdownMenuImports,
     HlmBreadCrumbImports,
     HlmProgressImports,
+    HlmTooltipImports,
   ],
   providers: [
     provideIcons({
@@ -97,6 +94,11 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
       lucideFilePlus,
       lucideExternalLink,
       lucideFolderRoot,
+      lucideUpload,
+      lucidePencil,
+      lucideCopy,
+      lucideFolderInput,
+      lucideTrash,
     }),
   ],
 })

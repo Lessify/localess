@@ -2,23 +2,6 @@ table {
   width: 100%;
 }
 
-//mat-header-cell {
-//  &.mat-column-actions {
-//    text-align: center;
-//    justify-content: flex-end;
-//
-//    .mat-mdc-button-base {
-//      margin: 8px 8px 8px 8px;
-//    }
-//  }
-//}
-
-//mat-row {
-//  &.row-folder {
-//    cursor: pointer;
-//  }
-//}
-
 mat-cell {
   &.mat-column-preview {
     cursor: zoom-in;
@@ -62,7 +45,7 @@ mat-cell {
   }
 
   &.mat-column-actions {
-    max-width: 200px;
+    max-width: 185px;
   }
 }
 
