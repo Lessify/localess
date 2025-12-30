@@ -190,12 +190,7 @@
           </button>
         }
         @if ('CONTENT_DELETE' | canUserPerform | async) {
-          <button
-            hlmBtn
-            size="icon"
-            variant="ghost"
-            (click)="openDeleteDialog($event, element)"
-            hlmTooltipTrigger="Delete">
+          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog($event, element)" hlmTooltipTrigger="Delete">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>
         }
