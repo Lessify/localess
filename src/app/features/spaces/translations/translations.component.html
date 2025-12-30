@@ -305,7 +305,7 @@
               <div class="p-2 mb-auto overflow-scroll wrap-break-word">
                 @switch (translation.type) {
                   @case ('STRING') {
-                    <ll-translation-string-view [value]="translation.locales[selectedSourceLocale().id]" />
+                    <ll-translation-string-view [enableHighlighting]="true" [value]="translation.locales[selectedSourceLocale().id]" />
                   }
                   @case ('PLURAL') {
                     <ll-translation-plural-view [value]="translation.locales[selectedSourceLocale().id]" />
@@ -327,7 +327,7 @@
                 <div class="p-2">
                   @switch (translation.type) {
                     @case ('STRING') {
-                      <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
+                      <ll-translation-string-edit [enableHighlighting]="true" [(value)]="selectedTranslationLocaleValue" />
                     }
                     @case ('PLURAL') {
                       <ll-translation-plural-edit

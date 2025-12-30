@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, model, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, input, model, viewChild } from '@angular/core';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 @Component({
@@ -11,10 +11,11 @@ import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 })
 export class TranslationStringEditComponent {
   value = model.required<string>();
+  enableHighlighting = input<boolean>(false);
 
   readonly $backdrop = viewChild.required<ElementRef<HTMLDivElement>>('backdrop');
   readonly $textarea = viewChild.required<ElementRef<HTMLTextAreaElement>>('textarea');
-  protected readonly highlightedText = computed(() => this.applyHighlights(this.value()));
+  readonly highlightedText = computed(() => this.applyHighlights(this.value()));
 
   private applyHighlights(text: string): string {
     if (!text) {
