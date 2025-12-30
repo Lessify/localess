@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,15 +9,15 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideRefreshCcw, lucideUserPlus } from '@ng-icons/lucide';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCheck, lucideMail, lucidePencil, lucideRefreshCcw, lucideTrash, lucideUserPlus, lucideX } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
-import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmIcon } from '@spartan-ng/helm/icon';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
@@ -41,11 +40,9 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
     MatSortModule,
     MatIconModule,
     CommonModule,
-    MatButtonModule,
     MatPaginatorModule,
-    HlmButton,
-    HlmIcon,
-    NgIcon,
+    HlmButtonImports,
+    HlmIconImports,
     HlmTooltipImports,
     HlmProgressImports,
     HlmSpinnerImports,
@@ -54,6 +51,11 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
     provideIcons({
       lucideUserPlus,
       lucideRefreshCcw,
+      lucidePencil,
+      lucideTrash,
+      lucideCheck,
+      lucideX,
+      lucideMail,
     }),
   ],
 })

@@ -3,12 +3,12 @@
     @if (isSyncLoading()) {
       <hlm-spinner class="size-4" />
     } @else {
-      <ng-icon hlm name="lucideRefreshCcw" />
+      <ng-icon hlm size="sm" name="lucideRefreshCcw" />
     }
     Sync
   </button>
   <button hlmBtn (click)="inviteDialog()">
-    <ng-icon hlm name="lucideUserPlus" />
+    <ng-icon hlm size="sm" name="lucideUserPlus" />
     Invite
   </button>
 </div>
@@ -33,21 +33,23 @@
         {{ element.email }}
         @if (element.emailVerified) {
           &nbsp;
-          <mat-icon matTooltip="Email Verified" matTooltipPosition="after">verified</mat-icon>
+          <ng-icon hlm size="sm" name="lucideShieldCheck" hlmTooltipTrigger="Verified" />
         }
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element" class="break-all"> {{ element.displayName }}</mat-cell>
+      <mat-cell *matCellDef="let element" class="break-all">
+        {{ element.displayName }}
+      </mat-cell>
     </ng-container>
     <ng-container matColumnDef="active">
       <mat-header-cell *matHeaderCellDef> Active</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @if (element.disabled) {
-          <mat-icon matTooltip="User is Disabled" matTooltipPosition="after">block</mat-icon>
+          <ng-icon hlm size="sm" name="lucideX" hlmTooltipTrigger="User is Disabled" />
         } @else {
-          <mat-icon matTooltip="User is Active" matTooltipPosition="after">check</mat-icon>
+          <ng-icon hlm size="sm" name="lucideCheck" hlmTooltipTrigger="User is Active" />
         }
       </mat-cell>
     </ng-container>
@@ -57,10 +59,10 @@
         @for (provider of element.providers; track provider) {
           @switch (provider) {
             @case ('password') {
-              <mat-icon matTooltip="Email & Password" matTooltipPosition="after">email</mat-icon>
+              <ng-icon hlm size="sm" name="lucideMail" hlmTooltipTrigger="Email & Password" />
             }
             @default {
-              <mat-icon [matTooltip]="provider" matTooltipPosition="after">verified_user</mat-icon>
+              <ng-icon hlm size="sm" name="lucideShieldCheck" [hlmTooltipTrigger]="provider" />
             }
           }
         }
@@ -93,11 +95,11 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="editDialog(element)" matTooltip="Update">
-          <mat-icon>edit</mat-icon>
+        <button hlmBtn size="icon" variant="ghost" (click)="editDialog(element)" hlmTooltipTrigger="Edit">
+          <ng-icon hlm size="sm" name="lucidePencil" />
         </button>
-        <button mat-icon-button (click)="deleteDialog(element)" matTooltip="Delete">
-          <mat-icon>delete</mat-icon>
+        <button hlmBtn size="icon" variant="ghost" (click)="deleteDialog(element)" hlmTooltipTrigger="Delete">
+          <ng-icon hlm size="sm" name="lucideTrash" />
         </button>
       </mat-cell>
     </ng-container>
