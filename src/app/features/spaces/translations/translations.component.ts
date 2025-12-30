@@ -93,13 +93,13 @@ import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { TranslationArrayEditComponent } from './shared/components/translation-array-edit/translation-array-edit.component';
+import { TranslationArrayViewComponent } from './shared/components/translation-array-view/translation-array-view.component';
+import { TranslationPluralEditComponent } from './shared/components/translation-plural-edit/translation-plural-edit.component';
+import { TranslationPluralViewComponent } from './shared/components/translation-plural-view/translation-plural-view.component';
+import { TranslationStringEditComponent } from './shared/components/translation-string-edit/translation-string-edit.component';
+import { TranslationStringViewComponent } from './shared/components/translation-string-view/translation-string-view.component';
 import { TranslationNode } from './shared/models/translation.model';
-import { TranslationArrayEditComponent } from './translation-array-edit/translation-array-edit.component';
-import { TranslationArrayViewComponent } from './translation-array-view/translation-array-view.component';
-import { TranslationPluralEditComponent } from './translation-plural-edit/translation-plural-edit.component';
-import { TranslationPluralViewComponent } from './translation-plural-view/translation-plural-view.component';
-import { TranslationStringEditComponent } from './translation-string-edit/translation-string-edit.component';
-import { TranslationStringViewComponent } from './translation-string-view/translation-string-view.component';
 
 @Component({
   selector: 'll-translations',
