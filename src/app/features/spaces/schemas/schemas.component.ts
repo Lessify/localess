@@ -15,19 +15,16 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { provideIcons } from '@ng-icons/core';
-import { lucideCloudDownload, lucideEllipsisVertical, lucidePlus, lucideUploadCloud } from '@ng-icons/lucide';
+import { lucideCloudDownload, lucideEllipsisVertical, lucidePlus, lucideReplace, lucideTrash, lucideUploadCloud } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
@@ -35,10 +32,12 @@ import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
@@ -55,21 +54,20 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatIconModule,
-    MatTooltipModule,
     CanUserPerformPipe,
     CommonModule,
     MatButtonModule,
-    MatMenuModule,
     MatFormFieldModule,
     MatInputModule,
     MatTableModule,
     MatSortModule,
-    MatChipsModule,
     MatPaginatorModule,
     HlmButtonImports,
     HlmIconImports,
     HlmDropdownMenuImports,
     HlmProgressImports,
+    HlmTooltipImports,
+    HlmBadgeImports,
   ],
   providers: [
     provideIcons({
@@ -77,6 +75,8 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
       lucideEllipsisVertical,
       lucideCloudDownload,
       lucideUploadCloud,
+      lucideTrash,
+      lucideReplace,
     }),
   ],
 })

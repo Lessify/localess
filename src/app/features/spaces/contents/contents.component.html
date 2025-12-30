@@ -97,11 +97,11 @@
         @switch (element.kind) {
           @case ('DOCUMENT') {
             @if (element?.publishedAt === undefined) {
-              <ll-status mode="offline" matTooltip="Not published" />
+              <ll-status mode="offline" hlmTooltipTrigger="Not published" />
             } @else if (element?.publishedAt?.seconds > element?.updatedAt?.seconds) {
-              <ll-status mode="online" matTooltip="Published" />
+              <ll-status mode="online" hlmTooltipTrigger="Published" />
             } @else if (element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds) {
-              <ll-status mode="away" matTooltip="Draft" />
+              <ll-status mode="away" hlmTooltipTrigger="Draft" />
             }
           }
           @case ('FOLDER') {
@@ -113,15 +113,11 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @if (element.locked) {
-          <mat-icon [matTooltip]="element.lockedBy ? 'Locked By ' + element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
-        }
-        {{ element.name }}
+        <div>
+          {{ element.name }} <br />
+          <span class="text-muted-foreground">#{{ element.slug }}</span>
+        </div>
       </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="slug">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.slug }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="schema">
       <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema</mat-header-cell>
@@ -137,19 +133,19 @@
     </ng-container>
     <ng-container matColumnDef="publishedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="publishedAt"> Published At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.publishedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.publishedAt?.toDate() | date: 'medium'">
         {{ element.publishedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.createdAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.createdAt?.toDate() | date: 'medium'">
         {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>

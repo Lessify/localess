@@ -122,7 +122,7 @@ export class ContentsComponent {
 
   isLoading = signal(true);
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'slug', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
+  displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
   selection = new SelectionModel<Content>(true, [], undefined, (o1, o2) => o1.id === o2.id);
 
   schemas: Schema[] = [];
