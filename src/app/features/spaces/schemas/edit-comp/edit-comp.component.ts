@@ -13,7 +13,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -21,7 +20,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AnimateDirective } from '@shared/directives/animate.directive';
+import { provideIcons } from '@ng-icons/core';
+import { lucideArrowLeft, lucideSave } from '@ng-icons/lucide';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import {
   AssetFileType,
@@ -40,7 +40,11 @@ import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
-import { HlmProgress, HlmProgressIndicator } from '@spartan-ng/helm/progress';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
 
@@ -56,7 +60,6 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     CanUserPerformPipe,
     CommonModule,
     MatTooltipModule,
-    MatProgressBarModule,
     ReactiveFormsModule,
     MatTabsModule,
     MatSidenavModule,
@@ -70,9 +73,17 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     MatChipsModule,
     MatExpansionModule,
     EditFieldComponent,
-    AnimateDirective,
-    HlmProgress,
-    HlmProgressIndicator,
+    HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmSpinnerImports,
+    HlmTooltipImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideSave,
+      lucideArrowLeft,
+    }),
   ],
 })
 export class EditCompComponent implements OnInit, DirtyFormGuardComponent {

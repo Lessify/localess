@@ -1,20 +1,22 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    <button mat-icon-button (click)="back()">
-      <mat-icon>arrow_back</mat-icon>
+<div class="p-2 flex items-center justify-end gap-2">
+  <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Schemas">
+    <ng-icon hlm size="sm" name="lucideArrowLeft" />
+  </button>
+  <span class="title">{{ entity?.displayName }}</span>
+  &nbsp;
+  <span class="text-muted-foreground">#{{ entity?.id }}</span>
+  <span class="spacer"></span>
+  @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+    <button hlmBtn hlmTooltipTrigger="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
+      @if (isSaveLoading()) {
+        <hlm-spinner class="size-4" />
+      } @else {
+        <ng-icon hlm size="sm" name="lucideSave" />
+      }
+      Save
     </button>
-    <span class="title">{{ entity?.displayName }}</span>
-    &nbsp;
-    <span class="subtitle">#{{ entity?.id }}</span>
-    <span class="spacer"></span>
-    @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-      <button mat-flat-button matTooltip="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
-        <mat-icon [llAnimate]="isSaveLoading()">{{ isSaveLoading() ? 'sync' : 'save' }}</mat-icon>
-        Save
-      </button>
-    }
-  </mat-toolbar-row>
-</mat-toolbar>
+  }
+</div>
 
 @if (isLoading()) {
   <hlm-progress class="h-0.5">
@@ -47,12 +49,12 @@
                       [activated]="index === selectedFieldIdx"
                       [class.invalid]="field.invalid">
                       @let descriptor = schemaFieldKindDescriptions[field.value.kind];
-                      <mat-icon matListItemIcon class="type" [matTooltip]="descriptor.description">{{ descriptor.icon }}</mat-icon>
+                      <mat-icon matListItemIcon class="type" [hlmTooltipTrigger]="descriptor.description">{{ descriptor.icon }}</mat-icon>
                       <span matListItemTitle>
                         {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
                       </span>
                       <span matListItemLine>
-                        <span class="badge" [matTooltip]="descriptor.description">{{ descriptor.name }}</span>
+                        <span class="badge" [hlmTooltipTrigger]="descriptor.description">{{ descriptor.name }}</span>
                         @if (field.value.translatable) {
                           <span class="badge">Translatable</span>
                         }
@@ -61,7 +63,7 @@
                         }
                         @if (field.value.fileTypes) {
                           @let descriptor = assetFileTypeDescriptions[field.value.fileTypes];
-                          <span class="badge" [matTooltip]="descriptor.description">File Type: {{ descriptor.name }}</span>
+                          <span class="badge" [hlmTooltipTrigger]="descriptor.description">File Type: {{ descriptor.name }}</span>
                         }
                         @if (field.value.path) {
                           <span class="badge">Path: {{ field.value.path }}</span>

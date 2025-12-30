@@ -16,11 +16,10 @@ import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AnimateDirective } from '@shared/directives/animate.directive';
+import { provideIcons } from '@ng-icons/core';
+import { lucideArrowLeft, lucideSave } from '@ng-icons/lucide';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -29,7 +28,11 @@ import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
-import { HlmProgress, HlmProgressIndicator } from '@spartan-ng/helm/progress';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
 
@@ -39,12 +42,10 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
   styleUrl: './edit-enum.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     MatIconModule,
     CanUserPerformPipe,
     CommonModule,
     MatButtonModule,
-    MatTooltipModule,
     MatProgressBarModule,
     MatTabsModule,
     ReactiveFormsModule,
@@ -58,9 +59,18 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     MatChipsModule,
     MatExpansionModule,
     EditValueComponent,
-    AnimateDirective,
-    HlmProgress,
-    HlmProgressIndicator,
+    HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmSpinnerImports,
+    HlmIconImports,
+    HlmTooltipImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideSave,
+      lucideArrowLeft,
+    }),
   ],
 })
 export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
