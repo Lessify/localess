@@ -2,24 +2,16 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFolderRoot } from '@ng-icons/lucide';
-import { AnimateDirective } from '@shared/directives/animate.directive';
+import { lucideFolderRoot, lucideLayoutGrid, lucideLayoutList, lucideUpload } from '@ng-icons/lucide';
 import { Asset, AssetKind } from '@shared/models/asset.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
@@ -28,9 +20,16 @@ import { AssetService } from '@shared/services/asset.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem } from '@shared/stores/space.store';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { concatMap, switchMap, tap } from 'rxjs/operators';
 import { AssetsSelectDialogModel } from './assets-select-dialog.model';
@@ -45,28 +44,30 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     MatDialogModule,
     MatPaginatorModule,
     MatCheckboxModule,
-    MatTooltipModule,
-    MatButtonToggleModule,
     MatIconModule,
     CanUserPerformPipe,
-    MatProgressBarModule,
     MatTableModule,
     TimeDurationPipe,
     FormatFileSizePipe,
-    MatProgressSpinnerModule,
-    MatButtonModule,
     MatSortModule,
-    MatBadgeModule,
     NgOptimizedImage,
-    AnimateDirective,
-    MatCardModule,
     HlmBreadCrumbImports,
     HlmIconImports,
     HlmProgressImports,
+    HlmSpinnerImports,
+    HlmTooltipImports,
+    HlmBadgeImports,
+    HlmToggleGroupImports,
+    HlmButtonImports,
+    HlmItemImports,
+    HlmCheckboxImports,
   ],
   providers: [
     provideIcons({
       lucideFolderRoot,
+      lucideLayoutList,
+      lucideLayoutGrid,
+      lucideUpload,
     }),
   ],
 })

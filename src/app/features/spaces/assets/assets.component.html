@@ -272,127 +272,125 @@
         }
       </mat-table>
     } @else {
-      <div>
-        <div hlmItemGroup class="flex flex-row flex-wrap gap-4">
-          @for (item of dataSource.connect() | async; track item.id) {
-            <div
-              role="listitem"
-              hlmItem
-              variant="outline"
-              class="cursor-pointer p-0 overflow-hidden items-baseline content-start flex-1 min-w-48 max-w-60"
-              (click)="onAssetSelect(item)"
-              (keyup.enter)="onAssetSelect(item)">
-              <div hlmItemHeader class="border-b">
-                @if (item.kind === 'FILE' && item.inProgress) {
-                  <div class="aspect-square w-full flex flex-col justify-center place-items-center">
-                    <hlm-spinner />
-                    <span>Processing ...</span>
-                  </div>
-                } @else if (item.kind === 'FILE' && filePreview(item.type)) {
-                  <div class="relative aspect-square w-full">
-                    @if (item.extension; as extension) {
-                      <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
-                    }
-                    <img
-                      class="aspect-square w-full object-contain bg-primary-foreground cursor-zoom-in"
-                      ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ item.id }}"
-                      alt="thumbnail"
-                      width="600"
-                      height="600"
-                      loading="lazy"
-                      [loaderParams]="{ thumbnail: true }" />
-                  </div>
-                } @else if (item.kind === 'FILE') {
-                  <div class="relative aspect-square w-full">
-                    @if (item.extension; as extension) {
-                      <span hlmBadge class="absolute top-5 left-5">{{ extension }}</span>
-                    }
-                    <img
-                      class="aspect-square w-full object-contain p-4 bg-primary-foreground"
-                      ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg"
-                      alt="File"
-                      width="240"
-                      height="240" />
-                  </div>
-                } @else {
+      <div hlmItemGroup class="flex flex-row flex-wrap gap-4">
+        @for (item of dataSource.connect() | async; track item.id) {
+          <div
+            role="listitem"
+            hlmItem
+            variant="outline"
+            class="cursor-pointer p-0 overflow-hidden items-baseline content-start flex-1 min-w-48 max-w-60"
+            (click)="onAssetSelect(item)"
+            (keyup.enter)="onAssetSelect(item)">
+            <div hlmItemHeader class="border-b">
+              @if (item.kind === 'FILE' && item.inProgress) {
+                <div class="aspect-square w-full flex flex-col justify-center place-items-center">
+                  <hlm-spinner />
+                  <span>Processing ...</span>
+                </div>
+              } @else if (item.kind === 'FILE' && filePreview(item.type)) {
+                <div class="relative aspect-square w-full">
+                  @if (item.extension; as extension) {
+                    <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
+                  }
                   <img
-                    ngSrc="assets/icons/folder.svg"
-                    alt="Folder"
+                    class="aspect-square w-full object-contain bg-primary-foreground cursor-zoom-in"
+                    ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ item.id }}"
+                    alt="thumbnail"
+                    width="600"
+                    height="600"
+                    loading="lazy"
+                    [loaderParams]="{ thumbnail: true }" />
+                </div>
+              } @else if (item.kind === 'FILE') {
+                <div class="relative aspect-square w-full">
+                  @if (item.extension; as extension) {
+                    <span hlmBadge class="absolute top-5 left-5">{{ extension }}</span>
+                  }
+                  <img
+                    class="aspect-square w-full object-contain p-4 bg-primary-foreground"
+                    ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg"
+                    alt="File"
                     width="240"
-                    height="240"
-                    class="aspect-square w-full object-contain p-4 bg-primary-foreground" />
-                }
+                    height="240" />
+                </div>
+              } @else {
+                <img
+                  ngSrc="assets/icons/folder.svg"
+                  alt="Folder"
+                  width="240"
+                  height="240"
+                  class="aspect-square w-full object-contain p-4 bg-primary-foreground" />
+              }
+            </div>
+            <div hlmItemContent class="px-4 pb-auto">
+              <div hlmItemTitle class="line-clamp-2" hlmTooltipTrigger="{{ item.name }}{{ item.extension }}">
+                {{ item.name }}{{ item.extension }}
               </div>
-              <div hlmItemContent class="px-4 pb-4">
-                <div hlmItemTitle class="line-clamp-2" hlmTooltipTrigger="{{ item.name }}{{ item.extension }}">
-                  {{ item.name }}{{ item.extension }}
-                </div>
-                <div hlmItemDescription>
-                  @if (item.kind === 'FILE') {
-                    @if (item.size; as size) {
-                      <p>{{ size | formatFileSize }}</p>
+              <div hlmItemDescription>
+                @if (item.kind === 'FILE') {
+                  @if (item.size; as size) {
+                    <p>{{ size | formatFileSize }}</p>
+                  }
+                  @if (item.metadata; as metadata) {
+                    @if (metadata.width && metadata.height) {
+                      W{{ metadata.width }} x H{{ metadata.height }}
                     }
-                    @if (item.metadata; as metadata) {
-                      @if (metadata.width && metadata.height) {
-                        W{{ metadata.width }} x H{{ metadata.height }}
-                      }
-                      @if (metadata.duration; as duration) {
-                        <div> Duration: {{ duration | timeDuration }}</div>
-                      }
+                    @if (metadata.duration; as duration) {
+                      <div> Duration: {{ duration | timeDuration }}</div>
                     }
                   }
-                  <p [hlmTooltipTrigger]="item.updatedAt?.toDate() | date: 'medium'">
-                    {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
-                  </p>
-                </div>
-                <div class="flex justify-end">
-                  <button
-                    hlmBtn
-                    size="icon"
-                    variant="ghost"
-                    (click)="onDownload($event, item)"
-                    [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
-                    hlmTooltipTrigger="Download">
-                    <ng-icon hlm size="sm" name="lucideDownload" />
-                  </button>
-                  @if ('ASSET_UPDATE' | canUserPerform | async) {
-                    <button
-                      hlmBtn
-                      size="icon"
-                      variant="ghost"
-                      (click)="openEditDialog($event, item)"
-                      [disabled]="item.inProgress === true"
-                      hlmTooltipTrigger="Edit">
-                      <ng-icon hlm size="sm" name="lucidePencil" />
-                    </button>
-                  }
-                  @if ('ASSET_UPDATE' | canUserPerform | async) {
-                    <button
-                      hlmBtn
-                      size="icon"
-                      variant="ghost"
-                      (click)="openMoveDialog($event, item)"
-                      [disabled]="item.kind === 'FOLDER'"
-                      hlmTooltipTrigger="Move">
-                      <ng-icon hlm size="sm" name="lucideFolderInput" />
-                    </button>
-                  }
-                  @if ('ASSET_DELETE' | canUserPerform | async) {
-                    <button
-                      hlmBtn
-                      size="icon"
-                      variant="ghost"
-                      (click)="openDeleteDialog($event, item)"
-                      [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
-                      hlmTooltipTrigger="Delete">
-                      <ng-icon hlm size="sm" name="lucideTrash" />
-                    </button>
-                  }
-                </div>
+                }
+                <p [hlmTooltipTrigger]="item.updatedAt?.toDate() | date: 'medium'">
+                  {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
+                </p>
               </div>
             </div>
-          }
-        </div>
+            <div hlmItemFooter class="px-4 pb-4 flex justify-end">
+              <button
+                hlmBtn
+                size="icon"
+                variant="ghost"
+                (click)="onDownload($event, item)"
+                [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
+                hlmTooltipTrigger="Download">
+                <ng-icon hlm size="sm" name="lucideDownload" />
+              </button>
+              @if ('ASSET_UPDATE' | canUserPerform | async) {
+                <button
+                  hlmBtn
+                  size="icon"
+                  variant="ghost"
+                  (click)="openEditDialog($event, item)"
+                  [disabled]="item.inProgress === true"
+                  hlmTooltipTrigger="Edit">
+                  <ng-icon hlm size="sm" name="lucidePencil" />
+                </button>
+              }
+              @if ('ASSET_UPDATE' | canUserPerform | async) {
+                <button
+                  hlmBtn
+                  size="icon"
+                  variant="ghost"
+                  (click)="openMoveDialog($event, item)"
+                  [disabled]="item.kind === 'FOLDER'"
+                  hlmTooltipTrigger="Move">
+                  <ng-icon hlm size="sm" name="lucideFolderInput" />
+                </button>
+              }
+              @if ('ASSET_DELETE' | canUserPerform | async) {
+                <button
+                  hlmBtn
+                  size="icon"
+                  variant="ghost"
+                  (click)="openDeleteDialog($event, item)"
+                  [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
+                  hlmTooltipTrigger="Delete">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                </button>
+              }
+            </div>
+          </div>
+        }
       </div>
     }
   </div>

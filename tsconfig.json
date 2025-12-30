@@ -130,6 +130,9 @@
       ],
       "@spartan-ng/helm/tabs": [
         "./libs/ui/tabs/src/index.ts"
+      ],
+      "@spartan-ng/helm/checkbox": [
+        "./libs/ui/checkbox/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

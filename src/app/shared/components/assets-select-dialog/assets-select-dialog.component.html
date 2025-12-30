@@ -2,22 +2,22 @@
   <span>Assets</span>
   <div class="mt-1 float-right flex gap-4 items-center">
     @if (fileUploadQueue().length > 0) {
-      <mat-icon [llAnimate]="true" [matBadge]="fileUploadQueue().length">progress_activity</mat-icon>
+      <span hlmBadge class="h-6">
+        <hlm-spinner />
+        Uploading ... ({{ fileUploadQueue().length }})
+      </span>
     }
-    <mat-button-toggle-group
-      hideSingleSelectionIndicator="true"
-      (change)="settingsStore.setAssetDialogLayout($event.value)"
-      [value]="settingsStore.assetDialogLayout()">
-      <mat-button-toggle value="list" matTooltip="List Layout">
-        <mat-icon>view_list</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="grid" matTooltip="Grid Layout">
-        <mat-icon>grid_view</mat-icon>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
+    <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.assetDialogLayout()">
+      <button hlmToggleGroupItem value="list" hlmTooltipTrigger="List Layout" (click)="settingsStore.setAssetDialogLayout('list')">
+        <ng-icon hlm size="sm" name="lucideLayoutList" />
+      </button>
+      <button hlmToggleGroupItem value="grid" hlmTooltipTrigger="Grid Layout" (click)="settingsStore.setAssetDialogLayout('grid')">
+        <ng-icon hlm size="sm" name="lucideLayoutGrid" />
+      </button>
+    </hlm-toggle-group>
     @if ('ASSET_CREATE' | canUserPerform | async) {
-      <button mat-stroked-button color="primary" (click)="fileInput.click()">
-        <mat-icon>upload_file</mat-icon>
+      <button hlmBtn variant="outline" (click)="fileInput.click()">
+        <ng-icon hlm size="sm" name="lucideUpload" />
         Upload Assets
       </button>
       <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
@@ -84,14 +84,21 @@
         <mat-header-cell *matHeaderCellDef> Preview</mat-header-cell>
         <mat-cell *matCellDef="let element">
           @if (element.kind === 'FILE' && filePreview(element.type)) {
-            <img
-              class="border object-contain rounded-sm image-bg"
-              width="200"
-              height="200"
-              alt="thumbnail"
-              loading="lazy"
-              [loaderParams]="{ thumbnail: true }"
-              ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
+            @if (element.inProgress) {
+              <div class="aspect-square w-full flex flex-col justify-center place-items-center">
+                <hlm-spinner />
+                <span>Processing ...</span>
+              </div>
+            } @else {
+              <img
+                class="border object-contain rounded-sm image-bg"
+                width="200"
+                height="200"
+                alt="thumbnail"
+                loading="lazy"
+                [loaderParams]="{ thumbnail: true }"
+                ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
+            }
           }
         </mat-cell>
       </ng-container>
@@ -137,7 +144,7 @@
       </ng-container>
       <ng-container matColumnDef="updatedAt">
         <mat-header-cell *matHeaderCellDef> Updated At</mat-header-cell>
-        <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+        <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">
           {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
         </mat-cell>
       </ng-container>
@@ -146,66 +153,96 @@
       <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></mat-row>
     </mat-table>
   } @else {
-    <div class="flex flex-wrap gap-2 justify-start">
+    <div hlmItemGroup class="flex flex-row flex-wrap gap-4">
       @for (item of dataSource.connect() | async; track item.id) {
-        <mat-card class="digital-asset-card cursor-pointer" appearance="outlined" (click)="onAssetSelect(item)">
-          @if (item.inProgress) {
-            <div class="progress">
-              <mat-progress-spinner mode="indeterminate" />
-            </div>
-          } @else if (item.kind === 'FILE' && filePreview(item.type)) {
-            <img
-              class="object-contain image-bg"
-              width="600"
-              height="600"
-              loading="lazy"
-              alt="thumbnail"
-              [loaderParams]="{ thumbnail: true }"
-              ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ item.id }}" />
-          } @else if (item.kind === 'FILE') {
-            <img mat-card-image ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg" alt="File" width="240" height="240" />
-          } @else {
-            <img mat-card-image ngSrc="assets/icons/folder.svg" alt="Folder" width="240" height="240" />
-          }
-          <mat-card-header>
-            <mat-card-subtitle class="break-all">{{ item.name }}{{ item.extension }}</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            @if (item.kind === 'FILE') {
-              @if (item.size; as size) {
-                <p>{{ size | formatFileSize }}</p>
-              }
-              @if (item.metadata; as metadata) {
-                @if (metadata.width && metadata.height) {
-                  W{{ metadata.width }} x H{{ metadata.height }}
+        <div
+          role="listitem"
+          hlmItem
+          variant="outline"
+          class="cursor-pointer p-0 overflow-hidden items-baseline content-start flex-1 min-w-48 max-w-60"
+          (click)="onAssetSelect(item)"
+          (keyup.enter)="onAssetSelect(item)">
+          <div hlmItemHeader class="border-b">
+            @if (item.kind === 'FILE' && item.inProgress) {
+              <div class="aspect-square w-full flex flex-col justify-center place-items-center">
+                <hlm-spinner />
+                <span>Processing ...</span>
+              </div>
+            } @else if (item.kind === 'FILE' && filePreview(item.type)) {
+              <div class="relative aspect-square w-full">
+                @if (item.extension; as extension) {
+                  <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
                 }
-                @if (metadata.duration; as duration) {
-                  <div> Duration: {{ duration | timeDuration }} </div>
+                <img
+                  class="aspect-square w-full object-contain bg-primary-foreground"
+                  ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ item.id }}"
+                  alt="thumbnail"
+                  width="600"
+                  height="600"
+                  loading="lazy"
+                  [loaderParams]="{ thumbnail: true }" />
+              </div>
+            } @else if (item.kind === 'FILE') {
+              <div class="relative aspect-square w-full">
+                @if (item.extension; as extension) {
+                  <span hlmBadge class="absolute top-5 left-5">{{ extension }}</span>
                 }
-              }
+                <img
+                  class="aspect-square w-full object-contain p-4 bg-primary-foreground"
+                  ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg"
+                  alt="File"
+                  width="240"
+                  height="240" />
+              </div>
+            } @else {
+              <img
+                ngSrc="assets/icons/folder.svg"
+                alt="Folder"
+                width="240"
+                height="240"
+                class="aspect-square w-full object-contain p-4 bg-primary-foreground" />
             }
-            <p [matTooltip]="item.updatedAt?.toDate() | date: 'medium'">
-              {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
-            </p>
-          </mat-card-content>
-          <span class="spacer"></span>
-          <mat-card-actions align="end">
-            <mat-checkbox
-              (click)="$event.stopPropagation()"
-              (change)="$event ? selection.toggle(item) : null"
-              [checked]="selection.isSelected(item)">
-            </mat-checkbox>
-          </mat-card-actions>
-        </mat-card>
+          </div>
+          <div hlmItemContent class="px-4">
+            <div hlmItemTitle class="line-clamp-2" hlmTooltipTrigger="{{ item.name }}{{ item.extension }}">
+              {{ item.name }}{{ item.extension }}
+            </div>
+            <div hlmItemDescription>
+              @if (item.kind === 'FILE') {
+                @if (item.size; as size) {
+                  <p>{{ size | formatFileSize }}</p>
+                }
+                @if (item.metadata; as metadata) {
+                  @if (metadata.width && metadata.height) {
+                    W{{ metadata.width }} x H{{ metadata.height }}
+                  }
+                  @if (metadata.duration; as duration) {
+                    <div> Duration: {{ duration | timeDuration }}</div>
+                  }
+                }
+              }
+              <p [hlmTooltipTrigger]="item.updatedAt?.toDate() | date: 'medium'">
+                {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
+              </p>
+            </div>
+          </div>
+          <div hlmItemFooter class="flex justify-end px-4 pb-4 grow">
+            @if (item.kind === 'FILE') {
+              <hlm-checkbox [checked]="selection.isSelected(item)" />
+            }
+          </div>
+        </div>
       }
     </div>
   }
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <mat-paginator></mat-paginator>
-  <button mat-button [disabled]="selection.isEmpty()" (click)="selection.clear()">Deselect All ({{ selection.selected.length }})</button>
-  <button mat-button [mat-dialog-close]="undefined">Close</button>
-  <button mat-flat-button [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
+  <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">
+    Deselect All ({{ selection.selected.length }})
+  </button>
+  <button hlmBtn variant="ghost" [mat-dialog-close]="undefined">Close</button>
+  <button hlmBtn [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     @if (selection.selected.length > 1) {
       Add Selected Assets ({{ selection.selected.length }})
     } @else {
