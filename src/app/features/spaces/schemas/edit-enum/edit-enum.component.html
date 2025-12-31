@@ -27,53 +27,42 @@
     <form [formGroup]="form">
       <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
         <mat-tab label="Values">
-          <mat-drawer-container (backdropClick)="selectedFieldIdx = undefined">
-            <mat-drawer-content>
-              <div class="flex flex-col mx-auto max-w-(--breakpoint-lg) gap-6 p-8" style="height: calc(100vh - 177px)">
-                <mat-action-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
-                  <mat-form-field>
-                    <mat-label>Name</mat-label>
-                    <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
-                    <button mat-stroked-button matTextSuffix color="accent" (click)="addValueForm()" [disabled]="!newFieldName.valid">
-                      Add
+          <div class="flex flex-col mx-auto max-w-(--breakpoint-lg) gap-6 p-8" style="height: calc(100vh - 177px)">
+            <mat-action-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+              <mat-form-field>
+                <mat-label>Name</mat-label>
+                <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
+                <button mat-stroked-button matTextSuffix color="accent" (click)="addValueForm()" [disabled]="!newFieldName.valid">
+                  Add
+                </button>
+                @if (newFieldName.errors; as errors) {
+                  <mat-error>{{ fe.errors(errors) }}</mat-error>
+                }
+              </mat-form-field>
+              @for (field of values.controls; track field.value.name; let index = $index; let last = $last) {
+                <mat-list-item
+                  cdkDrag
+                  cdkDragPreviewContainer="parent"
+                  (click)="selectComponent(index)"
+                  [activated]="index === selectedFieldIdx()"
+                  [class.invalid]="field.invalid">
+                  <span matListItemTitle>
+                    {{ field.value.name }} <span class="field-id">#{{ field.value.value }}</span>
+                  </span>
+                  <div matListItemMeta>
+                    <button mat-icon-button (click)="removeComponent($event, index)">
+                      <mat-icon>delete</mat-icon>
                     </button>
-                    @if (newFieldName.errors; as errors) {
-                      <mat-error>{{ fe.errors(errors) }}</mat-error>
-                    }
-                  </mat-form-field>
-                  @for (field of values.controls; track field.value.name; let index = $index; let last = $last) {
-                    <mat-list-item
-                      cdkDrag
-                      cdkDragPreviewContainer="parent"
-                      (click)="selectComponent(index)"
-                      [activated]="index === selectedFieldIdx"
-                      [class.invalid]="field.invalid">
-                      <span matListItemTitle>
-                        {{ field.value.name }} <span class="field-id">#{{ field.value.value }}</span>
-                      </span>
-                      <div matListItemMeta>
-                        <button mat-icon-button (click)="removeComponent($event, index)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                        &nbsp;&nbsp;
-                        <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                      </div>
-                    </mat-list-item>
-                    @if (!last) {
-                      <mat-divider />
-                    }
-                  }
-                </mat-action-list>
-              </div>
-            </mat-drawer-content>
-            <mat-drawer position="end" [opened]="selectedFieldIdx !== undefined">
-              @if (values.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
-                <div formArrayName="values">
-                  <ll-schema-value-edit [form]="selectedComponent" />
-                </div>
+                    &nbsp;&nbsp;
+                    <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                  </div>
+                </mat-list-item>
+                @if (!last) {
+                  <mat-divider />
+                }
               }
-            </mat-drawer>
-          </mat-drawer-container>
+            </mat-action-list>
+          </div>
         </mat-tab>
         <mat-tab label="Settings">
           <div class="flex flex-col mx-auto max-w-(--breakpoint-md) gap-6 p-8">
@@ -121,6 +110,17 @@
     </form>
   </div>
 }
+
+<hlm-sheet side="right" [state]="selectedFieldIdx() !== undefined ? 'open' : 'closed'" (closed)="selectedFieldIdx.set(undefined)">
+  <hlm-sheet-content *brnSheetContent="let ctx">
+    <hlm-sheet-header>
+      <h3 hlmSheetTitle>Edit Value</h3>
+    </hlm-sheet-header>
+    @if (values.at(selectedFieldIdx() ?? -100); as selectedComponent) {
+      <ll-schema-value-edit [form]="selectedComponent" />
+    }
+  </hlm-sheet-content>
+</hlm-sheet>
 
 @if (settingsStore.debugEnabled()) {
   <mat-accordion [multi]="true">

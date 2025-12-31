@@ -13,8 +13,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -31,8 +29,10 @@ import { SchemaValidator } from '@shared/validators/schema.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { BrnSheetImports } from '@spartan-ng/brain/sheet';
 import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
 
@@ -46,10 +46,8 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     CanUserPerformPipe,
     CommonModule,
     MatButtonModule,
-    MatProgressBarModule,
     MatTabsModule,
     ReactiveFormsModule,
-    MatSidenavModule,
     MatFormFieldModule,
     MatListModule,
     DragDropModule,
@@ -63,8 +61,9 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     HlmButtonImports,
     HlmIconImports,
     HlmSpinnerImports,
-    HlmIconImports,
     HlmTooltipImports,
+    HlmSheetImports,
+    BrnSheetImports,
   ],
   providers: [
     provideIcons({
@@ -88,7 +87,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   entity?: Schema;
   schemas: Schema[] = [];
 
-  selectedFieldIdx?: number;
+  selectedFieldIdx = signal<number | undefined>(undefined);
 
   fieldReservedNames: string[] = [];
   newFieldName = this.fb.control('', [...SchemaValidator.FIELD_OPTION_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
@@ -194,7 +193,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   selectComponent(index: number) {
-    this.selectedFieldIdx = index;
+    this.selectedFieldIdx.set(index);
   }
 
   removeComponent(event: MouseEvent, index: number) {
