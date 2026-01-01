@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { MatChipInputEvent } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
@@ -137,7 +136,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
     return this.form.dirty;
   }
 
-  addNewLabel(value: string): void {
+  addLabel(value: string): void {
     if (value) {
       const labels = this.form.controls['labels'].value;
       if (labels instanceof Array) {
@@ -146,20 +145,6 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
         this.form.controls['labels'].setValue([value]);
       }
     }
-  }
-
-  addLabel(event: MatChipInputEvent): void {
-    const { value, chipInput } = event;
-    if (value) {
-      const labels = this.form.controls['labels'].value;
-      if (labels instanceof Array) {
-        labels.push(value);
-      } else {
-        this.form.controls['labels'].setValue([value]);
-      }
-    }
-    chipInput.clear();
-    this.form.markAsDirty();
   }
 
   removeLabel(label: string): void {

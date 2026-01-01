@@ -111,7 +111,7 @@
                     id="labels"
                     autocomplete="off"
                     placeholder="Enter new label name"
-                    (keydown.enter)="$event.preventDefault(); addNewLabel(labelName.value); labelName.value = ''" />
+                    (keydown.enter)="$event.preventDefault(); addLabel(labelName.value); labelName.value = ''" />
                   <div class="flex items-center gap-1 px-2">
                     @for (label of form.controls['labels'].value; track label) {
                       <span hlmBadge variant="outline">
