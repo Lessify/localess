@@ -1,27 +1,16 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatChipInputEvent } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideSave } from '@ng-icons/lucide';
+import { lucideArrowLeft, lucideCircleX, lucideGripVertical, lucideSave, lucideTrash } from '@ng-icons/lucide';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import {
   AssetFileType,
@@ -40,10 +29,20 @@ import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { BrnSheetImports } from '@spartan-ng/brain/sheet';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
@@ -54,23 +53,11 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
   styleUrl: './edit-comp.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
-    MatButtonModule,
-    MatIconModule,
     CanUserPerformPipe,
     CommonModule,
-    MatTooltipModule,
-    ReactiveFormsModule,
     MatTabsModule,
-    MatSidenavModule,
-    MatListModule,
-    MatFormFieldModule,
+    ReactiveFormsModule,
     DragDropModule,
-    MatInputModule,
-    MatDividerModule,
-    TextFieldModule,
-    MatSelectModule,
-    MatChipsModule,
     MatExpansionModule,
     EditFieldComponent,
     HlmProgressImports,
@@ -78,11 +65,25 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     HlmIconImports,
     HlmSpinnerImports,
     HlmTooltipImports,
+    HlmSheetImports,
+    BrnSheetImports,
+    HlmInputGroupImports,
+    HlmFieldImports,
+    HlmItemImports,
+    HlmInputImports,
+    HlmTextareaImports,
+    HlmBadgeImports,
+    HlmSelectImports,
+    BrnSelectImports,
+    MatIconModule,
   ],
   providers: [
     provideIcons({
       lucideSave,
       lucideArrowLeft,
+      lucideTrash,
+      lucideGripVertical,
+      lucideCircleX,
     }),
   ],
 })
@@ -94,6 +95,8 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   private readonly schemaService = inject(SchemaService);
   private readonly notificationService = inject(NotificationService);
 
+  readonly PREVIEW_TYPES = ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'];
+
   // Input
   spaceId = input.required<string>();
   schemaId = input.required<string>();
@@ -103,7 +106,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
   assetFileTypeDescriptions = assetFileTypeDescriptions;
 
-  selectedFieldIdx?: number;
+  selectedFieldIdx = signal<number | undefined>(undefined);
 
   fieldReservedNames: string[] = [];
   newFieldName = this.fb.control('', [...SchemaValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
@@ -122,8 +125,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     labels: this.fb.control<string[] | undefined>([]),
     fields: this.fb.array<SchemaField>([]),
   });
-
-  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
 
   ngOnInit(): void {
     this.loadData(this.spaceId(), this.schemaId());
@@ -154,6 +155,17 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
 
   get isFormDirty(): boolean {
     return this.form.dirty;
+  }
+
+  addNewLabel(value: string): void {
+    if (value) {
+      const labels = this.form.controls['labels'].value;
+      if (labels instanceof Array) {
+        labels.push(value);
+      } else {
+        this.form.controls['labels'].setValue([value]);
+      }
+    }
   }
 
   addLabel(event: MatChipInputEvent): void {
@@ -189,6 +201,27 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
 
   fieldAt(index: number): FormGroup | undefined {
     return this.fields.at(index);
+  }
+
+  selectComponent(index: number) {
+    this.selectedFieldIdx.set(index);
+  }
+
+  removeComponent(event: MouseEvent, index: number) {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    // Remove name from reserved names
+    const cValue = this.fieldControlAt(index, 'name')?.value;
+    if (cValue) {
+      const idx = this.fieldReservedNames.indexOf(cValue);
+      if (idx !== -1) {
+        this.fieldReservedNames.splice(index, 1);
+      }
+    }
+    // Remove
+    this.fields.removeAt(index);
+    this.form.markAsDirty();
   }
 
   generateOptionForm(option?: SchemaFieldOptionSelectable): FormGroup {
@@ -336,28 +369,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
       this.selectComponent(this.fields.length - 1);
       this.form.markAsDirty();
     }
-  }
-
-  removeComponent(event: Event, index: number): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    // Remove name from reserved names
-    const cValue = this.fieldControlAt(index, 'name')?.value;
-    if (cValue) {
-      const idx = this.fieldReservedNames.indexOf(cValue);
-      if (idx !== -1) {
-        this.fieldReservedNames.splice(index, 1);
-      }
-    }
-    // Remove
-    this.fields.removeAt(index);
-    this.form.markAsDirty();
-  }
-
-  // handle form array element selection, by enforcing refresh
-  selectComponent(index: number): void {
-    this.selectedFieldIdx = index;
   }
 
   save(): void {

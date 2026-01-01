@@ -27,165 +27,193 @@
     <form [formGroup]="form">
       <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
         <mat-tab label="Fields">
-          <mat-drawer-container (backdropClick)="selectedFieldIdx = undefined">
-            <mat-drawer-content>
-              <div class="flex flex-col mx-auto max-w-(--breakpoint-lg) gap-6 p-8" style="height: calc(100vh - 177px)">
-                <mat-action-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
-                  <mat-form-field>
-                    <mat-label>Name</mat-label>
-                    <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
-                    <button mat-stroked-button matTextSuffix color="accent" (click)="addField()" [disabled]="!newFieldName.valid">
-                      Add
-                    </button>
-                    @if (newFieldName.errors; as errors) {
-                      <mat-error>{{ fe.errors(errors) }}</mat-error>
-                    }
-                  </mat-form-field>
-                  @for (field of fields.controls; track field.value.name; let index = $index; let last = $last) {
-                    <mat-list-item
-                      cdkDrag
-                      cdkDragPreviewContainer="parent"
-                      (click)="selectComponent(index)"
-                      [activated]="index === selectedFieldIdx"
-                      [class.invalid]="field.invalid">
-                      @let descriptor = schemaFieldKindDescriptions[field.value.kind];
-                      <mat-icon matListItemIcon class="type" [hlmTooltipTrigger]="descriptor.description">{{ descriptor.icon }}</mat-icon>
-                      <span matListItemTitle>
-                        {{ field.value.displayName }} <span class="field-id">#{{ field.value.name }}</span>
-                      </span>
-                      <span matListItemLine>
-                        <span class="badge" [hlmTooltipTrigger]="descriptor.description">{{ descriptor.name }}</span>
-                        @if (field.value.translatable) {
-                          <span class="badge">Translatable</span>
-                        }
-                        @if (field.value.required) {
-                          <span class="badge">Required</span>
-                        }
-                        @if (field.value.fileTypes) {
-                          @let descriptor = assetFileTypeDescriptions[field.value.fileTypes];
-                          <span class="badge" [hlmTooltipTrigger]="descriptor.description">File Type: {{ descriptor.name }}</span>
-                        }
-                        @if (field.value.path) {
-                          <span class="badge">Path: {{ field.value.path }}</span>
-                        }
-                        @if (field.value.source) {
-                          <span class="badge">Enum: {{ field.value.source }}</span>
-                        }
-                        @if (field.value.schemas) {
-                          @if (field.value.schemas.length === 1) {
-                            <span class="badge">Schema: {{ field.value.schemas[0] }}</span>
-                          } @else {
-                            <span class="badge" matTooltipClass="allow-cr" [matTooltip]="field.value.schemas.join(',&#10;')">
-                              Schemas: {{ field.value.schemas[0] }}, ...
-                            </span>
-                          }
-                        }
-                        @if (field.value.minLength) {
-                          <span class="badge">Min Length: {{ field.value.minLength }}</span>
-                        }
-                        @if (field.value.maxLength) {
-                          <span class="badge">Max Length: {{ field.value.maxLength }}</span>
-                        }
-                        @if (field.value.minValue) {
-                          <span class="badge">Min Value: {{ field.value.minValue }}</span>
-                        }
-                        @if (field.value.maxValue) {
-                          <span class="badge">Max Value: {{ field.value.maxValue }}</span>
-                        }
-                        @if (field.value.minValues) {
-                          <span class="badge">Min Values: {{ field.value.minValues }}</span>
-                        }
-                        @if (field.value.maxValues) {
-                          <span class="badge">Max Values: {{ field.value.maxValues }}</span>
-                        }
-                      </span>
-                      <div matListItemMeta>
-                        <button mat-icon-button (click)="removeComponent($event, index)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                        &nbsp;&nbsp;
-                        <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                      </div>
-                    </mat-list-item>
-                    @if (!last) {
-                      <mat-divider />
-                    }
-                  }
-                </mat-action-list>
+          <div class="flex flex-col mx-auto max-w-5xl gap-6 p-8" style="height: calc(100vh - 177px)">
+            <div hlmField class="col-span-2">
+              <div hlmInputGroup>
+                <input
+                  #name
+                  [formControl]="newFieldName"
+                  hlmInputGroupInput
+                  autocomplete="off"
+                  placeholder="Name of the new field..."
+                  (keydown.enter)="$event.preventDefault(); newFieldName.valid && addField()" />
+                <div hlmInputGroupAddon align="inline-end">
+                  <button hlmInputGroupButton variant="secondary" (click)="addField()" [disabled]="!newFieldName.valid">Add</button>
+                </div>
               </div>
-            </mat-drawer-content>
-            <mat-drawer position="end" [opened]="selectedFieldIdx !== undefined">
-              @if (fields.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
-                <div formArrayName="fields">
-                  <ll-schema-field-edit [form]="selectedComponent" [schemas]="schemas" />
+            </div>
+            <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+              @for (field of fields.controls; track field.value.name; let index = $index) {
+                <div
+                  hlmItem
+                  class="cursor-pointer"
+                  [variant]="index === selectedFieldIdx() ? 'muted' : 'outline'"
+                  role="listitem"
+                  cdkDrag
+                  cdkDragPreviewContainer="parent"
+                  (click)="selectComponent(index)"
+                  (keyup.enter)="selectComponent(index)"
+                  [class.border-destructive]="field.invalid">
+                  @let descriptor = schemaFieldKindDescriptions[field.value.kind];
+                  <div hlmItemMedia variant="icon">
+                    <mat-icon class="type" [hlmTooltipTrigger]="descriptor.description">{{ descriptor.icon }}</mat-icon>
+                  </div>
+                  <div hlmItemContent>
+                    <div hlmItemTitle class="line-clamp-1">
+                      {{ field.value.displayName }}
+                      <span class="text-muted-foreground">#{{ field.value.name }}</span>
+                    </div>
+                    <div hlmItemSubTitle class="line-clamp-1">
+                      <span hlmBadge variant="outline" [hlmTooltipTrigger]="descriptor.description">{{ descriptor.name }}</span>
+                      @if (field.value.translatable) {
+                        <span hlmBadge variant="outline">Translatable</span>
+                      }
+                      @if (field.value.required) {
+                        <span hlmBadge variant="outline">Required</span>
+                      }
+                      @if (field.value.fileTypes) {
+                        @let ftDescriptor = assetFileTypeDescriptions[field.value.fileTypes];
+                        <span hlmBadge variant="outline" [hlmTooltipTrigger]="ftDescriptor.description">
+                          File Type: {{ ftDescriptor.name }}
+                        </span>
+                      }
+                      @if (field.value.path) {
+                        <span hlmBadge variant="outline">Path: {{ field.value.path }}</span>
+                      }
+                      @if (field.value.source) {
+                        <span hlmBadge variant="outline">Enum: {{ field.value.source }}</span>
+                      }
+                      @if (field.value.schemas) {
+                        @if (field.value.schemas.length === 1) {
+                          <span hlmBadge variant="outline">Schema: {{ field.value.schemas[0] }}</span>
+                        } @else {
+                          <span hlmBadge variant="outline" [hlmTooltipTrigger]="field.value.schemas.join(',\n')">
+                            Schemas: {{ field.value.schemas[0] }}, ...
+                          </span>
+                        }
+                      }
+                      @if (field.value.minLength) {
+                        <span hlmBadge variant="outline">Min Length: {{ field.value.minLength }}</span>
+                      }
+                      @if (field.value.maxLength) {
+                        <span hlmBadge variant="outline">Max Length: {{ field.value.maxLength }}</span>
+                      }
+                      @if (field.value.minValue) {
+                        <span hlmBadge variant="outline">Min Value: {{ field.value.minValue }}</span>
+                      }
+                      @if (field.value.maxValue) {
+                        <span hlmBadge variant="outline">Max Value: {{ field.value.maxValue }}</span>
+                      }
+                      @if (field.value.minValues) {
+                        <span hlmBadge variant="outline">Min Values: {{ field.value.minValues }}</span>
+                      }
+                      @if (field.value.maxValues) {
+                        <span hlmBadge variant="outline">Max Values: {{ field.value.maxValues }}</span>
+                      }
+                    </div>
+                  </div>
+
+                  <div hlmItemActions>
+                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltipTrigger="Delete">
+                      <ng-icon hlm size="sm" name="lucideTrash" />
+                    </button>
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="ghost"
+                      cdkDragHandle
+                      class="cursor-grab active:cursor-grabbing"
+                      hlmTooltipTrigger="Move">
+                      <ng-icon hlm size="sm" name="lucideGripVertical" />
+                    </button>
+                  </div>
                 </div>
               }
-            </mat-drawer>
-          </mat-drawer-container>
+            </div>
+          </div>
         </mat-tab>
         <mat-tab label="Settings">
-          <div class="flex flex-col mx-auto max-w-(--breakpoint-md) gap-6 p-8">
-            <mat-form-field>
-              <mat-label>Display Name</mat-label>
-              <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
-              <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
-              @if (form.controls['displayName'].errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
-              <mat-hint align="end">{{ form.controls['description'].value?.length || 0 }}/250</mat-hint>
-              @if (form.controls['description']?.errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Preview Field</mat-label>
-              <mat-select formControlName="previewField">
-                @for (field of fields.controls; track field.value.name) {
-                  @if (
-                    ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'].includes(field.value.kind)
-                  ) {
-                    <mat-option [value]="field.value.name">
-                      {{ field.value.displayName }} <span>#{{ field.value.name }}</span>
-                    </mat-option>
+          <div class="flex flex-col mx-auto max-w-5xl gap-6 p-8">
+            <fieldset hlmFieldSet>
+              <div hlmFieldGroup>
+                <div hlmField>
+                  <label hlmFieldLabel for="displayName"> Display Name </label>
+                  <input #displayName hlmInput id="displayName" formControlName="displayName" autocomplete="off" />
+                  @if (form.controls['displayName']?.errors; as errors) {
+                    <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                  } @else {
+                    <p hlmFieldDescription class="content-end">{{ 50 - displayName.value.length }} characters left</p>
                   }
-                }
-              </mat-select>
-              @if (form.controls['previewField'].errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Labels</mat-label>
-              <mat-chip-grid #chipGrid aria-label="Enter Labels">
-                @for (label of form.controls['labels'].value; track label) {
-                  <mat-chip-row (removed)="removeLabel(label)">
-                    {{ label }}
-                    <button matChipRemove [attr.aria-label]="'Remove ' + label">
-                      <mat-icon>cancel</mat-icon>
-                    </button>
-                  </mat-chip-row>
-                }
-              </mat-chip-grid>
-              <input
-                placeholder="New Label..."
-                [matChipInputFor]="chipGrid"
-                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                [matChipInputAddOnBlur]="true"
-                (matChipInputTokenEnd)="addLabel($event)" />
-              @if (form.controls['labels'].errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
+                </div>
+                <div hlmField>
+                  <label hlmFieldLabel for="description"> Description </label>
+                  <textarea hlmTextarea class="resize-none" #description id="description" formControlName="description" autocomplete="off">
+                  </textarea>
+                  @if (form.controls['description']?.errors; as errors) {
+                    <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                  } @else {
+                    <p hlmFieldDescription class="content-end">{{ 250 - description.value.length }} characters left</p>
+                  }
+                </div>
+                <div hlmField>
+                  <label hlmFieldLabel for="previewField"> Preview Field </label>
+                  <hlm-select formControlName="previewField" id="previewField">
+                    <hlm-select-trigger class="w-full">
+                      <hlm-select-value />
+                    </hlm-select-trigger>
+                    <hlm-select-content>
+                      @for (field of fields.controls; track field.value.name) {
+                        @if (PREVIEW_TYPES.includes(field.value.kind)) {
+                          <hlm-option [value]="field.value.name">
+                            {{ field.value.displayName }} <span class="text-muted-foreground">#{{ field.value.name }}</span>
+                          </hlm-option>
+                        }
+                      }
+                    </hlm-select-content>
+                  </hlm-select>
+                  @if (form.controls['previewField']?.errors; as errors) {
+                    <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                  }
+                </div>
+                <div hlmField>
+                  <label hlmFieldLabel for="labels"> Labels </label>
+                  <input
+                    #labelName
+                    hlmInput
+                    id="labels"
+                    autocomplete="off"
+                    placeholder="Enter new label name"
+                    (keydown.enter)="$event.preventDefault(); addNewLabel(labelName.value); labelName.value = ''" />
+                  <div class="flex items-center gap-1 px-2">
+                    @for (label of form.controls['labels'].value; track label) {
+                      <span hlmBadge variant="outline">
+                        {{ label }}
+                        <button hlmBtn variant="ghost" size="icon-sm" (click)="removeLabel(label)">
+                          <ng-icon hlm size="sm" name="lucideCircleX" />
+                        </button>
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </fieldset>
           </div>
         </mat-tab>
       </mat-tab-group>
     </form>
   </div>
 }
+
+<hlm-sheet side="right" [state]="selectedFieldIdx() !== undefined ? 'open' : 'closed'" (closed)="selectedFieldIdx.set(undefined)">
+  <hlm-sheet-content *brnSheetContent="let ctx">
+    <hlm-sheet-header>
+      <h3 hlmSheetTitle>Edit Field</h3>
+    </hlm-sheet-header>
+    @if (fields.at(selectedFieldIdx() ?? -100); as selectedComponent) {
+      <ll-schema-field-edit [form]="selectedComponent" [schemas]="schemas" />
+    }
+  </hlm-sheet-content>
+</hlm-sheet>
 
 @if (settingsStore.debugEnabled()) {
   <mat-accordion [multi]="true">
