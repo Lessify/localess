@@ -1,23 +1,16 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatChipInputEvent } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideSave } from '@ng-icons/lucide';
+import { lucideArrowLeft, lucideCircleX, lucideGripVertical, lucideSave, lucideTrash } from '@ng-icons/lucide';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -27,13 +20,17 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import { BrnSheetImports } from '@spartan-ng/brain/sheet';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
@@ -44,19 +41,11 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
   styleUrl: './edit-enum.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatIconModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
     MatTabsModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatListModule,
     DragDropModule,
-    MatInputModule,
-    MatDividerModule,
-    TextFieldModule,
-    MatChipsModule,
     MatExpansionModule,
     EditValueComponent,
     HlmProgressImports,
@@ -68,11 +57,18 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     BrnSheetImports,
     HlmInputGroupImports,
     HlmFieldImports,
+    HlmItemImports,
+    HlmInputImports,
+    HlmTextareaImports,
+    HlmBadgeImports,
   ],
   providers: [
     provideIcons({
       lucideSave,
       lucideArrowLeft,
+      lucideTrash,
+      lucideGripVertical,
+      lucideCircleX,
     }),
   ],
 })
@@ -139,6 +135,17 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
 
   get isFormDirty(): boolean {
     return this.form.dirty;
+  }
+
+  addNewLabel(value: string): void {
+    if (value) {
+      const labels = this.form.controls['labels'].value;
+      if (labels instanceof Array) {
+        labels.push(value);
+      } else {
+        this.form.controls['labels'].setValue([value]);
+      }
+    }
   }
 
   addLabel(event: MatChipInputEvent): void {

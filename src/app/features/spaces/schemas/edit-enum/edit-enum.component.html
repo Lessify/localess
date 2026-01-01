@@ -27,82 +27,104 @@
     <form [formGroup]="form">
       <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
         <mat-tab label="Values">
-          <div class="flex flex-col mx-auto max-w-(--breakpoint-lg) gap-6 p-8" style="height: calc(100vh - 177px)">
+          <div class="flex flex-col mx-auto max-w-5xl gap-6 p-8" style="height: calc(100vh - 177px)">
             <div hlmField class="col-span-2">
               <div hlmInputGroup>
-                <input #name [formControl]="newFieldName" hlmInputGroupInput autocomplete="off" placeholder="Name of the new element..." />
+                <input
+                  #name
+                  [formControl]="newFieldName"
+                  hlmInputGroupInput
+                  autocomplete="off"
+                  placeholder="Name of the new element..."
+                  (keydown.enter)="$event.preventDefault(); newFieldName.valid && addValueForm()" />
                 <div hlmInputGroupAddon align="inline-end">
                   <button hlmInputGroupButton variant="secondary" (click)="addValueForm()" [disabled]="!newFieldName.valid">Add</button>
                 </div>
               </div>
             </div>
-
-            <mat-action-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
-              @for (field of values.controls; track field.value.name; let index = $index; let last = $last) {
-                <mat-list-item
+            <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+              @for (field of values.controls; track field.value.name; let index = $index) {
+                <div
+                  hlmItem
+                  class="cursor-pointer"
+                  [variant]="index === selectedFieldIdx() ? 'muted' : 'outline'"
+                  role="listitem"
                   cdkDrag
                   cdkDragPreviewContainer="parent"
                   (click)="selectComponent(index)"
-                  [activated]="index === selectedFieldIdx()"
-                  [class.invalid]="field.invalid">
-                  <span matListItemTitle>
-                    {{ field.value.name }} <span class="field-id">#{{ field.value.value }}</span>
-                  </span>
-                  <div matListItemMeta>
-                    <button mat-icon-button (click)="removeComponent($event, index)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                    &nbsp;&nbsp;
-                    <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+                  (keyup.enter)="selectComponent(index)"
+                  [class.border-destructive]="field.invalid">
+                  <div hlmItemContent>
+                    <div hlmItemTitle class="line-clamp-1">
+                      {{ field.value.name }}
+                      <span class="text-muted-foreground">#{{ field.value.value }}</span>
+                    </div>
                   </div>
-                </mat-list-item>
-                @if (!last) {
-                  <mat-divider />
-                }
+
+                  <div hlmItemActions>
+                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltipTrigger="Delete">
+                      <ng-icon hlm size="sm" name="lucideTrash" />
+                    </button>
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="ghost"
+                      cdkDragHandle
+                      class="cursor-grab active:cursor-grabbing"
+                      hlmTooltipTrigger="Move">
+                      <ng-icon hlm size="sm" name="lucideGripVertical" />
+                    </button>
+                  </div>
+                </div>
               }
-            </mat-action-list>
+            </div>
           </div>
         </mat-tab>
         <mat-tab label="Settings">
-          <div class="flex flex-col mx-auto max-w-(--breakpoint-md) gap-6 p-8">
-            <mat-form-field>
-              <mat-label>Display Name</mat-label>
-              <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
-              <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
-              @if (form.controls['displayName'].errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
-              <mat-hint align="end">{{ form.controls['description'].value?.length || 0 }}/250</mat-hint>
-              @if (form.controls['description']?.errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Labels</mat-label>
-              <mat-chip-grid #chipGrid aria-label="Enter Labels">
-                @for (label of form.controls['labels'].value; track label) {
-                  <mat-chip-row (removed)="removeLabel(label)">
-                    {{ label }}
-                    <button matChipRemove [attr.aria-label]="'Remove ' + label">
-                      <mat-icon>cancel</mat-icon>
-                    </button>
-                  </mat-chip-row>
-                }
-              </mat-chip-grid>
-              <input
-                placeholder="New Label..."
-                [matChipInputFor]="chipGrid"
-                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                [matChipInputAddOnBlur]="true"
-                (matChipInputTokenEnd)="addLabel($event)" />
-              @if (form.controls['labels'].errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
+          <div class="flex flex-col mx-auto max-w-5xl gap-6 p-8">
+            <fieldset hlmFieldSet>
+              <div hlmFieldGroup>
+                <div hlmField>
+                  <label hlmFieldLabel for="displayName"> Display Name </label>
+                  <input #displayName hlmInput id="displayName" formControlName="displayName" autocomplete="off" />
+                  @if (form.controls['displayName']?.errors; as errors) {
+                    <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                  } @else {
+                    <p hlmFieldDescription class="content-end">{{ 50 - displayName.value.length }} characters left</p>
+                  }
+                </div>
+                <div hlmField>
+                  <label hlmFieldLabel for="description"> Description </label>
+                  <textarea hlmTextarea class="resize-none" #description id="description" formControlName="description" autocomplete="off">
+                  </textarea>
+                  @if (form.controls['description']?.errors; as errors) {
+                    <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                  } @else {
+                    <p hlmFieldDescription class="content-end">{{ 250 - description.value.length }} characters left</p>
+                  }
+                </div>
+                <div hlmField>
+                  <label hlmFieldLabel for="labels"> Labels </label>
+                  <input
+                    #labelName
+                    hlmInput
+                    id="labels"
+                    autocomplete="off"
+                    placeholder="Enter new label name"
+                    (keydown.enter)="$event.preventDefault(); addNewLabel(labelName.value); labelName.value = ''" />
+                  <div class="flex items-center gap-1 px-2">
+                    @for (label of form.controls['labels'].value; track label) {
+                      <span hlmBadge variant="outline">
+                        {{ label }}
+                        <button hlmBtn variant="ghost" size="icon-sm" (click)="removeLabel(label)">
+                          <ng-icon hlm size="sm" name="lucideCircleX" />
+                        </button>
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </fieldset>
           </div>
         </mat-tab>
       </mat-tab-group>
