@@ -28,17 +28,16 @@
       <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
         <mat-tab label="Values">
           <div class="flex flex-col mx-auto max-w-(--breakpoint-lg) gap-6 p-8" style="height: calc(100vh - 177px)">
+            <div hlmField class="col-span-2">
+              <div hlmInputGroup>
+                <input #name [formControl]="newFieldName" hlmInputGroupInput autocomplete="off" placeholder="Name of the new element..." />
+                <div hlmInputGroupAddon align="inline-end">
+                  <button hlmInputGroupButton variant="secondary" (click)="addValueForm()" [disabled]="!newFieldName.valid">Add</button>
+                </div>
+              </div>
+            </div>
+
             <mat-action-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
-              <mat-form-field>
-                <mat-label>Name</mat-label>
-                <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
-                <button mat-stroked-button matTextSuffix color="accent" (click)="addValueForm()" [disabled]="!newFieldName.valid">
-                  Add
-                </button>
-                @if (newFieldName.errors; as errors) {
-                  <mat-error>{{ fe.errors(errors) }}</mat-error>
-                }
-              </mat-form-field>
               @for (field of values.controls; track field.value.name; let index = $index; let last = $last) {
                 <mat-list-item
                   cdkDrag
