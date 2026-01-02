@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -14,7 +13,13 @@ import {
   lucideCalendar,
   lucideCircleX,
   lucideClock,
+  lucideFile,
+  lucideFileDigit,
+  lucideFileImage,
+  lucideFileMusic,
   lucideFileSymlink,
+  lucideFileText,
+  lucideFileVideoCamera,
   lucideGripVertical,
   lucideLink,
   lucideList,
@@ -95,7 +100,6 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     HlmBadgeImports,
     HlmSelectImports,
     BrnSelectImports,
-    MatIconModule,
     HlmScrollAreaImports,
     NgScrollbar,
   ],
@@ -120,6 +124,12 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
       lucideFileSymlink,
       lucidePaperclip,
       lucideToyBrick,
+      lucideFile,
+      lucideFileImage,
+      lucideFileVideoCamera,
+      lucideFileMusic,
+      lucideFileDigit,
+      lucideFileText,
     }),
   ],
 })
@@ -353,10 +363,18 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        fieldForm.addControl(
-          'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
-        );
+        // Fallback to first file type if exists
+        if (element.fileTypes && element.fileTypes.length > 0) {
+          fieldForm.addControl(
+            'fileType',
+            this.fb.control<AssetFileType | undefined>(element.fileTypes[0], SchemaValidator.FIELD_FILE_TYPES),
+          );
+        } else {
+          fieldForm.addControl(
+            'fileType',
+            this.fb.control<AssetFileType | undefined>(element.fileType || AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES),
+          );
+        }
         break;
       }
       case SchemaFieldKind.ASSETS: {
@@ -364,10 +382,18 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        fieldForm.addControl(
-          'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
-        );
+        // Fallback to first file type if exists
+        if (element.fileTypes && element.fileTypes.length > 0) {
+          fieldForm.addControl(
+            'fileType',
+            this.fb.control<AssetFileType | undefined>(element.fileTypes[0], SchemaValidator.FIELD_FILE_TYPES),
+          );
+        } else {
+          fieldForm.addControl(
+            'fileType',
+            this.fb.control<AssetFileType | undefined>(element.fileType || AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES),
+          );
+        }
         break;
       }
       case SchemaFieldKind.SCHEMA: {

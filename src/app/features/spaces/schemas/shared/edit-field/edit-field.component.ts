@@ -1,24 +1,19 @@
-import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, Input } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatListModule, MatSelectionListChange } from '@angular/material/list';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCalendar,
   lucideClock,
+  lucideFile,
+  lucideFileDigit,
+  lucideFileImage,
+  lucideFileMusic,
   lucideFileSymlink,
+  lucideFileText,
+  lucideFileVideoCamera,
   lucideInfo,
   lucideLink,
   lucideList,
@@ -62,26 +57,15 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSelectModule,
-    MatTooltipModule,
-    MatSlideToggleModule,
-    TextFieldModule,
-    MatDividerModule,
-    DragDropModule,
     MatExpansionModule,
     CommonModule,
-    MatListModule,
     HlmFieldImports,
     HlmIconImports,
     HlmInputImports,
     HlmTooltipImports,
     HlmInputGroupImports,
-    HlmSelectImports,
     BrnSelectImports,
+    HlmSelectImports,
     HlmSwitchImports,
     HlmTextareaImports,
   ],
@@ -104,6 +88,12 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
       lucideFileSymlink,
       lucidePaperclip,
       lucideToyBrick,
+      lucideFile,
+      lucideFileImage,
+      lucideFileVideoCamera,
+      lucideFileMusic,
+      lucideFileDigit,
+      lucideFileText,
     }),
   ],
 })
@@ -192,7 +182,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('slug');
         break;
@@ -214,7 +204,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('slug');
         break;
@@ -237,7 +227,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('slug');
         break;
@@ -261,7 +251,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('path');
         break;
@@ -284,7 +274,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('path');
         break;
@@ -307,7 +297,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('path');
         break;
@@ -332,7 +322,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('path');
         break;
@@ -356,7 +346,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('path');
         break;
@@ -379,7 +369,7 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('path');
         break;
@@ -404,16 +394,13 @@ export class EditFieldComponent {
         // Schema
         this.form.removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         break;
       }
       case SchemaFieldKind.ASSET: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        this.form.addControl(
-          'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
-        );
+        this.form.addControl('fileType', this.fb.control<AssetFileType | undefined>(AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
@@ -435,10 +422,7 @@ export class EditFieldComponent {
       case SchemaFieldKind.ASSETS: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        this.form.addControl(
-          'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>([AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
-        );
+        this.form.addControl('fileType', this.fb.control<AssetFileType | undefined>(AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
         this.form.removeControl('minLength');
@@ -474,7 +458,7 @@ export class EditFieldComponent {
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('path');
         break;
@@ -496,37 +480,10 @@ export class EditFieldComponent {
         this.form.removeControl('minValues');
         this.form.removeControl('maxValues');
         // Asset & Assets
-        this.form.removeControl('fileTypes');
+        this.form.removeControl('fileType');
         // Reference
         this.form.removeControl('path');
         break;
-      }
-    }
-  }
-
-  optionDropDrop(event: CdkDragDrop<string[]>): void {
-    if (event.previousIndex === event.currentIndex) return;
-    const options = this.form.controls['options'] as FormArray;
-    const tmp = options.at(event.previousIndex);
-    options.removeAt(event.previousIndex);
-    options.insert(event.currentIndex, tmp);
-  }
-
-  assetTypeSelection(event: MatSelectionListChange) {
-    console.log(event);
-    const eventOption = event.options[0];
-    if (eventOption.selected) {
-      if (eventOption.value === AssetFileType.ANY) {
-        // Deselect others
-        this.form.controls['fileTypes'].setValue([AssetFileType.ANY]);
-      } else {
-        const values = event.source.selectedOptions.selected.filter(it => it.value !== AssetFileType.ANY).map(it => it.value);
-        this.form.controls['fileTypes'].setValue(values);
-      }
-    } else {
-      // In case nothing is selected, Select ANY
-      if (event.source.selectedOptions.selected.length === 0) {
-        this.form.controls['fileTypes'].setValue([AssetFileType.ANY]);
       }
     }
   }

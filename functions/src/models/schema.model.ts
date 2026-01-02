@@ -177,11 +177,13 @@ export interface SchemaFieldReferences extends SchemaFieldBase {
 export interface SchemaFieldAsset extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSET;
   fileTypes?: AssetFileType[];
+  fileType?: AssetFileType;
 }
 
 export interface SchemaFieldAssets extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSETS;
   fileTypes?: AssetFileType[];
+  fileType?: AssetFileType;
 }
 
 export enum AssetFileType {

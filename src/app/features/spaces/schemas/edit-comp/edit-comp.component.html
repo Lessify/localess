@@ -71,8 +71,8 @@
                       @if (field.value.required) {
                         <span hlmBadge variant="outline">Required</span>
                       }
-                      @if (field.value.fileTypes) {
-                        @let ftDescriptor = assetFileTypeDescriptions[field.value.fileTypes];
+                      @if (field.value.fileType) {
+                        @let ftDescriptor = assetFileTypeDescriptions[field.value.fileType];
                         <span hlmBadge variant="outline" [hlmTooltipTrigger]="ftDescriptor.description">
                           File Type: {{ ftDescriptor.name }}
                         </span>

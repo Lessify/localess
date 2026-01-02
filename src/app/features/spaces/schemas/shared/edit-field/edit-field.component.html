@@ -1,4 +1,4 @@
-<div class="px-4">
+<div class="px-4 pb-2">
   <form [formGroup]="form">
     <fieldset hlmFieldSet>
       <div hlmFieldGroup class="gap-4">
@@ -28,7 +28,7 @@
         </div>
         <div hlmField>
           <label hlmFieldLabel for="kind"> Kind </label>
-          <hlm-select formControlName="kind" id="kind">
+          <hlm-select scrollable="true" formControlName="kind" id="kind">
             <hlm-select-trigger class="w-full">
               <hlm-select-value>
                 <div *brnSelectValue="let value">
@@ -38,7 +38,8 @@
                 </div>
               </hlm-select-value>
             </hlm-select-trigger>
-            <hlm-select-content>
+            <hlm-select-content class="max-h-96">
+              <hlm-select-scroll-up />
               @for (kind of fieldKinds; track kind) {
                 @let descriptor = schemaFieldKindDescriptions[kind];
                 <hlm-option [value]="kind" [hlmTooltipTrigger]="descriptor.description" (click)="selectFieldKind(kind)">
@@ -46,6 +47,7 @@
                   {{ descriptor.name }}
                 </hlm-option>
               }
+              <hlm-select-scroll-down />
             </hlm-select-content>
           </hlm-select>
           @if (form.controls['kind']?.errors; as errors) {
@@ -151,77 +153,103 @@
               </div>
             </div>
           }
+          <div hlmField>
+            <label hlmFieldLabel for="source"> Source </label>
+            <hlm-select scrollable="true" formControlName="source" id="source">
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value />
+              </hlm-select-trigger>
+              <hlm-select-content class="max-h-96">
+                <hlm-select-scroll-up />
+                @for (schema of enumSchemas(); track schema.id) {
+                  <hlm-option [value]="schema.id" [hlmTooltipTrigger]="schema.description || ''">
+                    {{ schema.id }}
+                    @if (schema.displayName) {
+                      ({{ schema.displayName }})
+                    }
+                  </hlm-option>
+                }
+                <hlm-select-scroll-down />
+              </hlm-select-content>
+            </hlm-select>
+            @if (form.controls['source']?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+            }
+          </div>
+        }
+        <!--SCHEMA and SCHEMAS-->
+        @if (['SCHEMA', 'SCHEMAS'].includes(form.value.kind)) {
+          <div hlmField>
+            <label hlmFieldLabel for="schemas"> Schema </label>
+            <hlm-select scrollable="true" multiple="true" formControlName="schemas" id="schemas">
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value />
+              </hlm-select-trigger>
+              <hlm-select-content class="max-h-96">
+                <hlm-select-scroll-up />
+                @for (schema of nodeSchemas(); track schema.id) {
+                  <hlm-option [value]="schema.id" [hlmTooltipTrigger]="schema.description || ''">
+                    {{ schema.id }}
+                    @if (schema.displayName; as displayName) {
+                      ({{ displayName }})
+                    }
+                  </hlm-option>
+                }
+                <hlm-select-scroll-down />
+              </hlm-select-content>
+            </hlm-select>
+            @if (form.controls['schemas']?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+            }
+          </div>
+        }
+        <!--REFERENCE and REFERENCES-->
+        @if (['REFERENCE', 'REFERENCES'].includes(form.value.kind)) {
+          <div hlmField>
+            <label hlmFieldLabel for="path">
+              Path
+              <ng-icon hlm size="sm" name="lucideInfo" hlmTooltipTrigger="Path to be filtered by" />
+            </label>
+            <input hlmInput id="path" formControlName="path" autocomplete="off" />
+            @if (form.controls['path']?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+            } @else {
+              <p hlmFieldDescription class="content-end">{{ 500 - form.value.path?.length }} characters left</p>
+            }
+          </div>
+        }
+        <!--ASSET and ASSETS-->
+        @if (['ASSET', 'ASSETS'].includes(form.value.kind)) {
+          <div hlmField>
+            <label hlmFieldLabel for="fileType"> File Type </label>
+            <hlm-select formControlName="fileType" id="fileType">
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value>
+                  <div *brnSelectValue="let value">
+                    @let descriptor = assetFileTypeDescriptions[value];
+                    <ng-icon [name]="descriptor.icon" class="mr-1" />
+                    {{ descriptor.icon }}
+                    {{ descriptor.name }}
+                  </div>
+                </hlm-select-value>
+              </hlm-select-trigger>
+              <hlm-select-content>
+                @for (fileType of assetTypes; track fileType) {
+                  @let descriptor = assetFileTypeDescriptions[fileType];
+                  <hlm-option [value]="fileType" [hlmTooltipTrigger]="descriptor.description">
+                    <ng-icon [name]="descriptor.icon" class="mr-1" />
+                    {{ descriptor.name }}
+                  </hlm-option>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if (form.controls['fileType']?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+            }
+          </div>
         }
       </div>
     </fieldset>
-
-    <!--Option and Options-->
-    @if (['OPTION', 'OPTIONS'].includes(form.value.kind)) {
-      <mat-form-field>
-        <mat-label>Source</mat-label>
-        <mat-select formControlName="source">
-          @for (schema of enumSchemas(); track schema.id) {
-            <mat-option [value]="schema.id" [matTooltip]="schema.description">
-              {{ schema.id }}
-              @if (schema.displayName) {
-                <span> ({{ schema.displayName }})</span>
-              }
-            </mat-option>
-          }
-        </mat-select>
-        @if (form.controls['source']?.errors; as errors) {
-          <mat-error>{{ fe.errors(errors) }}</mat-error>
-        }
-      </mat-form-field>
-    }
-
-    <!--SCHEMA and SCHEMAS-->
-    @if (['SCHEMA', 'SCHEMAS'].includes(form.value.kind)) {
-      <mat-form-field>
-        <mat-label>Schema</mat-label>
-        <mat-select formControlName="schemas" multiple>
-          @for (schema of nodeSchemas(); track schema.id) {
-            <mat-option [value]="schema.id" [matTooltip]="schema.description">
-              {{ schema.id }}
-              @if (schema.displayName; as displayName) {
-                <span> ({{ displayName }})</span>
-              }
-            </mat-option>
-          }
-        </mat-select>
-        @if (form.controls['schemas']?.errors; as errors) {
-          <mat-error>{{ fe.errors(errors) }}</mat-error>
-        }
-      </mat-form-field>
-    }
-
-    <!--REFERENCE and REFERENCES-->
-    @if (['REFERENCE', 'REFERENCES'].includes(form.value.kind)) {
-      <mat-form-field>
-        <mat-label>Path</mat-label>
-        <input matInput type="text" formControlName="path" autocomplete="off" />
-        <mat-hint>Path to be filtered by</mat-hint>
-        <mat-hint align="end">{{ form.value.path?.length || 0 }}/500</mat-hint>
-        @if (form.controls['path']?.errors; as errors) {
-          <mat-error>{{ fe.errors(errors) }}</mat-error>
-        }
-      </mat-form-field>
-    }
-
-    <!--ASSET and ASSETS-->
-    @if (['ASSET', 'ASSETS'].includes(form.value.kind)) {
-      <mat-selection-list formControlName="fileTypes" multiple="false">
-        <div mat-subheader>File Types</div>
-        @for (fileType of assetTypes; track fileType) {
-          @let descriptor = assetFileTypeDescriptions[fileType];
-          <mat-list-option [value]="fileType">
-            <mat-icon matListItemIcon>{{ descriptor.icon }}</mat-icon>
-            <span matListItemTitle>{{ descriptor.name }}</span>
-            <span matListItemLine>{{ descriptor.description }}</span>
-          </mat-list-option>
-        }
-      </mat-selection-list>
-    }
   </form>
 </div>
 

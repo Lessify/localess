@@ -130,11 +130,13 @@ export const schemaEnumSchema = schemaBaseSchema.extend({
 export const schemaFieldAssetSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.ASSET),
   fileTypes: z.array(assetFileTypeSchema).optional(),
+  fileType: assetFileTypeSchema.optional(),
 });
 
 export const schemaFieldAssetsSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.ASSETS),
   fileTypes: z.array(assetFileTypeSchema).optional(),
+  fileType: assetFileTypeSchema.optional(),
 });
 
 export const schemaFieldSchema = z.union([

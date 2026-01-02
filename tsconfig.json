@@ -136,6 +136,9 @@
       ],
       "@spartan-ng/helm/switch": [
         "./libs/ui/switch/src/index.ts"
+      ],
+      "@spartan-ng/helm/radio-group": [
+        "./libs/ui/radio-group/src/index.ts"
       ]
     },
     "useDefineForClassFields": false
