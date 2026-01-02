@@ -9,7 +9,26 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideCircleX, lucideGripVertical, lucideSave, lucideTrash } from '@ng-icons/lucide';
+import {
+  lucideArrowLeft,
+  lucideCalendar,
+  lucideCircleX,
+  lucideClock,
+  lucideFileSymlink,
+  lucideGripVertical,
+  lucideLink,
+  lucideList,
+  lucidePalette,
+  lucidePaperclip,
+  lucidePencilRuler,
+  lucideSave,
+  lucideTextInitial,
+  lucideToggleLeft,
+  lucideToyBrick,
+  lucideTrash,
+  lucideType,
+} from '@ng-icons/lucide';
+import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import {
   AssetFileType,
@@ -38,11 +57,13 @@ import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { NgScrollbar } from 'ngx-scrollbar';
 import { combineLatest } from 'rxjs';
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
 
@@ -75,6 +96,8 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     HlmSelectImports,
     BrnSelectImports,
     MatIconModule,
+    HlmScrollAreaImports,
+    NgScrollbar,
   ],
   providers: [
     provideIcons({
@@ -83,6 +106,20 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
       lucideTrash,
       lucideGripVertical,
       lucideCircleX,
+      lucideType,
+      lucideTextInitial,
+      lucidePencilRuler,
+      tablerMarkdown,
+      tablerNumber,
+      lucidePalette,
+      lucideCalendar,
+      lucideClock,
+      lucideToggleLeft,
+      lucideList,
+      lucideLink,
+      lucideFileSymlink,
+      lucidePaperclip,
+      lucideToyBrick,
     }),
   ],
 })

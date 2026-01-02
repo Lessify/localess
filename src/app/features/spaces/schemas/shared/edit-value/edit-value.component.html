@@ -1,8 +1,8 @@
 <div class="p-4">
   <form [formGroup]="form()">
     <fieldset hlmFieldSet>
-      <div hlmFieldGroup>
-        <div hlmField class="col-span-2">
+      <div hlmFieldGroup class="gap-4">
+        <div hlmField>
           <label hlmFieldLabel for="name">
             Display Name
             <ng-icon hlm size="sm" name="lucideInfo" hlmTooltipTrigger="Shown to content creators" />
@@ -14,7 +14,7 @@
             <p hlmFieldDescription class="content-end">{{ 50 - name.value.length }} characters left</p>
           }
         </div>
-        <div hlmField class="col-span-2">
+        <div hlmField>
           <label hlmFieldLabel for="value">
             Value
             <ng-icon hlm size="sm" name="lucideInfo" hlmTooltipTrigger="Technical representation stored in data structure" />

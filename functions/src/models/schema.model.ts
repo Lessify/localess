@@ -148,13 +148,13 @@ export interface SchemaFieldOptionSelectable {
 
 export interface SchemaFieldOption extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTION;
-  source: string | 'self';
+  source: string;
   options?: SchemaFieldOptionSelectable[];
 }
 
 export interface SchemaFieldOptions extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTIONS;
-  source: string | 'self';
+  source: string;
   options?: SchemaFieldOptionSelectable[];
   minValues?: number;
   maxValues?: number;

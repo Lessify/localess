@@ -902,58 +902,31 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, Sch
     ];
   }
   if (field.kind === SchemaFieldKind.OPTION) {
-    if (field.source === undefined || field.source === 'self') {
-      return [
-        field.name,
-        {
-          type: 'string',
-          description: field.description,
-          enum: field.options?.map(it => it.value),
-        },
-      ];
-    } else {
-      const name = field.source || 'unknown';
-      const pascalName = name[0].toUpperCase() + name.slice(1);
-      return [
-        field.name,
-        {
-          description: field.description,
-          $ref: `#/components/schemas/${pascalName}`,
-        },
-      ];
-    }
+    const name = field.source || 'unknown';
+    const pascalName = name[0].toUpperCase() + name.slice(1);
+    return [
+      field.name,
+      {
+        description: field.description,
+        $ref: `#/components/schemas/${pascalName}`,
+      },
+    ];
   }
   if (field.kind === SchemaFieldKind.OPTIONS) {
-    if (field.source === undefined || field.source === 'self') {
-      return [
-        field.name,
-        {
-          type: 'array',
-          description: field.description,
-          minItems: field.minValues,
-          maxItems: field.maxValues,
-          items: {
-            type: 'string',
-            enum: field.options?.map(it => it.value),
-          },
+    const name = field.source;
+    const pascalName = name[0].toUpperCase() + name.slice(1);
+    return [
+      field.name,
+      {
+        type: 'array',
+        description: field.description,
+        minItems: field.minValues,
+        maxItems: field.maxValues,
+        items: {
+          $ref: `#/components/schemas/${pascalName}`,
         },
-      ];
-    } else {
-      const name = field.source;
-      const pascalName = name[0].toUpperCase() + name.slice(1);
-      return [
-        field.name,
-        {
-          type: 'array',
-          description: field.description,
-          minItems: field.minValues,
-          maxItems: field.maxValues,
-          items: {
-            $ref: `#/components/schemas/${pascalName}`,
-          },
-        },
-      ];
-    }
+      },
+    ];
   }
   if (field.kind === SchemaFieldKind.LINK) {
     return [

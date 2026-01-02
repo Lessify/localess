@@ -133,6 +133,9 @@
       ],
       "@spartan-ng/helm/checkbox": [
         "./libs/ui/checkbox/src/index.ts"
+      ],
+      "@spartan-ng/helm/switch": [
+        "./libs/ui/switch/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

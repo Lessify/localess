@@ -360,12 +360,10 @@ export class SchemasComponent implements OnInit {
             }
           } else if (field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) {
             const fieldEnum = field.source;
-            if (fieldEnum !== 'self') {
-              if (result[fieldEnum]) {
-                result[fieldEnum].push(schema.id);
-              } else {
-                result[fieldEnum] = [schema.id];
-              }
+            if (result[fieldEnum]) {
+              result[fieldEnum].push(schema.id);
+            } else {
+              result[fieldEnum] = [schema.id];
             }
           }
         }

@@ -56,7 +56,7 @@
                   [class.border-destructive]="field.invalid">
                   @let descriptor = schemaFieldKindDescriptions[field.value.kind];
                   <div hlmItemMedia variant="icon">
-                    <mat-icon class="type" [hlmTooltipTrigger]="descriptor.description">{{ descriptor.icon }}</mat-icon>
+                    <ng-icon [name]="descriptor.icon" [hlmTooltipTrigger]="descriptor.description" />
                   </div>
                   <div hlmItemContent>
                     <div hlmItemTitle class="line-clamp-1">
@@ -209,9 +209,11 @@
     <hlm-sheet-header>
       <h3 hlmSheetTitle>Edit Field</h3>
     </hlm-sheet-header>
-    @if (fields.at(selectedFieldIdx() ?? -100); as selectedComponent) {
-      <ll-schema-field-edit [form]="selectedComponent" [schemas]="schemas" />
-    }
+    <ng-scrollbar hlm>
+      @if (fields.at(selectedFieldIdx() ?? -100); as selectedComponent) {
+        <ll-schema-field-edit [form]="selectedComponent" [schemas]="schemas" />
+      }
+    </ng-scrollbar>
   </hlm-sheet-content>
 </hlm-sheet>
 

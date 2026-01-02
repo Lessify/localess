@@ -107,28 +107,28 @@ export interface FieldKindDescription {
 }
 
 export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescription> = {
-  TEXT: { name: 'Text', icon: 'title', description: 'Short text field, titles or headlines' },
-  TEXTAREA: { name: 'Text Area', icon: 'rtt', description: 'Long text field, description' },
+  TEXT: { name: 'Text', icon: 'lucideType', description: 'Short text field, titles or headlines' },
+  TEXTAREA: { name: 'Text Area', icon: 'lucideTextInitial', description: 'Long text field, description' },
   RICH_TEXT: {
     name: 'Rich Text (Beta)',
-    icon: 'format_shapes',
+    icon: 'lucidePencilRuler',
     description: 'Rich text field, text that includes formatting commands for page layout such as bold, underline, italic, etc.',
   },
-  MARKDOWN: { name: 'Markdown', icon: 'markdown', description: 'Markdown text field, description' },
-  NUMBER: { name: 'Number', icon: 'pin', description: 'Number field, amount or quantity' },
-  COLOR: { name: 'Color', icon: 'colorize', description: 'Color field, background or text color' },
-  DATE: { name: 'Date', icon: 'event', description: 'Date field, calendar date picker' },
-  DATETIME: { name: 'Date and Time', icon: 'schedule', description: 'Date and time field, calendar date and time picker' },
-  BOOLEAN: { name: 'Boolean', icon: 'toggle_on', description: 'Boolean field, true or false' },
-  OPTION: { name: 'Option (One)', icon: 'list', description: 'Single selection field, dropdown' },
-  OPTIONS: { name: 'Options (Multiple)', icon: 'list', description: 'Multiple selection field, dropdown' },
-  LINK: { name: 'Link', icon: 'link', description: 'Link field, external URL or internal resource' },
-  REFERENCE: { name: 'Reference (One)', icon: 'dataset_linked', description: 'Reference field, to a internal resource' },
-  REFERENCES: { name: 'References (Multiple)', icon: 'dataset_linked', description: 'References field, to multiple internal resources' },
-  ASSET: { name: 'Asset (One)', icon: 'attachment', description: 'Asset field, image, video or file' },
-  ASSETS: { name: 'Assets (Multiple)', icon: 'attachment', description: 'Assets field, multiple images, videos or files' },
-  SCHEMA: { name: 'Schema (One)', icon: 'polyline', description: 'Schema field, to a internal schema' },
-  SCHEMAS: { name: 'Schemas (Multiple)', icon: 'polyline', description: 'Schemas field, to multiple internal schemas' },
+  MARKDOWN: { name: 'Markdown', icon: 'tablerMarkdown', description: 'Markdown text field, description' },
+  NUMBER: { name: 'Number', icon: 'tablerNumber', description: 'Number field, amount or quantity' },
+  COLOR: { name: 'Color', icon: 'lucidePalette', description: 'Color field, background or text color' },
+  DATE: { name: 'Date', icon: 'lucideCalendar', description: 'Date field, calendar date picker' },
+  DATETIME: { name: 'Date and Time', icon: 'lucideClock', description: 'Date and time field, calendar date and time picker' },
+  BOOLEAN: { name: 'Boolean', icon: 'lucideToggleLeft', description: 'Boolean field, true or false' },
+  OPTION: { name: 'Option (One)', icon: 'lucideList', description: 'Single selection field, dropdown' },
+  OPTIONS: { name: 'Options (Multiple)', icon: 'lucideList', description: 'Multiple selection field, dropdown' },
+  LINK: { name: 'Link', icon: 'lucideLink', description: 'Link field, external URL or internal resource' },
+  REFERENCE: { name: 'Reference (One)', icon: 'lucideFileSymlink', description: 'Reference field, to a internal resource' },
+  REFERENCES: { name: 'References (Multiple)', icon: 'lucideFileSymlink', description: 'References field, to multiple internal resources' },
+  ASSET: { name: 'Asset (One)', icon: 'lucidePaperclip', description: 'Asset field, image, video or file' },
+  ASSETS: { name: 'Assets (Multiple)', icon: 'lucidePaperclip', description: 'Assets field, multiple images, videos or files' },
+  SCHEMA: { name: 'Schema (One)', icon: 'lucideToyBrick', description: 'Schema field, to a internal schema' },
+  SCHEMAS: { name: 'Schemas (Multiple)', icon: 'lucideToyBrick', description: 'Schemas field, to multiple internal schemas' },
 };
 
 export const assetFileTypeDescriptions: Record<AssetFileType, FieldKindDescription> = {
@@ -221,13 +221,13 @@ export interface SchemaFieldOptionSelectable {
 
 export interface SchemaFieldOption extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTION;
-  source: string | 'self';
+  source: string;
   options?: SchemaFieldOptionSelectable[];
 }
 
 export interface SchemaFieldOptions extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTIONS;
-  source: string | 'self';
+  source: string;
   options?: SchemaFieldOptionSelectable[];
   minValues?: number;
   maxValues?: number;

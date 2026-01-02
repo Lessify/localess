@@ -249,16 +249,9 @@
               @if (!field.required) {
                 <mat-option>-- None --</mat-option>
               }
-              <!--Handle source not defined in previous versions-->
-              @if (field.source === undefined || field.source === 'self') {
-                @for (option of field.options; track option.value) {
+              @if (schemaEnumMapById().get(field.source); as source) {
+                @for (option of source.values; track option.value) {
                   <mat-option [value]="option.value"> {{ option.name }}</mat-option>
-                }
-              } @else {
-                @if (schemaEnumMapById().get(field.source); as source) {
-                  @for (option of source.values; track option.value) {
-                    <mat-option [value]="option.value"> {{ option.name }}</mat-option>
-                  }
                 }
               }
             </mat-select>
@@ -278,16 +271,9 @@
           <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
             <mat-label>{{ field.displayName || field.name }}</mat-label>
             <mat-select [formControlName]="field.name" multiple>
-              <!--Handle source not defined in previous versions-->
-              @if (field.source === undefined || field.source === 'self') {
-                @for (option of field.options; track option.value) {
+              @if (schemaEnumMapById().get(field.source); as source) {
+                @for (option of source.values; track option.value) {
                   <mat-option [value]="option.value"> {{ option.name }}</mat-option>
-                }
-              } @else {
-                @if (schemaEnumMapById().get(field.source); as source) {
-                  @for (option of source.values; track option.value) {
-                    <mat-option [value]="option.value"> {{ option.name }}</mat-option>
-                  }
                 }
               }
             </mat-select>

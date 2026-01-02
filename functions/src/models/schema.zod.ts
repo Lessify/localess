@@ -94,13 +94,13 @@ export const schemaFieldOptionSelectableSchema = z.object({
 
 export const schemaFieldOptionSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTION),
-  source: z.union([z.string(), z.literal('self')]),
+  source: z.string(),
   options: z.array(schemaFieldOptionSelectableSchema).optional(),
 });
 
 export const schemaFieldOptionsSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTIONS),
-  source: z.union([z.string(), z.literal('self')]),
+  source: z.string(),
   options: z.array(schemaFieldOptionSelectableSchema).optional(),
   minValues: z.number().optional(),
   maxValues: z.number().optional(),
