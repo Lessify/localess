@@ -1,7 +1,12 @@
 <div hlmFieldGroup>
   <fieldset hlmFieldSet class="gap-2">
     <legend hlmFieldLegend class="w-full flex justify-between">
-      {{ component().displayName || component().name }}
+      <span>
+        {{ component().displayName || component().name }}
+        @if (component().translatable) {
+          <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+        }
+      </span>
       <button hlmBtn variant="ghost" size="sm" hlmTooltipTrigger="Add Assets" (click)="openAssetSelectDialog()">
         <ng-icon hlm size="sm" name="lucideFilePlusCorner" />
       </button>

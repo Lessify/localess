@@ -6,7 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFile, lucideFilePlusCorner, lucideGripVertical, lucideTrash } from '@ng-icons/lucide';
+import { lucideFile, lucideFilePlusCorner, lucideGripVertical, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
@@ -48,6 +48,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
       lucideTrash,
       lucideGripVertical,
       lucideFile,
+      lucideLanguages,
     }),
   ],
 })

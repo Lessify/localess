@@ -1,61 +1,72 @@
 <form [formGroup]="form()">
-  <mat-card class="ll-not-shadow">
-    <mat-card-header>
-      <mat-card-title-group>
-        <mat-card-title>
+  <div hlmFieldGroup>
+    <fieldset hlmFieldSet class="gap-2">
+      <legend hlmFieldLegend class="w-full flex justify-between">
+        <span>
           {{ component().displayName || component().name }}
           @if (component().translatable) {
-            <mat-icon matTooltip="The field is translatable">language</mat-icon>
+            <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
           }
-        </mat-card-title>
-        @if (component().description; as description) {
-          <mat-card-subtitle>{{ description }}</mat-card-subtitle>
-        }
-        <button mat-icon-button matTooltip="Add Asset" (click)="openAssetSelectDialog()">
-          <mat-icon>attach_file_add</mat-icon>
+        </span>
+        <button hlmBtn variant="ghost" size="sm" hlmTooltipTrigger="Add Asset" (click)="openAssetSelectDialog()">
+          <ng-icon hlm size="sm" name="lucideFilePlusCorner" />
         </button>
-      </mat-card-title-group>
-    </mat-card-header>
-    <mat-divider></mat-divider>
-    <mat-card-content>
-      @if (asset && asset.kind === 'FILE') {
-        <mat-list>
-          <mat-list-item [ngClass]="{ 'schema-hover': hover() }">
-            @if (asset.type.startsWith('image/')) {
-              <img
-                matListItemAvatar
-                (mouseup)="openImagePreview(asset)"
-                [llImagePreview]="3"
-                class="border object-contain image-bg rounded-sm!"
-                width="200"
-                height="200"
-                alt="thumbnail"
-                loading="lazy"
-                [loaderParams]="{ thumbnail: true }"
-                ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
-            } @else {
-              <mat-icon matListItemIcon>file_present</mat-icon>
-            }
-            <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
-            <code matListItemLine>
-              {{ asset.size | formatFileSize }}
-              @if (asset.metadata; as metadata) {
-                | W{{ metadata.width }} x H{{ metadata.height }}
+      </legend>
+      @if (component().description; as description) {
+        <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
+      }
+      <hlm-field-separator />
+      <div hlmFieldGroup>
+        <div hlmItemGroup class="gap-2">
+          @if (asset && asset.kind === 'FILE') {
+            <div
+              hlmItem
+              variant="outline"
+              role="listitem"
+              class="cursor-pointer"
+              [ngClass]="{ 'border-primary border': hover() }"
+              (click)="openImagePreview(asset)"
+              (keydown)="openImagePreview(asset)">
+              @if (asset.type.startsWith('image/')) {
+                <div hlmItemMedia variant="image">
+                  <img
+                    [llImagePreview]="2.5"
+                    class="border object-contain! image-bg rounded-sm!"
+                    width="200"
+                    height="200"
+                    alt="thumbnail"
+                    loading="lazy"
+                    [loaderParams]="{ thumbnail: true }"
+                    ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
+                </div>
+              } @else {
+                <div hlmItemMedia variant="icon">
+                  <ng-icon name="lucideFile" />
+                </div>
               }
-            </code>
-            <mat-action-list matListItemMeta>
-              <button mat-icon-button (click)="deleteAsset()">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </mat-action-list>
-          </mat-list-item>
-        </mat-list>
-      }
+              <div hlmItemContent class="min-w-0 overflow-hidden">
+                <div hlmItemTitle class="line-clamp-1 truncate w-full"> {{ asset.name }}{{ asset.extension }} </div>
+                <p hlmItemDescription class="line-clamp-1 truncate">
+                  {{ asset.size | formatFileSize }}
+                  @if (asset.metadata; as metadata) {
+                    | W{{ metadata.width }} x H{{ metadata.height }}
+                  }
+                </p>
+              </div>
+              <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                <button hlmBtn size="icon" variant="outline" (click)="deleteAsset()" hlmTooltipTrigger="Delete">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
       @if (form().controls['uri'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-card-content>
-  </mat-card>
+    </fieldset>
+  </div>
 </form>
 @if (settingsStore.debugEnabled()) {
   <mat-accordion>
