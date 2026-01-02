@@ -139,6 +139,9 @@
       ],
       "@spartan-ng/helm/radio-group": [
         "./libs/ui/radio-group/src/index.ts"
+      ],
+      "@spartan-ng/helm/autocomplete": [
+        "./libs/ui/autocomplete/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

@@ -1,4 +1,67 @@
 <form [formGroup]="form()">
+  <fieldset hlmFieldSet>
+    <div hlmFieldGroup class="gap-4">
+      <div hlmField>
+        <label hlmFieldLabel [for]="component().name">
+          {{ component().displayName || component().name }}
+          @if (component().description; as description) {
+            <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="description" />
+          }
+          @if (component().translatable) {
+            <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+          }
+        </label>
+        <div class="flex gap-2 items-center">
+          <button
+            hlmBtn
+            variant="secondary"
+            size="icon"
+            hlmTooltipTrigger="Change link type"
+            [hlmDropdownMenuTrigger]="linkTypeMenu"
+            [disabled]="default() && !component().translatable">
+            <ng-icon [name]="form().value.type === 'content' ? 'lucideFileSymlink' : 'lucideLink'" />
+          </button>
+          <ng-template #linkTypeMenu>
+            <hlm-dropdown-menu>
+              <button hlmDropdownMenuRadio [checked]="form().value.type === 'url'" (click)="onTypeChange('url')">
+                <hlm-dropdown-menu-radio-indicator />
+                <ng-icon name="lucideLink" class="mr-2" />
+                <span>Public URL</span>
+              </button>
+              <button hlmDropdownMenuRadio [checked]="form().value.type === 'content'" (click)="onTypeChange('content')">
+                <hlm-dropdown-menu-radio-indicator />
+                <ng-icon name="lucideFileSymlink" class="mr-2" />
+                <span>Internal Reference</span>
+              </button>
+            </hlm-dropdown-menu>
+          </ng-template>
+          @switch (form().value.type) {
+            @case ('url') {
+              <input
+                hlmInput
+                [id]="component().name"
+                type="url"
+                formControlName="uri"
+                autocomplete="off"
+                [readonly]="default() && !component().translatable"
+                [required]="component().required || false"
+                [placeholder]="displayContent(defaultDocument()) || default()?.uri || 'https://'" />
+            }
+            @case ('content') {
+              <hlm-autocomplete />
+            }
+          }
+        </div>
+        @if (form().controls['uri']?.errors; as errors) {
+          <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+        }
+      </div>
+      <div hlmField orientation="horizontal">
+        <hlm-switch id="target" [checked]="form().value.target === '_blank'" (checkedChange)="targetNewChange($event)" />
+        <label hlmFieldLabel for="target">Open in a new tab</label>
+      </div>
+    </div>
+  </fieldset>
   <mat-form-field [floatLabel]="default() ? 'always' : 'auto'">
     <mat-label>{{ component().displayName || component().name }}</mat-label>
     <button

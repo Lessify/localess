@@ -11,9 +11,20 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-icons/lucide';
 import { ContentDocument, LinkContent } from '@shared/models/content.model';
+import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { SchemaFieldKind, SchemaFieldLink } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmAutocompleteImports } from '@spartan-ng/helm/autocomplete';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmSwitchImports } from '@spartan-ng/helm/switch';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { debounceTime, Observable, of, startWith } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -34,6 +45,22 @@ import { map } from 'rxjs/operators';
     MatSlideToggleModule,
     MatExpansionModule,
     MatTooltipModule,
+    HlmFieldImports,
+    HlmTooltipImports,
+    HlmIconImports,
+    HlmSwitchImports,
+    HlmDropdownMenuImports,
+    HlmAutocompleteImports,
+    HlmButtonImports,
+    HlmInputImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideInfo,
+      lucideLanguages,
+      lucideLink,
+      lucideFileSymlink,
+    }),
   ],
 })
 export class LinkSelectComponent implements OnInit {
@@ -109,6 +136,14 @@ export class LinkSelectComponent implements OnInit {
     this.form().controls['uri'].setValue(null);
   }
 
+  targetNewChange(checked: boolean): void {
+    if (checked) {
+      this.form().controls['target'].setValue('_blank');
+    } else {
+      this.form().controls['target'].setValue('_self');
+    }
+  }
+
   targetChange(event: MatSlideToggleChange): void {
     if (event.checked) {
       this.form().controls['target'].setValue('_blank');
@@ -116,4 +151,6 @@ export class LinkSelectComponent implements OnInit {
       this.form().controls['target'].setValue('_self');
     }
   }
+
+  protected readonly selectedLocale = CONTENT_DEFAULT_LOCALE;
 }

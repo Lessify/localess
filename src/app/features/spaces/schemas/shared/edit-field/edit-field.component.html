@@ -63,7 +63,7 @@
           @if (form.controls['displayName']?.errors; as errors) {
             <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
           } @else {
-            <p hlmFieldDescription class="content-end">{{ 50 - form.value.displayName.length }} characters left</p>
+            <p hlmFieldDescription class="content-end">{{ 50 - form.value.displayName?.length }} characters left</p>
           }
         </div>
         <div hlmField orientation="horizontal">
