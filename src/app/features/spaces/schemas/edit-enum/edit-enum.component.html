@@ -25,8 +25,12 @@
 } @else {
   <div class="mx-auto">
     <form [formGroup]="form">
-      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
-        <mat-tab label="Values">
+      <hlm-tabs tab="values" class="w-full">
+        <hlm-tabs-list class="self-center">
+          <button hlmTabsTrigger="values">Values</button>
+          <button hlmTabsTrigger="settings">Settings</button>
+        </hlm-tabs-list>
+        <div hlmTabsContent="values">
           <div class="flex flex-col mx-auto max-w-5xl gap-6 p-8" style="height: calc(100vh - 177px)">
             <div hlmField class="col-span-2">
               <div hlmInputGroup>
@@ -79,8 +83,8 @@
               }
             </div>
           </div>
-        </mat-tab>
-        <mat-tab label="Settings">
+        </div>
+        <div hlmTabsContent="settings">
           <div class="flex flex-col mx-auto max-w-5xl gap-6 p-8">
             <fieldset hlmFieldSet>
               <div hlmFieldGroup>
@@ -126,8 +130,8 @@
               </div>
             </fieldset>
           </div>
-        </mat-tab>
-      </mat-tab-group>
+        </div>
+      </hlm-tabs>
     </form>
   </div>
 }

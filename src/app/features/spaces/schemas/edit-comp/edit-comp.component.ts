@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
@@ -66,6 +65,7 @@ import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbar } from 'ngx-scrollbar';
@@ -80,7 +80,7 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
   imports: [
     CanUserPerformPipe,
     CommonModule,
-    MatTabsModule,
+    HlmTabsImports,
     ReactiveFormsModule,
     DragDropModule,
     MatExpansionModule,
