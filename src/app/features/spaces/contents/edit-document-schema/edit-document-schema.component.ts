@@ -15,25 +15,27 @@ import {
   OnChanges,
   OnInit,
   output,
+  signal,
   SimpleChanges,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCirclePlus, lucideCopy, lucideGripVertical, lucideTrash } from '@ng-icons/lucide';
+import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icons';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import {
@@ -53,6 +55,12 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { MarkdownComponent } from 'ngx-markdown';
 import { debounceTime } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -91,11 +99,25 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     ReferencesSelectComponent,
     AssetSelectComponent,
     AssetsSelectComponent,
-    MatCardModule,
     MatDividerModule,
-    MatListModule,
     DragDropModule,
     MatExpansionModule,
+    HlmFieldImports,
+    HlmButtonImports,
+    HlmTooltipImports,
+    HlmIconImports,
+    HlmDropdownMenuImports,
+    HlmItemImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideCirclePlus,
+      lucideTrash,
+      lucideGripVertical,
+      tablerRowInsertTop,
+      tablerRowInsertBottom,
+      lucideCopy,
+    }),
   ],
 })
 export class EditDocumentSchemaComponent implements OnInit, OnChanges {
@@ -167,7 +189,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   );
   schemaFieldsMap: Map<string, SchemaField> = new Map<string, SchemaField>();
   //Loadings
-  isFormLoading = true;
+  isFormLoading = signal(true);
 
   constructor() {
     effect(() => {
@@ -195,8 +217,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    //console.group('EditDocumentSchemaComponent:ngOnChanges')
-    //console.log(changes);
+    console.group('EditDocumentSchemaComponent:ngOnChanges');
+    console.log(changes);
 
     const dataChange = changes['data'];
     if (dataChange) {
@@ -225,7 +247,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     if (selectedLocaleChange) {
       this.onChanged();
     }
-    //console.groupEnd()
+    console.groupEnd();
   }
 
   ngOnInit(): void {
@@ -289,6 +311,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                 }
               }
             }
+
             this.formChange.emit(JSON.stringify(formValue));
             //console.log('After data', ObjectUtils.clone(this.data));
             //console.groupEnd();
@@ -309,13 +332,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   onChanged(): void {
     //console.group('onChanged')
-    this.isFormLoading = true;
+    this.isFormLoading.set(true);
     this.cd.detectChanges();
     this.generateForm();
     this.formPatch();
     //this.form.reset();
     //this.form.patchValue(this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale));
-    this.isFormLoading = false;
+    this.isFormLoading.set(false);
     this.cd.markForCheck();
     //console.groupEnd()
   }
@@ -390,7 +413,10 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     this.structureChange.emit(`addSchemaOne ${field.name} ${schema.id}`);
   }
 
-  removeSchemaOne(field: SchemaField): void {
+  removeSchemaOne(event: MouseEvent, field: SchemaField): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
     delete this.data[field.name];
     this.structureChange.emit(`removeSchemaOne ${field.name}`);
   }

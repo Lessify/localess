@@ -1,5 +1,5 @@
-@if (rootSchema) {
-  <form [formGroup]="form" *ngIf="!isFormLoading" #schemaForm>
+@if (rootSchema && !isFormLoading()) {
+  <form [formGroup]="form" #schemaForm class="flex flex-col gap-2">
     @for (field of rootSchema.fields; track field.name) {
       @switch (field.kind) {
         <!--TEXT-->
@@ -324,142 +324,190 @@
         }
         <!--SCHEMA-->
         @case ('SCHEMA') {
-          <mat-card class="ll-not-shadow">
-            <mat-card-header>
-              <mat-card-title-group>
-                <mat-card-title> {{ field.displayName || field.name }}</mat-card-title>
-                @if (field.description) {
-                  <mat-card-subtitle>{{ field.description }}</mat-card-subtitle>
-                }
-                <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema" [disabled]="data[field.name]">
-                  <mat-icon>add_circle</mat-icon>
+          <div hlmFieldGroup>
+            <fieldset hlmFieldSet class="gap-2">
+              <legend hlmFieldLegend class="w-full flex justify-between">
+                {{ field.displayName || field.name }}
+                <button
+                  hlmBtn
+                  variant="ghost"
+                  size="sm"
+                  [hlmDropdownMenuTrigger]="menu"
+                  hlmTooltipTrigger="Add Schema"
+                  [disabled]="data[field.name]">
+                  <ng-icon hlm size="sm" name="lucideCirclePlus" />
                 </button>
-                <mat-menu #schemasMenu="matMenu">
-                  @for (sch of filterSchema(field.schemas); track sch.id) {
-                    <button mat-menu-item (click)="addSchemaOne(field, sch)" [matTooltip]="sch.description">
-                      {{ sch.displayName || sch.id }}
-                    </button>
-                  }
-                </mat-menu>
-              </mat-card-title-group>
-            </mat-card-header>
-            <mat-divider></mat-divider>
-            <mat-card-content>
-              <mat-action-list>
-                @if (data[field.name]; as item) {
-                  <mat-list-item
-                    [id]="item._id"
-                    [ngClass]="{ 'schema-hover': hoverSchemaPath()?.includes(item._id) }"
-                    (click)="navigationTo(item._id, field.name, item.schema)">
-                    @if (schemaCompNodeById().get(item.schema); as sch) {
-                      <div matListItemTitle>
-                        {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
-                        @if (sch.previewField) {
-                          <div matListItemLine>
-                            {{ previewText(item, sch, selectedLocaleId()) }}
+                <ng-template #menu>
+                  <hlm-dropdown-menu class="w-60">
+                    @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                      <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltipTrigger]="sch.description || ''">
+                        {{ sch.displayName || sch.id }}
+                      </button>
+                    }
+                  </hlm-dropdown-menu>
+                </ng-template>
+              </legend>
+              @if (field.description) {
+                <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
+              }
+              <hlm-field-separator />
+              <div hlmFieldGroup>
+                <div hlmItemGroup class="gap-2">
+                  @if (data[field.name]; as item) {
+                    <div
+                      [id]="item._id"
+                      hlmItem
+                      variant="outline"
+                      role="listitem"
+                      class="cursor-pointer"
+                      [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
+                      (click)="navigationTo(item._id, field.name, item.schema)"
+                      (keydown)="navigationTo(item._id, field.name, item.schema)">
+                      <div hlmItemContent>
+                        @if (schemaCompNodeById().get(item.schema); as sch) {
+                          <div hlmItemTitle class="line-clamp-1">
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                          </div>
+                          @if (sch.previewField) {
+                            <p hlmItemDescription> {{ previewText(item, sch, selectedLocaleId()) }}</p>
+                          }
+                        } @else {
+                          <div hlmItemTitle class="line-clamp-1 text-destructive">
+                            Schema with ID <b>#{{ item.schema }}</b> can't be found.
                           </div>
                         }
                       </div>
-                    } @else {
-                      <div matListItemTitle>
-                        <span class="error">
-                          Schema with ID <b>#{{ item.schema }}</b> can't be found.
-                        </span>
+                      <div hlmItemActions>
+                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne($event, field)" hlmTooltipTrigger="Delete">
+                          <ng-icon hlm size="sm" name="lucideTrash" />
+                        </button>
                       </div>
-                    }
-                    <div matListItemMeta>
-                      <button mat-icon-button (click)="removeSchemaOne(field)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
                     </div>
-                  </mat-list-item>
-                }
-              </mat-action-list>
-            </mat-card-content>
-          </mat-card>
+                  }
+                </div>
+              </div>
+            </fieldset>
+          </div>
         }
         <!--SCHEMAS-->
         @case ('SCHEMAS') {
-          <mat-card class="ll-not-shadow">
-            <mat-card-header>
-              <mat-card-title-group>
-                <mat-card-title> {{ field.displayName || field.name }}</mat-card-title>
-                @if (field.description) {
-                  <mat-card-subtitle>{{ field.description }}</mat-card-subtitle>
-                }
-                <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema at the end">
-                  <mat-icon>add_circle</mat-icon>
+          <div hlmFieldGroup>
+            <fieldset hlmFieldSet class="gap-2">
+              <legend hlmFieldLegend class="w-full flex justify-between">
+                {{ field.displayName || field.name }}
+                <button hlmBtn variant="ghost" size="sm" [hlmDropdownMenuTrigger]="menu" hlmTooltipTrigger="Add Schema at the end">
+                  <ng-icon hlm size="sm" name="lucideCirclePlus" />
                 </button>
-                <mat-menu #schemasMenu="matMenu">
-                  @for (sch of filterSchema(field.schemas); track sch.id) {
-                    <button mat-menu-item (click)="addSchemaMany(field, sch)" [matTooltip]="sch.description">
-                      {{ sch.displayName || sch.id }}
-                    </button>
-                  }
-                </mat-menu>
-              </mat-card-title-group>
-            </mat-card-header>
-            <mat-divider></mat-divider>
-            <mat-card-content>
-              <mat-action-list cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
-                @for (item of data[field.name]; track item; let index = $index) {
-                  <mat-list-item
-                    [id]="item._id"
-                    [ngClass]="{ 'schema-hover': hoverSchemaPath()?.includes(item._id) }"
-                    cdkDrag
-                    cdkDragPreviewContainer="parent"
-                    (click)="navigationTo(item._id, field.name, item.schema)">
-                    @if (schemaCompNodeById().get(item.schema); as sch) {
-                      <div matListItemTitle>
-                        {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
-                        @if (sch.previewField) {
-                          <div matListItemLine>
-                            {{ previewText(item, sch, selectedLocaleId()) }}
+                <ng-template #menu>
+                  <hlm-dropdown-menu class="w-60">
+                    @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                      <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltipTrigger]="sch.description || ''">
+                        {{ sch.displayName || sch.id }}
+                      </button>
+                    }
+                  </hlm-dropdown-menu>
+                </ng-template>
+              </legend>
+              @if (field.description) {
+                <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
+              }
+              <hlm-field-separator />
+              <div hlmFieldGroup>
+                <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
+                  @for (item of data[field.name] || []; track item; let index = $index) {
+                    <div
+                      [id]="item._id"
+                      hlmItem
+                      variant="outline"
+                      role="listitem"
+                      class="cursor-pointer"
+                      [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
+                      cdkDrag
+                      cdkDragPreviewContainer="parent"
+                      (click)="navigationTo(item._id, field.name, item.schema)"
+                      (keydown)="navigationTo(item._id, field.name, item.schema)">
+                      <div hlmItemContent>
+                        @if (schemaCompNodeById().get(item.schema); as sch) {
+                          <div hlmItemTitle class="line-clamp-1">
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                          </div>
+                          @if (sch.previewField) {
+                            <p hlmItemDescription> {{ previewText(item, sch, selectedLocaleId()) }}</p>
+                          }
+                        } @else {
+                          <div hlmItemTitle class="line-clamp-1 text-destructive">
+                            Schema with ID <b>#{{ item.schema }}</b> can't be found.
                           </div>
                         }
                       </div>
-                    } @else {
-                      <div matListItemTitle>
-                        <span class="error">
-                          Schema with ID <b>#{{ item.schema }}</b> can't be found.
-                        </span>
+                      <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                        <button
+                          hlmBtn
+                          variant="outline"
+                          size="sm"
+                          [hlmDropdownMenuTrigger]="schemasMenuAbove"
+                          hlmTooltipTrigger="Add Schema above">
+                          <ng-icon hlm size="sm" name="tablerRowInsertTop" />
+                        </button>
+                        <ng-template #schemasMenuAbove>
+                          <hlm-dropdown-menu class="w-60">
+                            @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                              <button
+                                hlmDropdownMenuItem
+                                (click)="addSchemaMany(field, sch, index)"
+                                [hlmTooltipTrigger]="sch.description || ''">
+                                {{ sch.displayName || sch.id }}
+                              </button>
+                            }
+                          </hlm-dropdown-menu>
+                        </ng-template>
+                        <button
+                          hlmBtn
+                          variant="outline"
+                          size="sm"
+                          [hlmDropdownMenuTrigger]="schemasMenuBelow"
+                          hlmTooltipTrigger="Add Schema below">
+                          <ng-icon hlm size="sm" name="tablerRowInsertBottom" />
+                        </button>
+                        <ng-template #schemasMenuBelow>
+                          <hlm-dropdown-menu class="w-60">
+                            @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                              <button
+                                hlmDropdownMenuItem
+                                (click)="addSchemaMany(field, sch, index + 1)"
+                                [hlmTooltipTrigger]="sch.description || ''">
+                                {{ sch.displayName || sch.id }}
+                              </button>
+                            }
+                          </hlm-dropdown-menu>
+                        </ng-template>
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="outline"
+                          (click)="duplicateSchemaMany(data[field.name], item, index)"
+                          hlmTooltipTrigger="Clone the schema">
+                          <ng-icon hlm size="sm" name="lucideCopy" />
+                        </button>
+                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltipTrigger="Delete">
+                          <ng-icon hlm size="sm" name="lucideTrash" />
+                        </button>
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="ghost"
+                          cdkDragHandle
+                          class="cursor-grab active:cursor-grabbing"
+                          hlmTooltipTrigger="Move">
+                          <ng-icon hlm size="sm" name="lucideGripVertical" />
+                        </button>
                       </div>
-                    }
-                    <mat-action-list matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuAbove" matTooltip="Add Schema above">
-                        <mat-icon>add_row_above</mat-icon>
-                      </button>
-                      <mat-menu #schemasMenuAbove="matMenu">
-                        @for (sch of filterSchema(field.schemas); track sch.id) {
-                          <button mat-menu-item (click)="addSchemaMany(field, sch, index)" [matTooltip]="sch.description">
-                            {{ sch.displayName || sch.id }}
-                          </button>
-                        }
-                      </mat-menu>
-                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuBelow" matTooltip="Add Schema below">
-                        <mat-icon>add_row_below</mat-icon>
-                      </button>
-                      <mat-menu #schemasMenuBelow="matMenu">
-                        @for (sch of filterSchema(field.schemas); track sch.id) {
-                          <button mat-menu-item (click)="addSchemaMany(field, sch, index + 1)" [matTooltip]="sch.description">
-                            {{ sch.displayName || sch.id }}
-                          </button>
-                        }
-                      </mat-menu>
-                      <button mat-icon-button (click)="duplicateSchemaMany(data[field.name], item, index)">
-                        <mat-icon>content_copy</mat-icon>
-                      </button>
-                      <button mat-icon-button (click)="removeSchemaMany(field, item._id)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                      &nbsp;&nbsp;
-                      <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                    </mat-action-list>
-                  </mat-list-item>
-                }
-              </mat-action-list>
-            </mat-card-content>
-          </mat-card>
+                    </div>
+                  }
+                </div>
+              </div>
+            </fieldset>
+          </div>
         }
         @default {
           {{ field.kind }} is not implemented
