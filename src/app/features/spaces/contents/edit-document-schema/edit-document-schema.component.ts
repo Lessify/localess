@@ -413,10 +413,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     this.structureChange.emit(`addSchemaOne ${field.name} ${schema.id}`);
   }
 
-  removeSchemaOne(event: MouseEvent, field: SchemaField): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  removeSchemaOne(field: SchemaField): void {
     delete this.data[field.name];
     this.structureChange.emit(`removeSchemaOne ${field.name}`);
   }

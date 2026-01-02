@@ -377,8 +377,8 @@
                           </div>
                         }
                       </div>
-                      <div hlmItemActions>
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne($event, field)" hlmTooltipTrigger="Delete">
+                      <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltipTrigger="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                       </div>
