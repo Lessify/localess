@@ -363,13 +363,13 @@
                       [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
                       (click)="navigationTo(item._id, field.name, item.schema)"
                       (keydown)="navigationTo(item._id, field.name, item.schema)">
-                      <div hlmItemContent>
+                      <div hlmItemContent class="min-w-0 overflow-hidden">
                         @if (schemaCompNodeById().get(item.schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
                             {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
                           </div>
                           @if (sch.previewField) {
-                            <p hlmItemDescription> {{ previewText(item, sch, selectedLocaleId()) }}</p>
+                            <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
                           }
                         } @else {
                           <div hlmItemTitle class="line-clamp-1 text-destructive">
@@ -426,13 +426,13 @@
                       cdkDragPreviewContainer="parent"
                       (click)="navigationTo(item._id, field.name, item.schema)"
                       (keydown)="navigationTo(item._id, field.name, item.schema)">
-                      <div hlmItemContent>
+                      <div hlmItemContent class="min-w-0 overflow-hidden">
                         @if (schemaCompNodeById().get(item.schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
                             {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
                           </div>
                           @if (sch.previewField) {
-                            <p hlmItemDescription> {{ previewText(item, sch, selectedLocaleId()) }}</p>
+                            <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
                           }
                         } @else {
                           <div hlmItemTitle class="line-clamp-1 text-destructive">

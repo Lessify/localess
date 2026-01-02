@@ -2,18 +2,15 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatError } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFile, lucideFilePlusCorner, lucideGripVertical, lucideTrash } from '@ng-icons/lucide';
 import { AssetsSelectDialogComponent } from '@shared/components/assets-select-dialog/assets-select-dialog.component';
 import { AssetsSelectDialogModel } from '@shared/components/assets-select-dialog/assets-select-dialog.model';
+import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
+import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
 import { Asset, AssetFile, AssetKind } from '@shared/models/asset.model';
 import { SchemaFieldAssets, SchemaFieldKind } from '@shared/models/schema.model';
@@ -21,8 +18,11 @@ import { Space } from '@shared/models/space.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { AssetService } from '@shared/services/asset.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
-import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({
   selector: 'll-assets-select',
@@ -30,19 +30,25 @@ import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog
   styleUrls: ['./assets-select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatCardModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatButtonModule,
-    MatDividerModule,
-    MatListModule,
     DragDropModule,
     ImagePreviewDirective,
     CommonModule,
     FormatFileSizePipe,
-    MatError,
     MatExpansionModule,
     NgOptimizedImage,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmIconImports,
+    HlmTooltipImports,
+    HlmItemImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideFilePlusCorner,
+      lucideTrash,
+      lucideGripVertical,
+      lucideFile,
+    }),
   ],
 })
 export class AssetsSelectComponent implements OnInit {
