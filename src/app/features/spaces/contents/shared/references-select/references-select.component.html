@@ -1,48 +1,55 @@
-<mat-card class="ll-not-shadow">
-  <mat-card-header>
-    <mat-card-title-group>
-      <mat-card-title>
+<div hlmFieldGroup>
+  <fieldset hlmFieldSet class="gap-2">
+    <legend hlmFieldLegend class="w-full flex justify-between">
+      <span>
         {{ component().displayName || component().name }}
-      </mat-card-title>
-      @if (component().description; as description) {
-        <mat-card-subtitle>{{ description }}</mat-card-subtitle>
-      }
-      <button mat-icon-button matTooltip="Add Assets" (click)="openReferenceSelectDialog()">
-        <mat-icon>add_link</mat-icon>
+      </span>
+      <button hlmBtn variant="ghost" size="sm" hlmTooltipTrigger="Add References" (click)="openReferenceSelectDialog()">
+        <ng-icon hlm size="sm" name="lucideFileSymlink" />
       </button>
-    </mat-card-title-group>
-  </mat-card-header>
-  <mat-divider></mat-divider>
-  <mat-card-content>
-    <mat-list cdkDropList (cdkDropListDropped)="referenceDropDrop($event)">
-      @for (content of contents; track content.id; let index = $index) {
-        <mat-list-item cdkDrag cdkDragPreviewContainer="parent">
-          <div matListItemIcon class="self-center!">
-            @if (content?.publishedAt === undefined) {
-              <ll-status mode="offline" matTooltip="Not published" />
-            } @else if (content?.publishedAt?.seconds > content?.updatedAt?.seconds) {
-              <ll-status mode="online" matTooltip="Published" />
-            } @else if (content?.publishedAt && content?.publishedAt?.seconds < content?.updatedAt?.seconds) {
-              <ll-status mode="away" matTooltip="Draft" />
-            }
-          </div>
-          <div matListItemTitle>{{ content.name }} #{{ content.slug }}</div>
-          <code matListItemLine>{{ content.fullSlug }}</code>
-          <div matListItemMeta>
-            <button mat-icon-button (click)="deleteReference(index)">
-              <mat-icon>delete</mat-icon>
-            </button>
-            &nbsp;&nbsp;
-            <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-          </div>
-        </mat-list-item>
-      }
-    </mat-list>
-    @if (form().errors; as errors) {
-      <mat-error>{{ fe.errors(errors) }}</mat-error>
+    </legend>
+    @if (component().description; as description) {
+      <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
     }
-  </mat-card-content>
-</mat-card>
+    <hlm-field-separator />
+    <div hlmFieldGroup>
+      <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="referenceDropDrop($event)">
+        @for (content of contents; track content.id; let index = $index) {
+          <div hlmItem variant="outline" role="listitem" cdkDrag cdkDragPreviewContainer="parent">
+            <div hlmItemMedia>
+              @if (content.publishedAt === undefined) {
+                <ll-status mode="offline" matTooltip="Not published" />
+              } @else if (content.publishedAt?.seconds > content.updatedAt?.seconds) {
+                <ll-status mode="online" matTooltip="Published" />
+              } @else if (content.publishedAt && content.publishedAt?.seconds < content.updatedAt?.seconds) {
+                <ll-status mode="away" matTooltip="Draft" />
+              }
+            </div>
+            <div hlmItemContent class="min-w-0 overflow-hidden">
+              <div hlmItemTitle class="line-clamp-1 truncate w-full">
+                {{ content.name }} <span class="accent-muted-foreground">#{{ content.slug }}</span>
+              </div>
+              <p hlmItemDescription class="line-clamp-1 truncate">
+                {{ content.fullSlug }}
+              </p>
+            </div>
+            <div role="none" hlmItemActions>
+              <button hlmBtn size="icon" variant="outline" (click)="deleteReference(index)" hlmTooltipTrigger="Delete">
+                <ng-icon hlm size="sm" name="lucideTrash" />
+              </button>
+              <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltipTrigger="Move">
+                <ng-icon hlm size="sm" name="lucideGripVertical" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    @if (form().errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </fieldset>
+</div>
 
 @if (settingsStore.debugEnabled()) {
   <mat-accordion [multi]="true">
