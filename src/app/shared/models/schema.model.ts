@@ -25,9 +25,9 @@ export interface FieldTypeDescription {
 }
 
 export const schemaTypeDescriptions: Record<SchemaType, FieldTypeDescription> = {
-  ROOT: { name: 'Root', icon: 'margin', description: 'Root schema, top level schema' },
-  NODE: { name: 'Node', icon: 'polyline', description: 'Node schema, nested schema' },
-  ENUM: { name: 'Enum', icon: 'list', description: 'Enum schema, list of values' },
+  ROOT: { name: 'Root', icon: 'lucideFileBox', description: 'Root schema, top level schema' },
+  NODE: { name: 'Node', icon: 'lucideWorkflow', description: 'Node schema, nested schema' },
+  ENUM: { name: 'Enum', icon: 'lucideList', description: 'Enum schema, list of values' },
 };
 
 export type Schema = SchemaComponent | SchemaEnum;

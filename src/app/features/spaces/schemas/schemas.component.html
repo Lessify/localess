@@ -92,8 +92,8 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @let descriptor = schemaTypeDescriptions[element.type];
-        <mat-icon [hlmTooltipTrigger]="descriptor.description">{{ descriptor.icon }}</mat-icon>
-        &nbsp; {{ descriptor.name }}
+        <ng-icon hlm size="sm" [name]="descriptor.icon" [hlmTooltipTrigger]="descriptor.description" class="mr-2" />
+        {{ descriptor.name }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">

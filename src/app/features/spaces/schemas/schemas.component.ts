@@ -28,11 +28,14 @@ import {
   lucideCirclePlus,
   lucideCloudDownload,
   lucideEllipsisVertical,
+  lucideFileBox,
+  lucideList,
   lucidePlus,
   lucideReplace,
   lucideSearch,
   lucideTrash,
   lucideUploadCloud,
+  lucideWorkflow,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -103,6 +106,9 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
       lucideSearch,
       lucideCirclePlus,
       lucideCheck,
+      lucideList,
+      lucideFileBox,
+      lucideWorkflow,
     }),
   ],
 })
