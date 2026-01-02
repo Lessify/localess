@@ -381,11 +381,11 @@
                         </span>
                       </div>
                     }
-                    <div matListItemMeta>
+                    <mat-action-list matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
                       <button mat-icon-button (click)="removeSchemaOne(field)">
                         <mat-icon>delete</mat-icon>
                       </button>
-                    </div>
+                    </mat-action-list>
                   </mat-list-item>
                 }
               </mat-action-list>
