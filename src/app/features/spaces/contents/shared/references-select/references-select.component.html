@@ -21,7 +21,7 @@
                 <ll-status mode="offline" hlmTooltipTrigger="Not published" />
               } @else if (content.publishedAt.seconds > content.updatedAt.seconds) {
                 <ll-status mode="online" hlmTooltipTrigger="Published" />
-              } @else if (content.publishedAt && content.publishedAt.seconds < content.updatedAt.seconds) {
+              } @else if (content.publishedAt.seconds < content.updatedAt.seconds) {
                 <ll-status mode="away" hlmTooltipTrigger="Draft" />
               }
             </div>

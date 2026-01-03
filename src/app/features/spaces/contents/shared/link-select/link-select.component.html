@@ -1,7 +1,7 @@
 <form [formGroup]="form()">
   <fieldset hlmFieldSet>
-    <div hlmFieldGroup class="gap-4">
-      <div hlmField>
+    <div hlmFieldGroup class="gap-2">
+      <div hlmField class="gap-2">
         <label hlmFieldLabel [for]="component().name">
           {{ component().displayName || component().name }}
           @if (component().description; as description) {
@@ -48,7 +48,20 @@
                 [placeholder]="displayContent(defaultDocument()) || default()?.uri || 'https://'" />
             }
             @case ('content') {
-              <hlm-autocomplete />
+              @if (default() && !component().translatable) {
+                <input hlmInput [readonly]="true" [value]="displayContent(defaultDocument())" />
+              } @else {
+                <hlm-autocomplete
+                  formControlName="uri"
+                  [required]="component().required || false"
+                  [filteredOptions]="filteredOptions()"
+                  [(search)]="search"
+                  [searchPlaceholderText]="displayContent(defaultDocument()) || default()?.uri || 'Select an document'"
+                  showClearBtn
+                  [displayWith]="displayWith"
+                  [transformOptionToString]="transformOptionToString"
+                  [transformOptionToValue]="transformOptionToValue"/>
+              }
             }
           }
         </div>
@@ -57,79 +70,11 @@
         }
       </div>
       <div hlmField orientation="horizontal">
-        <hlm-switch id="target" [checked]="form().value.target === '_blank'" (checkedChange)="targetNewChange($event)" />
+        <hlm-switch id="target" [checked]="form().value.target === '_blank'" (checkedChange)="targetChange($event)" />
         <label hlmFieldLabel for="target">Open in a new tab</label>
       </div>
     </div>
   </fieldset>
-  <mat-form-field [floatLabel]="default() ? 'always' : 'auto'">
-    <mat-label>{{ component().displayName || component().name }}</mat-label>
-    <button
-      mat-icon-button
-      matIconPrefix
-      [matMenuTriggerFor]="linkMenu"
-      [disabled]="default() && !component().translatable"
-      (click)="$event.preventDefault(); $event.stopPropagation()">
-      <mat-icon>{{ form().value.type === 'content' ? 'link' : 'public' }}</mat-icon>
-    </button>
-    <mat-menu #linkMenu="matMenu">
-      <button mat-menu-item (click)="onTypeChange('url')">
-        <mat-icon>public</mat-icon>
-        <span>External URL</span>
-      </button>
-      <button mat-menu-item (click)="onTypeChange('content')">
-        <mat-icon>link</mat-icon>
-        <span>Internal URL</span>
-      </button>
-    </mat-menu>
-    @switch (form().value.type) {
-      @case ('url') {
-        <input
-          matInput
-          type="url"
-          formControlName="uri"
-          [readonly]="default() && !component().translatable"
-          [required]="component().required || false"
-          [placeholder]="displayContent(defaultDocument()) || default()?.uri || ''"
-          autocomplete="off" />
-      }
-      @case ('content') {
-        <input
-          matInput
-          [required]="component().required || false"
-          [matAutocomplete]="auto"
-          [formControl]="searchCtrl"
-          [placeholder]="displayContent(defaultDocument()) || default()?.uri || ''" />
-        <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
-          @for (link of filteredContent | async; track link.id) {
-            <mat-option [value]="link">
-              <span>{{ link.name }}</span> |
-              <small>{{ link.fullSlug }}</small>
-            </mat-option>
-          }
-        </mat-autocomplete>
-      }
-    }
-    @if (form().value.type === 'content' && !(default() && !component().translatable)) {
-      <button mat-icon-button matIconSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
-        <mat-icon>clear</mat-icon>
-      </button>
-    }
-    @if (component().translatable) {
-      <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
-    }
-    @if (component().description; as description) {
-      <mat-hint>{{ description }}</mat-hint>
-    }
-    @if (form().controls['uri'].errors; as errors) {
-      <mat-error>{{ fe.errors(errors) }}</mat-error>
-    }
-  </mat-form-field>
-
-  &nbsp;&nbsp;
-  <mat-slide-toggle [checked]="form().value.target === '_blank'" (change)="targetChange($event)"> Open in a new window</mat-slide-toggle>
-  <br />
-  <br />
 </form>
 @if (settingsStore.debugEnabled()) {
   <mat-accordion>

@@ -118,9 +118,11 @@ export interface AssetContent {
   uri: string;
 }
 
+export type LinkContentType = 'url' | 'content';
+
 export interface LinkContent {
   kind: 'LINK';
-  type: 'url' | 'content';
+  type: LinkContentType;
   target: '_blank' | '_self';
   uri: string;
 }

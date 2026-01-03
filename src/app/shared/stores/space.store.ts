@@ -152,6 +152,7 @@ export const SpaceStore = signalStore(
       assetPath: computed(() => state.assetPath()),
       environment: computed(() => state.environment()),
       selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),
+      documents: computed(() => state.documents()),
     };
   }),
   withHooks({

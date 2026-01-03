@@ -1,20 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatButtonModule } from '@angular/material/button';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-icons/lucide';
-import { ContentDocument, LinkContent } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
+import { ContentDocument, LinkContent, LinkContentType } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldLink } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmAutocompleteImports } from '@spartan-ng/helm/autocomplete';
@@ -25,8 +16,6 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { debounceTime, Observable, of, startWith } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'll-link-select',
@@ -35,24 +24,16 @@ import { map } from 'rxjs/operators';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatInputModule,
-    MatAutocompleteModule,
     CommonModule,
-    MatSlideToggleModule,
     MatExpansionModule,
-    MatTooltipModule,
     HlmFieldImports,
     HlmTooltipImports,
     HlmIconImports,
     HlmSwitchImports,
     HlmDropdownMenuImports,
-    HlmAutocompleteImports,
     HlmButtonImports,
     HlmInputImports,
+    HlmAutocompleteImports,
   ],
   providers: [
     provideIcons({
@@ -81,21 +62,19 @@ export class LinkSelectComponent implements OnInit {
   });
 
   // Search
-  searchCtrl: FormControl = new FormControl();
-  filteredContent: Observable<ContentDocument[]> = of([]);
+  search = signal('');
+  filteredOptions = computed(() => {
+    const search = this.search().toLowerCase();
+    if (search) {
+      return this.documents().filter(it => it.name.toLowerCase().includes(search) || it.fullSlug.toLowerCase().includes(search));
+    }
+    return this.documents();
+  });
 
-  // Subscriptions
+  // Stores
   settingsStore = inject(LocalSettingsStore);
 
-  constructor() {
-    effect(() => {
-      if (this.default() && !this.component().translatable) {
-        this.searchCtrl.disable();
-      } else {
-        this.searchCtrl.enable();
-      }
-    });
-  }
+  constructor() {}
 
   ngOnInit(): void {
     // Data init in case everything is null
@@ -106,51 +85,41 @@ export class LinkSelectComponent implements OnInit {
         target: this.default()?.target || '_self',
       });
     }
-    if (this.form().value.type === 'content' && this.form().value.uri !== null) {
-      this.searchCtrl.patchValue(this.documents().find(it => it.id === this.form().value.uri));
-    }
-
-    this.filteredContent = this.searchCtrl.valueChanges.pipe(
-      startWith(''),
-      debounceTime(300),
-      map(search => this.documents().filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || []),
-    );
   }
 
-  onTypeChange(type: string): void {
+  onTypeChange(type: LinkContentType): void {
     this.form().patchValue({ uri: null, type });
-    this.searchCtrl.reset();
+    //this.searchCtrl.reset();
   }
 
-  displayContent(content?: ContentDocument): string {
+  protected displayWith = (content?: string): string => {
+    console.log('displayWith', content);
+    if (content) {
+      const doc = this.documents()?.find(it => it.id === content);
+      if (doc) {
+        return `${doc.name} | ${doc.fullSlug}`;
+      }
+    }
+    return '';
+  };
+  transformOptionToString(content?: ContentDocument): string {
     return content ? `${content.name} | ${content.fullSlug}` : '';
   }
 
-  contentSelected(event: MatAutocompleteSelectedEvent): void {
-    const content = event.option.value as ContentDocument;
-    this.form().controls['uri'].setValue(content.id);
+  transformOptionToValue(content: ContentDocument): string {
+    return content.id;
   }
 
-  contentReset(): void {
-    this.searchCtrl.setValue('');
-    this.form().controls['uri'].setValue(null);
+  displayContent(content?: ContentDocument): string {
+    console.log('displayContent', content);
+    return content ? `${content.name} | ${content.fullSlug}` : '';
   }
 
-  targetNewChange(checked: boolean): void {
+  targetChange(checked: boolean): void {
     if (checked) {
       this.form().controls['target'].setValue('_blank');
     } else {
       this.form().controls['target'].setValue('_self');
     }
   }
-
-  targetChange(event: MatSlideToggleChange): void {
-    if (event.checked) {
-      this.form().controls['target'].setValue('_blank');
-    } else {
-      this.form().controls['target'].setValue('_self');
-    }
-  }
-
-  protected readonly selectedLocale = CONTENT_DEFAULT_LOCALE;
 }
