@@ -302,7 +302,7 @@
                 </div>
                 <div aria-hidden="true" class="w-full border-t"></div>
               </div>
-              <div class="p-2 mb-auto overflow-scroll wrap-break-word">
+              <div class="p-2 mb-auto wrap-break-word">
                 @switch (translation.type) {
                   @case ('STRING') {
                     <ll-translation-string-view [enableHighlighting]="true" [value]="translation.locales[selectedSourceLocale().id]" />

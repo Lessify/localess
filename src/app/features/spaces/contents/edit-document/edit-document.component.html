@@ -99,12 +99,13 @@
         Publish
       </button>
     }
-
-    @if (documentPublishedAt() === undefined) {
+    @let publishedAt = documentPublishedAt();
+    @let updatedAt = documentUpdatedAt();
+    @if (publishedAt === undefined) {
       <ll-status mode="offline" matTooltip="Not published" />
-    } @else if (documentPublishedAt() > documentUpdatedAt()) {
+    } @else if (publishedAt > updatedAt) {
       <ll-status mode="online" matTooltip="Published" />
-    } @else if (documentPublishedAt() < documentUpdatedAt()) {
+    } @else if (publishedAt < updatedAt) {
       <ll-status mode="away" matTooltip="Draft" />
     }
 

@@ -167,7 +167,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   // Computed out of inputs
   rootSchema = computed(() => this.schemas().find(it => it.id === this.document().schema));
   documentUpdatedAt = linkedSignal(() => this.document().updatedAt.seconds);
-  documentPublishedAt = linkedSignal(() => this.document().publishedAt?.seconds || 0);
+  documentPublishedAt = linkedSignal(() => this.document().publishedAt?.seconds);
   //Store
   spaceStore = inject(SpaceStore);
   settingsStore = inject(LocalSettingsStore);

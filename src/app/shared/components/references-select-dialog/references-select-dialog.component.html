@@ -46,11 +46,11 @@
       <mat-cell *matCellDef="let element">
         @switch (element.kind) {
           @case ('DOCUMENT') {
-            @if (element?.publishedAt === undefined) {
+            @if (element.publishedAt === undefined) {
               <ll-status mode="offline" matTooltip="Not published" />
-            } @else if (element?.publishedAt?.seconds > element?.updatedAt?.seconds) {
+            } @else if (element.publishedAt.seconds > element.updatedAt.seconds) {
               <ll-status mode="online" matTooltip="Published" />
-            } @else if (element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds) {
+            } @else if (element.publishedAt.seconds < element.updatedAt.seconds) {
               <ll-status mode="away" matTooltip="Draft" />
             }
           }

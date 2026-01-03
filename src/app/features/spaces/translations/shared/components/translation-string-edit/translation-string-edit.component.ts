@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, input, model, viewChild } from '@angular/core';
+import { SafeHtmlPipe } from '@shared/pipes/safe-html.pipe';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 @Component({
@@ -7,7 +8,7 @@ import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
   templateUrl: './translation-string-edit.component.html',
   styleUrls: ['./translation-string-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [HlmInputGroupImports],
+  imports: [HlmInputGroupImports, SafeHtmlPipe],
 })
 export class TranslationStringEditComponent {
   value = model.required<string>();

@@ -1,7 +1,7 @@
 <div hlmInputGroup class="relative">
   @if (enableHighlighting()) {
     <div #backdrop class="backdrop">
-      <div class="highlights" [innerHTML]="highlightedText()"></div>
+      <div class="highlights" [innerHTML]="highlightedText() | safeHtml"></div>
     </div>
   }
   <textarea

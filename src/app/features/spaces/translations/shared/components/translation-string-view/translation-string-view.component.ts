@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { SafeHtmlPipe } from '@shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'll-translation-string-view',
@@ -6,6 +7,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   templateUrl: './translation-string-view.component.html',
   styleUrls: ['./translation-string-view.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SafeHtmlPipe],
 })
 export class TranslationStringViewComponent {
   value = input.required<string>();

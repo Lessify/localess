@@ -16,12 +16,12 @@
           @if (content && content.kind === 'DOCUMENT') {
             <div hlmItem variant="outline" role="listitem">
               <div hlmItemMedia>
-                @if (content?.publishedAt === undefined) {
-                  <ll-status mode="offline" matTooltip="Not published" />
-                } @else if (content?.publishedAt?.seconds > content?.updatedAt?.seconds) {
-                  <ll-status mode="online" matTooltip="Published" />
-                } @else if (content?.publishedAt && content?.publishedAt?.seconds < content?.updatedAt?.seconds) {
-                  <ll-status mode="away" matTooltip="Draft" />
+                @if (content.publishedAt === undefined) {
+                  <ll-status mode="offline" hlmTooltipTrigger="Not published" />
+                } @else if (content.publishedAt.seconds > content.updatedAt.seconds) {
+                  <ll-status mode="online" hlmTooltipTrigger="Published" />
+                } @else if (content.publishedAt.seconds < content.updatedAt.seconds) {
+                  <ll-status mode="away" hlmTooltipTrigger="Draft" />
                 }
               </div>
               <div hlmItemContent class="min-w-0 overflow-hidden">
