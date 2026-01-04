@@ -326,25 +326,40 @@
         }
         <!--OPTIONS-->
         @case ('OPTIONS') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <mat-select [formControlName]="field.name" multiple>
-              @if (schemaEnumMapById().get(field.source); as source) {
-                @for (option of source.values; track option.value) {
-                  <mat-option [value]="option.value"> {{ option.name }}</mat-option>
-                }
+          {{ form.value[field.name] | json }}
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel for="kind">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
               }
-            </mat-select>
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+              }
+            </label>
+            <hlm-select
+              scrollable="true"
+              [multiple]="true"
+              [id]="'schema-field-' + field.name"
+              [formControlName]="field.name"
+              [placeholder]="(!isDefaultLocale() && data[field.name]) || ''">
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value />
+              </hlm-select-trigger>
+              <hlm-select-content class="max-h-96">
+                <hlm-select-scroll-up />
+                @if (schemaEnumMapById().get(field.source); as source) {
+                  @for (option of source.values; track option.value) {
+                    <hlm-option [value]="option.value"> {{ option.name }}</hlm-option>
+                  }
+                }
+                <hlm-select-scroll-down />
+              </hlm-select-content>
+            </hlm-select>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--LINK-->
         @case ('LINK') {
