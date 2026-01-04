@@ -326,7 +326,6 @@
         }
         <!--OPTIONS-->
         @case ('OPTIONS') {
-          {{ form.value[field.name] | json }}
           <div hlmField class="gap-2">
             <label hlmFieldLabel for="kind">
               {{ field.displayName || field.name }}
