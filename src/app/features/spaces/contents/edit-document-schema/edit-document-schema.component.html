@@ -162,95 +162,109 @@
         }
         <!--NUMBER-->
         @case ('NUMBER') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="number"
-              [formControlName]="field.name"
-              [attr.min]="field.minValue"
-              [attr.max]="field.maxValue"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="number"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                [attr.min]="field.minValue"
+                [attr.max]="field.maxValue"
+                autocomplete="off" />
+            </div>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--COLOR-->
         @case ('COLOR') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="color"
-              [formControlName]="field.name"
-              [attr.min]="field.minValue"
-              [attr.max]="field.maxValue"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="color"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                autocomplete="off" />
+            </div>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--DATE-->
         @case ('DATE') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="date"
-              [formControlName]="field.name"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="date"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                autocomplete="off" />
+            </div>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--DATE TIME-->
         @case ('DATETIME') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="datetime-local"
-              [formControlName]="field.name"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="datetime-local"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                autocomplete="off" />
+            </div>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--BOOLEAN-->
         @case ('BOOLEAN') {
