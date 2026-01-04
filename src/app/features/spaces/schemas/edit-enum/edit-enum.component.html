@@ -31,7 +31,7 @@
           <button hlmTabsTrigger="settings">Settings</button>
         </hlm-tabs-list>
         <div hlmTabsContent="values">
-          <div class="flex flex-col mx-auto max-w-5xl gap-6 p-8" style="height: calc(100vh - 177px)">
+          <div class="flex flex-col mx-auto max-w-5xl gap-6 px-8" style="height: calc(100vh - 177px)">
             <div hlmField class="col-span-2">
               <div hlmInputGroup>
                 <input
@@ -46,7 +46,7 @@
                 </div>
               </div>
             </div>
-            <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+            <div hlmItemGroup class="overflow-y-scroll gap-2" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
               @for (field of values.controls; track field.value.name; let index = $index) {
                 <div
                   hlmItem
@@ -85,7 +85,7 @@
           </div>
         </div>
         <div hlmTabsContent="settings">
-          <div class="flex flex-col mx-auto max-w-5xl gap-6 p-8">
+          <div class="flex flex-col mx-auto max-w-5xl gap-6 px-8">
             <fieldset hlmFieldSet>
               <div hlmFieldGroup>
                 <div hlmField>
