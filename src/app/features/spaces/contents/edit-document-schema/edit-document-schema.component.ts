@@ -34,7 +34,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideCirclePlus, lucideCopy, lucideGripVertical, lucideTrash } from '@ng-icons/lucide';
+import { lucideCirclePlus, lucideCopy, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
 import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icons';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
@@ -59,6 +59,7 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { MarkdownComponent } from 'ngx-markdown';
@@ -108,6 +109,7 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     HlmIconImports,
     HlmDropdownMenuImports,
     HlmItemImports,
+    HlmInputGroupImports,
   ],
   providers: [
     provideIcons({
@@ -117,6 +119,8 @@ import { SchemaSelectChange } from './edit-document-schema.model';
       tablerRowInsertTop,
       tablerRowInsertBottom,
       lucideCopy,
+      lucideLanguages,
+      lucideInfo,
     }),
   ],
 })
@@ -199,10 +203,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         element
           .querySelector<HTMLElement>(`.mat-mdc-text-field-wrapper:has(#schema-field-${field})`)
           ?.classList.add('mdc-text-field--focused');
+        element.querySelector<HTMLElement>(`[hlminputgroup]:has(#schema-field-${field})`)?.classList.add('border-primary');
       } else if (element) {
         element.querySelectorAll<HTMLElement>(`[id^="schema-field-"]`).forEach(item => {
           if (item !== document.activeElement) {
             item.closest('.mat-mdc-text-field-wrapper')?.classList.remove('mdc-text-field--focused');
+            item.closest('[hlminputgroup]')?.classList.remove('border-primary');
           }
         });
       }
