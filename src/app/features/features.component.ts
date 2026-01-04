@@ -3,17 +3,9 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, injec
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Auth, signOut } from '@angular/fire/auth';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
-import { IconType, NgIcon, provideIcons } from '@ng-icons/core';
+import { IconType, provideIcons } from '@ng-icons/core';
 import {
   lucideBadgeInfo,
   lucideBookOpen,
@@ -55,14 +47,18 @@ import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
+import { BrnSheetImports } from '@spartan-ng/brain/sheet';
 import { BrnTooltipImports } from '@spartan-ng/brain/tooltip';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
-import { HlmIcon } from '@spartan-ng/helm/icon';
+import { HlmField, HlmFieldGroup, HlmFieldLabel, HlmFieldSet } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
+import { HlmSwitch } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { cva } from 'class-variance-authority';
 import { filter } from 'rxjs';
@@ -100,29 +96,27 @@ interface SideMenuItem {
   styleUrl: './features.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatMenuModule,
     RouterModule,
-    MatSidenavModule,
     CanUserPerformPipe,
     CommonModule,
-    MatListModule,
-    MatSlideToggleModule,
-    MatDividerModule,
-    HlmSidebarImports,
-    NgIcon,
-    HlmIcon,
-    HlmTooltipImports,
     LogoComponent,
+    HlmSidebarImports,
+    HlmIconImports,
+    HlmTooltipImports,
     HlmDropdownMenuImports,
     HlmAvatarImports,
     BrnTooltipImports,
     HlmButtonImports,
     HlmSeparatorImports,
     HlmBreadCrumbImports,
+    HlmSheetImports,
+    BrnSheetImports,
+    HlmFieldGroup,
+    HlmFieldSet,
+    HlmField,
+    HlmFieldLabel,
+    HlmSwitch,
+    ReactiveFormsModule,
   ],
   providers: [
     provideIcons({
@@ -169,6 +163,7 @@ class FeaturesComponent {
   // Settings
   isSettingsMenuExpended = signal(false);
   isDebug = environment.debug;
+  showDebugSettings = signal(false);
 
   version = environment.version;
   latestRelease?: Release;

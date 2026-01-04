@@ -207,7 +207,12 @@
           </ol>
         </nav>
       </div>
-      <div id="header-actions">
+      <div id="header-actions" class="flex gap-2 items-center px-4">
+        @if (isDebug) {
+          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltipTrigger="App Settings">
+            <ng-icon hlm name="lucideSettings" size="sm" />
+          </button>
+        }
         <button hlmBtn size="icon-sm" variant="ghost" (click)="switchTheme()" aria-label="Switch theme" hlmTooltipTrigger="Switch theme">
           <ng-icon hlm [name]="settingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
         </button>
@@ -218,4 +223,23 @@
     }
     <router-outlet></router-outlet>
   </main>
+  <hlm-sheet side="right" [state]="showDebugSettings() ? 'open' : 'closed'" (closed)="showDebugSettings.set(false)">
+    <hlm-sheet-content *brnSheetContent="let ctx">
+      <hlm-sheet-header>
+        <h3 hlmSheetTitle>Debug Settings</h3>
+      </hlm-sheet-header>
+      <div>
+        <div class="px-4">
+          <fieldset hlmFieldSet>
+            <div hlmFieldGroup class="gap-4">
+              <div hlmField orientation="horizontal">
+                <hlm-switch id="enableDebug" [checked]="settingsStore.debugEnabled()" (checkedChange)="settingsStore.setDebug($event)" />
+                <label hlmFieldLabel for="enableDebug">Enable Debug</label>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+    </hlm-sheet-content>
+  </hlm-sheet>
 </div>
