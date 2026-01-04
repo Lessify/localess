@@ -44,6 +44,7 @@ import {
   SchemaEnum,
   SchemaField,
   SchemaFieldKind,
+  schemaFieldKindDescriptions,
   SchemaFieldOption,
   SchemaFieldOptions,
   SchemaType,
@@ -55,12 +56,15 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { MarkdownComponent } from 'ngx-markdown';
 import { debounceTime } from 'rxjs';
@@ -110,6 +114,9 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     HlmDropdownMenuImports,
     HlmItemImports,
     HlmInputGroupImports,
+    HlmSwitchImports,
+    BrnSelectImports,
+    HlmSelectImports,
   ],
   providers: [
     provideIcons({
@@ -569,4 +576,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         });
     }
   }
+
+  protected readonly schemaFieldKindDescriptions = schemaFieldKindDescriptions;
 }
