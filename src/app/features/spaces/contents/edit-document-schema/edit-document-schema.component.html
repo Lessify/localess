@@ -24,13 +24,14 @@
                 [attr.minlength]="field.minLength"
                 [attr.maxlength]="field.maxLength"
                 autocomplete="off" />
-              @if (!isDefaultLocale()) {
+              @if (field.translatable && !isDefaultLocale()) {
                 <div hlmInputGroupAddon align="inline-end">
                   <button
                     hlmInputGroupButton
                     variant="ghost"
                     size="icon-xs"
                     align="end"
+                    [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
                     [hlmDropdownMenuTrigger]="translationMenu"
                     hlmTooltipTrigger="Translate the field with AI">
                     <ng-icon name="lucideLanguages" />
@@ -61,48 +62,62 @@
         }
         <!--TEXTAREA-->
         @case ('TEXTAREA') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <textarea
-              [id]="'schema-field-' + field.name"
-              matInput
-              cdkTextareaAutosize
-              cdkAutosizeMinRows="6"
-              cdkAutosizeMaxRows="12"
-              [formControlName]="field.name"
-              [attr.minLength]="field.minLength"
-              [attr.maxlength]="field.maxLength"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off"></textarea>
-            @if (field.translatable) {
-              <button
-                [matMenuTriggerFor]="tMenu"
-                [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
-                mat-icon-button
-                matSuffix
-                matTooltip="Translate the field with AI">
-                <mat-icon>translate</mat-icon>
-                <mat-menu #tMenu="matMenu">
-                  @for (locale of availableLocales(); track locale.id) {
-                    @if (locale.id !== selectedLocaleId()) {
-                      <button mat-menu-item (click)="translate(field.name, locale.id, selectedLocaleId())">
-                        Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
-                      </button>
-                    }
-                  }
-                </mat-menu>
-              </button>
-            }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <textarea
+                hlmInputGroupTextarea
+                type="text"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                [attr.minlength]="field.minLength"
+                [attr.maxlength]="field.maxLength"
+                autocomplete="off">
+              </textarea>
+              @if (field.translatable && !isDefaultLocale()) {
+                <div hlmInputGroupAddon align="inline-end">
+                  <button
+                    hlmInputGroupButton
+                    variant="ghost"
+                    size="icon-xs"
+                    align="end"
+                    [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false"
+                    [hlmDropdownMenuTrigger]="translationMenu"
+                    hlmTooltipTrigger="Translate the field with AI">
+                    <ng-icon name="lucideLanguages" />
+                  </button>
+                  <ng-template #translationMenu>
+                    <hlm-dropdown-menu>
+                      @for (locale of availableLocales(); track locale.id) {
+                        @if (locale.id !== selectedLocaleId()) {
+                          <button hlmDropdownMenuItem (click)="translate(field.name, locale.id, selectedLocaleId())">
+                            Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
+                          </button>
+                        }
+                      }
+                    </hlm-dropdown-menu>
+                  </ng-template>
+                </div>
+              }
+            </div>
             @if (field.maxLength) {
-              <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
+              <p hlmFieldDescription class="content-end">
+                {{ field.maxLength - form.controls[field.name]?.value?.length || 0 }} characters left
+              </p>
             }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-          </mat-form-field>
+          </div>
         }
         <!--RICH_TEXT-->
         @case ('RICH_TEXT') {
