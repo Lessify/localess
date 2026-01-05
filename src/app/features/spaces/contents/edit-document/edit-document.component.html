@@ -263,9 +263,9 @@
       [minSize]="20"
       [maxSize]="80"
       class="overflow-hidden flex justify-around">
-      <div class="flex grow overflow-auto h-full flex-col min-w-96 max-w-5xl">
+      <div class="flex grow overflow-auto h-full flex-col min-w-96 max-w-5xl px-4 py-2 gap-4">
         @if (rootSchema()) {
-          <nav hlmBreadcrumb class="p-4">
+          <nav hlmBreadcrumb>
             <ol hlmBreadcrumbList>
               @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isLast = $last; let isFirst = $first) {
                 @if (!isFirst) {
@@ -293,7 +293,7 @@
               }
             </ol>
           </nav>
-          <div class="flex flex-col max-w-(--breakpoint-lg) px-4 overflow-y-scroll">
+          <div class="flex flex-col max-w-(--breakpoint-lg) overflow-y-auto">
             <ll-content-document-schema-edit
               [data]="selectedDocumentData"
               [schemas]="schemas()"
