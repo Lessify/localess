@@ -19,7 +19,7 @@
       </button>
     </hlm-toggle-group>
     @if ('TRANSLATION_CREATE' | canUserPerform | async) {
-      <button hlmBtn size="sm" (click)="openAddDialog()">
+      <button hlmBtn (click)="openAddDialog()">
         <ng-icon hlm size="sm" name="lucidePlus" />
         Add Translation
       </button>
@@ -28,7 +28,6 @@
       <button
         hlmBtn
         variant="outline"
-        size="sm"
         hlmTooltipTrigger="Publish Translations to be available via API call"
         [disabled]="isPublishLoading()"
         (click)="publish()">
@@ -346,7 +345,6 @@
                   <button
                     hlmBtn
                     variant="outline"
-                    size="sm"
                     [disabled]="
                       isLocaleUpdateLoading() || translation.locales[selectedTargetLocale().id] === selectedTranslationLocaleValue()
                     "

@@ -49,16 +49,16 @@
       <mat-cell *matCellDef="let element">
         @switch (element.status) {
           @case ('INITIATED') {
-            <mat-icon [matTooltip]="element.status">pending</mat-icon>
+            <ng-icon hlm size="sm" name="lucideCircleEllipsis" [hlmTooltipTrigger]="element.status" />
           }
           @case ('IN_PROGRESS') {
-            <mat-icon [matTooltip]="element.status">hourglass</mat-icon>
+            <hlm-spinner [hlmTooltipTrigger]="element.status" />
           }
           @case ('FINISHED') {
-            <mat-icon [matTooltip]="element.status">done</mat-icon>
+            <ng-icon hlm size="sm" name="lucideCheck" [hlmTooltipTrigger]="element.status" />
           }
           @case ('ERROR') {
-            <mat-icon [matTooltip]="element.status">error</mat-icon>
+            <ng-icon hlm size="sm" name="lucideOctagonAlert" [hlmTooltipTrigger]="element.status" />
           }
         }
       </mat-cell>
@@ -72,7 +72,7 @@
             <div>Size : {{ file.size | formatFileSize }}</div>
           </div>
         } @else {
-          <mat-icon>remove</mat-icon>
+          -
         }
       </mat-cell>
     </ng-container>
@@ -101,35 +101,43 @@
             <div> Duration : {{ element.updatedAt.seconds - element.createdAt.seconds | timeDuration }}</div>
           }
           @if (element.message; as message) {
-            <div [matTooltip]="element.trace">Message : {{ message }}</div>
+            <div [hlmTooltipTrigger]="element.trace">Message : {{ message }}</div>
           }
         </div>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.createdAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.createdAt?.toDate() | date: 'medium'">
         {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="onDownload(element)" [disabled]="element.file === undefined" matTooltip="Download">
-          <mat-icon>download</mat-icon>
+        <button
+          hlmBtn
+          size="icon"
+          variant="ghost"
+          (click)="onDownload(element)"
+          [disabled]="element.file === undefined"
+          hlmTooltipTrigger="Download">
+          <ng-icon hlm size="sm" name="lucideDownload" />
         </button>
         <button
-          mat-icon-button
+          hlmBtn
+          size="icon"
+          variant="ghost"
           (click)="openDeleteDialog(element)"
           [disabled]="element.status !== 'FINISHED' && now - (element.createdAt?.toMillis() || 0) < 600000"
-          matTooltip="Delete">
-          <mat-icon>delete</mat-icon>
+          hlmTooltipTrigger="Delete">
+          <ng-icon hlm size="sm" name="lucideTrash" />
         </button>
       </mat-cell>
     </ng-container>
