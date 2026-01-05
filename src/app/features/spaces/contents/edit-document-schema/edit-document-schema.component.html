@@ -1,5 +1,5 @@
 @if (rootSchema && !isFormLoading()) {
-  <form [formGroup]="form" #schemaForm class="flex flex-col gap-4">
+  <form [formGroup]="form" #schemaForm class="flex flex-col gap-4 pb-2">
     @for (field of rootSchema.fields; track field.name) {
       @switch (field.kind) {
         <!--TEXT-->

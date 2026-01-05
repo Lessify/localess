@@ -1,13 +1,35 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, OnDestroy } from '@angular/core';
 import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideBold,
+  lucideCode,
+  lucideCodeSquare,
+  lucideHeading1,
+  lucideHeading2,
+  lucideHeading3,
+  lucideHeading4,
+  lucideHeading5,
+  lucideHeading6,
+  lucideInfo,
+  lucideItalic,
+  lucideLanguages,
+  lucideLink,
+  lucideList,
+  lucideListOrdered,
+  lucidePilcrow,
+  lucideStrikethrough,
+  lucideUnderline,
+} from '@ng-icons/lucide';
 import { SchemaFieldRichText } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Editor, Extension } from '@tiptap/core';
 import Bold from '@tiptap/extension-bold';
 import BulletList from '@tiptap/extension-bullet-list';
@@ -34,13 +56,36 @@ import { TiptapEditorDirective } from 'ngx-tiptap';
   styleUrls: ['./rich-text-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatFormFieldModule,
-    MatInputModule,
-    MatTooltipModule,
     CommonModule,
     TiptapEditorDirective,
     ReactiveFormsModule,
-    MatDividerModule,
+    HlmFieldImports,
+    HlmTooltipImports,
+    HlmIconImports,
+    HlmInputGroupImports,
+    HlmSeparatorImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideLanguages,
+      lucideInfo,
+      lucidePilcrow,
+      lucideHeading1,
+      lucideHeading2,
+      lucideHeading3,
+      lucideHeading4,
+      lucideHeading5,
+      lucideHeading6,
+      lucideBold,
+      lucideItalic,
+      lucideStrikethrough,
+      lucideUnderline,
+      lucideCode,
+      lucideLink,
+      lucideListOrdered,
+      lucideList,
+      lucideCodeSquare,
+    }),
   ],
 })
 export class RichTextEditorComponent implements OnDestroy {
