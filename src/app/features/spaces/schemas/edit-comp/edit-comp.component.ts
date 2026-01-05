@@ -42,7 +42,6 @@ import {
   SchemaField,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
-  SchemaFieldOptionSelectable,
   SchemaType,
 } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -256,13 +255,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     this.form.markAsDirty();
   }
 
-  generateOptionForm(option?: SchemaFieldOptionSelectable): FormGroup {
-    return this.fb.group({
-      name: this.fb.control(option?.name, SchemaValidator.FIELD_OPTION_NAME),
-      value: this.fb.control(option?.value, SchemaValidator.FIELD_OPTION_VALUE),
-    });
-  }
-
   addField(element?: SchemaField) {
     const fieldName = element?.name || this.newFieldName.value || '';
     this.fieldReservedNames.push(fieldName);
@@ -326,9 +318,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        element.options?.forEach(it => options.push(this.generateOptionForm(it)));
-        fieldForm.addControl('options', options);
         fieldForm.addControl('source', this.fb.control<string>(element.source, SchemaValidator.FIELD_OPTION_SOURCE));
         break;
       }
@@ -338,10 +327,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         fieldForm.addControl('source', this.fb.control<string>(element.source, SchemaValidator.FIELD_OPTION_SOURCE));
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        element.options?.forEach(it => options.push(this.generateOptionForm(it)));
-        fieldForm.addControl('options', options);
-
         fieldForm.addControl('minValues', this.fb.control<number | undefined>(element.minValues, SchemaValidator.FIELD_MIN_VALUES));
         fieldForm.addControl('maxValues', this.fb.control<number | undefined>(element.maxValues, SchemaValidator.FIELD_MAX_VALUES));
         break;

@@ -34,7 +34,6 @@ import {
   Schema,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
-  SchemaFieldOptionSelectable,
   SchemaType,
   sortSchema,
 } from '@shared/models/schema.model';
@@ -143,21 +142,6 @@ export class EditFieldComponent {
 
   get options(): FormArray<FormGroup> | undefined {
     return this.form.controls['options'] as FormArray<FormGroup>;
-  }
-
-  addOptionForm(): void {
-    this.options?.push(this.generateOptionForm());
-  }
-
-  removeOptionForm(idx: number): void {
-    this.options?.removeAt(idx);
-  }
-
-  generateOptionForm(): FormGroup {
-    return this.fb.group({
-      name: this.fb.control('', SchemaValidator.FIELD_OPTION_NAME),
-      value: this.fb.control('', SchemaValidator.FIELD_OPTION_VALUE),
-    });
   }
 
   selectFieldKind(value: SchemaFieldKind): void {
@@ -305,9 +289,6 @@ export class EditFieldComponent {
       case SchemaFieldKind.OPTION: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        //options.push(this.generateOptionForm());
-        this.form.addControl('options', options);
         this.form.addControl('source', this.fb.control<string>('', SchemaValidator.FIELD_OPTION_SOURCE));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
@@ -330,9 +311,6 @@ export class EditFieldComponent {
       case SchemaFieldKind.OPTIONS: {
         // ADD
         this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        //options.push(this.generateOptionForm());
-        this.form.addControl('options', options);
         this.form.addControl('source', this.fb.control<string>('', SchemaValidator.FIELD_OPTION_SOURCE));
         this.form.addControl('minValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUES));
         this.form.addControl('maxValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUES));

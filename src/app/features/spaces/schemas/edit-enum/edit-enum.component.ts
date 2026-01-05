@@ -89,7 +89,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   selectedFieldIdx = signal<number | undefined>(undefined);
 
   fieldReservedNames: string[] = [];
-  newFieldName = this.fb.control('', [...SchemaValidator.FIELD_OPTION_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
+  newFieldName = this.fb.control('', [...SchemaValidator.FIELD_ENUM_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
 
   //Loadings
   isLoading = signal(true);
@@ -214,10 +214,10 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
       this.values?.push(
         this.fb.group({
           name: this.fb.control(element.name, [
-            ...SchemaValidator.FIELD_OPTION_NAME,
+            ...SchemaValidator.FIELD_ENUM_NAME,
             CommonValidator.reservedName(this.fieldReservedNames, element.name),
           ]),
-          value: this.fb.control(element.value, SchemaValidator.FIELD_OPTION_VALUE),
+          value: this.fb.control(element.value, SchemaValidator.FIELD_ENUM_VALUE),
         }),
       );
       this.fieldReservedNames.push(element.name);
@@ -226,10 +226,10 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
       this.values?.push(
         this.fb.group({
           name: this.fb.control<string>(fieldName, [
-            ...SchemaValidator.FIELD_OPTION_NAME,
+            ...SchemaValidator.FIELD_ENUM_NAME,
             CommonValidator.reservedName(this.fieldReservedNames, fieldName),
           ]),
-          value: this.fb.control<string>(fieldName, SchemaValidator.FIELD_OPTION_VALUE),
+          value: this.fb.control<string>(fieldName, SchemaValidator.FIELD_ENUM_VALUE),
         }),
       );
       this.fieldReservedNames.push(fieldName);

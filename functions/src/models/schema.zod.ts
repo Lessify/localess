@@ -87,21 +87,14 @@ export const schemaFieldSchemaSchema = schemaFieldBaseSchema.extend({
   schemas: z.array(z.string()).optional(),
 });
 
-export const schemaFieldOptionSelectableSchema = z.object({
-  name: z.string(),
-  value: z.string(),
-});
-
 export const schemaFieldOptionSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTION),
   source: z.string(),
-  options: z.array(schemaFieldOptionSelectableSchema).optional(),
 });
 
 export const schemaFieldOptionsSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTIONS),
   source: z.string(),
-  options: z.array(schemaFieldOptionSelectableSchema).optional(),
   minValues: z.number().optional(),
   maxValues: z.number().optional(),
 });

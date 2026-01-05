@@ -29,7 +29,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -45,8 +45,6 @@ import {
   SchemaField,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
-  SchemaFieldOption,
-  SchemaFieldOptions,
   SchemaType,
   sortSchemaEnumValue,
 } from '@shared/models/schema.model';
@@ -508,34 +506,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
       }
     }
     return undefined;
-  }
-
-  defaultOptionPlaceholder(field: SchemaFieldOption): string {
-    if (!this.isDefaultLocale()) {
-      const value = this.data[field.name] as string;
-      return field.options?.find(it => it.value === value)?.name || '';
-    }
-    return '';
-  }
-
-  defaultOptionsPlaceholder(field: SchemaFieldOptions): string {
-    if (!this.isDefaultLocale()) {
-      const values = this.data[field.name] as string[];
-      const options = new Map(field.options?.map(it => [it.value, it.name]));
-      return values.map(it => options.get(it)).join(',');
-    }
-    return '';
-  }
-
-  markFiledAvailable(event: MatSlideToggleChange, field: SchemaField) {
-    console.log(event, field);
-    const formField = this.form.controls[field.name];
-    if (event.checked) {
-      formField.enable();
-    } else {
-      formField.setValue(undefined);
-      formField.disable();
-    }
   }
 
   translate(fieldName: string, sourceLocale: string, targetLocale: string): void {

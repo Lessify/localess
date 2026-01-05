@@ -218,21 +218,14 @@ export interface SchemaFieldSchema extends SchemaFieldBase {
   schemas?: string[];
 }
 
-export interface SchemaFieldOptionSelectable {
-  name: string;
-  value: string;
-}
-
 export interface SchemaFieldOption extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTION;
   source: string;
-  options?: SchemaFieldOptionSelectable[];
 }
 
 export interface SchemaFieldOptions extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTIONS;
   source: string;
-  options?: SchemaFieldOptionSelectable[];
   minValues?: number;
   maxValues?: number;
 }
