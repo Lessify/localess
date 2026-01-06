@@ -189,8 +189,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   });
   iframeUrl = computed(() => {
     const env = this.selectedEnvironment();
+    const locale = this.selectedLocale();
     if (env) {
-      return this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document().fullSlug);
+      const localePart = locale.id !== CONTENT_DEFAULT_LOCALE.id ? locale.id + '/' : '';
+      return this.sanitizer.bypassSecurityTrustResourceUrl(`${env.url}${localePart}${this.document().fullSlug}`);
     } else {
       return undefined;
     }
@@ -199,7 +201,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   availableLocales = computed<Locale[]>(() => [CONTENT_DEFAULT_LOCALE, ...(this.selectedSpace()?.locales || [])]);
   availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
 
-  selectedLocale: Locale = CONTENT_DEFAULT_LOCALE;
+  selectedLocale = signal(CONTENT_DEFAULT_LOCALE);
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);
   clickSchemaField = signal<string | undefined>(undefined);
@@ -391,10 +393,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         },
       });
     }
-  }
-
-  onLocaleChanged(locale: Locale): void {
-    this.selectedLocale = locale;
   }
 
   onSchemaChange(event: SchemaSelectChange): void {

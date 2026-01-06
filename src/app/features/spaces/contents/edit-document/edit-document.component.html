@@ -28,13 +28,13 @@
     </hlm-toggle-group>
 
     <button hlmBtn variant="outline" [hlmDropdownMenuTrigger]="localeMenu" side="bottom" hlmTooltipTrigger="Select Locale">
-      {{ selectedLocale.name }}
+      {{ selectedLocale().name }}
       <ng-icon hlm size="sm" name="lucideChevronDown" class="ml-auto" />
     </button>
     <ng-template #localeMenu>
       <hlm-dropdown-menu>
         @for (locale of availableLocales(); track locale.id) {
-          <button hlmDropdownMenuRadio [checked]="locale.id === selectedLocale.id" (click)="onLocaleChanged(locale)">
+          <button hlmDropdownMenuRadio [checked]="locale.id === selectedLocale().id" (click)="selectedLocale.set(locale)">
             <hlm-dropdown-menu-radio-indicator />
             <span> {{ locale.name }} </span>
           </button>
@@ -297,7 +297,7 @@
             <ll-content-document-schema-edit
               [data]="selectedDocumentData"
               [schemas]="schemas()"
-              [selectedLocale]="selectedLocale"
+              [selectedLocale]="selectedLocale()"
               [availableLocales]="availableLocales()"
               [hoverSchemaPath]="hoverSchemaPath()"
               [hoverSchemaField]="isSamePath() ? hoverSchemaField() : undefined"
