@@ -572,14 +572,16 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   onFormChange(event: string) {
-    console.debug('onFormChange', event);
-    this.sendEventToApp({ type: 'input', data: this.documentData });
+    const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    console.debug('onFormChange', event, data);
+    this.sendEventToApp({ type: 'input', data: data });
   }
 
   onStructureChange(event: string) {
-    console.debug('onStructureChange', event);
+    const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    console.debug('onStructureChange', event, data);
     this.generateDocumentIdsTree();
-    this.sendEventToApp({ type: 'change', data: this.documentData });
+    this.sendEventToApp({ type: 'change', data: data });
   }
 
   sendEventToApp(event: EventToApp) {

@@ -18,6 +18,12 @@ import { v4 } from 'uuid';
 export class ContentHelperService {
   private readonly fb = inject(FormBuilder);
 
+  /**
+   * Validate Content Data against Schemas and locale
+   * @param {ContentData} data - document
+   * @param {Schema[]} schemas
+   * @param {string} locale
+   */
   validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] {
     //console.group('validateContent');
     const isDefaultLocale = CONTENT_DEFAULT_LOCALE.id === locale;
@@ -219,6 +225,13 @@ export class ContentHelperService {
     return [inUseAssets, inUseReferences];
   }
 
+  /**
+   * Extract Schema Content based on locale
+   * @param data
+   * @param schema
+   * @param locale
+   * @param full
+   */
   extractSchemaContent(data: ContentData, schema: SchemaComponent, locale: string, full: boolean): Record<string, any> {
     //console.group('extractSchemaContent')
     //console.log('data',data)
@@ -243,6 +256,48 @@ export class ContentHelperService {
     //console.log('result',result)
     //console.groupEnd()
     return result;
+  }
+
+  /**
+   * extract Locale Content
+   * @param {ContentData} content content
+   * @param {Schema[]} schemas schema
+   * @param {string} locale locale
+   * @return {ContentData} content
+   */
+  extractContent(content: ContentData, schemas: Map<string, Schema>, locale: string): ContentData {
+    const extractedContentData: ContentData = {
+      _id: content._id,
+      _schema: content._schema || content.schema,
+      schema: content.schema,
+    };
+    const schema = schemas.get(content.schema);
+    if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
+      for (const field of schema?.fields || []) {
+        if (field.kind === SchemaFieldKind.SCHEMA) {
+          const fieldContent: ContentData | undefined = content[field.name];
+          if (fieldContent) {
+            extractedContentData[field.name] = this.extractContent(fieldContent, schemas, locale);
+          }
+        } else if (field.kind === SchemaFieldKind.SCHEMAS) {
+          const fieldContent: ContentData[] | undefined = content[field.name];
+          if (fieldContent && Array.isArray(fieldContent)) {
+            extractedContentData[field.name] = fieldContent.map(it => this.extractContent(it, schemas, locale));
+          }
+        } else {
+          if (field.translatable) {
+            let value = content[`${field.name}_i18n_${locale}`];
+            if (value === undefined) {
+              value = content[field.name];
+            }
+            extractedContentData[field.name] = value;
+          } else {
+            extractedContentData[field.name] = content[field.name];
+          }
+        }
+      }
+    }
+    return extractedContentData;
   }
 
   clone<T>(source: T, generateNewID = false): T {
@@ -507,17 +562,6 @@ export class ContentHelperService {
     return form;
   }
 
-  assetsContentToFormArray(uris: AssetContent[]): FormArray {
-    return this.fb.array(
-      uris.map(it =>
-        this.fb.group({
-          uri: this.fb.control(it.uri, Validators.required),
-          kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-        }),
-      ),
-    );
-  }
-
   assetContentToForm(asset: AssetContent): FormGroup {
     return this.fb.group({
       uri: this.fb.control(asset.uri),
@@ -529,24 +573,6 @@ export class ContentHelperService {
     return this.fb.group({
       uri: this.fb.control(reference.uri),
       kind: this.fb.control(reference.kind),
-    });
-  }
-
-  assetsFormArray(uris: string[]): FormArray {
-    return this.fb.array(
-      uris.map(it =>
-        this.fb.group({
-          uri: this.fb.control(it, Validators.required),
-          kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-        }),
-      ),
-    );
-  }
-
-  assetFormGroup(uri: string): FormGroup {
-    return this.fb.group({
-      uri: this.fb.control(uri, Validators.required),
-      kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
     });
   }
 }
