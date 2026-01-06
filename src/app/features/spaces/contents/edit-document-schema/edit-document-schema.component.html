@@ -412,7 +412,7 @@
                 <ng-template #menu>
                   <hlm-dropdown-menu class="w-60">
                     @for (sch of filterSchema(field.schemas || []); track sch.id) {
-                      <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltipTrigger]="sch.description || ''">
+                      <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltipTrigger]="sch.description || ''">
                         {{ sch.displayName || sch.id }}
                       </button>
                     }
@@ -473,7 +473,7 @@
                 <ng-template #menu>
                   <hlm-dropdown-menu class="w-60">
                     @for (sch of filterSchema(field.schemas || []); track sch.id) {
-                      <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltipTrigger]="sch.description || ''">
+                      <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltipTrigger]="sch.description || ''">
                         {{ sch.displayName || sch.id }}
                       </button>
                     }
