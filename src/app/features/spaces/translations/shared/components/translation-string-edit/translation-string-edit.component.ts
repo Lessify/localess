@@ -25,7 +25,7 @@ export class TranslationStringEditComponent {
     // Add extra newline at end for proper display
     let result = text.replace(/\n$/g, '\n\n');
     // Highlight text between {{ and }} including the brackets
-    result = result.replace(/{{[^}]*}}/g, '<mark>$&</mark>');
+    result = result.replace(/{{[^}]*}}/g, '<mark class="bg-yellow-100 dark:bg-yellow-300">$&</mark>');
     return result;
   }
 
