@@ -22,7 +22,7 @@ import { MatTreeModule } from '@angular/material/tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
-  lucideArrowLeftRight,
+  lucideArrowRight,
   lucideCheck,
   lucideChevronDown,
   lucideChevronRight,
@@ -165,7 +165,7 @@ import { TranslationNode } from './shared/models/translation.model';
       lucideTrash,
       lucideCopy,
       lucideSave,
-      lucideArrowLeftRight,
+      lucideArrowRight,
       lucideLanguages,
       lucideCircleQuestionMark,
       lucideChevronRight,
