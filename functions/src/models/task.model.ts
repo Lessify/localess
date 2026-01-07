@@ -19,6 +19,11 @@ export enum TaskStatus {
   FINISHED = 'FINISHED',
 }
 
+export interface TaskFile {
+  name: string;
+  size: number;
+}
+
 export interface TaskBase {
   id: string;
   kind: TaskKind;
@@ -37,20 +42,14 @@ export interface TaskAssetExport extends TaskBase {
   // Export Only data under this path
   path?: string;
   // Exported file
-  file?: {
-    name: string;
-    size: number;
-  };
+  file?: TaskFile;
 }
 
 export interface TaskAssetImport extends TaskBase {
   kind: TaskKind.ASSET_IMPORT;
   // Where Import Archive is located temporarily
   tmpPath: string;
-  file: {
-    name: string;
-    size: number;
-  };
+  file: TaskFile;
 }
 
 export interface TaskAssetRegenMetadata extends TaskBase {
@@ -62,20 +61,14 @@ export interface TaskContentExport extends TaskBase {
   // Export Only data under this path
   path?: string;
   // Exported file
-  file?: {
-    name: string;
-    size: number;
-  };
+  file?: TaskFile;
 }
 
 export interface TaskContentImport extends TaskBase {
   kind: TaskKind.CONTENT_IMPORT;
   // Where Import Archive is located temporarily
   tmpPath: string;
-  file: {
-    name: string;
-    size: number;
-  };
+  file: TaskFile;
 }
 
 export interface TaskSchemaExport extends TaskBase {
@@ -83,45 +76,35 @@ export interface TaskSchemaExport extends TaskBase {
   // Export Only change since this date
   fromDate?: number;
   // Exported file
-  file?: {
-    name: string;
-    size: number;
-  };
+  file?: TaskFile;
 }
 
 export interface TaskSchemaImport extends TaskBase {
   kind: TaskKind.SCHEMA_IMPORT;
   // Where Import Archive is located temporarily
   tmpPath: string;
-  file: {
-    name: string;
-    size: number;
-  };
+  file: TaskFile;
 }
 
 export interface TaskTranslationExport extends TaskBase {
   kind: TaskKind.TRANSLATION_EXPORT;
+  type: 'full' | 'flat-json' | 'nested-json';
   // Export Only change since this date
   fromDate?: number;
   // Export locale
   locale?: string;
   // Exported file
-  file?: {
-    name: string;
-    size: number;
-  };
+  file?: TaskFile;
 }
 
 export interface TaskTranslationImport extends TaskBase {
   kind: TaskKind.TRANSLATION_IMPORT;
+  type: 'full' | 'flat-json' | 'nested-json';
   // Imported locale
   locale?: string;
   // Where Import Archive is located temporarily
   tmpPath: string;
-  file: {
-    name: string;
-    size: number;
-  };
+  file: TaskFile;
 }
 
 export type Task =

@@ -1,4 +1,4 @@
-import { FieldValue, Timestamp } from '@angular/fire/firestore';
+import { Timestamp } from '@angular/fire/firestore';
 
 export enum TaskKind {
   ASSET_EXPORT = 'ASSET_EXPORT',
@@ -24,90 +24,109 @@ export interface TaskFile {
   size: number;
 }
 
-export interface Task {
+export interface TaskBase {
   id: string;
   kind: TaskKind;
   status: TaskStatus;
 
-  // import/export file
-  file?: TaskFile;
-  // export by date
-  fromDate?: number;
-  // export content
-  path?: string;
-  // translations
-  locale?: string;
-
+  // Error Message
   message?: string;
   trace?: string;
-
+  // Dates
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-export interface TaskCreateFS {
-  kind: TaskKind;
-  status: TaskStatus;
-
-  createdAt: FieldValue;
-  updatedAt: FieldValue;
-}
-
-export interface TaskAssetExportCreateFS extends TaskCreateFS {
+export interface TaskAssetExport extends TaskBase {
   kind: TaskKind.ASSET_EXPORT;
-  status: TaskStatus.INITIATED;
+  // Export Only data under this path
   path?: string;
+  // Exported file
+  file?: TaskFile;
 }
 
-export interface TaskAssetImportCreateFS extends TaskCreateFS {
+export interface TaskAssetImport extends TaskBase {
   kind: TaskKind.ASSET_IMPORT;
-  status: TaskStatus.INITIATED;
+  // Where Import Archive is located temporarily
   tmpPath: string;
   file: TaskFile;
 }
 
-export interface TaskAssetRegenerateMetadataCreateFS extends TaskCreateFS {
+export interface TaskAssetRegenMetadata extends TaskBase {
   kind: TaskKind.ASSET_REGEN_METADATA;
-  status: TaskStatus.INITIATED;
 }
 
-export interface TaskContentExportCreateFS extends TaskCreateFS {
+export interface TaskContentExport extends TaskBase {
   kind: TaskKind.CONTENT_EXPORT;
-  status: TaskStatus.INITIATED;
+  // Export Only data under this path
   path?: string;
+  // Exported file
+  file?: TaskFile;
 }
 
-export interface TaskContentImportCreateFS extends TaskCreateFS {
+export interface TaskContentImport extends TaskBase {
   kind: TaskKind.CONTENT_IMPORT;
-  status: TaskStatus.INITIATED;
+  // Where Import Archive is located temporarily
   tmpPath: string;
   file: TaskFile;
 }
 
-export interface TaskSchemaExportCreateFS extends TaskCreateFS {
+export interface TaskSchemaExport extends TaskBase {
   kind: TaskKind.SCHEMA_EXPORT;
-  status: TaskStatus.INITIATED;
+  // Export Only change since this date
   fromDate?: number;
+  // Exported file
+  file?: TaskFile;
 }
 
-export interface TaskSchemaImportCreateFS extends TaskCreateFS {
+export interface TaskSchemaImport extends TaskBase {
   kind: TaskKind.SCHEMA_IMPORT;
-  status: TaskStatus.INITIATED;
+  // Where Import Archive is located temporarily
   tmpPath: string;
   file: TaskFile;
 }
 
-export interface TaskTranslationExportCreateFS extends TaskCreateFS {
+export interface TaskTranslationExport extends TaskBase {
   kind: TaskKind.TRANSLATION_EXPORT;
-  status: TaskStatus.INITIATED;
+  // Export Only change since this date
   fromDate?: number;
+  // Export locale
   locale?: string;
+  // Exported file
+  file?: TaskFile;
 }
 
-export interface TaskTranslationImportCreateFS extends TaskCreateFS {
+export interface TaskTranslationImport extends TaskBase {
   kind: TaskKind.TRANSLATION_IMPORT;
-  status: TaskStatus.INITIATED;
+  type: 'full' | 'flat-json' | 'nested-json';
+  // Imported locale
   locale?: string;
+  // Where Import Archive is located temporarily
   tmpPath: string;
   file: TaskFile;
 }
+
+export type Task =
+  | TaskAssetExport
+  | TaskAssetImport
+  | TaskAssetRegenMetadata
+  | TaskContentExport
+  | TaskContentImport
+  | TaskSchemaExport
+  | TaskSchemaImport
+  | TaskTranslationExport
+  | TaskTranslationImport;
+
+export type TaskExport = TaskAssetExport | TaskContentExport | TaskSchemaExport | TaskTranslationExport;
+
+export type TaskImport = TaskAssetImport | TaskContentImport | TaskSchemaImport | TaskTranslationImport;
+
+export type TaskAssetExportFS = Omit<TaskAssetExport, 'id'>;
+export type TaskAssetImportFS = Omit<TaskAssetImport, 'id'>;
+export type TaskAssetRegenerateMetadataFS = Omit<TaskAssetRegenMetadata, 'id'>;
+export type TaskContentExportFS = Omit<TaskContentExport, 'id'>;
+export type TaskContentImportFS = Omit<TaskContentImport, 'id'>;
+export type TaskSchemaExportFS = Omit<TaskSchemaExport, 'id'>;
+export type TaskSchemaImportFS = Omit<TaskSchemaImport, 'id'>;
+export type TaskTranslationExportFS = Omit<TaskTranslationExport, 'id'>;
+export type TaskTranslationImportFS = Omit<TaskTranslationImport, 'id'>;

@@ -15,19 +15,20 @@ import {
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { getDownloadURL, ref, Storage, uploadBytes } from '@angular/fire/storage';
+import { WithFieldValue } from '@firebase/firestore';
 import {
   Task,
-  TaskAssetExportCreateFS,
-  TaskAssetImportCreateFS,
-  TaskAssetRegenerateMetadataCreateFS,
-  TaskContentExportCreateFS,
-  TaskContentImportCreateFS,
+  TaskAssetExportFS,
+  TaskAssetImportFS,
+  TaskAssetRegenerateMetadataFS,
+  TaskContentExportFS,
+  TaskContentImportFS,
   TaskKind,
-  TaskSchemaExportCreateFS,
-  TaskSchemaImportCreateFS,
+  TaskSchemaExportFS,
+  TaskSchemaImportFS,
   TaskStatus,
-  TaskTranslationExportCreateFS,
-  TaskTranslationImportCreateFS,
+  TaskTranslationExportFS,
+  TaskTranslationImportFS,
 } from '@shared/models/task.model';
 import { from, Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
@@ -54,7 +55,7 @@ export class TaskService {
   }
 
   createAssetExportTask(spaceId: string, path?: string): Observable<DocumentReference> {
-    const addEntity: TaskAssetExportCreateFS = {
+    const addEntity: WithFieldValue<TaskAssetExportFS> = {
       kind: TaskKind.ASSET_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -68,7 +69,7 @@ export class TaskService {
 
   createAssetImportTask(spaceId: string, file: File): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    const addEntity: TaskAssetImportCreateFS = {
+    const addEntity: WithFieldValue<TaskAssetImportFS> = {
       kind: TaskKind.ASSET_IMPORT,
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
@@ -87,7 +88,7 @@ export class TaskService {
   }
 
   createAssetRegenerateMetadataTask(spaceId: string): Observable<DocumentReference> {
-    const addEntity: TaskAssetRegenerateMetadataCreateFS = {
+    const addEntity: WithFieldValue<TaskAssetRegenerateMetadataFS> = {
       kind: TaskKind.ASSET_REGEN_METADATA,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -97,7 +98,7 @@ export class TaskService {
   }
 
   createContentExportTask(spaceId: string, path?: string): Observable<DocumentReference> {
-    const addEntity: TaskContentExportCreateFS = {
+    const addEntity: WithFieldValue<TaskContentExportFS> = {
       kind: TaskKind.CONTENT_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -111,7 +112,7 @@ export class TaskService {
 
   createContentImportTask(spaceId: string, file: File): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    const addEntity: TaskContentImportCreateFS = {
+    const addEntity: WithFieldValue<TaskContentImportFS> = {
       kind: TaskKind.CONTENT_IMPORT,
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
@@ -130,7 +131,7 @@ export class TaskService {
   }
 
   createSchemaExportTask(spaceId: string, fromDate?: number): Observable<DocumentReference> {
-    const addEntity: TaskSchemaExportCreateFS = {
+    const addEntity: WithFieldValue<TaskSchemaExportFS> = {
       kind: TaskKind.SCHEMA_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -144,7 +145,7 @@ export class TaskService {
 
   createSchemaImportTask(spaceId: string, file: File): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    const addEntity: TaskSchemaImportCreateFS = {
+    const addEntity: WithFieldValue<TaskSchemaImportFS> = {
       kind: TaskKind.SCHEMA_IMPORT,
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
@@ -163,7 +164,7 @@ export class TaskService {
   }
 
   createTranslationExportTask(spaceId: string, fromDate?: number, locale?: string): Observable<DocumentReference> {
-    const addEntity: TaskTranslationExportCreateFS = {
+    const addEntity: WithFieldValue<TaskTranslationExportFS> = {
       kind: TaskKind.TRANSLATION_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
@@ -180,8 +181,9 @@ export class TaskService {
 
   createTranslationImportTask(spaceId: string, file: File, locale?: string): Observable<DocumentReference> {
     const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    const addEntity: TaskTranslationImportCreateFS = {
+    const addEntity: WithFieldValue<TaskTranslationImportFS> = {
       kind: TaskKind.TRANSLATION_IMPORT,
+      type: 'full',
       status: TaskStatus.INITIATED,
       tmpPath: tmpPath,
       file: {
@@ -192,6 +194,7 @@ export class TaskService {
       updatedAt: serverTimestamp(),
     };
     if (locale) {
+      addEntity.type = 'flat-json';
       addEntity.locale = locale;
     }
     return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(

@@ -8,7 +8,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCheck, lucideCircleEllipsis, lucideDownload, lucideOctagonAlert, lucideTrash } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
-import { Task } from '@shared/models/task.model';
+import { Task, TaskExport, TaskImport } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
@@ -87,7 +87,7 @@ export class TasksComponent implements OnInit {
       });
   }
 
-  onDownload(element: Task): void {
+  onDownload(element: TaskExport | TaskImport): void {
     this.taskService.downloadUrl(this.spaceId(), element.id).subscribe({
       next: url => {
         saveAs(url, element.file?.name || 'unknown');
