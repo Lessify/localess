@@ -12,15 +12,30 @@ import {
   ContentExport,
   ContentFolder,
   ContentKind,
+  isTaskAssetExport,
+  isTaskAssetImport,
+  isTaskAssetRegenMetadata,
+  isTaskContentExport,
+  isTaskContentImport,
+  isTaskSchemaExport,
+  isTaskSchemaImport,
+  isTaskTranslationExport,
+  isTaskTranslationImport,
   Schema,
   SchemaComponent,
   SchemaEnum,
   SchemaExport,
   SchemaType,
   Task,
+  TaskAssetExport,
+  TaskContentExport,
   TaskExportMetadata,
+  TaskImport,
   TaskKind,
+  TaskSchemaExport,
   TaskStatus,
+  TaskTranslationExport,
+  TaskTranslationImport,
   Translation,
   TranslationExport,
   TranslationType,
@@ -76,12 +91,15 @@ const onTaskCreate = onDocumentCreated(
       status: TaskStatus.IN_PROGRESS,
       updatedAt: FieldValue.serverTimestamp(),
     };
-    if (task.kind.endsWith('_IMPORT')) {
-      if (task.tmpPath) {
-        const newPath = `spaces/${spaceId}/tasks/${taskId}/original`;
-        await bucket.file(task.tmpPath).move(newPath);
-        updateToInProgress.tmpPath = FieldValue.delete();
-      }
+    if (
+      task.kind === TaskKind.ASSET_IMPORT ||
+      task.kind === TaskKind.CONTENT_IMPORT ||
+      task.kind === TaskKind.SCHEMA_IMPORT ||
+      task.kind === TaskKind.TRANSLATION_IMPORT
+    ) {
+      const newPath = `spaces/${spaceId}/tasks/${taskId}/original`;
+      await bucket.file(task.tmpPath).move(newPath);
+      (updateToInProgress as UpdateData<TaskImport>).tmpPath = FieldValue.delete();
     }
     // Update to IN_PROGRESS
     logger.info(`[Task:onCreate] update='${JSON.stringify(updateToInProgress)}'`);
@@ -92,14 +110,15 @@ const onTaskCreate = onDocumentCreated(
       updatedAt: FieldValue.serverTimestamp(),
     };
 
-    if (task.kind === TaskKind.ASSET_EXPORT) {
+    if (isTaskAssetExport(task)) {
       const metadata = await assetsExport(spaceId, taskId, task);
       logger.info(`[Task:onCreate] metadata='${JSON.stringify(metadata)}'`);
-      updateToFinished['file'] = {
+
+      (updateToFinished as UpdateData<TaskAssetExport>).file = {
         name: `asset-export-${taskId}.lla.zip`,
         size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
       };
-    } else if (task.kind === TaskKind.ASSET_IMPORT) {
+    } else if (isTaskAssetImport(task)) {
       const errors = await assetsImport(spaceId, taskId);
       if (errors) {
         updateToFinished.status = TaskStatus.ERROR;
@@ -110,15 +129,15 @@ const onTaskCreate = onDocumentCreated(
           updateToFinished.trace = JSON.stringify(errors.format());
         }
       }
-    } else if (task.kind === TaskKind.ASSET_REGEN_METADATA) {
+    } else if (isTaskAssetRegenMetadata(task)) {
       await assetRegenerateMetadata(spaceId);
-    } else if (task.kind === TaskKind.CONTENT_EXPORT) {
+    } else if (isTaskContentExport(task)) {
       const metadata = await contentsExport(spaceId, taskId, task);
-      updateToFinished['file'] = {
+      (updateToFinished as UpdateData<TaskContentExport>).file = {
         name: `content-export-${taskId}.llc.zip`,
         size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
       };
-    } else if (task.kind === TaskKind.CONTENT_IMPORT) {
+    } else if (isTaskContentImport(task)) {
       const errors = await contentsImport(spaceId, taskId);
       if (errors) {
         updateToFinished.status = TaskStatus.ERROR;
@@ -129,13 +148,13 @@ const onTaskCreate = onDocumentCreated(
           updateToFinished.trace = JSON.stringify(errors.format());
         }
       }
-    } else if (task.kind === TaskKind.SCHEMA_EXPORT) {
+    } else if (isTaskSchemaExport(task)) {
       const metadata = await schemasExport(spaceId, taskId, task);
-      updateToFinished['file'] = {
+      (updateToFinished as UpdateData<TaskSchemaExport>).file = {
         name: `schema-export-${taskId}.lls.zip`,
         size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
       };
-    } else if (task.kind === TaskKind.SCHEMA_IMPORT) {
+    } else if (isTaskSchemaImport(task)) {
       const errors = await schemasImport(spaceId, taskId);
       if (errors) {
         updateToFinished.status = TaskStatus.ERROR;
@@ -146,21 +165,21 @@ const onTaskCreate = onDocumentCreated(
           updateToFinished.trace = JSON.stringify(errors.format());
         }
       }
-    } else if (task.kind === TaskKind.TRANSLATION_EXPORT) {
+    } else if (isTaskTranslationExport(task)) {
       if (task.locale) {
         const metadata = await translationsExportJsonFlat(spaceId, taskId, task);
-        updateToFinished['file'] = {
+        (updateToFinished as UpdateData<TaskTranslationExport>).file = {
           name: `translation-${task.locale}-export-${taskId}.json`,
           size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
         };
       } else {
         const metadata = await translationsExport(spaceId, taskId, task);
-        updateToFinished['file'] = {
+        (updateToFinished as UpdateData<TaskTranslationExport>).file = {
           name: `translation-export-${taskId}.llt.zip`,
           size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
         };
       }
-    } else if (task.kind === TaskKind.TRANSLATION_IMPORT) {
+    } else if (isTaskTranslationImport(task)) {
       let errors: any;
       if (task.locale) {
         errors = await translationsImportJsonFlat(spaceId, taskId, task);
@@ -189,7 +208,7 @@ const onTaskCreate = onDocumentCreated(
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function assetsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExport): Promise<any> {
   const exportAssets: (AssetExport | undefined)[] = [];
   if (task.path) {
     // Only specific folder or asset
@@ -387,7 +406,7 @@ async function assetRegenerateMetadata(spaceId: string): Promise<void> {
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function contentsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+async function contentsExport(spaceId: string, taskId: string, task: TaskContentExport): Promise<any> {
   const exportContents: (ContentExport | undefined)[] = [];
   if (task.path) {
     // Only specific folder or document
@@ -567,7 +586,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function schemasExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+async function schemasExport(spaceId: string, taskId: string, task: TaskSchemaExport): Promise<any> {
   const exportSchemas: SchemaExport[] = [];
   const schemasSnapshot = await findSchemas(spaceId, task.fromDate).get();
   schemasSnapshot.docs
@@ -716,7 +735,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function translationsExport(spaceId: string, taskId: string, task: Task): Promise<any> {
+async function translationsExport(spaceId: string, taskId: string, task: TaskTranslationExport): Promise<any> {
   const exportTranslations: TranslationExport[] = [];
   const translationsSnapshot = await findTranslations(spaceId, task.fromDate).get();
   translationsSnapshot.docs
@@ -763,7 +782,7 @@ async function translationsExport(spaceId: string, taskId: string, task: Task): 
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function translationsExportJsonFlat(spaceId: string, taskId: string, task: Task): Promise<any> {
+async function translationsExportJsonFlat(spaceId: string, taskId: string, task: TaskTranslationExport): Promise<any> {
   const exportTranslations: Record<string, string> = {};
   const translationsSnapshot = await findTranslations(spaceId, task.fromDate).get();
   translationsSnapshot.docs
@@ -852,7 +871,11 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function translationsImportJsonFlat(spaceId: string, taskId: string, task: Task): Promise<ZodError | undefined | 'WRONG_METADATA'> {
+async function translationsImportJsonFlat(
+  spaceId: string,
+  taskId: string,
+  task: TaskTranslationImport
+): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const jsonPath = `${tmpTaskFolder}/task.json`;
