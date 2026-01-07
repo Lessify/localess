@@ -1,8 +1,7 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, input, inject } from '@angular/core';
-import { activate } from '@angular/fire/remote-config';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Space } from '@shared/models/space.model';
 
 interface TabItem {
@@ -19,9 +18,7 @@ interface TabItem {
   imports: [MatTabsModule, MatIconModule, RouterModule],
 })
 export class SettingsComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly cd = inject(ChangeDetectorRef);
 
   // Input
   spaceId = input.required<string>();
@@ -41,6 +38,4 @@ export class SettingsComponent {
     const idx = router.url.lastIndexOf('/');
     this.activeTab = router.url.substring(idx + 1);
   }
-
-  protected readonly activate = activate;
 }

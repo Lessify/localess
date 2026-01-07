@@ -11,8 +11,21 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFolderRoot, lucideLayoutGrid, lucideLayoutList, lucideUpload } from '@ng-icons/lucide';
+import {
+  lucideFile,
+  lucideFileDigit,
+  lucideFileImage,
+  lucideFileMusic,
+  lucideFileText,
+  lucideFileVideoCamera,
+  lucideFolder,
+  lucideFolderRoot,
+  lucideLayoutGrid,
+  lucideLayoutList,
+  lucideUpload,
+} from '@ng-icons/lucide';
 import { Asset, AssetKind } from '@shared/models/asset.model';
+import { AssetFileType, assetFileTypeDescriptions } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
@@ -68,6 +81,13 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
       lucideLayoutList,
       lucideLayoutGrid,
       lucideUpload,
+      lucideFolder,
+      lucideFile,
+      lucideFileImage,
+      lucideFileVideoCamera,
+      lucideFileMusic,
+      lucideFileText,
+      lucideFileDigit,
     }),
   ],
 })
@@ -178,11 +198,12 @@ export class AssetsSelectDialogComponent implements OnInit {
   }
 
   fileIcon(type: string): string {
-    if (type.startsWith('audio/')) return 'audio_file';
-    if (type.startsWith('image/')) return 'image';
-    if (type.startsWith('font/')) return 'font_download';
-    if (type.startsWith('video/')) return 'video_file';
-    return 'file_present';
+    if (type.startsWith('audio/')) return assetFileTypeDescriptions[AssetFileType.AUDIO].icon;
+    if (type.startsWith('text/')) return assetFileTypeDescriptions[AssetFileType.TEXT].icon;
+    if (type.startsWith('image/')) return assetFileTypeDescriptions[AssetFileType.IMAGE].icon;
+    if (type.startsWith('video/')) return assetFileTypeDescriptions[AssetFileType.VIDEO].icon;
+    if (type.startsWith('application/')) return assetFileTypeDescriptions[AssetFileType.APPLICATION].icon;
+    return assetFileTypeDescriptions[AssetFileType.ANY].icon;
   }
 
   filePreview(type: string): boolean {

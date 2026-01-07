@@ -91,8 +91,8 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
       lucideFileImage,
       lucideFileVideoCamera,
       lucideFileMusic,
-      lucideFileDigit,
       lucideFileText,
+      lucideFileDigit,
     }),
   ],
 })

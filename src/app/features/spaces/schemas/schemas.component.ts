@@ -13,11 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -72,15 +68,12 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatIconModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
+    ReactiveFormsModule,
     HlmButtonImports,
     HlmIconImports,
     HlmDropdownMenuImports,
@@ -92,7 +85,6 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
     HlmFieldImports,
     BrnPopoverImports,
     HlmPopoverImports,
-    ReactiveFormsModule,
     HlmInputGroupImports,
   ],
   providers: [

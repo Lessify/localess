@@ -1,10 +1,7 @@
-import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -17,6 +14,7 @@ import {
   lucideEllipsisVertical,
   lucideExternalLink,
   lucideFilePlus,
+  lucideFolder,
   lucideFolderInput,
   lucideFolderPlus,
   lucideFolderRoot,
@@ -68,12 +66,10 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatIconModule,
     CanUserPerformPipe,
     CommonModule,
     MatTableModule,
     MatSortModule,
-    MatCheckboxModule,
     StatusComponent,
     MatPaginatorModule,
     HlmButtonImports,
@@ -99,6 +95,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
       lucideCopy,
       lucideFolderInput,
       lucideTrash,
+      lucideFolder,
     }),
   ],
 })
@@ -122,8 +119,7 @@ export class ContentsComponent {
 
   isLoading = signal(true);
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
-  selection = new SelectionModel<Content>(true, [], undefined, (o1, o2) => o1.id === o2.id);
+  displayedColumns: string[] = ['status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
 
   schemas: Schema[] = [];
   schemasMapById: Map<string, Schema> = new Map<string, Schema>();
@@ -162,7 +158,6 @@ export class ContentsComponent {
           this.dataSource.sort = this.sort();
           this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
-          this.selection.clear();
           this.cd.markForCheck();
         },
       });
@@ -237,7 +232,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Content has been updated.');
         },
@@ -280,7 +274,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success(messageSuccess);
         },
@@ -309,7 +302,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Document has been moved.');
         },
@@ -337,7 +329,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success(`Document '${element.name}' has been cloned.`);
         },
@@ -390,24 +381,6 @@ export class ContentsComponent {
       });
   }
 
-  // TABLE
-  /** Whether the number of selected elements matches the total number of rows. */
-  isAllSelected() {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.length;
-    return numSelected === numRows;
-  }
-
-  /** Selects all rows if they are not all selected; otherwise clear selection. */
-  toggleAllRows() {
-    if (this.isAllSelected()) {
-      this.selection.clear();
-      return;
-    }
-
-    this.selection.select(...this.dataSource.data);
-  }
-
   onRowSelect(element: Content): void {
     this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {
@@ -420,7 +393,6 @@ export class ContentsComponent {
     }
 
     if (element.kind === ContentKind.FOLDER) {
-      this.selection.clear();
       const contentPath = ObjectUtils.clone(this.spaceStore.contentPath() || []);
       contentPath.push({
         name: element.name,
@@ -432,7 +404,6 @@ export class ContentsComponent {
 
   navigateToSlug(pathItem: PathItem) {
     this.isLoading.set(true);
-    this.selection.clear();
     const contentPath = ObjectUtils.clone(this.spaceStore.contentPath() || []);
     const idx = contentPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     contentPath.splice(idx + 1);

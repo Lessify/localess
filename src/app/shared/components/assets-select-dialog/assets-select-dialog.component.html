@@ -72,10 +72,10 @@
         <mat-cell *matCellDef="let element">
           @switch (element.kind) {
             @case ('FILE') {
-              <mat-icon>{{ fileIcon(element.type) }}</mat-icon>
+              <ng-icon hlm [name]="fileIcon(element.type)" />
             }
             @case ('FOLDER') {
-              <mat-icon>folder</mat-icon>
+              <ng-icon hlm name="lucideFolder" />
             }
           }
         </mat-cell>
@@ -183,24 +183,20 @@
                   [loaderParams]="{ thumbnail: true }" />
               </div>
             } @else if (item.kind === 'FILE') {
-              <div class="relative aspect-square w-full">
+              <div class="relative aspect-square w-full bg-primary-foreground">
                 @if (item.extension; as extension) {
-                  <span hlmBadge class="absolute top-5 left-5">{{ extension }}</span>
+                  <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
                 }
-                <img
-                  class="aspect-square w-full object-contain p-4 bg-primary-foreground"
-                  ngSrc="assets/icons/{{ fileIcon(item.type) }}.svg"
-                  alt="File"
-                  width="240"
-                  height="240" />
+                <div class="w-full h-full flex items-center justify-center">
+                  <ng-icon hlm size="xl" [name]="fileIcon(item.type)" />
+                </div>
               </div>
             } @else {
-              <img
-                ngSrc="assets/icons/folder.svg"
-                alt="Folder"
-                width="240"
-                height="240"
-                class="aspect-square w-full object-contain p-4 bg-primary-foreground" />
+              <div class="relative aspect-square w-full bg-primary-foreground">
+                <div class="w-full h-full flex items-center justify-center">
+                  <ng-icon hlm size="xl" name="lucideFolder" />
+                </div>
+              </div>
             }
           </div>
           <div hlmItemContent class="px-4">

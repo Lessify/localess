@@ -74,23 +74,6 @@
   </nav>
 
   <mat-table [dataSource]="dataSource" matSort>
-    <!-- Checkbox Column -->
-    <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef>
-        <mat-checkbox
-          (change)="$event ? toggleAllRows() : null"
-          [checked]="selection.hasValue() && isAllSelected()"
-          [indeterminate]="selection.hasValue() && !isAllSelected()">
-        </mat-checkbox>
-      </mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        <mat-checkbox
-          (click)="$event.stopPropagation()"
-          (change)="$event ? selection.toggle(row) : null"
-          [checked]="selection.isSelected(row)">
-        </mat-checkbox>
-      </mat-cell>
-    </ng-container>
     <ng-container matColumnDef="status">
       <mat-header-cell *matHeaderCellDef> Status</mat-header-cell>
       <mat-cell *matCellDef="let element">
@@ -105,7 +88,7 @@
             }
           }
           @case ('FOLDER') {
-            <mat-icon>folder</mat-icon>
+            <ng-icon hlm name="lucideFolder" />
           }
         }
       </mat-cell>

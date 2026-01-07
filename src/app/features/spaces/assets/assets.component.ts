@@ -1,10 +1,7 @@
-import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -14,8 +11,15 @@ import {
   lucideCloudDownload,
   lucideDownload,
   lucideEllipsisVertical,
+  lucideFile,
+  lucideFileDigit,
+  lucideFileImage,
+  lucideFileMusic,
   lucideFileSymlink,
+  lucideFileText,
   lucideFileUp,
+  lucideFileVideoCamera,
+  lucideFolder,
   lucideFolderInput,
   lucideFolderPlus,
   lucideFolderRoot,
@@ -45,6 +49,7 @@ import {
   AssetFolderUpdate,
   AssetKind,
 } from '@shared/models/asset.model';
+import { AssetFileType, assetFileTypeDescriptions } from '@shared/models/schema.model';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
@@ -85,12 +90,10 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   styleUrls: ['./assets.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatIconModule,
     CanUserPerformPipe,
     CommonModule,
     FileDragAndDropDirective,
     MatTableModule,
-    MatCheckboxModule,
     MatSortModule,
     TimeDurationPipe,
     FormatFileSizePipe,
@@ -126,6 +129,13 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
       lucidePencil,
       lucideFolderInput,
       lucideTrash,
+      lucideFolder,
+      lucideFile,
+      lucideFileImage,
+      lucideFileVideoCamera,
+      lucideFileMusic,
+      lucideFileText,
+      lucideFileDigit,
     }),
   ],
 })
@@ -147,8 +157,7 @@ export class AssetsComponent implements OnInit {
 
   private destroyRef = inject(DestroyRef);
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
-  displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
-  selection = new SelectionModel<Asset>(true, [], undefined, (o1, o2) => o1.id === o2.id);
+  displayedColumns: string[] = ['icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
   assets: Asset[] = [];
   fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
   now = Date.now();
@@ -183,7 +192,6 @@ export class AssetsComponent implements OnInit {
           this.dataSource.sort = this.sort() || null;
           this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
-          this.selection.clear();
           this.cd.markForCheck();
         },
       });
@@ -351,7 +359,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Folder has been updated.');
         },
@@ -380,7 +387,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('File has been updated.');
         },
@@ -418,7 +424,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success(`Asset '${element.name}' has been deleted.`);
         },
@@ -447,7 +452,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Asset has been moved.');
         },
@@ -455,24 +459,6 @@ export class AssetsComponent implements OnInit {
           this.notificationService.error('Asset can not be moved.');
         },
       });
-  }
-
-  // TABLE
-  /** Whether the number of selected elements matches the total number of rows. */
-  isAllSelected() {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.length;
-    return numSelected === numRows;
-  }
-
-  /** Selects all rows if they are not all selected; otherwise clear selection. */
-  toggleAllRows() {
-    if (this.isAllSelected()) {
-      this.selection.clear();
-      return;
-    }
-
-    this.selection.select(...this.dataSource.data);
   }
 
   onAssetSelect(element: Asset): void {
@@ -493,7 +479,6 @@ export class AssetsComponent implements OnInit {
         });
     } else if (element.kind === AssetKind.FOLDER) {
       this.isLoading.set(true);
-      this.selection.clear();
       const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
       assetPath.push({
         name: element.name,
@@ -505,7 +490,6 @@ export class AssetsComponent implements OnInit {
 
   navigateToSlug(pathItem: PathItem) {
     this.isLoading.set(true);
-    this.selection.clear();
     const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
     const idx = assetPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     assetPath.splice(idx + 1);
@@ -513,12 +497,12 @@ export class AssetsComponent implements OnInit {
   }
 
   fileIcon(type: string): string {
-    if (type.startsWith('audio/')) return 'audio_file';
-    if (type.startsWith('text/')) return 'description';
-    if (type.startsWith('image/')) return 'image';
-    if (type.startsWith('font/')) return 'font_download';
-    if (type.startsWith('video/')) return 'video_file';
-    return 'file_present';
+    if (type.startsWith('audio/')) return assetFileTypeDescriptions[AssetFileType.AUDIO].icon;
+    if (type.startsWith('text/')) return assetFileTypeDescriptions[AssetFileType.TEXT].icon;
+    if (type.startsWith('image/')) return assetFileTypeDescriptions[AssetFileType.IMAGE].icon;
+    if (type.startsWith('video/')) return assetFileTypeDescriptions[AssetFileType.VIDEO].icon;
+    if (type.startsWith('application/')) return assetFileTypeDescriptions[AssetFileType.APPLICATION].icon;
+    return assetFileTypeDescriptions[AssetFileType.ANY].icon;
   }
 
   filePreview(type: string): boolean {
@@ -595,7 +579,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Assets Regenerate Metadata Task has been created.', [
             {

@@ -3,11 +3,6 @@ import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input }
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Timestamp } from '@angular/fire/firestore';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { provideIcons } from '@ng-icons/core';
 import { lucideRotateCw } from '@ng-icons/lucide';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -25,20 +20,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    CanUserPerformPipe,
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-    FormatFileSizePipe,
-    MatProgressBarModule,
-    MatCardModule,
-    MatTooltipModule,
-    HlmButtonImports,
-    HlmIconImports,
-    HlmCardImports,
-    HlmProgressImports,
-  ],
+  imports: [CanUserPerformPipe, CommonModule, FormatFileSizePipe, HlmButtonImports, HlmIconImports, HlmCardImports, HlmProgressImports],
   providers: [
     provideIcons({
       lucideRotateCw,

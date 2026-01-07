@@ -15,9 +15,8 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTreeModule } from '@angular/material/tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -109,9 +108,7 @@ import { TranslationNode } from './shared/models/translation.model';
   imports: [
     CommonModule,
     CanUserPerformPipe,
-    MatFormFieldModule,
     ReactiveFormsModule,
-    FormsModule,
     ScrollingModule,
     StatusComponent,
     TranslationStringViewComponent,
