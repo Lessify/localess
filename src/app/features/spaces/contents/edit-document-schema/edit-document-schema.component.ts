@@ -1,5 +1,4 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -21,17 +20,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCirclePlus, lucideCopy, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
@@ -64,7 +54,6 @@ import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { MarkdownComponent } from 'ngx-markdown';
 import { debounceTime } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { v4 } from 'uuid';
@@ -75,6 +64,7 @@ import { ReferenceSelectComponent } from '../shared/reference-select/reference-s
 import { ReferencesSelectComponent } from '../shared/references-select/references-select.component';
 import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
 import { SchemaSelectChange } from './edit-document-schema.model';
+import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-editor.component';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -83,20 +73,9 @@ import { SchemaSelectChange } from './edit-document-schema.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatTooltipModule,
-    MatIconModule,
-    MatMenuModule,
-    TextFieldModule,
     RichTextEditorComponent,
-    MatTabsModule,
-    MarkdownComponent,
-    MatSlideToggleModule,
-    MatSelectModule,
     LinkSelectComponent,
     ReferenceSelectComponent,
     ReferencesSelectComponent,
@@ -115,6 +94,7 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     HlmSwitchImports,
     BrnSelectImports,
     HlmSelectImports,
+    MarkdownEditorComponent,
   ],
   providers: [
     provideIcons({

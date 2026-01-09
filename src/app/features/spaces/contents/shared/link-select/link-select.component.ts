@@ -93,7 +93,6 @@ export class LinkSelectComponent implements OnInit {
   }
 
   protected displayWith = (content?: string): string => {
-    console.log('displayWith', content);
     if (content) {
       const doc = this.documents()?.find(it => it.id === content);
       if (doc) {
@@ -111,7 +110,6 @@ export class LinkSelectComponent implements OnInit {
   }
 
   displayContent(content?: ContentDocument): string {
-    console.log('displayContent', content);
     return content ? `${content.name} | ${content.fullSlug}` : '';
   }
 
