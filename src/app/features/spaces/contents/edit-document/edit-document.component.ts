@@ -271,10 +271,14 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     const data = this.document().data;
     if (data === undefined) {
       return false;
-    } else if (typeof data === 'string') {
-      return data !== JSON.stringify(this.contentHelperService.clone(this.documentData));
     }
-    return JSON.stringify(data) !== JSON.stringify(this.contentHelperService.clone(this.documentData));
+
+    // Normalize both original and current data for comparison
+    const originalData = typeof data === 'string' ? JSON.parse(data) : data;
+    const normalizedOriginal = this.contentHelperService.clone(originalData);
+    const normalizedCurrent = this.contentHelperService.clone(this.documentData);
+
+    return !ObjectUtils.isEqual(normalizedOriginal, normalizedCurrent);
   }
 
   publish(): void {
