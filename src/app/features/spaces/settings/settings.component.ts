@@ -30,6 +30,7 @@ export class SettingsComponent {
     { icon: 'language', label: 'Locales', link: 'locales' },
     { icon: 'shape_line', label: 'Visual Editor', link: 'visual-editor' },
     { icon: 'badge', label: 'Access Tokens', link: 'tokens' },
+    { icon: 'webhook', label: 'Webhooks', link: 'webhooks' },
   ];
 
   constructor() {

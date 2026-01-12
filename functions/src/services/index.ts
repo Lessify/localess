@@ -9,3 +9,4 @@ export * from './token.service';
 export * from './translation.service';
 export * from './translation-history.service';
 export * from './user.service';
+export * from './webhook.service';

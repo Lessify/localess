@@ -1,0 +1,22 @@
+table {
+  width: 100%;
+}
+
+mat-header-cell,
+mat-cell {
+  &.mat-column-enabled {
+    max-width: 100px;
+  }
+  &.mat-column-events {
+    max-width: 300px;
+  }
+  &.mat-column-createdAt {
+    max-width: 120px;
+  }
+  &.mat-column-updatedAt {
+    max-width: 120px;
+  }
+  &.mat-column-actions {
+    max-width: 160px;
+  }
+}

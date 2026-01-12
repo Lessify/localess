@@ -5,6 +5,7 @@ import { LocalesComponent } from './locales/locales.component';
 import { SettingsComponent } from './settings.component';
 import { TokensComponent } from './tokens/tokens.component';
 import { VisualEditorComponent } from './visual-editor/visual-editor.component';
+import { WebhooksComponent } from './webhooks/webhooks.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'general', pathMatch: 'full' },
@@ -27,6 +28,10 @@ const routes: Routes = [
       {
         path: 'tokens',
         component: TokensComponent,
+      },
+      {
+        path: 'webhooks',
+        component: WebhooksComponent,
       },
     ],
   },

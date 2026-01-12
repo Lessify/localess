@@ -16,6 +16,8 @@ import {
   Schema,
   Space,
   UserPermission,
+  WebHookEvent,
+  WebHookPayload,
 } from './models';
 import {
   extractContent,
@@ -27,6 +29,7 @@ import {
   findSpaceById,
   spaceContentCachePath,
 } from './services';
+import { triggerWebHooksForEvent } from './utils/webhook-utils';
 
 // Publish
 const publish = onCall<PublishContentData>(async request => {
@@ -56,6 +59,19 @@ const publish = onCall<PublishContentData>(async request => {
     // Save Cache
     logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/cache.json`);
     await bucket.file(`spaces/${spaceId}/contents/${contentId}/cache.json`).save('');
+
+    // Trigger webhooks for content published event
+    const webhookPayload: WebHookPayload = {
+      event: WebHookEvent.CONTENT_PUBLISHED,
+      spaceId,
+      timestamp: new Date().toISOString(),
+      data: {
+        contentId,
+        content,
+      },
+    };
+    await triggerWebHooksForEvent(spaceId, webhookPayload);
+
     return;
   } else {
     logger.info(`[Content::contentPublish] Content ${contentId} does not exist.`);
@@ -221,6 +237,19 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
         logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/cache.json`);
         await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/cache.json`).save('');
       }
+
+      // Trigger webhooks for content saved/updated event
+      const webhookPayload: WebHookPayload = {
+        event: WebHookEvent.CONTENT_UPDATED,
+        spaceId,
+        timestamp: new Date().toISOString(),
+        data: {
+          contentId,
+          content: contentAfter,
+          previousContent: contentBefore,
+        },
+      };
+      await triggerWebHooksForEvent(spaceId, webhookPayload);
     }
   } else {
     // In case it is a PAGE, skip recursion as PAGE doesn't have child
@@ -281,6 +310,19 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
 
   const content = event.data.data() as Content;
   logger.info(`[Content::onDelete] eventId='${event.id}' id='${event.data.id}' fullSlug='${content.fullSlug}'`);
+
+  // Trigger webhooks for content deleted event
+  const webhookPayload: WebHookPayload = {
+    event: WebHookEvent.CONTENT_DELETED,
+    spaceId,
+    timestamp: new Date().toISOString(),
+    data: {
+      contentId,
+      content,
+    },
+  };
+  await triggerWebHooksForEvent(spaceId, webhookPayload);
+
   // Logic related to delete, in case a folder is deleted it should be cascaded to all childs
   if (content.kind === ContentKind.DOCUMENT) {
     await bucket.deleteFiles({

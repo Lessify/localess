@@ -16,3 +16,4 @@ export * from './translation.model';
 export * from './translation.zod';
 export * from './translation-history.model';
 export * from './user.model';
+export * from './webhook.model';

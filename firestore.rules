@@ -72,6 +72,19 @@ service cloud.firestore {
         allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
         allow write: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
       }
+
+      // WebHooks
+      match /webhooks/{webhookId} {
+        allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
+        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
+        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
+        allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
+
+        // WebHook Logs
+        match /logs/{logId} {
+          allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
+        }
+      }
     }
 
     // Users
