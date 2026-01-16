@@ -99,9 +99,9 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="displayName"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <div>
-          {{ element.displayName }} <br />
-          <span class="text-muted-foreground">#{{ element.id }}</span>
+        <div [title]="element.displayName">
+          <div class="line-clamp-1">{{ element.displayName }}</div>
+          <div class="text-muted-foreground line-clamp-1">#{{ element.id }}</div>
         </div>
       </mat-cell>
     </ng-container>
