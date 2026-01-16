@@ -1,11 +1,13 @@
-<div class="p-2 flex items-center justify-end gap-2">
-  <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Schemas">
-    <ng-icon hlm size="sm" name="lucideArrowLeft" />
-  </button>
-  <span class="title">{{ entity?.displayName }}</span>
-  &nbsp;
-  <span class="text-muted-foreground">#{{ entity?.id }}</span>
-  <span class="spacer"></span>
+<div class="p-2 flex items-center justify-between gap-2">
+  <div class="flex items-center gap-2">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Schemas">
+      <ng-icon hlm size="sm" name="lucideArrowLeft" />
+    </button>
+    <div>
+      <div class="text-lg line-clamp-1">{{ entity?.displayName }}</div>
+      <div class="text-muted-foreground line-clamp-1">#{{ entity?.id }}</div>
+    </div>
+  </div>
   @if ('SCHEMA_UPDATE' | canUserPerform | async) {
     <button hlmBtn hlmTooltipTrigger="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
       @if (isSaveLoading()) {
