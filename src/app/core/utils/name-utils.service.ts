@@ -8,6 +8,8 @@ export class NameUtils {
   }
   public static slug(input: string): string {
     return input
+      .normalize('NFD') // Decompose accented characters
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
       .trim()
       .toLowerCase()
       .replace(/\s/g, '-')

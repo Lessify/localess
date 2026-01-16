@@ -97,8 +97,8 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div>
-          {{ element.name }} <br />
-          <span class="text-muted-foreground">#{{ element.slug }}</span>
+          <div class="line-clamp-1">{{ element.name }} </div>
+          <div class="text-muted-foreground line-clamp-1">#{{ element.slug }}</div>
         </div>
       </mat-cell>
     </ng-container>

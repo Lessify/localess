@@ -1,11 +1,12 @@
 <div class="p-2 flex items-center justify-between gap-2">
-  <div>
+  <div class="flex items-center gap-2">
     <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Contents">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
-    <span class="title">{{ document().name }}</span>
-    &nbsp;
-    <span class="subtitle">#{{ document().slug }}</span>
+    <div>
+      <div class="title line-clamp-1">{{ document().name }}</div>
+      <div class="subtitle line-clamp-1">#{{ document().slug }}</div>
+    </div>
   </div>
   <div class="flex items-center gap-2">
     <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorEnabled()">
