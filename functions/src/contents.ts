@@ -147,16 +147,16 @@ async function publishDocument(
     // Save generated JSON
     logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
     await bucket.file(`spaces/${spaceId}/contents/${documentId}/${locale.id}.json`).save(JSON.stringify(documentStorage));
-    // Update publishedAt
-    await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
-    const addHistory: WithFieldValue<ContentHistory> = {
-      type: ContentHistoryType.PUBLISHED,
-      name: auth?.token['name'] || FieldValue.delete(),
-      email: auth?.token.email || FieldValue.delete(),
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    await findContentsHistory(spaceId, documentId).add(addHistory);
   }
+  // Update publishedAt
+  await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
+  const addHistory: WithFieldValue<ContentHistory> = {
+    type: ContentHistoryType.PUBLISHED,
+    name: auth?.token['name'] || FieldValue.delete(),
+    email: auth?.token.email || FieldValue.delete(),
+    createdAt: FieldValue.serverTimestamp(),
+  };
+  await findContentsHistory(spaceId, documentId).add(addHistory);
 }
 
 // Firestore events
