@@ -4,7 +4,7 @@ import { AssetFileType, SchemaFieldKind, SchemaType } from './schema.model';
 // const FIELD_NAME_PATTERN = /^[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+$/;
 // const ID_PATTERN = /^[a-zA-Z]+[a-zA-Z0-9-_.]*[a-zA-Z0-9]+$/;
 
-export const schemaTypeSchema = z.nativeEnum(SchemaType);
+export const schemaTypeSchema = z.enum(SchemaType);
 
 export const schemaBaseSchema = z.object({
   id: z.string(),
@@ -19,7 +19,7 @@ export const schemaEnumValueSchema = z.object({
   value: z.string(),
 });
 
-export const schemaFieldKindSchema = z.nativeEnum(SchemaFieldKind);
+export const schemaFieldKindSchema = z.enum(SchemaFieldKind);
 
 export const schemaFieldBaseSchema = z.object({
   name: z.string(),
@@ -113,7 +113,7 @@ export const schemaFieldReferencesSchema = schemaFieldBaseSchema.extend({
   path: z.string().optional(),
 });
 
-export const assetFileTypeSchema = z.nativeEnum(AssetFileType);
+export const assetFileTypeSchema = z.enum(AssetFileType);
 
 export const schemaEnumSchema = schemaBaseSchema.extend({
   type: z.literal(SchemaType.ENUM),

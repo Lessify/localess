@@ -9,7 +9,7 @@ export const contentDataSchema = z.object({
 
 export const contentBaseSchema = z.object({
   id: z.string(),
-  kind: z.nativeEnum(ContentKind),
+  kind: z.enum(ContentKind),
   name: z.string(),
   slug: z.string(),
   parentSlug: z.string(),

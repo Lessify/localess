@@ -163,13 +163,15 @@ export class ContentHelperService {
    * @param {ContentData} data - document
    * @param {Schema[]} schemas
    * @param {string} locale
+   * @return {[Set<string>, Set<string>, Set<string>]} [inUseAssets, inUseLinks, inUseReferences]
    */
-  extractReferences(data: ContentData | undefined, schemas: Schema[], locale: string): [Set<string>, Set<string>] {
+  extractReferences(data: ContentData | undefined, schemas: Schema[], locale: string): [Set<string>, Set<string>, Set<string>] {
     //console.group('extractReferences', locale);
     const inUseAssets = new Set<string>();
+    const inUseLinks = new Set<string>();
     const inUseReferences = new Set<string>();
     const schemasById = new Map<string, Schema>(schemas.map(it => [it.id, it]));
-    if (data === undefined) return [inUseAssets, inUseReferences];
+    if (data === undefined) return [inUseAssets, inUseLinks, inUseReferences];
     const contentIteration = [data];
     // Iterative traversing content and extracting references.
     let selectedContent = contentIteration.pop();
@@ -197,7 +199,7 @@ export class ContentHelperService {
             } else if (isReferenceContent(content)) {
               inUseReferences.add(content.uri);
             } else if (isLinkContent(content) && content.type === 'content') {
-              inUseReferences.add(content.uri);
+              inUseLinks.add(content.uri);
             }
           }
         });
@@ -222,7 +224,7 @@ export class ContentHelperService {
     }
     //console.log(inUseAssets, inUseReferences);
     //console.groupEnd();
-    return [inUseAssets, inUseReferences];
+    return [inUseAssets, inUseLinks, inUseReferences];
   }
 
   /**

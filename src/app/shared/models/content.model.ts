@@ -34,10 +34,6 @@ export interface ContentBase {
   parentSlug: string;
   fullSlug: string;
 
-  //Lock
-  locked?: boolean;
-  lockedBy?: string;
-
   updatedBy?: {
     name: string;
     email: string;
@@ -53,6 +49,7 @@ export interface ContentDocument<T extends ContentData = ContentData> extends Co
   data?: T | string;
   publishedAt?: Timestamp;
   assets?: string[];
+  links?: string[];
   references?: string[];
 }
 

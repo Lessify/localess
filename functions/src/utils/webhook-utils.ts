@@ -22,12 +22,7 @@ export function generateSignature(secret: string, payload: string): string {
  * @param {WebHook} webhook WebHook configuration
  * @param {WebHookPayload} payload Payload to send
  */
-export async function triggerWebHook(
-  spaceId: string,
-  webhookId: string,
-  webhook: WebHook,
-  payload: WebHookPayload,
-): Promise<void> {
+export async function triggerWebHook(spaceId: string, webhookId: string, webhook: WebHook, payload: WebHookPayload): Promise<void> {
   const startTime = Date.now();
   const payloadJson = JSON.stringify(payload);
 

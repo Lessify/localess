@@ -32,10 +32,7 @@ export function findAllWebHooks(spaceId: string): Query {
  */
 export function findEnabledWebHooksByEvent(spaceId: string, event: WebHookEvent): Query {
   logger.info(`[findEnabledWebHooksByEvent] spaceId=${spaceId} event=${event}`);
-  return firestoreService
-    .collection(`spaces/${spaceId}/webhooks`)
-    .where('enabled', '==', true)
-    .where('events', 'array-contains', event);
+  return firestoreService.collection(`spaces/${spaceId}/webhooks`).where('enabled', '==', true).where('events', 'array-contains', event);
 }
 
 /**
@@ -46,8 +43,5 @@ export function findEnabledWebHooksByEvent(spaceId: string, event: WebHookEvent)
  */
 export function findWebHookLogs(spaceId: string, webhookId: string): Query {
   logger.info(`[findWebHookLogs] spaceId=${spaceId} webhookId=${webhookId}`);
-  return firestoreService
-    .collection(`spaces/${spaceId}/webhooks/${webhookId}/logs`)
-    .orderBy('createdAt', 'desc')
-    .limit(100);
+  return firestoreService.collection(`spaces/${spaceId}/webhooks/${webhookId}/logs`).orderBy('createdAt', 'desc').limit(100);
 }

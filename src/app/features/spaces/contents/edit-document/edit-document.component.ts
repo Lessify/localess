@@ -320,13 +320,14 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         .map(it => this.contentHelperService.extractReferences(this.documentData, this.schemas(), it.id))
         .reduce(
           (acc, val) => {
-            const inUseAssets = acc[0];
-            const inUseReferences = acc[1];
-            val[0].forEach(it => inUseAssets.add(it));
-            val[1].forEach(it => inUseReferences.add(it));
-            return [inUseAssets, inUseReferences];
+            const [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc] = acc;
+            const [inUseAssetsVal, inUseLinksVal, inUseReferencesVal] = val;
+            inUseAssetsVal.forEach(it => inUseAssetsAcc.add(it));
+            inUseLinksVal.forEach(it => inUseLinksAcc.add(it));
+            inUseReferencesVal.forEach(it => inUseReferencesAcc.add(it));
+            return [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc];
           },
-          [new Set<string>(), new Set<string>()],
+          [new Set<string>(), new Set<string>(), new Set<string>()],
         );
       this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData, refs).subscribe({
         next: () => {

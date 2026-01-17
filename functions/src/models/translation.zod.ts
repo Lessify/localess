@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 export const translationSchema = z.object({
   id: z.string(),
-  type: z.nativeEnum(TranslationType),
+  type: z.enum(TranslationType),
   locales: z.record(z.string(), z.string()),
   labels: z.array(z.string()).optional(),
   description: z.string().optional(),

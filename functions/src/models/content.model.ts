@@ -26,6 +26,7 @@ export interface ContentDocument<T extends ContentData = ContentData> extends Co
   data?: T | string;
   publishedAt?: Timestamp;
   assets?: string[];
+  links?: string[];
   references?: string[];
 }
 

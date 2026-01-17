@@ -98,10 +98,10 @@ async function publishDocument(
   schemas: Map<string, Schema>,
   auth?: AuthData
 ) {
-  let aggReferences: Record<string, ContentLink> | undefined;
-  if (document.references && document.references.length > 0) {
-    aggReferences = {};
-    for (const refId of document.references) {
+  let aggLinks: Record<string, ContentLink> | undefined;
+  if (document.links && document.links.length > 0) {
+    aggLinks = {};
+    for (const refId of document.links) {
       const contentSnapshot = await findContentById(spaceId, refId).get();
       const content = contentSnapshot.data() as Content;
       const link: ContentLink = {
@@ -117,7 +117,7 @@ async function publishDocument(
       if (content.kind === ContentKind.DOCUMENT) {
         link.publishedAt = content.publishedAt?.toDate().toISOString();
       }
-      aggReferences[refId] = link;
+      aggLinks[refId] = link;
     }
   }
 
@@ -141,8 +141,8 @@ async function publishDocument(
         documentStorage.data = extractContent(document.data, schemas, locale.id);
       }
     }
-    if (aggReferences) {
-      documentStorage.links = aggReferences;
+    if (aggLinks) {
+      documentStorage.links = aggLinks;
     }
     // Save generated JSON
     logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
@@ -186,10 +186,10 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
       const space: Space = spaceSnapshot.data() as Space;
       const document: ContentDocument = contentAfter;
       const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
-      let aggReferences: Record<string, ContentLink> | undefined;
-      if (document.references && document.references.length > 0) {
-        aggReferences = {};
-        for (const refId of document.references) {
+      let aggLinks: Record<string, ContentLink> | undefined;
+      if (document.links && document.links.length > 0) {
+        aggLinks = {};
+        for (const refId of document.links) {
           const contentSnapshot = await findContentById(spaceId, refId).get();
           const content = contentSnapshot.data() as Content;
           const link: ContentLink = {
@@ -205,7 +205,7 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
           if (content.kind === ContentKind.DOCUMENT) {
             link.publishedAt = content.publishedAt?.toDate().toISOString();
           }
-          aggReferences[refId] = link;
+          aggLinks[refId] = link;
         }
       }
       for (const locale of space.locales) {
@@ -227,8 +227,8 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
             documentStorage.data = extractContent(document.data, schemas, locale.id);
           }
         }
-        if (aggReferences) {
-          documentStorage.links = aggReferences;
+        if (aggLinks) {
+          documentStorage.links = aggLinks;
         }
         // Save generated JSON
         logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);

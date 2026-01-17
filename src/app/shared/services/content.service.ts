@@ -220,11 +220,19 @@ export class ContentService {
     );
   }
 
-  updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>]): Observable<void> {
+  /**
+   * Update Document Data
+   * @param spaceId
+   * @param id
+   * @param data
+   * @param refs Tuple of Sets: [assets, links, references]
+   */
+  updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>, Set<string>]): Observable<void> {
     const update: UpdateData<ContentDocument> = {
       data: JSON.stringify(this.contentHelperService.clone(data)),
       updatedAt: serverTimestamp(),
       assets: Array.from(refs[0]),
+      links: Array.from(refs[1]),
       references: Array.from(refs[1]),
     };
     if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
