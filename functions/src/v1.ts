@@ -8,7 +8,6 @@ import sharp from 'sharp';
 import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService, TEN_MINUTES } from './config';
 import { AssetFile, Content, ContentKind, ContentLink, Space } from './models';
 import {
-  contentCachePath,
   contentLocaleCachePath,
   extractThumbnail,
   findContentByFullSlug,
@@ -238,11 +237,12 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
   } else {
     contentId = contentsSnapshot.docs[0].id;
   }
-  const cachePath = contentCachePath(spaceId, contentId, version as string | undefined);
-  logger.info('v1 spaces content cachePath: ' + cachePath);
-  const [exists] = await bucket.file(cachePath).exists();
+  const cacheCheckPath = spaceContentCachePath(spaceId);
+  const cacheCheckFile = bucket.file(cacheCheckPath);
+  logger.info('v1 spaces content cachePath: ' + cacheCheckPath);
+  const [exists] = await cacheCheckFile.exists();
   if (exists) {
-    const [metadata] = await bucket.file(cachePath).getMetadata();
+    const [metadata] = await cacheCheckFile.getMetadata();
     // logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?cv=${metadata.generation}`;
@@ -276,14 +276,14 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
           res
             .status(404)
             .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-            .send(new HttpsError('not-found', 'File not found, on path. Please Publish again.'));
+            .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
         });
     }
   } else {
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-      .send(new HttpsError('not-found', 'File not found, Publish first.'));
+      .send(new HttpsError('not-found', 'File not found, Publish first. The content is cached for 10 minutes.'));
     return;
   }
 });
@@ -319,10 +319,12 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
       .send(new HttpsError('not-found', 'Not found'));
     return;
   }
-  const cachePath = contentCachePath(spaceId, contentId, version as string | undefined);
-  const [exists] = await bucket.file(cachePath).exists();
+  const cacheCheckPath = spaceContentCachePath(spaceId);
+  const cacheCheckFile = bucket.file(cacheCheckPath);
+  logger.info('v1 spaces content cachePath: ' + cacheCheckPath);
+  const [exists] = await cacheCheckFile.exists();
   if (exists) {
-    const [metadata] = await bucket.file(cachePath).getMetadata();
+    const [metadata] = await cacheCheckFile.getMetadata();
     // logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?cv=${metadata.generation}`;
@@ -356,14 +358,14 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
           res
             .status(404)
             .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-            .send(new HttpsError('not-found', 'File not found, on path. Please Publish again.'));
+            .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
         });
     }
   } else {
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-      .send(new HttpsError('not-found', 'File not found, Publish first.'));
+      .send(new HttpsError('not-found', 'File not found, Publish first. The content is cached for 10 minutes.'));
     return;
   }
 });

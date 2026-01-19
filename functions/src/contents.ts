@@ -56,9 +56,6 @@ const publish = onCall<PublishContentData>(async request => {
         await publishDocument(spaceId, space, contentId, document, documentSnapshot, schemas, auth);
       }
     }
-    // Save Cache
-    logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/cache.json`);
-    await bucket.file(`spaces/${spaceId}/contents/${contentId}/cache.json`).save('');
 
     // Trigger webhooks for content published event
     const webhookPayload: WebHookPayload = {
@@ -233,9 +230,6 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
         // Save generated JSON
         logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);
         await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`).save(JSON.stringify(documentStorage));
-        // Save Cache
-        logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/cache.json`);
-        await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/cache.json`).save('');
       }
 
       // Trigger webhooks for content saved/updated event
@@ -323,7 +317,7 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
   };
   await triggerWebHooksForEvent(spaceId, webhookPayload);
 
-  // Logic related to delete, in case a folder is deleted it should be cascaded to all childs
+  // Logic related to delete, in case a folder is deleted it should be cascaded to all children
   if (content.kind === ContentKind.DOCUMENT) {
     await bucket.deleteFiles({
       prefix: `spaces/${spaceId}/contents/${contentId}`,
