@@ -57,7 +57,7 @@ export interface ContentDocumentStorage {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
-  links?: Record<string, ContentLink>;
+  links?: string[];
   references?: string[];
 }
 

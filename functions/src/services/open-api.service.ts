@@ -147,10 +147,19 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
         },
         {
           type: 'object',
-          description: 'References of all links used in the content.',
+          description: 'All links used in the content.',
           properties: {
             links: {
               $ref: '#/components/schemas/Links',
+            },
+          },
+        },
+        {
+          type: 'object',
+          description: 'All references used in the content.',
+          properties: {
+            references: {
+              $ref: '#/components/schemas/References',
             },
           },
         },
@@ -279,6 +288,51 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
           createdAt: '2024-04-30T20:57:41.827Z',
           updatedAt: '2024-04-30T21:31:47.344Z',
           publishedAt: '2024-05-01T13:02:41.814Z',
+        },
+      },
+    },
+    References: {
+      description: 'Key-Value Object. Where Key is Unique identifier for the Content object and Value is Content.',
+      type: 'object',
+      additionalProperties: {
+        $ref: '#/components/schemas/Content',
+      },
+      example: {
+        '4pLYWyN47c076mSfpWIy': {
+          id: '4pLYWyN47c076mSfpWIy',
+          kind: 'DOCUMENT',
+          name: 'Options',
+          slug: 'options',
+          fullSlug: 'docs/schemas/options',
+          parentSlug: 'docs/schemas',
+          createdAt: '2024-05-01T09:56:00.923Z',
+          updatedAt: '2024-05-01T09:57:06.445Z',
+          publishedAt: '2024-05-01T13:03:31.672Z',
+          data: {},
+        },
+        '5L2ELYsmaM6C0fOBzKp0': {
+          id: '5L2ELYsmaM6C0fOBzKp0',
+          kind: 'DOCUMENT',
+          name: 'Translations',
+          slug: 'translations',
+          fullSlug: 'docs/api/translations',
+          parentSlug: 'docs/api',
+          createdAt: '2024-05-04T14:03:54.100Z',
+          updatedAt: '2024-05-07T14:03:57.457Z',
+          publishedAt: '2024-05-07T11:05:46.094Z',
+          data: {},
+        },
+        '7fUavXjDpFuHGdWgTFXy': {
+          id: '7fUavXjDpFuHGdWgTFXy',
+          kind: 'DOCUMENT',
+          name: 'Overview',
+          slug: 'overview',
+          fullSlug: 'docs/content/overview',
+          parentSlug: 'docs/content',
+          createdAt: '2024-04-30T20:57:41.827Z',
+          updatedAt: '2024-04-30T21:31:47.344Z',
+          publishedAt: '2024-05-01T13:02:41.814Z',
+          data: {},
         },
       },
     },
@@ -559,6 +613,26 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
                 example: 'fb6oTcVjbnyLCMhO2iLY',
               },
             },
+            {
+              name: 'resolveReference',
+              in: 'query',
+              description: 'Resolve all references.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
+              },
+            },
+            {
+              name: 'resolveLink',
+              in: 'query',
+              description: 'Resolve all links.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
+              },
+            },
           ],
           responses: {
             '200': {
@@ -647,6 +721,26 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               schema: {
                 type: 'string',
                 example: 'fb6oTcVjbnyLCMhO2iLY',
+              },
+            },
+            {
+              name: 'resolveReference',
+              in: 'query',
+              description: 'Resolve all references.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
+              },
+            },
+            {
+              name: 'resolveLink',
+              in: 'query',
+              description: 'Resolve all links.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
               },
             },
           ],

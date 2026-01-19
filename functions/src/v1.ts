@@ -14,6 +14,7 @@ import {
   findSpaceById,
   findTokenById,
   identifySpaceLocale,
+  resolveLinks,
   resolveReferences,
   spaceContentCachePath,
   validateToken,
@@ -201,7 +202,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
   logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
   logger.info('v1 spaces content url: ' + req.url);
   const { spaceId } = req.params;
-  const { cv, locale, version, token, resolveReference } = req.query;
+  const { cv, locale, version, token, resolveReference, resolveLink } = req.query;
   const params: Record<string, unknown> = req.params;
   const slug = params['slug'] as string[];
   const fullSlug = slug.join('/');
@@ -259,6 +260,9 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
       if (resolveReference) {
         url += `&resolveReference=${resolveReference}`;
       }
+      if (resolveLink) {
+        url += `&resolveLink=${resolveLink}`;
+      }
       logger.info(`v1 spaces content redirect to => ${url}`);
       res.redirect(url);
       return;
@@ -273,11 +277,14 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
         .then(async content => {
           const contentData: ContentDocumentStorage = JSON.parse(content.toString());
           const { links, references, ...rest } = contentData;
-          logger.info(`v1 spaces content id resolve links => ${links}`);
           const response: ContentDocumentApi = { ...rest };
+          if (resolveLink === 'true') {
+            logger.info(`v1 spaces content id resolve links => ${links}`);
+            response.links = await resolveLinks(spaceId, contentData);
+          }
           if (resolveReference === 'true') {
             logger.info(`v1 spaces content slug resolve refs => ${references}`);
-            response.references = await resolveReferences(spaceId, contentData, actualLocale);
+            response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
           }
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -304,7 +311,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
   const { spaceId, contentId } = req.params;
-  const { cv, locale, version, token, resolveReference } = req.query;
+  const { cv, locale, version, token, resolveReference, resolveLink } = req.query;
   if (!validateToken(token)) {
     logger.info('v1 spaces content Token Not Valid string: ' + token);
     res
@@ -352,6 +359,9 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
       if (resolveReference) {
         url += `&resolveReference=${resolveReference}`;
       }
+      if (resolveLink) {
+        url += `&resolveLink=${resolveLink}`;
+      }
       logger.info(`v1 spaces content redirect to => ${url}`);
       res.redirect(url);
       return;
@@ -366,11 +376,14 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
         .then(async content => {
           const contentData: ContentDocumentStorage = JSON.parse(content.toString());
           const { links, references, ...rest } = contentData;
-          logger.info(`v1 spaces content id resolve links => ${links}`);
           const response: ContentDocumentApi = { ...rest };
+          if (resolveLink === 'true') {
+            logger.info(`v1 spaces content id resolve links => ${links}`);
+            response.links = await resolveLinks(spaceId, contentData);
+          }
           if (resolveReference === 'true') {
             logger.info(`v1 spaces content id resolve refs => ${references}`);
-            response.references = await resolveReferences(spaceId, contentData, actualLocale);
+            response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
           }
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)

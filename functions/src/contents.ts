@@ -11,7 +11,6 @@ import {
   ContentHistory,
   ContentHistoryType,
   ContentKind,
-  ContentLink,
   PublishContentData,
   Schema,
   Space,
@@ -95,29 +94,6 @@ async function publishDocument(
   schemas: Map<string, Schema>,
   auth?: AuthData
 ) {
-  let aggLinks: Record<string, ContentLink> | undefined;
-  if (document.links && document.links.length > 0) {
-    aggLinks = {};
-    for (const refId of document.links) {
-      const contentSnapshot = await findContentById(spaceId, refId).get();
-      const content = contentSnapshot.data() as Content;
-      const link: ContentLink = {
-        id: contentSnapshot.id,
-        kind: content.kind,
-        name: content.name,
-        slug: content.slug,
-        fullSlug: content.fullSlug,
-        parentSlug: content.parentSlug,
-        createdAt: content.createdAt.toDate().toISOString(),
-        updatedAt: content.updatedAt.toDate().toISOString(),
-      };
-      if (content.kind === ContentKind.DOCUMENT) {
-        link.publishedAt = content.publishedAt?.toDate().toISOString();
-      }
-      aggLinks[refId] = link;
-    }
-  }
-
   for (const locale of space.locales) {
     const documentStorage: ContentDocumentStorage = {
       id: documentId,
@@ -138,8 +114,8 @@ async function publishDocument(
         documentStorage.data = extractContent(document.data, schemas, locale.id);
       }
     }
-    if (aggLinks) {
-      documentStorage.links = aggLinks;
+    if (document.links && document.links.length > 0) {
+      documentStorage.links = document.links;
     }
     if (document.references && document.references.length > 0) {
       documentStorage.references = document.references;
@@ -186,28 +162,6 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
       const space: Space = spaceSnapshot.data() as Space;
       const document: ContentDocument = contentAfter;
       const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
-      let aggLinks: Record<string, ContentLink> | undefined;
-      if (document.links && document.links.length > 0) {
-        aggLinks = {};
-        for (const refId of document.links) {
-          const contentSnapshot = await findContentById(spaceId, refId).get();
-          const content = contentSnapshot.data() as Content;
-          const link: ContentLink = {
-            id: contentSnapshot.id,
-            kind: content.kind,
-            name: content.name,
-            slug: content.slug,
-            fullSlug: content.fullSlug,
-            parentSlug: content.parentSlug,
-            createdAt: content.createdAt.toDate().toISOString(),
-            updatedAt: content.updatedAt.toDate().toISOString(),
-          };
-          if (content.kind === ContentKind.DOCUMENT) {
-            link.publishedAt = content.publishedAt?.toDate().toISOString();
-          }
-          aggLinks[refId] = link;
-        }
-      }
       for (const locale of space.locales) {
         const documentStorage: ContentDocumentStorage = {
           id: event.data.after.id,
@@ -227,8 +181,8 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
             documentStorage.data = extractContent(document.data, schemas, locale.id);
           }
         }
-        if (aggLinks) {
-          documentStorage.links = aggLinks;
+        if (document.links && document.links.length > 0) {
+          documentStorage.links = document.links;
         }
         if (document.references && document.references.length > 0) {
           documentStorage.references = document.references;

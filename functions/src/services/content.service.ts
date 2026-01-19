@@ -1,13 +1,16 @@
 import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
-import { firestoreService } from '../config';
+import { bucket, firestoreService } from '../config';
 import {
   Content,
   ContentData,
+  ContentDocumentApi,
   ContentDocumentExport,
+  ContentDocumentStorage,
   ContentExport,
   ContentFolderExport,
   ContentKind,
+  ContentLink,
   Schema,
   SchemaFieldKind,
   SchemaType,
@@ -210,4 +213,76 @@ export function docContentToExport(docId: string, content: Content): ContentExpo
     } as ContentDocumentExport;
   }
   return undefined;
+}
+
+/**
+ * Resolve references for a single content document
+ * @param {string} spaceId Space identifier
+ * @param {ContentDocumentStorage} content Content document
+ * @param {string} locale Locale identifier
+ * @param {string} version Content version
+ * @return {Promise<Record<string, ContentDocumentStorage>>} Map of reference ID to content
+ */
+export async function resolveReferences(
+  spaceId: string,
+  content: ContentDocumentStorage,
+  locale: string,
+  version: string | 'draft' | undefined
+): Promise<Record<string, ContentDocumentApi> | undefined> {
+  if (!content.references || content.references.length === 0) {
+    return undefined;
+  }
+  const resolvedReferences: Record<string, ContentDocumentApi> = {};
+  await Promise.all(
+    content.references.map(async refId => {
+      try {
+        const refCachePath = contentLocaleCachePath(spaceId, refId, locale, version);
+        const [exists] = await bucket.file(refCachePath).exists();
+
+        if (exists) {
+          const [fileContent] = await bucket.file(refCachePath).download();
+          resolvedReferences[refId] = JSON.parse(fileContent.toString());
+        } else {
+          logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found at ${refCachePath}`);
+        }
+      } catch (error) {
+        logger.error(`[ReferenceResolver::resolveReferences] Failed to resolve reference ${refId}:`, error);
+      }
+    })
+  );
+  return resolvedReferences;
+}
+
+/**
+ * Resolve links for a single content document
+ * @param {string} spaceId Space identifier
+ * @param {ContentDocumentStorage} content Content document
+ * @return {Promise<Record<string, ContentLink>>} Map of reference ID to content
+ */
+export async function resolveLinks(spaceId: string, content: ContentDocumentStorage): Promise<Record<string, ContentLink> | undefined> {
+  if (!content.links || content.links.length === 0) {
+    return undefined;
+  }
+  const resolvedLinks: Record<string, ContentLink> = {};
+  await Promise.all(
+    content.links.map(async linkId => {
+      const contentSnapshot = await findContentById(spaceId, linkId).get();
+      const content = contentSnapshot.data() as Content;
+      const link: ContentLink = {
+        id: contentSnapshot.id,
+        kind: content.kind,
+        name: content.name,
+        slug: content.slug,
+        fullSlug: content.fullSlug,
+        parentSlug: content.parentSlug,
+        createdAt: content.createdAt.toDate().toISOString(),
+        updatedAt: content.updatedAt.toDate().toISOString(),
+      };
+      if (content.kind === ContentKind.DOCUMENT) {
+        link.publishedAt = content.publishedAt?.toDate().toISOString();
+      }
+      resolvedLinks[linkId] = link;
+    })
+  );
+  return resolvedLinks;
 }
