@@ -228,12 +228,13 @@ export class ContentService {
    * @param refs Tuple of Sets: [assets, links, references]
    */
   updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>, Set<string>]): Observable<void> {
+    console.log('updateDocumentData:refs', refs);
     const update: UpdateData<ContentDocument> = {
       data: JSON.stringify(this.contentHelperService.clone(data)),
       updatedAt: serverTimestamp(),
       assets: Array.from(refs[0]),
       links: Array.from(refs[1]),
-      references: Array.from(refs[1]),
+      references: Array.from(refs[2]),
     };
     if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
       update.updatedBy = {

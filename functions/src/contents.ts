@@ -141,6 +141,9 @@ async function publishDocument(
     if (aggLinks) {
       documentStorage.links = aggLinks;
     }
+    if (document.references && document.references.length > 0) {
+      documentStorage.references = document.references;
+    }
     // Save generated JSON
     logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
     await bucket.file(`spaces/${spaceId}/contents/${documentId}/${locale.id}.json`).save(JSON.stringify(documentStorage));
@@ -226,6 +229,9 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
         }
         if (aggLinks) {
           documentStorage.links = aggLinks;
+        }
+        if (document.references && document.references.length > 0) {
+          documentStorage.references = document.references;
         }
         // Save generated JSON
         logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);

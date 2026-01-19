@@ -2,6 +2,7 @@ export * from './asset.service';
 export * from './content.service';
 export * from './content-history.service';
 export * from './open-api.service';
+export * from './reference-resolver.service';
 export * from './schema.service';
 export * from './space.service';
 export * from './task.service';

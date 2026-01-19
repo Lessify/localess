@@ -133,21 +133,6 @@ export function contentLocaleCachePath(spaceId: string, contentId: string, local
 /**
  * construct content cache path, will return url to the cache file for cache version identifier
  * @param {string} spaceId
- * @param {string} contentId
- * @param {string} version
- * @return {string} path
- */
-export function contentCachePath(spaceId: string, contentId: string, version: string | 'draft' | undefined): string {
-  if (version === 'draft') {
-    return `spaces/${spaceId}/contents/${contentId}/${version}/cache.json`;
-  } else {
-    return `spaces/${spaceId}/contents/${contentId}/cache.json`;
-  }
-}
-
-/**
- * construct content cache path, will return url to the cache file for cache version identifier
- * @param {string} spaceId
  * @return {string} path
  */
 export function spaceContentCachePath(spaceId: string): string {

@@ -6,7 +6,7 @@ import { HttpsError, onRequest } from 'firebase-functions/v2/https';
 import os from 'os';
 import sharp from 'sharp';
 import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService, TEN_MINUTES } from './config';
-import { AssetFile, Content, ContentKind, ContentLink, Space } from './models';
+import { AssetFile, Content, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentLink, Space } from './models';
 import {
   contentLocaleCachePath,
   extractThumbnail,
@@ -14,6 +14,7 @@ import {
   findSpaceById,
   findTokenById,
   identifySpaceLocale,
+  resolveReferences,
   spaceContentCachePath,
   validateToken,
 } from './services';
@@ -200,7 +201,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
   logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
   logger.info('v1 spaces content url: ' + req.url);
   const { spaceId } = req.params;
-  const { cv, locale, version, token } = req.query;
+  const { cv, locale, version, token, resolveReference } = req.query;
   const params: Record<string, unknown> = req.params;
   const slug = params['slug'] as string[];
   const fullSlug = slug.join('/');
@@ -255,6 +256,9 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
       if (token) {
         url += `&token=${token}`;
       }
+      if (resolveReference) {
+        url += `&resolveReference=${resolveReference}`;
+      }
       logger.info(`v1 spaces content redirect to => ${url}`);
       res.redirect(url);
       return;
@@ -266,11 +270,19 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
       bucket
         .file(filePath)
         .download()
-        .then(content => {
+        .then(async content => {
+          const contentData: ContentDocumentStorage = JSON.parse(content.toString());
+          const { links, references, ...rest } = contentData;
+          logger.info(`v1 spaces content id resolve links => ${links}`);
+          const response: ContentDocumentApi = { ...rest };
+          if (resolveReference === 'true') {
+            logger.info(`v1 spaces content slug resolve refs => ${references}`);
+            response.references = await resolveReferences(spaceId, contentData, actualLocale);
+          }
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
             .contentType('application/json; charset=utf-8')
-            .send(content.toString());
+            .send(response);
         })
         .catch(() => {
           res
@@ -292,7 +304,7 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
   const { spaceId, contentId } = req.params;
-  const { cv, locale, version, token } = req.query;
+  const { cv, locale, version, token, resolveReference } = req.query;
   if (!validateToken(token)) {
     logger.info('v1 spaces content Token Not Valid string: ' + token);
     res
@@ -337,6 +349,9 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
       if (token) {
         url += `&token=${token}`;
       }
+      if (resolveReference) {
+        url += `&resolveReference=${resolveReference}`;
+      }
       logger.info(`v1 spaces content redirect to => ${url}`);
       res.redirect(url);
       return;
@@ -348,11 +363,19 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
       bucket
         .file(filePath)
         .download()
-        .then(content => {
+        .then(async content => {
+          const contentData: ContentDocumentStorage = JSON.parse(content.toString());
+          const { links, references, ...rest } = contentData;
+          logger.info(`v1 spaces content id resolve links => ${links}`);
+          const response: ContentDocumentApi = { ...rest };
+          if (resolveReference === 'true') {
+            logger.info(`v1 spaces content id resolve refs => ${references}`);
+            response.references = await resolveReferences(spaceId, contentData, actualLocale);
+          }
           res
             .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
             .contentType('application/json; charset=utf-8')
-            .send(content.toString());
+            .send(response);
         })
         .catch(() => {
           res

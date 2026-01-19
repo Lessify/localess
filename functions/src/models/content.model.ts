@@ -58,6 +58,23 @@ export interface ContentDocumentStorage {
   updatedAt: string;
   publishedAt?: string;
   links?: Record<string, ContentLink>;
+  references?: string[];
+}
+
+export interface ContentDocumentApi {
+  id: string;
+  name: string;
+  kind: ContentKind;
+  slug: string;
+  locale: string;
+  parentSlug: string;
+  fullSlug: string;
+  data?: ContentData;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+  links?: Record<string, ContentLink>;
+  references?: Record<string, ContentDocumentApi>;
 }
 
 export interface ContentData extends Record<string, any | ContentData | ContentData[]> {
@@ -99,19 +116,6 @@ export interface RichTextContent {
   type?: string;
   content?: RichTextContent[];
 }
-
-// export type RichTextContent = {
-//   type?: string;
-//   attrs?: Record<string, any>;
-//   content?: RichTextContent[];
-//   marks?: {
-//     type: string;
-//     attrs?: Record<string, any>;
-//     [key: string]: any;
-//   }[];
-//   text?: string;
-//   [key: string]: any;
-// };
 
 // Import and Export
 export interface ContentFolderExport extends Omit<ContentFolder, 'createdAt' | 'updatedAt'> {
