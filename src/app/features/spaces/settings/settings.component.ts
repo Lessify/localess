@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { Space } from '@shared/models/space.model';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFingerprintPattern, lucideGlobe, lucideLayoutDashboard, lucideVectorSquare, lucideWebhook } from '@ng-icons/lucide';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 interface TabItem {
   icon: string;
@@ -15,7 +17,16 @@ interface TabItem {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatTabsModule, MatIconModule, RouterModule],
+  imports: [RouterModule, HlmTabsImports, HlmIconImports],
+  providers: [
+    provideIcons({
+      lucideLayoutDashboard,
+      lucideGlobe,
+      lucideVectorSquare,
+      lucideFingerprintPattern,
+      lucideWebhook,
+    }),
+  ],
 })
 export class SettingsComponent {
   private readonly router = inject(Router);
@@ -24,19 +35,22 @@ export class SettingsComponent {
   spaceId = input.required<string>();
 
   space?: Space;
-  activeTab = 'general';
+  activeTab = signal('general');
   tabItems: TabItem[] = [
-    { icon: 'space_dashboard', label: 'General', link: 'general' },
-    { icon: 'language', label: 'Locales', link: 'locales' },
-    { icon: 'shape_line', label: 'Visual Editor', link: 'visual-editor' },
-    { icon: 'badge', label: 'Access Tokens', link: 'tokens' },
-    { icon: 'webhook', label: 'Webhooks', link: 'webhooks' },
+    { icon: 'lucideLayoutDashboard', label: 'General', link: 'general' },
+    { icon: 'lucideGlobe', label: 'Locales', link: 'locales' },
+    { icon: 'lucideVectorSquare', label: 'Visual Editor', link: 'visual-editor' },
+    { icon: 'lucideFingerprintPattern', label: 'Access Tokens', link: 'tokens' },
+    { icon: 'lucideWebhook', label: 'Webhooks', link: 'webhooks' },
   ];
 
   constructor() {
-    const router = this.router;
+    const idx = this.router.url.lastIndexOf('/');
+    this.activeTab.set(this.router.url.substring(idx + 1));
+  }
 
-    const idx = router.url.lastIndexOf('/');
-    this.activeTab = router.url.substring(idx + 1);
+  onTabActivated(tabLink: string) {
+    this.activeTab.set(tabLink);
+    this.router.navigate(['features', 'spaces', this.spaceId(), 'settings', tabLink]);
   }
 }
