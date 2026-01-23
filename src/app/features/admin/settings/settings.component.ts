@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { provideIcons } from '@ng-icons/core';
+import { lucideLayoutDashboard } from '@ng-icons/lucide';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 interface TabItem {
   icon: string;
@@ -14,16 +16,26 @@ interface TabItem {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatTabsModule, RouterModule, MatIconModule],
+  imports: [RouterModule, HlmTabsImports, HlmIconImports],
+  providers: [
+    provideIcons({
+      lucideLayoutDashboard,
+    }),
+  ],
 })
 export class SettingsComponent {
   private readonly router = inject(Router);
 
-  activeTab = 'ui';
-  tabItems: TabItem[] = [{ icon: 'palette', label: 'UI', link: 'ui' }];
+  activeTab = signal('ui');
+  tabItems: TabItem[] = [{ icon: 'lucideLayoutDashboard', label: 'UI', link: 'ui' }];
 
   constructor() {
     const idx = this.router.url.lastIndexOf('/');
-    this.activeTab = this.router.url.substring(idx + 1);
+    this.activeTab.set(this.router.url.substring(idx + 1));
+  }
+
+  onTabActivated(tabLink: string) {
+    this.activeTab.set(tabLink);
+    this.router.navigate(['features', 'admin', 'settings', tabLink]);
   }
 }
