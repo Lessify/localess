@@ -2,14 +2,10 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { Token } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -19,6 +15,11 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter, switchMap } from 'rxjs/operators';
 import { TokenDialogComponent } from './token-dialog/token-dialog.component';
 import { TokenDialogModel } from './token-dialog/token-dialog.model';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCopy, lucidePlus, lucideTrash } from '@ng-icons/lucide';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({
   selector: 'll-space-settings-tokens',
@@ -26,16 +27,22 @@ import { TokenDialogModel } from './token-dialog/token-dialog.model';
   styleUrls: ['./tokens.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
-    MatIconModule,
-    MatButtonModule,
     MatTableModule,
     MatSortModule,
     ClipboardModule,
-    MatTooltipModule,
     CommonModule,
     MatPaginatorModule,
     HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmTooltipImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+      lucideTrash,
+      lucideCopy,
+    }),
   ],
 })
 export class TokensComponent {
