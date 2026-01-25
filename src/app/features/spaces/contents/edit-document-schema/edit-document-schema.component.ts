@@ -34,7 +34,6 @@ import {
   SchemaEnum,
   SchemaField,
   SchemaFieldKind,
-  schemaFieldKindDescriptions,
   SchemaType,
   sortSchemaEnumValue,
 } from '@shared/models/schema.model';
@@ -526,6 +525,4 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         });
     }
   }
-
-  protected readonly schemaFieldKindDescriptions = schemaFieldKindDescriptions;
 }

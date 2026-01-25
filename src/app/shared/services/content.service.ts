@@ -229,6 +229,7 @@ export class ContentService {
    */
   updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>, Set<string>]): Observable<void> {
     console.log('updateDocumentData:refs', refs);
+    console.log('updateDocumentData:data', data);
     const update: UpdateData<ContentDocument> = {
       data: JSON.stringify(this.contentHelperService.clone(data)),
       updatedAt: serverTimestamp(),
