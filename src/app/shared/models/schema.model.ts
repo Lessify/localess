@@ -277,3 +277,13 @@ export type SchemaCreateFS = Omit<Schema, 'id'>;
 
 export type SchemaComponentUpdateIdFS = Omit<SchemaComponent, 'id'>;
 export type SchemaEnumUpdateIdFS = Omit<SchemaEnum, 'id'>;
+
+// Utils
+export function isSchemaArray(schema: SchemaField): boolean {
+  return (
+    schema.kind === SchemaFieldKind.SCHEMAS ||
+    schema.kind === SchemaFieldKind.REFERENCES ||
+    schema.kind === SchemaFieldKind.OPTIONS ||
+    schema.kind === SchemaFieldKind.ASSETS
+  );
+}

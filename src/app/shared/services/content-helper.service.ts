@@ -10,7 +10,7 @@ import {
   ReferenceContent,
 } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { isSchemaArray, Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { v4 } from 'uuid';
 
@@ -252,7 +252,15 @@ export class ContentHelperService {
           value = data[field.name];
         }
         if (value !== undefined) {
-          result[field.name] = value;
+          if (isSchemaArray(field)) {
+            if (Array.isArray(value)) {
+              result[field.name] = value;
+            }
+          } else {
+            if (!Array.isArray(value)) {
+              result[field.name] = value;
+            }
+          }
         }
       });
     //console.log('result',result)
