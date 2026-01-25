@@ -47,6 +47,9 @@
                   <button hlmInputGroupButton variant="secondary" (click)="addField()" [disabled]="!newFieldName.valid">Add</button>
                 </div>
               </div>
+              @if (newFieldName.errors; as errors) {
+                <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+              }
             </div>
             <div hlmItemGroup class="overflow-y-auto gap-2" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
               @for (field of fields.controls; track field.value.name; let index = $index) {

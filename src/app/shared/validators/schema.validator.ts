@@ -38,6 +38,7 @@ export class SchemaValidator {
     Validators.required,
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.JSON_NAME),
+    Validators.pattern(CommonPattern.SCHEMA_FIELD_NAME_TRANSLATION),
     CommonValidator.reservedName(SCHEMA_RESERVED_FIELD_NAMES),
     Validators.minLength(2),
     Validators.maxLength(30),
