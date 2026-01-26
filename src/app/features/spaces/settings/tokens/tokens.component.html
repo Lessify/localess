@@ -12,12 +12,9 @@
 <div class="my-3">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Id </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="id"> Token </mat-header-cell>
       <mat-cell *matCellDef="let element">
         <code>{{ element.id.substring(0, 10) }}...</code>
-        <button hlmBtn size="icon" variant="ghost" [cdkCopyToClipboard]="element.id" hlmTooltipTrigger="Copy Id">
-          <ng-icon hlm size="sm" name="lucideCopy" />
-        </button>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
@@ -35,6 +32,9 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
+        <button hlmBtn size="icon" variant="ghost" [cdkCopyToClipboard]="element.id" hlmTooltipTrigger="Copy Token">
+          <ng-icon hlm size="sm" name="lucideCopy" />
+        </button>
         <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltipTrigger="Delete">
           <ng-icon hlm size="sm" name="lucideTrash" />
         </button>
