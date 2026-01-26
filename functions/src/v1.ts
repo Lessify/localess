@@ -66,7 +66,7 @@ expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) 
     return;
   }
   const tokenData = tokenSnapshot.data() as Token;
-  if (!canPerform(TokenPermission.PUBLIC, tokenData) || !canPerform(TokenPermission.DRAFT, tokenData)) {
+  if (!canPerform(TokenPermission.PUBLIC, tokenData) && !canPerform(TokenPermission.DRAFT, tokenData)) {
     res
       .status(403)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -141,7 +141,7 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
     return;
   }
   const tokenData = tokenSnapshot.data() as Token;
-  if (!canPerform(TokenPermission.PUBLIC, tokenData) || !canPerform(TokenPermission.DRAFT, tokenData)) {
+  if (!canPerform(TokenPermission.PUBLIC, tokenData) && !canPerform(TokenPermission.DRAFT, tokenData)) {
     res
       .status(403)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -259,7 +259,14 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
     return;
   }
   const tokenData = tokenSnapshot.data() as Token;
-  if (!canPerform(TokenPermission.PUBLIC, tokenData) || !canPerform(TokenPermission.DRAFT, tokenData)) {
+
+  // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
+  const hasRequiredPermission =
+    version !== undefined
+      ? canPerform(TokenPermission.DRAFT, tokenData)
+      : canPerform(TokenPermission.PUBLIC, tokenData) || canPerform(TokenPermission.DRAFT, tokenData);
+
+  if (!hasRequiredPermission) {
     res
       .status(403)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -375,7 +382,14 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
     return;
   }
   const tokenData = tokenSnapshot.data() as Token;
-  if (!canPerform(TokenPermission.PUBLIC, tokenData) || !canPerform(TokenPermission.DRAFT, tokenData)) {
+
+  // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
+  const hasRequiredPermission =
+    version !== undefined
+      ? canPerform(TokenPermission.DRAFT, tokenData)
+      : canPerform(TokenPermission.PUBLIC, tokenData) || canPerform(TokenPermission.DRAFT, tokenData);
+
+  if (!hasRequiredPermission) {
     res
       .status(403)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
