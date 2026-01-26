@@ -6,7 +6,7 @@ import { bucket, firestoreService } from './config';
 import { PublishTranslationsData, Space, Translation, TranslationHistory, TranslationHistoryType, UserPermission } from './models';
 import { findSpaceById, findTranslations, findTranslationsHistory } from './services';
 import { translateCloud } from './services/translate.service';
-import { canPerform } from './utils/security-utils';
+import { canPerform } from './utils/user-auth-utils';
 
 // Publish
 const publish = onCall<PublishTranslationsData>(async request => {

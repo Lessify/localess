@@ -19,6 +19,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 
 @Component({
   selector: 'll-space-settings-tokens',
@@ -35,6 +36,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
     HlmButtonImports,
     HlmIconImports,
     HlmTooltipImports,
+    HlmBadgeImports,
   ],
   providers: [
     provideIcons({
@@ -58,7 +60,7 @@ export class TokensComponent {
   spaceStore = inject(SpaceStore);
 
   dataSource: MatTableDataSource<Token> = new MatTableDataSource<Token>([]);
-  displayedColumns: string[] = ['id', 'name', 'version', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'version', 'permissions', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 

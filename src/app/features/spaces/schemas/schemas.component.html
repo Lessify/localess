@@ -114,11 +114,13 @@
     <ng-container matColumnDef="labels">
       <mat-header-cell *matHeaderCellDef> Labels</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @for (label of element.labels; track label) {
-          <span hlmBadge [variant]="filterForm.controls.labels.value?.includes(label) ? 'secondary' : 'outline'">
-            {{ label }}
-          </span>
-        }
+        <div class="flex items-center gap-1 px-2">
+          @for (label of element.labels; track label) {
+            <span hlmBadge [variant]="filterForm.controls.labels.value?.includes(label) ? 'secondary' : 'outline'">
+              {{ label }}
+            </span>
+          }
+        </div>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">

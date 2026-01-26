@@ -25,6 +25,33 @@
       <mat-header-cell *matHeaderCellDef> Version </mat-header-cell>
       <mat-cell *matCellDef="let element"> v{{ element.version ? element.version : '1' }} </mat-cell>
     </ng-container>
+    <ng-container matColumnDef="permissions">
+      <mat-header-cell *matHeaderCellDef> Permissions </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        @if (element.permissions && element.permissions.length > 0) {
+          <div class="flex items-center gap-1 px-2">
+            @for (permission of element.permissions; track permission) {
+              <span hlmBadge variant="secondary">
+                @switch (permission) {
+                  @case ('PUBLIC') {
+                    Public
+                  }
+                  @case ('DRAFT') {
+                    Draft
+                  }
+                  @case ('DEV_TOOLS') {
+                    Development Tools
+                  }
+                  @default {
+                    Unknown Permission
+                  }
+                }
+              </span>
+            }
+          </div>
+        }
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
       <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">

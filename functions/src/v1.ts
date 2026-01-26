@@ -6,7 +6,17 @@ import { HttpsError, onRequest } from 'firebase-functions/v2/https';
 import os from 'os';
 import sharp from 'sharp';
 import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService, TEN_MINUTES } from './config';
-import { AssetFile, Content, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentLink, Space } from './models';
+import {
+  AssetFile,
+  Content,
+  ContentDocumentApi,
+  ContentDocumentStorage,
+  ContentKind,
+  ContentLink,
+  Space,
+  Token,
+  TokenPermission,
+} from './models';
 import {
   contentLocaleCachePath,
   extractThumbnail,
@@ -19,6 +29,7 @@ import {
   spaceContentCachePath,
   validateToken,
 } from './services';
+import { canPerform } from './utils/api-auth-utils';
 
 // API V1
 const expressApp = express();
@@ -49,9 +60,17 @@ expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) 
   const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
   if (!tokenSnapshot.exists) {
     res
-      .status(404)
+      .status(401)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
+      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
+    return;
+  }
+  const tokenData = tokenSnapshot.data() as Token;
+  if (!canPerform(TokenPermission.PUBLIC, tokenData) || !canPerform(TokenPermission.DRAFT, tokenData)) {
+    res
+      .status(403)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('permission-denied', 'Permission denied'));
     return;
   }
 
@@ -116,11 +135,20 @@ expressApp.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
   const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
   if (!tokenSnapshot.exists) {
     res
-      .status(404)
+      .status(401)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
+      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
     return;
   }
+  const tokenData = tokenSnapshot.data() as Token;
+  if (!canPerform(TokenPermission.PUBLIC, tokenData) || !canPerform(TokenPermission.DRAFT, tokenData)) {
+    res
+      .status(403)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('permission-denied', 'Permission denied'));
+    return;
+  }
+
   const cachePath = spaceContentCachePath(spaceId);
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
@@ -225,11 +253,20 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) 
   const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
   if (!tokenSnapshot.exists) {
     res
-      .status(404)
+      .status(401)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
+      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
     return;
   }
+  const tokenData = tokenSnapshot.data() as Token;
+  if (!canPerform(TokenPermission.PUBLIC, tokenData) || !canPerform(TokenPermission.DRAFT, tokenData)) {
+    res
+      .status(403)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('permission-denied', 'Permission denied'));
+    return;
+  }
+
   const contentsSnapshot = await findContentByFullSlug(spaceId, fullSlug).get();
   // logger.info('v1 spaces contents', contentsSnapshot.size);
   if (contentsSnapshot.empty) {
@@ -331,13 +368,21 @@ expressApp.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) =
   }
   const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
   if (!tokenSnapshot.exists) {
-    logger.info('v1 spaces content Token not exist: ' + token);
     res
-      .status(404)
+      .status(401)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
+      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
     return;
   }
+  const tokenData = tokenSnapshot.data() as Token;
+  if (!canPerform(TokenPermission.PUBLIC, tokenData) || !canPerform(TokenPermission.DRAFT, tokenData)) {
+    res
+      .status(403)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('permission-denied', 'Permission denied'));
+    return;
+  }
+
   const cacheCheckPath = spaceContentCachePath(spaceId);
   const cacheCheckFile = bucket.file(cacheCheckPath);
   logger.info('v1 spaces content cachePath: ' + cacheCheckPath);
