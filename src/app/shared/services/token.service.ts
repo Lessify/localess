@@ -13,11 +13,14 @@ import {
   query,
   QueryConstraint,
   serverTimestamp,
+  updateDoc,
+  WithFieldValue,
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { Token, TokenCreateFS } from '@shared/models/token.model';
+import { Token, TokenForm, TokenFS } from '@shared/models/token.model';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { UpdateData } from '@firebase/firestore';
 
 @Injectable({ providedIn: 'root' })
 export class TokenService {
@@ -46,13 +49,25 @@ export class TokenService {
     );
   }
 
-  create(spaceId: string, name: string): Observable<DocumentReference> {
-    const addEntity: TokenCreateFS = {
-      name: name,
+  create(spaceId: string, model: TokenForm): Observable<DocumentReference> {
+    const addEntity: WithFieldValue<TokenFS> = {
+      version: 2,
+      name: model.name,
+      permissions: model.permissions,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tokens`), addEntity)).pipe(traceUntilFirst('Firestore:Tokens:create'));
+  }
+
+  update(spaceId: string, id: string, model: TokenForm): Observable<void> {
+    const update: UpdateData<TokenFS> = {
+      version: 2,
+      name: model.name,
+      permissions: model.permissions,
+      updatedAt: serverTimestamp(),
+    };
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/tokens/${id}`), update)).pipe(traceUntilFirst('Firestore:Tokens:update'));
   }
 
   delete(spaceId: string, id: string): Observable<void> {

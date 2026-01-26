@@ -7,7 +7,13 @@ mat-cell {
   &.mat-column-id {
     max-width: 250px;
   }
+  &.mat-column-version {
+    max-width: 80px;
+  }
+  &.mat-column-updatedAt {
+    max-width: 120px;
+  }
   &.mat-column-actions {
-    max-width: 110px;
+    max-width: 150px;
   }
 }

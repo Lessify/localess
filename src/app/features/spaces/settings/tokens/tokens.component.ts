@@ -7,18 +7,17 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
-import { Token } from '@shared/models/token.model';
+import { isTokenV2, Token, TokenForm } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter, switchMap } from 'rxjs/operators';
 import { TokenDialogComponent } from './token-dialog/token-dialog.component';
-import { TokenDialogModel } from './token-dialog/token-dialog.model';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { provideIcons } from '@ng-icons/core';
-import { lucideCopy, lucidePlus, lucideTrash } from '@ng-icons/lucide';
+import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({
@@ -42,6 +41,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
       lucidePlus,
       lucideTrash,
       lucideCopy,
+      lucidePencil,
     }),
   ],
 })
@@ -58,7 +58,7 @@ export class TokensComponent {
   spaceStore = inject(SpaceStore);
 
   dataSource: MatTableDataSource<Token> = new MatTableDataSource<Token>([]);
-  displayedColumns: string[] = ['id', 'name', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'version', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
@@ -83,13 +83,39 @@ export class TokensComponent {
   openAddDialog(): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<TokenDialogComponent, never, TokenDialogModel>(TokenDialogComponent, {
+      .open<TokenDialogComponent, never, TokenForm>(TokenDialogComponent, {
         panelClass: 'sm',
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.tokenService.create(spaceId!, it!.name)),
+        switchMap(it => this.tokenService.create(spaceId!, it)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Token has been created.');
+        },
+        error: (err: unknown) => {
+          console.error(err);
+          this.notificationService.error('Token can not be created.');
+        },
+      });
+  }
+
+  openEditDialog(element: Token): void {
+    const spaceId = this.spaceStore.selectedSpaceId();
+    this.dialog
+      .open<TokenDialogComponent, TokenForm, TokenForm>(TokenDialogComponent, {
+        panelClass: 'sm',
+        data: {
+          name: element.name,
+          permissions: isTokenV2(element) ? element.permissions : [],
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.tokenService.update(spaceId!, element.id, it)),
       )
       .subscribe({
         next: () => {

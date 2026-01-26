@@ -10,6 +10,25 @@
         <mat-error>{{ fe.errors(errors) }}</mat-error>
       }
     </mat-form-field>
+    <br />
+    <b>Permissions</b>
+    <mat-selection-list formControlName="permissions">
+      <mat-list-option value="PUBLIC">
+        <span matListItemTitle>Public</span>
+        <span matListItemLine>Access to published only version.</span>
+      </mat-list-option>
+      <mat-list-option value="DRAFT">
+        <span matListItemTitle>Draft</span>
+        <span matListItemLine>Access to draft only version.</span>
+      </mat-list-option>
+      <mat-list-option value="DEV_TOOLS">
+        <span matListItemTitle>Development Tools</span>
+        <span matListItemLine>Access development tools, like Open API Specifications.</span>
+      </mat-list-option>
+    </mat-selection-list>
+    @if (form.controls['permissions'].errors; as errors) {
+      <mat-error>{{ fe.errors(errors) }}</mat-error>
+    }
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

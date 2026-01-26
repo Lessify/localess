@@ -121,6 +121,7 @@ export type TaskExport = TaskAssetExport | TaskContentExport | TaskSchemaExport 
 
 export type TaskImport = TaskAssetImport | TaskContentImport | TaskSchemaImport | TaskTranslationImport;
 
+// Firestore Models (Without ID)
 export type TaskAssetExportFS = Omit<TaskAssetExport, 'id'>;
 export type TaskAssetImportFS = Omit<TaskAssetImport, 'id'>;
 export type TaskAssetRegenerateMetadataFS = Omit<TaskAssetRegenMetadata, 'id'>;
