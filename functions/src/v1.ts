@@ -13,6 +13,7 @@ import {
   ContentDocumentStorage,
   ContentKind,
   ContentLink,
+  Schema,
   Space,
   Token,
   TokenPermission,
@@ -21,8 +22,10 @@ import {
   contentLocaleCachePath,
   extractThumbnail,
   findContentByFullSlug,
+  findSchemas,
   findSpaceById,
   findTokenById,
+  generateOpenApi,
   identifySpaceLocale,
   resolveLinks,
   resolveReferences,
@@ -537,6 +540,47 @@ expressApp.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     res.status(404).header('Cache-Control', 'no-cache').send(new HttpsError('not-found', 'Not found.'));
     return;
   }
+});
+
+expressApp.get('/api/v1/spaces/:spaceId/open-api', async (req, res) => {
+  logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
+  logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
+  const { spaceId } = req.params;
+  const { token } = req.query;
+  if (!validateToken(token)) {
+    logger.info('v1 spaces content Token Not Valid string: ' + token);
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (!spaceSnapshot.exists) {
+    logger.info('v1 spaces content Space not exist: ' + spaceId);
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
+  if (!tokenSnapshot.exists) {
+    res
+      .status(401)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
+    return;
+  }
+  const tokenData = tokenSnapshot.data() as Token;
+
+  if (!canPerform(TokenPermission.DEV_TOOLS, tokenData)) {
+    res.status(403).send(new HttpsError('permission-denied', 'Permission denied'));
+    return;
+  }
+  const schemasSnapshot = await findSchemas(spaceId).get();
+  const schemaById = new Map<string, Schema>(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
+  res.json(generateOpenApi(schemaById));
 });
 
 export const v1 = onRequest({ memory: '512MiB' }, expressApp);
