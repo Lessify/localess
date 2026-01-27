@@ -14,10 +14,11 @@ import {
   QueryConstraint,
   serverTimestamp,
   updateDoc,
+  where,
   WithFieldValue,
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { Token, TokenForm, TokenFS } from '@shared/models/token.model';
+import { Token, TokenForm, TokenFS, TokenPermission } from '@shared/models/token.model';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { UpdateData } from '@firebase/firestore';
@@ -38,6 +39,14 @@ export class TokenService {
   findFirst(spaceId: string): Observable<Token[]> {
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tokens`), limit(1)), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Tokens:findFirst'),
+      map(it => it as Token[]),
+    );
+  }
+
+  findFirstByPermission(spaceId: string, permission: TokenPermission): Observable<Token[]> {
+    const queryConstrains: QueryConstraint[] = [where('permission', 'array-contains', permission), limit(1)];
+    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tokens`), ...queryConstrains), { idField: 'id' }).pipe(
+      traceUntilFirst('Firestore:Tokens:findFirstByPermission'),
       map(it => it as Token[]),
     );
   }
