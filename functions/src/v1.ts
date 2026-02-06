@@ -38,6 +38,56 @@ import { canPerform } from './utils/api-auth-utils';
 const expressApp = express();
 expressApp.use(cors({ origin: true }));
 
+expressApp.get('/api/v1/spaces/:spaceId', async (req, res) => {
+  logger.info('v1 spaces params : ' + JSON.stringify(req.params));
+  logger.info('v1 spaces query : ' + JSON.stringify(req.query));
+  const { spaceId } = req.params;
+  const { token } = req.query;
+
+  if (!validateToken(token)) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (!spaceSnapshot.exists) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+  const space = spaceSnapshot.data() as Space;
+
+  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
+  if (!tokenSnapshot.exists) {
+    res
+      .status(401)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
+    return;
+  }
+  const tokenData = tokenSnapshot.data() as Token;
+  if (!canPerform(TokenPermission.PUBLIC, tokenData) && !canPerform(TokenPermission.DRAFT, tokenData)) {
+    res
+      .status(403)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('permission-denied', 'Permission denied'));
+    return;
+  }
+
+  res.json({
+    id: spaceSnapshot.id,
+    name: space.name,
+    locales: space.locales,
+    localeFallback: space.localeFallback,
+    createdAt: space.createdAt.toDate().toISOString(),
+    updatedAt: space.updatedAt.toDate().toISOString(),
+  });
+});
+
 expressApp.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) => {
   logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
   logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
