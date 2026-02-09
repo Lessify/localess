@@ -70,7 +70,11 @@ expressApp.get('/api/v1/spaces/:spaceId', async (req, res) => {
     return;
   }
   const tokenData = tokenSnapshot.data() as Token;
-  if (!canPerform(TokenPermission.PUBLIC, tokenData) && !canPerform(TokenPermission.DRAFT, tokenData)) {
+  if (
+    !canPerform(TokenPermission.PUBLIC, tokenData) &&
+    !canPerform(TokenPermission.DRAFT, tokenData) &&
+    !canPerform(TokenPermission.DEV_TOOLS, tokenData)
+  ) {
     res
       .status(403)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
