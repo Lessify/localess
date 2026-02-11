@@ -190,6 +190,7 @@ export class TranslationsComponent implements OnInit {
     locale: this.fb.control<string>('', [Validators.required]),
     search: this.fb.control<string>('', []),
     labels: this.fb.control<string[]>([], []),
+    states: this.fb.control<TranslationStatus[]>([], []),
   });
   $filterForm = toSignal(this.filterForm.valueChanges.pipe(debounceTime(500)));
 
@@ -200,7 +201,7 @@ export class TranslationsComponent implements OnInit {
   translations = signal<Translation[]>([]);
   translationsFiltered = computed(() => {
     const form = this.$filterForm();
-    return this.filterTranslations(this.translations(), form?.locale || 'en', form?.search || '', form?.labels || []);
+    return this.filterTranslations(this.translations(), form?.locale || 'en', form?.search || '', form?.labels || [], form?.states || []);
   });
   translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
   translationIds = computed(() => this.translations().map(it => it.id));
@@ -215,6 +216,12 @@ export class TranslationsComponent implements OnInit {
       .map(it => it!);
     return [...new Set<string>(tmp)];
   });
+  allStates = [TranslationStatus.TRANSLATED, TranslationStatus.PARTIALLY_TRANSLATED, TranslationStatus.UNTRANSLATED];
+  stateTranslations: Record<TranslationStatus, string> = {
+    [TranslationStatus.TRANSLATED]: 'Translated',
+    [TranslationStatus.PARTIALLY_TRANSLATED]: 'Partially Translated',
+    [TranslationStatus.UNTRANSLATED]: 'Untranslated',
+  };
 
   selectedTranslation = signal<Translation | undefined>(undefined);
   selectedTranslationLocaleValue = linkedSignal(() => {
@@ -494,14 +501,16 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  filterTranslations(items: Translation[], locale: string, search: string, labels: string[]): Translation[] {
-    console.log('Filtering translations', locale, search, labels);
+  filterTranslations(items: Translation[], locale: string, search: string, labels: string[], states: TranslationStatus[]): Translation[] {
+    console.log('Filtering translations', locale, search, labels, states);
     const lcFilter = search.trim().toLowerCase();
-    if (!items || (!search && !labels.length)) {
+    if (!items || (!search && !labels.length && !states.length)) {
       return items;
     }
     return items.filter(it => {
       const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.some(label => it.labels?.includes(label)));
+      const matchByStatus = !states.length || states.includes(this.identifyStatus(it));
+      if (!matchByStatus) return false;
       if (it.id.toLowerCase().includes(lcFilter) && matchByLabel) {
         return true;
       } else {
@@ -574,6 +583,15 @@ export class TranslationsComponent implements OnInit {
       this.filterForm.controls.labels.setValue(current.filter(l => l !== label));
     } else {
       this.filterForm.controls.labels.setValue([...current, label]);
+    }
+  }
+
+  selectState(state: TranslationStatus): void {
+    const current = this.filterForm.controls.states.value || [];
+    if (current.includes(state)) {
+      this.filterForm.controls.states.setValue(current.filter(l => l !== state));
+    } else {
+      this.filterForm.controls.states.setValue([...current, state]);
     }
   }
 

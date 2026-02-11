@@ -104,7 +104,39 @@
                 <ng-icon hlm size="sm" name="lucideSearch" />
               </div>
             </div>
-            <div hlmField class="col-span-2">
+            <div hlmField class="col-span-2 flex flex-row w-fit">
+              <hlm-popover sideOffset="5">
+                <div hlmButtonGroup>
+                  <button class="justify-between" hlmPopoverTrigger hlmBtn variant="outline">
+                    <ng-icon hlm size="sm" name="lucideCirclePlus" class="opacity-50" />
+                    Status
+                  </button>
+                  @let states = filterForm.controls.states.value;
+                  @if (states && states.length > 0) {
+                    <div class="flex items-center gap-1 px-2 border shadow-xs rounded-md">
+                      <span hlmBadge variant="secondary">{{ states.length }}</span>
+                    </div>
+                  }
+                </div>
+                <hlm-command *brnPopoverContent="let ctx" hlmPopoverContent class="w-[200px] p-0">
+                  <hlm-command-list>
+                    <hlm-command-group>
+                      @for (state of allStates; track state) {
+                        <button hlm-command-item [value]="state" (selected)="selectState(state)">
+                          <span>{{ stateTranslations[state] }}</span>
+                          <ng-icon
+                            hlm
+                            size="sm"
+                            class="ml-auto"
+                            [class.opacity-0]="!filterForm.value.states?.includes(state)"
+                            name="lucideCheck"
+                            hlmCommandIcon />
+                        </button>
+                      }
+                    </hlm-command-group>
+                  </hlm-command-list>
+                </hlm-command>
+              </hlm-popover>
               <hlm-popover sideOffset="5">
                 <div hlmButtonGroup>
                   <button class="justify-between" hlmPopoverTrigger hlmBtn variant="outline">
@@ -114,9 +146,7 @@
                   @let labels = filterForm.controls.labels.value;
                   @if (labels && labels.length > 0) {
                     <div class="flex items-center gap-1 px-2 border shadow-xs rounded-md">
-                      @for (label of labels; track label) {
-                        <span hlmBadge variant="secondary">{{ label }}</span>
-                      }
+                      <span hlmBadge variant="secondary">{{ labels.length }}</span>
                     </div>
                   }
                 </div>
