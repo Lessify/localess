@@ -14,3 +14,8 @@ export const translationSchema = z.object({
 export const zTranslationExportArraySchema = z.array(translationSchema);
 
 export const zTranslationFlatExportSchema = z.record(z.string(), z.string());
+
+export const zTranslationUpdateSchema = z.object({
+  type: z.enum(['']),
+  values: z.record(z.string(), z.string()),
+});
