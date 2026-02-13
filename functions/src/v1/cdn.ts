@@ -12,323 +12,195 @@ import {
   ContentDocumentStorage,
   ContentKind,
   ContentLink,
-  Schema,
   Space,
-  Token,
   TokenPermission,
 } from '../models';
 import {
   contentLocaleCachePath,
   extractThumbnail,
   findContentByFullSlug,
-  findSchemas,
   findSpaceById,
-  findTokenById,
-  generateOpenApi,
   identifySpaceLocale,
   resolveLinks,
   resolveReferences,
   spaceContentCachePath,
-  validateToken,
 } from '../services';
-import { canPerform } from '../utils/api-auth-utils';
+import { requireContentPermissions, requireTokenPermissions, RequestWithToken } from './middleware';
 
+// eslint-disable-next-line new-cap
 export const CDN = Router();
 
-CDN.get('/api/v1/spaces/:spaceId', async (req, res) => {
-  logger.info('v1 spaces params : ' + JSON.stringify(req.params));
-  logger.info('v1 spaces query : ' + JSON.stringify(req.query));
-  const { spaceId } = req.params;
-  const { token } = req.query;
+CDN.get(
+  '/api/v1/spaces/:spaceId/translations/:locale',
+  requireTokenPermissions([TokenPermission.PUBLIC, TokenPermission.DRAFT, TokenPermission.DEV_TOOLS]),
+  async (req: RequestWithToken, res) => {
+    logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
+    logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
+    const { spaceId, locale } = req.params;
+    const { cv } = req.query;
+    const token = req.tokenId;
 
-  if (!validateToken(token)) {
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const spaceSnapshot = await findSpaceById(spaceId).get();
-  if (!spaceSnapshot.exists) {
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const space = spaceSnapshot.data() as Space;
-
-  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
-  if (!tokenSnapshot.exists) {
-    res
-      .status(401)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
-    return;
-  }
-  const tokenData = tokenSnapshot.data() as Token;
-  if (
-    !canPerform(TokenPermission.PUBLIC, tokenData) &&
-    !canPerform(TokenPermission.DRAFT, tokenData) &&
-    !canPerform(TokenPermission.DEV_TOOLS, tokenData)
-  ) {
-    res
-      .status(403)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('permission-denied', 'Permission denied'));
-    return;
-  }
-
-  res.json({
-    id: spaceSnapshot.id,
-    name: space.name,
-    locales: space.locales,
-    localeFallback: space.localeFallback,
-    createdAt: space.createdAt.toDate().toISOString(),
-    updatedAt: space.updatedAt.toDate().toISOString(),
-  });
-});
-
-CDN.get('/api/v1/spaces/:spaceId/translations/:locale', async (req, res) => {
-  logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
-  logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
-  const { spaceId, locale } = req.params;
-  const { cv, token } = req.query;
-
-  if (!validateToken(token)) {
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const spaceSnapshot = await findSpaceById(spaceId).get();
-  if (!spaceSnapshot.exists) {
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-
-  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
-  if (!tokenSnapshot.exists) {
-    res
-      .status(401)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
-    return;
-  }
-  const tokenData = tokenSnapshot.data() as Token;
-  if (
-    !canPerform(TokenPermission.PUBLIC, tokenData) &&
-    !canPerform(TokenPermission.DRAFT, tokenData) &&
-    !canPerform(TokenPermission.DEV_TOOLS, tokenData)
-  ) {
-    res
-      .status(403)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('permission-denied', 'Permission denied'));
-    return;
-  }
-
-  const cachePath = `spaces/${spaceId}/translations/cache.json`;
-  const [exists] = await bucket.file(cachePath).exists();
-  if (exists) {
-    const [metadata] = await bucket.file(cachePath).getMetadata();
-    logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
-    if (cv === undefined || cv != metadata.generation) {
-      let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`;
-      if (token) {
-        url += `&token=${token}`;
-      }
-      logger.info(`v1 spaces translate redirect to => ${url}`);
-      res.redirect(url);
-      return;
-    } else {
-      const space = spaceSnapshot.data() as Space;
-      let actualLocale = locale;
-      if (!space.locales.some(it => it.id === locale)) {
-        actualLocale = space.localeFallback.id;
-      }
-      bucket
-        .file(`spaces/${spaceId}/translations/${actualLocale}.json`)
-        .download()
-        .then(content => {
-          res
-            .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-            .contentType('application/json; charset=utf-8')
-            .send(content.toString());
-        })
-        .catch(() => {
-          res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
-        });
-    }
-  } else {
-    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
-    return;
-  }
-});
-
-CDN.get('/api/v1/spaces/:spaceId/links', async (req, res) => {
-  logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
-  logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
-  const { spaceId } = req.params;
-  const { kind, parentSlug, excludeChildren, cv, token } = req.query;
-  if (!validateToken(token)) {
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const spaceSnapshot = await findSpaceById(spaceId).get();
-  if (!spaceSnapshot.exists) {
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
-  if (!tokenSnapshot.exists) {
-    res
-      .status(401)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
-    return;
-  }
-  const tokenData = tokenSnapshot.data() as Token;
-  if (!canPerform(TokenPermission.PUBLIC, tokenData) && !canPerform(TokenPermission.DRAFT, tokenData)) {
-    res
-      .status(403)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('permission-denied', 'Permission denied'));
-    return;
-  }
-
-  const cachePath = spaceContentCachePath(spaceId);
-  const [exists] = await bucket.file(cachePath).exists();
-  if (exists) {
-    const [metadata] = await bucket.file(cachePath).getMetadata();
-    logger.info('v1 spaces links cache meta : ' + JSON.stringify(metadata));
-    if (cv === undefined || cv != metadata.generation) {
-      let url = `/api/v1/spaces/${spaceId}/links?cv=${metadata.generation}`;
-      if (parentSlug !== undefined) {
-        url += `&parentSlug=${parentSlug}`;
-      }
-      if (excludeChildren === 'true') {
-        url += `&excludeChildren=${excludeChildren}`;
-      }
-      if (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER) {
-        url += `&kind=${kind}`;
-      }
-      if (token) {
-        url += `&token=${token}`;
-      }
-      res.redirect(url);
-      return;
-    } else {
-      let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
-      if (parentSlug) {
-        if (excludeChildren === 'true') {
-          contentsQuery = contentsQuery.where('parentSlug', '==', parentSlug);
-        } else {
-          contentsQuery = contentsQuery.where('parentSlug', '>=', parentSlug).where('parentSlug', '<', `${parentSlug}/~`);
-        }
-      } else {
-        if (excludeChildren === 'true') {
-          contentsQuery = contentsQuery.where('parentSlug', '==', '');
-        }
-      }
-      if (kind && (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER)) {
-        contentsQuery = contentsQuery.where('kind', '==', kind);
-      }
-      const contentsSnapshot = await contentsQuery.get();
-
-      const response: Record<string, ContentLink> = contentsSnapshot.docs
-        .map(contentSnapshot => {
-          const content = contentSnapshot.data() as Content;
-          const link: ContentLink = {
-            id: contentSnapshot.id,
-            kind: content.kind,
-            name: content.name,
-            slug: content.slug,
-            fullSlug: content.fullSlug,
-            parentSlug: content.parentSlug,
-            createdAt: content.createdAt.toDate().toISOString(),
-            updatedAt: content.updatedAt.toDate().toISOString(),
-          };
-          if (content.kind === ContentKind.DOCUMENT) {
-            link.publishedAt = content.publishedAt?.toDate().toISOString();
-          }
-          return link;
-        })
-        .reduce(
-          (acc, item) => {
-            acc[item.id] = item;
-            return acc;
-          },
-          {} as Record<string, ContentLink>
-        );
+    const spaceSnapshot = await findSpaceById(spaceId).get();
+    if (!spaceSnapshot.exists) {
       res
+        .status(404)
         .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-        .contentType('application/json; charset=utf-8')
-        .send(response);
+        .send(new HttpsError('not-found', 'Not found'));
       return;
     }
-  } else {
-    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
-    return;
-  }
-});
 
-CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) => {
+    const cachePath = `spaces/${spaceId}/translations/cache.json`;
+    const [exists] = await bucket.file(cachePath).exists();
+    if (exists) {
+      const [metadata] = await bucket.file(cachePath).getMetadata();
+      logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
+      if (cv === undefined || cv != metadata.generation) {
+        let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`;
+        if (token) {
+          url += `&token=${token}`;
+        }
+        logger.info(`v1 spaces translate redirect to => ${url}`);
+        res.redirect(url);
+        return;
+      } else {
+        const space = spaceSnapshot.data() as Space;
+        let actualLocale = locale;
+        if (!space.locales.some(it => it.id === locale)) {
+          actualLocale = space.localeFallback.id;
+        }
+        bucket
+          .file(`spaces/${spaceId}/translations/${actualLocale}.json`)
+          .download()
+          .then(content => {
+            res
+              .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+              .contentType('application/json; charset=utf-8')
+              .send(content.toString());
+          })
+          .catch(() => {
+            res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+          });
+      }
+    } else {
+      res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+      return;
+    }
+  }
+);
+
+CDN.get(
+  '/api/v1/spaces/:spaceId/links',
+  requireTokenPermissions([TokenPermission.PUBLIC, TokenPermission.DRAFT, TokenPermission.DRAFT]),
+  async (req: RequestWithToken, res) => {
+    logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
+    logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
+    const { spaceId } = req.params;
+    const { kind, parentSlug, excludeChildren, cv } = req.query;
+    const token = req.tokenId;
+
+    const spaceSnapshot = await findSpaceById(spaceId).get();
+    if (!spaceSnapshot.exists) {
+      res
+        .status(404)
+        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+        .send(new HttpsError('not-found', 'Not found'));
+      return;
+    }
+
+    const cachePath = spaceContentCachePath(spaceId);
+    const [exists] = await bucket.file(cachePath).exists();
+    if (exists) {
+      const [metadata] = await bucket.file(cachePath).getMetadata();
+      logger.info('v1 spaces links cache meta : ' + JSON.stringify(metadata));
+      if (cv === undefined || cv != metadata.generation) {
+        let url = `/api/v1/spaces/${spaceId}/links?cv=${metadata.generation}`;
+        if (parentSlug !== undefined) {
+          url += `&parentSlug=${parentSlug}`;
+        }
+        if (excludeChildren === 'true') {
+          url += `&excludeChildren=${excludeChildren}`;
+        }
+        if (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER) {
+          url += `&kind=${kind}`;
+        }
+        if (token) {
+          url += `&token=${token}`;
+        }
+        res.redirect(url);
+        return;
+      } else {
+        let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
+        if (parentSlug) {
+          if (excludeChildren === 'true') {
+            contentsQuery = contentsQuery.where('parentSlug', '==', parentSlug);
+          } else {
+            contentsQuery = contentsQuery.where('parentSlug', '>=', parentSlug).where('parentSlug', '<', `${parentSlug}/~`);
+          }
+        } else {
+          if (excludeChildren === 'true') {
+            contentsQuery = contentsQuery.where('parentSlug', '==', '');
+          }
+        }
+        if (kind && (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER)) {
+          contentsQuery = contentsQuery.where('kind', '==', kind);
+        }
+        const contentsSnapshot = await contentsQuery.get();
+
+        const response: Record<string, ContentLink> = contentsSnapshot.docs
+          .map(contentSnapshot => {
+            const content = contentSnapshot.data() as Content;
+            const link: ContentLink = {
+              id: contentSnapshot.id,
+              kind: content.kind,
+              name: content.name,
+              slug: content.slug,
+              fullSlug: content.fullSlug,
+              parentSlug: content.parentSlug,
+              createdAt: content.createdAt.toDate().toISOString(),
+              updatedAt: content.updatedAt.toDate().toISOString(),
+            };
+            if (content.kind === ContentKind.DOCUMENT) {
+              link.publishedAt = content.publishedAt?.toDate().toISOString();
+            }
+            return link;
+          })
+          .reduce(
+            (acc, item) => {
+              acc[item.id] = item;
+              return acc;
+            },
+            {} as Record<string, ContentLink>
+          );
+        res
+          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+          .contentType('application/json; charset=utf-8')
+          .send(response);
+        return;
+      }
+    } else {
+      res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+      return;
+    }
+  }
+);
+
+CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermissions(), async (req: RequestWithToken, res) => {
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
-  logger.info('v1 spaces content url: ' + req.url);
   const { spaceId } = req.params;
-  const { cv, locale, version, token, resolveReference, resolveLink } = req.query;
+  const { cv, locale, version, resolveReference, resolveLink } = req.query;
+  const token = req.tokenId;
   const params: Record<string, unknown> = req.params;
   const slug = params['slug'] as string[];
   const fullSlug = slug.join('/');
   let contentId = '';
-  if (!validateToken(token)) {
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
+
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (!spaceSnapshot.exists) {
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
       .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
-  if (!tokenSnapshot.exists) {
-    res
-      .status(401)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
-    return;
-  }
-  const tokenData = tokenSnapshot.data() as Token;
-
-  // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
-  const hasRequiredPermission =
-    version !== undefined
-      ? canPerform(TokenPermission.DRAFT, tokenData)
-      : canPerform(TokenPermission.PUBLIC, tokenData) || canPerform(TokenPermission.DRAFT, tokenData);
-
-  if (!hasRequiredPermission) {
-    res
-      .status(403)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('permission-denied', 'Permission denied'));
     return;
   }
 
@@ -409,19 +281,13 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', async (req, res) => {
   }
 });
 
-CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
+CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions(), async (req: RequestWithToken, res) => {
   logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
   logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
   const { spaceId, contentId } = req.params;
-  const { cv, locale, version, token, resolveReference, resolveLink } = req.query;
-  if (!validateToken(token)) {
-    logger.info('v1 spaces content Token Not Valid string: ' + token);
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
+  const { cv, locale, version, resolveReference, resolveLink } = req.query;
+  const token = req.tokenId;
+
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (!spaceSnapshot.exists) {
     logger.info('v1 spaces content Space not exist: ' + spaceId);
@@ -429,29 +295,6 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', async (req, res) => {
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
       .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
-  if (!tokenSnapshot.exists) {
-    res
-      .status(401)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
-    return;
-  }
-  const tokenData = tokenSnapshot.data() as Token;
-
-  // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
-  const hasRequiredPermission =
-    version !== undefined
-      ? canPerform(TokenPermission.DRAFT, tokenData)
-      : canPerform(TokenPermission.PUBLIC, tokenData) || canPerform(TokenPermission.DRAFT, tokenData);
-
-  if (!hasRequiredPermission) {
-    res
-      .status(403)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('permission-denied', 'Permission denied'));
     return;
   }
 
@@ -595,45 +438,4 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     res.status(404).header('Cache-Control', 'no-cache').send(new HttpsError('not-found', 'Not found.'));
     return;
   }
-});
-
-CDN.get('/api/v1/spaces/:spaceId/open-api', async (req, res) => {
-  logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
-  logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
-  const { spaceId } = req.params;
-  const { token } = req.query;
-  if (!validateToken(token)) {
-    logger.info('v1 spaces content Token Not Valid string: ' + token);
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const spaceSnapshot = await findSpaceById(spaceId).get();
-  if (!spaceSnapshot.exists) {
-    logger.info('v1 spaces content Space not exist: ' + spaceId);
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found'));
-    return;
-  }
-  const tokenSnapshot = await findTokenById(spaceId, token?.toString() || '').get();
-  if (!tokenSnapshot.exists) {
-    res
-      .status(401)
-      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-      .send(new HttpsError('unauthenticated', 'Unauthenticated'));
-    return;
-  }
-  const tokenData = tokenSnapshot.data() as Token;
-
-  if (!canPerform(TokenPermission.DEV_TOOLS, tokenData)) {
-    res.status(403).send(new HttpsError('permission-denied', 'Permission denied'));
-    return;
-  }
-  const schemasSnapshot = await findSchemas(spaceId).get();
-  const schemaById = new Map<string, Schema>(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
-  res.json(generateOpenApi(schemaById));
 });
