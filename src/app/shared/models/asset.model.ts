@@ -45,7 +45,7 @@ export type AssetMetadata =
       width?: number;
       height?: number;
       orientation?: 'landscape' | 'portrait' | 'squarish';
-      duration?: number;
+      duration?: number | string;
     }
   | {
       type: 'video';
@@ -53,7 +53,7 @@ export type AssetMetadata =
       width?: number;
       height?: number;
       orientation?: 'landscape' | 'portrait' | 'squarish';
-      duration?: number;
+      duration?: number | string;
     };
 
 // Common image file types
