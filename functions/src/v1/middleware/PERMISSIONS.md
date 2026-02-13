@@ -1,15 +1,15 @@
 # V1 API Endpoints - Permission Matrix
 
-| Endpoint | Method | Required Permissions | Notes                                    |
-|----------|--------|-------------------|------------------------------------------|
-| `/api/v1/spaces/:spaceId` | GET | DEV_TOOLS | Space metadata                           |
-| `/api/v1/spaces/:spaceId/translations/:locale` | GET | PUBLIC \| DRAFT \| DEV_TOOLS | Translation files                        |
-| `/api/v1/spaces/:spaceId/translations/:locale` | POST | DRAFT \| DEV_TOOLS | Update translations                      |
-| `/api/v1/spaces/:spaceId/links` | GET | PUBLIC \| DRAFT \| DEV_TOOLS | Content links                            |
-| `/api/v1/spaces/:spaceId/contents/slugs/*slug` | GET | **Conditional** | Published: PUBLIC \| DRAFT,<br>  Draft: DRAFT |
-| `/api/v1/spaces/:spaceId/contents/:contentId` | GET | **Conditional** | Published: PUBLIC \| DRAFT,<br>  Draft: DRAFT |
-| `/api/v1/spaces/:spaceId/open-api` | GET | DEV_TOOLS | OpenAPI schema                           |
-| `/api/v1/spaces/:spaceId/assets/:assetId` | GET | None | Public asset access                      |
+| Endpoint | Method | Required Permissions | Notes                                                      |
+|----------|--------|-------------------|------------------------------------------------------------|
+| `/api/v1/spaces/:spaceId` | GET | DEV_TOOLS | Space metadata                                             |
+| `/api/v1/spaces/:spaceId/translations/:locale` | GET | PUBLIC \| DRAFT \| DEV_TOOLS | Translation files                                          |
+| `/api/v1/spaces/:spaceId/translations/:locale` | POST | DRAFT \| DEV_TOOLS | Update translations                                        |
+| `/api/v1/spaces/:spaceId/links` | GET | PUBLIC \| DRAFT \| DEV_TOOLS | Content links                                              |
+| `/api/v1/spaces/:spaceId/contents/slugs/*slug` | GET | **Conditional** | Published: PUBLIC \| DRAFT \| DEV_TOOLS,<br>  Draft: DRAFT \| DEV_TOOLS|
+| `/api/v1/spaces/:spaceId/contents/:contentId` | GET | **Conditional** | Published: PUBLIC \| DRAFT \| DEV_TOOLS,<br>  Draft: DRAFT \| DEV_TOOLS            |
+| `/api/v1/spaces/:spaceId/open-api` | GET | DEV_TOOLS | OpenAPI schema                                             |
+| `/api/v1/spaces/:spaceId/assets/:assetId` | GET | None | Public asset access                                        |
 
 ## Conditional Permissions
 

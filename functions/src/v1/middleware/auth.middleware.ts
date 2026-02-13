@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { Token, TokenPermission } from '../../models';
 import { findTokenById, validateToken } from '../../services';
-import { canPerform } from '../../utils/api-auth-utils';
+import { canPerformAny } from '../../utils/api-auth-utils';
 
 /**
  * Extended Express Request with token information
@@ -46,7 +46,7 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
       const token = tokenSnapshot.data() as Token;
 
       // Check if token has any of the required permissions
-      const hasPermission = requiredPermissions.some(permission => canPerform(permission, token));
+      const hasPermission = canPerformAny(requiredPermissions, token);
 
       if (!hasPermission) {
         res
@@ -112,8 +112,8 @@ export function requireContentPermissions() {
       // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
       const hasRequiredPermission =
         version !== undefined
-          ? canPerform(TokenPermission.DRAFT, token)
-          : canPerform(TokenPermission.PUBLIC, token) || canPerform(TokenPermission.DRAFT, token);
+          ? canPerformAny([TokenPermission.DRAFT, TokenPermission.DEV_TOOLS], token)
+          : canPerformAny([TokenPermission.PUBLIC, TokenPermission.DRAFT, TokenPermission.DEV_TOOLS], token);
 
       if (!hasRequiredPermission) {
         res
