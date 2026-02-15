@@ -25,7 +25,7 @@ import {
   resolveReferences,
   spaceContentCachePath,
 } from '../services';
-import { requireContentPermissions, requireTokenPermissions, RequestWithToken } from './middleware';
+import { requireContentPermissions, requireTokenPermissions, RequestWithToken } from './middleware/query-auth.middleware';
 
 // eslint-disable-next-line new-cap
 export const CDN = Router();
