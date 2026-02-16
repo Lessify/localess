@@ -42,6 +42,7 @@ export class SettingsComponent {
     { icon: 'lucideVectorSquare', label: 'Visual Editor', link: 'visual-editor' },
     { icon: 'lucideFingerprintPattern', label: 'Access Tokens', link: 'tokens' },
     { icon: 'lucideWebhook', label: 'Webhooks', link: 'webhooks' },
+    { icon: 'lucideWebhook', label: 'Danger Zone', link: 'danger-zone' },
   ];
 
   constructor() {

@@ -24,3 +24,8 @@ export function findTranslations(spaceId: string, fromDate?: number): Query {
   }
   return translationsRef;
 }
+
+export function deleteTranslations(spaceId: string): Promise<void> {
+  let translationsRef = firestoreService.collection(`spaces/${spaceId}/translations`);
+  return firestoreService.recursiveDelete(translationsRef);
+}

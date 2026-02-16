@@ -168,4 +168,9 @@ export class TranslationService {
     const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-publish');
     return translationsPublish({ spaceId }).pipe(traceUntilFirst('Functions:Translations:publish'));
   }
+
+  deleteAll(spaceId: string): Observable<void> {
+    const translationsDeleteAll = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-deleteall');
+    return translationsDeleteAll({ spaceId }).pipe(traceUntilFirst('Functions:Translations:deleteAll'));
+  }
 }

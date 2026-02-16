@@ -4,7 +4,7 @@ import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/fire
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { bucket, firestoreService } from './config';
 import { PublishTranslationsData, Space, Translation, TranslationHistory, TranslationHistoryType, UserPermission } from './models';
-import { findSpaceById, findTranslations, findTranslationsHistory } from './services';
+import { deleteTranslations, findSpaceById, findTranslations, findTranslationsHistory } from './services';
 import { translateCloud } from './services/translate.service';
 import { canPerform } from './utils/user-auth-utils';
 
@@ -62,6 +62,15 @@ const publish = onCall<PublishTranslationsData>(async request => {
     throw new HttpsError('not-found', 'Space not found');
   }
 });
+
+const deleteAll = onCall<{ spaceId: string }>(async request => {
+  logger.info('[translationsDeleteAll] data: ' + JSON.stringify(request.data));
+  logger.info('[translationsDeleteAll] context.auth: ' + JSON.stringify(request.auth));
+  const { auth, data } = request;
+  if (!canPerform(UserPermission.SPACE_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { spaceId } = data;
+  await deleteTranslations(spaceId);
+  });
 
 const onCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async event => {
   logger.info(`[Translation:onCreate] eventId='${event.id}'`);
@@ -171,4 +180,5 @@ export const translation = {
   publish: publish,
   oncreate: onCreate,
   onwritetohistory: onWriteToHistory,
+  deleteall: deleteAll,
 };
