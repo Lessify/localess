@@ -3,10 +3,10 @@
     <label hlmFieldLabel [for]="'schema-field-' + field.name">
       {{ field.displayName || field.name }}
       @if (field.description) {
-        <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+        <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
       }
       @if (field.translatable) {
-        <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+        <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
       }
     </label>
     <div hlmInputGroup>
@@ -26,7 +26,7 @@
         <markdown [data]="mdText.value" class="block w-full px-3 py-3"></markdown>
       }
       <div hlmInputGroupAddon align="block-start" class="border-b flex flex-wrap">
-        <button hlmInputGroupButton size="icon-xs" hlmTooltipTrigger="View Markdown Rendered Preview" (click)="preview.set(!preview())">
+        <button hlmInputGroupButton size="icon-xs" hlmTooltip="View Markdown Rendered Preview" (click)="preview.set(!preview())">
           <ng-icon [name]="preview() ? 'lucideEyeOff' : 'lucideEye'" />
         </button>
         <hlm-separator orientation="vertical" class="h-4!" />

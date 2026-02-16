@@ -5,7 +5,7 @@
         <div hlmField>
           <label hlmFieldLabel for="name">
             Display Name
-            <ng-icon hlm size="sm" name="lucideInfo" hlmTooltipTrigger="Shown to content creators" />
+            <ng-icon hlm size="sm" name="lucideInfo" hlmTooltip="Shown to content creators" />
           </label>
           <input #name hlmInput id="name" formControlName="name" autocomplete="off" />
           @if (form().controls['name']?.errors; as errors) {
@@ -17,7 +17,7 @@
         <div hlmField>
           <label hlmFieldLabel for="value">
             Value
-            <ng-icon hlm size="sm" name="lucideInfo" hlmTooltipTrigger="Technical representation stored in data structure" />
+            <ng-icon hlm size="sm" name="lucideInfo" hlmTooltip="Technical representation stored in data structure" />
           </label>
           <input #value hlmInput id="value" formControlName="value" autocomplete="off" />
           @if (form().controls['value']?.errors; as errors) {

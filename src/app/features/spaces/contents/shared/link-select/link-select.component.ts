@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-icons/lucide';
@@ -16,6 +15,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 
 @Component({
   selector: 'll-link-select',
@@ -25,7 +25,6 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   imports: [
     ReactiveFormsModule,
     CommonModule,
-    MatExpansionModule,
     HlmFieldImports,
     HlmTooltipImports,
     HlmIconImports,
@@ -34,6 +33,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
     HlmButtonImports,
     HlmInputImports,
     HlmAutocompleteImports,
+    HlmAccordionImports,
   ],
   providers: [
     provideIcons({
@@ -92,22 +92,15 @@ export class LinkSelectComponent implements OnInit {
     //this.searchCtrl.reset();
   }
 
-  protected displayWith = (content?: string): string => {
+  public readonly displayWith = (content: string): string => {
     if (content) {
       const doc = this.documents()?.find(it => it.id === content);
       if (doc) {
         return `${doc.name} | ${doc.fullSlug}`;
       }
     }
-    return '';
+    return 'unknown';
   };
-  transformOptionToString(content?: ContentDocument): string {
-    return content ? `${content.name} | ${content.fullSlug}` : '';
-  }
-
-  transformOptionToValue(content: ContentDocument): string {
-    return content.id;
-  }
 
   displayContent(content?: ContentDocument): string {
     return content ? `${content.name} | ${content.fullSlug}` : '';

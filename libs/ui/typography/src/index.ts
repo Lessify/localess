@@ -25,16 +25,16 @@ export * from './lib/hlm-small';
 export * from './lib/hlm-ul';
 
 export const HlmTypographyImports = [
-	HlmBlockquote,
-	HlmCode,
-	HlmH1,
-	HlmH2,
-	HlmH3,
-	HlmH4,
-	HlmLarge,
-	HlmLead,
-	HlmMuted,
-	HlmP,
-	HlmSmall,
-	HlmUl,
+  HlmBlockquote,
+  HlmCode,
+  HlmH1,
+  HlmH2,
+  HlmH3,
+  HlmH4,
+  HlmLarge,
+  HlmLead,
+  HlmMuted,
+  HlmP,
+  HlmSmall,
+  HlmUl,
 ];

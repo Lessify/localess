@@ -61,7 +61,6 @@ import { TranslationHistoryService } from '@shared/services/translation-history.
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
-import { BrnPopoverImports } from '@spartan-ng/brain/popover';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { BrnSheetImports } from '@spartan-ng/brain/sheet';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -133,7 +132,6 @@ import { TranslationNode } from './shared/models/translation.model';
     HlmSelectImports,
     BrnSelectImports,
     HlmFieldImports,
-    BrnPopoverImports,
     HlmPopoverImports,
     HlmCommandImports,
     HlmButtonGroupImports,

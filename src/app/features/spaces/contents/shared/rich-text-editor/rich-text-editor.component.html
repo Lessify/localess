@@ -3,10 +3,10 @@
     <label hlmFieldLabel [for]="'schema-field-' + field.name">
       {{ field.displayName || field.name }}
       @if (field.description) {
-        <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+        <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
       }
       @if (field.translatable) {
-        <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+        <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
       }
     </label>
     <div hlmInputGroup>
@@ -17,7 +17,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('paragraph') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Normal text &#10; {{ fnKey }} + Alt + 0"
+          hlmTooltip="Normal text &#10; {{ fnKey }} + Alt + 0"
           (click)="editor.chain().focus().setParagraph().run()">
           <ng-icon name="lucidePilcrow" />
         </button>
@@ -25,7 +25,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('heading', { level: 1 }) ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Heading 1 &#10; {{ fnKey }} + Alt + 1"
+          hlmTooltip="Heading 1 &#10; {{ fnKey }} + Alt + 1"
           (click)="editor.chain().focus().toggleHeading({ level: 1 }).run()">
           <ng-icon name="lucideHeading1" />
         </button>
@@ -33,7 +33,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Heading 2 &#10; {{ fnKey }} + Alt + 2"
+          hlmTooltip="Heading 2 &#10; {{ fnKey }} + Alt + 2"
           (click)="editor.chain().focus().toggleHeading({ level: 2 }).run()">
           <ng-icon name="lucideHeading2" />
         </button>
@@ -41,7 +41,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('heading', { level: 3 }) ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Heading 3 &#10; {{ fnKey }} + Alt + 3"
+          hlmTooltip="Heading 3 &#10; {{ fnKey }} + Alt + 3"
           (click)="editor.chain().focus().toggleHeading({ level: 3 }).run()">
           <ng-icon name="lucideHeading3" />
         </button>
@@ -49,7 +49,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('heading', { level: 4 }) ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Heading 4 &#10; {{ fnKey }} + Alt + 4"
+          hlmTooltip="Heading 4 &#10; {{ fnKey }} + Alt + 4"
           (click)="editor.chain().focus().toggleHeading({ level: 4 }).run()">
           <ng-icon name="lucideHeading4" />
         </button>
@@ -57,7 +57,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('heading', { level: 5 }) ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Heading 5 &#10; {{ fnKey }} + Alt + 5"
+          hlmTooltip="Heading 5 &#10; {{ fnKey }} + Alt + 5"
           (click)="editor.chain().focus().toggleHeading({ level: 5 }).run()">
           <ng-icon name="lucideHeading5" />
         </button>
@@ -65,7 +65,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('heading', { level: 6 }) ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Heading 6 &#10; {{ fnKey }} + Alt + 6"
+          hlmTooltip="Heading 6 &#10; {{ fnKey }} + Alt + 6"
           (click)="editor.chain().focus().toggleHeading({ level: 6 }).run()">
           <ng-icon name="lucideHeading6" />
         </button>
@@ -74,7 +74,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('bold') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Bold &#10; {{ fnKey }} + B"
+          hlmTooltip="Bold &#10; {{ fnKey }} + B"
           (click)="editor.chain().focus().toggleBold().run()">
           <ng-icon name="lucideBold" />
         </button>
@@ -82,7 +82,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('italic') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Italic &#10; {{ fnKey }} + I"
+          hlmTooltip="Italic &#10; {{ fnKey }} + I"
           (click)="editor.chain().focus().toggleItalic().run()">
           <ng-icon name="lucideItalic" />
         </button>
@@ -90,7 +90,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('strike') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Strike &#10; {{ fnKey }} + Shift + S"
+          hlmTooltip="Strike &#10; {{ fnKey }} + Shift + S"
           (click)="editor.chain().focus().toggleStrike().run()">
           <ng-icon name="lucideStrikethrough" />
         </button>
@@ -98,7 +98,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('underline') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Underline &#10; {{ fnKey }} + U"
+          hlmTooltip="Underline &#10; {{ fnKey }} + U"
           (click)="editor.chain().focus().toggleUnderline().run()">
           <ng-icon name="lucideUnderline" />
         </button>
@@ -106,7 +106,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('code') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Code &#10; {{ fnKey }} + E"
+          hlmTooltip="Code &#10; {{ fnKey }} + E"
           (click)="editor.chain().focus().toggleCode().run()">
           <ng-icon name="lucideCode" />
         </button>
@@ -115,7 +115,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('link') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Link"
+          hlmTooltip="Link"
           (click)="setLink()">
           <ng-icon name="lucideLink" />
         </button>
@@ -124,7 +124,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('orderedList') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Ordered List &#10; {{ fnKey }} + Shift + 7"
+          hlmTooltip="Ordered List &#10; {{ fnKey }} + Shift + 7"
           (click)="editor.chain().focus().toggleOrderedList().run()">
           <ng-icon name="lucideListOrdered" />
         </button>
@@ -132,7 +132,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('bulletList') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Bullet List &#10; {{ fnKey }} + Shift + 8"
+          hlmTooltip="Bullet List &#10; {{ fnKey }} + Shift + 8"
           (click)="editor.chain().focus().toggleBulletList().run()">
           <ng-icon name="lucideList" />
         </button>
@@ -141,7 +141,7 @@
           hlmInputGroupButton
           size="icon-xs"
           [variant]="editor.isActive('codeBlock') ? 'secondary' : 'ghost'"
-          hlmTooltipTrigger="Code Block &#10; {{ fnKey }} + Alt + C"
+          hlmTooltip="Code Block &#10; {{ fnKey }} + Alt + C"
           (click)="editor.chain().focus().toggleCodeBlock().run()">
           <ng-icon name="lucideCodeSquare" />
         </button>

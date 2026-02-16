@@ -1,5 +1,5 @@
 <div class="p-2 flex justify-end gap-2">
-  <button hlmBtn (click)="sync()" [disabled]="isSyncLoading()" hlmTooltipTrigger="Synchronize Users with Database">
+  <button hlmBtn (click)="sync()" [disabled]="isSyncLoading()" hlmTooltip="Synchronize Users with Database">
     @if (isSyncLoading()) {
       <hlm-spinner class="size-4" />
     } @else {
@@ -33,7 +33,7 @@
         {{ element.email }}
         @if (element.emailVerified) {
           &nbsp;
-          <ng-icon hlm size="sm" name="lucideShieldCheck" hlmTooltipTrigger="Verified" />
+          <ng-icon hlm size="sm" name="lucideShieldCheck" hlmTooltip="Verified" />
         }
       </mat-cell>
     </ng-container>
@@ -47,9 +47,9 @@
       <mat-header-cell *matHeaderCellDef> Active</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @if (element.disabled) {
-          <ng-icon hlm size="sm" name="lucideX" hlmTooltipTrigger="User is Disabled" />
+          <ng-icon hlm size="sm" name="lucideX" hlmTooltip="User is Disabled" />
         } @else {
-          <ng-icon hlm size="sm" name="lucideCheck" hlmTooltipTrigger="User is Active" />
+          <ng-icon hlm size="sm" name="lucideCheck" hlmTooltip="User is Active" />
         }
       </mat-cell>
     </ng-container>
@@ -59,10 +59,10 @@
         @for (provider of element.providers; track provider) {
           @switch (provider) {
             @case ('password') {
-              <ng-icon hlm size="sm" name="lucideMail" hlmTooltipTrigger="Email & Password" />
+              <ng-icon hlm size="sm" name="lucideMail" hlmTooltip="Email & Password" />
             }
             @default {
-              <ng-icon hlm size="sm" name="lucideShieldCheck" [hlmTooltipTrigger]="provider" />
+              <ng-icon hlm size="sm" name="lucideShieldCheck" [hlmTooltip]="provider" />
             }
           }
         }
@@ -95,10 +95,10 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button hlmBtn size="icon" variant="ghost" (click)="editDialog(element)" hlmTooltipTrigger="Edit">
+        <button hlmBtn size="icon" variant="ghost" (click)="editDialog(element)" hlmTooltip="Edit">
           <ng-icon hlm size="sm" name="lucidePencil" />
         </button>
-        <button hlmBtn size="icon" variant="ghost" (click)="deleteDialog(element)" hlmTooltipTrigger="Delete">
+        <button hlmBtn size="icon" variant="ghost" (click)="deleteDialog(element)" hlmTooltip="Delete">
           <ng-icon hlm size="sm" name="lucideTrash" />
         </button>
       </mat-cell>

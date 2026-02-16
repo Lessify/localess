@@ -45,26 +45,26 @@
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.createdAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
         {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="openLogsSheet(element)" hlmTooltipTrigger="View Logs">
+        <button mat-icon-button (click)="openLogsSheet(element)" hlmTooltip="View Logs">
           <mat-icon>history</mat-icon>
         </button>
-        <button mat-icon-button (click)="openEditDialog(element)" hlmTooltipTrigger="Edit">
+        <button mat-icon-button (click)="openEditDialog(element)" hlmTooltip="Edit">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button (click)="openDeleteDialog(element)" hlmTooltipTrigger="Delete">
+        <button mat-icon-button (click)="openDeleteDialog(element)" hlmTooltip="Delete">
           <mat-icon>delete</mat-icon>
         </button>
       </mat-cell>
@@ -76,7 +76,7 @@
 </div>
 
 <hlm-sheet side="right" [state]="isLogsSheetOpen() ? 'open' : 'closed'" (closed)="closeLogsSheet()">
-  <hlm-sheet-content *brnSheetContent="let ctx">
+  <hlm-sheet-content *hlmSheetPortal="let ctx">
     <hlm-sheet-header>
       <h3 hlmSheetTitle>Webhook Logs</h3>
       <p hlmSheetDescription>

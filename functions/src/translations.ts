@@ -70,7 +70,7 @@ const deleteAll = onCall<{ spaceId: string }>(async request => {
   if (!canPerform(UserPermission.SPACE_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId } = data;
   await deleteTranslations(spaceId);
-  });
+});
 
 const onCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async event => {
   logger.info(`[Translation:onCreate] eventId='${event.id}'`);

@@ -8,10 +8,10 @@
             <label hlmFieldLabel [for]="'schema-field-' + field.name">
               {{ field.displayName || field.name }}
               @if (field.description) {
-                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
               @if (field.translatable) {
-                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
             <div hlmInputGroup>
@@ -33,7 +33,7 @@
                     align="end"
                     [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
                     [hlmDropdownMenuTrigger]="translationMenu"
-                    hlmTooltipTrigger="Translate the field with AI">
+                    hlmTooltip="Translate the field with AI">
                     <ng-icon name="lucideLanguages" />
                   </button>
                   <ng-template #translationMenu>
@@ -66,10 +66,10 @@
             <label hlmFieldLabel [for]="'schema-field-' + field.name">
               {{ field.displayName || field.name }}
               @if (field.description) {
-                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
               @if (field.translatable) {
-                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
             <div hlmInputGroup>
@@ -92,7 +92,7 @@
                     align="end"
                     [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false"
                     [hlmDropdownMenuTrigger]="translationMenu"
-                    hlmTooltipTrigger="Translate the field with AI">
+                    hlmTooltip="Translate the field with AI">
                     <ng-icon name="lucideLanguages" />
                   </button>
                   <ng-template #translationMenu>
@@ -137,10 +137,10 @@
             <label hlmFieldLabel [for]="'schema-field-' + field.name">
               {{ field.displayName || field.name }}
               @if (field.description) {
-                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
               @if (field.translatable) {
-                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
             <div hlmInputGroup>
@@ -165,10 +165,10 @@
             <label hlmFieldLabel [for]="'schema-field-' + field.name">
               {{ field.displayName || field.name }}
               @if (field.description) {
-                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
               @if (field.translatable) {
-                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
             <div hlmInputGroup>
@@ -191,10 +191,10 @@
             <label hlmFieldLabel [for]="'schema-field-' + field.name">
               {{ field.displayName || field.name }}
               @if (field.description) {
-                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
               @if (field.translatable) {
-                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
             <div hlmInputGroup>
@@ -217,10 +217,10 @@
             <label hlmFieldLabel [for]="'schema-field-' + field.name">
               {{ field.displayName || field.name }}
               @if (field.description) {
-                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
               @if (field.translatable) {
-                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
             <div hlmInputGroup>
@@ -245,10 +245,10 @@
               <label hlmFieldLabel [for]="'schema-field-' + field.name">
                 {{ field.displayName || field.name }}
                 @if (field.description) {
-                  <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                  <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
                 }
                 @if (field.translatable) {
-                  <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                  <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
                 }
               </label>
               @if (form.controls[field.name]?.errors; as errors) {
@@ -263,10 +263,10 @@
             <label hlmFieldLabel for="kind">
               {{ field.displayName || field.name }}
               @if (field.description) {
-                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
               @if (field.translatable) {
-                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
             <hlm-select
@@ -301,10 +301,10 @@
             <label hlmFieldLabel for="kind">
               {{ field.displayName || field.name }}
               @if (field.description) {
-                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="field.description" />
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
               @if (field.translatable) {
-                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
             <hlm-select
@@ -376,14 +376,14 @@
                   variant="ghost"
                   size="sm"
                   [hlmDropdownMenuTrigger]="menu"
-                  hlmTooltipTrigger="Add Schema"
+                  hlmTooltip="Add Schema"
                   [disabled]="data[field.name]">
                   <ng-icon hlm size="sm" name="lucideCirclePlus" />
                 </button>
                 <ng-template #menu>
                   <hlm-dropdown-menu class="w-60">
                     @for (sch of filterSchema(field.schemas || []); track sch.id) {
-                      <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltipTrigger]="sch.description || ''">
+                      <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltip]="sch.description || ''">
                         {{ sch.displayName || sch.id }}
                       </button>
                     }
@@ -421,7 +421,7 @@
                         }
                       </div>
                       <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltipTrigger="Delete">
+                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltip="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                       </div>
@@ -438,13 +438,13 @@
             <fieldset hlmFieldSet class="gap-2">
               <legend hlmFieldLegend class="w-full flex justify-between">
                 {{ field.displayName || field.name }}
-                <button hlmBtn variant="ghost" size="sm" [hlmDropdownMenuTrigger]="menu" hlmTooltipTrigger="Add Schema at the end">
+                <button hlmBtn variant="ghost" size="sm" [hlmDropdownMenuTrigger]="menu" hlmTooltip="Add Schema at the end">
                   <ng-icon hlm size="sm" name="lucideCirclePlus" />
                 </button>
                 <ng-template #menu>
                   <hlm-dropdown-menu class="w-60">
                     @for (sch of filterSchema(field.schemas || []); track sch.id) {
-                      <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltipTrigger]="sch.description || ''">
+                      <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltip]="sch.description || ''">
                         {{ sch.displayName || sch.id }}
                       </button>
                     }
@@ -489,16 +489,13 @@
                           variant="outline"
                           size="sm"
                           [hlmDropdownMenuTrigger]="schemasMenuAbove"
-                          hlmTooltipTrigger="Add Schema above">
+                          hlmTooltip="Add Schema above">
                           <ng-icon hlm size="sm" name="tablerRowInsertTop" />
                         </button>
                         <ng-template #schemasMenuAbove>
                           <hlm-dropdown-menu class="w-60">
                             @for (sch of filterSchema(field.schemas || []); track sch.id) {
-                              <button
-                                hlmDropdownMenuItem
-                                (click)="addSchemaMany(field, sch, index)"
-                                [hlmTooltipTrigger]="sch.description || ''">
+                              <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch, index)" [hlmTooltip]="sch.description || ''">
                                 {{ sch.displayName || sch.id }}
                               </button>
                             }
@@ -509,7 +506,7 @@
                           variant="outline"
                           size="sm"
                           [hlmDropdownMenuTrigger]="schemasMenuBelow"
-                          hlmTooltipTrigger="Add Schema below">
+                          hlmTooltip="Add Schema below">
                           <ng-icon hlm size="sm" name="tablerRowInsertBottom" />
                         </button>
                         <ng-template #schemasMenuBelow>
@@ -518,7 +515,7 @@
                               <button
                                 hlmDropdownMenuItem
                                 (click)="addSchemaMany(field, sch, index + 1)"
-                                [hlmTooltipTrigger]="sch.description || ''">
+                                [hlmTooltip]="sch.description || ''">
                                 {{ sch.displayName || sch.id }}
                               </button>
                             }
@@ -529,10 +526,10 @@
                           size="icon"
                           variant="outline"
                           (click)="duplicateSchemaMany(data[field.name], item, index)"
-                          hlmTooltipTrigger="Clone the schema">
+                          hlmTooltip="Clone the schema">
                           <ng-icon hlm size="sm" name="lucideCopy" />
                         </button>
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltipTrigger="Delete">
+                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltip="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                         <button
@@ -541,7 +538,7 @@
                           variant="ghost"
                           cdkDragHandle
                           class="cursor-grab active:cursor-grabbing"
-                          hlmTooltipTrigger="Move">
+                          hlmTooltip="Move">
                           <ng-icon hlm size="sm" name="lucideGripVertical" />
                         </button>
                       </div>
@@ -565,16 +562,21 @@
   <br />
   <mat-divider />
   <br />
-  <mat-accordion>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>isDefaultLocale = {{ isDefaultLocale() }}</pre>
-      Value :
-      <pre>{{ form.value | json }}</pre>
-      Error :
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
+  <hlm-accordion>
+    <hlm-accordion-item>
+      <h3 class="contents">
+        <button hlmAccordionTrigger>
+          EditDocumentSchema Form => {{ form?.valid }}
+          <ng-icon name="lucideChevronDown" hlm hlmAccIcon />
+        </button>
+      </h3>
+      <hlm-accordion-content>
+        <pre>isDefaultLocale = {{ isDefaultLocale() }}</pre>
+        Value :
+        <pre>{{ form.value | json }}</pre>
+        Error :
+        <pre>{{ form.errors | json }}</pre>
+      </hlm-accordion-content>
+    </hlm-accordion-item>
+  </hlm-accordion>
 }

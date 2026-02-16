@@ -21,7 +21,6 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCirclePlus, lucideCopy, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
@@ -44,6 +43,7 @@ import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -82,7 +82,6 @@ import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-edit
     AssetsSelectComponent,
     MatDividerModule,
     DragDropModule,
-    MatExpansionModule,
     HlmFieldImports,
     HlmButtonImports,
     HlmTooltipImports,
@@ -94,6 +93,7 @@ import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-edit
     BrnSelectImports,
     HlmSelectImports,
     MarkdownEditorComponent,
+    HlmAccordionImports,
   ],
   providers: [
     provideIcons({

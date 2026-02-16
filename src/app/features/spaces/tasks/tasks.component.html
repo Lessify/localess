@@ -49,16 +49,16 @@
       <mat-cell *matCellDef="let element">
         @switch (element.status) {
           @case ('INITIATED') {
-            <ng-icon hlm size="sm" name="lucideCircleEllipsis" [hlmTooltipTrigger]="element.status" />
+            <ng-icon hlm size="sm" name="lucideCircleEllipsis" [hlmTooltip]="element.status" />
           }
           @case ('IN_PROGRESS') {
-            <hlm-spinner [hlmTooltipTrigger]="element.status" />
+            <hlm-spinner [hlmTooltip]="element.status" />
           }
           @case ('FINISHED') {
-            <ng-icon hlm size="sm" name="lucideCheck" [hlmTooltipTrigger]="element.status" />
+            <ng-icon hlm size="sm" name="lucideCheck" [hlmTooltip]="element.status" />
           }
           @case ('ERROR') {
-            <ng-icon hlm size="sm" name="lucideOctagonAlert" [hlmTooltipTrigger]="element.status" />
+            <ng-icon hlm size="sm" name="lucideOctagonAlert" [hlmTooltip]="element.status" />
           }
         }
       </mat-cell>
@@ -101,20 +101,20 @@
             <div> Duration : {{ element.updatedAt.seconds - element.createdAt.seconds | timeDuration }}</div>
           }
           @if (element.message; as message) {
-            <div [hlmTooltipTrigger]="element.trace">Message : {{ message }}</div>
+            <div [hlmTooltip]="element.trace">Message : {{ message }}</div>
           }
         </div>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.createdAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
         {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
@@ -127,7 +127,7 @@
           variant="ghost"
           (click)="onDownload(element)"
           [disabled]="element.file === undefined"
-          hlmTooltipTrigger="Download">
+          hlmTooltip="Download">
           <ng-icon hlm size="sm" name="lucideDownload" />
         </button>
         <button
@@ -136,7 +136,7 @@
           variant="ghost"
           (click)="openDeleteDialog(element)"
           [disabled]="element.status !== 'FINISHED' && now - (element.createdAt?.toMillis() || 0) < 600000"
-          hlmTooltipTrigger="Delete">
+          hlmTooltip="Delete">
           <ng-icon hlm size="sm" name="lucideTrash" />
         </button>
       </mat-cell>

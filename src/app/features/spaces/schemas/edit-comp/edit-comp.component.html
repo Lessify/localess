@@ -1,6 +1,6 @@
 <div class="p-2 flex items-center justify-between gap-2">
   <div class="flex items-center gap-2">
-    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Schemas">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Schemas">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <div>
@@ -9,7 +9,7 @@
     </div>
   </div>
   @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-    <button hlmBtn hlmTooltipTrigger="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
+    <button hlmBtn hlmTooltip="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
       @if (isSaveLoading()) {
         <hlm-spinner class="size-4" />
       } @else {
@@ -65,7 +65,7 @@
                   [class.border-destructive]="field.invalid">
                   @let descriptor = schemaFieldKindDescriptions[field.value.kind];
                   <div hlmItemMedia variant="icon">
-                    <ng-icon [name]="descriptor.icon" [hlmTooltipTrigger]="descriptor.description" />
+                    <ng-icon [name]="descriptor.icon" [hlmTooltip]="descriptor.description" />
                   </div>
                   <div hlmItemContent>
                     <div hlmItemTitle class="line-clamp-1">
@@ -73,7 +73,7 @@
                       <span class="text-muted-foreground">#{{ field.value.name }}</span>
                     </div>
                     <div hlmItemSubTitle class="line-clamp-1">
-                      <span hlmBadge variant="outline" [hlmTooltipTrigger]="descriptor.description">{{ descriptor.name }}</span>
+                      <span hlmBadge variant="outline" [hlmTooltip]="descriptor.description">{{ descriptor.name }}</span>
                       @if (field.value.translatable) {
                         <span hlmBadge variant="outline">Translatable</span>
                       }
@@ -82,9 +82,7 @@
                       }
                       @if (field.value.fileType) {
                         @let ftDescriptor = assetFileTypeDescriptions[field.value.fileType];
-                        <span hlmBadge variant="outline" [hlmTooltipTrigger]="ftDescriptor.description">
-                          File Type: {{ ftDescriptor.name }}
-                        </span>
+                        <span hlmBadge variant="outline" [hlmTooltip]="ftDescriptor.description"> File Type: {{ ftDescriptor.name }} </span>
                       }
                       @if (field.value.path) {
                         <span hlmBadge variant="outline">Path: {{ field.value.path }}</span>
@@ -96,7 +94,7 @@
                         @if (field.value.schemas.length === 1) {
                           <span hlmBadge variant="outline">Schema: {{ field.value.schemas[0] }}</span>
                         } @else {
-                          <span hlmBadge variant="outline" [hlmTooltipTrigger]="field.value.schemas.join(',\n')">
+                          <span hlmBadge variant="outline" [hlmTooltip]="field.value.schemas.join(',\n')">
                             Schemas: {{ field.value.schemas[0] }}, ...
                           </span>
                         }
@@ -123,16 +121,10 @@
                   </div>
 
                   <div hlmItemActions>
-                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltipTrigger="Delete">
+                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltip="Delete">
                       <ng-icon hlm size="sm" name="lucideTrash" />
                     </button>
-                    <button
-                      hlmBtn
-                      size="icon"
-                      variant="ghost"
-                      cdkDragHandle
-                      class="cursor-grab active:cursor-grabbing"
-                      hlmTooltipTrigger="Move">
+                    <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
                       <ng-icon hlm size="sm" name="lucideGripVertical" />
                     </button>
                   </div>
@@ -214,7 +206,7 @@
 }
 
 <hlm-sheet side="right" [state]="selectedFieldIdx() !== undefined ? 'open' : 'closed'" (closed)="selectedFieldIdx.set(undefined)">
-  <hlm-sheet-content *brnSheetContent="let ctx">
+  <hlm-sheet-content *hlmSheetPortal="let ctx">
     <hlm-sheet-header>
       <h3 hlmSheetTitle>Edit Field</h3>
     </hlm-sheet-header>

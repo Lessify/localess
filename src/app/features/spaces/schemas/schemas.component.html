@@ -53,18 +53,13 @@
               @let labels = filterForm.controls.labels.value;
               @if (labels && labels.length > 0) {
                 <div class="flex items-center gap-1 px-2 border shadow-xs rounded-md">
-                  @for (label of labels; track label) {
-                    <span hlmBadge variant="secondary">{{ label }}</span>
-                  }
+                  <span hlmBadge variant="secondary">{{ labels.length }}</span>
                 </div>
               }
             </div>
-            <hlm-command *brnPopoverContent="let ctx" hlmPopoverContent class="w-[200px] p-0">
-              <hlm-command-search>
-                <ng-icon hlm size="sm" name="lucideSearch" />
-                <input placeholder="Search label..." hlm-command-search-input />
-              </hlm-command-search>
-              <div *brnCommandEmpty hlmCommandEmpty>No results found.</div>
+            <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
+              <hlm-command-input placeholder="Search label..." />
+              <div *hlmCommandEmptyState hlmCommandEmpty>No results found.</div>
               <hlm-command-list>
                 <hlm-command-group>
                   @for (label of allLabels(); track label) {
@@ -92,7 +87,7 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @let descriptor = schemaTypeDescriptions[element.type];
-        <ng-icon hlm size="sm" [name]="descriptor.icon" [hlmTooltipTrigger]="descriptor.description" class="mr-2" />
+        <ng-icon hlm size="sm" [name]="descriptor.icon" [hlmTooltip]="descriptor.description" class="mr-2" />
         {{ descriptor.name }}
       </mat-cell>
     </ng-container>
@@ -107,31 +102,27 @@
     </ng-container>
     <ng-container matColumnDef="description">
       <mat-header-cell *matHeaderCellDef> Description</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        {{ element.description }}
-      </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.description }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="labels">
       <mat-header-cell *matHeaderCellDef> Labels</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div class="flex items-center gap-1 px-2">
           @for (label of element.labels; track label) {
-            <span hlmBadge [variant]="filterForm.controls.labels.value?.includes(label) ? 'secondary' : 'outline'">
-              {{ label }}
-            </span>
+            <span hlmBadge [variant]="filterForm.controls.labels.value?.includes(label) ? 'secondary' : 'outline'"> {{ label }} </span>
           }
         </div>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.createdAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
         {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
@@ -139,14 +130,14 @@
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @let inUse = schemasInUse()[element.id];
-        <div [hlmTooltipTrigger]="inUse ? 'Used by : ' + inUse.join(', ') : ''">
+        <div [hlmTooltip]="inUse ? 'Used by : ' + inUse.join(', ') : ''">
           @if ('SCHEMA_UPDATE' | canUserPerform | async) {
             <button
               hlmBtn
               size="icon"
               variant="ghost"
               (click)="openEditIdDialog($event, element)"
-              hlmTooltipTrigger="Edit ID"
+              hlmTooltip="Edit ID"
               [disabled]="inUse !== undefined">
               <ng-icon hlm size="sm" name="lucideReplace" />
             </button>
@@ -157,7 +148,7 @@
               size="icon"
               variant="ghost"
               (click)="openDeleteDialog($event, element)"
-              hlmTooltipTrigger="Delete"
+              hlmTooltip="Delete"
               [disabled]="inUse !== undefined">
               <ng-icon hlm size="sm" name="lucideTrash" />
             </button>

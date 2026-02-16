@@ -5,7 +5,7 @@
         hlmToggleGroupItem
         value="list"
         aria-label="List Layout"
-        hlmTooltipTrigger="List Layout"
+        hlmTooltip="List Layout"
         (click)="settingsStore.setTranslationLayout('list')">
         <ng-icon hlm size="sm" name="lucideLayoutList" />
       </button>
@@ -13,7 +13,7 @@
         hlmToggleGroupItem
         value="tree"
         aria-label="Tree Layout"
-        hlmTooltipTrigger="Tree Layout"
+        hlmTooltip="Tree Layout"
         (click)="settingsStore.setTranslationLayout('tree')">
         <ng-icon hlm size="sm" name="lucideListTree" />
       </button>
@@ -28,7 +28,7 @@
       <button
         hlmBtn
         variant="outline"
-        hlmTooltipTrigger="Publish Translations to be available via API call"
+        hlmTooltip="Publish Translations to be available via API call"
         [disabled]="isPublishLoading()"
         (click)="publish()">
         @if (isPublishLoading()) {
@@ -39,7 +39,7 @@
         Publish
       </button>
     }
-    <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Hisotry" (click)="showHistory.set(!showHistory())">
+    <button hlmBtn size="icon" variant="ghost" hlmTooltip="Hisotry" (click)="showHistory.set(!showHistory())">
       <ng-icon hlm size="sm" name="lucideHistory" />
     </button>
     <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
@@ -118,7 +118,7 @@
                     </div>
                   }
                 </div>
-                <hlm-command *brnPopoverContent="let ctx" hlmPopoverContent class="w-[200px] p-0">
+                <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
                   <hlm-command-list>
                     <hlm-command-group>
                       @for (state of allStates; track state) {
@@ -150,12 +150,9 @@
                     </div>
                   }
                 </div>
-                <hlm-command *brnPopoverContent="let ctx" hlmPopoverContent class="w-[200px] p-0">
-                  <hlm-command-search>
-                    <ng-icon hlm size="sm" name="lucideSearch" />
-                    <input placeholder="Search label..." hlm-command-search-input />
-                  </hlm-command-search>
-                  <div *brnCommandEmpty hlmCommandEmpty>No results found.</div>
+                <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
+                  <hlm-command-input placeholder="Search label..." />
+                  <div *hlmCommandEmptyState hlmCommandEmpty>No results found.</div>
                   <hlm-command-list>
                     <hlm-command-group>
                       @for (label of allLabels(); track label) {
@@ -196,13 +193,13 @@
                   } @else {
                     @switch (identifyStatus(translation)) {
                       @case ('TRANSLATED') {
-                        <ll-status mode="online" hlmTooltipTrigger="Translated" />
+                        <ll-status mode="online" hlmTooltip="Translated" />
                       }
                       @case ('PARTIALLY_TRANSLATED') {
-                        <ll-status mode="away" hlmTooltipTrigger="Partially Translated" />
+                        <ll-status mode="away" hlmTooltip="Partially Translated" />
                       }
                       @case ('UNTRANSLATED') {
-                        <ll-status mode="offline" hlmTooltipTrigger="Untranslated" />
+                        <ll-status mode="offline" hlmTooltip="Untranslated" />
                       }
                     }
                   }
@@ -246,13 +243,13 @@
                     } @else {
                       @switch (identifyStatus(translation)) {
                         @case ('TRANSLATED') {
-                          <ll-status mode="online" hlmTooltipTrigger="Translated" />
+                          <ll-status mode="online" hlmTooltip="Translated" />
                         }
                         @case ('PARTIALLY_TRANSLATED') {
-                          <ll-status mode="away" hlmTooltipTrigger="Partially Translated" />
+                          <ll-status mode="away" hlmTooltip="Partially Translated" />
                         }
                         @case ('UNTRANSLATED') {
-                          <ll-status mode="offline" hlmTooltipTrigger="Untranslated" />
+                          <ll-status mode="offline" hlmTooltip="Untranslated" />
                         }
                       }
                     }
@@ -313,7 +310,7 @@
                       size="icon"
                       variant="ghost"
                       (click)="translate()"
-                      hlmTooltipTrigger="Translate"
+                      hlmTooltip="Translate"
                       [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
                       @if (isTranslateLoading()) {
                         <hlm-spinner class="size-4" />
@@ -396,15 +393,15 @@
             <div>
               <div class="p-2 align-items-start">
                 @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit ID" (click)="openEditIdDialog(translation)">
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltip="Edit ID" (click)="openEditIdDialog(translation)">
                     <ng-icon hlm size="sm" name="lucideReplace" />
                   </button>
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Edit" (click)="openEditDialog(translation)">
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltip="Edit" (click)="openEditDialog(translation)">
                     <ng-icon hlm size="sm" name="lucidePencil" />
                   </button>
                 }
                 @if ('TRANSLATION_DELETE' | canUserPerform | async) {
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Delete" (click)="openDeleteDialog(translation)">
+                  <button hlmBtn size="icon" variant="ghost" hlmTooltip="Delete" (click)="openDeleteDialog(translation)">
                     <ng-icon hlm size="sm" name="lucideTrash" />
                   </button>
                 }
@@ -418,7 +415,7 @@
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                       <code>{{ translation.id }}</code>
-                      <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Copy ID" [cdkCopyToClipboard]="translation.id">
+                      <button hlmBtn size="icon" variant="ghost" hlmTooltip="Copy ID" [cdkCopyToClipboard]="translation.id">
                         <ng-icon hlm size="sm" name="lucideCopy" />
                       </button>
                     </div>
@@ -491,7 +488,7 @@
                     </div>
                     <div
                       class="flex items-center gap-x-2.5 text-xs leading-5 break-words"
-                      [hlmTooltipTrigger]="translation.updatedBy?.email || 'Unknown'">
+                      [hlmTooltip]="translation.updatedBy?.email || 'Unknown'">
                       {{ translation.updatedBy?.name || 'Unknown' }}
                     </div>
                   </div>
@@ -504,7 +501,7 @@
     </div>
   }
   <hlm-sheet side="right" [state]="showHistory() ? 'open' : 'closed'" (closed)="showHistory.set(false)">
-    <hlm-sheet-content *brnSheetContent="let ctx">
+    <hlm-sheet-content *hlmSheetPortal="let ctx">
       <hlm-sheet-header>
         <h3 hlmSheetTitle>History</h3>
       </hlm-sheet-header>
@@ -525,7 +522,7 @@
                             <div>
                               <p class="text-sm">
                                 Published by
-                                <span class="font-medium" [hlmTooltipTrigger]="item.email || 'Unknown'">
+                                <span class="font-medium" [hlmTooltip]="item.email || 'Unknown'">
                                   {{ item.name || 'Unknown' }}
                                 </span>
                               </p>
@@ -543,7 +540,7 @@
                             <div>
                               <p class="text-sm">
                                 Add <span class="font-medium break-all">{{ item.key }}</span> by
-                                <span class="font-medium" [hlmTooltipTrigger]="item.email || 'Unknown'">
+                                <span class="font-medium" [hlmTooltip]="item.email || 'Unknown'">
                                   {{ item.name || 'Unknown' }}
                                 </span>
                               </p>
@@ -561,7 +558,7 @@
                             <div>
                               <p class="text-sm">
                                 Edit <span class="font-medium break-all">{{ item.key }}</span> by
-                                <span class="font-medium" [hlmTooltipTrigger]="item.email || 'Unknown'">
+                                <span class="font-medium" [hlmTooltip]="item.email || 'Unknown'">
                                   {{ item.name || 'Unknown' }}
                                 </span>
                               </p>
@@ -579,7 +576,7 @@
                             <div>
                               <p class="text-sm">
                                 Delete <span class="font-medium break-all">{{ item.key }}</span> by
-                                <span class="font-medium" [hlmTooltipTrigger]="item.email || 'Unknown'">
+                                <span class="font-medium" [hlmTooltip]="item.email || 'Unknown'">
                                   {{ item.name || 'Unknown' }}
                                 </span>
                               </p>

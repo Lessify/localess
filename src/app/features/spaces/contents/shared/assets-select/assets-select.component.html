@@ -4,10 +4,10 @@
       <span>
         {{ component().displayName || component().name }}
         @if (component().translatable) {
-          <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+          <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
         }
       </span>
-      <button hlmBtn variant="ghost" size="sm" hlmTooltipTrigger="Add Assets" (click)="openAssetSelectDialog()">
+      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Assets" (click)="openAssetSelectDialog()">
         <ng-icon hlm size="sm" name="lucideFilePlusCorner" />
       </button>
     </legend>
@@ -54,10 +54,10 @@
               </p>
             </div>
             <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-              <button hlmBtn size="icon" variant="outline" (click)="deleteAsset(idx)" hlmTooltipTrigger="Delete">
+              <button hlmBtn size="icon" variant="outline" (click)="deleteAsset(idx)" hlmTooltip="Delete">
                 <ng-icon hlm size="sm" name="lucideTrash" />
               </button>
-              <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltipTrigger="Move">
+              <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
                 <ng-icon hlm size="sm" name="lucideGripVertical" />
               </button>
             </div>

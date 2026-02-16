@@ -18,7 +18,6 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -84,6 +83,7 @@ import { v4 } from 'uuid';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
 import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -102,7 +102,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     MatSidenavModule,
     MatCardModule,
     EditDocumentSchemaComponent,
-    MatExpansionModule,
     HlmResizableImports,
     HlmBreadCrumbImports,
     HlmIconImports,
@@ -120,6 +119,7 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     HlmInputGroupImports,
     HlmButtonGroupImports,
     HlmLabelImports,
+    HlmAccordionImports,
   ],
   providers: [
     provideIcons({

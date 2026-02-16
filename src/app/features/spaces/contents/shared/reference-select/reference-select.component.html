@@ -3,7 +3,7 @@
     <fieldset hlmFieldSet class="gap-2">
       <legend hlmFieldLegend class="w-full flex justify-between">
         {{ component().displayName || component().name }}
-        <button hlmBtn variant="ghost" size="sm" hlmTooltipTrigger="Add Reference" (click)="openReferenceSelectDialog()">
+        <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Reference" (click)="openReferenceSelectDialog()">
           <ng-icon hlm size="sm" name="lucideFileSymlink" />
         </button>
       </legend>
@@ -17,11 +17,11 @@
             <div hlmItem variant="outline" role="listitem">
               <div hlmItemMedia>
                 @if (content.publishedAt === undefined) {
-                  <ll-status mode="offline" hlmTooltipTrigger="Not published" />
+                  <ll-status mode="offline" hlmTooltip="Not published" />
                 } @else if (content.publishedAt.seconds > content.updatedAt.seconds) {
-                  <ll-status mode="online" hlmTooltipTrigger="Published" />
+                  <ll-status mode="online" hlmTooltip="Published" />
                 } @else if (content.publishedAt.seconds < content.updatedAt.seconds) {
-                  <ll-status mode="away" hlmTooltipTrigger="Draft" />
+                  <ll-status mode="away" hlmTooltip="Draft" />
                 }
               </div>
               <div hlmItemContent class="min-w-0 overflow-hidden">
@@ -33,7 +33,7 @@
                 </p>
               </div>
               <div role="none" hlmItemActions>
-                <button hlmBtn size="icon" variant="outline" (click)="deleteReference()" hlmTooltipTrigger="Delete">
+                <button hlmBtn size="icon" variant="outline" (click)="deleteReference()" hlmTooltip="Delete">
                   <ng-icon hlm size="sm" name="lucideTrash" />
                 </button>
               </div>

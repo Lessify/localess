@@ -5,10 +5,10 @@
         <label hlmFieldLabel [for]="component().name">
           {{ component().displayName || component().name }}
           @if (component().description; as description) {
-            <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltipTrigger]="description" />
+            <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="description" />
           }
           @if (component().translatable) {
-            <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltipTrigger="The field is translatable" />
+            <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
           }
         </label>
         <div class="flex gap-2 items-center">
@@ -16,7 +16,7 @@
             hlmBtn
             variant="secondary"
             size="icon"
-            hlmTooltipTrigger="Change link type"
+            hlmTooltip="Change link type"
             [hlmDropdownMenuTrigger]="linkTypeMenu"
             [disabled]="default() && !component().translatable">
             <ng-icon [name]="form().value.type === 'content' ? 'lucideFileSymlink' : 'lucideLink'" />
@@ -54,13 +54,20 @@
                 <hlm-autocomplete
                   formControlName="uri"
                   [required]="component().required || false"
-                  [filteredOptions]="filteredOptions()"
                   [(search)]="search"
-                  [searchPlaceholderText]="displayContent(defaultDocument()) || default()?.uri || 'Select an document'"
-                  showClearBtn
-                  [displayWith]="displayWith"
-                  [transformOptionToString]="transformOptionToString"
-                  [transformOptionToValue]="transformOptionToValue" />
+                  [itemToString]="displayWith">
+                  <hlm-autocomplete-input
+                    [placeholder]="displayContent(defaultDocument()) || default()?.uri || 'Select an document'"
+                    showClear />
+                  <hlm-autocomplete-content *hlmAutocompletePortal>
+                    <hlm-autocomplete-empty>No document found.</hlm-autocomplete-empty>
+                    <div hlmAutocompleteList>
+                      @for (content of filteredOptions(); track $index) {
+                        <hlm-autocomplete-item [value]="content.id"> {{ content.name }} | {{ content.fullSlug }}</hlm-autocomplete-item>
+                      }
+                    </div>
+                  </hlm-autocomplete-content>
+                </hlm-autocomplete>
               }
             }
           }
@@ -77,16 +84,21 @@
   </fieldset>
 </form>
 @if (settingsStore.debugEnabled()) {
-  <mat-accordion>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Form => valid={{ form().valid }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      Value :
-      <pre>{{ form().value | json }}</pre>
-      Error :
-      <pre>{{ form().errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
+  <hlm-accordion>
+    <hlm-accordion-item>
+      <h3 class="contents">
+        <button hlmAccordionTrigger>
+          Form => valid={{ form().valid }}
+          <ng-icon name="lucideChevronDown" hlm hlmAccIcon />
+        </button>
+      </h3>
+      <hlm-accordion-content>
+        Value :
+        <pre>{{ form().value | json }}</pre>
+        Error :
+        <pre>{{ form().errors | json }}</pre>
+      </hlm-accordion-content>
+    </hlm-accordion-item>
+  </hlm-accordion>
   <br />
 }

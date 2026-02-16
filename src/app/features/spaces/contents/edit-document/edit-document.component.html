@@ -1,6 +1,6 @@
 <div class="p-2 flex items-center justify-between gap-2">
   <div class="flex items-center gap-2">
-    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Contents">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Contents">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <div>
@@ -14,7 +14,7 @@
         hlmToggleGroupItem
         [value]="true"
         aria-label="Visual Editor"
-        hlmTooltipTrigger="Visual Editor"
+        hlmTooltip="Visual Editor"
         (click)="settingsStore.setEditorEnabled(true)">
         <ng-icon hlm size="sm" name="lucideVectorSquare" />
       </button>
@@ -22,13 +22,13 @@
         hlmToggleGroupItem
         [value]="false"
         aria-label="Form Mode"
-        hlmTooltipTrigger="Form Mode"
+        hlmTooltip="Form Mode"
         (click)="settingsStore.setEditorEnabled(false)">
         <ng-icon hlm size="sm" name="lucideFormInput" />
       </button>
     </hlm-toggle-group>
 
-    <button hlmBtn variant="outline" [hlmDropdownMenuTrigger]="localeMenu" side="bottom" hlmTooltipTrigger="Select Locale">
+    <button hlmBtn variant="outline" [hlmDropdownMenuTrigger]="localeMenu" side="bottom" hlmTooltip="Select Locale">
       {{ selectedLocale().name }}
       <ng-icon hlm size="sm" name="lucideChevronDown" class="ml-auto" />
     </button>
@@ -44,13 +44,7 @@
     </ng-template>
 
     @if (contentErrors.length > 0) {
-      <button
-        hlmBtn
-        size="icon"
-        variant="destructive"
-        [hlmDropdownMenuTrigger]="contentErrorsMenu"
-        side="bottom"
-        hlmTooltipTrigger="Errors">
+      <button hlmBtn size="icon" variant="destructive" [hlmDropdownMenuTrigger]="contentErrorsMenu" side="bottom" hlmTooltip="Errors">
         <ng-icon hlm size="sm" name="lucideAlertCircle" />
       </button>
 
@@ -70,12 +64,7 @@
     }
 
     @if ('CONTENT_UPDATE' | canUserPerform | async) {
-      <button
-        hlmBtn
-        variant="default"
-        hlmTooltipTrigger="Save the changes."
-        [disabled]="isSaveLoading() || isPublishLoading()"
-        (click)="save()">
+      <button hlmBtn variant="default" hlmTooltip="Save the changes." [disabled]="isSaveLoading() || isPublishLoading()" (click)="save()">
         @if (isSaveLoading()) {
           <hlm-spinner class="size-4" />
         } @else {
@@ -89,7 +78,7 @@
       <button
         hlmBtn
         variant="default"
-        hlmTooltipTrigger="Publish to be available via API call"
+        hlmTooltip="Publish to be available via API call"
         [disabled]="isPublishLoading() || isSaveLoading()"
         (click)="publish()">
         @if (isPublishLoading()) {
@@ -110,7 +99,7 @@
       <ll-status mode="away" matTooltip="Draft" />
     }
 
-    <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Hisotry" (click)="showHistory.set(!showHistory())">
+    <button hlmBtn size="icon" variant="ghost" hlmTooltip="Hisotry" (click)="showHistory.set(!showHistory())">
       <ng-icon hlm size="sm" name="lucideHistory" />
     </button>
 
@@ -156,7 +145,7 @@
         <div id="browser" class="browser flex flex-col h-full overflow-hidden border rounded-t-xl">
           @if (selectedEnvironment(); as environment) {
             <div id="browser-toolbar" class="flex flex-wrap p-2 items-center gap-2 border-b">
-              <button hlmBtn size="icon" variant="ghost" hlmTooltipTrigger="Reload" (click)="reloadEnvironment()">
+              <button hlmBtn size="icon" variant="ghost" hlmTooltip="Reload" (click)="reloadEnvironment()">
                 <ng-icon hlm size="sm" name="lucideRefreshCcw" />
               </button>
               <div class="flex-grow">
@@ -199,7 +188,7 @@
                   hlmToggleGroupItem
                   value=""
                   aria-label="Fullscreen"
-                  hlmTooltipTrigger="Fullscreen"
+                  hlmTooltip="Fullscreen"
                   (click)="settingsStore.setEditorSize('')">
                   <ng-icon hlm size="sm" name="lucideFullscreen" />
                 </button>
@@ -207,7 +196,7 @@
                   hlmToggleGroupItem
                   value="sm"
                   aria-label="Smartphone: 640px"
-                  hlmTooltipTrigger="Smartphone: 640px"
+                  hlmTooltip="Smartphone: 640px"
                   (click)="settingsStore.setEditorSize('sm')">
                   <ng-icon hlm size="sm" name="tablerDeviceMobile" />
                 </button>
@@ -215,7 +204,7 @@
                   hlmToggleGroupItem
                   value="md"
                   aria-label="Tablet: 768px"
-                  hlmTooltipTrigger="Tablet: 768px"
+                  hlmTooltip="Tablet: 768px"
                   (click)="settingsStore.setEditorSize('md')">
                   <ng-icon hlm size="sm" name="tablerDeviceTablet" />
                 </button>
@@ -223,7 +212,7 @@
                   hlmToggleGroupItem
                   value="lg"
                   aria-label="Laptop: 1024px"
-                  hlmTooltipTrigger="Laptop: 1024px"
+                  hlmTooltip="Laptop: 1024px"
                   (click)="settingsStore.setEditorSize('lg')">
                   <ng-icon hlm size="sm" name="tablerDeviceLaptop" />
                 </button>
@@ -231,7 +220,7 @@
                   hlmToggleGroupItem
                   value="xl"
                   aria-label="Desktop: 1280px"
-                  hlmTooltipTrigger="Desktop: 1280px"
+                  hlmTooltip="Desktop: 1280px"
                   (click)="settingsStore.setEditorSize('xl')">
                   <ng-icon hlm size="sm" name="tablerDeviceDesktop" />
                 </button>
@@ -315,18 +304,23 @@
   </hlm-resizable-group>
 
   @if (settingsStore.debugEnabled()) {
-    <mat-accordion>
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
-        </mat-expansion-panel-header>
-        <pre>{{ documentData | json }}</pre>
-      </mat-expansion-panel>
-    </mat-accordion>
+    <hlm-accordion class="overflow-auto">
+      <hlm-accordion-item>
+        <h3 class="contents">
+          <button hlmAccordionTrigger>
+            EditDocumentComponent Content
+            <ng-icon name="lucideChevronDown" hlm hlmAccIcon />
+          </button>
+        </h3>
+        <hlm-accordion-content>
+          <pre class="max-2-70">{{ documentData | json }}</pre>
+        </hlm-accordion-content>
+      </hlm-accordion-item>
+    </hlm-accordion>
   }
 </div>
 <hlm-sheet side="right" [state]="showHistory() ? 'open' : 'closed'" (closed)="showHistory.set(false)">
-  <hlm-sheet-content *brnSheetContent="let ctx">
+  <hlm-sheet-content *hlmSheetPortal="let ctx">
     <hlm-sheet-header>
       <h3 hlmSheetTitle>History</h3>
     </hlm-sheet-header>

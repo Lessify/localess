@@ -53,12 +53,12 @@ import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
-import { HlmField, HlmFieldGroup, HlmFieldLabel, HlmFieldSet } from '@spartan-ng/helm/field';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
-import { HlmSwitch } from '@spartan-ng/helm/switch';
+import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { cva } from 'class-variance-authority';
 import { filter } from 'rxjs';
@@ -111,11 +111,8 @@ interface SideMenuItem {
     HlmBreadCrumbImports,
     HlmSheetImports,
     BrnSheetImports,
-    HlmFieldGroup,
-    HlmFieldSet,
-    HlmField,
-    HlmFieldLabel,
-    HlmSwitch,
+    HlmFieldImports,
+    HlmSwitchImports,
     ReactiveFormsModule,
   ],
   providers: [

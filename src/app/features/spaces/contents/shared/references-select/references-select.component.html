@@ -4,7 +4,7 @@
       <span>
         {{ component().displayName || component().name }}
       </span>
-      <button hlmBtn variant="ghost" size="sm" hlmTooltipTrigger="Add References" (click)="openReferenceSelectDialog()">
+      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add References" (click)="openReferenceSelectDialog()">
         <ng-icon hlm size="sm" name="lucideFileSymlink" />
       </button>
     </legend>
@@ -18,11 +18,11 @@
           <div hlmItem variant="outline" role="listitem" cdkDrag cdkDragPreviewContainer="parent">
             <div hlmItemMedia>
               @if (content.publishedAt === undefined) {
-                <ll-status mode="offline" hlmTooltipTrigger="Not published" />
+                <ll-status mode="offline" hlmTooltip="Not published" />
               } @else if (content.publishedAt.seconds > content.updatedAt.seconds) {
-                <ll-status mode="online" hlmTooltipTrigger="Published" />
+                <ll-status mode="online" hlmTooltip="Published" />
               } @else if (content.publishedAt.seconds < content.updatedAt.seconds) {
-                <ll-status mode="away" hlmTooltipTrigger="Draft" />
+                <ll-status mode="away" hlmTooltip="Draft" />
               }
             </div>
             <div hlmItemContent class="min-w-0 overflow-hidden">
@@ -34,10 +34,10 @@
               </p>
             </div>
             <div role="none" hlmItemActions>
-              <button hlmBtn size="icon" variant="outline" (click)="deleteReference(index)" hlmTooltipTrigger="Delete">
+              <button hlmBtn size="icon" variant="outline" (click)="deleteReference(index)" hlmTooltip="Delete">
                 <ng-icon hlm size="sm" name="lucideTrash" />
               </button>
-              <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltipTrigger="Move">
+              <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
                 <ng-icon hlm size="sm" name="lucideGripVertical" />
               </button>
             </div>

@@ -1,6 +1,6 @@
 <div class="p-2 flex items-center justify-between gap-2">
   <div class="flex items-center gap-2">
-    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltipTrigger="Back to Schemas">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Schemas">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <div>
@@ -9,7 +9,7 @@
     </div>
   </div>
   @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-    <button hlmBtn hlmTooltipTrigger="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
+    <button hlmBtn hlmTooltip="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
       @if (isSaveLoading()) {
         <hlm-spinner class="size-4" />
       } @else {
@@ -68,16 +68,10 @@
                   </div>
 
                   <div hlmItemActions>
-                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltipTrigger="Delete">
+                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltip="Delete">
                       <ng-icon hlm size="sm" name="lucideTrash" />
                     </button>
-                    <button
-                      hlmBtn
-                      size="icon"
-                      variant="ghost"
-                      cdkDragHandle
-                      class="cursor-grab active:cursor-grabbing"
-                      hlmTooltipTrigger="Move">
+                    <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
                       <ng-icon hlm size="sm" name="lucideGripVertical" />
                     </button>
                   </div>
@@ -139,7 +133,7 @@
 }
 
 <hlm-sheet side="right" [state]="selectedFieldIdx() !== undefined ? 'open' : 'closed'" (closed)="selectedFieldIdx.set(undefined)">
-  <hlm-sheet-content *brnSheetContent="let ctx">
+  <hlm-sheet-content *hlmSheetPortal="let ctx">
     <hlm-sheet-header>
       <h3 hlmSheetTitle>Edit Value</h3>
     </hlm-sheet-header>

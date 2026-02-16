@@ -142,6 +142,12 @@
       ],
       "@spartan-ng/helm/autocomplete": [
         "./libs/ui/autocomplete/src/index.ts"
+      ],
+      "@spartan-ng/helm/dialog": [
+        "./libs/ui/dialog/src/index.ts"
+      ],
+      "@spartan-ng/helm/accordion": [
+        "./libs/ui/accordion/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

@@ -6,10 +6,10 @@
     </span>
   }
   <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.assetLayout()">
-    <button hlmToggleGroupItem value="list" hlmTooltipTrigger="List Layout" (click)="settingsStore.setAssetLayout('list')">
+    <button hlmToggleGroupItem value="list" hlmTooltip="List Layout" (click)="settingsStore.setAssetLayout('list')">
       <ng-icon hlm size="sm" name="lucideLayoutList" />
     </button>
-    <button hlmToggleGroupItem value="grid" hlmTooltipTrigger="Grid Layout" (click)="settingsStore.setAssetLayout('grid')">
+    <button hlmToggleGroupItem value="grid" hlmTooltip="Grid Layout" (click)="settingsStore.setAssetLayout('grid')">
       <ng-icon hlm size="sm" name="lucideLayoutGrid" />
     </button>
   </hlm-toggle-group>
@@ -181,13 +181,13 @@
         </ng-container>
         <ng-container matColumnDef="createdAt">
           <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-          <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.createdAt?.toDate() | date: 'medium'">
+          <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
             {{ element.createdAt?.toDate() | date: 'mediumDate' }}
           </mat-cell>
         </ng-container>
         <ng-container matColumnDef="updatedAt">
           <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-          <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">
+          <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
             {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
           </mat-cell>
         </ng-container>
@@ -200,7 +200,7 @@
               variant="ghost"
               (click)="onDownload($event, element)"
               [disabled]="element.kind === 'FOLDER' || element.inProgress === true"
-              hlmTooltipTrigger="Download">
+              hlmTooltip="Download">
               <ng-icon hlm size="sm" name="lucideDownload" />
             </button>
             @if ('ASSET_UPDATE' | canUserPerform | async) {
@@ -210,7 +210,7 @@
                 variant="ghost"
                 (click)="openEditDialog($event, element)"
                 [disabled]="element.inProgress === true"
-                hlmTooltipTrigger="Edit">
+                hlmTooltip="Edit">
                 <ng-icon hlm size="sm" name="lucidePencil" />
               </button>
             }
@@ -221,7 +221,7 @@
                 variant="ghost"
                 (click)="openMoveDialog($event, element)"
                 [disabled]="element.kind === 'FOLDER'"
-                hlmTooltipTrigger="Move">
+                hlmTooltip="Move">
                 <ng-icon hlm size="sm" name="lucideFolderInput" />
               </button>
             }
@@ -232,7 +232,7 @@
                 variant="ghost"
                 (click)="openDeleteDialog($event, element)"
                 [disabled]="element.inProgress === true && now - (element.createdAt?.toMillis() || 0) < 600000"
-                hlmTooltipTrigger="Delete">
+                hlmTooltip="Delete">
                 <ng-icon hlm size="sm" name="lucideTrash" />
               </button>
             }
@@ -302,7 +302,7 @@
               }
             </div>
             <div hlmItemContent class="px-4 pb-auto">
-              <div hlmItemTitle class="line-clamp-2" hlmTooltipTrigger="{{ item.name }}{{ item.extension }}">
+              <div hlmItemTitle class="line-clamp-2" hlmTooltip="{{ item.name }}{{ item.extension }}">
                 {{ item.name }}{{ item.extension }}
               </div>
               <div hlmItemDescription>
@@ -319,7 +319,7 @@
                     }
                   }
                 }
-                <p [hlmTooltipTrigger]="item.updatedAt?.toDate() | date: 'medium'">
+                <p [hlmTooltip]="item.updatedAt?.toDate() | date: 'medium'">
                   {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
                 </p>
               </div>
@@ -331,7 +331,7 @@
                 variant="ghost"
                 (click)="onDownload($event, item)"
                 [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
-                hlmTooltipTrigger="Download">
+                hlmTooltip="Download">
                 <ng-icon hlm size="sm" name="lucideDownload" />
               </button>
               @if ('ASSET_UPDATE' | canUserPerform | async) {
@@ -341,7 +341,7 @@
                   variant="ghost"
                   (click)="openEditDialog($event, item)"
                   [disabled]="item.inProgress === true"
-                  hlmTooltipTrigger="Edit">
+                  hlmTooltip="Edit">
                   <ng-icon hlm size="sm" name="lucidePencil" />
                 </button>
               }
@@ -352,7 +352,7 @@
                   variant="ghost"
                   (click)="openMoveDialog($event, item)"
                   [disabled]="item.kind === 'FOLDER'"
-                  hlmTooltipTrigger="Move">
+                  hlmTooltip="Move">
                   <ng-icon hlm size="sm" name="lucideFolderInput" />
                 </button>
               }
@@ -363,7 +363,7 @@
                   variant="ghost"
                   (click)="openDeleteDialog($event, item)"
                   [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
-                  hlmTooltipTrigger="Delete">
+                  hlmTooltip="Delete">
                   <ng-icon hlm size="sm" name="lucideTrash" />
                 </button>
               }

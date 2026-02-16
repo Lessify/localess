@@ -1,37 +1,54 @@
-import { Directive, ElementRef, Renderer2, contentChild, effect, inject, signal } from '@angular/core';
-import { BrnCommandSearchInputToken } from '@spartan-ng/brain/command';
-import { injectExposesStateProvider } from '@spartan-ng/brain/core';
-import { classes } from '@spartan-ng/helm/utils';
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+	booleanAttribute,
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	input,
+	linkedSignal,
+	output,
+} from '@angular/core';
+import { BrnDialogContent, BrnDialogState } from '@spartan-ng/brain/dialog';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
+import { hlm } from '@spartan-ng/helm/utils';
+import { ClassValue } from 'clsx';
 
-@Directive({
-	selector: '[hlmCommandDialog]',
-	host: {
-		'data-slot': 'command-dialog',
-	},
+@Component({
+	selector: 'hlm-command-dialog',
+	imports: [HlmDialogImports, BrnDialogContent],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	template: `
+		<hlm-dialog [state]="_state()" (stateChanged)="stateChanged($event)">
+			<hlm-dialog-content
+				*hlmDialogPortal="let ctx"
+				[class]="_computedDialogContentClass()"
+				[showCloseButton]="showCloseButton()"
+			>
+				<hlm-dialog-header class="sr-only">
+					<h2 hlmDialogTitle>{{ title() }}</h2>
+					<p hlmDialogDescription>{{ description() }}</p>
+				</hlm-dialog-header>
+				<ng-content />
+			</hlm-dialog-content>
+		</hlm-dialog>
+	`,
 })
 export class HlmCommandDialog {
-	private readonly _stateProvider = injectExposesStateProvider({ host: true });
-	public readonly state = this._stateProvider.state ?? signal('closed').asReadonly();
-	private readonly _renderer = inject(Renderer2);
-	private readonly _element = inject(ElementRef);
+	public readonly title = input<string>('Command Palette');
+	public readonly description = input<string>('Search for a command to run...');
 
-	/** Access the search field */
-	private readonly _searchInput = contentChild(BrnCommandSearchInputToken, { read: ElementRef });
+	public readonly state = input<BrnDialogState>('closed');
+	protected readonly _state = linkedSignal(this.state);
 
-	constructor() {
-		classes(
-			() =>
-				'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[2%] data-[state=open]:slide-in-from-top-[2%]',
-		);
+	public readonly showCloseButton = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
 
-		effect(() => {
-			this._renderer.setAttribute(this._element.nativeElement, 'data-state', this.state());
+	public readonly dialogContentClass = input<ClassValue>('');
+	protected readonly _computedDialogContentClass = computed(() => hlm('w-96 p-0', this.dialogContentClass()));
 
-			const searchInput = this._searchInput();
+	public readonly stateChange = output<BrnDialogState>();
 
-			if (this.state() === 'open' && searchInput) {
-				searchInput.nativeElement.focus();
-			}
-		});
+	protected stateChanged(state: BrnDialogState) {
+		this.stateChange.emit(state);
+		this._state.set(state);
 	}
 }

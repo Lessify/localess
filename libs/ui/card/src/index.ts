@@ -15,11 +15,11 @@ export * from './lib/hlm-card-header';
 export * from './lib/hlm-card-title';
 
 export const HlmCardImports = [
-	HlmCard,
-	HlmCardHeader,
-	HlmCardFooter,
-	HlmCardTitle,
-	HlmCardDescription,
-	HlmCardContent,
-	HlmCardAction,
+  HlmCard,
+  HlmCardHeader,
+  HlmCardFooter,
+  HlmCardTitle,
+  HlmCardDescription,
+  HlmCardContent,
+  HlmCardAction,
 ] as const;

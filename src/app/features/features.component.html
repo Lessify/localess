@@ -51,7 +51,7 @@
                 @if (item.permission | canUserPerform | async) {
                   <li hlmSidebarMenuItem>
                     <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
-                      <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
+                      <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" />
                       <span>{{ item.label }}</span>
                     </a>
                   </li>
@@ -70,7 +70,7 @@
                 @if (item.permission | canUserPerform | async) {
                   <li hlmSidebarMenuItem>
                     <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
-                      <ng-icon hlm [name]="item.icon" [hlmTooltipTrigger]="item.label" />
+                      <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" />
                       <span>{{ item.label }}</span>
                     </a>
                   </li>
@@ -83,7 +83,7 @@
       <div hlmSidebarGroup class="mt-auto">
         <div hlmSidebarGroupContent>
           <ul hlmSidebarMenu>
-            <li hlmSidebarMenuItem hlmTooltipTrigger="Welcome">
+            <li hlmSidebarMenuItem hlmTooltip="Welcome">
               <button
                 hlmSidebarMenuButton
                 routerLink="/features/welcome"
@@ -94,7 +94,7 @@
                 Welcome
               </button>
             </li>
-            <li hlmSidebarMenuItem hlmTooltipTrigger="Support">
+            <li hlmSidebarMenuItem hlmTooltip="Support">
               <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="menu" side="right">
                 <ng-icon hlm name="lucideLifeBuoy" />
                 Support
@@ -113,21 +113,21 @@
               </hlm-dropdown-menu>
             </ng-template>
 
-            <li hlmSidebarMenuItem hlmTooltipTrigger="Sponsor Us">
+            <li hlmSidebarMenuItem hlmTooltip="Sponsor Us">
               <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/sponsoring')">
                 <ng-icon hlm name="lucideHeartHandshake" />
                 Sponsor Us
               </button>
             </li>
             @if (latestRelease && latestRelease.tag_name > 'v' + version) {
-              <li hlmSidebarMenuItem [hlmTooltipTrigger]="'A new version is available : ' + latestRelease.name">
+              <li hlmSidebarMenuItem [hlmTooltip]="'A new version is available : ' + latestRelease.name">
                 <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
                   <ng-icon hlm name="lucideShieldAlert" class="motion-safe:animate-pulse flash" />
                   Version: {{ version }}
                 </button>
               </li>
             } @else {
-              <li hlmSidebarMenuItem hlmTooltipTrigger="You are on the latest version.">
+              <li hlmSidebarMenuItem hlmTooltip="You are on the latest version.">
                 <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2')">
                   <ng-icon hlm name="lucideShieldCheck" />
                   Version: {{ version }}
@@ -195,7 +195,7 @@
                 @if (isLast) {
                   <span hlmBreadcrumbPage>{{ breadcrumb.label }}</span>
                   @if (breadcrumb.helpUrl) {
-                    <a hlmBtn variant="link" size="icon-sm" [href]="breadcrumb.helpUrl" target="_blank" hlmTooltipTrigger="Help Article">
+                    <a hlmBtn variant="link" size="icon-sm" [href]="breadcrumb.helpUrl" target="_blank" hlmTooltip="Help Article">
                       <ng-icon name="lucideBadgeInfo" />
                     </a>
                   }
@@ -209,11 +209,11 @@
       </div>
       <div id="header-actions" class="flex gap-2 items-center px-4">
         @if (isDebug) {
-          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltipTrigger="App Settings">
+          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltip="App Settings">
             <ng-icon hlm name="lucideSettings" size="sm" />
           </button>
         }
-        <button hlmBtn size="icon-sm" variant="ghost" (click)="switchTheme()" aria-label="Switch theme" hlmTooltipTrigger="Switch theme">
+        <button hlmBtn size="icon-sm" variant="ghost" (click)="switchTheme()" aria-label="Switch theme" hlmTooltip="Switch theme">
           <ng-icon hlm [name]="settingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
         </button>
       </div>
@@ -224,7 +224,7 @@
     <router-outlet></router-outlet>
   </main>
   <hlm-sheet side="right" [state]="showDebugSettings() ? 'open' : 'closed'" (closed)="showDebugSettings.set(false)">
-    <hlm-sheet-content *brnSheetContent="let ctx">
+    <hlm-sheet-content *hlmSheetPortal="let ctx">
       <hlm-sheet-header>
         <h3 hlmSheetTitle>Debug Settings</h3>
       </hlm-sheet-header>

@@ -8,10 +8,10 @@
       </span>
     }
     <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.assetDialogLayout()">
-      <button hlmToggleGroupItem value="list" hlmTooltipTrigger="List Layout" (click)="settingsStore.setAssetDialogLayout('list')">
+      <button hlmToggleGroupItem value="list" hlmTooltip="List Layout" (click)="settingsStore.setAssetDialogLayout('list')">
         <ng-icon hlm size="sm" name="lucideLayoutList" />
       </button>
-      <button hlmToggleGroupItem value="grid" hlmTooltipTrigger="Grid Layout" (click)="settingsStore.setAssetDialogLayout('grid')">
+      <button hlmToggleGroupItem value="grid" hlmTooltip="Grid Layout" (click)="settingsStore.setAssetDialogLayout('grid')">
         <ng-icon hlm size="sm" name="lucideLayoutGrid" />
       </button>
     </hlm-toggle-group>
@@ -144,7 +144,7 @@
       </ng-container>
       <ng-container matColumnDef="updatedAt">
         <mat-header-cell *matHeaderCellDef> Updated At</mat-header-cell>
-        <mat-cell *matCellDef="let element" [hlmTooltipTrigger]="element.updatedAt?.toDate() | date: 'medium'">
+        <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
           {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
         </mat-cell>
       </ng-container>
@@ -200,7 +200,7 @@
             }
           </div>
           <div hlmItemContent class="px-4">
-            <div hlmItemTitle class="line-clamp-2" hlmTooltipTrigger="{{ item.name }}{{ item.extension }}">
+            <div hlmItemTitle class="line-clamp-2" hlmTooltip="{{ item.name }}{{ item.extension }}">
               {{ item.name }}{{ item.extension }}
             </div>
             <div hlmItemDescription>
@@ -217,7 +217,7 @@
                   }
                 }
               }
-              <p [hlmTooltipTrigger]="item.updatedAt?.toDate() | date: 'medium'">
+              <p [hlmTooltip]="item.updatedAt?.toDate() | date: 'medium'">
                 {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
               </p>
             </div>

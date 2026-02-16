@@ -1,5 +1,5 @@
 (function () {
-  const FG_BLUE = "\x1b[34m"
+  const FG_BLUE = '\x1b[34m';
   const RESET = '\x1b[0m';
   const LOG_GROUP = `${FG_BLUE}[Localess:Sync]${RESET}`;
   // Event emitted from Application to Visual Editor

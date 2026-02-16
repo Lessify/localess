@@ -5,7 +5,7 @@
         <div hlmField>
           <label hlmFieldLabel for="name">
             Name
-            <ng-icon hlm size="sm" name="lucideInfo" hlmTooltipTrigger="Will be used in JSON structure" />
+            <ng-icon hlm size="sm" name="lucideInfo" hlmTooltip="Will be used in JSON structure" />
           </label>
           <div hlmInputGroup>
             <input hlmInputGroupInput id="name" formControlName="name" autocomplete="off" [readonly]="nameReadonly" />
@@ -14,7 +14,7 @@
                 hlmInputGroupButton
                 class="rounded-full"
                 size="icon-xs"
-                hlmTooltipTrigger="Edit the name"
+                hlmTooltip="Edit the name"
                 (click)="nameReadonly = !nameReadonly">
                 <ng-icon [name]="nameReadonly ? 'lucidePencilOff' : 'lucidePencil'" />
               </button>
@@ -42,7 +42,7 @@
               <hlm-select-scroll-up />
               @for (kind of fieldKinds; track kind) {
                 @let descriptor = schemaFieldKindDescriptions[kind];
-                <hlm-option [value]="kind" [hlmTooltipTrigger]="descriptor.description" (click)="selectFieldKind(kind)">
+                <hlm-option [value]="kind" [hlmTooltip]="descriptor.description" (click)="selectFieldKind(kind)">
                   <ng-icon [name]="descriptor.icon" class="mr-1" />
                   {{ descriptor.name }}
                 </hlm-option>
@@ -57,7 +57,7 @@
         <div hlmField>
           <label hlmFieldLabel for="displayName">
             Display Name
-            <ng-icon hlm size="sm" name="lucideInfo" hlmTooltipTrigger="Shown to content creators" />
+            <ng-icon hlm size="sm" name="lucideInfo" hlmTooltip="Shown to content creators" />
           </label>
           <input hlmInput id="displayName" formControlName="displayName" autocomplete="off" />
           @if (form.controls['displayName']?.errors; as errors) {
@@ -162,7 +162,7 @@
               <hlm-select-content class="max-h-96">
                 <hlm-select-scroll-up />
                 @for (schema of enumSchemas(); track schema.id) {
-                  <hlm-option [value]="schema.id" [hlmTooltipTrigger]="schema.description || ''">
+                  <hlm-option [value]="schema.id" [hlmTooltip]="schema.description || ''">
                     {{ schema.id }}
                     @if (schema.displayName) {
                       ({{ schema.displayName }})
@@ -188,7 +188,7 @@
               <hlm-select-content class="max-h-96">
                 <hlm-select-scroll-up />
                 @for (schema of nodeSchemas(); track schema.id) {
-                  <hlm-option [value]="schema.id" [hlmTooltipTrigger]="schema.description || ''">
+                  <hlm-option [value]="schema.id" [hlmTooltip]="schema.description || ''">
                     {{ schema.id }}
                     @if (schema.displayName; as displayName) {
                       ({{ displayName }})
@@ -208,7 +208,7 @@
           <div hlmField>
             <label hlmFieldLabel for="path">
               Path
-              <ng-icon hlm size="sm" name="lucideInfo" hlmTooltipTrigger="Path to be filtered by" />
+              <ng-icon hlm size="sm" name="lucideInfo" hlmTooltip="Path to be filtered by" />
             </label>
             <input hlmInput id="path" formControlName="path" autocomplete="off" />
             @if (form.controls['path']?.errors; as errors) {
@@ -236,7 +236,7 @@
               <hlm-select-content>
                 @for (fileType of assetTypes; track fileType) {
                   @let descriptor = assetFileTypeDescriptions[fileType];
-                  <hlm-option [value]="fileType" [hlmTooltipTrigger]="descriptor.description">
+                  <hlm-option [value]="fileType" [hlmTooltip]="descriptor.description">
                     <ng-icon [name]="descriptor.icon" class="mr-1" />
                     {{ descriptor.name }}
                   </hlm-option>
