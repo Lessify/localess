@@ -24,6 +24,8 @@ import {
   resolveLinks,
   resolveReferences,
   spaceContentCachePath,
+  translationLocaleCachePath,
+  spaceTranslationCachePath,
 } from '../services';
 import {
   requireContentPermissions,
@@ -39,7 +41,7 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
   logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
   logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
   const { spaceId, locale } = req.params;
-  const { cv } = req.query;
+  const { cv, version } = req.query;
   const token = req.tokenId;
 
   const spaceSnapshot = await findSpaceById(spaceId).get();
@@ -51,13 +53,16 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
     return;
   }
 
-  const cachePath = `spaces/${spaceId}/translations/cache.json`;
+  const cachePath = spaceTranslationCachePath(spaceId);
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
     logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`;
+      if (version) {
+        url += `&version=${version}`;
+      }
       if (token) {
         url += `&token=${token}`;
       }
@@ -70,8 +75,9 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
       if (!space.locales.some(it => it.id === locale)) {
         actualLocale = space.localeFallback.id;
       }
+      const filePath = translationLocaleCachePath(spaceId, actualLocale, version as string | undefined);
       bucket
-        .file(`spaces/${spaceId}/translations/${actualLocale}.json`)
+        .file(filePath)
         .download()
         .then(content => {
           res

@@ -67,6 +67,16 @@
 
         <hlm-dropdown-menu-group>
           @for (locale of space.locales; track locale.id) {
+            <button hlmDropdownMenuItem (click)="openDraftV1InNewTab(locale.id)">
+              <ng-icon hlm size="sm" name="lucidePencil" />
+              <span>Draft {{ locale.name }} JSON</span>
+              <ng-icon hlm size="sm" name="lucideExternalLink" class="ml-auto" />
+            </button>
+          }
+        </hlm-dropdown-menu-group>
+        <hlm-dropdown-menu-separator />
+        <hlm-dropdown-menu-group>
+          @for (locale of space.locales; track locale.id) {
             <button hlmDropdownMenuItem (click)="openPublishedV1InNewTab(locale.id)">
               <ng-icon hlm size="sm" name="lucideEarth" />
               <span>Published {{ locale.name }} JSON</span>

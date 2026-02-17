@@ -32,6 +32,7 @@ import {
   lucideCopy,
   lucideEarth,
   lucideEllipsisVertical,
+  lucideExternalLink,
   lucideHistory,
   lucideLanguages,
   lucideLayoutList,
@@ -152,6 +153,7 @@ import { TokenPermission } from '@shared/models/token.model';
       lucideUpload,
       lucideHistory,
       lucideEarth,
+      lucideExternalLink,
       lucideLayoutList,
       lucideListTree,
       lucideSearch,
@@ -594,10 +596,30 @@ export class TranslationsComponent implements OnInit {
     }
   }
 
-  openApiV1InNewTab(locale: string, token: string): void {
+  openApiV1InNewTab(locale: string, token: string, version?: 'draft'): void {
     const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/translations/${locale}`);
+    if (version) {
+      url.searchParams.set('version', version);
+    }
     url.searchParams.set('token', token);
     window.open(url, '_blank');
+  }
+
+  openDraftV1InNewTab(locale: string): void {
+    if (this.availableToken) {
+      this.openApiV1InNewTab(locale, this.availableToken, 'draft');
+    } else {
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.TRANSLATION_DRAFT).subscribe({
+        next: tokens => {
+          if (tokens.length === 1) {
+            this.availableToken = tokens[0].id;
+            this.openApiV1InNewTab(locale, this.availableToken, 'draft');
+          } else {
+            this.notificationService.error('Please create Access Token with Translation Draft Permission in your Space Settings');
+          }
+        },
+      });
+    }
   }
 
   openPublishedV1InNewTab(locale: string): void {
