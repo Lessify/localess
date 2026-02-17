@@ -34,13 +34,7 @@ MANAGE.post(
         // Handle adding missing translations
         const fetchPromises = Object.getOwnPropertyNames(body.data.values).map(id => findTranslationById(spaceId, id).get());
         const snapshots = await Promise.all(fetchPromises);
-        const translationIds = snapshots
-          .map(it => {
-            logger.info(`Translation ${it.id} exists: ${it.exists}`);
-            return it;
-          })
-          .filter(it => !it.exists)
-          .map(it => it.id);
+        const translationIds = snapshots.filter(it => !it.exists).map(it => it.id);
         if (translationIds.length === 0) {
           logger.info('No missing translations to add');
           res.status(200).send({ message: 'No missing translations to add' });
@@ -62,7 +56,7 @@ MANAGE.post(
         });
         await bulk.close();
         logger.info(`Added ${translationIds.length} missing translations`, translationIds);
-        res.status(200).send({ message: `Added ${translationIds.length} missing translations`, addedIds: translationIds });
+        res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });
         return;
       } else if (body.data.type === 'update-existing') {
         // Handle updating existing translations
@@ -86,7 +80,7 @@ MANAGE.post(
         });
         await bulk.close();
         logger.info(`Updated ${translationIds.length} translations`, translationIds);
-        res.status(200).send({ message: `Updated ${translationIds.length} translations`, addedIds: translationIds });
+        res.status(200).send({ message: `Updated ${translationIds.length} translations`, ids: translationIds });
         return;
       }
     }
