@@ -98,6 +98,7 @@ import { TranslationPluralViewComponent } from './shared/components/translation-
 import { TranslationStringEditComponent } from './shared/components/translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from './shared/components/translation-string-view/translation-string-view.component';
 import { TranslationNode } from './shared/models/translation.model';
+import { TokenPermission } from '@shared/models/token.model';
 
 @Component({
   selector: 'll-translations',
@@ -603,13 +604,13 @@ export class TranslationsComponent implements OnInit {
     if (this.availableToken) {
       this.openApiV1InNewTab(locale, this.availableToken);
     } else {
-      this.tokenService.findFirst(this.spaceId()).subscribe({
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.TRANSLATION_PUBLIC).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
             this.availableToken = tokens[0].id;
             this.openApiV1InNewTab(locale, this.availableToken);
           } else {
-            this.notificationService.error('Please create Access Token in your Space Settings');
+            this.notificationService.error('Please create Access Token with Translation Public Permission in your Space Settings');
           }
         },
       });

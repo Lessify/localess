@@ -5,7 +5,10 @@ table {
 mat-header-cell,
 mat-cell {
   &.mat-column-id {
-    max-width: 250px;
+    max-width: 150px;
+  }
+  &.mat-column-permissions {
+    max-width: 115px;
   }
   &.mat-column-version {
     max-width: 80px;

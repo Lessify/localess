@@ -112,8 +112,8 @@ export function requireContentPermissions() {
       // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
       const hasRequiredPermission =
         version !== undefined
-          ? canPerformAny([TokenPermission.DRAFT, TokenPermission.DEV_TOOLS], token)
-          : canPerformAny([TokenPermission.PUBLIC, TokenPermission.DRAFT, TokenPermission.DEV_TOOLS], token);
+          ? canPerformAny([TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS], token)
+          : canPerformAny([TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS], token);
 
       if (!hasRequiredPermission) {
         res
@@ -122,6 +122,69 @@ export function requireContentPermissions() {
             new HttpsError(
               'permission-denied',
               version !== undefined ? 'Draft content requires DRAFT permission' : 'Published content requires PUBLIC or DRAFT permission'
+            )
+          );
+        return;
+      }
+
+      // Attach token and tokenId to request for use in route handlers
+      (req as RequestWithToken).token = token;
+      (req as RequestWithToken).tokenId = tokenId as string;
+
+      next();
+    } catch (error) {
+      res.status(500).send(new HttpsError('internal', 'Failed to verify token'));
+    }
+  };
+}
+
+/**
+ * Middleware for translation endpoints that checks permissions based on version query parameter
+ * Published translation (no version) requires PUBLIC or DRAFT permission
+ * Draft translation (with version) requires DRAFT permission
+ * @return {Function} Express middleware function
+ */
+export function requireTranslationPermissions() {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { spaceId } = req.params;
+    const { token: tokenId, version } = req.query;
+
+    // Validate token format
+    if (!validateToken(tokenId)) {
+      res.status(401).send(new HttpsError('unauthenticated', 'Invalid or missing token'));
+      return;
+    }
+
+    // Validate spaceId exists
+    if (!spaceId) {
+      res.status(400).send(new HttpsError('invalid-argument', 'Space ID is required'));
+      return;
+    }
+
+    try {
+      // Fetch token from Firestore
+      const tokenSnapshot = await findTokenById(spaceId, tokenId as string).get();
+
+      if (!tokenSnapshot.exists) {
+        res.status(401).send(new HttpsError('unauthenticated', 'Token not found'));
+        return;
+      }
+
+      const token = tokenSnapshot.data() as Token;
+
+      // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
+      const hasRequiredPermission =
+        version !== undefined
+          ? canPerformAny([TokenPermission.TRANSLATION_DRAFT, TokenPermission.DEV_TOOLS], token)
+          : canPerformAny([TokenPermission.TRANSLATION_PUBLIC, TokenPermission.TRANSLATION_DRAFT, TokenPermission.DEV_TOOLS], token);
+
+      if (!hasRequiredPermission) {
+        res
+          .status(403)
+          .send(
+            new HttpsError(
+              'permission-denied',
+              version !== undefined ? 'Draft translation requires DRAFT permission' : 'Published translation requires PUBLIC or DRAFT permission'
             )
           );
         return;

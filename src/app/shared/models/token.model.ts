@@ -1,8 +1,10 @@
 import { Timestamp } from '@angular/fire/firestore';
 
 export enum TokenPermission {
-  PUBLIC = 'PUBLIC',
-  DRAFT = 'DRAFT',
+  TRANSLATION_PUBLIC = 'TRANSLATION_PUBLIC',
+  TRANSLATION_DRAFT = 'TRANSLATION_DRAFT',
+  CONTENT_PUBLIC = 'CONTENT_PUBLIC',
+  CONTENT_DRAFT = 'CONTENT_DRAFT',
   DEV_TOOLS = 'DEV_TOOLS',
 }
 
@@ -35,3 +37,11 @@ export function isTokenV1(token: Token): token is TokenV1 {
 export function isTokenV2(token: Token): token is TokenV2 {
   return token.version === 2;
 }
+
+export const PERMISSION_TEXT: Record<TokenPermission, string> = {
+  [TokenPermission.TRANSLATION_PUBLIC]: 'Translation Public',
+  [TokenPermission.TRANSLATION_DRAFT]: 'Translation Draft',
+  [TokenPermission.CONTENT_PUBLIC]: 'Content Public',
+  [TokenPermission.CONTENT_DRAFT]: 'Content Draft',
+  [TokenPermission.DEV_TOOLS]: 'Development Tools',
+};

@@ -84,6 +84,7 @@ import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-docume
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
 import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
+import { TokenPermission } from '@shared/models/token.model';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -372,13 +373,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     if (this.availableToken) {
       this.openApiV1InNewTab(locale, this.availableToken, 'draft');
     } else {
-      this.tokenService.findFirst(this.spaceId()).subscribe({
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.CONTENT_DRAFT).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
             this.availableToken = tokens[0].id;
             this.openApiV1InNewTab(locale, this.availableToken, 'draft');
           } else {
-            this.notificationService.error('Please create Access Token in your Space Settings');
+            this.notificationService.error('Please create Access Token with Content Draft Permission in your Space Settings');
           }
         },
       });
@@ -389,13 +390,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     if (this.availableToken) {
       this.openApiV1InNewTab(locale, this.availableToken);
     } else {
-      this.tokenService.findFirst(this.spaceId()).subscribe({
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.CONTENT_PUBLIC).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
             this.availableToken = tokens[0].id;
             this.openApiV1InNewTab(locale, this.availableToken);
           } else {
-            this.notificationService.error('Please create Access Token in your Space Settings');
+            this.notificationService.error('Please create Access Token with Content Public Permission in your Space Settings');
           }
         },
       });

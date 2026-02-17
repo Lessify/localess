@@ -13,17 +13,30 @@
     <br />
     <b>Permissions</b>
     <mat-selection-list formControlName="permissions">
-      <mat-list-option value="PUBLIC">
+      <div mat-subheader>Translation</div>
+      <mat-list-option value="TRANSLATION_PUBLIC">
         <span matListItemTitle>Public</span>
         <span matListItemLine>Access to published only version.</span>
       </mat-list-option>
-      <mat-list-option value="DRAFT">
+      <mat-list-option value="TRANSLATION_DRAFT">
         <span matListItemTitle>Draft</span>
-        <span matListItemLine>Access to draft only version.</span>
+        <span matListItemLine>Access to draft and published version.</span>
       </mat-list-option>
+      <mat-divider></mat-divider>
+      <div mat-subheader>Content</div>
+      <mat-list-option value="CONTENT_PUBLIC">
+        <span matListItemTitle>Public</span>
+        <span matListItemLine>Access to published only version.</span>
+      </mat-list-option>
+      <mat-list-option value="CONTENT_DRAFT">
+        <span matListItemTitle>Draft</span>
+        <span matListItemLine>Access to draft and published version.</span>
+      </mat-list-option>
+      <mat-divider></mat-divider>
+      <div mat-subheader>Development</div>
       <mat-list-option value="DEV_TOOLS">
         <span matListItemTitle>Development Tools</span>
-        <span matListItemLine>Access development tools, like Open API Specifications.</span>
+        <span matListItemLine>Access to development tools like CLI, where you can manage and sync data.</span>
       </mat-list-option>
     </mat-selection-list>
     @if (form.controls['permissions'].errors; as errors) {

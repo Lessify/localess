@@ -7,7 +7,7 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
-import { isTokenV2, Token, TokenForm } from '@shared/models/token.model';
+import { isTokenV2, PERMISSION_TEXT, Token, TokenForm, TokenPermission } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -152,5 +152,9 @@ export class TokensComponent {
           this.notificationService.error(`Token '${element.name}' can not be deleted.`);
         },
       });
+  }
+
+  permissionsToText(permissions: TokenPermission[]): string {
+    return permissions.map(it => PERMISSION_TEXT[it]).join(', ');
   }
 }

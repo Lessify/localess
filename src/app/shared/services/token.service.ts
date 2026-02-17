@@ -44,7 +44,7 @@ export class TokenService {
   }
 
   findFirstByPermission(spaceId: string, permission: TokenPermission): Observable<Token[]> {
-    const queryConstrains: QueryConstraint[] = [where('permission', 'array-contains', permission), limit(1)];
+    const queryConstrains: QueryConstraint[] = [where('permissions', 'array-contains', permission), limit(1)];
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tokens`), ...queryConstrains), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Tokens:findFirstByPermission'),
       map(it => it as Token[]),

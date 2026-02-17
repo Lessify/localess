@@ -1,8 +1,10 @@
 import { Timestamp } from 'firebase-admin/firestore';
 
 export enum TokenPermission {
-  PUBLIC = 'PUBLIC',
-  DRAFT = 'DRAFT',
+  TRANSLATION_PUBLIC = 'TRANSLATION_PUBLIC',
+  TRANSLATION_DRAFT = 'TRANSLATION_DRAFT',
+  CONTENT_PUBLIC = 'CONTENT_PUBLIC',
+  CONTENT_DRAFT = 'CONTENT_DRAFT',
   DEV_TOOLS = 'DEV_TOOLS',
 }
 

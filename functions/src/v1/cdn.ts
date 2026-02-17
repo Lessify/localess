@@ -25,72 +25,73 @@ import {
   resolveReferences,
   spaceContentCachePath,
 } from '../services';
-import { requireContentPermissions, requireTokenPermissions, RequestWithToken } from './middleware/query-auth.middleware';
+import {
+  requireContentPermissions,
+  requireTokenPermissions,
+  RequestWithToken,
+  requireTranslationPermissions,
+} from './middleware/query-auth.middleware';
 
 // eslint-disable-next-line new-cap
 export const CDN = Router();
 
-CDN.get(
-  '/api/v1/spaces/:spaceId/translations/:locale',
-  requireTokenPermissions([TokenPermission.PUBLIC, TokenPermission.DRAFT, TokenPermission.DEV_TOOLS]),
-  async (req: RequestWithToken, res) => {
-    logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
-    logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
-    const { spaceId, locale } = req.params;
-    const { cv } = req.query;
-    const token = req.tokenId;
+CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermissions(), async (req: RequestWithToken, res) => {
+  logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
+  logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
+  const { spaceId, locale } = req.params;
+  const { cv } = req.query;
+  const token = req.tokenId;
 
-    const spaceSnapshot = await findSpaceById(spaceId).get();
-    if (!spaceSnapshot.exists) {
-      res
-        .status(404)
-        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-        .send(new HttpsError('not-found', 'Not found'));
-      return;
-    }
-
-    const cachePath = `spaces/${spaceId}/translations/cache.json`;
-    const [exists] = await bucket.file(cachePath).exists();
-    if (exists) {
-      const [metadata] = await bucket.file(cachePath).getMetadata();
-      logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
-      if (cv === undefined || cv != metadata.generation) {
-        let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`;
-        if (token) {
-          url += `&token=${token}`;
-        }
-        logger.info(`v1 spaces translate redirect to => ${url}`);
-        res.redirect(url);
-        return;
-      } else {
-        const space = spaceSnapshot.data() as Space;
-        let actualLocale = locale;
-        if (!space.locales.some(it => it.id === locale)) {
-          actualLocale = space.localeFallback.id;
-        }
-        bucket
-          .file(`spaces/${spaceId}/translations/${actualLocale}.json`)
-          .download()
-          .then(content => {
-            res
-              .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-              .contentType('application/json; charset=utf-8')
-              .send(content.toString());
-          })
-          .catch(() => {
-            res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
-          });
-      }
-    } else {
-      res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
-      return;
-    }
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (!spaceSnapshot.exists) {
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found'));
+    return;
   }
-);
+
+  const cachePath = `spaces/${spaceId}/translations/cache.json`;
+  const [exists] = await bucket.file(cachePath).exists();
+  if (exists) {
+    const [metadata] = await bucket.file(cachePath).getMetadata();
+    logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
+    if (cv === undefined || cv != metadata.generation) {
+      let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`;
+      if (token) {
+        url += `&token=${token}`;
+      }
+      logger.info(`v1 spaces translate redirect to => ${url}`);
+      res.redirect(url);
+      return;
+    } else {
+      const space = spaceSnapshot.data() as Space;
+      let actualLocale = locale;
+      if (!space.locales.some(it => it.id === locale)) {
+        actualLocale = space.localeFallback.id;
+      }
+      bucket
+        .file(`spaces/${spaceId}/translations/${actualLocale}.json`)
+        .download()
+        .then(content => {
+          res
+            .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+            .contentType('application/json; charset=utf-8')
+            .send(content.toString());
+        })
+        .catch(() => {
+          res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+        });
+    }
+  } else {
+    res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+    return;
+  }
+});
 
 CDN.get(
   '/api/v1/spaces/:spaceId/links',
-  requireTokenPermissions([TokenPermission.PUBLIC, TokenPermission.DRAFT, TokenPermission.DRAFT]),
+  requireTokenPermissions([TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
     logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
     logger.info('v1 spaces links query: ' + JSON.stringify(req.query));

@@ -59,6 +59,7 @@ import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { ExportDialogComponent, ExportDialogModel, ExportDialogReturn } from './export-dialog';
 import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { TokenPermission } from '@shared/models/token.model';
 
 @Component({
   selector: 'll-contents',
@@ -420,13 +421,13 @@ export class ContentsComponent {
     if (this.availableToken) {
       this.openApiV1InNewTab(this.availableToken);
     } else {
-      this.tokenService.findFirst(this.spaceId()).subscribe({
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.CONTENT_PUBLIC).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
             this.availableToken = tokens[0].id;
             this.openApiV1InNewTab(this.availableToken);
           } else {
-            this.notificationService.error('Please create Access Token in your Space Settings');
+            this.notificationService.error('Please create Access Token with Content Public Permission in your Space Settings');
           }
         },
       });
