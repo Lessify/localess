@@ -126,6 +126,15 @@ const onWriteToDraft = onDocumentWritten('spaces/{spaceId}/translations/{transla
     return;
   }
 
+  // Check if locales have changed (skip regeneration if only metadata changed)
+  if (beforeData && afterData) {
+    const localesChanged = JSON.stringify(beforeData.locales) !== JSON.stringify(afterData.locales);
+    if (!localesChanged) {
+      logger.info(`[Translation:onWriteToDraft] translationId='${translationId}' Locales unchanged, skipping draft generation`);
+      return;
+    }
+  }
+
   // For create or update, generate draft files
   if (afterData) {
     logger.info(`[Translation:onWriteToDraft] eventId='${event.id}' translationId='${translationId}' Generating draft files`);
