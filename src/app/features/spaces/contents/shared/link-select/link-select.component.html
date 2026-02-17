@@ -53,12 +53,11 @@
               } @else {
                 <hlm-autocomplete
                   formControlName="uri"
+                  class="w-full"
                   [required]="component().required || false"
                   [(search)]="search"
                   [itemToString]="displayWith">
-                  <hlm-autocomplete-input
-                    [placeholder]="displayContent(defaultDocument()) || default()?.uri || 'Select an document'"
-                    showClear />
+                  <hlm-autocomplete-input placeholder="Select an document" showClear />
                   <hlm-autocomplete-content *hlmAutocompletePortal>
                     <hlm-autocomplete-empty>No document found.</hlm-autocomplete-empty>
                     <div hlmAutocompleteList>
