@@ -15,6 +15,7 @@ MANAGE.post(
   requireTokenPermissions([TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
     logger.info('v1 spaces translations update params : ' + JSON.stringify(req.params));
+    logger.info('v1 spaces translations update headers : ' + JSON.stringify(req.headers));
     logger.info('v1 spaces translations update body : ' + JSON.stringify(req.body));
     // req.token contains the validated token object
     // req.tokenId contains the token string
