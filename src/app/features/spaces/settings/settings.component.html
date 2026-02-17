@@ -2,7 +2,7 @@
   <hlm-tabs [tab]="activeTab()" class="w-full" (tabActivated)="onTabActivated($event)">
     <hlm-tabs-list class="self-center" variant="line">
       @for (tabItem of tabItems; track tabItem.label) {
-        <button [hlmTabsTrigger]="tabItem.link">
+        <button [hlmTabsTrigger]="tabItem.link" [class]="activeTab() === tabItem.link ? tabItem.colorActive : tabItem.colorInactive">
           <ng-icon [name]="tabItem.icon" />
           {{ tabItem.label }}
         </button>

@@ -185,14 +185,12 @@
                     autocomplete="off"
                     placeholder="Enter new label name"
                     (keydown.enter)="$event.preventDefault(); addLabel(labelName.value); labelName.value = ''" />
-                  <div class="flex items-center gap-1">
+                  <div class="flex w-full flex-wrap gap-2">
                     @for (label of form.controls['labels'].value; track label) {
-                      <span hlmBadge variant="outline">
+                      <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
+                        <ng-icon hlm size="xs" name="lucideCircleX" />
                         {{ label }}
-                        <button hlmBtn variant="ghost" size="icon-sm" (click)="removeLabel(label)">
-                          <ng-icon hlm size="sm" name="lucideCircleX" />
-                        </button>
-                      </span>
+                      </button>
                     }
                   </div>
                 </div>

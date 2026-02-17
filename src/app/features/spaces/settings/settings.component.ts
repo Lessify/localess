@@ -10,6 +10,8 @@ interface TabItem {
   icon: string;
   link: string;
   label: string;
+  colorActive?: string;
+  colorInactive?: string;
 }
 
 @Component({
@@ -42,7 +44,13 @@ export class SettingsComponent {
     { icon: 'lucideVectorSquare', label: 'Visual Editor', link: 'visual-editor' },
     { icon: 'lucideFingerprintPattern', label: 'Access Tokens', link: 'tokens' },
     { icon: 'lucideWebhook', label: 'Webhooks', link: 'webhooks' },
-    { icon: 'lucideWebhook', label: 'Danger Zone', link: 'danger-zone' },
+    {
+      icon: 'lucideWebhook',
+      label: 'Danger Zone',
+      link: 'danger-zone',
+      colorActive: 'text-destructive!',
+      colorInactive: 'text-destructive/50!',
+    },
   ];
 
   constructor() {
