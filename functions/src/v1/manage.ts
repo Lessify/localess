@@ -15,6 +15,7 @@ MANAGE.post(
   requireTokenPermissions([TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
     logger.info('v1 spaces translations update params : ' + JSON.stringify(req.params));
+    logger.info('v1 spaces translations update body : ' + JSON.stringify(req.body));
     // req.token contains the validated token object
     // req.tokenId contains the token string
     const { spaceId, locale } = req.params;
@@ -23,6 +24,7 @@ MANAGE.post(
       const spaceSnapshot = await findSpaceById(spaceId).get();
       const space = spaceSnapshot.data() as Space;
       if (!space.locales.some(it => it.id === locale)) {
+        logger.error(`Locale ${locale} is not in space locales`);
         res
           .status(400)
           .send(new HttpsError('invalid-argument', 'Locale not supported by this space', `Locale ${locale} is not in space locales`));
@@ -34,6 +36,7 @@ MANAGE.post(
         const snapshots = await Promise.all(fetchPromises);
         const translationIds = snapshots.filter(it => !it.exists).map(it => it.id);
         if (translationIds.length === 0) {
+          logger.info('No missing translations to add');
           res.status(200).send({ message: 'No missing translations to add' });
           return;
         }
@@ -52,6 +55,7 @@ MANAGE.post(
           bulk.create(ref, data);
         });
         await bulk.close();
+        logger.info(`Added ${translationIds.length} missing translations`, translationIds);
         res.status(200).send({ message: `Added ${translationIds.length} missing translations`, addedIds: translationIds });
         return;
       } else if (body.data.type === 'update-existing') {
@@ -60,6 +64,7 @@ MANAGE.post(
         const snapshots = await Promise.all(fetchPromises);
         const translationIds = snapshots.filter(it => it.exists).map(it => it.id);
         if (translationIds.length === 0) {
+          logger.info('No translations to update');
           res.status(200).send({ message: 'No translations to update' });
           return;
         }
@@ -74,10 +79,12 @@ MANAGE.post(
           bulk.update(ref, data);
         });
         await bulk.close();
+        logger.info(`Updated ${translationIds.length} translations`, translationIds);
         res.status(200).send({ message: `Updated ${translationIds.length} translations`, addedIds: translationIds });
         return;
       }
     }
+    logger.error('Bad request body', body.error);
     res.status(400).send(new HttpsError('invalid-argument', 'Bad request body', body.error));
   }
 );
