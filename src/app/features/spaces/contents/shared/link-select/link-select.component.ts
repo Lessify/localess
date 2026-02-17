@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
@@ -7,8 +7,8 @@ import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-
 import { ContentDocument, LinkContent, LinkContentType } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldLink } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { HlmAutocompleteImports } from '@spartan-ng/helm/autocomplete';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -32,7 +32,7 @@ import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
     HlmDropdownMenuImports,
     HlmButtonImports,
     HlmInputImports,
-    HlmAutocompleteImports,
+    HlmComboboxImports,
     HlmAccordionImports,
   ],
   providers: [
@@ -71,10 +71,40 @@ export class LinkSelectComponent implements OnInit {
     return this.documents();
   });
 
+  // Combobox selected value
+  selectedDocument = signal<ContentDocument | null>(null);
+
   // Stores
   settingsStore = inject(LocalSettingsStore);
 
-  constructor() {}
+  constructor() {
+    // Sync combobox selection with form control
+    effect(() => {
+      const selected = this.selectedDocument();
+      const control = this.form().get('uri');
+      if (!control) return;
+
+      const newValue = selected?.id ?? null;
+      if (control.value !== newValue) {
+        control.setValue(newValue);
+      }
+    });
+
+    // Initialize combobox from form value
+    effect(() => {
+      const control = this.form().get('uri');
+      const selected = this.selectedDocument();
+      if (!control) return;
+
+      const formValue = control.value;
+      if (formValue && !selected) {
+        const doc = this.documents().find(it => it.id === formValue);
+        if (doc) {
+          this.selectedDocument.set(doc);
+        }
+      }
+    });
+  }
 
   ngOnInit(): void {
     // Data init in case everything is null
@@ -85,21 +115,24 @@ export class LinkSelectComponent implements OnInit {
         target: this.default()?.target || '_self',
       });
     }
+
+    // Initialize selected document from form value
+    const initialUri = this.form().get('uri')?.value;
+    if (initialUri) {
+      const doc = this.documents().find(it => it.id === initialUri);
+      if (doc) {
+        this.selectedDocument.set(doc);
+      }
+    }
   }
 
   onTypeChange(type: LinkContentType): void {
     this.form().patchValue({ uri: null, type });
-    //this.searchCtrl.reset();
+    this.selectedDocument.set(null);
   }
 
-  public readonly displayWith = (content: string): string => {
-    if (content) {
-      const doc = this.documents()?.find(it => it.id === content);
-      if (doc) {
-        return `${doc.name} | ${doc.fullSlug}`;
-      }
-    }
-    return 'unknown';
+  itemToString = (item: ContentDocument): string => {
+    return item ? `${item.name} | ${item.fullSlug}` : '';
   };
 
   displayContent(content?: ContentDocument): string {

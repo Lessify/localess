@@ -148,6 +148,9 @@
       ],
       "@spartan-ng/helm/accordion": [
         "./libs/ui/accordion/src/index.ts"
+      ],
+      "@spartan-ng/helm/combobox": [
+        "./libs/ui/combobox/src/index.ts"
       ]
     },
     "useDefineForClassFields": false

@@ -51,22 +51,17 @@
               @if (default() && !component().translatable) {
                 <input hlmInput [readonly]="true" [value]="displayContent(defaultDocument())" />
               } @else {
-                <hlm-autocomplete
-                  formControlName="uri"
-                  class="w-full"
-                  [required]="component().required || false"
-                  [(search)]="search"
-                  [itemToString]="displayWith">
-                  <hlm-autocomplete-input placeholder="Select an document" showClear />
-                  <hlm-autocomplete-content *hlmAutocompletePortal>
-                    <hlm-autocomplete-empty>No document found.</hlm-autocomplete-empty>
-                    <div hlmAutocompleteList>
-                      @for (content of filteredOptions(); track $index) {
-                        <hlm-autocomplete-item [value]="content.id"> {{ content.name }} | {{ content.fullSlug }}</hlm-autocomplete-item>
+                <hlm-combobox class="w-full" [(value)]="selectedDocument" [(search)]="search" [itemToString]="itemToString">
+                  <hlm-combobox-input placeholder="Select a document" showClear />
+                  <hlm-combobox-content *hlmComboboxPortal>
+                    <hlm-combobox-empty>No document found.</hlm-combobox-empty>
+                    <div hlmComboboxList>
+                      @for (content of filteredOptions(); track content.id) {
+                        <hlm-combobox-item [value]="content">{{ content.name }} | {{ content.fullSlug }}</hlm-combobox-item>
                       }
                     </div>
-                  </hlm-autocomplete-content>
-                </hlm-autocomplete>
+                  </hlm-combobox-content>
+                </hlm-combobox>
               }
             }
           }
