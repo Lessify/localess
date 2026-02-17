@@ -8,6 +8,7 @@ import { DEV_TOOLS } from './v1/dev-tools';
 // API V1
 const expressApp = express();
 expressApp.use(cors({ origin: true }));
+expressApp.use(express.json());
 expressApp.use('/', CDN);
 expressApp.use('/', DEV_TOOLS);
 expressApp.use('/', MANAGE);
