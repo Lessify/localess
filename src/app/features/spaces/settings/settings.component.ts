@@ -49,7 +49,7 @@ export class SettingsComponent {
       label: 'Danger Zone',
       link: 'danger-zone',
       colorActive: 'text-destructive!',
-      colorInactive: 'text-destructive/50!',
+      colorInactive: 'text-destructive/60!',
     },
   ];
 

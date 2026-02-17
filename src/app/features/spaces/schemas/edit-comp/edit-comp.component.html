@@ -67,12 +67,12 @@
                   <div hlmItemMedia variant="icon">
                     <ng-icon [name]="descriptor.icon" [hlmTooltip]="descriptor.description" />
                   </div>
-                  <div hlmItemContent>
+                  <div hlmItemContent class="gap-2">
                     <div hlmItemTitle class="line-clamp-1">
                       {{ field.value.displayName }}
                       <span class="text-muted-foreground">#{{ field.value.name }}</span>
                     </div>
-                    <div hlmItemSubTitle class="line-clamp-1">
+                    <div class="line-clamp-1 flex items-center gap-2">
                       <span hlmBadge variant="outline" [hlmTooltip]="descriptor.description">{{ descriptor.name }}</span>
                       @if (field.value.translatable) {
                         <span hlmBadge variant="outline">Translatable</span>
