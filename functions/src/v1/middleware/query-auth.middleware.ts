@@ -184,7 +184,9 @@ export function requireTranslationPermissions() {
           .send(
             new HttpsError(
               'permission-denied',
-              version !== undefined ? 'Draft translation requires DRAFT permission' : 'Published translation requires PUBLIC or DRAFT permission'
+              version !== undefined
+                ? 'Draft translation requires DRAFT permission'
+                : 'Published translation requires PUBLIC or DRAFT permission'
             )
           );
         return;

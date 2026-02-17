@@ -8,7 +8,12 @@ import { isTokenV1, isTokenV2, Token, TokenPermission } from '../models';
  */
 export function canPerform(permission: TokenPermission, token: Token): boolean {
   if (isTokenV1(token)) {
-    return permission === TokenPermission.PUBLIC || permission === TokenPermission.DRAFT;
+    return (
+      permission === TokenPermission.TRANSLATION_PUBLIC ||
+      permission === TokenPermission.TRANSLATION_DRAFT ||
+      permission === TokenPermission.CONTENT_PUBLIC ||
+      permission === TokenPermission.CONTENT_DRAFT
+    );
   }
   if (isTokenV2(token)) {
     return token.permissions.includes(permission);
