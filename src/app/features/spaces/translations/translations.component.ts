@@ -524,6 +524,19 @@ export class TranslationsComponent implements OnInit {
     });
   }
 
+  filterReset(): void {
+    this.filterForm.patchValue({
+      search: '',
+      labels: [],
+      states: [],
+    });
+  }
+
+  isFormChanged(): boolean {
+    const { search, states, labels } = this.filterForm.value;
+    return search !== '' || (labels && labels.length > 0) || (states && states.length > 0) || false;
+  }
+
   buildTranslationTree(translations: Translation[]): TranslationNode[] {
     const tTree: Record<string, any> = {};
     for (const translation of translations) {

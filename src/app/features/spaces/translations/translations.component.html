@@ -181,6 +181,9 @@
                   </hlm-command-list>
                 </hlm-command>
               </hlm-popover>
+              @if (isFormChanged()) {
+                <button hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">Reset</button>
+              }
             </div>
           </div>
         </fieldset>
