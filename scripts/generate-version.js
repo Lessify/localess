@@ -12,6 +12,7 @@ const packageJson = JSON.parse(
 );
 
 // Get GITHUB_SHA from environment variable (provided by GitHub Actions)
+console.log('env', process.env);
 const gitCommitSha = process.env.GITHUB_SHA || 'local-build';
 
 const versionInfo = {
