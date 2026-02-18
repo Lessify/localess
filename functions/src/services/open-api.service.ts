@@ -423,6 +423,17 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               },
             },
             {
+              name: 'version',
+              in: 'query',
+              description: 'Translation version.',
+              required: false,
+              schema: {
+                type: 'string',
+                enum: ['draft'],
+                example: 'draft',
+              },
+            },
+            {
               name: 'token',
               in: 'query',
               description: 'Authentication Token.',
