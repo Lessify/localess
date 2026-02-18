@@ -15,6 +15,7 @@ WORKDIR /app
 COPY . .
 ## UI
 RUN npm install
+RUN npm run version:generate
 RUN npm run build:docker
 ## Functions
 RUN npm --prefix functions install

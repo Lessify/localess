@@ -22,7 +22,8 @@
     "prettier": "prettier --check ./src/app",
     "prettier:fix": "prettier --write ./src/app",
     "build:stats": "ng build --configuration production --stats-json",
-    "generate:github": "ng-openapi-gen --includeTags repos -i api-docs/api.github.com.2022-11-28.yaml -o src/app/shared/generated/github"
+    "generate:github": "ng-openapi-gen --includeTags repos -i api-docs/api.github.com.2022-11-28.yaml -o src/app/shared/generated/github",
+    "version:generate": "node scripts/generate-version.js"
   },
   "license": "MIT",
   "private": true,
@@ -75,6 +76,7 @@
     "marked": "^16.3.0",
     "ngx-markdown": "^20.1.0",
     "ngx-scrollbar": "^18.0.0",
+    "ngx-sonner": ">=3.0.0",
     "ngx-tiptap": "^13.0.0",
     "prismjs": "^1.29.0",
     "rxjs": "^7.8.0",

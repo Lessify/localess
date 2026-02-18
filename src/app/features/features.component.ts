@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, Signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, signal, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Auth, signOut } from '@angular/fire/auth';
@@ -61,8 +61,12 @@ import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { cva } from 'class-variance-authority';
-import { filter } from 'rxjs';
+import { filter, interval, mergeMap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { VersionService } from '@shared/services/version.service';
+import { Version } from '@shared/models/version.model';
+import { HlmToasterImports } from '@spartan-ng/helm/sonner';
+import { toast } from 'ngx-sonner';
 
 const appTextVariants = cva(
   'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xl font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] ',
@@ -114,6 +118,7 @@ interface SideMenuItem {
     HlmFieldImports,
     HlmSwitchImports,
     ReactiveFormsModule,
+    HlmToasterImports,
   ],
   providers: [
     provideIcons({
@@ -147,14 +152,14 @@ interface SideMenuItem {
     }),
   ],
 })
-class FeaturesComponent {
+export class FeaturesComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly reposService = inject(ReposService);
   private auth = inject(Auth);
   private route = inject(ActivatedRoute);
   private readonly contentService = inject(ContentService);
   private readonly schemaService = inject(SchemaService);
-
+  private readonly versionService = inject(VersionService);
   public readonly sidebarService = inject(HlmSidebarService);
 
   // Settings
@@ -164,6 +169,7 @@ class FeaturesComponent {
 
   version = environment.version;
   latestRelease?: Release;
+  currentVersion = signal<Version | undefined>(undefined);
 
   appTextClass = computed(() => appTextVariants({ variant: this.appSettingsStore.ui()?.color }));
 
@@ -275,6 +281,37 @@ class FeaturesComponent {
         this.breadcrumbs.set(breadcrumbs);
       });
   }
+  ngOnInit(): void {
+    interval(300000)
+      .pipe(
+        mergeMap(() => this.versionService.checkRemoteVersion()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(remoteVersion => {
+        console.log('remoteVersion', remoteVersion);
+        const currentVersion = this.currentVersion();
+        if (currentVersion) {
+          if (currentVersion.version !== remoteVersion.version) {
+            window.location.reload();
+          } else if (currentVersion.gitCommitSha !== remoteVersion.gitCommitSha) {
+            toast.info('New version is available', {
+              position: 'bottom-left',
+              description: 'We’ve just rolled out an update! Refresh the page to get the latest improvements.',
+              duration: 300000,
+              action: {
+                label: 'Reload',
+                onClick: () => window.location.reload(),
+              },
+              cancel: {
+                label: 'Skip',
+              },
+            });
+          }
+        } else {
+          this.currentVersion.set(remoteVersion);
+        }
+      });
+  }
 
   onSpaceSelection(space: Space): void {
     this.spaceStore.changeSpace(space);
@@ -325,5 +362,3 @@ class FeaturesComponent {
     return breadcrumbs;
   }
 }
-
-export default FeaturesComponent;

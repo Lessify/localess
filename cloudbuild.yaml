@@ -34,6 +34,12 @@ steps:
     id: 'Copy Firebase Apps SDK Config'
     args: [ 'mv', '-f', 'src/environments/firebase-config-tmp.json', 'src/environments/firebase-config.json' ]
   - name: 'node:22'
+    id: 'version-generate'
+    entrypoint: npm
+    args:
+      - 'run'
+      - 'version:generate'
+  - name: 'node:22'
     id: 'build-prod'
     entrypoint: npm
     args:
