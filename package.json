@@ -27,6 +27,7 @@
   },
   "license": "MIT",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@angular/animations": "^20.3.15",
     "@angular/cdk": "^20.2.14",
