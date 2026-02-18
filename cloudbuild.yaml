@@ -39,6 +39,8 @@ steps:
     args:
       - 'run'
       - 'version:generate'
+    env:
+      - 'COMMIT_SHA=$COMMIT_SHA'
   - name: 'node:22'
     id: 'build-prod'
     entrypoint: npm
