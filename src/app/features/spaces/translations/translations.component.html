@@ -181,6 +181,14 @@
                   </hlm-command-list>
                 </hlm-command>
               </hlm-popover>
+              <button
+                hlmBtn
+                [variant]="filterForm.value.onlyEmpty ? 'secondary' : 'outline'"
+                class="!w-fit"
+                hlmTooltip="Show only Untranslated transaltions for selected Locale"
+                (click)="toggleOnlyEmpty()">
+                <ng-icon hlm size="sm" name="lucideRemoveFormatting" />
+              </button>
               @if (isFormChanged()) {
                 <button hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">Reset</button>
               }

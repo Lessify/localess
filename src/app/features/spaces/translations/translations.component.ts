@@ -39,6 +39,7 @@ import {
   lucideListTree,
   lucidePencil,
   lucidePlus,
+  lucideRemoveFormatting,
   lucideReplace,
   lucideSave,
   lucideSearch,
@@ -168,6 +169,7 @@ import { TokenPermission } from '@shared/models/token.model';
       lucideCircleQuestionMark,
       lucideChevronRight,
       lucideChevronDown,
+      lucideRemoveFormatting,
     }),
   ],
 })
@@ -192,6 +194,7 @@ export class TranslationsComponent implements OnInit {
     search: this.fb.control<string>('', []),
     labels: this.fb.control<string[]>([], []),
     states: this.fb.control<TranslationStatus[]>([], []),
+    onlyEmpty: this.fb.control<boolean>(false, []),
   });
   $filterForm = toSignal(this.filterForm.valueChanges.pipe(debounceTime(500)));
 
@@ -202,7 +205,14 @@ export class TranslationsComponent implements OnInit {
   translations = signal<Translation[]>([]);
   translationsFiltered = computed(() => {
     const form = this.$filterForm();
-    return this.filterTranslations(this.translations(), form?.locale || 'en', form?.search || '', form?.labels || [], form?.states || []);
+    return this.filterTranslations(
+      this.translations(),
+      form?.locale || 'en',
+      form?.search || '',
+      form?.labels || [],
+      form?.states || [],
+      form?.onlyEmpty || false,
+    );
   });
   translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
   translationIds = computed(() => this.translations().map(it => it.id));
@@ -502,15 +512,26 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  filterTranslations(items: Translation[], locale: string, search: string, labels: string[], states: TranslationStatus[]): Translation[] {
+  filterTranslations(
+    items: Translation[],
+    locale: string,
+    search: string,
+    labels: string[],
+    states: TranslationStatus[],
+    onlyEmptyLocale: boolean,
+  ): Translation[] {
     console.log('Filtering translations', locale, search, labels, states);
     const lcFilter = search.trim().toLowerCase();
-    if (!items || (!search && !labels.length && !states.length)) {
+    if (!items || (!search && !labels.length && !states.length && !onlyEmptyLocale)) {
       return items;
     }
     return items.filter(it => {
       const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.some(label => it.labels?.includes(label)));
       const matchByStatus = !states.length || states.includes(this.identifyStatus(it));
+      const isEmptyForLocale = !it.locales[locale] || it.locales[locale] === '';
+      if (onlyEmptyLocale && !isEmptyForLocale) {
+        return false;
+      }
       if (!matchByStatus) return false;
       if (it.id.toLowerCase().includes(lcFilter) && matchByLabel) {
         return true;
@@ -529,12 +550,20 @@ export class TranslationsComponent implements OnInit {
       search: '',
       labels: [],
       states: [],
+      onlyEmpty: false,
+    });
+  }
+
+  toggleOnlyEmpty() {
+    const current = this.filterForm.value.onlyEmpty || false;
+    this.filterForm.patchValue({
+      onlyEmpty: !current,
     });
   }
 
   isFormChanged(): boolean {
-    const { search, states, labels } = this.filterForm.value;
-    return search !== '' || (labels && labels.length > 0) || (states && states.length > 0) || false;
+    const { search, states, labels, onlyEmpty } = this.filterForm.value;
+    return search !== '' || (labels && labels.length > 0) || (states && states.length > 0) || onlyEmpty === true || false;
   }
 
   buildTranslationTree(translations: Translation[]): TranslationNode[] {
