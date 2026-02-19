@@ -131,9 +131,25 @@
                 <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
                   <hlm-command-list>
                     <hlm-command-group>
-                      @for (state of allStates; track state) {
+                      <hlm-command-group-label>Translation</hlm-command-group-label>
+                      @for (state of allTranslationStates; track state) {
                         <button hlm-command-item [value]="state" (selected)="selectState(state)">
-                          <span>{{ stateTranslations[state] }}</span>
+                          <span>{{ translationStatesDictionary[state] }}</span>
+                          <ng-icon
+                            hlm
+                            size="sm"
+                            class="ml-auto"
+                            [class.opacity-0]="!filterForm.value.states?.includes(state)"
+                            name="lucideCheck"
+                            hlmCommandIcon />
+                        </button>
+                      }
+                    </hlm-command-group>
+                    <hlm-command-group>
+                      <hlm-command-group-label>Locale</hlm-command-group-label>
+                      @for (state of allLocaleStates; track state) {
+                        <button hlm-command-item [value]="state" (selected)="selectState(state)">
+                          <span>{{ localeStatesDictionary[state] }}</span>
                           <ng-icon
                             hlm
                             size="sm"
@@ -181,14 +197,6 @@
                   </hlm-command-list>
                 </hlm-command>
               </hlm-popover>
-              <button
-                hlmBtn
-                [variant]="filterForm.value.onlyEmpty ? 'secondary' : 'outline'"
-                class="!w-fit"
-                hlmTooltip="Show only Untranslated transaltions for selected Locale"
-                (click)="toggleOnlyEmpty()">
-                <ng-icon hlm size="sm" name="lucideRemoveFormatting" />
-              </button>
               @if (isFormChanged()) {
                 <button hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">Reset</button>
               }
@@ -212,14 +220,14 @@
                   @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
                     <hlm-spinner class="size-6" />
                   } @else {
-                    @switch (identifyStatus(translation)) {
-                      @case ('TRANSLATED') {
+                    @switch (identifyTranslationStatus(translation)) {
+                      @case ('TRANSLATION_TRANSLATED') {
                         <ll-status mode="online" hlmTooltip="Translated" />
                       }
-                      @case ('PARTIALLY_TRANSLATED') {
+                      @case ('TRANSLATION_PARTIALLY_TRANSLATED') {
                         <ll-status mode="away" hlmTooltip="Partially Translated" />
                       }
-                      @case ('UNTRANSLATED') {
+                      @case ('TRANSLATION_UNTRANSLATED') {
                         <ll-status mode="offline" hlmTooltip="Untranslated" />
                       }
                     }
@@ -262,14 +270,14 @@
                     @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
                       <hlm-spinner class="size-4" />
                     } @else {
-                      @switch (identifyStatus(translation)) {
-                        @case ('TRANSLATED') {
+                      @switch (identifyTranslationStatus(translation)) {
+                        @case ('TRANSLATION_TRANSLATED') {
                           <ll-status mode="online" hlmTooltip="Translated" />
                         }
-                        @case ('PARTIALLY_TRANSLATED') {
+                        @case ('TRANSLATION_PARTIALLY_TRANSLATED') {
                           <ll-status mode="away" hlmTooltip="Partially Translated" />
                         }
-                        @case ('UNTRANSLATED') {
+                        @case ('TRANSLATION_UNTRANSLATED') {
                           <ll-status mode="offline" hlmTooltip="Untranslated" />
                         }
                       }
@@ -448,7 +456,7 @@
                       <div class="text-sm font-semibold leading-6 break-all"> Status</div>
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-                      {{ identifyStatus(translation) }}
+                      {{ identifyTranslationStatus(translation) }}
                     </div>
                   </div>
                 </li>

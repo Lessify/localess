@@ -1,41 +1,40 @@
 // Karma configuration file, see link for more information
-
-};
-  });
-    restartOnFileChange: true,
-    singleRun: false,
-    browsers: ['Chrome'],
-    autoWatch: true,
-    logLevel: config.LOG_INFO,
-    colors: true,
-    port: 9876,
-    reporters: ['progress', 'kjhtml'],
-    },
-      reporters: [{ type: 'html' }, { type: 'text-summary' }],
-      subdir: '.',
-      dir: require('path').join(__dirname, './coverage/localess'),
-    coverageReporter: {
-    },
-      suppressAll: true, // removes the duplicated traces
-    jasmineHtmlReporter: {
-    },
-      clearContext: false, // leave Jasmine Spec Runner output visible in browser
-      },
-        // or set a specific seed with `seed: 4321`
-        // for example, you can disable the random execution with `random: false`
-        // the possible options are listed at https://jasmine.github.io/api/edge/Configuration.html
-        // you can add configuration options for Jasmine here
-      jasmine: {
-    client: {
-    ],
-      require('karma-coverage'),
-      require('karma-jasmine-html-reporter'),
-      require('karma-chrome-launcher'),
-      require('karma-jasmine'),
-    plugins: [
-    frameworks: ['jasmine', '@angular-devkit/build-angular'],
-    basePath: '',
-  config.set({
-module.exports = function (config) {
-
 // https://karma-runner.github.io/1.0/config/configuration-file.html
+
+module.exports = function (config) {
+  config.set({
+    basePath: '',
+    frameworks: ['jasmine', '@angular-devkit/build-angular'],
+    plugins: [
+      require('karma-jasmine'),
+      require('karma-chrome-launcher'),
+      require('karma-jasmine-html-reporter'),
+      require('karma-coverage'),
+    ],
+    client: {
+      jasmine: {
+        // you can add configuration options for Jasmine here
+        // the possible options are listed at https://jasmine.github.io/api/edge/Configuration.html
+        // for example, you can disable the random execution with `random: false`
+        // or set a specific seed with `seed: 4321`
+      },
+      clearContext: false, // leave Jasmine Spec Runner output visible in browser
+    },
+    jasmineHtmlReporter: {
+      suppressAll: true, // removes the duplicated traces
+    },
+    coverageReporter: {
+      dir: require('path').join(__dirname, './coverage/localess'),
+      subdir: '.',
+      reporters: [{ type: 'html' }, { type: 'text-summary' }],
+    },
+    reporters: ['progress', 'kjhtml'],
+    port: 9876,
+    colors: true,
+    logLevel: config.LOG_INFO,
+    autoWatch: true,
+    browsers: ['Chrome'],
+    singleRun: false,
+    restartOnFileChange: true,
+  });
+};

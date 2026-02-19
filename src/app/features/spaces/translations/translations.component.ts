@@ -39,7 +39,6 @@ import {
   lucideListTree,
   lucidePencil,
   lucidePlus,
-  lucideRemoveFormatting,
   lucideReplace,
   lucideSave,
   lucideSearch,
@@ -52,7 +51,15 @@ import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/
 import { StatusComponent } from '@shared/components/status';
 import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { TranslationHistory } from '@shared/models/translation-history.model';
-import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
+import {
+  isLocaleStatus,
+  isTranslationStatus,
+  LocaleStatus,
+  Translation,
+  TranslationCreate,
+  TranslationStatus,
+  TranslationUpdate,
+} from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
@@ -169,7 +176,6 @@ import { TokenPermission } from '@shared/models/token.model';
       lucideCircleQuestionMark,
       lucideChevronRight,
       lucideChevronDown,
-      lucideRemoveFormatting,
     }),
   ],
 })
@@ -193,8 +199,7 @@ export class TranslationsComponent implements OnInit {
     locale: this.fb.control<string>('', [Validators.required]),
     search: this.fb.control<string>('', []),
     labels: this.fb.control<string[]>([], []),
-    states: this.fb.control<TranslationStatus[]>([], []),
-    onlyEmpty: this.fb.control<boolean>(false, []),
+    states: this.fb.control<(TranslationStatus | LocaleStatus)[]>([], []),
   });
   $filterForm = toSignal(this.filterForm.valueChanges.pipe(debounceTime(500)));
 
@@ -210,8 +215,8 @@ export class TranslationsComponent implements OnInit {
       form?.locale || 'en',
       form?.search || '',
       form?.labels || [],
-      form?.states || [],
-      form?.onlyEmpty || false,
+      form?.states?.filter(it => isTranslationStatus(it)) || [],
+      form?.states?.filter(it => isLocaleStatus(it)) || [],
     );
   });
   translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
@@ -227,11 +232,16 @@ export class TranslationsComponent implements OnInit {
       .map(it => it!);
     return [...new Set<string>(tmp)];
   });
-  allStates = [TranslationStatus.TRANSLATED, TranslationStatus.PARTIALLY_TRANSLATED, TranslationStatus.UNTRANSLATED];
-  stateTranslations: Record<TranslationStatus, string> = {
+  allTranslationStates = [TranslationStatus.TRANSLATED, TranslationStatus.PARTIALLY_TRANSLATED, TranslationStatus.UNTRANSLATED];
+  translationStatesDictionary: Record<TranslationStatus, string> = {
     [TranslationStatus.TRANSLATED]: 'Translated',
     [TranslationStatus.PARTIALLY_TRANSLATED]: 'Partially Translated',
     [TranslationStatus.UNTRANSLATED]: 'Untranslated',
+  };
+  allLocaleStates = [LocaleStatus.TRANSLATED, LocaleStatus.UNTRANSLATED];
+  localeStatesDictionary: Record<LocaleStatus, string> = {
+    [LocaleStatus.TRANSLATED]: 'Translated',
+    [LocaleStatus.UNTRANSLATED]: 'Untranslated',
   };
 
   selectedTranslation = signal<Translation | undefined>(undefined);
@@ -517,22 +527,20 @@ export class TranslationsComponent implements OnInit {
     locale: string,
     search: string,
     labels: string[],
-    states: TranslationStatus[],
-    onlyEmptyLocale: boolean,
+    translationStates: TranslationStatus[],
+    localeStates: LocaleStatus[],
   ): Translation[] {
-    console.log('Filtering translations', locale, search, labels, states);
+    console.log('Filtering translations', locale, search, labels, translationStates, localeStates);
     const lcFilter = search.trim().toLowerCase();
-    if (!items || (!search && !labels.length && !states.length && !onlyEmptyLocale)) {
+    if (!items || (!search && !labels.length && !translationStates.length && !localeStates.length)) {
       return items;
     }
     return items.filter(it => {
       const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.some(label => it.labels?.includes(label)));
-      const matchByStatus = !states.length || states.includes(this.identifyStatus(it));
-      const isEmptyForLocale = !it.locales[locale] || it.locales[locale] === '';
-      if (onlyEmptyLocale && !isEmptyForLocale) {
-        return false;
-      }
-      if (!matchByStatus) return false;
+      const matchByTranslationStatus = !translationStates.length || translationStates.includes(this.identifyTranslationStatus(it));
+      const matchByLocaleStatus = !localeStates.length || localeStates.includes(this.identifyLocaleStatus(it, locale));
+      if (!matchByTranslationStatus) return false;
+      if (!matchByLocaleStatus) return false;
       if (it.id.toLowerCase().includes(lcFilter) && matchByLabel) {
         return true;
       } else {
@@ -550,20 +558,12 @@ export class TranslationsComponent implements OnInit {
       search: '',
       labels: [],
       states: [],
-      onlyEmpty: false,
-    });
-  }
-
-  toggleOnlyEmpty() {
-    const current = this.filterForm.value.onlyEmpty || false;
-    this.filterForm.patchValue({
-      onlyEmpty: !current,
     });
   }
 
   isFormChanged(): boolean {
-    const { search, states, labels, onlyEmpty } = this.filterForm.value;
-    return search !== '' || (labels && labels.length > 0) || (states && states.length > 0) || onlyEmpty === true || false;
+    const { search, states, labels } = this.filterForm.value;
+    return search !== '' || (labels && labels.length > 0) || (states && states.length > 0) || false;
   }
 
   buildTranslationTree(translations: Translation[]): TranslationNode[] {
@@ -629,7 +629,7 @@ export class TranslationsComponent implements OnInit {
     }
   }
 
-  selectState(state: TranslationStatus): void {
+  selectState(state: TranslationStatus | LocaleStatus): void {
     const current = this.filterForm.controls.states.value || [];
     if (current.includes(state)) {
       this.filterForm.controls.states.setValue(current.filter(l => l !== state));
@@ -722,7 +722,7 @@ export class TranslationsComponent implements OnInit {
     return this.localeService.isLocaleTranslatable(sourceLocale.id) && this.localeService.isLocaleTranslatable(targetLocale.id);
   }
 
-  identifyStatus(translate: Translation): TranslationStatus {
+  identifyTranslationStatus(translate: Translation): TranslationStatus {
     const space = this.selectedSpace();
     const locales = space?.locales || [];
     if (Object.getOwnPropertyNames(translate.locales).length === 0) return TranslationStatus.UNTRANSLATED;
@@ -739,5 +739,12 @@ export class TranslationsComponent implements OnInit {
       return TranslationStatus.UNTRANSLATED;
     }
     return TranslationStatus.PARTIALLY_TRANSLATED;
+  }
+  identifyLocaleStatus(translate: Translation, locale: string): LocaleStatus {
+    const localeValue = translate.locales[locale];
+    if (localeValue === undefined || localeValue.trim() === '') {
+      return LocaleStatus.UNTRANSLATED;
+    }
+    return LocaleStatus.TRANSLATED;
   }
 }
