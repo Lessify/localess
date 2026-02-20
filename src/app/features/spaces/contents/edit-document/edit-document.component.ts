@@ -6,7 +6,6 @@ import {
   computed,
   DestroyRef,
   ElementRef,
-  HostListener,
   inject,
   input,
   linkedSignal,
@@ -91,6 +90,9 @@ import { TokenPermission } from '@shared/models/token.model';
   templateUrl: './edit-document.component.html',
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:message)': 'contentIdLink($event)',
+  },
   imports: [
     MatTooltipModule,
     MatButtonModule,
@@ -496,7 +498,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     //console.groupEnd()
   }
 
-  @HostListener('window:message', ['$event'])
   contentIdLink(event: MessageEvent<EventToEditor>): void {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       //console.log('MessageEvent', event);

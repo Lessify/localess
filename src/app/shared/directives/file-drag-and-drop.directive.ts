@@ -1,34 +1,31 @@
-import { Directive, EventEmitter, HostBinding, HostListener, Output } from '@angular/core';
+import { Directive, output } from '@angular/core';
 
 @Directive({
   selector: '[llFileDragDrop]',
-  standalone: true,
+  host: {
+    '[class.file-drag-and-drop-wrapper]': 'classEnabled',
+    '(dragover)': 'onDragOver($event)',
+    '(dragleave)': 'onDragLeave($event)',
+    '(drop)': 'onDrop($event)',
+  },
 })
 export class FileDragAndDropDirective {
-  @Output() private filesChanges: EventEmitter<File[]> = new EventEmitter();
-  @HostBinding('class.file-drag-and-drop-wrapper') private classEnabled = false;
+  filesChanges = output<File[]>();
+  protected classEnabled = false;
 
-  constructor() {}
-
-  @HostListener('dragover', ['$event'])
-  public onDragOver(event: DragEvent) {
-    //console.log('dragover', e);
+  onDragOver(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
     this.classEnabled = true;
   }
 
-  @HostListener('dragleave', ['$event'])
-  public onDragLeave(event: DragEvent) {
-    //console.log('dragleave', e);
+  onDragLeave(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
     this.classEnabled = false;
   }
 
-  @HostListener('drop', ['$event'])
-  public onDrop(event: DragEvent) {
-    //console.log('drop', e);
+  onDrop(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
     this.classEnabled = false;
