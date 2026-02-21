@@ -51,7 +51,6 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
-import { BrnSheetImports } from '@spartan-ng/brain/sheet';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -90,7 +89,6 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     HlmSpinnerImports,
     HlmTooltipImports,
     HlmSheetImports,
-    BrnSheetImports,
     HlmInputGroupImports,
     HlmFieldImports,
     HlmItemImports,

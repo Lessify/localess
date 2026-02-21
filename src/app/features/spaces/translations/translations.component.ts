@@ -71,7 +71,6 @@ import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
-import { BrnSheetImports } from '@spartan-ng/brain/sheet';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
@@ -135,7 +134,6 @@ import { TokenPermission } from '@shared/models/token.model';
     HlmToggleGroupImports,
     HlmProgressImports,
     HlmSheetImports,
-    BrnSheetImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
     HlmSpinnerImports,

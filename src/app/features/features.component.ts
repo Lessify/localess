@@ -47,8 +47,6 @@ import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
-import { BrnSheetImports } from '@spartan-ng/brain/sheet';
-import { BrnTooltipImports } from '@spartan-ng/brain/tooltip';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -109,12 +107,10 @@ interface SideMenuItem {
     HlmTooltipImports,
     HlmDropdownMenuImports,
     HlmAvatarImports,
-    BrnTooltipImports,
     HlmButtonImports,
     HlmSeparatorImports,
     HlmBreadCrumbImports,
     HlmSheetImports,
-    BrnSheetImports,
     HlmFieldImports,
     HlmSwitchImports,
     ReactiveFormsModule,

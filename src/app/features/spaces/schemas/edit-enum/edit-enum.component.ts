@@ -17,8 +17,6 @@ import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
-import { BrnSheetImports } from '@spartan-ng/brain/sheet';
-import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -53,13 +51,11 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     HlmSpinnerImports,
     HlmTooltipImports,
     HlmSheetImports,
-    BrnSheetImports,
     HlmInputGroupImports,
     HlmFieldImports,
     HlmItemImports,
     HlmInputImports,
     HlmTextareaImports,
-    HlmBadgeImports,
   ],
   providers: [
     provideIcons({

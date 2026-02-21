@@ -19,7 +19,6 @@ import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
-import { BrnSheetImports } from '@spartan-ng/brain/sheet';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -45,7 +44,6 @@ import { Observable } from 'rxjs';
     HlmBadgeImports,
     HlmTooltipImports,
     HlmSheetImports,
-    BrnSheetImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
     HlmButtonImports,

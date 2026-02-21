@@ -165,12 +165,12 @@
                 </div>
               </div>
               <hlm-dropdown-menu-separator />
-              <button hlmDropdownMenuItem routerLink="/features/me" brnTooltipTrigger="Profile">
+              <button hlmDropdownMenuItem routerLink="/features/me" hlmTooltip="Profile">
                 <ng-icon name="lucideUserCircle" />
                 Profile
               </button>
               <hlm-dropdown-menu-separator />
-              <button hlmDropdownMenuItem (click)="onLogoutClick()" brnTooltipTrigger="Log Out">
+              <button hlmDropdownMenuItem (click)="onLogoutClick()" hlmTooltip="Log Out">
                 <ng-icon name="lucideLogOut" />
                 Log out
               </button>
@@ -209,11 +209,18 @@
       </div>
       <div id="header-actions" class="flex gap-2 items-center px-4">
         @if (isDebug) {
-          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltip="App Settings">
+          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltip="App Settings" position="bottom">
             <ng-icon hlm name="lucideSettings" size="sm" />
           </button>
         }
-        <button hlmBtn size="icon-sm" variant="ghost" (click)="switchTheme()" aria-label="Switch theme" hlmTooltip="Switch theme">
+        <button
+          hlmBtn
+          size="icon-sm"
+          variant="ghost"
+          (click)="switchTheme()"
+          aria-label="Switch theme"
+          hlmTooltip="Switch theme"
+          position="bottom">
           <ng-icon hlm [name]="settingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
         </button>
       </div>
