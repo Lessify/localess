@@ -3,12 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NotificationService } from '@shared/services/notification.service';
@@ -17,6 +14,10 @@ import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter } from 'rxjs/operators';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { provideIcons } from '@ng-icons/core';
+import { lucideSave } from '@ng-icons/lucide';
 
 @Component({
   selector: 'll-space-settings-general',
@@ -24,17 +25,21 @@ import { filter } from 'rxjs/operators';
   styleUrls: ['./general.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule,
     MatIconModule,
     ClipboardModule,
     ReactiveFormsModule,
     MatTooltipModule,
-    MatSelectModule,
     CommonModule,
     HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideSave,
+    }),
   ],
 })
 export class GeneralComponent {
