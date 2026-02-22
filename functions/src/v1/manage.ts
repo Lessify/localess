@@ -4,7 +4,7 @@ import { HttpsError } from 'firebase-functions/https';
 import { logger } from 'firebase-functions/v2';
 import { firestoreService } from '../config';
 import { Space, TokenPermission, Translation, TranslationType, zTranslationUpdateSchema } from '../models';
-import { findSpaceById, findTranslationById } from '../services';
+import { findSpaceById, findTranslationById, findTranslations } from '../services';
 import { RequestWithToken, requireTokenPermissions } from './middleware/api-key-auth.middleware';
 
 // eslint-disable-next-line new-cap
@@ -43,7 +43,7 @@ MANAGE.post(
         // Now `missing` contains the IDs of translations that are missing and can be added
         const bulk = firestoreService.bulkWriter();
         translationIds.forEach(id => {
-          const ref = firestoreService.collection(`spaces/${spaceId}/translations`).doc(id);
+          const ref = findTranslationById(spaceId, id);
           const data: WithFieldValue<Translation> = {
             type: TranslationType.STRING,
             locales: {
@@ -71,7 +71,7 @@ MANAGE.post(
         // Now `missing` contains the IDs of translations that are missing and can be added
         const bulk = firestoreService.bulkWriter();
         translationIds.forEach(id => {
-          const ref = firestoreService.doc(`spaces/${spaceId}/translations/${id}`);
+          const ref = findTranslationById(spaceId, id);
           const data: UpdateData<Translation> = {
             updatedAt: FieldValue.serverTimestamp(),
           };
@@ -81,6 +81,24 @@ MANAGE.post(
         await bulk.close();
         logger.info(`Updated ${translationIds.length} translations`, translationIds);
         res.status(200).send({ message: `Updated ${translationIds.length} translations`, ids: translationIds });
+        return;
+      } else if (body.data.type === 'delete-missing') {
+        // Handle deleting missing translations
+        const translationsSnapshot = await findTranslations(spaceId).get();
+        const translationIds = translationsSnapshot.docs.filter(it => body.data.values[it.id] === undefined).map(it => it.id);
+        if (translationIds.length === 0) {
+          logger.info('No translations to delete');
+          res.status(200).send({ message: 'No translations to delete' });
+          return;
+        }
+        const bulk = firestoreService.bulkWriter();
+        translationIds.forEach(id => {
+          const ref = findTranslationById(spaceId, id);
+          bulk.delete(ref);
+        });
+        await bulk.close();
+        logger.info(`Delete ${translationIds.length} missing translations`, translationIds);
+        res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });
         return;
       }
     }

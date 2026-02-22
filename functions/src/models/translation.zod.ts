@@ -16,6 +16,6 @@ export const zTranslationExportArraySchema = z.array(translationSchema);
 export const zTranslationFlatExportSchema = z.record(z.string(), z.string());
 
 export const zTranslationUpdateSchema = z.object({
-  type: z.enum(['add-missing', 'update-existing']),
+  type: z.enum(['add-missing', 'update-existing', 'delete-missing']),
   values: z.record(z.string(), z.string()),
 });
