@@ -21,6 +21,7 @@ MANAGE.post(
     const { spaceId, locale } = req.params;
     const body = zTranslationUpdateSchema.safeParse(req.body);
     if (body.success) {
+      const {dryRun, type, values} = body.data;
       const spaceSnapshot = await findSpaceById(spaceId).get();
       const space = spaceSnapshot.data() as Space;
       if (!space.locales.some(it => it.id === locale)) {
@@ -30,14 +31,19 @@ MANAGE.post(
           .send(new HttpsError('invalid-argument', 'Locale not supported by this space', `Locale ${locale} is not in space locales`));
         return;
       }
-      if (body.data.type === 'add-missing') {
+      if (type === 'add-missing') {
         // Handle adding missing translations
-        const fetchPromises = Object.getOwnPropertyNames(body.data.values).map(id => findTranslationById(spaceId, id).get());
+        const fetchPromises = Object.getOwnPropertyNames(values).map(id => findTranslationById(spaceId, id).get());
         const snapshots = await Promise.all(fetchPromises);
         const translationIds = snapshots.filter(it => !it.exists).map(it => it.id);
         if (translationIds.length === 0) {
           logger.info('No missing translations to add');
           res.status(200).send({ message: 'No missing translations to add' });
+          return;
+        }
+        if (dryRun) {
+          logger.info(`[DryRun] Would add ${translationIds.length} missing translations`, translationIds);
+          res.status(200).send({ message: `[DryRun] Would add ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
@@ -47,7 +53,7 @@ MANAGE.post(
           const data: WithFieldValue<Translation> = {
             type: TranslationType.STRING,
             locales: {
-              [locale]: body.data.values[id],
+              [locale]: values[id],
             },
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
@@ -58,14 +64,19 @@ MANAGE.post(
         logger.info(`Added ${translationIds.length} missing translations`, translationIds);
         res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });
         return;
-      } else if (body.data.type === 'update-existing') {
+      } else if (type === 'update-existing') {
         // Handle updating existing translations
-        const fetchPromises = Object.getOwnPropertyNames(body.data.values).map(id => findTranslationById(spaceId, id).get());
+        const fetchPromises = Object.getOwnPropertyNames(values).map(id => findTranslationById(spaceId, id).get());
         const snapshots = await Promise.all(fetchPromises);
         const translationIds = snapshots.filter(it => it.exists).map(it => it.id);
         if (translationIds.length === 0) {
           logger.info('No translations to update');
           res.status(200).send({ message: 'No translations to update' });
+          return;
+        }
+        if (dryRun) {
+          logger.info(`[DryRun] Would update ${translationIds.length} translations`, translationIds);
+          res.status(200).send({ message: `[DryRun] Would update ${translationIds.length} translations`, ids: translationIds, dryRun: true });
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
@@ -75,20 +86,25 @@ MANAGE.post(
           const data: UpdateData<Translation> = {
             updatedAt: FieldValue.serverTimestamp(),
           };
-          data[`locales.${locale}`] = body.data.values[id];
+          data[`locales.${locale}`] = values[id];
           bulk.update(ref, data);
         });
         await bulk.close();
         logger.info(`Updated ${translationIds.length} translations`, translationIds);
         res.status(200).send({ message: `Updated ${translationIds.length} translations`, ids: translationIds });
         return;
-      } else if (body.data.type === 'delete-missing') {
+      } else if (type === 'delete-missing') {
         // Handle deleting missing translations
         const translationsSnapshot = await findTranslations(spaceId).get();
-        const translationIds = translationsSnapshot.docs.filter(it => body.data.values[it.id] === undefined).map(it => it.id);
+        const translationIds = translationsSnapshot.docs.filter(it => values[it.id] === undefined).map(it => it.id);
         if (translationIds.length === 0) {
           logger.info('No translations to delete');
           res.status(200).send({ message: 'No translations to delete' });
+          return;
+        }
+        if (dryRun) {
+          logger.info(`[DryRun] Would delete ${translationIds.length} missing translations`, translationIds);
+          res.status(200).send({ message: `[DryRun] Would delete ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
           return;
         }
         const bulk = firestoreService.bulkWriter();
