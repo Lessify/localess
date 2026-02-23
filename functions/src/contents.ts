@@ -23,7 +23,7 @@ import {
   findAllContentsByParentSlug,
   findContentById,
   findContentsHistory,
-  findDocumentsToPublishByStartFullSlug,
+  findDocumentsToPublishByParentSlug,
   findSchemas,
   findSpaceById,
   spaceContentCachePath,
@@ -47,7 +47,7 @@ const publish = onCall<PublishContentData>(async request => {
     if (content.kind === ContentKind.DOCUMENT) {
       await publishDocument(spaceId, space, contentId, content, contentSnapshot, schemas, auth);
     } else if (content.kind === ContentKind.FOLDER) {
-      const documentsSnapshot = await findDocumentsToPublishByStartFullSlug(spaceId, `${content.fullSlug}/`).get();
+      const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
       for (const documentSnapshot of documentsSnapshot.docs) {
         const document = documentSnapshot.data() as ContentDocument;
         // SKIP if the page was already published, by comparing publishedAt and updatedAt
@@ -150,7 +150,7 @@ const unpublish = onCall<PublishContentData>(async request => {
     if (content.kind === ContentKind.DOCUMENT) {
       await unpublishDocument(spaceId, space, contentId, content, contentSnapshot, auth);
     } else if (content.kind === ContentKind.FOLDER) {
-      const documentsSnapshot = await findDocumentsToPublishByStartFullSlug(spaceId, `${content.fullSlug}/`).get();
+      const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
       for (const documentSnapshot of documentsSnapshot.docs) {
         const document = documentSnapshot.data() as ContentDocument;
         // SKIP if the document is not published
