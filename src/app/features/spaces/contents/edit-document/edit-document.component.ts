@@ -31,6 +31,7 @@ import {
   lucideChevronDown,
   lucideCircleQuestionMark,
   lucideEarth,
+  lucideEllipsis,
   lucideEllipsisVertical,
   lucideFolderRoot,
   lucideFormInput,
@@ -43,6 +44,7 @@ import {
   lucideTriangleAlert,
   lucideUpload,
   lucideVectorSquare,
+  lucideWebhookOff,
 } from '@ng-icons/lucide';
 import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
 import { StatusComponent } from '@shared/components/status';
@@ -145,6 +147,8 @@ import { TokenPermission } from '@shared/models/token.model';
       lucideChevronDown,
       lucidePlus,
       lucideCircleQuestionMark,
+      lucideEllipsis,
+      lucideWebhookOff,
     }),
   ],
 })
@@ -292,6 +296,26 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       },
       error: () => {
         this.notificationService.error('Content can not be published.');
+      },
+      complete: () => {
+        setTimeout(() => {
+          this.isPublishLoading.set(false);
+          this.cd.markForCheck();
+        }, 1000);
+      },
+    });
+  }
+
+  unpublish(): void {
+    this.isPublishLoading.set(true);
+    this.contentService.unpublish(this.spaceId(), this.contentId()).subscribe({
+      next: () => {
+        this.notificationService.success('Content has been unpublished.');
+        this.sendEventToApp({ type: 'unpublish' });
+        this.documentPublishedAt.set(undefined);
+      },
+      error: () => {
+        this.notificationService.error('Content can not be unpublished.');
       },
       complete: () => {
         setTimeout(() => {

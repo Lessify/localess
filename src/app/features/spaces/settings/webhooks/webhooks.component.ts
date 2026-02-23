@@ -8,7 +8,7 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
-import { WebHook, WebHookLog } from '@shared/models/webhook.model';
+import { WebHook, WebHookEvent, WebHookLog } from '@shared/models/webhook.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { WebHookService } from '@shared/services/webhook.service';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -184,5 +184,10 @@ export class WebhooksComponent {
   closeLogsSheet() {
     this.isLogsSheetOpen.set(false);
     this.selectedWebhook.set(null);
+  }
+
+  protected eventsToText(events: WebHookEvent[]) {
+    console.log('eventsToText', events);
+    return events.join(', ');
   }
 }

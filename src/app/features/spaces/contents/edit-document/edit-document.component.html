@@ -75,19 +75,46 @@
     }
 
     @if ('CONTENT_PUBLISH' | canUserPerform | async) {
-      <button
-        hlmBtn
-        variant="default"
-        hlmTooltip="Publish to be available via API call"
-        [disabled]="isPublishLoading() || isSaveLoading()"
-        (click)="publish()">
-        @if (isPublishLoading()) {
-          <hlm-spinner class="size-4" />
-        } @else {
-          <ng-icon hlm size="sm" name="lucideUpload" />
+      @let publishedAt = documentPublishedAt();
+      <div hlmButtonGroup>
+        <button
+          hlmBtn
+          variant="default"
+          hlmTooltip="Publish, it will be available via API call"
+          [disabled]="isPublishLoading() || isSaveLoading()"
+          (click)="publish()">
+          @if (isPublishLoading()) {
+            <hlm-spinner class="size-4" />
+          } @else {
+            <ng-icon hlm size="sm" name="lucideUpload" />
+          }
+          Publish
+        </button>
+        @if (publishedAt) {
+          <hlm-button-group-separator />
+          <button
+            hlmBtn
+            variant="default"
+            aria-label="More Options"
+            align="end"
+            [hlmDropdownMenuTrigger]="menu"
+            [disabled]="isPublishLoading() || isSaveLoading()">
+            <ng-icon name="lucideEllipsis" />
+          </button>
+          <ng-template #menu>
+            <hlm-dropdown-menu>
+              <button
+                hlmDropdownMenuItem
+                variant="destructive"
+                hlmTooltip="Unpublish, it will not be available via API call"
+                (click)="unpublish()">
+                <ng-icon hlm name="lucideWebhookOff" size="sm" />
+                <span>Unpublish</span>
+              </button>
+            </hlm-dropdown-menu>
+          </ng-template>
         }
-        Publish
-      </button>
+      </div>
     }
     @let publishedAt = documentPublishedAt();
     @let updatedAt = documentUpdatedAt();
@@ -341,6 +368,24 @@
                           <div>
                             <p class="text-sm">
                               Published by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
+                                {{ item.name || 'Unknown' }}
+                              </span>
+                            </p>
+                          </div>
+                          <div class="whitespace-nowrap text-right text-sm">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
+                        </div>
+                      }
+                      @case ('UNPUBLISHED') {
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucideWebhookOff" />
+                        </div>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
+                          <div>
+                            <p class="text-sm">
+                              Unpublished by
                               <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
                                 {{ item.name || 'Unknown' }}
                               </span>

@@ -14,6 +14,7 @@ export interface WebHook {
 
 export enum WebHookEvent {
   CONTENT_PUBLISHED = 'content.published',
+  CONTENT_UNPUBLISHED = 'content.unpublished',
   CONTENT_DELETED = 'content.deleted',
   CONTENT_UPDATED = 'content.updated',
 }

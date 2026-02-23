@@ -19,8 +19,8 @@ export type EventToEditor =
     };
 
 // Event emitted from Visual Editor to Application
-export type EventToAppType = 'save' | 'publish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
+export type EventToAppType = 'save' | 'publish' | 'unpublish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
 export type EventToApp =
-  | { type: 'save' | 'publish' | 'pong' }
+  | { type: 'save' | 'publish' | 'unpublish' | 'pong' }
   | { type: 'input' | 'change'; data: any }
   | { type: 'enterSchema' | 'hoverSchema'; id: string; schema: string; field?: string };

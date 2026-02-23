@@ -135,6 +135,86 @@ async function publishDocument(
   await findContentsHistory(spaceId, documentId).add(addHistory);
 }
 
+// Unpublish
+const unpublish = onCall<PublishContentData>(async request => {
+  logger.info('[Content::contentUnpublish] data: ' + JSON.stringify(request.data));
+  logger.info('[Content::contentUnpublish] context.auth: ' + JSON.stringify(request.auth));
+  const { auth, data } = request;
+  if (!canPerform(UserPermission.CONTENT_PUBLISH, auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { spaceId, contentId } = data;
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  const contentSnapshot = await findContentById(spaceId, contentId).get();
+  if (spaceSnapshot.exists && contentSnapshot.exists) {
+    const space: Space = spaceSnapshot.data() as Space;
+    const content: Content = contentSnapshot.data() as Content;
+    if (content.kind === ContentKind.DOCUMENT) {
+      await unpublishDocument(spaceId, space, contentId, content, contentSnapshot, auth);
+    } else if (content.kind === ContentKind.FOLDER) {
+      const documentsSnapshot = await findDocumentsToPublishByStartFullSlug(spaceId, `${content.fullSlug}/`).get();
+      for (const documentSnapshot of documentsSnapshot.docs) {
+        const document = documentSnapshot.data() as ContentDocument;
+        // SKIP if the document is not published
+        if (!document.publishedAt) continue;
+        await unpublishDocument(spaceId, space, documentSnapshot.id, document, documentSnapshot, auth);
+      }
+    }
+
+    // Trigger webhooks for content unpublished event
+    const webhookPayload: WebHookPayload = {
+      event: WebHookEvent.CONTENT_UNPUBLISHED,
+      spaceId,
+      timestamp: new Date().toISOString(),
+      data: {
+        contentId,
+        content,
+      },
+    };
+    await triggerWebHooksForEvent(spaceId, webhookPayload);
+
+    return;
+  } else {
+    logger.info(`[Content::contentUnpublish] Content ${contentId} does not exist.`);
+    throw new HttpsError('not-found', 'Content not found');
+  }
+});
+
+/**
+ * Unpublish Document
+ * @param {string} spaceId space id
+ * @param {Space} space
+ * @param {string} documentId
+ * @param {ContentDocument} document
+ * @param {DocumentSnapshot} documentSnapshot
+ * @param {AuthData} auth
+ */
+async function unpublishDocument(
+  spaceId: string,
+  space: Space,
+  documentId: string,
+  document: ContentDocument,
+  documentSnapshot: DocumentSnapshot,
+  auth?: AuthData
+) {
+  for (const locale of space.locales) {
+    // Delete published JSON files
+    logger.info(`[Content::contentUnpublish] Delete file spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
+    try {
+      await bucket.file(`spaces/${spaceId}/contents/${documentId}/${locale.id}.json`).delete();
+    } catch (error) {
+      logger.warn(`[Content::contentUnpublish] File not found or already deleted: ${error}`);
+    }
+  }
+  // Clear publishedAt timestamp
+  await documentSnapshot.ref.update({ publishedAt: FieldValue.delete() });
+  const addHistory: WithFieldValue<ContentHistory> = {
+    type: ContentHistoryType.UNPUBLISHED,
+    name: auth?.token['name'] || FieldValue.delete(),
+    email: auth?.token.email || FieldValue.delete(),
+    createdAt: FieldValue.serverTimestamp(),
+  };
+  await findContentsHistory(spaceId, documentId).add(addHistory);
+}
+
 // Firestore events
 const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}', async event => {
   logger.info(`[Content::onUpdate] eventId='${event.id}'`);
@@ -383,6 +463,7 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
 
 export const content = {
   publish: publish,
+  unpublish: unpublish,
   onupdate: onContentUpdate,
   ondelete: onContentDelete,
   onwrite: onContentWrite,

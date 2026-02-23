@@ -2,12 +2,18 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export enum ContentHistoryType {
   PUBLISHED = 'PUBLISHED',
+  UNPUBLISHED = 'UNPUBLISHED',
   CREATE = 'CREATE',
   UPDATE = 'UPDATE',
   DELETE = 'DELETE',
 }
 
-export type ContentHistory = ContentHistoryPublish | ContentHistoryCreate | ContentHistoryUpdate | ContentHistoryDelete;
+export type ContentHistory =
+  | ContentHistoryPublish
+  | ContentHistoryUnpublish
+  | ContentHistoryCreate
+  | ContentHistoryUpdate
+  | ContentHistoryDelete;
 
 export interface ContentHistoryBase {
   type: ContentHistoryType;
@@ -18,6 +24,10 @@ export interface ContentHistoryBase {
 
 export interface ContentHistoryPublish extends ContentHistoryBase {
   type: ContentHistoryType.PUBLISHED;
+}
+
+export interface ContentHistoryUnpublish extends ContentHistoryBase {
+  type: ContentHistoryType.UNPUBLISHED;
 }
 
 export interface ContentHistoryCreate extends ContentHistoryBase {

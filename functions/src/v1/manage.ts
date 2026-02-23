@@ -21,7 +21,7 @@ MANAGE.post(
     const { spaceId, locale } = req.params;
     const body = zTranslationUpdateSchema.safeParse(req.body);
     if (body.success) {
-      const {dryRun, type, values} = body.data;
+      const { dryRun, type, values } = body.data;
       const spaceSnapshot = await findSpaceById(spaceId).get();
       const space = spaceSnapshot.data() as Space;
       if (!space.locales.some(it => it.id === locale)) {
@@ -43,7 +43,9 @@ MANAGE.post(
         }
         if (dryRun) {
           logger.info(`[DryRun] Would add ${translationIds.length} missing translations`, translationIds);
-          res.status(200).send({ message: `[DryRun] Would add ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
+          res
+            .status(200)
+            .send({ message: `[DryRun] Would add ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
@@ -76,7 +78,9 @@ MANAGE.post(
         }
         if (dryRun) {
           logger.info(`[DryRun] Would update ${translationIds.length} translations`, translationIds);
-          res.status(200).send({ message: `[DryRun] Would update ${translationIds.length} translations`, ids: translationIds, dryRun: true });
+          res
+            .status(200)
+            .send({ message: `[DryRun] Would update ${translationIds.length} translations`, ids: translationIds, dryRun: true });
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
@@ -104,7 +108,9 @@ MANAGE.post(
         }
         if (dryRun) {
           logger.info(`[DryRun] Would delete ${translationIds.length} missing translations`, translationIds);
-          res.status(200).send({ message: `[DryRun] Would delete ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
+          res
+            .status(200)
+            .send({ message: `[DryRun] Would delete ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
           return;
         }
         const bulk = firestoreService.bulkWriter();

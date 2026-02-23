@@ -285,4 +285,9 @@ export class ContentService {
     const contentPublish = httpsCallableData<{ spaceId: string; contentId: string }, void>(this.functions, 'content-publish');
     return contentPublish({ spaceId, contentId: id }).pipe(traceUntilFirst('Functions:Contents:publish'));
   }
+
+  unpublish(spaceId: string, id: string): Observable<void> {
+    const contentUnpublish = httpsCallableData<{ spaceId: string; contentId: string }, void>(this.functions, 'content-unpublish');
+    return contentUnpublish({ spaceId, contentId: id }).pipe(traceUntilFirst('Functions:Contents:unpublish'));
+  }
 }

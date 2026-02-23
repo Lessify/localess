@@ -382,6 +382,48 @@ export class ContentsComponent {
       });
   }
 
+  openUnpublishDialog(event: Event, element: Content): void {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    let title = '';
+    let content = '';
+    let messageSuccess = '';
+    let messageError = '';
+    if (element.kind === ContentKind.FOLDER) {
+      title = 'Unpublish Folder';
+      content = `Are you sure about unpublishing the Folder with the name: ${element.name}.\n All sub folders and documents will be unpublished.`;
+      messageSuccess = `Folder '${element.name}' has been unpublished.`;
+      messageError = `Folder '${element.name}' can not be unpublished.`;
+    } else if (element.kind === ContentKind.DOCUMENT) {
+      title = 'Unpublish Document';
+      content = `Are you sure about unpublishing the Document with the name: ${element.name}.`;
+      messageSuccess = `Document '${element.name}' has been unpublished.`;
+      messageError = `Document '${element.name}' can not be unpublished.`;
+    }
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
+        data: {
+          title: title,
+          content: content,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it || false),
+        switchMap(() => this.contentService.unpublish(this.spaceId(), element.id)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(messageSuccess);
+        },
+        error: (err: unknown) => {
+          console.error(err);
+          this.notificationService.success(messageError);
+        },
+      });
+  }
+
   onRowSelect(element: Content): void {
     this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {

@@ -35,10 +35,8 @@
     <ng-container matColumnDef="events">
       <mat-header-cell *matHeaderCellDef> Events </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @for (event of element.events; track event) {
-          <span hlmBadge variant="outline" class="mr-1 mb-1">
-            {{ event }}
-          </span>
+        @if (element.events && element.events.length > 0) {
+          <span hlmBadge variant="outline" [hlmTooltip]="eventsToText(element.events)">{{ element.events.length }}</span>
         }
       </mat-cell>
     </ng-container>
