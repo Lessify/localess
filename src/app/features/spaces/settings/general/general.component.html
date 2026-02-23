@@ -10,23 +10,34 @@
   </hlm-progress>
 }
 @if (spaceStore.selectedSpace(); as space) {
-  <div>
-    <mat-form-field>
-      <mat-label>Space ID</mat-label>
-      <input matInput type="text" [value]="space.id" readonly />
-      <button mat-icon-button matSuffix [cdkCopyToClipboard]="space.id" matTooltip="Copy Id">
-        <mat-icon>content_copy</mat-icon>
-      </button>
-    </mat-form-field>
-    <form [formGroup]="form">
-      <mat-form-field>
-        <mat-label>Space Name</mat-label>
-        <input matInput type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
-        <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/30</mat-hint>
-        @if (form.controls['name'].errors; as errors) {
-          <mat-error>{{ fe.errors(errors) }}</mat-error>
-        }
-      </mat-form-field>
-    </form>
-  </div>
+  <form [formGroup]="form">
+    <fieldset hlmFieldSet class="mx-auto max-w-5xl">
+      <div hlmFieldGroup>
+        <div hlmField>
+          <label hlmFieldLabel for="space-id">Space ID</label>
+          <div hlmInputGroup>
+            <input hlmInputGroupInput [value]="space.id" readonly />
+            <div hlmInputGroupAddon align="inline-end">
+              <button
+                hlmInputGroupButton
+                aria-label="Copy"
+                title="Copy"
+                size="icon-xs"
+                [cdkCopyToClipboard]="space.id"
+                hlmTooltip="Copy Id">
+                <ng-icon name="lucideCopy" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div hlmField>
+          <label hlmFieldLabel for="space-id">Space Name</label>
+          <input hlmInput formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
+          @if (form.controls['name'].errors; as errors) {
+            <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+          }
+        </div>
+      </div>
+    </fieldset>
+  </form>
 }

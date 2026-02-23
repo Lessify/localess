@@ -3,10 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
@@ -17,7 +13,11 @@ import { filter } from 'rxjs/operators';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { provideIcons } from '@ng-icons/core';
-import { lucideSave } from '@ng-icons/lucide';
+import { lucideCopy, lucideSave } from '@ng-icons/lucide';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 
 @Component({
   selector: 'll-space-settings-general',
@@ -25,20 +25,21 @@ import { lucideSave } from '@ng-icons/lucide';
   styleUrls: ['./general.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
     ClipboardModule,
     ReactiveFormsModule,
-    MatTooltipModule,
     CommonModule,
     HlmProgressImports,
     HlmButtonImports,
     HlmIconImports,
+    HlmFieldImports,
+    HlmInputGroupImports,
+    HlmTooltipImports,
+    HlmInputImports,
   ],
   providers: [
     provideIcons({
       lucideSave,
+      lucideCopy,
     }),
   ],
 })

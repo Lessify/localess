@@ -3,7 +3,14 @@ import { Router, RouterModule } from '@angular/router';
 import { Space } from '@shared/models/space.model';
 import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFingerprintPattern, lucideGlobe, lucideLayoutDashboard, lucideVectorSquare, lucideWebhook } from '@ng-icons/lucide';
+import {
+  lucideFingerprintPattern,
+  lucideGlobe,
+  lucideLayoutDashboard,
+  lucideShredder,
+  lucideVectorSquare,
+  lucideWebhook,
+} from '@ng-icons/lucide';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 interface TabItem {
@@ -27,6 +34,7 @@ interface TabItem {
       lucideVectorSquare,
       lucideFingerprintPattern,
       lucideWebhook,
+      lucideShredder,
     }),
   ],
 })
@@ -45,7 +53,7 @@ export class SettingsComponent {
     { icon: 'lucideFingerprintPattern', label: 'Access Tokens', link: 'tokens' },
     { icon: 'lucideWebhook', label: 'Webhooks', link: 'webhooks' },
     {
-      icon: 'lucideWebhook',
+      icon: 'lucideShredder',
       label: 'Danger Zone',
       link: 'danger-zone',
       colorActive: 'text-destructive!',

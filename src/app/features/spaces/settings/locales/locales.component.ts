@@ -1,12 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { Locale } from '@shared/models/locale.model';
@@ -17,6 +15,10 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter, switchMap } from 'rxjs/operators';
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
+import { provideIcons } from '@ng-icons/core';
+import { lucidePlus } from '@ng-icons/lucide';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 @Component({
   selector: 'll-space-settings-locales',
@@ -24,14 +26,19 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
   styleUrls: ['./locales.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
     MatIconModule,
-    MatButtonModule,
     MatTableModule,
     MatSortModule,
     MatTooltipModule,
     MatPaginatorModule,
     HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+    }),
   ],
 })
 export class LocalesComponent {

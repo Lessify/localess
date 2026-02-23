@@ -18,6 +18,10 @@ import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter } from 'rxjs/operators';
+import { provideIcons } from '@ng-icons/core';
+import { lucideSave } from '@ng-icons/lucide';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 @Component({
   selector: 'll-space-settings-visual-editor',
@@ -35,6 +39,13 @@ import { filter } from 'rxjs/operators';
     MatInputModule,
     CommonModule,
     HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideSave,
+    }),
   ],
 })
 export class VisualEditorComponent {

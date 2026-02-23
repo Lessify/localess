@@ -1,15 +1,9 @@
-<mat-toolbar class="border-b">
-  <mat-toolbar-row>
-    User Interface
-    <span class="spacer"></span>
-    <div class="actions">
-      <button mat-flat-button [disabled]="!form.valid" (click)="save()">
-        <mat-icon>save</mat-icon>
-        Save
-      </button>
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+<div class="p-2 flex items-center justify-end gap-2">
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">
+    <ng-icon hlm size="sm" name="lucideSave" />
+    Save
+  </button>
+</div>
 
 @if (isLoading()) {
   <hlm-progress class="h-0.5">

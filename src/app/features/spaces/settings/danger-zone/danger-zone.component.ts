@@ -9,13 +9,21 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { TranslationService } from '@shared/services/translation.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideShredder } from '@ng-icons/lucide';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 @Component({
   selector: 'll-space-settings-danger-zone',
   templateUrl: './danger-zone.component.html',
   styleUrls: ['./danger-zone.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, HlmProgressImports, HlmFieldImports, HlmButtonImports],
+  imports: [CommonModule, HlmProgressImports, HlmFieldImports, HlmButtonImports, HlmIconImports],
+  providers: [
+    provideIcons({
+      lucideShredder,
+    }),
+  ],
 })
 export class DangerZoneComponent {
   private readonly dialog = inject(MatDialog);
