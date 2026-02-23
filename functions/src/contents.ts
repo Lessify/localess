@@ -50,8 +50,10 @@ const publish = onCall<PublishContentData>(async request => {
       const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
       for (const documentSnapshot of documentsSnapshot.docs) {
         const document = documentSnapshot.data() as ContentDocument;
+        const isAlreadyPublished = document.publishedAt ? document.publishedAt.seconds > document.updatedAt.seconds : false;
+        logger.info('[Content::contentPublish] check', document.fullSlug, 'isAlreadyPublished', isAlreadyPublished);
         // SKIP if the page was already published, by comparing publishedAt and updatedAt
-        if (document.publishedAt && document.publishedAt.seconds > document.updatedAt.seconds) continue;
+        if (isAlreadyPublished) continue;
         await publishDocument(spaceId, space, contentId, document, documentSnapshot, schemas, auth);
       }
     }
