@@ -150,14 +150,14 @@ const unpublish = onCall<PublishContentData>(async request => {
     const space: Space = spaceSnapshot.data() as Space;
     const content: Content = contentSnapshot.data() as Content;
     if (content.kind === ContentKind.DOCUMENT) {
-      await unpublishDocument(spaceId, space, contentId, content, contentSnapshot, auth);
+      await unpublishDocument(spaceId, space, contentId, contentSnapshot, auth);
     } else if (content.kind === ContentKind.FOLDER) {
       const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
       for (const documentSnapshot of documentsSnapshot.docs) {
         const document = documentSnapshot.data() as ContentDocument;
         // SKIP if the document is not published
         if (!document.publishedAt) continue;
-        await unpublishDocument(spaceId, space, documentSnapshot.id, document, documentSnapshot, auth);
+        await unpublishDocument(spaceId, space, documentSnapshot.id, documentSnapshot, auth);
       }
     }
 
@@ -185,18 +185,10 @@ const unpublish = onCall<PublishContentData>(async request => {
  * @param {string} spaceId space id
  * @param {Space} space
  * @param {string} documentId
- * @param {ContentDocument} document
  * @param {DocumentSnapshot} documentSnapshot
  * @param {AuthData} auth
  */
-async function unpublishDocument(
-  spaceId: string,
-  space: Space,
-  documentId: string,
-  document: ContentDocument,
-  documentSnapshot: DocumentSnapshot,
-  auth?: AuthData
-) {
+async function unpublishDocument(spaceId: string, space: Space, documentId: string, documentSnapshot: DocumentSnapshot, auth?: AuthData) {
   for (const locale of space.locales) {
     // Delete published JSON files
     logger.info(`[Content::contentUnpublish] Delete file spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
