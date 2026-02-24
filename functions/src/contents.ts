@@ -54,7 +54,7 @@ const publish = onCall<PublishContentData>(async request => {
         logger.info('[Content::contentPublish] check', document.fullSlug, 'isAlreadyPublished', isAlreadyPublished);
         // SKIP if the page was already published, by comparing publishedAt and updatedAt
         if (isAlreadyPublished) continue;
-        await publishDocument(spaceId, space, contentId, document, documentSnapshot, schemas, auth);
+        await publishDocument(spaceId, space, documentSnapshot.id, document, documentSnapshot, schemas, auth);
       }
     }
 
