@@ -97,7 +97,7 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div [title]="element.name">
-          <div class="line-clamp-1">{{ element.name }} </div>
+          <div class="line-clamp-1">{{ element.name }}</div>
           <div class="text-muted-foreground line-clamp-1">#{{ element.slug }}</div>
         </div>
       </mat-cell>
@@ -136,43 +136,75 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @if ('CONTENT_PUBLISH' | canUserPerform | async) {
-          <button hlmBtn size="icon" variant="ghost" (click)="openPublishDialog($event, element)" hlmTooltip="Publish">
-            <ng-icon hlm size="sm" name="lucideUpload" />
-          </button>
-        }
-        @if ('CONTENT_UPDATE' | canUserPerform | async) {
-          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog($event, element)" hlmTooltip="Edit">
-            <ng-icon hlm size="sm" name="lucidePencil" />
-          </button>
-        }
-        @if ('CONTENT_CREATE' | canUserPerform | async) {
-          <button
-            hlmBtn
-            size="icon"
-            variant="ghost"
-            (click)="openCloneDialog($event, element)"
-            [disabled]="element.kind === 'FOLDER'"
-            hlmTooltip="Clone the Document Here">
-            <ng-icon hlm size="sm" name="lucideCopy" />
-          </button>
-        }
-        @if ('CONTENT_UPDATE' | canUserPerform | async) {
-          <button
-            hlmBtn
-            size="icon"
-            variant="ghost"
-            (click)="openMoveDialog($event, element)"
-            [disabled]="element.kind === 'FOLDER'"
-            hlmTooltip="Move">
-            <ng-icon hlm size="sm" name="lucideFolderInput" />
-          </button>
-        }
-        @if ('CONTENT_DELETE' | canUserPerform | async) {
-          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog($event, element)" hlmTooltip="Delete">
-            <ng-icon hlm size="sm" name="lucideTrash" />
-          </button>
-        }
+        <button
+          hlmBtn
+          size="icon"
+          variant="ghost"
+          [hlmDropdownMenuTrigger]="actionsMenu"
+          (click)="$event.stopPropagation()"
+          hlmTooltip="Actions">
+          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+        </button>
+        <ng-template #actionsMenu>
+          <hlm-dropdown-menu>
+            @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+              <hlm-dropdown-menu-group>
+                @if (element.kind === 'FOLDER') {
+                  <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
+                    <ng-icon hlm size="sm" name="lucideUpload" />
+                    Publish
+                  </button>
+                  <button hlmDropdownMenuItem (click)="openUnpublishDialog(element)">
+                    <ng-icon hlm size="sm" name="lucideWebhookOff" />
+                    Unpublish
+                  </button>
+                } @else if (element.kind === 'DOCUMENT') {
+                  @if (element.publishedAt) {
+                    <button hlmDropdownMenuItem (click)="openUnpublishDialog(element)">
+                      <ng-icon hlm size="sm" name="lucideWebhookOff" />
+                      Unpublish
+                    </button>
+                  } @else {
+                    <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
+                      <ng-icon hlm size="sm" name="lucideUpload" />
+                      Publish
+                    </button>
+                  }
+                }
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+            }
+            <hlm-dropdown-menu-group>
+              @if ('CONTENT_UPDATE' | canUserPerform | async) {
+                <button hlmDropdownMenuItem (click)="openEditDialog(element)">
+                  <ng-icon hlm size="sm" name="lucidePencil" />
+                  Edit
+                </button>
+              }
+              @if (('CONTENT_CREATE' | canUserPerform | async) && element.kind === 'DOCUMENT') {
+                <button hlmDropdownMenuItem (click)="openCloneDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideCopy" />
+                  Clone
+                </button>
+              }
+              @if (('CONTENT_UPDATE' | canUserPerform | async) && element.kind === 'DOCUMENT') {
+                <button hlmDropdownMenuItem (click)="openMoveDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideFolderInput" />
+                  Move
+                </button>
+              }
+            </hlm-dropdown-menu-group>
+            @if ('CONTENT_DELETE' | canUserPerform | async) {
+              <hlm-dropdown-menu-separator />
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                  Delete
+                </button>
+              </hlm-dropdown-menu-group>
+            }
+          </hlm-dropdown-menu>
+        </ng-template>
       </mat-cell>
     </ng-container>
 

@@ -198,44 +198,51 @@
               hlmBtn
               size="icon"
               variant="ghost"
-              (click)="onDownload($event, element)"
-              [disabled]="element.kind === 'FOLDER' || element.inProgress === true"
-              hlmTooltip="Download">
-              <ng-icon hlm size="sm" name="lucideDownload" />
+              [hlmDropdownMenuTrigger]="actionsMenu"
+              (click)="$event.stopPropagation()"
+              hlmTooltip="Actions">
+              <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
             </button>
-            @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                (click)="openEditDialog($event, element)"
-                [disabled]="element.inProgress === true"
-                hlmTooltip="Edit">
-                <ng-icon hlm size="sm" name="lucidePencil" />
-              </button>
-            }
-            @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                (click)="openMoveDialog($event, element)"
-                [disabled]="element.kind === 'FOLDER'"
-                hlmTooltip="Move">
-                <ng-icon hlm size="sm" name="lucideFolderInput" />
-              </button>
-            }
-            @if ('ASSET_DELETE' | canUserPerform | async) {
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                (click)="openDeleteDialog($event, element)"
-                [disabled]="element.inProgress === true && now - (element.createdAt?.toMillis() || 0) < 600000"
-                hlmTooltip="Delete">
-                <ng-icon hlm size="sm" name="lucideTrash" />
-              </button>
-            }
+            <ng-template #actionsMenu>
+              <hlm-dropdown-menu>
+                @if (element.kind === 'FILE') {
+                  <hlm-dropdown-menu-group>
+                    <button hlmDropdownMenuItem (click)="onDownload(element)" [disabled]="element.inProgress === true">
+                      <ng-icon hlm size="sm" name="lucideDownload" />
+                      Download
+                    </button>
+                  </hlm-dropdown-menu-group>
+                  <hlm-dropdown-menu-separator />
+                }
+                @if ('ASSET_UPDATE' | canUserPerform | async) {
+                  <hlm-dropdown-menu-group>
+                    <button hlmDropdownMenuItem (click)="openEditDialog(element)" [disabled]="element.inProgress === true">
+                      <ng-icon hlm size="sm" name="lucidePencil" />
+                      Edit
+                    </button>
+                    @if (element.kind === 'FILE') {
+                      <button hlmDropdownMenuItem (click)="openMoveDialog(element)">
+                        <ng-icon hlm size="sm" name="lucideFolderInput" />
+                        Move
+                      </button>
+                    }
+                  </hlm-dropdown-menu-group>
+                }
+                @if ('ASSET_DELETE' | canUserPerform | async) {
+                  <hlm-dropdown-menu-separator />
+                  <hlm-dropdown-menu-group>
+                    <button
+                      hlmDropdownMenuItem
+                      variant="destructive"
+                      (click)="openDeleteDialog(element)"
+                      [disabled]="element.inProgress === true && now - (element.createdAt?.toMillis() || 0) < 600000">
+                      <ng-icon hlm size="sm" name="lucideTrash" />
+                      Delete
+                    </button>
+                  </hlm-dropdown-menu-group>
+                }
+              </hlm-dropdown-menu>
+            </ng-template>
           </mat-cell>
         </ng-container>
 
@@ -329,7 +336,7 @@
                 hlmBtn
                 size="icon"
                 variant="ghost"
-                (click)="onDownload($event, item)"
+                (click)="onDownload(item)"
                 [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
                 hlmTooltip="Download">
                 <ng-icon hlm size="sm" name="lucideDownload" />
@@ -339,7 +346,7 @@
                   hlmBtn
                   size="icon"
                   variant="ghost"
-                  (click)="openEditDialog($event, item)"
+                  (click)="openEditDialog(item)"
                   [disabled]="item.inProgress === true"
                   hlmTooltip="Edit">
                   <ng-icon hlm size="sm" name="lucidePencil" />
@@ -350,7 +357,7 @@
                   hlmBtn
                   size="icon"
                   variant="ghost"
-                  (click)="openMoveDialog($event, item)"
+                  (click)="openMoveDialog(item)"
                   [disabled]="item.kind === 'FOLDER'"
                   hlmTooltip="Move">
                   <ng-icon hlm size="sm" name="lucideFolderInput" />
@@ -361,7 +368,7 @@
                   hlmBtn
                   size="icon"
                   variant="ghost"
-                  (click)="openDeleteDialog($event, item)"
+                  (click)="openDeleteDialog(item)"
                   [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
                   hlmTooltip="Delete">
                   <ng-icon hlm size="sm" name="lucideTrash" />

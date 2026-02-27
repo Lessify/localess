@@ -337,7 +337,7 @@
                     <button
                       hlmBtn
                       size="icon"
-                      variant="ghost"
+                      variant="outline"
                       (click)="translate()"
                       hlmTooltip="Translate"
                       [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
@@ -420,17 +420,17 @@
         <div class="overlay border break-all">
           @if (selectedTranslation(); as translation) {
             <div>
-              <div class="p-2 align-items-start">
+              <div class="p-2 align-items-start flex gap-2">
                 @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltip="Edit ID" (click)="openEditIdDialog(translation)">
+                  <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit ID" (click)="openEditIdDialog(translation)">
                     <ng-icon hlm size="sm" name="lucideReplace" />
                   </button>
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltip="Edit" (click)="openEditDialog(translation)">
+                  <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit" (click)="openEditDialog(translation)">
                     <ng-icon hlm size="sm" name="lucidePencil" />
                   </button>
                 }
                 @if ('TRANSLATION_DELETE' | canUserPerform | async) {
-                  <button hlmBtn size="icon" variant="ghost" hlmTooltip="Delete" (click)="openDeleteDialog(translation)">
+                  <button hlmBtn size="icon" variant="outline" hlmTooltip="Delete" (click)="openDeleteDialog(translation)">
                     <ng-icon hlm size="sm" name="lucideTrash" />
                   </button>
                 }

@@ -125,20 +125,34 @@
           hlmBtn
           size="icon"
           variant="ghost"
-          (click)="onDownload(element)"
-          [disabled]="element.file === undefined"
-          hlmTooltip="Download">
-          <ng-icon hlm size="sm" name="lucideDownload" />
+          [hlmDropdownMenuTrigger]="actionsMenu"
+          (click)="$event.stopPropagation()"
+          hlmTooltip="Actions">
+          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
         </button>
-        <button
-          hlmBtn
-          size="icon"
-          variant="ghost"
-          (click)="openDeleteDialog(element)"
-          [disabled]="element.status !== 'FINISHED' && now - (element.createdAt?.toMillis() || 0) < 600000"
-          hlmTooltip="Delete">
-          <ng-icon hlm size="sm" name="lucideTrash" />
-        </button>
+        <ng-template #actionsMenu>
+          <hlm-dropdown-menu>
+            @if (element.file) {
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem (click)="onDownload(element)">
+                  <ng-icon hlm size="sm" name="lucideDownload" />
+                  Download
+                </button>
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+            }
+            <hlm-dropdown-menu-group>
+              <button
+                hlmDropdownMenuItem
+                variant="destructive"
+                (click)="openDeleteDialog(element)"
+                [disabled]="element.status !== 'FINISHED' && now - (element.createdAt?.toMillis() || 0) < 600000">
+                <ng-icon hlm size="sm" name="lucideTrash" />
+                Delete
+              </button>
+            </hlm-dropdown-menu-group>
+          </hlm-dropdown-menu>
+        </ng-template>
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>

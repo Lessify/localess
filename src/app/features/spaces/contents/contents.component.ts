@@ -24,6 +24,7 @@ import {
   lucideTrash,
   lucideUpload,
   lucideUploadCloud,
+  lucideWebhookOff,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -97,6 +98,7 @@ import { TokenPermission } from '@shared/models/token.model';
       lucideFolderInput,
       lucideTrash,
       lucideFolder,
+      lucideWebhookOff,
     }),
   ],
 })
@@ -213,10 +215,7 @@ export class ContentsComponent {
       });
   }
 
-  openEditDialog(event: Event, element: Content): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openEditDialog(element: Content): void {
     this.dialog
       .open<EditDialogComponent, EditDialogModel, ContentUpdate>(EditDialogComponent, {
         panelClass: 'sm',
@@ -242,10 +241,7 @@ export class ContentsComponent {
       });
   }
 
-  openDeleteDialog(event: Event, element: Content): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openDeleteDialog(element: Content): void {
     let title = '';
     let content = '';
     let messageSuccess = '';
@@ -285,10 +281,7 @@ export class ContentsComponent {
       });
   }
 
-  openMoveDialog(event: Event, element: Content) {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openMoveDialog(element: Content) {
     this.dialog
       .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
         panelClass: 'sm',
@@ -312,10 +305,7 @@ export class ContentsComponent {
       });
   }
 
-  openCloneDialog(event: Event, element: ContentDocument): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openCloneDialog(element: ContentDocument): void {
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
@@ -340,10 +330,7 @@ export class ContentsComponent {
       });
   }
 
-  openPublishDialog(event: Event, element: Content): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openPublishDialog(element: Content): void {
     let title = '';
     let content = '';
     let messageSuccess = '';
@@ -382,10 +369,7 @@ export class ContentsComponent {
       });
   }
 
-  openUnpublishDialog(event: Event, element: Content): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openUnpublishDialog(element: Content): void {
     let title = '';
     let content = '';
     let messageSuccess = '';

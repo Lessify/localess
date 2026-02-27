@@ -129,31 +129,41 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @let inUse = schemasInUse()[element.id];
-        <div [hlmTooltip]="inUse ? 'Used by : ' + inUse.join(', ') : ''">
-          @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-            <button
-              hlmBtn
-              size="icon"
-              variant="ghost"
-              (click)="openEditIdDialog($event, element)"
-              hlmTooltip="Edit ID"
-              [disabled]="inUse !== undefined">
-              <ng-icon hlm size="sm" name="lucideReplace" />
-            </button>
-          }
-          @if ('SCHEMA_DELETE' | canUserPerform | async) {
-            <button
-              hlmBtn
-              size="icon"
-              variant="ghost"
-              (click)="openDeleteDialog($event, element)"
-              hlmTooltip="Delete"
-              [disabled]="inUse !== undefined">
-              <ng-icon hlm size="sm" name="lucideTrash" />
-            </button>
-          }
-        </div>
+        <button
+          hlmBtn
+          size="icon"
+          variant="ghost"
+          [hlmDropdownMenuTrigger]="actionsMenu"
+          (click)="$event.stopPropagation()"
+          hlmTooltip="Actions">
+          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+        </button>
+        <ng-template #actionsMenu>
+          @let inUse = schemasInUse()[element.id];
+          <hlm-dropdown-menu [hlmTooltip]="inUse ? 'Used by : ' + inUse.join(', ') : ''">
+            @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem (click)="openEditIdDialog($event, element)" [disabled]="inUse !== undefined">
+                  <ng-icon hlm size="sm" name="lucideReplace" />
+                  Edit ID
+                </button>
+              </hlm-dropdown-menu-group>
+            }
+            @if ('SCHEMA_DELETE' | canUserPerform | async) {
+              <hlm-dropdown-menu-separator />
+              <hlm-dropdown-menu-group>
+                <button
+                  hlmDropdownMenuItem
+                  variant="destructive"
+                  (click)="openDeleteDialog($event, element)"
+                  [disabled]="inUse !== undefined">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                  Delete
+                </button>
+              </hlm-dropdown-menu-group>
+            }
+          </hlm-dropdown-menu>
+        </ng-template>
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>

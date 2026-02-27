@@ -6,7 +6,14 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { provideIcons } from '@ng-icons/core';
-import { lucideCheck, lucideCircleEllipsis, lucideDownload, lucideOctagonAlert, lucideTrash } from '@ng-icons/lucide';
+import {
+  lucideCheck,
+  lucideCircleEllipsis,
+  lucideDownload,
+  lucideEllipsisVertical,
+  lucideOctagonAlert,
+  lucideTrash,
+} from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { Task, TaskExport, TaskImport } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
@@ -14,6 +21,7 @@ import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
@@ -38,9 +46,11 @@ import { filter, switchMap } from 'rxjs/operators';
     HlmTooltipImports,
     HlmIconImports,
     HlmSpinnerImports,
+    HlmDropdownMenuImports,
   ],
   providers: [
     provideIcons({
+      lucideEllipsisVertical,
       lucideDownload,
       lucideTrash,
       lucideOctagonAlert,

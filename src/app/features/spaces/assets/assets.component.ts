@@ -332,18 +332,15 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  openEditDialog(event: Event, element: Asset): void {
+  openEditDialog(element: Asset): void {
     if (element.kind === AssetKind.FILE) {
-      this.openEditFileDialog(event, element);
+      this.openEditFileDialog(element);
     } else if (element.kind === AssetKind.FOLDER) {
-      this.openEditFolderDialog(event, element);
+      this.openEditFolderDialog(element);
     }
   }
 
-  openEditFolderDialog(event: Event, element: Asset): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openEditFolderDialog(element: Asset): void {
     this.dialog
       .open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdate>(EditFolderDialogComponent, {
         panelClass: 'sm',
@@ -368,10 +365,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  openEditFileDialog(event: Event, element: Asset): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openEditFileDialog(element: Asset): void {
     this.dialog
       .open<EditFileDialogComponent, EditFileDialogModel, AssetFileUpdate>(EditFileDialogComponent, {
         panelClass: 'sm',
@@ -396,11 +390,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  openDeleteDialog(event: Event, element: Asset): void {
-    console.log(element);
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openDeleteDialog(element: Asset): void {
     let title = '';
     let content = '';
     if (element.kind === AssetKind.FOLDER) {
@@ -434,10 +424,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  openMoveDialog(event: Event, element: Asset) {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openMoveDialog(element: Asset) {
     this.dialog
       .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
         panelClass: 'sm',
@@ -594,10 +581,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  onDownload(event: Event, element: Asset): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  onDownload(element: Asset): void {
     if (element.kind !== AssetKind.FILE) return;
     window.open(`/api/v1/spaces/${this.spaceId()}/assets/${element.id}?download`);
   }
