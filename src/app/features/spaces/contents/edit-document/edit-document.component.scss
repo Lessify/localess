@@ -1,15 +1,7 @@
-:host {
-  height: 100%;
-  display: block;
-}
-
-mat-form-field {
-  width: 100%;
-}
-
 .container-fluid {
-  height: calc(100dvh - 110px);
+  height: calc(100dvh - 120px);
 }
+
 div.browser {
   min-width: 0;
   max-width: 100%;
