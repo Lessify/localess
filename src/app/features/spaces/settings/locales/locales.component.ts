@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
@@ -16,9 +14,11 @@ import { filter, switchMap } from 'rxjs/operators';
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
 import { provideIcons } from '@ng-icons/core';
-import { lucidePlus } from '@ng-icons/lucide';
+import { lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 
 @Component({
   selector: 'll-space-settings-locales',
@@ -26,18 +26,22 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
   styleUrls: ['./locales.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatIconModule,
     MatTableModule,
     MatSortModule,
-    MatTooltipModule,
     MatPaginatorModule,
     HlmProgressImports,
     HlmButtonImports,
     HlmIconImports,
+    HlmTooltipImports,
+    HlmDropdownMenuImports,
   ],
   providers: [
     provideIcons({
       lucidePlus,
+      lucideEllipsisVertical,
+      lucideTrash,
+      lucideCheck,
+      lucideX,
     }),
   ],
 })
@@ -54,7 +58,7 @@ export class LocalesComponent {
   spaceStore = inject(SpaceStore);
 
   dataSource: MatTableDataSource<Locale> = new MatTableDataSource<Locale>([]);
-  displayedColumns: string[] = ['id', 'name', 'isLocaleTranslatable', 'fallback', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'isTranslatable', 'isFallback', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 

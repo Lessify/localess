@@ -19,23 +19,21 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.name }}</mat-cell>
     </ng-container>
-    <ng-container matColumnDef="isLocaleTranslatable">
+    <ng-container matColumnDef="isTranslatable">
       <mat-header-cell *matHeaderCellDef> Translatable</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <mat-icon color="primary">{{ isSupport(element.id) ? 'check' : 'clear' }}</mat-icon>
+        @if (isSupport(element.id)) {
+          <ng-icon name="lucideCheck" />
+        } @else {
+          <ng-icon name="lucideX" />
+        }
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="fallback">
+    <ng-container matColumnDef="isFallback">
       <mat-header-cell *matHeaderCellDef> Fallback</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @if (spaceStore.selectedSpace()?.localeFallback?.id === element.id) {
-          <button mat-icon-button disabled>
-            <mat-icon color="accent" matTooltip="Fallback">check_circle</mat-icon>
-          </button>
-        } @else {
-          <button mat-icon-button (click)="markAsFallback(element)">
-            <mat-icon matTooltip="Mark as Fallback">check_circle_outline</mat-icon>
-          </button>
+          <ng-icon name="lucideCheck" />
         }
       </mat-cell>
     </ng-container>
@@ -43,12 +41,37 @@
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <button
-          mat-icon-button
-          (click)="openDeleteDialog(element)"
-          matTooltip="Delete"
-          [disabled]="spaceStore.selectedSpace()?.localeFallback?.id === element.id">
-          <mat-icon>delete</mat-icon>
+          hlmBtn
+          size="icon"
+          variant="ghost"
+          [hlmDropdownMenuTrigger]="actionsMenu"
+          (click)="$event.stopPropagation()"
+          hlmTooltip="Actions">
+          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
         </button>
+        <ng-template #actionsMenu>
+          <hlm-dropdown-menu class="w-36">
+            @if (spaceStore.selectedSpace()?.localeFallback?.id !== element.id) {
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem (click)="markAsFallback(element)">
+                  <ng-icon hlm size="sm" name="lucideCheck" />
+                  Set as Fallback
+                </button>
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+            }
+            <hlm-dropdown-menu-group>
+              <button
+                hlmDropdownMenuItem
+                variant="destructive"
+                [disabled]="spaceStore.selectedSpace()?.localeFallback?.id === element.id"
+                (click)="openDeleteDialog(element)">
+                <ng-icon hlm size="sm" name="lucideTrash" />
+                Delete
+              </button>
+            </hlm-dropdown-menu-group>
+          </hlm-dropdown-menu>
+        </ng-template>
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
