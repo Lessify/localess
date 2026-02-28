@@ -50,10 +50,10 @@
           <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
         </button>
         <ng-template #actionsMenu>
-          <hlm-dropdown-menu class="w-36">
+          <hlm-dropdown-menu>
             @if (spaceStore.selectedSpace()?.localeFallback?.id !== element.id) {
               <hlm-dropdown-menu-group>
-                <button hlmDropdownMenuItem (click)="markAsFallback(element)">
+                <button class="text-nowrap" hlmDropdownMenuItem (click)="markAsFallback(element)">
                   <ng-icon hlm size="sm" name="lucideCheck" />
                   Set as Fallback
                 </button>

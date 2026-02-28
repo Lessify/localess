@@ -1,22 +1,28 @@
-<h2 mat-dialog-title>Locale Form</h2>
+<h2 mat-dialog-title>Add Locale</h2>
 <mat-dialog-content>
-  <br />
   <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label> Locale</mat-label>
-      <input matInput type="text" formControlName="locale" required [matAutocomplete]="auto" />
-      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayLocale">
-        @for (locale of filteredLocales | async; track locale.id) {
-          <mat-option [value]="locale"> {{ locale.name }} ({{ locale.id }})</mat-option>
+    <div hlmFieldGroup>
+      <div hlmField>
+        <label hlmFieldLabel for="locale">Locale</label>
+        <hlm-combobox id="locale" formControlName="locale" [(search)]="search" [itemToString]="displayLocale">
+          <hlm-combobox-input placeholder="English" showClear />
+          <hlm-combobox-content *hlmComboboxPortal>
+            <hlm-combobox-empty>No locale found.</hlm-combobox-empty>
+            <div hlmComboboxList>
+              @for (locale of filteredOptions(); track locale.id) {
+                <hlm-combobox-item [value]="locale">{{ locale.name }}</hlm-combobox-item>
+              }
+            </div>
+          </hlm-combobox-content>
+        </hlm-combobox>
+        @if (form.controls['locale'].errors; as errors) {
+          <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
         }
-      </mat-autocomplete>
-      @if (form.controls['locale'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
-      }
-    </mat-form-field>
+      </div>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>
