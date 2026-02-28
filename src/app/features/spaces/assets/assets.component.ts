@@ -65,7 +65,6 @@ import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
@@ -83,6 +82,7 @@ import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-di
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { HlmCardImports } from '@spartan-ng/helm/card';
 
 @Component({
   selector: 'll-assets',
@@ -107,8 +107,8 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmTooltipImports,
     HlmBreadCrumbImports,
     HlmProgressImports,
-    HlmItemImports,
     HlmSpinnerImports,
+    HlmCardImports,
   ],
   providers: [
     provideIcons({

@@ -262,16 +262,10 @@
         }
       </mat-table>
     } @else {
-      <div hlmItemGroup class="flex flex-row flex-wrap gap-4">
+      <div class="flex flex-row flex-wrap gap-4 pb-2">
         @for (item of dataSource.connect() | async; track item.id) {
-          <div
-            role="listitem"
-            hlmItem
-            variant="outline"
-            class="cursor-pointer p-0 overflow-hidden items-baseline content-start flex-1 min-w-48 max-w-60"
-            (click)="onAssetSelect(item)"
-            (keyup.enter)="onAssetSelect(item)">
-            <div hlmItemHeader class="border-b">
+          <hlm-card class="min-w-48 max-w-60 pt-0 cursor-pointer overflow-hidden flex-1" (click)="onAssetSelect(item)">
+            <div class="border-b">
               @if (item.kind === 'FILE' && item.inProgress) {
                 <div class="aspect-square w-full flex flex-col justify-center place-items-center">
                   <hlm-spinner />
@@ -308,11 +302,11 @@
                 </div>
               }
             </div>
-            <div hlmItemContent class="px-4 pb-auto">
-              <div hlmItemTitle class="line-clamp-2" hlmTooltip="{{ item.name }}{{ item.extension }}">
+            <hlm-card-header>
+              <h3 hlmCardTitle class="line-clamp-2" hlmTooltip="{{ item.name }}{{ item.extension }}">
                 {{ item.name }}{{ item.extension }}
-              </div>
-              <div hlmItemDescription>
+              </h3>
+              <div hlmCardDescription>
                 @if (item.kind === 'FILE') {
                   @if (item.size; as size) {
                     <p>{{ size | formatFileSize }}</p>
@@ -330,17 +324,19 @@
                   {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
                 </p>
               </div>
-            </div>
-            <div hlmItemFooter class="px-4 pb-4 flex justify-end">
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                (click)="onDownload(item)"
-                [disabled]="item.kind === 'FOLDER' || item.inProgress === true"
-                hlmTooltip="Download">
-                <ng-icon hlm size="sm" name="lucideDownload" />
-              </button>
+            </hlm-card-header>
+            <hlm-card-footer class="gap-2 mt-auto justify-end">
+              @if (item.kind === 'FILE') {
+                <button
+                  hlmBtn
+                  size="icon"
+                  variant="ghost"
+                  (click)="onDownload(item)"
+                  [disabled]="item.inProgress === true"
+                  hlmTooltip="Download">
+                  <ng-icon hlm size="sm" name="lucideDownload" />
+                </button>
+              }
               @if ('ASSET_UPDATE' | canUserPerform | async) {
                 <button
                   hlmBtn
@@ -352,14 +348,8 @@
                   <ng-icon hlm size="sm" name="lucidePencil" />
                 </button>
               }
-              @if ('ASSET_UPDATE' | canUserPerform | async) {
-                <button
-                  hlmBtn
-                  size="icon"
-                  variant="ghost"
-                  (click)="openMoveDialog(item)"
-                  [disabled]="item.kind === 'FOLDER'"
-                  hlmTooltip="Move">
+              @if (('ASSET_UPDATE' | canUserPerform | async) && item.kind === 'FILE') {
+                <button hlmBtn size="icon" variant="ghost" (click)="openMoveDialog(item)" hlmTooltip="Move">
                   <ng-icon hlm size="sm" name="lucideFolderInput" />
                 </button>
               }
@@ -374,8 +364,8 @@
                   <ng-icon hlm size="sm" name="lucideTrash" />
                 </button>
               }
-            </div>
-          </div>
+            </hlm-card-footer>
+          </hlm-card>
         }
       </div>
     }
