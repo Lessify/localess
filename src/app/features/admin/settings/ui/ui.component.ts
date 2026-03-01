@@ -1,9 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AppUiColor } from '@shared/models/settings.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -14,13 +11,26 @@ import { provideIcons } from '@ng-icons/core';
 import { lucideSave } from '@ng-icons/lucide';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
 
 @Component({
   selector: 'll-admin-settings-ui',
   templateUrl: './ui.component.html',
   styleUrls: ['./ui.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatSelectModule, MatInputModule, HlmProgressImports, HlmButtonImports, HlmIconImports],
+  imports: [
+    ReactiveFormsModule,
+    HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmFieldImports,
+    HlmInputImports,
+    HlmSelectImports,
+    BrnSelectImports,
+  ],
   providers: [
     provideIcons({
       lucideSave,

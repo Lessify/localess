@@ -13,26 +13,33 @@
 
 <div class="my-3">
   <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Color</mat-label>
-      <mat-select formControlName="color">
-        <mat-option value="primary">Primary</mat-option>
-        <mat-option value="secondary">Secondary</mat-option>
-        <mat-option value="outline">Outline</mat-option>
-        <mat-option value="destructive">Destructive</mat-option>
-      </mat-select>
-      @if (form.controls['color'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
-      }
-    </mat-form-field>
-    <br />
-    <mat-form-field>
-      <mat-label>Text</mat-label>
-      <input matInput type="text" formControlName="text" maxlength="30" autocomplete="off" />
-      <mat-hint align="end">{{ form.controls['text'].value?.length || 0 }}/30</mat-hint>
-      @if (form.controls['text'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
-      }
-    </mat-form-field>
+    <fieldset hlmFieldSet class="mx-auto max-w-5xl">
+      <div hlmFieldGroup>
+        <div hlmField>
+          <label hlmFieldLabel for="color">Color</label>
+          <hlm-select id="color" formControlName="color">
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value />
+            </hlm-select-trigger>
+            <hlm-select-content class="max-h-96">
+              <hlm-option value="primary">Primary</hlm-option>
+              <hlm-option value="secondary">Secondary</hlm-option>
+              <hlm-option value="outline">Outline</hlm-option>
+              <hlm-option value="destructive">Destructive</hlm-option>
+            </hlm-select-content>
+          </hlm-select>
+          @if (form.controls['color'].errors; as errors) {
+            <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+          }
+        </div>
+        <div hlmField>
+          <label hlmFieldLabel for="text">Text</label>
+          <input hlmInput id="text" formControlName="text" autocomplete="off" />
+          @if (form.controls['text'].errors; as errors) {
+            <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+          }
+        </div>
+      </div>
+    </fieldset>
   </form>
 </div>
