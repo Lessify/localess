@@ -12,7 +12,7 @@
 <div>
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
         <div>
           {{ element.name }} <br />
@@ -21,19 +21,17 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="enabled">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="enabled"> Status </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="enabled"> Status</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <span hlmBadge variant="outline">
-          @if (element.enabled) {
-            Enabled
-          } @else {
-            Disabled
-          }
-        </span>
+        @if (element.enabled) {
+          <span hlmBadge>Enabled</span>
+        } @else {
+          <span hlmBadge variant="secondary">Disabled</span>
+        }
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="events">
-      <mat-header-cell *matHeaderCellDef> Events </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> Events</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @if (element.events && element.events.length > 0) {
           <span hlmBadge variant="outline" [hlmTooltip]="eventsToText(element.events)">{{ element.events.length }}</span>
@@ -41,29 +39,64 @@
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
       <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
         {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
       <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
-      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
+      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button mat-icon-button (click)="openLogsSheet(element)" hlmTooltip="View Logs">
-          <mat-icon>history</mat-icon>
+        <button
+          hlmBtn
+          size="icon"
+          variant="ghost"
+          [hlmDropdownMenuTrigger]="actionsMenu"
+          (click)="$event.stopPropagation()"
+          hlmTooltip="Actions">
+          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
         </button>
-        <button mat-icon-button (click)="openEditDialog(element)" hlmTooltip="Edit">
-          <mat-icon>edit</mat-icon>
-        </button>
-        <button mat-icon-button (click)="openDeleteDialog(element)" hlmTooltip="Delete">
-          <mat-icon>delete</mat-icon>
-        </button>
+        <ng-template #actionsMenu>
+          <hlm-dropdown-menu>
+            <hlm-dropdown-menu-group>
+              <button hlmDropdownMenuItem (click)="openLogsSheet(element)">
+                <ng-icon hlm size="sm" name="lucideHistory" />
+                View Logs
+              </button>
+            </hlm-dropdown-menu-group>
+            <hlm-dropdown-menu-separator />
+            <hlm-dropdown-menu-group>
+              <button hlmDropdownMenuItem (click)="openEditDialog(element)">
+                <ng-icon hlm size="sm" name="lucidePencil" />
+                Edit
+              </button>
+              <button hlmDropdownMenuItem (click)="changeStatus(element)">
+                @if (element.enabled) {
+                  <ng-icon hlm size="sm" name="lucideWebhookOff" />
+                  Disable
+                } @else {
+                  <ng-icon hlm size="sm" name="lucideWebhook" />
+                  Enable
+                }
+              </button>
+            </hlm-dropdown-menu-group>
+            <hlm-dropdown-menu-separator />
+            <hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                  Delete
+                </button>
+              </hlm-dropdown-menu-group>
+            </hlm-dropdown-menu-group>
+          </hlm-dropdown-menu>
+        </ng-template>
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>

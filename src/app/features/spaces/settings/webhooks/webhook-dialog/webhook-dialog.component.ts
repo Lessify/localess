@@ -35,7 +35,6 @@ export class WebhookDialogComponent {
   form: FormGroup = this.fb.group({
     name: this.fb.control(this.data?.name || '', WebhookValidator.NAME),
     url: this.fb.control(this.data?.url || '', WebhookValidator.URL),
-    enabled: this.fb.control(this.data?.enabled ?? true),
     events: this.fb.control(this.data?.events || [], WebhookValidator.EVENTS),
     secret: this.fb.control(this.data?.secret || ''),
   });

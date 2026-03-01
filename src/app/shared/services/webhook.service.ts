@@ -14,9 +14,10 @@ import {
   updateDoc,
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { WebHook, WebHookCreate, WebHookCreateFS, WebHookLog, WebHookUpdate } from '@shared/models/webhook.model';
+import { WebHook, WebHookCreate, WebHookFS, WebHookLog, WebHookUpdate } from '@shared/models/webhook.model';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { WithFieldValue } from '@firebase/firestore';
 
 @Injectable({ providedIn: 'root' })
 export class WebHookService {
@@ -39,10 +40,10 @@ export class WebHookService {
   }
 
   create(spaceId: string, entity: WebHookCreate): Observable<string> {
-    const addEntity: WebHookCreateFS = {
+    const addEntity: WithFieldValue<WebHookFS> = {
       name: entity.name,
       url: entity.url,
-      enabled: entity.enabled,
+      enabled: true,
       events: entity.events,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -60,10 +61,9 @@ export class WebHookService {
   }
 
   update(spaceId: string, id: string, entity: WebHookUpdate): Observable<void> {
-    const update: UpdateData<WebHook> = {
+    const update: UpdateData<WebHookFS> = {
       name: entity.name,
       url: entity.url,
-      enabled: entity.enabled,
       events: entity.events,
       updatedAt: serverTimestamp(),
     };
@@ -75,6 +75,16 @@ export class WebHookService {
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/webhooks/${id}`), update)).pipe(
       traceUntilFirst('Firestore:WebHooks:update'),
+    );
+  }
+
+  updateStatus(spaceId: string, id: string, enabled: boolean): Observable<void> {
+    const update: UpdateData<WebHookFS> = {
+      enabled: enabled,
+      updatedAt: serverTimestamp(),
+    };
+    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/webhooks/${id}`), update)).pipe(
+      traceUntilFirst('Firestore:WebHooks:updateStatus'),
     );
   }
 

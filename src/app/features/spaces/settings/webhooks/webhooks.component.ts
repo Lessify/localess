@@ -1,9 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -24,9 +22,19 @@ import { NgScrollbarModule } from 'ngx-scrollbar';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { provideIcons } from '@ng-icons/core';
-import { lucidePlus, lucideShieldAlert } from '@ng-icons/lucide';
+import {
+  lucideEllipsisVertical,
+  lucideHistory,
+  lucidePencil,
+  lucidePlus,
+  lucideShieldAlert,
+  lucideTrash,
+  lucideWebhook,
+  lucideWebhookOff,
+} from '@ng-icons/lucide';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { Observable } from 'rxjs';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 
 @Component({
   selector: 'll-space-settings-webhooks',
@@ -34,8 +42,6 @@ import { Observable } from 'rxjs';
   styleUrls: ['./webhooks.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatIconModule,
-    MatButtonModule,
     MatTableModule,
     MatSortModule,
     CommonModule,
@@ -49,11 +55,18 @@ import { Observable } from 'rxjs';
     HlmButtonImports,
     HlmIconImports,
     HlmItemImports,
+    HlmDropdownMenuImports,
   ],
   providers: [
     provideIcons({
       lucidePlus,
       lucideShieldAlert,
+      lucideEllipsisVertical,
+      lucideTrash,
+      lucidePencil,
+      lucideHistory,
+      lucideWebhook,
+      lucideWebhookOff,
     }),
   ],
 })
@@ -149,6 +162,19 @@ export class WebhooksComponent {
           this.notificationService.error('Webhook can not be updated.');
         },
       });
+  }
+
+  changeStatus(element: WebHook): void {
+    const spaceId = this.spaceStore.selectedSpaceId();
+    this.webhookService.updateStatus(spaceId!, element.id, !element.enabled).subscribe({
+      next: () => {
+        this.notificationService.success(`Webhook '${element.name}' has been ${!element.enabled ? 'enabled' : 'disabled'}.`);
+      },
+      error: (err: unknown) => {
+        console.error(err);
+        this.notificationService.error(`Webhook '${element.name}' can not be ${!element.enabled ? 'enabled' : 'disabled'}.`);
+      },
+    });
   }
 
   openDeleteDialog(element: WebHook): void {
