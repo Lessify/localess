@@ -86,4 +86,8 @@ export class GeneralComponent {
       },
     });
   }
+
+  copied() {
+    this.notificationService.success(`Space ID copied to clipboard.`);
+  }
 }

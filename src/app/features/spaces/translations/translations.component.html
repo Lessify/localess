@@ -444,7 +444,13 @@
                     </div>
                     <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
                       <code>{{ translation.id }}</code>
-                      <button hlmBtn size="icon" variant="ghost" hlmTooltip="Copy ID" [cdkCopyToClipboard]="translation.id">
+                      <button
+                        hlmBtn
+                        size="icon"
+                        variant="ghost"
+                        hlmTooltip="Copy ID"
+                        [cdkCopyToClipboard]="translation.id"
+                        (cdkCopyToClipboardCopied)="copied()">
                         <ng-icon hlm size="sm" name="lucideCopy" />
                       </button>
                     </div>

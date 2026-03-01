@@ -140,7 +140,7 @@
         </button>
         <ng-template #actionsMenu>
           @let inUse = schemasInUse()[element.id];
-          <hlm-dropdown-menu [hlmTooltip]="inUse ? 'Used by : ' + inUse.join(', ') : ''">
+          <hlm-dropdown-menu [hlmTooltip]="inUse ? 'Used by : \n' + inUse.join('\n ') : ''">
             @if ('SCHEMA_UPDATE' | canUserPerform | async) {
               <hlm-dropdown-menu-group>
                 <button hlmDropdownMenuItem (click)="openEditIdDialog($event, element)" [disabled]="inUse !== undefined">

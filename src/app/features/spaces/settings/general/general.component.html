@@ -24,6 +24,7 @@
                 title="Copy"
                 size="icon-xs"
                 [cdkCopyToClipboard]="space.id"
+                (cdkCopyToClipboardCopied)="copied()"
                 hlmTooltip="Copy Id">
                 <ng-icon name="lucideCopy" />
               </button>

@@ -213,7 +213,6 @@ export class WebhooksComponent {
   }
 
   protected eventsToText(events: WebHookEvent[]) {
-    console.log('eventsToText', events);
-    return events.join(', ');
+    return events.join('\n');
   }
 }

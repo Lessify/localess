@@ -155,6 +155,10 @@ export class TokensComponent {
   }
 
   permissionsToText(permissions: TokenPermission[]): string {
-    return permissions.map(it => PERMISSION_TEXT[it]).join(', ');
+    return permissions.map(it => PERMISSION_TEXT[it]).join('\n');
+  }
+
+  copied() {
+    this.notificationService.success(`Token ID copied to clipboard.`);
   }
 }

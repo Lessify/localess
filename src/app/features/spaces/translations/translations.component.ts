@@ -745,4 +745,8 @@ export class TranslationsComponent implements OnInit {
     }
     return LocaleStatus.TRANSLATED;
   }
+
+  copied() {
+    this.notificationService.success(`Translation ID copied to clipboard.`);
+  }
 }

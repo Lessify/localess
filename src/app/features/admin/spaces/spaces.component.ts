@@ -2,15 +2,12 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { provideIcons } from '@ng-icons/core';
-import { lucidePlus } from '@ng-icons/lucide';
+import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { Space } from '@shared/models/space.model';
@@ -22,6 +19,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter, switchMap } from 'rxjs/operators';
 import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
 import { SpaceDialogModel } from './space-dialog/space-dialog.model';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({
   selector: 'll-spaces',
@@ -29,10 +27,7 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
   styleUrls: ['./spaces.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatIconModule,
-    MatButtonModule,
     ClipboardModule,
-    MatTooltipModule,
     CommonModule,
     MatTableModule,
     MatSortModule,
@@ -40,10 +35,14 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
     HlmButtonImports,
     HlmIconImports,
     HlmProgressImports,
+    HlmTooltipImports,
   ],
   providers: [
     provideIcons({
       lucidePlus,
+      lucideCopy,
+      lucidePencil,
+      lucideTrash,
     }),
   ],
 })
@@ -149,5 +148,9 @@ export class SpacesComponent implements OnInit {
           this.notificationService.error(`Space '${element.name}' can not be deleted.`);
         },
       });
+  }
+
+  copied() {
+    this.notificationService.success(`Space ID copied to clipboard.`);
   }
 }
