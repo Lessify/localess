@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
+  lucideBookCopy,
   lucideCloudDownload,
   lucideCopy,
   lucideEllipsisVertical,
@@ -61,6 +62,7 @@ import { ExportDialogComponent, ExportDialogModel, ExportDialogReturn } from './
 import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 import { TokenPermission } from '@shared/models/token.model';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'll-contents',
@@ -80,6 +82,7 @@ import { TokenPermission } from '@shared/models/token.model';
     HlmBreadCrumbImports,
     HlmProgressImports,
     HlmTooltipImports,
+    ClipboardModule,
   ],
   providers: [
     provideIcons({
@@ -99,6 +102,7 @@ import { TokenPermission } from '@shared/models/token.model';
       lucideTrash,
       lucideFolder,
       lucideWebhookOff,
+      lucideBookCopy,
     }),
   ],
 })
@@ -513,5 +517,15 @@ export class ContentsComponent {
           this.notificationService.error('Content Export Task can not be created.');
         },
       });
+  }
+
+  copiedSlug() {
+    console.log('copied');
+    this.notificationService.success(`Slug copied to clipboard.`);
+  }
+
+  copiedFullSlug() {
+    console.log('copied');
+    this.notificationService.success(`Full Slug copied to clipboard.`);
   }
 }
