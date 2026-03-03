@@ -87,6 +87,7 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { TokenPermission } from '@shared/models/token.model';
 import { ClipboardModule } from '@angular/cdk/clipboard';
+import { HlmCommandImports } from '@spartan-ng/helm/command';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -95,6 +96,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(window:message)': 'contentIdLink($event)',
+    '(window:keydown)': 'captureKeyboard($event)',
   },
   imports: [
     ClipboardModule,
@@ -126,6 +128,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
     HlmButtonGroupImports,
     HlmLabelImports,
     HlmAccordionImports,
+    HlmCommandImports,
   ],
   providers: [
     provideIcons({
@@ -522,6 +525,14 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
     //console.log(this.documentIdsTree)
     //console.groupEnd()
+  }
+
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (event.key === 's' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      this.save();
+    }
   }
 
   contentIdLink(event: MessageEvent<EventToEditor>): void {

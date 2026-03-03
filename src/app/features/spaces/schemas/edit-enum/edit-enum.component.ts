@@ -31,12 +31,16 @@ import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
+import { HlmCommandImports } from '@spartan-ng/helm/command';
 
 @Component({
   selector: 'll-schema-edit-enum',
   templateUrl: './edit-enum.component.html',
   styleUrl: './edit-enum.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'captureKeyboard($event)',
+  },
   imports: [
     CanUserPerformPipe,
     CommonModule,
@@ -56,6 +60,7 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     HlmItemImports,
     HlmInputImports,
     HlmTextareaImports,
+    HlmCommandImports,
   ],
   providers: [
     provideIcons({
@@ -130,6 +135,14 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
 
   get isFormDirty(): boolean {
     return this.form.dirty;
+  }
+
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (event.key === 's' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      this.save();
+    }
   }
 
   addLabel(value: string): void {

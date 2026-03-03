@@ -66,15 +66,19 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { NgScrollbar } from 'ngx-scrollbar';
+import { NgScrollbarModule } from 'ngx-scrollbar';
 import { combineLatest } from 'rxjs';
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
+import { HlmCommandImports } from '@spartan-ng/helm/command';
 
 @Component({
   selector: 'll-schema-edit-comp',
   templateUrl: './edit-comp.component.html',
   styleUrl: './edit-comp.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'captureKeyboard($event)',
+  },
   imports: [
     CanUserPerformPipe,
     CommonModule,
@@ -98,7 +102,8 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     HlmSelectImports,
     BrnSelectImports,
     HlmScrollAreaImports,
-    NgScrollbar,
+    NgScrollbarModule,
+    HlmCommandImports,
   ],
   providers: [
     provideIcons({
@@ -198,6 +203,14 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
 
   get isFormDirty(): boolean {
     return this.form.dirty;
+  }
+
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (event.key === 's' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      this.save();
+    }
   }
 
   addLabel(value: string): void {
