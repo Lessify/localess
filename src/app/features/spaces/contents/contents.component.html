@@ -140,7 +140,7 @@
           <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
         </button>
         <ng-template #actionsMenu>
-          <hlm-dropdown-menu>
+          <hlm-dropdown-menu class="text-nowrap">
             @if ('CONTENT_PUBLISH' | canUserPerform | async) {
               <hlm-dropdown-menu-group>
                 @if (element.kind === 'FOLDER') {
@@ -175,7 +175,7 @@
               </button>
             </hlm-dropdown-menu-group>
             <hlm-dropdown-menu-group>
-              <button class="text-nowrap" hlmDropdownMenuItem [cdkCopyToClipboard]="element.fullSlug" (click)="copiedFullSlug()">
+              <button hlmDropdownMenuItem [cdkCopyToClipboard]="element.fullSlug" (click)="copiedFullSlug()">
                 <ng-icon hlm size="sm" name="lucideCopy" />
                 Copy Full Slug
               </button>

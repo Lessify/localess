@@ -72,6 +72,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
   imports: [
     CanUserPerformPipe,
     CommonModule,
+    ClipboardModule,
     MatTableModule,
     MatSortModule,
     StatusComponent,
@@ -82,7 +83,6 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
     HlmBreadCrumbImports,
     HlmProgressImports,
     HlmTooltipImports,
-    ClipboardModule,
   ],
   providers: [
     provideIcons({
@@ -520,12 +520,10 @@ export class ContentsComponent {
   }
 
   copiedSlug() {
-    console.log('copied');
     this.notificationService.success(`Slug copied to clipboard.`);
   }
 
   copiedFullSlug() {
-    console.log('copied');
     this.notificationService.success(`Full Slug copied to clipboard.`);
   }
 }

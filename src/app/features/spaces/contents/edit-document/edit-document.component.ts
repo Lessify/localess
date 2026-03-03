@@ -30,6 +30,7 @@ import {
   lucideArrowLeft,
   lucideChevronDown,
   lucideCircleQuestionMark,
+  lucideCopy,
   lucideEarth,
   lucideEllipsis,
   lucideEllipsisVertical,
@@ -85,6 +86,7 @@ import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema
 import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { TokenPermission } from '@shared/models/token.model';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -95,6 +97,7 @@ import { TokenPermission } from '@shared/models/token.model';
     '(window:message)': 'contentIdLink($event)',
   },
   imports: [
+    ClipboardModule,
     MatTooltipModule,
     MatButtonModule,
     MatMenuModule,
@@ -149,6 +152,7 @@ import { TokenPermission } from '@shared/models/token.model';
       lucideCircleQuestionMark,
       lucideEllipsis,
       lucideWebhookOff,
+      lucideCopy,
     }),
   ],
 })
@@ -628,5 +632,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     const environment = this.selectedEnvironment();
     this.selectedEnvironment.set(undefined);
     this.selectedEnvironment.set(environment);
+  }
+
+  copiedSlug() {
+    this.notificationService.success(`Slug copied to clipboard.`);
+  }
+
+  copiedFullSlug() {
+    this.notificationService.success(`Full Slug copied to clipboard.`);
   }
 }

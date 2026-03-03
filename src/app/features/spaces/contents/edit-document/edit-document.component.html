@@ -134,7 +134,20 @@
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
-      <hlm-dropdown-menu class="w-60">
+      <hlm-dropdown-menu class="text-nowrap">
+        <hlm-dropdown-menu-group>
+          <button hlmDropdownMenuItem [cdkCopyToClipboard]="document().slug" (click)="copiedSlug()">
+            <ng-icon hlm size="sm" name="lucideCopy" />
+            Copy Slug
+          </button>
+        </hlm-dropdown-menu-group>
+        <hlm-dropdown-menu-group>
+          <button hlmDropdownMenuItem [cdkCopyToClipboard]="document().fullSlug" (click)="copiedFullSlug()">
+            <ng-icon hlm size="sm" name="lucideCopy" />
+            Copy Full Slug
+          </button>
+        </hlm-dropdown-menu-group>
+        <hlm-dropdown-menu-separator />
         <hlm-dropdown-menu-group>
           @for (locale of selectedSpace()?.locales; track locale.id) {
             <button hlmDropdownMenuItem (click)="openDraftV1InNewTab(locale.id)">
