@@ -95,7 +95,7 @@
                           <span hlmBadge variant="outline">Schema: {{ field.value.schemas[0] }}</span>
                         } @else {
                           <span hlmBadge variant="outline" [hlmTooltip]="field.value.schemas.join('\n')">
-                            Schemas: {{ field.value.schemas[0] }}, ...
+                            Schemas: {{ field.value.schemas[0] }}, + {{ field.value.schemas.length - 1 }} more
                           </span>
                         }
                       }
