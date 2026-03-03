@@ -16,7 +16,7 @@
         type="text"
         [id]="'schema-field-' + field.name"
         [formControl]="form()"
-        [placeholder]="default()"
+        [placeholder]="default() ?? ''"
         [attr.minlength]="field.minLength"
         [attr.maxlength]="field.maxLength"
         [class.hidden]="preview()"
