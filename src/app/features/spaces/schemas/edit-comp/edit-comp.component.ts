@@ -69,7 +69,6 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { combineLatest } from 'rxjs';
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
-import { HlmCommandImports } from '@spartan-ng/helm/command';
 
 @Component({
   selector: 'll-schema-edit-comp',
@@ -103,7 +102,6 @@ import { HlmCommandImports } from '@spartan-ng/helm/command';
     BrnSelectImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
-    HlmCommandImports,
   ],
   providers: [
     provideIcons({

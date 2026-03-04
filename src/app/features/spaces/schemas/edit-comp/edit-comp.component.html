@@ -9,14 +9,13 @@
     </div>
   </div>
   @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-    <button hlmBtn hlmTooltip="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
+    <button hlmBtn hlmTooltip="Save the changes (Ctrl/⌘ + S)" [disabled]="!form.valid || isSaveLoading()" (click)="save()">
       @if (isSaveLoading()) {
         <hlm-spinner class="size-4" />
       } @else {
         <ng-icon hlm size="sm" name="lucideSave" />
       }
       Save
-      <hlm-command-shortcut>⌘S</hlm-command-shortcut>
     </button>
   }
 </div>

@@ -87,7 +87,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { TokenPermission } from '@shared/models/token.model';
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { HlmCommandImports } from '@spartan-ng/helm/command';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -128,7 +127,6 @@ import { HlmCommandImports } from '@spartan-ng/helm/command';
     HlmButtonGroupImports,
     HlmLabelImports,
     HlmAccordionImports,
-    HlmCommandImports,
   ],
   providers: [
     provideIcons({

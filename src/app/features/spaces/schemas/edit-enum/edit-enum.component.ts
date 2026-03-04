@@ -31,7 +31,6 @@ import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
-import { HlmCommandImports } from '@spartan-ng/helm/command';
 
 @Component({
   selector: 'll-schema-edit-enum',
@@ -60,7 +59,6 @@ import { HlmCommandImports } from '@spartan-ng/helm/command';
     HlmItemImports,
     HlmInputImports,
     HlmTextareaImports,
-    HlmCommandImports,
   ],
   providers: [
     provideIcons({
