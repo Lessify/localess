@@ -107,6 +107,8 @@ import { TranslationStringEditComponent } from './shared/components/translation-
 import { TranslationStringViewComponent } from './shared/components/translation-string-view/translation-string-view.component';
 import { TranslationNode } from './shared/models/translation.model';
 import { TokenPermission } from '@shared/models/token.model';
+import { LocaleTranslateDialogComponent } from './locale-translate-dialog/locale-translate-dialog.component';
+import { LocaleTranslateDialogModel, LocaleTranslateDialogReturn } from './locale-translate-dialog/locale-translate-dialog.model';
 
 @Component({
   selector: 'll-translations',
@@ -519,6 +521,29 @@ export class TranslationsComponent implements OnInit {
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Translation Export Task can not be created.');
+        },
+      });
+  }
+
+  openLocaleTranslateDialog(locales: Locale[]): void {
+    this.dialog
+      .open<LocaleTranslateDialogComponent, LocaleTranslateDialogModel, LocaleTranslateDialogReturn>(LocaleTranslateDialogComponent, {
+        panelClass: 'sm',
+        data: {
+          locales: locales,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.translationService.translateLocale(this.spaceId(), it.sourceLocale, it.targetLocale)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Locale Translate run with success.');
+        },
+        error: () => {
+          this.notificationService.error('Locale Translate failed.');
         },
       });
   }

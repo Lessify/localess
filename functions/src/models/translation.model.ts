@@ -32,3 +32,9 @@ export interface TranslationExport extends Omit<Translation, 'autoTranslate' | '
 }
 
 export type TranslationUpdate = z.infer<typeof zTranslationUpdateSchema>;
+
+export interface TranslateLocaleData {
+  spaceId: string;
+  sourceLocaleId: string;
+  targetLocaleId: string;
+}

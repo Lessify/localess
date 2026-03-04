@@ -1,0 +1,39 @@
+<h2 mat-dialog-title>Translate Locale</h2>
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <div hlmFieldGroup class="w-full">
+      <div hlmField>
+        <label hlmFieldLabel for="sourceLocale">Source Locale</label>
+        <hlm-select id="sourceLocale" formControlName="sourceLocale">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value />
+          </hlm-select-trigger>
+          <hlm-select-content>
+            @for (locale of data.locales; track locale.id) {
+              <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
+      <div hlmField>
+        <label hlmFieldLabel for="targetLocale">Target Locale</label>
+        <hlm-select id="targetLocale" formControlName="targetLocale">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value />
+          </hlm-select-trigger>
+          <hlm-select-content>
+            @for (locale of data.locales; track locale.id) {
+              <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid || form.value.sourceLocale === form.value.targetLocale">
+    Translate
+  </button>
+</mat-dialog-actions>

@@ -173,4 +173,12 @@ export class TranslationService {
     const translationsDeleteAll = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-deleteall');
     return translationsDeleteAll({ spaceId }).pipe(traceUntilFirst('Functions:Translations:deleteAll'));
   }
+
+  translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string): Observable<void> {
+    const translateLocale = httpsCallableData<{ spaceId: string; sourceLocaleId: string; targetLocaleId: string }, void>(
+      this.functions,
+      'translation-translatelocale',
+    );
+    return translateLocale({ spaceId, sourceLocaleId, targetLocaleId }).pipe(traceUntilFirst('Functions:Translations:translateLocale'));
+  }
 }
