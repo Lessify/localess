@@ -1,4 +1,4 @@
-<div class="p-2 flex items-center justify-end gap-2">
+<div class="flex items-center justify-end gap-2 p-2">
   @if ('CONTENT_CREATE' | canUserPerform | async) {
     <button hlmBtn [hlmDropdownMenuTrigger]="contentCreateMenu">
       <ng-icon hlm size="sm" name="lucidePlus" />
@@ -49,7 +49,7 @@
   </hlm-progress>
 }
 
-<div class="px-2 mx-auto mt-3">
+<div class="mx-auto mt-3 px-2">
   <nav hlmBreadcrumb class="p-2">
     <ol hlmBreadcrumbList>
       @for (pathItem of spaceStore.contentPath(); track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
@@ -64,9 +64,7 @@
           } @else if (isLast) {
             <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
           } @else {
-            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
-              {{ pathItem.name }}
-            </button>
+            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)"> {{ pathItem.name }} </button>
           }
         </li>
       }

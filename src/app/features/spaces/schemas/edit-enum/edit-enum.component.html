@@ -1,10 +1,10 @@
-<div class="p-2 flex items-center justify-between gap-2">
+<div class="flex items-center justify-between gap-2 p-2">
   <div class="flex items-center gap-2">
     <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Schemas">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <div>
-      <div class="text-lg line-clamp-1">{{ entity?.displayName }}</div>
+      <div class="line-clamp-1 text-lg">{{ entity?.displayName }}</div>
       <div class="text-muted-foreground line-clamp-1">#{{ entity?.id }}</div>
     </div>
   </div>
@@ -33,7 +33,7 @@
           <button hlmTabsTrigger="settings">Settings</button>
         </hlm-tabs-list>
         <div hlmTabsContent="values">
-          <div class="flex flex-col mx-auto max-w-5xl gap-6 px-8" style="height: calc(100vh - 177px)">
+          <div class="mx-auto flex max-w-5xl flex-col gap-6 px-8" style="height: calc(100vh - 177px)">
             <div hlmField class="col-span-2">
               <div hlmInputGroup>
                 <input
@@ -48,7 +48,7 @@
                 </div>
               </div>
             </div>
-            <div hlmItemGroup class="overflow-y-auto gap-2" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+            <div hlmItemGroup class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
               @for (field of values.controls; track field.value.name; let index = $index) {
                 <div
                   hlmItem
@@ -81,7 +81,7 @@
           </div>
         </div>
         <div hlmTabsContent="settings">
-          <div class="flex flex-col mx-auto max-w-5xl gap-6 px-8">
+          <div class="mx-auto flex max-w-5xl flex-col gap-6 px-8">
             <fieldset hlmFieldSet>
               <div hlmFieldGroup>
                 <div hlmField>

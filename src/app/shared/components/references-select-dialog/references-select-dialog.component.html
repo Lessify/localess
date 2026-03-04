@@ -18,9 +18,7 @@
         } @else if (isLast) {
           <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
         } @else {
-          <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
-            {{ pathItem.name }}
-          </button>
+          <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)"> {{ pathItem.name }} </button>
         }
       </li>
     }
@@ -62,9 +60,7 @@
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        {{ element.name }}
-      </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.name }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="slug">
       <mat-header-cell *matHeaderCellDef> Slug</mat-header-cell>

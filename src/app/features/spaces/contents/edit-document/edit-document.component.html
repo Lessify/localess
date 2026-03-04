@@ -1,10 +1,10 @@
-<div class="p-2 flex items-center justify-between gap-2">
+<div class="flex items-center justify-between gap-2 p-2">
   <div class="flex items-center gap-2">
     <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Contents">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <div>
-      <div class="text-lg line-clamp-1">{{ document().name }}</div>
+      <div class="line-clamp-1 text-lg">{{ document().name }}</div>
       <div class="text-muted-foreground line-clamp-1">#{{ document().slug }}</div>
     </div>
   </div>
@@ -55,16 +55,21 @@
               <ng-icon hlm size="sm" name="lucideTriangleAlert" />
               <span>
                 In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for
-                Locale {{ availableLocalesMap().get(error.locale) }}
+                Locale
+                {{ availableLocalesMap().get(error.locale) }}
               </span>
             </button>
           }
         </hlm-dropdown-menu>
       </ng-template>
     }
-
     @if ('CONTENT_UPDATE' | canUserPerform | async) {
-      <button hlmBtn variant="default" hlmTooltip="Save the changes (Ctrl/⌘ + S)" [disabled]="isSaveLoading() || isPublishLoading()" (click)="save()">
+      <button
+        hlmBtn
+        variant="default"
+        hlmTooltip="Save the changes (Ctrl/⌘ + S)"
+        [disabled]="isSaveLoading() || isPublishLoading()"
+        (click)="save()">
         @if (isSaveLoading()) {
           <hlm-spinner class="size-4" />
         } @else {
@@ -73,7 +78,6 @@
         Save
       </button>
     }
-
     @if ('CONTENT_PUBLISH' | canUserPerform | async) {
       @let publishedAt = documentPublishedAt();
       <div hlmButtonGroup>
@@ -116,8 +120,7 @@
         }
       </div>
     }
-    @let publishedAt = documentPublishedAt();
-    @let updatedAt = documentUpdatedAt();
+    @let publishedAt = documentPublishedAt(); @let updatedAt = documentUpdatedAt();
     @if (publishedAt === undefined) {
       <ll-status mode="offline" matTooltip="Not published" />
     } @else if (publishedAt > updatedAt) {
@@ -178,18 +181,18 @@
   </hlm-progress>
 }
 
-<div class="mx-auto container-fluid grid px-2">
-  <hlm-resizable-group direction="horizontal" class="flex justify-center h-full w-full overflow-hidden">
+<div class="container-fluid mx-auto grid px-2">
+  <hlm-resizable-group direction="horizontal" class="flex h-full w-full justify-center overflow-hidden">
     @if (settingsStore.editorEnabled()) {
       <hlm-resizable-panel [defaultSize]="60" class="overflow-hidden">
-        <div id="browser" class="browser flex flex-col h-full overflow-hidden border rounded-t-xl">
+        <div id="browser" class="browser flex h-full flex-col overflow-hidden rounded-t-xl border">
           @if (selectedEnvironment(); as environment) {
-            <div id="browser-toolbar" class="flex flex-wrap p-2 items-center gap-2 border-b">
+            <div id="browser-toolbar" class="flex flex-wrap items-center gap-2 border-b p-2">
               <button hlmBtn size="icon" variant="ghost" hlmTooltip="Reload" (click)="reloadEnvironment()">
                 <ng-icon hlm size="sm" name="lucideRefreshCcw" />
               </button>
               <div class="flex-grow">
-                <div class="min-w-80 w-full" hlmButtonGroup>
+                <div class="w-full min-w-80" hlmButtonGroup>
                   <div hlmButtonGroupText>
                     <label hlmLabel for="url">{{ environment.name }}</label>
                   </div>
@@ -266,7 +269,7 @@
                 </button>
               </hlm-toggle-group>
             </div>
-            <div id="browser-content" class="flex h-full overflow-auto justify-center-safe bg-secondary">
+            <div id="browser-content" class="bg-secondary flex h-full justify-center-safe overflow-auto">
               @if (iframeUrl(); as url) {
                 <iframe
                   id="previewId"
@@ -292,8 +295,8 @@
       [defaultSize]="settingsStore.editorEnabled() ? 40 : 100"
       [minSize]="25"
       [maxSize]="75"
-      class="overflow-hidden flex justify-around">
-      <div class="flex grow overflow-auto h-full flex-col min-w-96 max-w-5xl px-4 py-2 gap-4">
+      class="flex justify-around overflow-hidden">
+      <div class="flex h-full max-w-5xl min-w-96 grow flex-col gap-4 overflow-auto px-4 py-2">
         @if (rootSchema()) {
           <nav hlmBreadcrumb>
             <ol hlmBreadcrumbList>
@@ -323,7 +326,7 @@
               }
             </ol>
           </nav>
-          <div class="flex flex-col max-w-(--breakpoint-lg) overflow-y-auto">
+          <div class="flex max-w-(--breakpoint-lg) flex-col overflow-y-auto">
             <ll-content-document-schema-edit
               [data]="selectedDocumentData"
               [schemas]="schemas()"
@@ -366,7 +369,7 @@
     </hlm-sheet-header>
     <ng-scrollbar hlm>
       @if (showHistory()) {
-        <div class="flow-root m-4">
+        <div class="m-4 flow-root">
           <ul role="list">
             @for (item of history$ | async; track item.id; let isLast = $last) {
               <li>
@@ -381,12 +384,10 @@
                           <div>
                             <p class="text-sm">
                               Published by
-                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                                {{ item.name || 'Unknown' }}
-                              </span>
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
                             </p>
                           </div>
-                          <div class="whitespace-nowrap text-right text-sm">
+                          <div class="text-right text-sm whitespace-nowrap">
                             <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                           </div>
                         </div>
@@ -399,12 +400,10 @@
                           <div>
                             <p class="text-sm">
                               Unpublished by
-                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                                {{ item.name || 'Unknown' }}
-                              </span>
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
                             </p>
                           </div>
-                          <div class="whitespace-nowrap text-right text-sm">
+                          <div class="text-right text-sm whitespace-nowrap">
                             <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                           </div>
                         </div>
@@ -418,12 +417,10 @@
                             <p class="text-sm">
                               Created with name <span class="font-medium break-all">{{ item.cName }}</span> and slug
                               <span class="font-medium break-all">{{ item.cSlug }}</span> by
-                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                                {{ item.name || 'Unknown' }}
-                              </span>
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
                             </p>
                           </div>
-                          <div class="whitespace-nowrap text-right text-sm">
+                          <div class="text-right text-sm whitespace-nowrap">
                             <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                           </div>
                         </div>
@@ -453,12 +450,10 @@
                                 nothing
                               }
                               by
-                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                                {{ item.name || 'Unknown' }}
-                              </span>
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
                             </p>
                           </div>
-                          <div class="whitespace-nowrap text-right text-sm">
+                          <div class="text-right text-sm whitespace-nowrap">
                             <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                           </div>
                         </div>
@@ -470,11 +465,9 @@
                         <div class="flex min-w-0 flex-1 justify-between space-x-4">
                           <div>
                             <p class="text-sm">Unknown</p> by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                              {{ item.name || 'Unknown' }}
-                            </span>
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
                           </div>
-                          <div class="whitespace-nowrap text-right text-sm">
+                          <div class="text-right text-sm whitespace-nowrap">
                             <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
                           </div>
                         </div>

@@ -1,4 +1,4 @@
-<div class="p-2 flex items-center justify-end gap-2">
+<div class="flex items-center justify-end gap-2 p-2">
   <button hlmBtn variant="outline" (click)="addEnvironment()">
     <ng-icon hlm size="sm" name="lucidePlus" />
     Add Environment
@@ -19,7 +19,7 @@
   <form [formGroup]="form">
     <div
       hlmItemGroup
-      class="overflow-y-auto gap-2"
+      class="gap-2 overflow-y-auto"
       formArrayName="environments"
       cdkDropList
       (cdkDropListDropped)="environmentDropDrop($event)">

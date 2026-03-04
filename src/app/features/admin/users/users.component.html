@@ -1,4 +1,4 @@
-<div class="p-2 flex justify-end gap-2">
+<div class="flex justify-end gap-2 p-2">
   <button hlmBtn (click)="sync()" [disabled]="isSyncLoading()" hlmTooltip="Synchronize Users with Database">
     @if (isSyncLoading()) {
       <hlm-spinner class="size-4" />
@@ -19,7 +19,7 @@
   </hlm-progress>
 }
 
-<div class="px-2 mx-auto mt-3">
+<div class="mx-auto mt-3 px-2">
   <div>
     <mat-form-field appearance="fill">
       <mat-label>Filter</mat-label>
@@ -39,9 +39,7 @@
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element" class="break-all">
-        {{ element.displayName }}
-      </mat-cell>
+      <mat-cell *matCellDef="let element" class="break-all"> {{ element.displayName }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="active">
       <mat-header-cell *matHeaderCellDef> Active</mat-header-cell>

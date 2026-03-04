@@ -1,4 +1,4 @@
-<div class="p-2 flex items-center justify-end gap-2">
+<div class="flex items-center justify-end gap-2 p-2">
   @if ('SCHEMA_CREATE' | canUserPerform | async) {
     <button hlmBtn (click)="openAddDialog()">
       <ng-icon hlm size="sm" name="lucidePlus" />
@@ -33,10 +33,10 @@
     <hlm-progress-indicator />
   </hlm-progress>
 }
-<div class="px-2 mx-auto mt-3">
+<div class="mx-auto mt-3 px-2">
   <form [formGroup]="filterForm">
     <fieldset hlmFieldSet>
-      <div hlmFieldGroup class="grid grid-cols-4 gap-2 mb-3">
+      <div hlmFieldGroup class="mb-3 grid grid-cols-4 gap-2">
         <div hlmInputGroup>
           <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" />
           <div hlmInputGroupAddon>
@@ -52,7 +52,7 @@
               </button>
               @let labels = filterForm.controls.labels.value;
               @if (labels && labels.length > 0) {
-                <div class="flex items-center gap-1 px-2 border shadow-xs rounded-md">
+                <div class="flex items-center gap-1 rounded-md border px-2 shadow-xs">
                   <span hlmBadge variant="secondary">{{ labels.length }}</span>
                 </div>
               }

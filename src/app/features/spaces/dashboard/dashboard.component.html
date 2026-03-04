@@ -1,16 +1,16 @@
-<div class="p-2 flex items-center justify-end gap-2">
+<div class="flex items-center justify-end gap-2 p-2">
   @if ('SPACE_MANAGEMENT' | canUserPerform | async) {
     <button hlmBtn size="icon" variant="ghost" (click)="calculateOverview()">
       <ng-icon hlm size="sm" name="lucideRotateCw" />
     </button>
   }
 </div>
-<div class="px-2 mx-auto mt-3">
+<div class="mx-auto mt-3 px-2">
   @if (space(); as space) {
-    <div class="grid grid-rows-1 gap-4 max-w-7xl">
+    <div class="grid max-w-7xl grid-rows-1 gap-4">
       @if (space.overview; as overview) {
         <section id="overview">
-          <h3 class="text-base font-semibold leading-6">Overview</h3>
+          <h3 class="text-base leading-6 font-semibold">Overview</h3>
           <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             <section hlmCard>
               <div hlmCardHeader>
@@ -51,7 +51,7 @@
           </div>
         </section>
         <section id="storage">
-          <h3 class="text-base font-semibold leading-6">Storage</h3>
+          <h3 class="text-base leading-6 font-semibold">Storage</h3>
           <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             <section hlmCard>
               <div hlmCardHeader>
@@ -87,12 +87,11 @@
         </section>
         @if (space.progress; as progress) {
           <section id="translations">
-            <h3 class="text-base font-semibold leading-6">Translations</h3>
+            <h3 class="text-base leading-6 font-semibold">Translations</h3>
             @if (progress.translations) {
               <dl class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 @for (locale of space.locales; track locale.id) {
-                  @let translationsCount = overview.translationsCount;
-                  @let localeCount = progress.translations[locale.id] ?? 0;
+                  @let translationsCount = overview.translationsCount; @let localeCount = progress.translations[locale.id] ?? 0;
                   @let localeProgress = translationsCount === 0 || localeCount === 0 ? 0 : localeCount / translationsCount;
                   <section hlmCard>
                     <div hlmCardHeader>

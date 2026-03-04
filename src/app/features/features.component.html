@@ -8,9 +8,7 @@
         @if (appSettingsStore.ui(); as ui) {
           @if (ui.text) {
             <div class="flex justify-center">
-              <span [class]="appTextClass()">
-                {{ ui.text }}
-              </span>
+              <span [class]="appTextClass()"> {{ ui.text }} </span>
             </div>
           }
         }
@@ -122,7 +120,7 @@
             @if (latestRelease && latestRelease.tag_name > 'v' + version) {
               <li hlmSidebarMenuItem [hlmTooltip]="'A new version is available : ' + latestRelease.name">
                 <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
-                  <ng-icon hlm name="lucideShieldAlert" class="motion-safe:animate-pulse flash" />
+                  <ng-icon hlm name="lucideShieldAlert" class="flash motion-safe:animate-pulse" />
                   Version: {{ version }}
                 </button>
               </li>
@@ -182,7 +180,7 @@
   </hlm-sidebar>
   <main hlmSidebarInset>
     <header class="flex h-12 items-center justify-between border-b">
-      <div id="header-breadcrumbs" class="h-5 flex w-full items-center gap-2 px-4">
+      <div id="header-breadcrumbs" class="flex h-5 w-full items-center gap-2 px-4">
         <button hlmSidebarTrigger><span class="sr-only"></span></button>
         <hlm-separator orientation="vertical" />
         <nav hlmBreadcrumb>
@@ -207,7 +205,7 @@
           </ol>
         </nav>
       </div>
-      <div id="header-actions" class="flex gap-2 items-center px-4">
+      <div id="header-actions" class="flex items-center gap-2 px-4">
         @if (isDebug) {
           <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltip="App Settings" position="bottom">
             <ng-icon hlm name="lucideSettings" size="sm" />

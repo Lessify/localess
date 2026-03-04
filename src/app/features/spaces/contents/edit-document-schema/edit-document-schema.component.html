@@ -369,7 +369,7 @@
         @case ('SCHEMA') {
           <div hlmFieldGroup>
             <fieldset hlmFieldSet class="gap-2">
-              <legend hlmFieldLegend class="w-full flex justify-between">
+              <legend hlmFieldLegend class="flex w-full justify-between">
                 {{ field.displayName || field.name }}
                 <button
                   hlmBtn
@@ -415,7 +415,7 @@
                             <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
                           }
                         } @else {
-                          <div hlmItemTitle class="line-clamp-1 text-destructive">
+                          <div hlmItemTitle class="text-destructive line-clamp-1">
                             Schema with ID <b>#{{ item.schema }}</b> can't be found.
                           </div>
                         }
@@ -436,7 +436,7 @@
         @case ('SCHEMAS') {
           <div hlmFieldGroup>
             <fieldset hlmFieldSet class="gap-2">
-              <legend hlmFieldLegend class="w-full flex justify-between">
+              <legend hlmFieldLegend class="flex w-full justify-between">
                 {{ field.displayName || field.name }}
                 <button hlmBtn variant="ghost" size="sm" [hlmDropdownMenuTrigger]="menu" hlmTooltip="Add Schema at the end">
                   <ng-icon hlm size="sm" name="lucideCirclePlus" />
@@ -478,7 +478,7 @@
                             <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
                           }
                         } @else {
-                          <div hlmItemTitle class="line-clamp-1 text-destructive">
+                          <div hlmItemTitle class="text-destructive line-clamp-1">
                             Schema with ID <b>#{{ item.schema }}</b> can't be found.
                           </div>
                         }

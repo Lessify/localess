@@ -1,7 +1,7 @@
 <form [formGroup]="form()">
   <div hlmFieldGroup>
     <fieldset hlmFieldSet class="gap-2">
-      <legend hlmFieldLegend class="w-full flex justify-between">
+      <legend hlmFieldLegend class="flex w-full justify-between">
         <span>
           {{ component().displayName || component().name }}
           @if (component().translatable) {
@@ -31,7 +31,7 @@
                 <div hlmItemMedia variant="image">
                   <img
                     [llImagePreview]="2.5"
-                    class="border object-contain! image-bg rounded-sm!"
+                    class="image-bg rounded-sm! border object-contain!"
                     width="200"
                     height="200"
                     alt="thumbnail"
@@ -45,7 +45,7 @@
                 </div>
               }
               <div hlmItemContent class="min-w-0 overflow-hidden">
-                <div hlmItemTitle class="line-clamp-1 truncate w-full"> {{ asset.name }}{{ asset.extension }} </div>
+                <div hlmItemTitle class="line-clamp-1 w-full truncate"> {{ asset.name }}{{ asset.extension }} </div>
                 <p hlmItemDescription class="line-clamp-1 truncate">
                   {{ asset.size | formatFileSize }}
                   @if (asset.metadata; as metadata) {

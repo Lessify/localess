@@ -1,4 +1,4 @@
-<div class="p-2 flex items-center justify-end gap-2">
+<div class="flex items-center justify-end gap-2 p-2">
   @if (fileUploadQueue().length > 0) {
     <span hlmBadge class="h-6">
       <hlm-spinner />
@@ -43,7 +43,6 @@
       Create Folder
     </button>
   }
-
   @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
     <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
@@ -78,7 +77,7 @@
     <hlm-progress-indicator />
   </hlm-progress>
 }
-<div class="px-2 mx-auto mt-3">
+<div class="mx-auto mt-3 px-2">
   <nav hlmBreadcrumb class="p-2">
     <ol hlmBreadcrumbList>
       @for (pathItem of spaceStore.assetPath(); track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
@@ -93,9 +92,7 @@
           } @else if (isLast) {
             <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
           } @else {
-            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
-              {{ pathItem.name }}
-            </button>
+            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)"> {{ pathItem.name }} </button>
           }
         </li>
       }
@@ -122,13 +119,13 @@
           <mat-cell *matCellDef="let element">
             @if (element.kind === 'FILE' && filePreview(element.type)) {
               @if (element.inProgress) {
-                <div class="aspect-square w-full flex flex-col justify-center place-items-center">
+                <div class="flex aspect-square w-full flex-col place-items-center justify-center">
                   <hlm-spinner />
                   <span>Processing ...</span>
                 </div>
               } @else {
                 <img
-                  class="border object-contain rounded-sm image-bg"
+                  class="image-bg rounded-sm border object-contain"
                   width="200"
                   height="200"
                   loading="lazy"
@@ -258,10 +255,10 @@
     } @else {
       <div class="flex flex-row flex-wrap gap-4 pb-2">
         @for (item of dataSource.connect() | async; track item.id) {
-          <hlm-card class="min-w-48 max-w-60 pt-0 cursor-pointer overflow-hidden flex-1" (click)="onAssetSelect(item)">
+          <hlm-card class="max-w-60 min-w-48 flex-1 cursor-pointer overflow-hidden pt-0" (click)="onAssetSelect(item)">
             <div class="border-b">
               @if (item.kind === 'FILE' && item.inProgress) {
-                <div class="aspect-square w-full flex flex-col justify-center place-items-center">
+                <div class="flex aspect-square w-full flex-col place-items-center justify-center">
                   <hlm-spinner />
                   <span>Processing ...</span>
                 </div>
@@ -271,7 +268,7 @@
                     <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
                   }
                   <img
-                    class="aspect-square w-full object-contain bg-primary-foreground cursor-zoom-in"
+                    class="bg-primary-foreground aspect-square w-full cursor-zoom-in object-contain"
                     ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ item.id }}"
                     alt="thumbnail"
                     width="600"
@@ -280,17 +277,17 @@
                     [loaderParams]="{ thumbnail: true }" />
                 </div>
               } @else if (item.kind === 'FILE') {
-                <div class="relative aspect-square w-full bg-primary-foreground">
+                <div class="bg-primary-foreground relative aspect-square w-full">
                   @if (item.extension; as extension) {
                     <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
                   }
-                  <div class="w-full h-full flex items-center justify-center">
+                  <div class="flex h-full w-full items-center justify-center">
                     <ng-icon hlm size="xl" [name]="fileIcon(item.type)" />
                   </div>
                 </div>
               } @else {
-                <div class="relative aspect-square w-full bg-primary-foreground">
-                  <div class="w-full h-full flex items-center justify-center">
+                <div class="bg-primary-foreground relative aspect-square w-full">
+                  <div class="flex h-full w-full items-center justify-center">
                     <ng-icon hlm size="xl" name="lucideFolder" />
                   </div>
                 </div>
@@ -314,12 +311,10 @@
                     }
                   }
                 }
-                <p [hlmTooltip]="item.updatedAt?.toDate() | date: 'medium'">
-                  {{ item.updatedAt?.toDate() | date: 'mediumDate' }}
-                </p>
+                <p [hlmTooltip]="item.updatedAt?.toDate() | date: 'medium'"> {{ item.updatedAt?.toDate() | date: 'mediumDate' }} </p>
               </div>
             </hlm-card-header>
-            <hlm-card-footer class="gap-2 mt-auto justify-end">
+            <hlm-card-footer class="mt-auto justify-end gap-2">
               @if (item.kind === 'FILE') {
                 <button
                   hlmBtn

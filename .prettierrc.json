@@ -1,4 +1,5 @@
 {
+  "plugins": ["prettier-plugin-tailwindcss"],
   "tabWidth": 2,
   "useTabs": false,
   "singleQuote": true,
@@ -13,9 +14,9 @@
   "endOfLine": "auto",
   "overrides": [
     {
-      "files": "*.component.html",
+      "files": "*.html",
       "options": {
-        "parser": "angular"
+        "parser": "html"
       }
     },
     {
@@ -25,9 +26,9 @@
       }
     },
     {
-      "files": "*.html",
+      "files": "*.component.html",
       "options": {
-        "parser": "html"
+        "parser": "angular"
       }
     }
   ]

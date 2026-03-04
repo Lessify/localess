@@ -1,4 +1,4 @@
-<div class="p-2 flex items-center justify-end gap-2">
+<div class="flex items-center justify-end gap-2 p-2">
   <button hlmBtn (click)="openAddDialog()">
     <ng-icon hlm size="sm" name="lucidePlus" />
     Add Webhook
@@ -118,9 +118,7 @@
             </div>
             <div hlmItemContent class="truncate">
               <div hlmItemTitle>{{ item.webhookId }}</div>
-              <p hlmItemDescription>
-                {{ item.url }}
-              </p>
+              <p hlmItemDescription> {{ item.url }} </p>
             </div>
             <div hlmItemContent class="flex-none text-center">
               <p hlmItemDescription>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</p>

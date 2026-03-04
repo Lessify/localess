@@ -1,9 +1,7 @@
 <div hlmFieldGroup>
   <fieldset hlmFieldSet class="gap-2">
-    <legend hlmFieldLegend class="w-full flex justify-between">
-      <span>
-        {{ component().displayName || component().name }}
-      </span>
+    <legend hlmFieldLegend class="flex w-full justify-between">
+      <span> {{ component().displayName || component().name }} </span>
       <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add References" (click)="openReferenceSelectDialog()">
         <ng-icon hlm size="sm" name="lucideFileSymlink" />
       </button>
@@ -26,12 +24,10 @@
               }
             </div>
             <div hlmItemContent class="min-w-0 overflow-hidden">
-              <div hlmItemTitle class="line-clamp-1 truncate w-full">
+              <div hlmItemTitle class="line-clamp-1 w-full truncate">
                 {{ content.name }} <span class="accent-muted-foreground">#{{ content.slug }}</span>
               </div>
-              <p hlmItemDescription class="line-clamp-1 truncate">
-                {{ content.fullSlug }}
-              </p>
+              <p hlmItemDescription class="line-clamp-1 truncate"> {{ content.fullSlug }} </p>
             </div>
             <div role="none" hlmItemActions>
               <button hlmBtn size="icon" variant="outline" (click)="deleteReference(index)" hlmTooltip="Delete">

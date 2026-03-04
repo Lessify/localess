@@ -1,4 +1,4 @@
-<div class="container edit-array">
+<div class="edit-array container">
   <form [formGroup]="form">
     <ng-container formArrayName="values">
       @for (control of values.controls; track control; let i = $index) {

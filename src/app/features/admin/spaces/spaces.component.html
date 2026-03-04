@@ -1,4 +1,4 @@
-<div class="p-2 flex justify-end">
+<div class="flex justify-end p-2">
   <button hlmBtn (click)="openAddDialog()">
     <ng-icon hlm size="sm" name="lucidePlus" />
     Add Space
@@ -9,19 +9,15 @@
     <hlm-progress-indicator />
   </hlm-progress>
 }
-<div class="px-2 mx-auto mt-3">
+<div class="mx-auto mt-3 px-2">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="id">
       <mat-header-cell *matHeaderCellDef mat-sort-header="id"> ID</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        {{ element.id }}
-      </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.id }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        {{ element.name }}
-      </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.name }} </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
