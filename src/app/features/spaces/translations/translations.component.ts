@@ -113,6 +113,9 @@ import { TokenPermission } from '@shared/models/token.model';
   templateUrl: './translations.component.html',
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'captureKeyboard($event)',
+  },
   imports: [
     CommonModule,
     CanUserPerformPipe,
@@ -748,5 +751,18 @@ export class TranslationsComponent implements OnInit {
 
   copied() {
     this.notificationService.success(`Translation ID copied to clipboard.`);
+  }
+
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (event.key === 's' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      const selectedTranslation = this.selectedTranslation();
+      const selectedTargetLocale = this.selectedTargetLocale();
+      const selectedTranslationLocaleValue = this.selectedTranslationLocaleValue();
+      if (selectedTranslation) {
+        this.updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue);
+      }
+    }
   }
 }

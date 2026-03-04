@@ -79,9 +79,9 @@
           @case ('DOCUMENT') {
             @if (element.publishedAt === undefined) {
               <ll-status mode="offline" hlmTooltip="Not published" />
-            } @else if (element.publishedAt.seconds > element.updatedAt.seconds) {
+            } @else if (element.publishedAt.seconds > element.updatedAt?.seconds) {
               <ll-status mode="online" hlmTooltip="Published" />
-            } @else if (element.publishedAt.seconds < element.updatedAt.seconds) {
+            } @else if (element.publishedAt.seconds < element.updatedAt?.seconds) {
               <ll-status mode="away" hlmTooltip="Draft" />
             }
           }
