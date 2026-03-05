@@ -287,26 +287,35 @@ const translateLocale = onCall<TranslateLocaleData>(async request => {
   }
 
   const bulk = firestoreService.bulkWriter();
-  let counter = 0;
-  for (const doc of translationsSnapshot.docs) {
+  const candidates = translationsSnapshot.docs.filter(doc => {
     const translation = doc.data() as Translation;
     const sourceValue = translation.locales[sourceLocaleId];
     const targetValue = translation.locales[targetLocaleId];
-    // Skip if source value is empty or target value already exists
-    if (!sourceValue) continue;
-    if (targetValue) continue;
-    try {
-      const translatedValue = await translateWithGoogle(sourceValue, sourceLocaleId, targetLocaleId);
-      if (translatedValue) {
-        const update: UpdateData<Translation> = {
-          [`locales.${targetLocaleId}`]: translatedValue,
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        bulk.update(doc.ref, update);
-        counter++;
+    return sourceValue && !targetValue;
+  });
+
+  const results = await Promise.all(
+    candidates.map(async doc => {
+      const sourceValue = (doc.data() as Translation).locales[sourceLocaleId];
+      try {
+        const translatedValue = await translateWithGoogle(sourceValue, sourceLocaleId, targetLocaleId);
+        return { doc, translatedValue };
+      } catch (e) {
+        logger.error(`[translationsTranslateLocale] Failed to translate '${doc.id}': ${e}`);
+        return { doc, translatedValue: null };
       }
-    } catch (e) {
-      logger.error(`[translationsTranslateLocale] Failed to translate '${doc.id}': ${e}`);
+    })
+  );
+
+  let counter = 0;
+  for (const { doc, translatedValue } of results) {
+    if (translatedValue) {
+      const update: UpdateData<Translation> = {
+        [`locales.${targetLocaleId}`]: translatedValue,
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      bulk.update(doc.ref, update);
+      counter++;
     }
   }
   await bulk.close();
