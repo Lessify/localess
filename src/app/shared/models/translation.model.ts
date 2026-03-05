@@ -68,3 +68,9 @@ export interface TranslationUpdate {
   labels: string[];
   description: string;
 }
+
+export interface TranslateLocaleData {
+  spaceId: string;
+  sourceLocaleId: string;
+  targetLocaleId: string;
+}

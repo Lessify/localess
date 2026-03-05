@@ -140,3 +140,10 @@ export function isLinkContent(arg: any): arg is LinkContent {
 export function isReferenceContent(arg: any): arg is ReferenceContent {
   return arg.kind === 'REFERENCE';
 }
+
+export interface TranslateContentLocaleData {
+  spaceId: string;
+  contentId: string;
+  sourceLocaleId?: string;
+  targetLocaleId: string;
+}

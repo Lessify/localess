@@ -34,10 +34,12 @@ import {
   ContentFolderCreateFS,
   ContentKind,
   ContentUpdate,
+  TranslateContentLocaleData,
 } from '@shared/models/content.model';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
 
 @Injectable({ providedIn: 'root' })
 export class ContentService {
@@ -289,5 +291,15 @@ export class ContentService {
   unpublish(spaceId: string, id: string): Observable<void> {
     const contentUnpublish = httpsCallableData<{ spaceId: string; contentId: string }, void>(this.functions, 'content-unpublish');
     return contentUnpublish({ spaceId, contentId: id }).pipe(traceUntilFirst('Functions:Contents:unpublish'));
+  }
+
+  translateLocale(spaceId: string, contentId: string, sourceLocaleId: string, targetLocaleId: string): Observable<void> {
+    const translateLocale = httpsCallableData<TranslateContentLocaleData, void>(this.functions, 'content-translatelocale');
+    return translateLocale({
+      spaceId: spaceId,
+      contentId: contentId,
+      sourceLocaleId: sourceLocaleId !== CONTENT_DEFAULT_LOCALE.id ? sourceLocaleId : undefined,
+      targetLocaleId: targetLocaleId,
+    }).pipe(traceUntilFirst('Functions:Contents:publish'));
   }
 }

@@ -151,6 +151,15 @@
           </button>
         </hlm-dropdown-menu-group>
         <hlm-dropdown-menu-separator />
+        @if ('CONTENT_UPDATE' | canUserPerform | async) {
+          <hlm-dropdown-menu-group>
+            <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog()">
+              <ng-icon hlm size="sm" name="lucideLanguages" />
+              Translate Locale
+            </button>
+          </hlm-dropdown-menu-group>
+          <hlm-dropdown-menu-separator />
+        }
         <hlm-dropdown-menu-group>
           @for (locale of selectedSpace()?.locales; track locale.id) {
             <button hlmDropdownMenuItem (click)="openDraftV1InNewTab(locale.id)">
@@ -326,7 +335,7 @@
               }
             </ol>
           </nav>
-          <div class="flex max-w-(--breakpoint-lg) flex-col overflow-y-auto">
+          <div class="flex max-w-(--breakpoint-lg) flex-col overflow-x-hidden overflow-y-auto">
             <ll-content-document-schema-edit
               [data]="selectedDocumentData"
               [schemas]="schemas()"

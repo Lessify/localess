@@ -6,6 +6,7 @@ import { AuthData, canPerform } from './utils/user-auth-utils';
 import { BATCH_MAX, bucket, firestoreService } from './config';
 import {
   Content,
+  ContentData,
   ContentDocument,
   ContentDocumentStorage,
   ContentHistory,
@@ -13,7 +14,11 @@ import {
   ContentKind,
   PublishContentData,
   Schema,
+  SchemaComponent,
+  SchemaFieldKind,
+  SchemaType,
   Space,
+  TranslateContentLocaleData,
   UserPermission,
   WebHookEvent,
   WebHookPayload,
@@ -28,6 +33,7 @@ import {
   findSpaceById,
   spaceContentCachePath,
 } from './services';
+import { translateWithGoogle } from './services/translate.service';
 import { triggerWebHooksForEvent } from './utils/webhook-utils';
 
 // Publish
@@ -455,10 +461,110 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
   return;
 });
 
+/**
+ * Recursively collect translatable fields that have a source value but no target translation.
+ * Each task carries the source value and a setter that writes the translation directly into parsedData.
+ * @param {ContentData} data Parsed content data node (mutated in-place via setters)
+ * @param {Map<string, Schema>} schemas Schema map
+ * @param {string} sourceLocaleId Source locale identifier
+ * @param {string} targetLocaleId Target locale identifier
+ * @return {Array} List of { fieldName, sourceValue, setter } entries
+ */
+function collectTranslatableTasks(
+  data: ContentData,
+  schemas: Map<string, Schema>,
+  sourceLocaleId: string | undefined,
+  targetLocaleId: string
+): Array<{ fieldName: string; sourceValue: string; setter: (value: string) => void }> {
+  const tasks: Array<{ fieldName: string; sourceValue: string; setter: (value: string) => void }> = [];
+  const schema = schemas.get(data.schema);
+  if (!schema || (schema.type !== SchemaType.ROOT && schema.type !== SchemaType.NODE)) return tasks;
+
+  for (const field of (schema as SchemaComponent).fields || []) {
+    if (field.kind === SchemaFieldKind.SCHEMA) {
+      const nested: ContentData | undefined = data[field.name];
+      if (nested) {
+        tasks.push(...collectTranslatableTasks(nested, schemas, sourceLocaleId, targetLocaleId));
+      }
+    } else if (field.kind === SchemaFieldKind.SCHEMAS) {
+      const items: ContentData[] | undefined = data[field.name];
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          tasks.push(...collectTranslatableTasks(item, schemas, sourceLocaleId, targetLocaleId));
+        }
+      }
+    } else if (field.translatable) {
+      const targetKey = `${field.name}_i18n_${targetLocaleId}`;
+      const sourceValue: string | undefined = sourceLocaleId ? data[`${field.name}_i18n_${sourceLocaleId}`] : data[field.name];
+      const targetValue: string | undefined = data[targetKey];
+      if (sourceValue && !targetValue) {
+        tasks.push({ fieldName: field.name, sourceValue, setter: value => (data[targetKey] = value) });
+      }
+    }
+  }
+  return tasks;
+}
+
+// Translate Content Locale
+const translateLocale = onCall<TranslateContentLocaleData>(async request => {
+  logger.info('[Content::translateLocale] data: ' + JSON.stringify(request.data));
+  logger.info('[Content::translateLocale] context.auth: ' + JSON.stringify(request.auth));
+  const { auth, data } = request;
+  if (!canPerform(UserPermission.CONTENT_UPDATE, auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { spaceId, contentId, sourceLocaleId, targetLocaleId } = data;
+
+  const [contentSnapshot, schemasSnapshot] = await Promise.all([findContentById(spaceId, contentId).get(), findSchemas(spaceId).get()]);
+
+  if (!contentSnapshot.exists) {
+    logger.info(`[Content::translateLocale] Content ${contentId} does not exist.`);
+    throw new HttpsError('not-found', 'Content not found');
+  }
+
+  const document = contentSnapshot.data() as ContentDocument;
+  if (document.kind !== ContentKind.DOCUMENT || !document.data) {
+    logger.info(`[Content::translateLocale] Content ${contentId} has no translatable data.`);
+    return;
+  }
+
+  const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
+  const parsedData: ContentData = typeof document.data === 'string' ? JSON.parse(document.data) : document.data;
+  const tasks = collectTranslatableTasks(parsedData, schemas, sourceLocaleId, targetLocaleId);
+
+  if (tasks.length === 0) {
+    logger.info(`[Content::translateLocale] No translatable fields found for content ${contentId}.`);
+    return;
+  }
+
+  // Translate all fields concurrently
+  const results = await Promise.all(
+    tasks.map(async ({ fieldName, sourceValue, setter }) => {
+      try {
+        const translatedValue = await translateWithGoogle(sourceValue, sourceLocaleId, targetLocaleId);
+        return { fieldName, setter, translatedValue };
+      } catch (e) {
+        logger.error(`[Content::translateLocale] Failed to translate field '${fieldName}': ${e}`);
+        return { fieldName, setter, translatedValue: null };
+      }
+    })
+  );
+
+  // Apply translated values back into parsedData via setters, then persist as JSON string
+  let counter = 0;
+  for (const { setter, translatedValue } of results) {
+    if (translatedValue) {
+      setter(translatedValue);
+      counter++;
+    }
+  }
+  await contentSnapshot.ref.update({ data: JSON.stringify(parsedData), updatedAt: FieldValue.serverTimestamp() });
+  logger.info(`[Content::translateLocale] Successfully updated ${counter} fields for content ${contentId}.`);
+});
+
 export const content = {
   publish: publish,
   unpublish: unpublish,
   onupdate: onContentUpdate,
   ondelete: onContentDelete,
   onwrite: onContentWrite,
+  translatelocale: translateLocale,
 };

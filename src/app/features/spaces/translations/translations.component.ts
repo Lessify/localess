@@ -107,8 +107,11 @@ import { TranslationStringEditComponent } from './shared/components/translation-
 import { TranslationStringViewComponent } from './shared/components/translation-string-view/translation-string-view.component';
 import { TranslationNode } from './shared/models/translation.model';
 import { TokenPermission } from '@shared/models/token.model';
-import { LocaleTranslateDialogComponent } from './locale-translate-dialog/locale-translate-dialog.component';
-import { LocaleTranslateDialogModel, LocaleTranslateDialogReturn } from './locale-translate-dialog/locale-translate-dialog.model';
+import {
+  TranslateLocaleDialogComponent,
+  TranslateLocaleDialogModel,
+  TranslateLocaleDialogReturn,
+} from '@shared/components/translate-locale-dialog';
 
 @Component({
   selector: 'll-translations',
@@ -525,9 +528,9 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  openLocaleTranslateDialog(locales: Locale[]): void {
+  openTranslateLocaleDialog(locales: Locale[]): void {
     this.dialog
-      .open<LocaleTranslateDialogComponent, LocaleTranslateDialogModel, LocaleTranslateDialogReturn>(LocaleTranslateDialogComponent, {
+      .open<TranslateLocaleDialogComponent, TranslateLocaleDialogModel, TranslateLocaleDialogReturn>(TranslateLocaleDialogComponent, {
         panelClass: 'sm',
         data: {
           locales: locales,

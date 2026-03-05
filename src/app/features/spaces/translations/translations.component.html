@@ -49,7 +49,7 @@
       <hlm-dropdown-menu class="text-nowrap">
         @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
           <hlm-dropdown-menu-group>
-            <button hlmDropdownMenuItem (click)="openLocaleTranslateDialog(space.locales)">
+            <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog(space.locales)">
               <ng-icon hlm size="sm" name="lucideLanguages" />
               Translate Locale
             </button>

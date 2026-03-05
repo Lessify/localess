@@ -38,6 +38,7 @@ import {
   lucideFormInput,
   lucideFullscreen,
   lucideHistory,
+  lucideLanguages,
   lucidePencil,
   lucidePlus,
   lucideRefreshCcw,
@@ -87,6 +88,13 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { TokenPermission } from '@shared/models/token.model';
 import { ClipboardModule } from '@angular/cdk/clipboard';
+import {
+  TranslateLocaleDialogComponent,
+  TranslateLocaleDialogModel,
+  TranslateLocaleDialogReturn,
+} from '@shared/components/translate-locale-dialog';
+import { filter, switchMap } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -154,6 +162,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
       lucideEllipsis,
       lucideWebhookOff,
       lucideCopy,
+      lucideLanguages,
     }),
   ],
 })
@@ -164,6 +173,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   private readonly contentHistoryService = inject(ContentHistoryService);
   private readonly tokenService = inject(TokenService);
   private readonly notificationService = inject(NotificationService);
+  private readonly dialog = inject(MatDialog);
   private readonly contentHelperService = inject(ContentHelperService);
   private readonly sanitizer = inject(DomSanitizer);
   readonly fe = inject(FormErrorHandlerService);
@@ -649,5 +659,28 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   copiedFullSlug() {
     this.notificationService.success(`Full Slug copied to clipboard.`);
+  }
+
+  openTranslateLocaleDialog(): void {
+    this.dialog
+      .open<TranslateLocaleDialogComponent, TranslateLocaleDialogModel, TranslateLocaleDialogReturn>(TranslateLocaleDialogComponent, {
+        panelClass: 'sm',
+        data: {
+          locales: this.availableLocales(),
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.contentService.translateLocale(this.spaceId(), this.contentId(), it.sourceLocale, it.targetLocale)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Locale Translate run with success.');
+        },
+        error: () => {
+          this.notificationService.error('Locale Translate failed.');
+        },
+      });
   }
 }

@@ -127,3 +127,10 @@ export interface ContentDocumentExport extends Omit<ContentDocument, 'createdAt'
 }
 
 export type ContentExport = ContentDocumentExport | ContentFolderExport;
+
+export interface TranslateContentLocaleData {
+  spaceId: string;
+  contentId: string;
+  sourceLocaleId?: string;
+  targetLocaleId: string;
+}

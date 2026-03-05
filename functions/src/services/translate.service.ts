@@ -98,7 +98,7 @@ export async function translateCloud(content: string, sourceLocale: string | nul
  * @param {string | null} sourceLocale
  * @param {string} targetLocale
  */
-export async function translateWithGoogle(content: string, sourceLocale: string | null, targetLocale: string): Promise<string> {
+export async function translateWithGoogle(content: string, sourceLocale: string | undefined, targetLocale: string): Promise<string> {
   if (sourceLocale && !GCP_SUPPORT_LOCALES.has(sourceLocale)) {
     throw new HttpsError('invalid-argument', `Unsupported source locale : '${sourceLocale}'`);
   }
