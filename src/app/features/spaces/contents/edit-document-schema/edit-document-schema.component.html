@@ -128,7 +128,13 @@
         <!--MARKDOWN-->
         @case ('MARKDOWN') {
           @if (form.controls[field.name]; as control) {
-            <ll-markdown-editor [form]="control" [component]="field" [default]="isDefaultLocale() ? undefined : data[field.name]" />
+            <ll-markdown-editor
+              [data]="data"
+              [form]="control"
+              [component]="field"
+              [default]="isDefaultLocale() ? undefined : data[field.name]"
+              [selectedLocale]="selectedLocale()"
+              [availableLocales]="availableLocales()" />
           }
         }
         <!--NUMBER-->

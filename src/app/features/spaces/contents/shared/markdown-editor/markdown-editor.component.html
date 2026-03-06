@@ -30,6 +30,27 @@
           <ng-icon [name]="preview() ? 'lucideEyeOff' : 'lucideEye'" />
         </button>
         <hlm-separator orientation="vertical" class="h-4!" />
+        @if (field.translatable && !isDefaultLocale()) {
+          <button
+            hlmInputGroupButton
+            size="icon-xs"
+            [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false"
+            [hlmDropdownMenuTrigger]="translationMenu"
+            hlmTooltip="Translate the field with AI">
+            <ng-icon name="lucideLanguages" />
+          </button>
+          <ng-template #translationMenu>
+            <hlm-dropdown-menu>
+              @for (locale of availableLocales(); track locale.id) {
+                @if (locale.id !== selectedLocaleId()) {
+                  <button hlmDropdownMenuItem (click)="translate(field.name, locale.id, selectedLocaleId())">
+                    Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
+                  </button>
+                }
+              }
+            </hlm-dropdown-menu>
+          </ng-template>
+        }
       </div>
     </div>
     @if (field.maxLength) {
