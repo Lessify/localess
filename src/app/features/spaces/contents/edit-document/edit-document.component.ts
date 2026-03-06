@@ -672,6 +672,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         panelClass: 'sm',
         data: {
           locales: this.availableLocales(),
+          description: 'Save all your changes before running the Translation, otherwise you will lose all changes.',
         },
       })
       .afterClosed()

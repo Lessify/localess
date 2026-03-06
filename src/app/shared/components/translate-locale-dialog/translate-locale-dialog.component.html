@@ -31,6 +31,9 @@
     </div>
   </form>
 </mat-dialog-content>
+@if (data.description) {
+  <mat-dialog-content>{{ data.description }}</mat-dialog-content>
+}
 <mat-dialog-actions align="end" class="flex gap-2">
   <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
   <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid || form.value.sourceLocale === form.value.targetLocale">
