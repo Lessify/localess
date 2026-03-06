@@ -410,7 +410,7 @@
                   <button
                     hlmBtn
                     variant="outline"
-                    hlmTooltip="Save the changes (Ctrl/⌘ + S)"
+                    hlmTooltip="Save the changes"
                     [disabled]="
                       isLocaleUpdateLoading() || translation.locales[selectedTargetLocale().id] === selectedTranslationLocaleValue()
                     "
@@ -421,6 +421,7 @@
                       <ng-icon hlm size="sm" name="lucideSave" />
                     }
                     Save
+                    <kbd hlmKbd>{{ platformService.actionSaveLabel }}</kbd>
                   </button>
                 </div>
               }

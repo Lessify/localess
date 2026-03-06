@@ -69,6 +69,8 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { combineLatest } from 'rxjs';
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
+import { PlatformService } from '@shared/services/platform.service';
 
 @Component({
   selector: 'll-schema-edit-comp',
@@ -102,6 +104,7 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     BrnSelectImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
+    HlmKbdImports,
   ],
   providers: [
     provideIcons({
@@ -134,6 +137,7 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
   ],
 })
 export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
+  readonly platformService = inject(PlatformService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
@@ -205,7 +209,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
 
   captureKeyboard(event: KeyboardEvent): void {
     // Ctrl + S to Save
-    if (event.key === 's' && (event.metaKey || event.ctrlKey)) {
+    if (this.platformService.isActionSave(event)) {
       event.preventDefault();
       this.save();
     }

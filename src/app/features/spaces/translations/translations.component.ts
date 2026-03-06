@@ -112,6 +112,8 @@ import {
   TranslateLocaleDialogModel,
   TranslateLocaleDialogReturn,
 } from '@shared/components/translate-locale-dialog';
+import { PlatformService } from '@shared/services/platform.service';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 
 @Component({
   selector: 'll-translations',
@@ -155,6 +157,7 @@ import {
     HlmItemImports,
     HlmInputGroupImports,
     HlmSeparatorImports,
+    HlmKbdImports,
   ],
   providers: [
     provideIcons({
@@ -186,6 +189,7 @@ import {
   ],
 })
 export class TranslationsComponent implements OnInit {
+  readonly platformService = inject(PlatformService);
   private readonly translationService = inject(TranslationService);
   private readonly translateHistoryService = inject(TranslationHistoryService);
   private readonly localeService = inject(LocaleService);
@@ -783,7 +787,7 @@ export class TranslationsComponent implements OnInit {
 
   captureKeyboard(event: KeyboardEvent): void {
     // Ctrl + S to Save
-    if (event.key === 's' && (event.metaKey || event.ctrlKey)) {
+    if (this.platformService.isActionSave(event)) {
       event.preventDefault();
       const selectedTranslation = this.selectedTranslation();
       const selectedTargetLocale = this.selectedTargetLocale();

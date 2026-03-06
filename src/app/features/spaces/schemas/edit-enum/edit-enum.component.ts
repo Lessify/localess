@@ -31,6 +31,8 @@ import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
+import { PlatformService } from '@shared/services/platform.service';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 
 @Component({
   selector: 'll-schema-edit-enum',
@@ -59,6 +61,7 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
     HlmItemImports,
     HlmInputImports,
     HlmTextareaImports,
+    HlmKbdImports,
   ],
   providers: [
     provideIcons({
@@ -71,6 +74,7 @@ import { EditValueComponent } from '../shared/edit-value/edit-value.component';
   ],
 })
 export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
+  readonly platformService = inject(PlatformService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
@@ -137,7 +141,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
 
   captureKeyboard(event: KeyboardEvent): void {
     // Ctrl + S to Save
-    if (event.key === 's' && (event.metaKey || event.ctrlKey)) {
+    if (this.platformService.isActionSave(event)) {
       event.preventDefault();
       this.save();
     }

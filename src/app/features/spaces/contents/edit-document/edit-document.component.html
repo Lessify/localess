@@ -64,18 +64,14 @@
       </ng-template>
     }
     @if ('CONTENT_UPDATE' | canUserPerform | async) {
-      <button
-        hlmBtn
-        variant="default"
-        hlmTooltip="Save the changes (Ctrl/⌘ + S)"
-        [disabled]="isSaveLoading() || isPublishLoading()"
-        (click)="save()">
+      <button hlmBtn variant="default" hlmTooltip="Save the changes" [disabled]="isSaveLoading() || isPublishLoading()" (click)="save()">
         @if (isSaveLoading()) {
           <hlm-spinner class="size-4" />
         } @else {
           <ng-icon hlm size="sm" name="lucideSave" />
         }
         Save
+        <kbd hlmKbd>{{ platformService.actionSaveLabel }}</kbd>
       </button>
     }
     @if ('CONTENT_PUBLISH' | canUserPerform | async) {

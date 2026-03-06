@@ -95,6 +95,8 @@ import {
 } from '@shared/components/translate-locale-dialog';
 import { filter, switchMap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
+import { PlatformService } from '@shared/services/platform.service';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -135,6 +137,7 @@ import { MatDialog } from '@angular/material/dialog';
     HlmButtonGroupImports,
     HlmLabelImports,
     HlmAccordionImports,
+    HlmKbdImports,
   ],
   providers: [
     provideIcons({
@@ -168,6 +171,7 @@ import { MatDialog } from '@angular/material/dialog';
 })
 export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   private readonly router = inject(Router);
+  readonly platformService = inject(PlatformService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly contentService = inject(ContentService);
   private readonly contentHistoryService = inject(ContentHistoryService);
@@ -537,7 +541,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   captureKeyboard(event: KeyboardEvent): void {
     // Ctrl + S to Save
-    if (event.key === 's' && (event.metaKey || event.ctrlKey)) {
+    if (this.platformService.isActionSave(event)) {
       event.preventDefault();
       this.save();
     }
