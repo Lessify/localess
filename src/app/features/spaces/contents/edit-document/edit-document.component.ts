@@ -97,6 +97,7 @@ import { filter, switchMap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { PlatformService } from '@shared/services/platform.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -271,7 +272,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   constructor() {}
 
   ngOnInit(): void {
-    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId());
+    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId()).pipe(takeUntilDestroyed(this.destroyRef));
     const document = this.document();
     // Initialize document data
     if (document.kind === ContentKind.DOCUMENT) {
