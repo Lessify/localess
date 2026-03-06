@@ -35,6 +35,7 @@ import {
 } from './services';
 import { translateWithGoogle } from './services/translate.service';
 import { triggerWebHooksForEvent } from './utils/webhook-utils';
+import { isSchemaFieldKindAITranslatable } from './utils/translate.utils';
 
 // Publish
 const publish = onCall<PublishContentData>(async request => {
@@ -481,6 +482,9 @@ function collectTranslatableTasks(
   if (!schema || (schema.type !== SchemaType.ROOT && schema.type !== SchemaType.NODE)) return tasks;
 
   for (const field of (schema as SchemaComponent).fields || []) {
+    if (!isSchemaFieldKindAITranslatable(field.kind)) {
+      continue;
+    }
     if (field.kind === SchemaFieldKind.SCHEMA) {
       const nested: ContentData | undefined = data[field.name];
       if (nested) {
