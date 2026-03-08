@@ -19,5 +19,5 @@ export const environment = {
   emulator: {
     enabled: true,
   },
-  version: '2.6.0',
+  version: '3.0.0',
 };
