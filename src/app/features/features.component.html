@@ -110,16 +110,17 @@
         </li>
         @if (latestRelease && latestRelease.tag_name > 'v' + version) {
           <li hlmSidebarMenuItem [hlmTooltip]="'A new version is available : ' + latestRelease.name">
-            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
+            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v3#' + latestRelease.tag_name)">
               <ng-icon hlm name="lucideShieldAlert" class="flash motion-safe:animate-pulse" />
               Version: {{ version }}
             </button>
           </li>
         } @else {
           <li hlmSidebarMenuItem hlmTooltip="You are on the latest version.">
-            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2')">
+            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v3')">
               <ng-icon hlm name="lucideShieldCheck" />
               Version: {{ version }}
+              <ng-icon hlm name="lucideBellDot" class="text-destructive ml-auto"/>
             </button>
           </li>
         }

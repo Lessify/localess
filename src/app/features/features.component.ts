@@ -8,6 +8,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/ro
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
   lucideBadgeInfo,
+  lucideBellDot,
   lucideBookOpen,
   lucideChevronDown,
   lucideChevronsUpDown,
@@ -145,6 +146,7 @@ interface SideMenuItem {
       lucideSun,
       lucideCode,
       lucideBadgeInfo,
+      lucideBellDot,
     }),
   ],
 })
