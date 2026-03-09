@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
   </head>
-  <body class="mat-typography">
+  <body class="mat-typography bg-background">
     <ll-root></ll-root>
   </body>
   <script>
@@ -25,6 +25,7 @@
         document.documentElement.classList.remove('light');
         document.documentElement.classList.add('dark');
         document.documentElement.style.colorScheme = 'dark';
+        document.documentElement.setAttribute('data-theme', 'dark');
       }
     }
   </script>

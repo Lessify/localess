@@ -1,0 +1,5 @@
+@if (enableHighlighting()) {
+  <div [innerHTML]="highlightedText() | safeHtml"></div>
+} @else {
+  {{ value() }}
+}

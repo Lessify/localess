@@ -1,202 +1,47 @@
-# Localess Project Guidelines
+You are an expert in TypeScript, Angular, and scalable web application development. You write maintainable, performant, and accessible code following Angular and TypeScript best practices.
 
-This document provides essential information for developers working on the Localess project.
+## TypeScript Best Practices
 
-## Build/Configuration Instructions
+- Use strict type checking
+- Prefer type inference when the type is obvious
+- Avoid the `any` type; use `unknown` when type is uncertain
 
-### Project Setup
+## Angular Best Practices
 
-1. **Node.js Version**: This project requires Node.js version 20 as specified in both the root and functions package.json files.
+- Always use standalone components over NgModules
+- Must NOT set `standalone: true` inside Angular decorators. It's the default.
+- Use signals for state management
+- Implement lazy loading for feature routes
+- Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
+- Use `NgOptimizedImage` for all static images.
+  - `NgOptimizedImage` does not work for inline base64 images.
 
-2. **Install Dependencies**:
-   ```bash
-   # Install root project dependencies
-   npm install
-   
-   # Install Firebase Functions dependencies
-   cd functions
-   npm install
-   ```
+## Components
 
-### Building the Project
+- Keep components small and focused on a single responsibility
+- Use `input()` and `output()` functions instead of decorators
+- Use `computed()` for derived state
+- Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
+- Prefer inline templates for small components
+- Prefer Reactive forms instead of Template-driven ones
+- Do NOT use `ngClass`, use `class` bindings instead
+- Do NOT use `ngStyle`, use `style` bindings instead
 
-The project consists of an Angular frontend and Firebase Functions backend:
+## State Management
 
-#### Frontend (Angular)
+- Use signals for local component state
+- Use `computed()` for derived state
+- Keep state transformations pure and predictable
+- Do NOT use `mutate` on signals, use `update` or `set` instead
 
-```bash
-# Development build
-npm run build
+## Templates
 
-# Production build
-npm run build:prod
+- Keep templates simple and avoid complex logic
+- Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
+- Use the async pipe to handle observables
 
-# Docker configuration build
-npm run build:docker
-```
+## Services
 
-#### Backend (Firebase Functions)
-
-```bash
-# Build Firebase Functions
-cd functions
-npm run build
-```
-
-### Running the Project
-
-```bash
-# Start Angular development server with proxy configuration
-npm run start
-
-# Start Firebase emulators with data import/export
-npm run emulator
-
-# Start Firebase emulators with debug mode
-npm run emulator:debug
-```
-
-## Testing Information
-
-### Running Tests
-
-The project uses Karma and Jasmine for testing the Angular application:
-
-```bash
-# Run all tests
-npm run test
-
-# Run specific tests
-npm test -- --include=path/to/test.spec.ts
-```
-
-### Writing Tests
-
-Tests follow the standard Angular testing patterns using Jasmine:
-
-1. **File Naming**: Test files should be named with the `.spec.ts` suffix and placed alongside the file they are testing.
-
-2. **Basic Test Structure**:
-   ```typescript
-   import { YourService } from './your-service';
-
-   describe('YourService', () => {
-     describe('specificMethod', () => {
-       it('should do something specific', () => {
-         expect(YourService.specificMethod('input')).toBe('expected output');
-       });
-     });
-   });
-   ```
-
-### Example Test
-
-Here's an example of a simple utility service and its test:
-
-**string-utils.service.ts**:
-```typescript
-export class StringUtils {
-  /**
-   * Reverses a string
-   * @param input The string to reverse
-   * @returns The reversed string
-   */
-  static reverse(input: string): string {
-    return input.split('').reverse().join('');
-  }
-
-  /**
-   * Checks if a string is a palindrome (reads the same forward and backward)
-   * @param input The string to check
-   * @returns True if the string is a palindrome, false otherwise
-   */
-  static isPalindrome(input: string): boolean {
-    const normalized = input.toLowerCase().replace(/[^a-z0-9]/g, '');
-    return normalized === this.reverse(normalized);
-  }
-}
-```
-
-**string-utils.service.spec.ts**:
-```typescript
-import { StringUtils } from './string-utils.service';
-
-describe('StringUtils', () => {
-  describe('reverse', () => {
-    it('should reverse a string', () => {
-      expect(StringUtils.reverse('hello')).toBe('olleh');
-      expect(StringUtils.reverse('world')).toBe('dlrow');
-      expect(StringUtils.reverse('')).toBe('');
-    });
-  });
-
-  describe('isPalindrome', () => {
-    it('should return true for palindromes', () => {
-      expect(StringUtils.isPalindrome('racecar')).toBe(true);
-      expect(StringUtils.isPalindrome('A man, a plan, a canal: Panama')).toBe(true);
-      expect(StringUtils.isPalindrome('No lemon, no melon')).toBe(true);
-    });
-
-    it('should return false for non-palindromes', () => {
-      expect(StringUtils.isPalindrome('hello')).toBe(false);
-      expect(StringUtils.isPalindrome('world')).toBe(false);
-    });
-
-    it('should handle empty strings', () => {
-      expect(StringUtils.isPalindrome('')).toBe(true);
-    });
-  });
-});
-```
-
-## Additional Development Information
-
-### Code Style
-
-The project uses ESLint and Prettier for code formatting and linting:
-
-```bash
-# Lint the code
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Check formatting
-npm run prettier
-
-# Fix formatting issues
-npm run prettier:fix
-```
-
-### Angular Component Naming Conventions
-
-- **Component Selector Prefix**: All component selectors should use the `ll` prefix (e.g., `ll-my-component`).
-- **Component Selector Style**: Component selectors should use kebab-case.
-- **Directive Selector Prefix**: All directive selectors should use the `ll` prefix.
-- **Directive Selector Style**: Directive selectors should use camelCase.
-
-### Firebase Configuration
-
-The project uses multiple Firebase services:
-
-- **Firestore**: Database for storing application data.
-- **Hosting**: For hosting the Angular application.
-- **Functions**: Backend services written in TypeScript.
-- **Storage**: For storing files.
-
-Local development uses Firebase Emulators which can be started with `npm run emulator`.
-
-### Project Structure
-
-- **src/app**: Angular application code.
-- **functions/src**: Firebase Functions code.
-- **src/app/core**: Core functionality used throughout the application.
-- **src/app/shared**: Shared components, services, and utilities.
-
-### Path Aliases
-
-The project uses TypeScript path aliases for cleaner imports:
-
-- `@shared/*`: Maps to `src/app/shared/*`
-- `@core/*`: Maps to `src/app/core/*`
+- Design services around a single responsibility
+- Use the `providedIn: 'root'` option for singleton services
+- Use the `inject()` function instead of constructor injection

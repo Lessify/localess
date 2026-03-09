@@ -1,26 +1,14 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AnimateDirective } from '@shared/directives/animate.directive';
+import { provideIcons } from '@ng-icons/core';
+import { lucideArrowLeft, lucideCircleX, lucideGripVertical, lucideSave, lucideTrash } from '@ng-icons/lucide';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -29,38 +17,64 @@ import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
+import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
+import { PlatformService } from '@shared/services/platform.service';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 
 @Component({
   selector: 'll-schema-edit-enum',
   templateUrl: './edit-enum.component.html',
   styleUrl: './edit-enum.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'captureKeyboard($event)',
+  },
   imports: [
-    MatToolbarModule,
-    MatIconModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatTooltipModule,
-    MatProgressBarModule,
-    MatTabsModule,
+    HlmTabsImports,
     ReactiveFormsModule,
-    MatSidenavModule,
-    MatFormFieldModule,
-    MatListModule,
     DragDropModule,
-    MatInputModule,
-    MatDividerModule,
-    TextFieldModule,
-    MatChipsModule,
     MatExpansionModule,
     EditValueComponent,
-    AnimateDirective,
+    HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmSpinnerImports,
+    HlmTooltipImports,
+    HlmSheetImports,
+    HlmInputGroupImports,
+    HlmFieldImports,
+    HlmItemImports,
+    HlmInputImports,
+    HlmTextareaImports,
+    HlmKbdImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideSave,
+      lucideArrowLeft,
+      lucideTrash,
+      lucideGripVertical,
+      lucideCircleX,
+    }),
   ],
 })
 export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
+  readonly platformService = inject(PlatformService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
@@ -75,10 +89,10 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   entity?: Schema;
   schemas: Schema[] = [];
 
-  selectedFieldIdx?: number;
+  selectedFieldIdx = signal<number | undefined>(undefined);
 
   fieldReservedNames: string[] = [];
-  newFieldName = this.fb.control('', [...SchemaValidator.FIELD_OPTION_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
+  newFieldName = this.fb.control('', [...SchemaValidator.FIELD_ENUM_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
 
   //Loadings
   isLoading = signal(true);
@@ -125,8 +139,15 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
     return this.form.dirty;
   }
 
-  addLabel(event: MatChipInputEvent): void {
-    const { value, chipInput } = event;
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (this.platformService.isActionSave(event)) {
+      event.preventDefault();
+      this.save();
+    }
+  }
+
+  addLabel(value: string): void {
     if (value) {
       const labels = this.form.controls['labels'].value;
       if (labels instanceof Array) {
@@ -135,8 +156,6 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
         this.form.controls['labels'].setValue([value]);
       }
     }
-    chipInput.clear();
-    this.form.markAsDirty();
   }
 
   removeLabel(label: string): void {
@@ -181,7 +200,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   selectComponent(index: number) {
-    this.selectedFieldIdx = index;
+    this.selectedFieldIdx.set(index);
   }
 
   removeComponent(event: MouseEvent, index: number) {
@@ -206,10 +225,10 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
       this.values?.push(
         this.fb.group({
           name: this.fb.control(element.name, [
-            ...SchemaValidator.FIELD_OPTION_NAME,
+            ...SchemaValidator.FIELD_ENUM_NAME,
             CommonValidator.reservedName(this.fieldReservedNames, element.name),
           ]),
-          value: this.fb.control(element.value, SchemaValidator.FIELD_OPTION_VALUE),
+          value: this.fb.control(element.value, SchemaValidator.FIELD_ENUM_VALUE),
         }),
       );
       this.fieldReservedNames.push(element.name);
@@ -218,10 +237,10 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
       this.values?.push(
         this.fb.group({
           name: this.fb.control<string>(fieldName, [
-            ...SchemaValidator.FIELD_OPTION_NAME,
+            ...SchemaValidator.FIELD_ENUM_NAME,
             CommonValidator.reservedName(this.fieldReservedNames, fieldName),
           ]),
-          value: this.fb.control<string>(fieldName, SchemaValidator.FIELD_OPTION_VALUE),
+          value: this.fb.control<string>(fieldName, SchemaValidator.FIELD_ENUM_VALUE),
         }),
       );
       this.fieldReservedNames.push(fieldName);

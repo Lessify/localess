@@ -3,13 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SpaceEnvironment } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -17,7 +10,16 @@ import { SpaceService } from '@shared/services/space.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { filter } from 'rxjs/operators';
+import { provideIcons } from '@ng-icons/core';
+import { lucideGripVertical, lucidePlus, lucideSave, lucideTrash } from '@ng-icons/lucide';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 
 @Component({
   selector: 'll-space-settings-visual-editor',
@@ -25,16 +27,24 @@ import { filter } from 'rxjs/operators';
   styleUrls: ['./visual-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
-    MatIconModule,
-    MatButtonModule,
-    MatProgressBarModule,
     ReactiveFormsModule,
-    MatExpansionModule,
     DragDropModule,
-    MatFormFieldModule,
-    MatInputModule,
     CommonModule,
+    HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmItemImports,
+    HlmTooltipImports,
+    HlmFieldImports,
+    HlmInputImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideSave,
+      lucidePlus,
+      lucideTrash,
+      lucideGripVertical,
+    }),
   ],
 })
 export class VisualEditorComponent {

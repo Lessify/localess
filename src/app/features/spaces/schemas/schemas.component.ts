@@ -1,4 +1,3 @@
-import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -8,26 +7,32 @@ import {
   DestroyRef,
   inject,
   input,
-  model,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideCheck,
+  lucideCirclePlus,
+  lucideCloudDownload,
+  lucideEllipsisVertical,
+  lucideFileBox,
+  lucideList,
+  lucidePlus,
+  lucideReplace,
+  lucideSearch,
+  lucideTrash,
+  lucideUploadCloud,
+  lucideWorkflow,
+} from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
@@ -35,6 +40,19 @@ import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
+import { BrnPopoverImports } from '@spartan-ng/brain/popover';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
+import { HlmCommandImports } from '@spartan-ng/helm/command';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmPopoverImports } from '@spartan-ng/helm/popover';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { debounceTime } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
@@ -50,20 +68,40 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
-    MatIconModule,
-    MatTooltipModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatMenuModule,
-    MatProgressBarModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatTableModule,
     MatSortModule,
-    MatChipsModule,
     MatPaginatorModule,
+    ReactiveFormsModule,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmDropdownMenuImports,
+    HlmProgressImports,
+    HlmTooltipImports,
+    HlmBadgeImports,
+    HlmButtonGroupImports,
+    HlmCommandImports,
+    HlmFieldImports,
+    BrnPopoverImports,
+    HlmPopoverImports,
+    HlmInputGroupImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+      lucideEllipsisVertical,
+      lucideCloudDownload,
+      lucideUploadCloud,
+      lucideTrash,
+      lucideReplace,
+      lucideSearch,
+      lucideCirclePlus,
+      lucideCheck,
+      lucideList,
+      lucideFileBox,
+      lucideWorkflow,
+    }),
   ],
 })
 export class SchemasComponent implements OnInit {
@@ -73,6 +111,7 @@ export class SchemasComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly fb = inject(FormBuilder);
 
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
@@ -93,9 +132,13 @@ export class SchemasComponent implements OnInit {
   // Loading
   isLoading = true;
 
-  // Filter
-  currentLabel = model('');
-  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
+  // Form
+  filterForm = this.fb.group({
+    search: this.fb.control<string>('', []),
+    labels: this.fb.control<string[]>([], []),
+  });
+
+  //Labels
   allLabels = computed(() => {
     const tmp = this.schemas()
       .map(it => it.labels)
@@ -104,18 +147,14 @@ export class SchemasComponent implements OnInit {
       .map(it => it!);
     return [...new Set<string>(tmp)];
   });
-  filterLabels = signal<string[]>([]);
-  filteredLabels = computed(() => {
-    const currentLabel = this.currentLabel()?.toLowerCase() || '';
-    return currentLabel
-      ? this.allLabels()
-          .filter(label => !this.filterLabels().includes(label))
-          .filter(label => label.toLowerCase().includes(currentLabel))
-      : this.allLabels().filter(label => !this.filterLabels().includes(label));
-  });
 
   ngOnInit(): void {
     this.loadData(this.spaceId());
+    this.filterForm.valueChanges.pipe(debounceTime(500)).subscribe({
+      next: value => {
+        this.dataSource.filter = JSON.stringify(value);
+      },
+    });
   }
 
   loadData(spaceId: string): void {
@@ -135,22 +174,31 @@ export class SchemasComponent implements OnInit {
       });
   }
 
-  applyFilter(event: KeyboardEvent): void {
-    this.dataSource.filter = (event.target as HTMLInputElement).value.toLowerCase();
-  }
-
   schemaFilterPredicate(data: Schema, filter: string): boolean {
-    if (data.id.toLowerCase().includes(filter)) {
+    console.log('schemaFilterPredicate', filter);
+    const { search, labels } = JSON.parse(filter);
+    // if search is empty and no labels are selected, return true
+    if ((!search || search.trim() === '') && (!labels || labels.length === 0)) {
       return true;
     }
-    if (data.displayName?.toLowerCase().includes(filter)) {
+    // if labels are selected, check if at least one label matches
+    const matchSomeLabel = Array.isArray(labels) ? labels.some((label: string) => data.labels?.includes(label)) : undefined;
+    if (labels && labels.length > 0 && !matchSomeLabel) {
+      return false;
+    }
+    // if search is empty, return true (labels already matched)
+    if (!search || search.trim() === '') {
       return true;
     }
-    if (data.description?.toLowerCase().includes(filter)) {
+    const searchLower = search.toLowerCase();
+    if (data.id.toLowerCase().includes(searchLower)) {
       return true;
     }
-    if (data.labels && data.labels.length > 0) {
-      return data.labels.some(label => label.toLowerCase().includes(filter));
+    if (data.displayName?.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    if (data.description?.toLowerCase().includes(searchLower)) {
+      return true;
     }
     return false;
   }
@@ -310,17 +358,24 @@ export class SchemasComponent implements OnInit {
             }
           } else if (field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) {
             const fieldEnum = field.source;
-            if (fieldEnum !== 'self') {
-              if (result[fieldEnum]) {
-                result[fieldEnum].push(schema.id);
-              } else {
-                result[fieldEnum] = [schema.id];
-              }
+            if (result[fieldEnum]) {
+              result[fieldEnum].push(schema.id);
+            } else {
+              result[fieldEnum] = [schema.id];
             }
           }
         }
       }
     }
     return result;
+  }
+
+  selectLabel(label: string): void {
+    const current = this.filterForm.controls.labels.value || [];
+    if (current.includes(label)) {
+      this.filterForm.controls.labels.setValue(current.filter(l => l !== label));
+    } else {
+      this.filterForm.controls.labels.setValue([...current, label]);
+    }
   }
 }

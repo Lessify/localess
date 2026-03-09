@@ -1,47 +1,97 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatChipsModule } from '@angular/material/chips';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTreeModule } from '@angular/material/tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideArrowRight,
+  lucideCheck,
+  lucideChevronDown,
+  lucideChevronRight,
+  lucideCirclePlus,
+  lucideCircleQuestionMark,
+  lucideCircleSmall,
+  lucideCloudDownload,
+  lucideCopy,
+  lucideEarth,
+  lucideEllipsisVertical,
+  lucideExternalLink,
+  lucideHistory,
+  lucideLanguages,
+  lucideLayoutList,
+  lucideListTree,
+  lucidePencil,
+  lucidePlus,
+  lucideReplace,
+  lucideSave,
+  lucideSearch,
+  lucideTrash,
+  lucideUpload,
+  lucideUploadCloud,
+} from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { StatusComponent } from '@shared/components/status';
-import { AnimateDirective } from '@shared/directives/animate.directive';
-import { Locale } from '@shared/models/locale.model';
-import { Space } from '@shared/models/space.model';
+import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { TranslationHistory } from '@shared/models/translation-history.model';
-import { Translation, TranslationCreate, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
+import {
+  isLocaleStatus,
+  isTranslationStatus,
+  LocaleStatus,
+  Translation,
+  TranslationCreate,
+  TranslationStatus,
+  TranslationUpdate,
+} from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { SpaceService } from '@shared/services/space.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { EMPTY, Observable } from 'rxjs';
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { SpaceStore } from '@shared/stores/space.store';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
+import { HlmCommandImports } from '@spartan-ng/helm/command';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmPopoverImports } from '@spartan-ng/helm/popover';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { NgScrollbarModule } from 'ngx-scrollbar';
+import { debounceTime, EMPTY, Observable } from 'rxjs';
+import { filter, switchMap } from 'rxjs/operators';
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
@@ -49,37 +99,34 @@ import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { TranslationArrayEditComponent } from './shared/components/translation-array-edit/translation-array-edit.component';
+import { TranslationArrayViewComponent } from './shared/components/translation-array-view/translation-array-view.component';
+import { TranslationPluralEditComponent } from './shared/components/translation-plural-edit/translation-plural-edit.component';
+import { TranslationPluralViewComponent } from './shared/components/translation-plural-view/translation-plural-view.component';
+import { TranslationStringEditComponent } from './shared/components/translation-string-edit/translation-string-edit.component';
+import { TranslationStringViewComponent } from './shared/components/translation-string-view/translation-string-view.component';
 import { TranslationNode } from './shared/models/translation.model';
-import { TranslationArrayEditComponent } from './translation-array-edit/translation-array-edit.component';
-import { TranslationArrayViewComponent } from './translation-array-view/translation-array-view.component';
-import { TranslationPluralEditComponent } from './translation-plural-edit/translation-plural-edit.component';
-import { TranslationPluralViewComponent } from './translation-plural-view/translation-plural-view.component';
-import { TranslationStringEditComponent } from './translation-string-edit/translation-string-edit.component';
-import { TranslationStringViewComponent } from './translation-string-view/translation-string-view.component';
+import { TokenPermission } from '@shared/models/token.model';
+import {
+  TranslateLocaleDialogComponent,
+  TranslateLocaleDialogModel,
+  TranslateLocaleDialogReturn,
+} from '@shared/components/translate-locale-dialog';
+import { PlatformService } from '@shared/services/platform.service';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 
 @Component({
   selector: 'll-translations',
   templateUrl: './translations.component.html',
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'captureKeyboard($event)',
+  },
   imports: [
     CommonModule,
-    MatToolbarModule,
-    MatIconModule,
     CanUserPerformPipe,
-    MatButtonModule,
-    MatTooltipModule,
-    MatMenuModule,
-    MatDividerModule,
-    MatProgressBarModule,
-    MatSidenavModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
     ReactiveFormsModule,
-    MatChipsModule,
-    FormsModule,
-    MatAutocompleteModule,
     ScrollingModule,
     StatusComponent,
     TranslationStringViewComponent,
@@ -89,16 +136,63 @@ import { TranslationStringViewComponent } from './translation-string-view/transl
     TranslationPluralEditComponent,
     TranslationArrayEditComponent,
     ClipboardModule,
-    AnimateDirective,
-    MatButtonToggleModule,
     MatTreeModule,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmTooltipImports,
+    HlmDropdownMenuImports,
+    HlmToggleGroupImports,
+    HlmProgressImports,
+    HlmSheetImports,
+    HlmScrollAreaImports,
+    NgScrollbarModule,
+    HlmSpinnerImports,
+    HlmSelectImports,
+    BrnSelectImports,
+    HlmFieldImports,
+    HlmPopoverImports,
+    HlmCommandImports,
+    HlmButtonGroupImports,
+    HlmBadgeImports,
+    HlmItemImports,
+    HlmInputGroupImports,
+    HlmSeparatorImports,
+    HlmKbdImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+      lucideCirclePlus,
+      lucideCheck,
+      lucideEllipsisVertical,
+      lucideCloudDownload,
+      lucideUploadCloud,
+      lucideUpload,
+      lucideHistory,
+      lucideEarth,
+      lucideExternalLink,
+      lucideLayoutList,
+      lucideListTree,
+      lucideSearch,
+      lucideCircleSmall,
+      lucideReplace,
+      lucidePencil,
+      lucideTrash,
+      lucideCopy,
+      lucideSave,
+      lucideArrowRight,
+      lucideLanguages,
+      lucideCircleQuestionMark,
+      lucideChevronRight,
+      lucideChevronDown,
+    }),
   ],
 })
 export class TranslationsComponent implements OnInit {
+  readonly platformService = inject(PlatformService);
   private readonly translationService = inject(TranslationService);
   private readonly translateHistoryService = inject(TranslationHistoryService);
   private readonly localeService = inject(LocaleService);
-  private readonly spaceService = inject(SpaceService);
   private readonly taskService = inject(TaskService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
@@ -110,24 +204,36 @@ export class TranslationsComponent implements OnInit {
   // Input
   spaceId = input.required<string>();
 
-  selectedSpace?: Space;
-  showHistory = false;
+  // Form
+  filterForm = this.fb.group({
+    locale: this.fb.control<string>('', [Validators.required]),
+    search: this.fb.control<string>('', []),
+    labels: this.fb.control<string[]>([], []),
+    states: this.fb.control<(TranslationStatus | LocaleStatus)[]>([], []),
+  });
+  $filterForm = toSignal(this.filterForm.valueChanges.pipe(debounceTime(500)));
 
-  DEFAULT_LOCALE = 'en';
+  selectedSpace = computed(() => this.spaceStore.selectedSpace());
+  showHistory = signal(false);
 
+  // Translations
   translations = signal<Translation[]>([]);
-  translationsFiltered = computed(() =>
-    this.filterTranslations(this.translations(), this.searchValue(), this.selectedSearchLocale(), this.filterLabels()),
-  );
+  translationsFiltered = computed(() => {
+    const form = this.$filterForm();
+    return this.filterTranslations(
+      this.translations(),
+      form?.locale || 'en',
+      form?.search || '',
+      form?.labels || [],
+      form?.states?.filter(it => isTranslationStatus(it)) || [],
+      form?.states?.filter(it => isLocaleStatus(it)) || [],
+    );
+  });
   translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
   translationIds = computed(() => this.translations().map(it => it.id));
   translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.id, it])));
-  //Search
-  searchValue = signal('');
 
   //Labels
-  currentLabel = signal('');
-  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
   allLabels = computed(() => {
     const tmp = this.translations()
       .map(it => it.labels)
@@ -136,29 +242,36 @@ export class TranslationsComponent implements OnInit {
       .map(it => it!);
     return [...new Set<string>(tmp)];
   });
-  filterLabels = signal<string[]>([]);
-  filteredLabels = computed(() => {
-    const currentLabel = this.currentLabel().toLowerCase();
-    if (currentLabel) {
-      return this.allLabels()
-        .filter(label => !this.filterLabels().includes(label))
-        .filter(label => label.toLowerCase().includes(currentLabel));
-    }
-    return this.allLabels().filter(label => !this.filterLabels().includes(label));
+  allTranslationStates = [TranslationStatus.TRANSLATED, TranslationStatus.PARTIALLY_TRANSLATED, TranslationStatus.UNTRANSLATED];
+  translationStatesDictionary: Record<TranslationStatus, string> = {
+    [TranslationStatus.TRANSLATED]: 'Translated',
+    [TranslationStatus.PARTIALLY_TRANSLATED]: 'Partially Translated',
+    [TranslationStatus.UNTRANSLATED]: 'Untranslated',
+  };
+  allLocaleStates = [LocaleStatus.TRANSLATED, LocaleStatus.UNTRANSLATED];
+  localeStatesDictionary: Record<LocaleStatus, string> = {
+    [LocaleStatus.TRANSLATED]: 'Translated',
+    [LocaleStatus.UNTRANSLATED]: 'Untranslated',
+  };
+
+  selectedTranslation = signal<Translation | undefined>(undefined);
+  selectedTranslationLocaleValue = linkedSignal(() => {
+    return this.selectedTranslation()?.locales[this.selectedTargetLocale().id] || '';
   });
 
-  selectedTranslation?: Translation;
-  selectedTranslationLocaleValue?: string;
-
-  selectedSearchLocale = signal('');
-  selectedSourceLocale = signal('');
-  selectedTargetLocale = signal('');
+  selectedSourceLocale = linkedSignal(() => {
+    const space = this.selectedSpace();
+    return space ? space.localeFallback : TRANSLATION_DEFAULT_LOCALE;
+  });
+  selectedTargetLocale = linkedSignal(() => {
+    const space = this.selectedSpace();
+    return space ? space.localeFallback : TRANSLATION_DEFAULT_LOCALE;
+  });
 
   availableToken?: string = undefined;
 
   // Subscriptions
   history$?: Observable<TranslationHistory[]>;
-  space$?: Observable<Space>;
 
   //Loadings
   isLoading = signal(true);
@@ -171,6 +284,7 @@ export class TranslationsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
+  spaceStore = inject(SpaceStore);
 
   // Tree features
   childrenAccessor = (node: TranslationNode) => node.children ?? [];
@@ -178,23 +292,19 @@ export class TranslationsComponent implements OnInit {
   trackBy = (_: number, node: TranslationNode) => this.expansionKey(node);
   expansionKey = (node: TranslationNode) => node.key;
 
+  constructor() {
+    effect(() => {
+      const space = this.selectedSpace();
+      if (space) {
+        if (this.filterForm.value.locale === '') {
+          this.filterForm.patchValue({ locale: space.localeFallback.id });
+        }
+      }
+    });
+  }
+
   ngOnInit(): void {
-    this.space$ = this.spaceService.findById(this.spaceId()).pipe(
-      tap(space => {
-        this.selectedSpace = space;
-        //this.locales = space.locales;
-        if (this.selectedSearchLocale() === '') {
-          this.selectedSearchLocale.set(space.localeFallback.id);
-        }
-        if (this.selectedSourceLocale() === '') {
-          this.selectedSourceLocale.set(space.localeFallback.id);
-        }
-        if (this.selectedTargetLocale() === '') {
-          this.selectedTargetLocale.set(space.localeFallback.id);
-        }
-      }),
-      takeUntilDestroyed(this.destroyRef),
-    );
+    this.filterForm.valueChanges.subscribe(value => console.log(value));
     this.translationService
       .findAll(this.spaceId())
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -202,8 +312,8 @@ export class TranslationsComponent implements OnInit {
         next: translations => {
           this.translations.set(translations);
           if (translations.length > 0) {
-            if (this.selectedTranslation) {
-              const tr = translations.find(it => it.id === this.selectedTranslation?.id);
+            if (this.selectedTranslation()) {
+              const tr = translations.find(it => it.id === this.selectedTranslation()?.id);
               if (tr) {
                 this.selectTranslation(tr);
               } else {
@@ -238,6 +348,8 @@ export class TranslationsComponent implements OnInit {
   }
 
   openAddDialog(): void {
+    const space = this.selectedSpace();
+    if (!space) return;
     this.dialog
       .open<AddDialogComponent, AddDialogModel, AddDialogReturnModel>(AddDialogComponent, {
         panelClass: 'sm',
@@ -252,7 +364,7 @@ export class TranslationsComponent implements OnInit {
           const tc: TranslationCreate = {
             id: it!.id,
             type: it!.type,
-            locale: this.selectedSpace!.localeFallback.id,
+            locale: space.localeFallback.id,
             value: it!.value,
             labels: it?.labels,
             description: it?.description,
@@ -420,13 +532,48 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  filterTranslations(items: Translation[], filter: string, locale: string, labels: string[]): Translation[] {
-    const lcFilter = filter.toLowerCase();
-    if (!items || (!filter && !labels.length)) {
+  openTranslateLocaleDialog(locales: Locale[]): void {
+    this.dialog
+      .open<TranslateLocaleDialogComponent, TranslateLocaleDialogModel, TranslateLocaleDialogReturn>(TranslateLocaleDialogComponent, {
+        panelClass: 'sm',
+        data: {
+          locales: locales,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.translationService.translateLocale(this.spaceId(), it.sourceLocale, it.targetLocale)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Locale Translate run with success.');
+        },
+        error: () => {
+          this.notificationService.error('Locale Translate failed.');
+        },
+      });
+  }
+
+  filterTranslations(
+    items: Translation[],
+    locale: string,
+    search: string,
+    labels: string[],
+    translationStates: TranslationStatus[],
+    localeStates: LocaleStatus[],
+  ): Translation[] {
+    console.log('Filtering translations', locale, search, labels, translationStates, localeStates);
+    const lcFilter = search.trim().toLowerCase();
+    if (!items || (!search && !labels.length && !translationStates.length && !localeStates.length)) {
       return items;
     }
     return items.filter(it => {
-      const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.every(label => it.labels?.includes(label)));
+      const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.some(label => it.labels?.includes(label)));
+      const matchByTranslationStatus = !translationStates.length || translationStates.includes(this.identifyTranslationStatus(it));
+      const matchByLocaleStatus = !localeStates.length || localeStates.includes(this.identifyLocaleStatus(it, locale));
+      if (!matchByTranslationStatus) return false;
+      if (!matchByLocaleStatus) return false;
       if (it.id.toLowerCase().includes(lcFilter) && matchByLabel) {
         return true;
       } else {
@@ -437,6 +584,19 @@ export class TranslationsComponent implements OnInit {
         return false;
       }
     });
+  }
+
+  filterReset(): void {
+    this.filterForm.patchValue({
+      search: '',
+      labels: [],
+      states: [],
+    });
+  }
+
+  isFormChanged(): boolean {
+    const { search, states, labels } = this.filterForm.value;
+    return search !== '' || (labels && labels.length > 0) || (states && states.length > 0) || false;
   }
 
   buildTranslationTree(translations: Translation[]): TranslationNode[] {
@@ -465,18 +625,13 @@ export class TranslationsComponent implements OnInit {
   }
 
   selectTranslation(translation: Translation): void {
-    this.selectedTranslation = translation;
-    this.selectedTranslationLocaleValue = this.selectedTranslation.locales[this.selectedTargetLocale()];
+    this.selectedTranslation.set(translation);
   }
 
-  selectTargetLocale(): void {
-    this.selectedTranslationLocaleValue = this.selectedTranslation?.locales[this.selectedTargetLocale()];
-  }
-
-  updateLocale(transaction: Translation, locale: string, value: string): void {
+  updateLocale(transaction: Translation, locale: Locale, value: string): void {
     this.isLocaleUpdateLoading.set(true);
     this.translationUpdateId.set(transaction.id);
-    this.translationService.updateLocale(this.spaceId(), transaction.id, locale, value).subscribe({
+    this.translationService.updateLocale(this.spaceId(), transaction.id, locale.id, value).subscribe({
       next: () => {
         this.notificationService.success('Translation has been updated.');
       },
@@ -494,43 +649,65 @@ export class TranslationsComponent implements OnInit {
   }
 
   // Labels
-  selectLabel(event: MatAutocompleteSelectedEvent): void {
-    const { option } = event;
-    this.filterLabels.update(it => [...it, option.viewValue]);
-    this.currentLabel.set('');
-    option.deselect();
-    this.selectedTranslation = undefined;
+  compareLocale(a: Locale, b: Locale): boolean {
+    return a.id === b.id;
   }
 
-  removeLabel(label: string): void {
-    this.filterLabels.update(it => {
-      const idx = it.indexOf(label);
-      if (idx < 0) {
-        return it;
-      }
-      it.splice(idx, 1);
-      return [...it];
-    });
-    this.selectedTranslation = undefined;
+  selectLabel(label: string): void {
+    const current = this.filterForm.controls.labels.value || [];
+    if (current.includes(label)) {
+      this.filterForm.controls.labels.setValue(current.filter(l => l !== label));
+    } else {
+      this.filterForm.controls.labels.setValue([...current, label]);
+    }
   }
 
-  openApiV1InNewTab(locale: string, token: string): void {
+  selectState(state: TranslationStatus | LocaleStatus): void {
+    const current = this.filterForm.controls.states.value || [];
+    if (current.includes(state)) {
+      this.filterForm.controls.states.setValue(current.filter(l => l !== state));
+    } else {
+      this.filterForm.controls.states.setValue([...current, state]);
+    }
+  }
+
+  openApiV1InNewTab(locale: string, token: string, version?: 'draft'): void {
     const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/translations/${locale}`);
+    if (version) {
+      url.searchParams.set('version', version);
+    }
     url.searchParams.set('token', token);
     window.open(url, '_blank');
+  }
+
+  openDraftV1InNewTab(locale: string): void {
+    if (this.availableToken) {
+      this.openApiV1InNewTab(locale, this.availableToken, 'draft');
+    } else {
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.TRANSLATION_DRAFT).subscribe({
+        next: tokens => {
+          if (tokens.length === 1) {
+            this.availableToken = tokens[0].id;
+            this.openApiV1InNewTab(locale, this.availableToken, 'draft');
+          } else {
+            this.notificationService.error('Please create Access Token with Translation Draft Permission in your Space Settings');
+          }
+        },
+      });
+    }
   }
 
   openPublishedV1InNewTab(locale: string): void {
     if (this.availableToken) {
       this.openApiV1InNewTab(locale, this.availableToken);
     } else {
-      this.tokenService.findFirst(this.spaceId()).subscribe({
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.TRANSLATION_PUBLIC).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
             this.availableToken = tokens[0].id;
             this.openApiV1InNewTab(locale, this.availableToken);
           } else {
-            this.notificationService.error('Please create Access Token in your Space Settings');
+            this.notificationService.error('Please create Access Token with Translation Public Permission in your Space Settings');
           }
         },
       });
@@ -541,14 +718,15 @@ export class TranslationsComponent implements OnInit {
     this.isTranslateLoading.set(true);
     this.translateService
       .translate({
-        content: this.selectedTranslation?.locales[this.selectedSourceLocale()] || '',
-        sourceLocale: this.selectedSourceLocale(),
-        targetLocale: this.selectedTargetLocale(),
+        content: this.selectedTranslation()?.locales[this.selectedSourceLocale().id] || '',
+        sourceLocale: this.selectedSourceLocale().id,
+        targetLocale: this.selectedTargetLocale().id,
       })
       .subscribe({
         next: value => {
+          console.log('[translate]', value);
           // make sure the component is updated
-          this.selectedTranslationLocaleValue = value;
+          this.selectedTranslationLocaleValue.set(value);
           this.notificationService.success('Translated');
         },
         error: (err: unknown) => {
@@ -570,15 +748,16 @@ export class TranslationsComponent implements OnInit {
       });
   }
 
-  isLocaleTranslatable(sourceLocale: string, targetLocale: string): boolean {
-    if (sourceLocale === targetLocale) {
+  isLocaleTranslatable(sourceLocale: Locale, targetLocale: Locale): boolean {
+    if (sourceLocale.id === targetLocale.id) {
       return false;
     }
-    return this.localeService.isLocaleTranslatable(sourceLocale) && this.localeService.isLocaleTranslatable(targetLocale);
+    return this.localeService.isLocaleTranslatable(sourceLocale.id) && this.localeService.isLocaleTranslatable(targetLocale.id);
   }
 
-  identifyStatus(translate: Translation): TranslationStatus {
-    const locales = this.selectedSpace?.locales || [];
+  identifyTranslationStatus(translate: Translation): TranslationStatus {
+    const space = this.selectedSpace();
+    const locales = space?.locales || [];
     if (Object.getOwnPropertyNames(translate.locales).length === 0) return TranslationStatus.UNTRANSLATED;
     let translateCount = 0;
     for (const locale of locales) {
@@ -593,5 +772,29 @@ export class TranslationsComponent implements OnInit {
       return TranslationStatus.UNTRANSLATED;
     }
     return TranslationStatus.PARTIALLY_TRANSLATED;
+  }
+  identifyLocaleStatus(translate: Translation, locale: string): LocaleStatus {
+    const localeValue = translate.locales[locale];
+    if (localeValue === undefined || localeValue.trim() === '') {
+      return LocaleStatus.UNTRANSLATED;
+    }
+    return LocaleStatus.TRANSLATED;
+  }
+
+  copied() {
+    this.notificationService.success(`Translation ID copied to clipboard.`);
+  }
+
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (this.platformService.isActionSave(event)) {
+      event.preventDefault();
+      const selectedTranslation = this.selectedTranslation();
+      const selectedTargetLocale = this.selectedTargetLocale();
+      const selectedTranslationLocaleValue = this.selectedTranslationLocaleValue();
+      if (selectedTranslation) {
+        this.updateLocale(selectedTranslation, selectedTargetLocale, selectedTranslationLocaleValue);
+      }
+    }
   }
 }

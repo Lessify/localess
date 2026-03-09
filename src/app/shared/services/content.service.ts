@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import {
   addDoc,
@@ -34,10 +34,12 @@ import {
   ContentFolderCreateFS,
   ContentKind,
   ContentUpdate,
+  TranslateContentLocaleData,
 } from '@shared/models/content.model';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
 
 @Injectable({ providedIn: 'root' })
 export class ContentService {
@@ -119,6 +121,13 @@ export class ContentService {
     return docData(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), { idField: 'id' }).pipe(
       traceUntilFirst('Firestore:Contents:findById'),
       map(it => it as Content),
+    );
+  }
+
+  findDocumentById(spaceId: string, id: string): Observable<ContentDocument> {
+    return docData(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), { idField: 'id' }).pipe(
+      traceUntilFirst('Firestore:Contents:findDocumentById'),
+      map(it => it as ContentDocument),
     );
   }
 
@@ -213,12 +222,22 @@ export class ContentService {
     );
   }
 
-  updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>]): Observable<void> {
+  /**
+   * Update Document Data
+   * @param spaceId
+   * @param id
+   * @param data
+   * @param refs Tuple of Sets: [assets, links, references]
+   */
+  updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>, Set<string>]): Observable<void> {
+    console.log('updateDocumentData:refs', refs);
+    console.log('updateDocumentData:data', data);
     const update: UpdateData<ContentDocument> = {
       data: JSON.stringify(this.contentHelperService.clone(data)),
       updatedAt: serverTimestamp(),
       assets: Array.from(refs[0]),
-      references: Array.from(refs[1]),
+      links: Array.from(refs[1]),
+      references: Array.from(refs[2]),
     };
     if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
       update.updatedBy = {
@@ -267,5 +286,20 @@ export class ContentService {
   publish(spaceId: string, id: string): Observable<void> {
     const contentPublish = httpsCallableData<{ spaceId: string; contentId: string }, void>(this.functions, 'content-publish');
     return contentPublish({ spaceId, contentId: id }).pipe(traceUntilFirst('Functions:Contents:publish'));
+  }
+
+  unpublish(spaceId: string, id: string): Observable<void> {
+    const contentUnpublish = httpsCallableData<{ spaceId: string; contentId: string }, void>(this.functions, 'content-unpublish');
+    return contentUnpublish({ spaceId, contentId: id }).pipe(traceUntilFirst('Functions:Contents:unpublish'));
+  }
+
+  translateLocale(spaceId: string, contentId: string, sourceLocaleId: string, targetLocaleId: string): Observable<void> {
+    const translateLocale = httpsCallableData<TranslateContentLocaleData, void>(this.functions, 'content-translatelocale');
+    return translateLocale({
+      spaceId: spaceId,
+      contentId: contentId,
+      sourceLocaleId: sourceLocaleId !== CONTENT_DEFAULT_LOCALE.id ? sourceLocaleId : undefined,
+      targetLocaleId: targetLocaleId,
+    }).pipe(traceUntilFirst('Functions:Contents:publish'));
   }
 }

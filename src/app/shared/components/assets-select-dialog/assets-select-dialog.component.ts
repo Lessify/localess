@@ -2,24 +2,30 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
-import { AnimateDirective } from '@shared/directives/animate.directive';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideFile,
+  lucideFileDigit,
+  lucideFileImage,
+  lucideFileMusic,
+  lucideFileText,
+  lucideFileVideoCamera,
+  lucideFolder,
+  lucideFolderRoot,
+  lucideLayoutGrid,
+  lucideLayoutList,
+  lucideUpload,
+} from '@ng-icons/lucide';
 import { Asset, AssetKind } from '@shared/models/asset.model';
+import { AssetFileType, assetFileTypeDescriptions } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
@@ -27,6 +33,16 @@ import { AssetService } from '@shared/services/asset.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem } from '@shared/stores/space.store';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { concatMap, switchMap, tap } from 'rxjs/operators';
 import { AssetsSelectDialogModel } from './assets-select-dialog.model';
@@ -41,23 +57,38 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     MatDialogModule,
     MatPaginatorModule,
     MatCheckboxModule,
-    MatTooltipModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
-    MatButtonToggleModule,
     MatIconModule,
     CanUserPerformPipe,
-    MatProgressBarModule,
     MatTableModule,
     TimeDurationPipe,
     FormatFileSizePipe,
-    MatProgressSpinnerModule,
-    MatButtonModule,
     MatSortModule,
-    MatBadgeModule,
     NgOptimizedImage,
-    AnimateDirective,
-    MatCardModule,
+    HlmBreadCrumbImports,
+    HlmIconImports,
+    HlmProgressImports,
+    HlmSpinnerImports,
+    HlmTooltipImports,
+    HlmBadgeImports,
+    HlmToggleGroupImports,
+    HlmButtonImports,
+    HlmItemImports,
+    HlmCheckboxImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideFolderRoot,
+      lucideLayoutList,
+      lucideLayoutGrid,
+      lucideUpload,
+      lucideFolder,
+      lucideFile,
+      lucideFileImage,
+      lucideFileVideoCamera,
+      lucideFileMusic,
+      lucideFileText,
+      lucideFileDigit,
+    }),
   ],
 })
 export class AssetsSelectDialogComponent implements OnInit {
@@ -167,11 +198,12 @@ export class AssetsSelectDialogComponent implements OnInit {
   }
 
   fileIcon(type: string): string {
-    if (type.startsWith('audio/')) return 'audio_file';
-    if (type.startsWith('image/')) return 'image';
-    if (type.startsWith('font/')) return 'font_download';
-    if (type.startsWith('video/')) return 'video_file';
-    return 'file_present';
+    if (type.startsWith('audio/')) return assetFileTypeDescriptions[AssetFileType.AUDIO].icon;
+    if (type.startsWith('text/')) return assetFileTypeDescriptions[AssetFileType.TEXT].icon;
+    if (type.startsWith('image/')) return assetFileTypeDescriptions[AssetFileType.IMAGE].icon;
+    if (type.startsWith('video/')) return assetFileTypeDescriptions[AssetFileType.VIDEO].icon;
+    if (type.startsWith('application/')) return assetFileTypeDescriptions[AssetFileType.APPLICATION].icon;
+    return assetFileTypeDescriptions[AssetFileType.ANY].icon;
   }
 
   filePreview(type: string): boolean {

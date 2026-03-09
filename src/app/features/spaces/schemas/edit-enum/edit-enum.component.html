@@ -1,122 +1,146 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    <button mat-icon-button (click)="back()">
-      <mat-icon>arrow_back</mat-icon>
+<div class="flex items-center justify-between gap-2 p-2">
+  <div class="flex items-center gap-2">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Schemas">
+      <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
-    <span class="title">{{ entity?.displayName }}</span>
-    &nbsp;
-    <span class="subtitle">#{{ entity?.id }}</span>
-    <span class="spacer"></span>
-    @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-      <button mat-flat-button matTooltip="Save the changes." [disabled]="!form.valid || isSaveLoading()" (click)="save()">
-        <mat-icon [llAnimate]="isSaveLoading()">{{ isSaveLoading() ? 'sync' : 'save' }}</mat-icon>
-        Save
-      </button>
-    }
-  </mat-toolbar-row>
-</mat-toolbar>
+    <div>
+      <div class="line-clamp-1 text-lg">{{ entity?.displayName }}</div>
+      <div class="text-muted-foreground line-clamp-1">#{{ entity?.id }}</div>
+    </div>
+  </div>
+  @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+    <button hlmBtn hlmTooltip="Save the changes" [disabled]="!form.valid || isSaveLoading()" (click)="save()">
+      @if (isSaveLoading()) {
+        <hlm-spinner class="size-4" />
+      } @else {
+        <ng-icon hlm size="sm" name="lucideSave" />
+      }
+      Save
+      <kbd hlmKbd>{{ platformService.actionSaveLabel }}</kbd>
+    </button>
+  }
+</div>
 
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 } @else {
   <div class="mx-auto">
     <form [formGroup]="form">
-      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="0ms">
-        <mat-tab label="Values">
-          <mat-drawer-container (backdropClick)="selectedFieldIdx = undefined">
-            <mat-drawer-content>
-              <div class="flex flex-col mx-auto max-w-(--breakpoint-lg) gap-6 p-8" style="height: calc(100vh - 177px)">
-                <mat-action-list cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
-                  <mat-form-field>
-                    <mat-label>Name</mat-label>
-                    <input matInput type="text" [formControl]="newFieldName" autocomplete="off" />
-                    <button mat-stroked-button matTextSuffix color="accent" (click)="addValueForm()" [disabled]="!newFieldName.valid">
-                      Add
-                    </button>
-                    @if (newFieldName.errors; as errors) {
-                      <mat-error>{{ fe.errors(errors) }}</mat-error>
-                    }
-                  </mat-form-field>
-                  @for (field of values.controls; track field.value.name; let index = $index; let last = $last) {
-                    <mat-list-item
-                      cdkDrag
-                      cdkDragPreviewContainer="parent"
-                      (click)="selectComponent(index)"
-                      [activated]="index === selectedFieldIdx"
-                      [class.invalid]="field.invalid">
-                      <span matListItemTitle>
-                        {{ field.value.name }} <span class="field-id">#{{ field.value.value }}</span>
-                      </span>
-                      <div matListItemMeta>
-                        <button mat-icon-button (click)="removeComponent($event, index)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                        &nbsp;&nbsp;
-                        <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                      </div>
-                    </mat-list-item>
-                    @if (!last) {
-                      <mat-divider />
-                    }
-                  }
-                </mat-action-list>
+      <hlm-tabs tab="values" class="w-full">
+        <hlm-tabs-list class="self-center" variant="line">
+          <button hlmTabsTrigger="values">Values</button>
+          <button hlmTabsTrigger="settings">Settings</button>
+        </hlm-tabs-list>
+        <div hlmTabsContent="values">
+          <div class="mx-auto flex max-w-5xl flex-col gap-6 px-8" style="height: calc(100vh - 177px)">
+            <div hlmField class="col-span-2">
+              <div hlmInputGroup>
+                <input
+                  #name
+                  [formControl]="newFieldName"
+                  hlmInputGroupInput
+                  autocomplete="off"
+                  placeholder="Name of the new element..."
+                  (keydown.enter)="$event.preventDefault(); newFieldName.valid && addValueForm()" />
+                <div hlmInputGroupAddon align="inline-end">
+                  <button hlmInputGroupButton variant="secondary" (click)="addValueForm()" [disabled]="!newFieldName.valid">Add</button>
+                </div>
               </div>
-            </mat-drawer-content>
-            <mat-drawer position="end" [opened]="selectedFieldIdx !== undefined">
-              @if (values.at(selectedFieldIdx === undefined ? -100 : selectedFieldIdx); as selectedComponent) {
-                <div formArrayName="values">
-                  <ll-schema-value-edit [form]="selectedComponent" />
+            </div>
+            <div hlmItemGroup class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+              @for (field of values.controls; track field.value.name; let index = $index) {
+                <div
+                  hlmItem
+                  class="cursor-pointer"
+                  [variant]="index === selectedFieldIdx() ? 'muted' : 'outline'"
+                  role="listitem"
+                  cdkDrag
+                  cdkDragPreviewContainer="parent"
+                  (click)="selectComponent(index)"
+                  (keyup.enter)="selectComponent(index)"
+                  [class.border-destructive]="field.invalid">
+                  <div hlmItemContent>
+                    <div hlmItemTitle class="line-clamp-1">
+                      {{ field.value.name }}
+                      <span class="text-muted-foreground">#{{ field.value.value }}</span>
+                    </div>
+                  </div>
+
+                  <div hlmItemActions>
+                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltip="Delete">
+                      <ng-icon hlm size="sm" name="lucideTrash" />
+                    </button>
+                    <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+                      <ng-icon hlm size="sm" name="lucideGripVertical" />
+                    </button>
+                  </div>
                 </div>
               }
-            </mat-drawer>
-          </mat-drawer-container>
-        </mat-tab>
-        <mat-tab label="Settings">
-          <div class="flex flex-col mx-auto max-w-(--breakpoint-md) gap-6 p-8">
-            <mat-form-field>
-              <mat-label>Display Name</mat-label>
-              <input matInput type="text" formControlName="displayName" minlength="3" maxlength="50" autocomplete="off" />
-              <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
-              @if (form.controls['displayName'].errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
-              <mat-hint align="end">{{ form.controls['description'].value?.length || 0 }}/250</mat-hint>
-              @if (form.controls['description']?.errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Labels</mat-label>
-              <mat-chip-grid #chipGrid aria-label="Enter Labels">
-                @for (label of form.controls['labels'].value; track label) {
-                  <mat-chip-row (removed)="removeLabel(label)">
-                    {{ label }}
-                    <button matChipRemove [attr.aria-label]="'Remove ' + label">
-                      <mat-icon>cancel</mat-icon>
-                    </button>
-                  </mat-chip-row>
-                }
-              </mat-chip-grid>
-              <input
-                placeholder="New Label..."
-                [matChipInputFor]="chipGrid"
-                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                [matChipInputAddOnBlur]="true"
-                (matChipInputTokenEnd)="addLabel($event)" />
-              @if (form.controls['labels'].errors; as errors) {
-                <mat-error>{{ fe.errors(errors) }}</mat-error>
-              }
-            </mat-form-field>
+            </div>
           </div>
-        </mat-tab>
-      </mat-tab-group>
+        </div>
+        <div hlmTabsContent="settings">
+          <div class="mx-auto flex max-w-5xl flex-col gap-6 px-8">
+            <fieldset hlmFieldSet>
+              <div hlmFieldGroup>
+                <div hlmField>
+                  <label hlmFieldLabel for="displayName"> Display Name </label>
+                  <input #displayName hlmInput id="displayName" formControlName="displayName" autocomplete="off" />
+                  @if (form.controls['displayName']?.errors; as errors) {
+                    <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                  } @else {
+                    <p hlmFieldDescription class="content-end">{{ 50 - displayName.value.length }} characters left</p>
+                  }
+                </div>
+                <div hlmField>
+                  <label hlmFieldLabel for="description"> Description </label>
+                  <textarea hlmTextarea class="resize-none" #description id="description" formControlName="description" autocomplete="off">
+                  </textarea>
+                  @if (form.controls['description']?.errors; as errors) {
+                    <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                  } @else {
+                    <p hlmFieldDescription class="content-end">{{ 250 - description.value.length }} characters left</p>
+                  }
+                </div>
+                <div hlmField>
+                  <label hlmFieldLabel for="labels"> Labels </label>
+                  <input
+                    #labelName
+                    hlmInput
+                    id="labels"
+                    autocomplete="off"
+                    placeholder="Enter new label name"
+                    (keydown.enter)="$event.preventDefault(); addLabel(labelName.value); labelName.value = ''" />
+                  <div class="flex w-full flex-wrap gap-2">
+                    @for (label of form.controls['labels'].value; track label) {
+                      <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
+                        <ng-icon hlm size="xs" name="lucideCircleX" />
+                        {{ label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </hlm-tabs>
     </form>
   </div>
 }
+
+<hlm-sheet side="right" [state]="selectedFieldIdx() !== undefined ? 'open' : 'closed'" (closed)="selectedFieldIdx.set(undefined)">
+  <hlm-sheet-content *hlmSheetPortal="let ctx">
+    <hlm-sheet-header>
+      <h3 hlmSheetTitle>Edit Value</h3>
+    </hlm-sheet-header>
+    @if (values.at(selectedFieldIdx() ?? -100); as selectedComponent) {
+      <ll-schema-value-edit [form]="selectedComponent" />
+    }
+  </hlm-sheet-content>
+</hlm-sheet>
 
 @if (settingsStore.debugEnabled()) {
   <mat-accordion [multi]="true">

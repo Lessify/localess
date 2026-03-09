@@ -1,354 +1,492 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    <button mat-icon-button (click)="back()">
-      <mat-icon>arrow_back</mat-icon>
+<div class="flex items-center justify-between gap-2 p-2">
+  <div class="flex items-center gap-2">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Contents">
+      <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
-    <span class="title">{{ document()?.name }}</span>
-    &nbsp;
-    <span class="subtitle">#{{ document()?.slug }}</span>
-    <span class="spacer"></span>
-    <div class="actions">
-      <button mat-stroked-button [matMenuTriggerFor]="modeMenu" matTooltip="Select Mode">
-        @if (settingsStore.editorEnabled()) {
-          <mat-icon>format_shapes</mat-icon>
-        } @else {
-          <mat-icon>edit_note</mat-icon>
-        }
-        @if (settingsStore.editorEnabled()) {
-          Visual Editor
-        } @else {
-          Form Mode
-        }
-        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+    <div>
+      <div class="line-clamp-1 text-lg">{{ document().name }}</div>
+      <div class="text-muted-foreground line-clamp-1">#{{ document().slug }}</div>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorEnabled()">
+      <button
+        hlmToggleGroupItem
+        [value]="true"
+        aria-label="Visual Editor"
+        hlmTooltip="Visual Editor"
+        (click)="settingsStore.setEditorEnabled(true)">
+        <ng-icon hlm size="sm" name="lucideVectorSquare" />
       </button>
-
-      <mat-menu #modeMenu="matMenu">
-        <button mat-menu-item (click)="settingsStore.setEditorEnabled(true)">
-          <mat-icon>format_shapes</mat-icon>
-          <span [ngClass]="{ 'font-semibold': settingsStore.editorEnabled() === true }"> Visual Editor </span>
-        </button>
-        <button mat-menu-item (click)="settingsStore.setEditorEnabled(false)">
-          <mat-icon>edit_note</mat-icon>
-          <span [ngClass]="{ 'font-semibold': settingsStore.editorEnabled() === false }"> Form Mode </span>
-        </button>
-      </mat-menu>
-
-      <button mat-stroked-button [matMenuTriggerFor]="localesMenu" matTooltip="Select a locale">
-        {{ selectedLocale.name }}
-        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+      <button
+        hlmToggleGroupItem
+        [value]="false"
+        aria-label="Form Mode"
+        hlmTooltip="Form Mode"
+        (click)="settingsStore.setEditorEnabled(false)">
+        <ng-icon hlm size="sm" name="lucideFormInput" />
       </button>
+    </hlm-toggle-group>
 
-      <mat-menu #localesMenu="matMenu">
+    <button hlmBtn variant="outline" [hlmDropdownMenuTrigger]="localeMenu" side="bottom" hlmTooltip="Select Locale">
+      {{ selectedLocale().name }}
+      <ng-icon hlm size="sm" name="lucideChevronDown" class="ml-auto" />
+    </button>
+    <ng-template #localeMenu>
+      <hlm-dropdown-menu>
         @for (locale of availableLocales(); track locale.id) {
-          <button mat-menu-item (click)="onLocaleChanged(locale)">
-            <span [ngClass]="{ 'font-semibold': locale.id === selectedLocale.id }">
-              {{ locale.name }}
-            </span>
+          <button hlmDropdownMenuRadio [checked]="locale.id === selectedLocale().id" (click)="selectedLocale.set(locale)">
+            <hlm-dropdown-menu-radio-indicator />
+            <span> {{ locale.name }} </span>
           </button>
         }
-      </mat-menu>
+      </hlm-dropdown-menu>
+    </ng-template>
 
-      @if (contentErrors.length > 0) {
-        <button mat-icon-button [matMenuTriggerFor]="contentErrorsMenu">
-          <mat-icon color="warn" [matBadge]="contentErrors.length" matBadgeColor="warn">error_outline</mat-icon>
-        </button>
-      }
+    @if (contentErrors.length > 0) {
+      <button hlmBtn size="icon" variant="destructive" [hlmDropdownMenuTrigger]="contentErrorsMenu" side="bottom" hlmTooltip="Errors">
+        <ng-icon hlm size="sm" name="lucideAlertCircle" />
+      </button>
 
-      <mat-menu class="mat-menu-error-messages" #contentErrorsMenu="matMenu" xPosition="before">
-        <div class="vstack gap-1">
+      <ng-template #contentErrorsMenu>
+        <hlm-dropdown-menu>
           @for (error of contentErrors; track error.contentId) {
-            <div class="p-2">
-              <mat-icon color="accent">warning</mat-icon>
-              In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for
-              Locale
-              {{ availableLocalesMap().get(error.locale) }}
-            </div>
+            <button hlmDropdownMenuItem>
+              <ng-icon hlm size="sm" name="lucideTriangleAlert" />
+              <span>
+                In <b>{{ error.schema }}</b> the <b>{{ error.fieldDisplayName || error.fieldName }}</b> {{ fe.errors(error.errors) }} for
+                Locale
+                {{ availableLocalesMap().get(error.locale) }}
+              </span>
+            </button>
           }
-        </div>
-      </mat-menu>
-      @if ('CONTENT_UPDATE' | canUserPerform | async) {
-        <button mat-flat-button matTooltip="Save the changes." [disabled]="isSaveLoading() || isPublishLoading()" (click)="save()">
-          <mat-icon [llAnimate]="isSaveLoading()">{{ isSaveLoading() ? 'sync' : 'save' }}</mat-icon>
-          Save
-        </button>
-      }
-      @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+        </hlm-dropdown-menu>
+      </ng-template>
+    }
+    @if ('CONTENT_UPDATE' | canUserPerform | async) {
+      <button hlmBtn variant="default" hlmTooltip="Save the changes" [disabled]="isSaveLoading() || isPublishLoading()" (click)="save()">
+        @if (isSaveLoading()) {
+          <hlm-spinner class="size-4" />
+        } @else {
+          <ng-icon hlm size="sm" name="lucideSave" />
+        }
+        Save
+        <kbd hlmKbd>{{ platformService.actionSaveLabel }}</kbd>
+      </button>
+    }
+    @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+      @let publishedAt = documentPublishedAt();
+      <div hlmButtonGroup>
         <button
-          mat-stroked-button
-          matTooltip="Publish to be available via API call"
+          hlmBtn
+          variant="default"
+          hlmTooltip="Publish, it will be available via API call"
           [disabled]="isPublishLoading() || isSaveLoading()"
           (click)="publish()">
-          <mat-icon [llAnimate]="isPublishLoading()">{{ isPublishLoading() ? 'sync' : 'publish' }}</mat-icon>
+          @if (isPublishLoading()) {
+            <hlm-spinner class="size-4" />
+          } @else {
+            <ng-icon hlm size="sm" name="lucideUpload" />
+          }
           Publish
         </button>
-      }
-      @if (document()?.publishedAt === undefined) {
-        <ll-status mode="offline" matTooltip="Not published" />
-      } @else if (document()?.publishedAt?.seconds > document()?.updatedAt?.seconds) {
-        <ll-status mode="online" matTooltip="Published" />
-      } @else if (document()?.publishedAt && document()?.publishedAt?.seconds < document()?.updatedAt?.seconds) {
-        <ll-status mode="away" matTooltip="Draft" />
-      }
-
-      <button mat-icon-button (click)="showHistory = !showHistory" matTooltip="History">
-        <mat-icon>history</mat-icon>
-      </button>
-
-      <button mat-icon-button [matMenuTriggerFor]="importMenu">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-
-      <mat-menu #importMenu="matMenu">
-        @for (locale of selectedSpace?.locales; track locale.id) {
-          <button mat-menu-item (click)="openDraftV1InNewTab(locale.id)">
-            <mat-icon>mode_edit</mat-icon>
-            <span>Draft {{ locale.name }} JSON</span>
+        @if (publishedAt) {
+          <hlm-button-group-separator />
+          <button
+            hlmBtn
+            variant="default"
+            aria-label="More Options"
+            align="end"
+            [hlmDropdownMenuTrigger]="menu"
+            [disabled]="isPublishLoading() || isSaveLoading()">
+            <ng-icon name="lucideEllipsis" />
           </button>
+          <ng-template #menu>
+            <hlm-dropdown-menu>
+              <button
+                hlmDropdownMenuItem
+                variant="destructive"
+                hlmTooltip="Unpublish, it will not be available via API call"
+                (click)="unpublish()">
+                <ng-icon hlm name="lucideWebhookOff" size="sm" />
+                <span>Unpublish</span>
+              </button>
+            </hlm-dropdown-menu>
+          </ng-template>
         }
-        <mat-divider />
-        @for (locale of selectedSpace?.locales; track locale.id) {
-          <button mat-menu-item (click)="openPublishedV1InNewTab(locale.id)">
-            <mat-icon>public</mat-icon>
-            <span>Published {{ locale.name }} JSON</span>
+      </div>
+    }
+    @let publishedAt = documentPublishedAt(); @let updatedAt = documentUpdatedAt();
+    @if (publishedAt === undefined) {
+      <ll-status mode="offline" matTooltip="Not published" />
+    } @else if (publishedAt > updatedAt) {
+      <ll-status mode="online" matTooltip="Published" />
+    } @else if (publishedAt < updatedAt) {
+      <ll-status mode="away" matTooltip="Draft" />
+    }
+
+    <button hlmBtn size="icon" variant="ghost" hlmTooltip="Hisotry" (click)="showHistory.set(!showHistory())">
+      <ng-icon hlm size="sm" name="lucideHistory" />
+    </button>
+
+    <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+      <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+    </button>
+    <ng-template #extraMenu>
+      <hlm-dropdown-menu class="text-nowrap">
+        <hlm-dropdown-menu-group>
+          <button hlmDropdownMenuItem [cdkCopyToClipboard]="document().slug" (click)="copiedSlug()">
+            <ng-icon hlm size="sm" name="lucideCopy" />
+            Copy Slug
           </button>
+        </hlm-dropdown-menu-group>
+        <hlm-dropdown-menu-group>
+          <button hlmDropdownMenuItem [cdkCopyToClipboard]="document().fullSlug" (click)="copiedFullSlug()">
+            <ng-icon hlm size="sm" name="lucideCopy" />
+            Copy Full Slug
+          </button>
+        </hlm-dropdown-menu-group>
+        <hlm-dropdown-menu-separator />
+        @if ('CONTENT_UPDATE' | canUserPerform | async) {
+          <hlm-dropdown-menu-group>
+            <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog()">
+              <ng-icon hlm size="sm" name="lucideLanguages" />
+              Translate Locale
+            </button>
+          </hlm-dropdown-menu-group>
+          <hlm-dropdown-menu-separator />
         }
-      </mat-menu>
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+        <hlm-dropdown-menu-group>
+          @for (locale of selectedSpace()?.locales; track locale.id) {
+            <button hlmDropdownMenuItem (click)="openDraftV1InNewTab(locale.id)">
+              <ng-icon hlm size="sm" name="lucidePencil" />
+              <span>Draft {{ locale.name }} JSON</span>
+              <ng-icon hlm size="sm" name="lucideExternalLink" class="ml-auto" />
+            </button>
+          }
+        </hlm-dropdown-menu-group>
+        <hlm-dropdown-menu-separator />
+        <hlm-dropdown-menu-group>
+          @for (locale of selectedSpace()?.locales; track locale.id) {
+            <button hlmDropdownMenuItem (click)="openPublishedV1InNewTab(locale.id)">
+              <ng-icon hlm size="sm" name="lucideEarth" />
+              <span>Published {{ locale.name }} JSON</span>
+              <ng-icon hlm size="sm" name="lucideExternalLink" class="ml-auto" />
+            </button>
+          }
+        </hlm-dropdown-menu-group>
+      </hlm-dropdown-menu>
+    </ng-template>
+  </div>
+</div>
 
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
 
-<mat-sidenav-container>
-  <mat-sidenav-content>
-    <div class="mx-auto container-fluid">
-      <div class="flex justify-center h-full">
-        @if (settingsStore.editorEnabled()) {
-          <div [ngClass]="{ 'block-dragging': inResizeMode() }" class="browser flex flex-col h-full grow overflow-hidden border">
-            @if (selectedEnvironment; as environment) {
-              <div class="flex flex-wrap border-b py-1">
-                <div class="flex flex-col grow px-2">
-                  <div class="truncate">{{ environment.name }}</div>
-                  <div class="truncate">{{ environment.url }}</div>
-                </div>
-                <div class="flex self-center">
-                  <mat-button-toggle-group
-                    hideSingleSelectionIndicator="true"
-                    (change)="settingsStore.setEditorSize($event.value)"
-                    [value]="settingsStore.editorSize()"
-                    style="height: 42px">
-                    <mat-button-toggle value="" matTooltip="Fullscreen">
-                      <mat-icon>screenshot_monitor</mat-icon>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="sm" matTooltip="Smartphone: 640px">
-                      <mat-icon>smartphone</mat-icon>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="md" matTooltip="Tablet: 768px">
-                      <mat-icon>tablet</mat-icon>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="lg" matTooltip="Laptop: 1024px">
-                      <mat-icon>laptop_windows</mat-icon>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="xl" matTooltip="Desktop: 1280px">
-                      <mat-icon>desktop_windows</mat-icon>
-                    </mat-button-toggle>
-                  </mat-button-toggle-group>
-                  <button mat-icon-button matTooltip="Reload" (click)="changeEnvironment(environment)">
-                    <mat-icon>refresh</mat-icon>
-                  </button>
-                  <button mat-icon-button [matMenuTriggerFor]="envMenu">
-                    <mat-icon>arrow_drop_down</mat-icon>
-                  </button>
-                  <mat-menu #envMenu="matMenu">
-                    @for (env of selectedSpace?.environments; track env.name) {
-                      <button mat-menu-item (click)="changeEnvironment(env)" [disabled]="env === selectedEnvironment">
-                        {{ env.name }} | {{ env.url }}
+<div class="container-fluid mx-auto grid px-2">
+  <hlm-resizable-group direction="horizontal" class="flex h-full w-full justify-center overflow-hidden">
+    @if (settingsStore.editorEnabled()) {
+      <hlm-resizable-panel [defaultSize]="60" class="overflow-hidden">
+        <div id="browser" class="browser flex h-full flex-col overflow-hidden rounded-t-xl border">
+          @if (selectedEnvironment(); as environment) {
+            <div id="browser-toolbar" class="flex flex-wrap items-center gap-2 border-b p-2">
+              <button hlmBtn size="icon" variant="ghost" hlmTooltip="Reload" (click)="reloadEnvironment()">
+                <ng-icon hlm size="sm" name="lucideRefreshCcw" />
+              </button>
+              <div class="flex-grow">
+                <div class="w-full min-w-80" hlmButtonGroup>
+                  <div hlmButtonGroupText>
+                    <label hlmLabel for="url">{{ environment.name }}</label>
+                  </div>
+                  <div hlmInputGroup>
+                    <input
+                      class="truncate"
+                      hlmInputGroupInput
+                      readonly
+                      id="url"
+                      placeholder="Select Environment"
+                      [value]="environment.url"
+                      [title]="environment.url" />
+                    <div hlmInputGroupAddon align="inline-end">
+                      <button hlmBtn size="icon" variant="link" [hlmDropdownMenuTrigger]="envMenu">
+                        <ng-icon hlm size="sm" name="lucideChevronDown" />
                       </button>
-                    }
-                  </mat-menu>
+                      <ng-template #envMenu>
+                        <hlm-dropdown-menu>
+                          @for (env of availableEnvironments(); track env.name) {
+                            <button
+                              hlmDropdownMenuRadio
+                              (click)="selectedEnvironment.set(env)"
+                              [checked]="env.name === selectedEnvironment()?.name">
+                              <hlm-dropdown-menu-radio-indicator />
+                              <span>{{ env.name }} | {{ env.url }}</span>
+                            </button>
+                          }
+                        </hlm-dropdown-menu>
+                      </ng-template>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div class="flex h-full overflow-auto">
-                <iframe id="previewId" #preview [src]="iframeUrl" [class]="settingsStore.editorSize()"> </iframe>
-              </div>
-            } @else {
-              <div class="text-center">
-                No Configured Environments.<br />
-                You can configure them in Settings.
-              </div>
-            }
-          </div>
-          <div
-            cdkDragLockAxis="x"
-            cdkDrag
-            (cdkDragStarted)="onDragStarted($event)"
-            (cdkDragMoved)="onDragMoved($event)"
-            (cdkDragEnded)="onDragEnded($event)"
-            class="relative inset-y-0 cursor-ew-resize items-center px-2 sm:flex">
-            <div class="h-8 w-1.5 rounded-full bg-gray-400"></div>
-          </div>
-        }
-        <div
-          [ngClass]="{ 'block-dragging': inResizeMode() }"
-          [style.width.px]="settingsStore.editorEnabled() ? editorFormWidth() : undefined"
-          class="flex overflow-auto h-full flex-col min-w-[400px] max-w-[1000px]">
-          @if (rootSchema) {
-            <div class="flex flex-col max-w-(--breakpoint-lg) p-2">
-              <ll-breadcrumb>
-                @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isFirst = $first) {
-                  <ll-breadcrumb-item (click)="navigateToSchemaBackwards(schemaPathItem)" [home]="isFirst">
-                    @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
-                      {{ sch.displayName || sch.id }}
-                    }
-                  </ll-breadcrumb-item>
-                }
-              </ll-breadcrumb>
-              <ll-content-document-schema-edit
-                [data]="selectedDocumentData"
-                [schemas]="schemas()"
-                [selectedLocale]="selectedLocale"
-                [availableLocales]="availableLocales()"
-                [hoverSchemaPath]="hoverSchemaPath()"
-                [hoverSchemaField]="isSamePath() ? hoverSchemaField() : undefined"
-                [clickSchemaField]="clickSchemaField()"
-                [documents]="documents"
-                [space]="selectedSpace"
-                (schemaChange)="onSchemaChange($event)"
-                (formChange)="onFormChange($event)"
-                (structureChange)="onStructureChange($event)" />
+              <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorSize()">
+                <button
+                  hlmToggleGroupItem
+                  value=""
+                  aria-label="Fullscreen"
+                  hlmTooltip="Fullscreen"
+                  (click)="settingsStore.setEditorSize('')">
+                  <ng-icon hlm size="sm" name="lucideFullscreen" />
+                </button>
+                <button
+                  hlmToggleGroupItem
+                  value="sm"
+                  aria-label="Smartphone: 640px"
+                  hlmTooltip="Smartphone: 640px"
+                  (click)="settingsStore.setEditorSize('sm')">
+                  <ng-icon hlm size="sm" name="tablerDeviceMobile" />
+                </button>
+                <button
+                  hlmToggleGroupItem
+                  value="md"
+                  aria-label="Tablet: 768px"
+                  hlmTooltip="Tablet: 768px"
+                  (click)="settingsStore.setEditorSize('md')">
+                  <ng-icon hlm size="sm" name="tablerDeviceTablet" />
+                </button>
+                <button
+                  hlmToggleGroupItem
+                  value="lg"
+                  aria-label="Laptop: 1024px"
+                  hlmTooltip="Laptop: 1024px"
+                  (click)="settingsStore.setEditorSize('lg')">
+                  <ng-icon hlm size="sm" name="tablerDeviceLaptop" />
+                </button>
+                <button
+                  hlmToggleGroupItem
+                  value="xl"
+                  aria-label="Desktop: 1280px"
+                  hlmTooltip="Desktop: 1280px"
+                  (click)="settingsStore.setEditorSize('xl')">
+                  <ng-icon hlm size="sm" name="tablerDeviceDesktop" />
+                </button>
+              </hlm-toggle-group>
+            </div>
+            <div id="browser-content" class="bg-secondary flex h-full justify-center-safe overflow-auto">
+              @if (iframeUrl(); as url) {
+                <iframe
+                  id="previewId"
+                  class="shadow"
+                  #preview
+                  [src]="url"
+                  [class]="settingsStore.editorSize()"
+                  [class.resizing]="isResizing()">
+                </iframe>
+              }
+            </div>
+          } @else {
+            <div class="text-center">
+              No Configured Environments.<br />
+              You can configure them in Settings.
             </div>
           }
         </div>
-      </div>
-
-      @if (settingsStore.debugEnabled()) {
-        <mat-accordion>
-          <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>EditDocumentComponent Content</mat-panel-title>
-            </mat-expansion-panel-header>
-            <pre>{{ documentData | json }}</pre>
-          </mat-expansion-panel>
-        </mat-accordion>
-      }
-    </div>
-  </mat-sidenav-content>
-  <mat-sidenav position="end" [opened]="showHistory" (openedChange)="showHistory = $event">
-    @if (showHistory) {
-      <div class="flow-root m-4">
-        <ul role="list" class="-mb-8">
-          @for (item of history$ | async; track item.id; let isLast = $last) {
-            <li>
-              <div class="relative pb-5">
-                <div class="relative flex space-x-3">
-                  @switch (item.type) {
-                    @case ('PUBLISHED') {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>publish</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                        <div>
-                          <p class="text-sm">
-                            Published by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                              {{ item.name || 'Unknown' }}
-                            </span>
-                          </p>
-                        </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                        </div>
-                      </div>
-                    }
-                    @case ('CREATE') {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>add</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                        <div>
-                          <p class="text-sm">
-                            Created with name <span class="font-medium break-all">{{ item.cName }}</span> and slug
-                            <span class="font-medium break-all">{{ item.cSlug }}</span> by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                              {{ item.name || 'Unknown' }}
-                            </span>
-                          </p>
-                        </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                        </div>
-                      </div>
-                    }
-                    @case ('UPDATE') {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>edit</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                        <div>
-                          <p class="text-sm">
-                            Updated with
-                            @if (item.cName) {
-                              name <span class="font-medium break-all">{{ item.cName }}</span>
-                            }
-                            @if (item.cSlug) {
-                              @if (item.cName) {
-                                and
-                              }
-                              slug <span class="font-medium break-all">{{ item.cSlug }}</span>
-                            }
-                            @if (item.cParentSlug) {
-                              parent slug <span class="font-medium break-all">{{ item.cParentSlug }}</span>
-                            } @else if (item.cData) {
-                              content
-                            } @else {
-                              nothing
-                            }
-                            by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                              {{ item.name || 'Unknown' }}
-                            </span>
-                          </p>
-                        </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                        </div>
-                      </div>
-                    }
-                    @default {
-                      <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center">
-                          <mat-icon>question_mark</mat-icon>
-                        </span>
-                      </div>
-                      <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                        <div>
-                          <p class="text-sm">Unknown</p> by
-                          <span class="font-medium" [matTooltip]="item.email || 'Unknown'">
-                            {{ item.name || 'Unknown' }}
-                          </span>
-                        </div>
-                        <div class="whitespace-nowrap text-right text-sm">
-                          <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                        </div>
-                      </div>
-                    }
-                  }
-                </div>
-              </div>
-            </li>
-          } @empty {
-            No Records found
-          }
-        </ul>
-      </div>
+      </hlm-resizable-panel>
+      <hlm-resizable-handle withHandle (mousedown)="isResizing.set(true)" (mouseup)="isResizing.set(false)" />
     }
-  </mat-sidenav>
-</mat-sidenav-container>
+    <hlm-resizable-panel
+      [defaultSize]="settingsStore.editorEnabled() ? 40 : 100"
+      [minSize]="25"
+      [maxSize]="75"
+      class="flex justify-around overflow-hidden">
+      <div class="flex h-full max-w-5xl min-w-96 grow flex-col gap-4 overflow-auto px-4 py-2">
+        @if (rootSchema()) {
+          <nav hlmBreadcrumb>
+            <ol hlmBreadcrumbList>
+              @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isLast = $last; let isFirst = $first) {
+                @if (!isFirst) {
+                  <li hlmBreadcrumbSeparator></li>
+                }
+                <li hlmBreadcrumbItem>
+                  @if (isFirst) {
+                    <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
+                      <ng-icon hlm size="sm" name="lucideFolderRoot" />
+                    </button>
+                  } @else if (isLast) {
+                    <span hlmBreadcrumbPage>
+                      @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
+                        {{ sch.displayName || sch.id }}
+                      }
+                    </span>
+                  } @else {
+                    <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
+                      @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
+                        {{ sch.displayName || sch.id }}
+                      }
+                    </button>
+                  }
+                </li>
+              }
+            </ol>
+          </nav>
+          <div class="flex max-w-(--breakpoint-lg) flex-col overflow-x-hidden overflow-y-auto">
+            <ll-content-document-schema-edit
+              [data]="selectedDocumentData"
+              [schemas]="schemas()"
+              [selectedLocale]="selectedLocale()"
+              [availableLocales]="availableLocales()"
+              [hoverSchemaPath]="hoverSchemaPath()"
+              [hoverSchemaField]="isSamePath() ? hoverSchemaField() : undefined"
+              [clickSchemaField]="clickSchemaField()"
+              [documents]="documents()"
+              [space]="selectedSpace()"
+              (schemaChange)="onSchemaChange($event)"
+              (formChange)="onFormChange($event)"
+              (structureChange)="onStructureChange($event)" />
+          </div>
+        }
+      </div>
+    </hlm-resizable-panel>
+  </hlm-resizable-group>
+
+  @if (settingsStore.debugEnabled()) {
+    <hlm-accordion class="overflow-auto">
+      <hlm-accordion-item>
+        <h3 class="contents">
+          <button hlmAccordionTrigger>
+            EditDocumentComponent Content
+            <ng-icon name="lucideChevronDown" hlm hlmAccIcon />
+          </button>
+        </h3>
+        <hlm-accordion-content>
+          <pre class="max-2-70">{{ documentData | json }}</pre>
+        </hlm-accordion-content>
+      </hlm-accordion-item>
+    </hlm-accordion>
+  }
+</div>
+<hlm-sheet side="right" [state]="showHistory() ? 'open' : 'closed'" (closed)="showHistory.set(false)">
+  <hlm-sheet-content *hlmSheetPortal="let ctx">
+    <hlm-sheet-header>
+      <h3 hlmSheetTitle>History</h3>
+    </hlm-sheet-header>
+    <ng-scrollbar hlm>
+      @if (showHistory()) {
+        <div class="m-4 flow-root">
+          <ul role="list">
+            @for (item of history$ | async; track item.id; let isLast = $last) {
+              <li>
+                <div class="relative pb-5">
+                  <div class="relative flex space-x-2">
+                    @switch (item.type) {
+                      @case ('PUBLISHED') {
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucideUpload" />
+                        </div>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
+                          <div>
+                            <p class="text-sm">
+                              Published by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
+                            </p>
+                          </div>
+                          <div class="text-right text-sm whitespace-nowrap">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
+                        </div>
+                      }
+                      @case ('UNPUBLISHED') {
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucideWebhookOff" />
+                        </div>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
+                          <div>
+                            <p class="text-sm">
+                              Unpublished by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
+                            </p>
+                          </div>
+                          <div class="text-right text-sm whitespace-nowrap">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
+                        </div>
+                      }
+                      @case ('CREATE') {
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucidePlus" />
+                        </div>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
+                          <div>
+                            <p class="text-sm">
+                              Created with name <span class="font-medium break-all">{{ item.cName }}</span> and slug
+                              <span class="font-medium break-all">{{ item.cSlug }}</span> by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
+                            </p>
+                          </div>
+                          <div class="text-right text-sm whitespace-nowrap">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
+                        </div>
+                      }
+                      @case ('UPDATE') {
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucidePencil" />
+                        </div>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
+                          <div>
+                            <p class="text-sm">
+                              Updated with
+                              @if (item.cName) {
+                                name <span class="font-medium break-all">{{ item.cName }}</span>
+                              }
+                              @if (item.cSlug) {
+                                @if (item.cName) {
+                                  and
+                                }
+                                slug <span class="font-medium break-all">{{ item.cSlug }}</span>
+                              }
+                              @if (item.cParentSlug) {
+                                parent slug <span class="font-medium break-all">{{ item.cParentSlug }}</span>
+                              } @else if (item.cData) {
+                                content
+                              } @else {
+                                nothing
+                              }
+                              by
+                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
+                            </p>
+                          </div>
+                          <div class="text-right text-sm whitespace-nowrap">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
+                        </div>
+                      }
+                      @default {
+                        <div class="px-2">
+                          <ng-icon hlm size="sm" name="lucidePencil" />
+                        </div>
+                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
+                          <div>
+                            <p class="text-sm">Unknown</p> by
+                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
+                          </div>
+                          <div class="text-right text-sm whitespace-nowrap">
+                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                </div>
+              </li>
+            } @empty {
+              No Records found
+            }
+          </ul>
+        </div>
+      }
+    </ng-scrollbar>
+  </hlm-sheet-content>
+</hlm-sheet>

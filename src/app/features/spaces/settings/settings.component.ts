@@ -1,15 +1,24 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, input, inject } from '@angular/core';
-import { activate } from '@angular/fire/remote-config';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { Space } from '@shared/models/space.model';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideFingerprintPattern,
+  lucideGlobe,
+  lucideLayoutDashboard,
+  lucideShredder,
+  lucideVectorSquare,
+  lucideWebhook,
+} from '@ng-icons/lucide';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 interface TabItem {
   icon: string;
   link: string;
   label: string;
+  colorActive?: string;
+  colorInactive?: string;
 }
 
 @Component({
@@ -17,31 +26,48 @@ interface TabItem {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatTabsModule, MatIconModule, RouterModule],
+  imports: [RouterModule, HlmTabsImports, HlmIconImports],
+  providers: [
+    provideIcons({
+      lucideLayoutDashboard,
+      lucideGlobe,
+      lucideVectorSquare,
+      lucideFingerprintPattern,
+      lucideWebhook,
+      lucideShredder,
+    }),
+  ],
 })
 export class SettingsComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly cd = inject(ChangeDetectorRef);
 
   // Input
   spaceId = input.required<string>();
 
   space?: Space;
-  activeTab = 'general';
+  activeTab = signal('general');
   tabItems: TabItem[] = [
-    { icon: 'space_dashboard', label: 'General', link: 'general' },
-    { icon: 'language', label: 'Locales', link: 'locales' },
-    { icon: 'shape_line', label: 'Visual Editor', link: 'visual-editor' },
-    { icon: 'badge', label: 'Access Tokens', link: 'tokens' },
+    { icon: 'lucideLayoutDashboard', label: 'General', link: 'general' },
+    { icon: 'lucideGlobe', label: 'Locales', link: 'locales' },
+    { icon: 'lucideVectorSquare', label: 'Visual Editor', link: 'visual-editor' },
+    { icon: 'lucideFingerprintPattern', label: 'Access Tokens', link: 'tokens' },
+    { icon: 'lucideWebhook', label: 'Webhooks', link: 'webhooks' },
+    {
+      icon: 'lucideShredder',
+      label: 'Danger Zone',
+      link: 'danger-zone',
+      colorActive: 'text-destructive!',
+      colorInactive: 'text-destructive/60!',
+    },
   ];
 
   constructor() {
-    const router = this.router;
-
-    const idx = router.url.lastIndexOf('/');
-    this.activeTab = router.url.substring(idx + 1);
+    const idx = this.router.url.lastIndexOf('/');
+    this.activeTab.set(this.router.url.substring(idx + 1));
   }
 
-  protected readonly activate = activate;
+  onTabActivated(tabLink: string) {
+    this.activeTab.set(tabLink);
+    this.router.navigate(['features', 'spaces', this.spaceId(), 'settings', tabLink]);
+  }
 }

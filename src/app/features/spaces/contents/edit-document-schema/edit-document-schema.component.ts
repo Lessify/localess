@@ -1,5 +1,4 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -15,35 +14,25 @@ import {
   OnChanges,
   OnInit,
   output,
+  signal,
   SimpleChanges,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideBookCopy, lucideCirclePlus, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
+import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icons';
 import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
-import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import {
   Schema,
   SchemaComponent,
   SchemaEnum,
   SchemaField,
   SchemaFieldKind,
-  SchemaFieldOption,
-  SchemaFieldOptions,
   SchemaType,
   sortSchemaEnumValue,
 } from '@shared/models/schema.model';
@@ -53,7 +42,17 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { MarkdownComponent } from 'ngx-markdown';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmSwitchImports } from '@spartan-ng/helm/switch';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { debounceTime } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { v4 } from 'uuid';
@@ -64,6 +63,7 @@ import { ReferenceSelectComponent } from '../shared/reference-select/reference-s
 import { ReferencesSelectComponent } from '../shared/references-select/references-select.component';
 import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
 import { SchemaSelectChange } from './edit-document-schema.model';
+import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-editor.component';
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -72,30 +72,40 @@ import { SchemaSelectChange } from './edit-document-schema.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatTooltipModule,
-    MatIconModule,
-    MatMenuModule,
-    TextFieldModule,
     RichTextEditorComponent,
-    MatTabsModule,
-    MarkdownComponent,
-    MatSlideToggleModule,
-    MatSelectModule,
     LinkSelectComponent,
     ReferenceSelectComponent,
     ReferencesSelectComponent,
     AssetSelectComponent,
     AssetsSelectComponent,
-    MatCardModule,
     MatDividerModule,
-    MatListModule,
     DragDropModule,
-    MatExpansionModule,
+    HlmFieldImports,
+    HlmButtonImports,
+    HlmTooltipImports,
+    HlmIconImports,
+    HlmDropdownMenuImports,
+    HlmItemImports,
+    HlmInputGroupImports,
+    HlmSwitchImports,
+    BrnSelectImports,
+    HlmSelectImports,
+    MarkdownEditorComponent,
+    HlmAccordionImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideCirclePlus,
+      lucideTrash,
+      lucideGripVertical,
+      tablerRowInsertTop,
+      tablerRowInsertBottom,
+      lucideBookCopy,
+      lucideLanguages,
+      lucideInfo,
+    }),
   ],
 })
 export class EditDocumentSchemaComponent implements OnInit, OnChanges {
@@ -111,7 +121,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   schemaForm = viewChild<ElementRef<HTMLFormElement>>('schemaForm');
 
-  isDefaultLocale = computed(() => this.selectedLocale().id === DEFAULT_LOCALE.id);
+  isDefaultLocale = computed(() => this.selectedLocale().id === CONTENT_DEFAULT_LOCALE.id);
   selectedLocaleId = computed(() => this.selectedLocale().id);
   // Subscriptions
   settingsStore = inject(LocalSettingsStore);
@@ -167,7 +177,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   );
   schemaFieldsMap: Map<string, SchemaField> = new Map<string, SchemaField>();
   //Loadings
-  isFormLoading = true;
+  isFormLoading = signal(true);
 
   constructor() {
     effect(() => {
@@ -177,10 +187,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         element
           .querySelector<HTMLElement>(`.mat-mdc-text-field-wrapper:has(#schema-field-${field})`)
           ?.classList.add('mdc-text-field--focused');
+        element.querySelector<HTMLElement>(`[hlminputgroup]:has(#schema-field-${field})`)?.classList.add('border-primary');
       } else if (element) {
         element.querySelectorAll<HTMLElement>(`[id^="schema-field-"]`).forEach(item => {
           if (item !== document.activeElement) {
             item.closest('.mat-mdc-text-field-wrapper')?.classList.remove('mdc-text-field--focused');
+            item.closest('[hlminputgroup]')?.classList.remove('border-primary');
           }
         });
       }
@@ -195,8 +207,8 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    //console.group('EditDocumentSchemaComponent:ngOnChanges')
-    //console.log(changes);
+    console.group('EditDocumentSchemaComponent:ngOnChanges');
+    console.log(changes);
 
     const dataChange = changes['data'];
     if (dataChange) {
@@ -225,7 +237,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     if (selectedLocaleChange) {
       this.onChanged();
     }
-    //console.groupEnd()
+    console.groupEnd();
   }
 
   ngOnInit(): void {
@@ -235,6 +247,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     //console.log(`locale : ${this.locale}`)
     //console.log(`localeFallback : ${this.localeFallback}`)
     //console.groupEnd()
+    console.log('ngOnInit');
 
     this.generateForm();
     if (this.data) {
@@ -288,6 +301,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                 }
               }
             }
+
             this.formChange.emit(JSON.stringify(formValue));
             //console.log('After data', ObjectUtils.clone(this.data));
             //console.groupEnd();
@@ -308,13 +322,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   onChanged(): void {
     //console.group('onChanged')
-    this.isFormLoading = true;
+    this.isFormLoading.set(true);
     this.cd.detectChanges();
     this.generateForm();
     this.formPatch();
     //this.form.reset();
     //this.form.patchValue(this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale));
-    this.isFormLoading = false;
+    this.isFormLoading.set(false);
     this.cd.markForCheck();
     //console.groupEnd()
   }
@@ -322,31 +336,33 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   formPatch(): void {
     //console.group('formPatch')
     this.form.reset();
-    const extractSchemaContent = this.contentHelperService.extractSchemaContent(
-      this.data,
-      this.rootSchema!,
-      this.selectedLocaleId(),
-      false,
-    );
-    //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
-    this.form.patchValue(extractSchemaContent);
-    Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
-      const content = extractSchemaContent[fieldName];
-      if (content instanceof Array) {
-        // Assets
-        if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
-          const assets: AssetContent[] = content;
-          const fa = this.form.controls[fieldName] as FormArray;
-          assets.forEach(it => fa.push(this.contentHelperService.assetContentToForm(it)));
+    if (this.rootSchema) {
+      const extractSchemaContent = this.contentHelperService.extractSchemaContent(
+        this.data,
+        this.rootSchema,
+        this.selectedLocaleId(),
+        false,
+      );
+      //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
+      this.form.patchValue(extractSchemaContent);
+      Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
+        const content = extractSchemaContent[fieldName];
+        if (content instanceof Array) {
+          // Assets
+          if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
+            const assets: AssetContent[] = content;
+            const fa = this.form.controls[fieldName] as FormArray;
+            assets.forEach(it => fa.push(this.contentHelperService.assetContentToForm(it)));
+          }
+          // References
+          if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
+            const references: ReferenceContent[] = content;
+            const fa = this.form.controls[fieldName] as FormArray;
+            references.forEach(it => fa.push(this.contentHelperService.referenceContentToForm(it)));
+          }
         }
-        // References
-        if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
-          const references: ReferenceContent[] = content;
-          const fa = this.form.controls[fieldName] as FormArray;
-          references.forEach(it => fa.push(this.contentHelperService.referenceContentToForm(it)));
-        }
-      }
-    });
+      });
+    }
     //console.groupEnd()
   }
 
@@ -471,40 +487,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     return undefined;
   }
 
-  defaultOptionPlaceholder(field: SchemaFieldOption): string {
-    if (!this.isDefaultLocale()) {
-      const value = this.data[field.name] as string;
-      return field.options?.find(it => it.value === value)?.name || '';
-    }
-    return '';
-  }
-
-  defaultOptionsPlaceholder(field: SchemaFieldOptions): string {
-    if (!this.isDefaultLocale()) {
-      const values = this.data[field.name] as string[];
-      const options = new Map(field.options?.map(it => [it.value, it.name]));
-      return values.map(it => options.get(it)).join(',');
-    }
-    return '';
-  }
-
-  markFiledAvailable(event: MatSlideToggleChange, field: SchemaField) {
-    console.log(event, field);
-    const formField = this.form.controls[field.name];
-    if (event.checked) {
-      formField.enable();
-    } else {
-      formField.setValue(undefined);
-      formField.disable();
-    }
-  }
-
   translate(fieldName: string, sourceLocale: string, targetLocale: string): void {
     // get source locale content
     // this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
     //debugger;
     let content = '';
-    if (sourceLocale === DEFAULT_LOCALE.id) {
+    if (sourceLocale === CONTENT_DEFAULT_LOCALE.id) {
       content = this.data[fieldName];
     } else {
       content = this.data[`${fieldName}_i18n_${sourceLocale}`];
@@ -515,7 +503,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
       this.translateService
         .translate({
           content: content,
-          sourceLocale: sourceLocale !== DEFAULT_LOCALE.id ? sourceLocale : null,
+          sourceLocale: sourceLocale !== CONTENT_DEFAULT_LOCALE.id ? sourceLocale : null,
           targetLocale: targetLocale,
         })
         .subscribe({

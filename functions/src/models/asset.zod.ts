@@ -3,7 +3,7 @@ import { AssetKind } from './asset.model';
 
 export const assetBaseSchema = z.object({
   id: z.string(),
-  kind: z.nativeEnum(AssetKind),
+  kind: z.enum(AssetKind),
   name: z.string(),
   parentPath: z.string(),
 });

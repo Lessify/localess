@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "version": "2.5.1",
+  "version": "3.0.0",
   "scripts": {
     "lint": "eslint --ext .js,.ts .",
     "lint:fix": "eslint --fix --ext .js,.ts .",
@@ -19,22 +19,22 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@google-cloud/translate": "^9.2.0",
-    "compressing": "^2.0.0",
-    "cors": "^2.8.5",
-    "deepl-node": "^1.19.1",
-    "exiftool-vendored": "^31.1.0",
-    "express": "^5.1.0",
-    "firebase-admin": "^13.5.0",
-    "firebase-functions": "^6.4.0",
+    "@google-cloud/translate": "^9.3.0",
+    "compressing": "^2.1.0",
+    "cors": "^2.8.6",
+    "deepl-node": "^1.24.0",
+    "exiftool-vendored": "^35.13.1",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.7.0",
+    "firebase-functions": "^7.1.0",
     "fluent-ffmpeg": "^2.1.3",
-    "sharp": "^0.34.4",
+    "sharp": "^0.34.5",
     "uuid": "^13.0.0",
-    "zod": "^3.25.75"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/express": "^5.0.6",
+    "@types/fluent-ffmpeg": "^2.1.28",
     "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "^7.9.0",
     "@typescript-eslint/parser": "^7.9.0",
@@ -42,7 +42,7 @@
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.32.0",
     "openapi3-ts": "^4.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "private": true
 }

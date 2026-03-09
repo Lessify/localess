@@ -12,7 +12,7 @@ export interface AppUi {
   color?: AppUiColor;
 }
 
-export type AppUiColor = 'primary' | 'secondary' | 'tertiary' | 'error';
+export type AppUiColor = 'primary' | 'secondary' | 'outline' | 'destructive';
 
 export interface AppSettingsUiUpdate {
   text?: string;

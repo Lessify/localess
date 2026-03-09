@@ -25,9 +25,9 @@ export interface FieldTypeDescription {
 }
 
 export const schemaTypeDescriptions: Record<SchemaType, FieldTypeDescription> = {
-  ROOT: { name: 'Root', icon: 'margin', description: 'Root schema, top level schema' },
-  NODE: { name: 'Node', icon: 'polyline', description: 'Node schema, nested schema' },
-  ENUM: { name: 'Enum', icon: 'list', description: 'Enum schema, list of values' },
+  ROOT: { name: 'Root', icon: 'lucideFileBox', description: 'Root schema, top level schema' },
+  NODE: { name: 'Node', icon: 'lucideWorkflow', description: 'Node schema, nested schema' },
+  ENUM: { name: 'Enum', icon: 'lucideList', description: 'Enum schema, list of values' },
 };
 
 export type Schema = SchemaComponent | SchemaEnum;
@@ -107,43 +107,47 @@ export interface FieldKindDescription {
 }
 
 export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescription> = {
-  TEXT: { name: 'Text', icon: 'title', description: 'Short text field, titles or headlines' },
-  TEXTAREA: { name: 'Text Area', icon: 'rtt', description: 'Long text field, description' },
+  TEXT: { name: 'Text', icon: 'lucideType', description: 'Short text field, titles or headlines' },
+  TEXTAREA: { name: 'Text Area', icon: 'lucideTextInitial', description: 'Long text field, description' },
   RICH_TEXT: {
     name: 'Rich Text (Beta)',
-    icon: 'format_shapes',
+    icon: 'lucidePencilRuler',
     description: 'Rich text field, text that includes formatting commands for page layout such as bold, underline, italic, etc.',
   },
-  MARKDOWN: { name: 'Markdown', icon: 'markdown', description: 'Markdown text field, description' },
-  NUMBER: { name: 'Number', icon: 'pin', description: 'Number field, amount or quantity' },
-  COLOR: { name: 'Color', icon: 'colorize', description: 'Color field, background or text color' },
-  DATE: { name: 'Date', icon: 'event', description: 'Date field, calendar date picker' },
-  DATETIME: { name: 'Date and Time', icon: 'schedule', description: 'Date and time field, calendar date and time picker' },
-  BOOLEAN: { name: 'Boolean', icon: 'toggle_on', description: 'Boolean field, true or false' },
-  OPTION: { name: 'Option (One)', icon: 'list', description: 'Single selection field, dropdown' },
-  OPTIONS: { name: 'Options (Multiple)', icon: 'list', description: 'Multiple selection field, dropdown' },
-  LINK: { name: 'Link', icon: 'link', description: 'Link field, external URL or internal resource' },
-  REFERENCE: { name: 'Reference (One)', icon: 'dataset_linked', description: 'Reference field, to a internal resource' },
-  REFERENCES: { name: 'References (Multiple)', icon: 'dataset_linked', description: 'References field, to multiple internal resources' },
-  ASSET: { name: 'Asset (One)', icon: 'attachment', description: 'Asset field, image, video or file' },
-  ASSETS: { name: 'Assets (Multiple)', icon: 'attachment', description: 'Assets field, multiple images, videos or files' },
-  SCHEMA: { name: 'Schema (One)', icon: 'polyline', description: 'Schema field, to a internal schema' },
-  SCHEMAS: { name: 'Schemas (Multiple)', icon: 'polyline', description: 'Schemas field, to multiple internal schemas' },
+  MARKDOWN: { name: 'Markdown', icon: 'tablerMarkdown', description: 'Markdown text field, description' },
+  NUMBER: { name: 'Number', icon: 'tablerNumber', description: 'Number field, amount or quantity' },
+  COLOR: { name: 'Color', icon: 'lucidePalette', description: 'Color field, background or text color' },
+  DATE: { name: 'Date', icon: 'lucideCalendar', description: 'Date field, calendar date picker' },
+  DATETIME: { name: 'Date and Time', icon: 'lucideClock', description: 'Date and time field, calendar date and time picker' },
+  BOOLEAN: { name: 'Boolean', icon: 'lucideToggleLeft', description: 'Boolean field, true or false' },
+  OPTION: { name: 'Option (One)', icon: 'lucideList', description: 'Single selection field, dropdown' },
+  OPTIONS: { name: 'Options (Multiple)', icon: 'lucideList', description: 'Multiple selection field, dropdown' },
+  LINK: { name: 'Link', icon: 'lucideLink', description: 'Link field, external URL or internal resource' },
+  REFERENCE: { name: 'Reference (One)', icon: 'lucideFileSymlink', description: 'Reference field, to a internal resource' },
+  REFERENCES: { name: 'References (Multiple)', icon: 'lucideFileSymlink', description: 'References field, to multiple internal resources' },
+  ASSET: { name: 'Asset (One)', icon: 'lucidePaperclip', description: 'Asset field, image, video or file' },
+  ASSETS: { name: 'Assets (Multiple)', icon: 'lucidePaperclip', description: 'Assets field, multiple images, videos or files' },
+  SCHEMA: { name: 'Schema (One)', icon: 'lucideToyBrick', description: 'Schema field, to a internal schema' },
+  SCHEMAS: { name: 'Schemas (Multiple)', icon: 'lucideToyBrick', description: 'Schemas field, to multiple internal schemas' },
 };
 
 export const assetFileTypeDescriptions: Record<AssetFileType, FieldKindDescription> = {
-  ANY: { name: 'Any File', icon: 'file_present', description: 'All type of files.' },
-  IMAGE: { name: 'Images', icon: 'image', description: 'Image or graphical files including both bitmap and vector still images.' },
-  VIDEO: { name: 'Videos', icon: 'video_file', description: 'Videos files.' },
-  AUDIO: { name: 'Audio', icon: 'audio_file', description: 'Audio or music files.' },
+  ANY: { name: 'Any File', icon: 'lucideFile', description: 'All type of files.' },
+  IMAGE: {
+    name: 'Images',
+    icon: 'lucideFileImage',
+    description: 'Image or graphical files including both bitmap and vector still images.',
+  },
+  VIDEO: { name: 'Videos', icon: 'lucideFileVideoCamera', description: 'Videos files.' },
+  AUDIO: { name: 'Audio', icon: 'lucideFileMusic', description: 'Audio or music files.' },
   TEXT: {
     name: 'Text Documents',
-    icon: 'description',
+    icon: 'lucideFileText',
     description: 'Text-only files including any human-readable content, source code, or textual data.',
   },
   APPLICATION: {
     name: 'Application Documents',
-    icon: 'file_present',
+    icon: 'lucideFileDigit',
     description: "Any kind of binary data that doesn't fall explicitly into one of the other types.",
   },
 };
@@ -214,21 +218,14 @@ export interface SchemaFieldSchema extends SchemaFieldBase {
   schemas?: string[];
 }
 
-export interface SchemaFieldOptionSelectable {
-  name: string;
-  value: string;
-}
-
 export interface SchemaFieldOption extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTION;
-  source: string | 'self';
-  options?: SchemaFieldOptionSelectable[];
+  source: string;
 }
 
 export interface SchemaFieldOptions extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTIONS;
-  source: string | 'self';
-  options?: SchemaFieldOptionSelectable[];
+  source: string;
   minValues?: number;
   maxValues?: number;
 }
@@ -250,11 +247,13 @@ export interface SchemaFieldReferences extends SchemaFieldBase {
 export interface SchemaFieldAsset extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSET;
   fileTypes?: AssetFileType[];
+  fileType?: AssetFileType;
 }
 
 export interface SchemaFieldAssets extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSETS;
   fileTypes?: AssetFileType[];
+  fileType?: AssetFileType;
 }
 
 export enum AssetFileType {
@@ -278,3 +277,13 @@ export type SchemaCreateFS = Omit<Schema, 'id'>;
 
 export type SchemaComponentUpdateIdFS = Omit<SchemaComponent, 'id'>;
 export type SchemaEnumUpdateIdFS = Omit<SchemaEnum, 'id'>;
+
+// Utils
+export function isSchemaArray(schema: SchemaField): boolean {
+  return (
+    schema.kind === SchemaFieldKind.SCHEMAS ||
+    schema.kind === SchemaFieldKind.REFERENCES ||
+    schema.kind === SchemaFieldKind.OPTIONS ||
+    schema.kind === SchemaFieldKind.ASSETS
+  );
+}

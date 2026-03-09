@@ -1,6 +1,8 @@
 <h2 mat-dialog-title>Select Image from Unsplash</h2>
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
 <mat-dialog-content>
   <br />
@@ -32,18 +34,16 @@
   </mat-form-field>
 </mat-dialog-content>
 <mat-dialog-content>
-  <div class="flex flex-wrap gap-2 justify-start">
+  <div class="flex flex-wrap justify-start gap-2">
     @for (item of assets(); track item.id) {
       <mat-card class="digital-asset-card cursor-pointer" appearance="outlined" (click)="selection.toggle(item)">
-        <img class="object-contain image-bg" width="600" height="600" loading="lazy" alt="thumbnail" [ngSrc]="item.urls.regular" />
+        <img class="image-bg object-contain" width="600" height="600" loading="lazy" alt="thumbnail" [ngSrc]="item.urls.regular" />
         <mat-card-header>
           <mat-card-subtitle class="break-all">{{ item.description || item.alt_description }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           W{{ item.width }} x H{{ item.height }}
-          <p [matTooltip]="item.updated_at | date: 'medium'">
-            {{ item.updated_at | date: 'mediumDate' }}
-          </p>
+          <p [matTooltip]="item.updated_at | date: 'medium'"> {{ item.updated_at | date: 'mediumDate' }} </p>
           <p>
             by <a [href]="item.user.links.html + '?utm_source=localess&utm_medium=referral'" target="_blank">{{ item.user.name }}</a>
           </p>

@@ -1,153 +1,237 @@
-<div class="wrapper">
-  <mat-toolbar class="main">
-    <button mat-icon-button (click)="onMainMenuExpendedChangeState()" matTooltip="Menu">
-      <mat-icon>{{ settingsStore.mainMenuExpended() ? 'menu_open' : 'menu' }}</mat-icon>
-    </button>
-    <img src="assets/logo-adaptive.svg" class="h-8! ml-2" alt="Logo" />
-    @if (appSettingsStore.ui(); as ui) {
-      @if (ui.text) {
-        <mat-divider [vertical]="true" class="middle" />
-        <span class="ml-2 post-logo-text-{{ ui.color }}">
-          {{ ui.text }}
-        </span>
-      }
-    }
-    <span class="spacer"></span>
-
-    @if (spaceStore.spaces(); as spaces) {
-      @if (spaceStore.selectedSpace(); as selectedSpace) {
-        <button mat-flat-button [matMenuTriggerFor]="spacesMenu" matTooltip="Select a Space">
-          @if (selectedSpace.icon) {
-            <mat-icon>{{ selectedSpace.icon }}</mat-icon>
+<div hlmSidebarWrapper>
+  <hlm-sidebar collapsible="icon" variant="sidebar">
+    <div hlmSidebarHeader>
+      <a routerLink="/">
+        <ll-logo [open]="sidebarService.open() || sidebarService.openMobile()" />
+      </a>
+      @if (sidebarService.open() || sidebarService.openMobile()) {
+        @if (appSettingsStore.ui(); as ui) {
+          @if (ui.text) {
+            <div class="flex justify-center">
+              <span [class]="appTextClass()"> {{ ui.text }} </span>
+            </div>
           }
-          {{ selectedSpace.name }}
-          <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
-        </button>
-        <mat-menu #spacesMenu="matMenu" yPosition="below" xPosition="after">
-          @for (space of spaces; track space.id) {
-            <button mat-menu-item (click)="onSpaceSelection(space)">
-              @if (space.icon) {
-                <mat-icon>{{ space.icon }}</mat-icon>
-              }
-              <span [class.font-semibold]="space.id === selectedSpace.id"> {{ space.name }} </span>
+        }
+      }
+      <ul hlmSidebarMenu>
+        @if (spaceStore.spaces().length > 0) {
+          <li hlmSidebarMenuItem>
+            <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom">
+              <ng-icon hlm name="tablerSpaces" />
+              <span>{{ spaceStore.selectedSpace()?.name }}</span>
+              <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
             </button>
-          }
-        </mat-menu>
-      }
-    } @else {
-      <button mat-stroked-button color="warn" routerLink="/features/spaces">No Spaces. Click here to create one.</button>
-    }
-
-    <span class="spacer"></span>
-    <mat-divider [vertical]="true" class="middle" />
-    <button mat-icon-button routerLink="/features/welcome" matTooltip="Welcome">
-      <mat-icon>waving_hand</mat-icon>
-    </button>
-    <button mat-icon-button (click)="openNewTab('https://localess.org/sponsoring')" matTooltip="Sponsor Us">
-      <mat-icon class="motion-safe:animate-bounce">volunteer_activism</mat-icon>
-    </button>
-    <button mat-icon-button (click)="openNewTab('https://localess.org/home')" matTooltip="Visit Localess.ORG">
-      <mat-icon>public</mat-icon>
-    </button>
-    <button mat-icon-button [matMenuTriggerFor]="supportMenu" matTooltip="Documentation and Support">
-      <mat-icon>help_center</mat-icon>
-    </button>
-    <mat-menu #supportMenu="matMenu">
-      @for (item of communitySideMenu; track item.label) {
-        <button mat-menu-item (click)="openNewTab(item.link)">
-          <mat-icon>{{ item.icon }}</mat-icon>
-          <span>{{ item.label }}</span>
-        </button>
-      }
-    </mat-menu>
-    <mat-divider [vertical]="true" class="middle" />
-    <button mat-icon-button (click)="switchTheme()" aria-label="Switch theme" matTooltip="Switch theme">
-      <mat-icon class="dark:!hidden">dark_mode</mat-icon>
-      <mat-icon class="!hidden dark:!block">light_mode</mat-icon>
-    </button>
-    <button mat-icon-button (click)="onSettingsMenuExpendedChangeState()" matTooltip="Settings">
-      <mat-icon>settings</mat-icon>
-    </button>
-    <button mat-icon-button routerLink="/features/me" matTooltip="My Profile">
-      <mat-icon>account_circle</mat-icon>
-    </button>
-    <button mat-icon-button (click)="onLogoutClick()" matTooltip="LogOut">
-      <mat-icon>logout</mat-icon>
-    </button>
-  </mat-toolbar>
-
-  <mat-sidenav-container autosize="true">
-    <mat-sidenav mode="side" opened="true" position="start" [class.collapsed]="!settingsStore.mainMenuExpended()">
-      <mat-nav-list>
-        @if (spaceStore.selectedSpace(); as selectedSpace) {
-          @for (item of userSideMenu(); track item.label) {
-            @if (item.permission | canUserPerform | async) {
-              <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
-                <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
-                @if (settingsStore.mainMenuExpended()) {
-                  <div matListItemTitle>{{ item.label }}</div>
+            <ng-template #spaceMenu>
+              <hlm-dropdown-menu class="w-60">
+                @for (space of spaceStore.spaces(); track space.id) {
+                  <button hlmDropdownMenuRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
+                    <hlm-dropdown-menu-radio-indicator />
+                    <span> {{ space.name }} </span>
+                  </button>
                 }
-              </mat-list-item>
-            }
-          }
+              </hlm-dropdown-menu>
+            </ng-template>
+          </li>
         }
-
-        @if (['USER_MANAGEMENT', 'SPACE_MANAGEMENT'] | canUserPerform | async) {
-          <mat-divider />
-          @if (settingsStore.mainMenuExpended()) {
-            <div mat-subheader>Admin</div>
-          }
-          @for (item of adminSideMenu; track item.label) {
-            @if (item.permission | canUserPerform | async) {
-              <mat-list-item [routerLink]="[item.link]" routerLinkActive="active">
-                <mat-icon matListItemIcon [matTooltip]="item.label">{{ item.icon }}</mat-icon>
-                @if (settingsStore.mainMenuExpended()) {
-                  <div matListItemTitle>{{ item.label }}</div>
+      </ul>
+    </div>
+    <div hlmSidebarContent>
+      @if (spaceStore.selectedSpace()) {
+        <div hlmSidebarGroup>
+          <div hlmSidebarGroupLabel>Space</div>
+          <div hlmSidebarGroupContent>
+            <ul hlmSidebarMenu>
+              @for (item of userSideMenu(); track item.label) {
+                @if (item.permission | canUserPerform | async) {
+                  <li hlmSidebarMenuItem>
+                    <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
+                      <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" />
+                      <span>{{ item.label }}</span>
+                    </a>
+                  </li>
                 }
-              </mat-list-item>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+      @if (['USER_MANAGEMENT', 'SPACE_MANAGEMENT'] | canUserPerform | async) {
+        <div hlmSidebarGroup>
+          <div hlmSidebarGroupLabel>Admin</div>
+          <div hlmSidebarGroupContent>
+            <ul hlmSidebarMenu>
+              @for (item of adminSideMenu; track item.label) {
+                @if (item.permission | canUserPerform | async) {
+                  <li hlmSidebarMenuItem>
+                    <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
+                      <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" />
+                      <span>{{ item.label }}</span>
+                    </a>
+                  </li>
+                }
+              }
+            </ul>
+          </div>
+        </div>
+      }
+    </div>
+    <div hlmSidebarFooter>
+      <ul hlmSidebarMenu>
+        <li hlmSidebarMenuItem hlmTooltip="Welcome">
+          <button hlmSidebarMenuButton routerLink="/features/welcome" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
+            <ng-icon hlm name="lucideCircleQuestionMark" />
+            Welcome
+          </button>
+        </li>
+        <li hlmSidebarMenuItem hlmTooltip="Support">
+          <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="menu" side="right">
+            <ng-icon hlm name="lucideLifeBuoy" />
+            Support
+            <hlm-dropdown-menu-item-sub-indicator />
+          </button>
+        </li>
+        <ng-template #menu>
+          <hlm-dropdown-menu>
+            @for (menuItem of communitySideMenu; track menuItem.label) {
+              <button hlmDropdownMenuItem (click)="openNewTab(menuItem.link)">
+                <ng-icon [name]="menuItem.icon" />
+                {{ menuItem.label }}
+                <ng-icon name="lucideExternalLink" class="ml-auto" />
+              </button>
             }
-          }
-        }
+          </hlm-dropdown-menu>
+        </ng-template>
 
-        <mat-divider />
-        @if (latestRelease?.tag_name > 'v' + version) {
-          <mat-list-item
-            (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)"
-            [matTooltip]="'A new version is available : ' + latestRelease.name">
-            <mat-icon matListItemIcon class="motion-safe:animate-pulse flash"> release_alert </mat-icon>
-            @if (settingsStore.mainMenuExpended()) {
-              Version : {{ version }}
-            }
-          </mat-list-item>
+        <li hlmSidebarMenuItem hlmTooltip="Sponsor Us">
+          <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/sponsoring')">
+            <ng-icon hlm name="lucideHeartHandshake" />
+            Sponsor Us
+          </button>
+        </li>
+        @if (latestRelease && latestRelease.tag_name > 'v' + version) {
+          <li hlmSidebarMenuItem [hlmTooltip]="'A new version is available : ' + latestRelease.name">
+            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v3#' + latestRelease.tag_name)">
+              <ng-icon hlm name="lucideShieldAlert" class="flash motion-safe:animate-pulse" />
+              Version: {{ version }}
+            </button>
+          </li>
         } @else {
-          <mat-list-item matTooltip="You are on the latest version." (click)="openNewTab('https://localess.org/changelog/v2')">
-            <mat-icon matListItemIcon> new_releases </mat-icon>
-            @if (settingsStore.mainMenuExpended()) {
-              Version : {{ version }}
+          <li hlmSidebarMenuItem hlmTooltip="You are on the latest version.">
+            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v3')">
+              <ng-icon hlm name="lucideShieldCheck" />
+              Version: {{ version }}
+              <ng-icon hlm name="lucideBellDot" class="text-destructive ml-auto" />
+            </button>
+          </li>
+        }
+        <li hlmSidebarMenuItem>
+          <button hlmSidebarMenuButton size="lg" [hlmDropdownMenuTrigger]="userMenu" side="right" class="flex gap-2">
+            <hlm-avatar>
+              <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+              <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
+            </hlm-avatar>
+            <div class="grid flex-1 text-left text-sm leading-tight">
+              <span class="truncate font-medium">{{ userStore.displayName() }}</span>
+              <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
+            </div>
+            <ng-icon hlm name="lucideChevronsUpDown" class="ml-auto" />
+          </button>
+          <ng-template #userMenu>
+            <hlm-dropdown-menu class="w-60">
+              <div class="flex gap-2 p-2">
+                <hlm-avatar>
+                  <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+                  <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
+                </hlm-avatar>
+                <div class="grid flex-1 text-left text-sm leading-tight">
+                  <span class="truncate font-medium">{{ userStore.displayName() }}</span>
+                  <span class="text-muted-foreground truncate text-xs">{{ userStore.email() }}</span>
+                </div>
+              </div>
+              <hlm-dropdown-menu-separator />
+              <button hlmDropdownMenuItem routerLink="/features/me" hlmTooltip="Profile">
+                <ng-icon name="lucideUserCircle" />
+                Profile
+              </button>
+              <hlm-dropdown-menu-separator />
+              <button hlmDropdownMenuItem (click)="onLogoutClick()" hlmTooltip="Log Out">
+                <ng-icon name="lucideLogOut" />
+                Log out
+              </button>
+            </hlm-dropdown-menu>
+          </ng-template>
+        </li>
+      </ul>
+    </div>
+  </hlm-sidebar>
+  <main hlmSidebarInset>
+    <header class="flex h-12 items-center justify-between border-b">
+      <div id="header-breadcrumbs" class="flex h-5 w-full items-center gap-2 px-4">
+        <button hlmSidebarTrigger><span class="sr-only"></span></button>
+        <hlm-separator orientation="vertical" />
+        <nav hlmBreadcrumb>
+          <ol hlmBreadcrumbList>
+            @for (breadcrumb of breadcrumbs(); track breadcrumb.route; let isLast = $last; let isFirst = $first) {
+              @if (!isFirst) {
+                <li hlmBreadcrumbSeparator></li>
+              }
+              <li hlmBreadcrumbItem>
+                @if (isLast) {
+                  <span hlmBreadcrumbPage>{{ breadcrumb.label }}</span>
+                  @if (breadcrumb.helpUrl) {
+                    <a hlmBtn variant="link" size="icon-sm" [href]="breadcrumb.helpUrl" target="_blank" hlmTooltip="Help Article">
+                      <ng-icon name="lucideBadgeInfo" />
+                    </a>
+                  }
+                } @else {
+                  <a hlmBreadcrumbLink [link]="breadcrumb.route">{{ breadcrumb.label }}</a>
+                }
+              </li>
             }
-          </mat-list-item>
-        }
-      </mat-nav-list>
-    </mat-sidenav>
-
-    <mat-sidenav mode="over" [opened]="isSettingsMenuExpended()" position="end" (openedChange)="isSettingsMenuExpended.set($event)">
-      <mat-list>
-        <div mat-subheader>Settings</div>
+          </ol>
+        </nav>
+      </div>
+      <div id="header-actions" class="flex items-center gap-2 px-4">
         @if (isDebug) {
-          <mat-list-item>
-            <mat-slide-toggle [checked]="settingsStore.debugEnabled()" (change)="onDebugEnabledChangeState()">
-              Enable Debug
-            </mat-slide-toggle>
-          </mat-list-item>
+          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltip="App Settings" position="bottom">
+            <ng-icon hlm name="lucideSettings" size="sm" />
+          </button>
         }
-      </mat-list>
-    </mat-sidenav>
-
-    <mat-sidenav-content>
-      @if (userStore.role() === undefined) {
-        Please contact your administrator to grant you access to resources.
-      }
-      <router-outlet></router-outlet>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
+        <button
+          hlmBtn
+          size="icon-sm"
+          variant="ghost"
+          (click)="switchTheme()"
+          aria-label="Switch theme"
+          hlmTooltip="Switch theme"
+          position="bottom">
+          <ng-icon hlm [name]="settingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
+        </button>
+      </div>
+    </header>
+    @if (userStore.role() === undefined) {
+      Please contact your administrator to grant you access to resources.
+    }
+    <router-outlet></router-outlet>
+  </main>
+  <hlm-sheet side="right" [state]="showDebugSettings() ? 'open' : 'closed'" (closed)="showDebugSettings.set(false)">
+    <hlm-sheet-content *hlmSheetPortal="let ctx">
+      <hlm-sheet-header>
+        <h3 hlmSheetTitle>Debug Settings</h3>
+      </hlm-sheet-header>
+      <div>
+        <div class="px-4">
+          <fieldset hlmFieldSet>
+            <div hlmFieldGroup class="gap-4">
+              <div hlmField orientation="horizontal">
+                <hlm-switch id="enableDebug" [checked]="settingsStore.debugEnabled()" (checkedChange)="settingsStore.setDebug($event)" />
+                <label hlmFieldLabel for="enableDebug">Enable Debug</label>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+    </hlm-sheet-content>
+  </hlm-sheet>
+  <hlm-toaster />
 </div>

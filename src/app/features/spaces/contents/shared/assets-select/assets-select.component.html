@@ -1,62 +1,75 @@
-<mat-card class="ll-not-shadow">
-  <mat-card-header>
-    <mat-card-title-group>
-      <mat-card-title>
+<div hlmFieldGroup>
+  <fieldset hlmFieldSet class="gap-2">
+    <legend hlmFieldLegend class="flex w-full justify-between">
+      <span>
         {{ component().displayName || component().name }}
         @if (component().translatable) {
-          <mat-icon matTooltip="The field is translatable">language</mat-icon>
+          <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
         }
-      </mat-card-title>
-      @if (component().description; as description) {
-        <mat-card-subtitle>{{ description }}</mat-card-subtitle>
-      }
-      <button mat-icon-button matTooltip="Add Assets" (click)="openAssetSelectDialog()">
-        <mat-icon>attach_file_add</mat-icon>
+      </span>
+      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Assets" (click)="openAssetSelectDialog()">
+        <ng-icon hlm size="sm" name="lucideFilePlusCorner" />
       </button>
-    </mat-card-title-group>
-  </mat-card-header>
-  <mat-divider></mat-divider>
-  <mat-card-content>
-    <mat-list cdkDropList (cdkDropListDropped)="assetDropDrop($event)">
-      @for (asset of assets; track asset.id; let idx = $index) {
-        <mat-list-item cdkDrag cdkDragPreviewContainer="parent">
-          @if (asset.type.startsWith('image/')) {
-            <img
-              matListItemAvatar
-              (mouseup)="openImagePreview(asset)"
-              [llImagePreview]="3"
-              class="border object-contain image-bg rounded-sm!"
-              width="200"
-              height="200"
-              alt="thumbnail"
-              loading="lazy"
-              [loaderParams]="{ thumbnail: true }"
-              ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
-          } @else {
-            <mat-icon matListItemIcon>file_present</mat-icon>
-          }
-          <div matListItemTitle>{{ asset.name }}{{ asset.extension }}</div>
-          <code matListItemLine>
-            {{ asset.size | formatFileSize }}
-            @if (asset.metadata; as metadata) {
-              | W{{ metadata.width }} x H{{ metadata.height }}
-            }
-          </code>
-          <div matListItemMeta>
-            <button mat-icon-button (click)="deleteAsset(idx)">
-              <mat-icon>delete</mat-icon>
-            </button>
-            &nbsp;&nbsp;
-            <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-          </div>
-        </mat-list-item>
-      }
-    </mat-list>
-    @if (form().errors; as errors) {
-      <mat-error>{{ fe.errors(errors) }}</mat-error>
+    </legend>
+    @if (component().description; as description) {
+      <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
     }
-  </mat-card-content>
-</mat-card>
+    <hlm-field-separator />
+    <div hlmFieldGroup>
+      <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="assetDropDrop($event)">
+        @for (asset of assets; track asset.id; let idx = $index) {
+          <div
+            hlmItem
+            variant="outline"
+            role="listitem"
+            class="cursor-pointer"
+            cdkDrag
+            cdkDragPreviewContainer="parent"
+            (click)="openImagePreview(asset)"
+            (keydown)="openImagePreview(asset)">
+            @if (asset.type.startsWith('image/')) {
+              <div hlmItemMedia variant="image">
+                <img
+                  [llImagePreview]="2.5"
+                  class="image-bg rounded-sm! border object-contain!"
+                  width="200"
+                  height="200"
+                  alt="thumbnail"
+                  loading="lazy"
+                  [loaderParams]="{ thumbnail: true }"
+                  ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
+              </div>
+            } @else {
+              <div hlmItemMedia variant="icon">
+                <ng-icon name="lucideFile" />
+              </div>
+            }
+            <div hlmItemContent class="min-w-0 overflow-hidden">
+              <div hlmItemTitle class="line-clamp-1 w-full truncate"> {{ asset.name }}{{ asset.extension }} </div>
+              <p hlmItemDescription class="line-clamp-1 truncate">
+                {{ asset.size | formatFileSize }}
+                @if (asset.metadata; as metadata) {
+                  | W{{ metadata.width }} x H{{ metadata.height }}
+                }
+              </p>
+            </div>
+            <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+              <button hlmBtn size="icon" variant="outline" (click)="deleteAsset(idx)" hlmTooltip="Delete">
+                <ng-icon hlm size="sm" name="lucideTrash" />
+              </button>
+              <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+                <ng-icon hlm size="sm" name="lucideGripVertical" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    @if (form().errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </fieldset>
+</div>
 
 @if (settingsStore.debugEnabled()) {
   <mat-accordion [multi]="true">

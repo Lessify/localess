@@ -4,7 +4,7 @@ import { AssetFileType, SchemaFieldKind, SchemaType } from './schema.model';
 // const FIELD_NAME_PATTERN = /^[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+$/;
 // const ID_PATTERN = /^[a-zA-Z]+[a-zA-Z0-9-_.]*[a-zA-Z0-9]+$/;
 
-export const schemaTypeSchema = z.nativeEnum(SchemaType);
+export const schemaTypeSchema = z.enum(SchemaType);
 
 export const schemaBaseSchema = z.object({
   id: z.string(),
@@ -19,7 +19,7 @@ export const schemaEnumValueSchema = z.object({
   value: z.string(),
 });
 
-export const schemaFieldKindSchema = z.nativeEnum(SchemaFieldKind);
+export const schemaFieldKindSchema = z.enum(SchemaFieldKind);
 
 export const schemaFieldBaseSchema = z.object({
   name: z.string(),
@@ -87,21 +87,14 @@ export const schemaFieldSchemaSchema = schemaFieldBaseSchema.extend({
   schemas: z.array(z.string()).optional(),
 });
 
-export const schemaFieldOptionSelectableSchema = z.object({
-  name: z.string(),
-  value: z.string(),
-});
-
 export const schemaFieldOptionSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTION),
-  source: z.union([z.string(), z.literal('self')]),
-  options: z.array(schemaFieldOptionSelectableSchema).optional(),
+  source: z.string(),
 });
 
 export const schemaFieldOptionsSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTIONS),
-  source: z.union([z.string(), z.literal('self')]),
-  options: z.array(schemaFieldOptionSelectableSchema).optional(),
+  source: z.string(),
   minValues: z.number().optional(),
   maxValues: z.number().optional(),
 });
@@ -120,7 +113,7 @@ export const schemaFieldReferencesSchema = schemaFieldBaseSchema.extend({
   path: z.string().optional(),
 });
 
-export const assetFileTypeSchema = z.nativeEnum(AssetFileType);
+export const assetFileTypeSchema = z.enum(AssetFileType);
 
 export const schemaEnumSchema = schemaBaseSchema.extend({
   type: z.literal(SchemaType.ENUM),
@@ -130,11 +123,13 @@ export const schemaEnumSchema = schemaBaseSchema.extend({
 export const schemaFieldAssetSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.ASSET),
   fileTypes: z.array(assetFileTypeSchema).optional(),
+  fileType: assetFileTypeSchema.optional(),
 });
 
 export const schemaFieldAssetsSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.ASSETS),
   fileTypes: z.array(assetFileTypeSchema).optional(),
+  fileType: assetFileTypeSchema.optional(),
 });
 
 export const schemaFieldSchema = z.union([

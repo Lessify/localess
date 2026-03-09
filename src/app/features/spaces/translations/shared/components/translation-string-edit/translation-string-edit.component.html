@@ -1,0 +1,20 @@
+<div hlmInputGroup class="relative">
+  @if (enableHighlighting()) {
+    <div #backdrop class="backdrop">
+      <div class="highlights" [innerHTML]="highlightedText() | safeHtml"></div>
+    </div>
+  }
+  <textarea
+    #textarea
+    [value]="value()"
+    (input)="value.set(textarea.value)"
+    (scroll)="handleScroll()"
+    hlmInputGroupTextarea
+    placeholder="Enter your content here..."
+    maxlength="1000"
+    class="max-h-80 min-h-0">
+  </textarea>
+  <div hlmInputGroupAddon align="block-end">
+    <span hlmInputGroupText class="text-muted-foreground text-xs">{{ 1000 - textarea.value.length }} characters left</span>
+  </div>
+</div>

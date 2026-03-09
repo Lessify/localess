@@ -1,0 +1,22 @@
+@if (isLoading()) {
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
+}
+@if (spaceStore.selectedSpaceId(); as selectedSpaceId) {
+  <fieldset hlmFieldSet class="mx-auto mt-10 w-full max-w-4xl">
+    <div hlmFieldGroup>
+      <div hlmField orientation="responsive">
+        <div hlmFieldContent>
+          <label hlmFieldLabel for="deleteTranslations">Delete All Translations</label>
+          <p hlmFieldDescription>Once you delete all translations, there is no going back. Make sure you have a back-up.</p>
+        </div>
+        <button hlmBtn variant="destructive" id="deleteTranslations" (click)="deleteTranslations(selectedSpaceId)">
+          <ng-icon hlm size="sm" name="lucideShredder" />
+          Delete All Translations
+        </button>
+      </div>
+      <hlm-field-separator />
+    </div>
+  </fieldset>
+}

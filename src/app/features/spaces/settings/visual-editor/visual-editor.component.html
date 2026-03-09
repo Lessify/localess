@@ -1,77 +1,78 @@
-<mat-toolbar class="border-b">
-  <mat-toolbar-row>
-    Visual Editor
-    <span class="spacer"></span>
-    <div class="actions">
-      <button mat-flat-button [disabled]="!form.valid" (click)="save()">
-        <mat-icon>save</mat-icon>
-        Save
-      </button>
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+<div class="flex items-center justify-end gap-2 p-2">
+  <button hlmBtn variant="outline" (click)="addEnvironment()">
+    <ng-icon hlm size="sm" name="lucidePlus" />
+    Add Environment
+  </button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">
+    <ng-icon hlm size="sm" name="lucideSave" />
+    Save
+  </button>
+</div>
 
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
 
 <div class="my-3">
-  <mat-toolbar style="background: transparent">
-    <mat-toolbar-row>
-      Preview URL's
-      <span class="spacer"></span>
-      <div class="actions">
-        <button mat-stroked-button (click)="addEnvironment()">
-          <mat-icon>add</mat-icon>
-          Add Environment
-        </button>
-      </div>
-    </mat-toolbar-row>
-  </mat-toolbar>
-
   <form [formGroup]="form">
-    <mat-accordion cdkDropList multi formArrayName="environments" (cdkDropListDropped)="environmentDropDrop($event)">
+    <div
+      hlmItemGroup
+      class="gap-2 overflow-y-auto"
+      formArrayName="environments"
+      cdkDropList
+      (cdkDropListDropped)="environmentDropDrop($event)">
       @for (option of environments?.controls; track option; let idx = $index) {
-        <mat-expansion-panel cdkDrag [formGroupName]="idx" expanded [class.invalid]="option.invalid">
-          <mat-expansion-panel-header>
-            <mat-panel-title>
-              <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-              Environment {{ idx + 1 }}
-              <button mat-icon-button (click)="removeEnvironment(idx)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-
-          <mat-form-field style="padding-right: 10px">
-            <mat-label>Name</mat-label>
-            <input matInput type="text" formControlName="name" autocomplete="off" placeholder="Production/Testing/Development" />
-            <mat-hint align="end">{{ option.value.name?.length || 0 }}/30</mat-hint>
-            @if (option.controls['name']?.errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field style="width: calc(100% - 360px)">
-            <mat-label>URL</mat-label>
-            <input matInput type="text" formControlName="url" autocomplete="off" placeholder="https://localess.io/api/url" />
-            <mat-hint align="end">{{ option.value.url?.length || 0 }}/250</mat-hint>
-            @if (option.controls['url']?.errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
-        </mat-expansion-panel>
+        <div
+          hlmItem
+          role="listitem"
+          cdkDrag
+          variant="outline"
+          [formGroupName]="idx"
+          [class.border-destructive]="option.invalid"
+          cdkDragPreviewContainer="parent">
+          <div hlmItemContent class="gap-2">
+            <div hlmItemTitle>Environment {{ idx + 1 }} </div>
+            <div hlmFieldGroup>
+              <div hlmField>
+                <label hlmFieldLabel [for]="'name-' + idx">Name</label>
+                <input
+                  hlmInput
+                  [id]="'name-' + idx"
+                  type="text"
+                  formControlName="name"
+                  autocomplete="off"
+                  placeholder="Production/Testing/Development" />
+                @if (option.controls['name'].errors; as errors) {
+                  <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                }
+              </div>
+              <div hlmField>
+                <label hlmFieldLabel [for]="'url-' + idx">Name</label>
+                <input
+                  hlmInput
+                  [id]="'url-' + idx"
+                  type="text"
+                  formControlName="url"
+                  autocomplete="off"
+                  placeholder="https://localess.io/api/url" />
+                @if (option.controls['url'].errors; as errors) {
+                  <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                }
+              </div>
+            </div>
+          </div>
+          <div hlmItemActions class="mb-auto">
+            <button hlmBtn size="icon" variant="outline" (click)="removeEnvironment(idx)" hlmTooltip="Delete">
+              <ng-icon hlm size="sm" name="lucideTrash" />
+            </button>
+            <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+              <ng-icon hlm size="sm" name="lucideGripVertical" />
+            </button>
+          </div>
+        </div>
       }
-    </mat-accordion>
+    </div>
   </form>
 </div>
-@if (settingsStore.debugEnabled()) {
-  <mat-accordion [multi]="true">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Form : {{ form?.valid }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>{{ form.value | json }}</pre>
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
-}

@@ -29,6 +29,8 @@ export { translation } from './translations';
 
 export { user } from './users';
 
+export { webhook } from './webhooks';
+
 export { v1 as publicv1 } from './v1';
 
 // Plugins API

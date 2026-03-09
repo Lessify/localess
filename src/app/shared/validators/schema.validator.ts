@@ -38,6 +38,7 @@ export class SchemaValidator {
     Validators.required,
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.JSON_NAME),
+    Validators.pattern(CommonPattern.SCHEMA_FIELD_NAME_TRANSLATION),
     CommonValidator.reservedName(SCHEMA_RESERVED_FIELD_NAMES),
     Validators.minLength(2),
     Validators.maxLength(30),
@@ -51,7 +52,7 @@ export class SchemaValidator {
 
   public static FIELD_TRANSLATABLE: ValidatorFn[] = [];
 
-  public static FIELD_DESCRIPTION: ValidatorFn[] = [Validators.maxLength(500)];
+  public static FIELD_DESCRIPTION: ValidatorFn[] = [Validators.maxLength(250)];
 
   public static FIELD_DEFAULT_VALUE: ValidatorFn[] = [Validators.maxLength(250)];
 
@@ -71,14 +72,14 @@ export class SchemaValidator {
 
   public static FIELD_OPTION_SOURCE: ValidatorFn[] = [Validators.required];
 
-  public static FIELD_OPTION_NAME: ValidatorFn[] = [
+  public static FIELD_ENUM_NAME: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpaceAround,
     Validators.minLength(1),
     Validators.maxLength(50),
   ];
 
-  public static FIELD_OPTION_VALUE: ValidatorFn[] = [
+  public static FIELD_ENUM_VALUE: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.ENUM_VALUE),

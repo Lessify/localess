@@ -18,7 +18,14 @@ import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { Translation, TranslationCreate, TranslationCreateFS, TranslationType, TranslationUpdate } from '../models/translation.model';
+import {
+  TranslateLocaleData,
+  Translation,
+  TranslationCreate,
+  TranslationCreateFS,
+  TranslationType,
+  TranslationUpdate,
+} from '../models/translation.model';
 
 @Injectable({ providedIn: 'root' })
 export class TranslationService {
@@ -167,5 +174,15 @@ export class TranslationService {
   publish(spaceId: string): Observable<void> {
     const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-publish');
     return translationsPublish({ spaceId }).pipe(traceUntilFirst('Functions:Translations:publish'));
+  }
+
+  deleteAll(spaceId: string): Observable<void> {
+    const translationsDeleteAll = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-deleteall');
+    return translationsDeleteAll({ spaceId }).pipe(traceUntilFirst('Functions:Translations:deleteAll'));
+  }
+
+  translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string): Observable<void> {
+    const translateLocale = httpsCallableData<TranslateLocaleData, void>(this.functions, 'translation-translatelocale');
+    return translateLocale({ spaceId, sourceLocaleId, targetLocaleId }).pipe(traceUntilFirst('Functions:Translations:translateLocale'));
   }
 }

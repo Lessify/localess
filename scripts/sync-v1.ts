@@ -1,5 +1,5 @@
 (function () {
-  const FG_BLUE = "\x1b[34m"
+  const FG_BLUE = '\x1b[34m';
   const RESET = '\x1b[0m';
   const LOG_GROUP = `${FG_BLUE}[Localess:Sync]${RESET}`;
   // Event emitted from Application to Visual Editor
@@ -9,10 +9,10 @@
     | { type: 'selectSchema' | 'hoverSchema' | 'leaveSchema'; id: string; schema: string; field?: string };
 
   // Event emitted from Visual Editor to Application
-  type EventToAppType = 'save' | 'publish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
+  type EventToAppType = 'save' | 'publish' | 'unpublish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
   type EventCallback = (event: EventToApp) => void;
   type EventToApp =
-    | { type: 'save' | 'publish' | 'pong' }
+    | { type: 'save' | 'publish' | 'unpublish' | 'pong' }
     | { type: 'input' | 'change'; data: any }
     | { type: 'enterSchema' | 'hoverSchema'; id: string; schema: string; field?: string };
 
@@ -116,6 +116,7 @@
       events: Record<EventToAppType, EventCallback[]> = {
         save: [],
         publish: [],
+        unpublish: [],
         input: [],
         change: [],
         enterSchema: [],
@@ -141,6 +142,10 @@
                 break;
               }
               case 'publish': {
+                this.emit(data);
+                break;
+              }
+              case 'unpublish': {
                 this.emit(data);
                 break;
               }

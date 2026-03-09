@@ -1,102 +1,92 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    Content
-    <a mat-icon-button target="_blank" href="https://localess.org/docs/content/overview" matTooltip="Help Article">
-      <mat-icon>help</mat-icon>
-    </a>
-    <span class="spacer"></span>
-    <div class="actions">
-      @if ('CONTENT_CREATE' | canUserPerform | async) {
-        <button mat-flat-button [matMenuTriggerFor]="contentCreateMenu">
-          <mat-icon>add</mat-icon>
-          Add Content
+<div class="flex items-center justify-end gap-2 p-2">
+  @if ('CONTENT_CREATE' | canUserPerform | async) {
+    <button hlmBtn [hlmDropdownMenuTrigger]="contentCreateMenu">
+      <ng-icon hlm size="sm" name="lucidePlus" />
+      Add Content
+    </button>
+    <ng-template #contentCreateMenu>
+      <hlm-dropdown-menu>
+        <button hlmDropdownMenuItem (click)="openAddDocumentDialog()">
+          <ng-icon hlm size="sm" name="lucideFilePlus" />
+          Document
         </button>
-        <mat-menu #contentCreateMenu="matMenu">
-          <button mat-menu-item (click)="openAddDocumentDialog()">
-            <mat-icon>post_add</mat-icon>
-            <span>Document</span>
-          </button>
-          <button mat-menu-item (click)="openAddFolderDialog()">
-            <mat-icon>create_new_folder</mat-icon>
-            <span>Folder</span>
-          </button>
-        </mat-menu>
+        <button hlmDropdownMenuItem (click)="openAddFolderDialog()">
+          <ng-icon hlm size="sm" name="lucideFolderPlus" />
+          Folder
+        </button>
+      </hlm-dropdown-menu>
+    </ng-template>
+  }
+  <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+    <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+  </button>
+  <ng-template #extraMenu>
+    <hlm-dropdown-menu>
+      @if ('CONTENT_IMPORT' | canUserPerform | async) {
+        <button hlmDropdownMenuItem (click)="openImportDialog()">
+          <ng-icon hlm size="sm" name="lucideUploadCloud" />
+          Import
+        </button>
       }
-
-      <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-
-      <mat-menu #extraMenu="matMenu">
-        @if (['CONTENT_IMPORT', 'CONTENT_EXPORT'] | canUserPerform | async) {
-          @if ('CONTENT_IMPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openImportDialog()">
-              <mat-icon>cloud_upload</mat-icon>
-              <span>Import</span>
-            </button>
-          }
-          @if ('CONTENT_EXPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openExportDialog()">
-              <mat-icon>cloud_download</mat-icon>
-              <span>Export</span>
-            </button>
-          }
-          <mat-divider></mat-divider>
-        }
-        <button mat-menu-item (click)="openLinksV1InNewTab()">
-          <mat-icon>link</mat-icon>
-          <span>Links</span>
+      @if ('CONTENT_EXPORT' | canUserPerform | async) {
+        <button hlmDropdownMenuItem (click)="openExportDialog()">
+          <ng-icon hlm size="sm" name="lucideCloudDownload" />
+          Export
         </button>
-      </mat-menu>
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+      }
+      <hlm-dropdown-menu-separator />
+      <button hlmDropdownMenuItem (click)="openLinksV1InNewTab()">
+        <ng-icon hlm size="sm" name="lucideLink" />
+        Links
+        <ng-icon hlm size="sm" name="lucideExternalLink" class="ml-auto" />
+      </button>
+    </hlm-dropdown-menu>
+  </ng-template>
+</div>
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
 
-<div class="px-2 mx-auto mt-3">
-  <ll-breadcrumb>
-    @for (pathItem of spaceStore.contentPath(); track pathItem.fullSlug; let isFirst = $first) {
-      <ll-breadcrumb-item (click)="navigateToSlug(pathItem)" [home]="isFirst">
-        {{ pathItem.name }}
-      </ll-breadcrumb-item>
-    }
-  </ll-breadcrumb>
+<div class="mx-auto mt-3 px-2">
+  <nav hlmBreadcrumb class="p-2">
+    <ol hlmBreadcrumbList>
+      @for (pathItem of spaceStore.contentPath(); track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
+        @if (!isFirst) {
+          <li hlmBreadcrumbSeparator></li>
+        }
+        <li hlmBreadcrumbItem>
+          @if (isFirst) {
+            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
+              <ng-icon name="lucideFolderRoot" />
+            </button>
+          } @else if (isLast) {
+            <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
+          } @else {
+            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)"> {{ pathItem.name }} </button>
+          }
+        </li>
+      }
+    </ol>
+  </nav>
 
   <mat-table [dataSource]="dataSource" matSort>
-    <!-- Checkbox Column -->
-    <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef>
-        <mat-checkbox
-          (change)="$event ? toggleAllRows() : null"
-          [checked]="selection.hasValue() && isAllSelected()"
-          [indeterminate]="selection.hasValue() && !isAllSelected()">
-        </mat-checkbox>
-      </mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        <mat-checkbox
-          (click)="$event.stopPropagation()"
-          (change)="$event ? selection.toggle(row) : null"
-          [checked]="selection.isSelected(row)">
-        </mat-checkbox>
-      </mat-cell>
-    </ng-container>
     <ng-container matColumnDef="status">
       <mat-header-cell *matHeaderCellDef> Status</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @switch (element.kind) {
           @case ('DOCUMENT') {
-            @if (element?.publishedAt === undefined) {
-              <ll-status mode="offline" matTooltip="Not published" />
-            } @else if (element?.publishedAt?.seconds > element?.updatedAt?.seconds) {
-              <ll-status mode="online" matTooltip="Published" />
-            } @else if (element?.publishedAt && element?.publishedAt?.seconds < element?.updatedAt?.seconds) {
-              <ll-status mode="away" matTooltip="Draft" />
+            @if (element.publishedAt === undefined) {
+              <ll-status mode="offline" hlmTooltip="Not published" />
+            } @else if (element.publishedAt.seconds > element.updatedAt?.seconds) {
+              <ll-status mode="online" hlmTooltip="Published" />
+            } @else if (element.publishedAt.seconds < element.updatedAt?.seconds) {
+              <ll-status mode="away" hlmTooltip="Draft" />
             }
           }
           @case ('FOLDER') {
-            <mat-icon>folder</mat-icon>
+            <ng-icon hlm name="lucideFolder" />
           }
         }
       </mat-cell>
@@ -104,15 +94,11 @@
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @if (element.locked) {
-          <mat-icon [matTooltip]="element.lockedBy ? 'Locked By ' + element.lockedBy + ' plugin' : 'Locked by unknown'">lock</mat-icon>
-        }
-        {{ element.name }}
+        <div [title]="element.name">
+          <div class="line-clamp-1">{{ element.name }}</div>
+          <div class="text-muted-foreground line-clamp-1">#{{ element.slug }}</div>
+        </div>
       </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="slug">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="slug"> Slug</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.slug }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="schema">
       <mat-header-cell *matHeaderCellDef mat-sort-header="schema"> Schema</mat-header-cell>
@@ -128,19 +114,19 @@
     </ng-container>
     <ng-container matColumnDef="publishedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="publishedAt"> Published At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.publishedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.publishedAt?.toDate() | date: 'medium'">
         {{ element.publishedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.createdAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
         {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
@@ -148,58 +134,85 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @if ('CONTENT_PUBLISH' | canUserPerform | async) {
-          <button mat-icon-button (click)="openPublishDialog($event, element)" matTooltip="Publish">
-            <mat-icon>publish</mat-icon>
-          </button>
-        }
-        @if ('CONTENT_UPDATE' | canUserPerform | async) {
-          <button mat-icon-button (click)="openEditDialog($event, element)" [disabled]="element.locked" matTooltip="Edit">
-            <mat-icon>edit</mat-icon>
-          </button>
-        }
-        @if ('CONTENT_CREATE' | canUserPerform | async) {
-          <button
-            mat-icon-button
-            (click)="openCloneDialog($event, element)"
-            [disabled]="element.kind === 'FOLDER'"
-            matTooltip="Clone the Document Here">
-            <mat-icon>content_copy</mat-icon>
-          </button>
-        }
-        @if ('CONTENT_UPDATE' | canUserPerform | async) {
-          <button mat-icon-button (click)="openMoveDialog($event, element)" [disabled]="element.kind === 'FOLDER'" matTooltip="Move">
-            <mat-icon>drive_file_move</mat-icon>
-          </button>
-        }
-        @if ('CONTENT_DELETE' | canUserPerform | async) {
-          <button mat-icon-button (click)="openDeleteDialog($event, element)" matTooltip="Delete">
-            <mat-icon>delete</mat-icon>
-          </button>
-        }
+        <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+        </button>
+        <ng-template #actionsMenu>
+          <hlm-dropdown-menu class="text-nowrap">
+            @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+              <hlm-dropdown-menu-group>
+                @if (element.kind === 'FOLDER') {
+                  <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
+                    <ng-icon hlm size="sm" name="lucideUpload" />
+                    Publish
+                  </button>
+                  <button hlmDropdownMenuItem (click)="openUnpublishDialog(element)">
+                    <ng-icon hlm size="sm" name="lucideWebhookOff" />
+                    Unpublish
+                  </button>
+                } @else if (element.kind === 'DOCUMENT') {
+                  @if (element.publishedAt) {
+                    <button hlmDropdownMenuItem (click)="openUnpublishDialog(element)">
+                      <ng-icon hlm size="sm" name="lucideWebhookOff" />
+                      Unpublish
+                    </button>
+                  } @else {
+                    <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
+                      <ng-icon hlm size="sm" name="lucideUpload" />
+                      Publish
+                    </button>
+                  }
+                }
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+            }
+            <hlm-dropdown-menu-group>
+              <button hlmDropdownMenuItem [cdkCopyToClipboard]="element.slug" (click)="copiedSlug()">
+                <ng-icon hlm size="sm" name="lucideCopy" />
+                Copy Slug
+              </button>
+            </hlm-dropdown-menu-group>
+            <hlm-dropdown-menu-group>
+              <button hlmDropdownMenuItem [cdkCopyToClipboard]="element.fullSlug" (click)="copiedFullSlug()">
+                <ng-icon hlm size="sm" name="lucideCopy" />
+                Copy Full Slug
+              </button>
+            </hlm-dropdown-menu-group>
+            <hlm-dropdown-menu-separator />
+            <hlm-dropdown-menu-group>
+              @if ('CONTENT_UPDATE' | canUserPerform | async) {
+                <button hlmDropdownMenuItem (click)="openEditDialog(element)">
+                  <ng-icon hlm size="sm" name="lucidePencil" />
+                  Edit
+                </button>
+              }
+              @if (('CONTENT_CREATE' | canUserPerform | async) && element.kind === 'DOCUMENT') {
+                <button hlmDropdownMenuItem (click)="openCloneDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideBookCopy" />
+                  Clone
+                </button>
+              }
+              @if (('CONTENT_UPDATE' | canUserPerform | async) && element.kind === 'DOCUMENT') {
+                <button hlmDropdownMenuItem (click)="openMoveDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideFolderInput" />
+                  Move
+                </button>
+              }
+            </hlm-dropdown-menu-group>
+            @if ('CONTENT_DELETE' | canUserPerform | async) {
+              <hlm-dropdown-menu-separator />
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                  Delete
+                </button>
+              </hlm-dropdown-menu-group>
+            }
+          </hlm-dropdown-menu>
+        </ng-template>
       </mat-cell>
     </ng-container>
 
-    <!--    <ng-container matColumnDef="actions">-->
-    <!--      <mat-header-cell mat-header-cell *matHeaderCellDef>-->
-    <!--        <button mat-stroked-button-->
-    <!--                *ngIf="'CONTENT_UPDATE' | canUserPerform | async"-->
-    <!--                [disabled]="selection.selected.length !== 1"-->
-    <!--                (click)="openEditDialog(selection.selected[0])">-->
-    <!--          <mat-icon>edit</mat-icon>-->
-    <!--          Edit-->
-    <!--        </button>-->
-    <!--        <button mat-stroked-button-->
-    <!--                *ngIf="'CONTENT_DELETE' | canUserPerform | async"-->
-    <!--                [disabled]="selection.selected.length !== 1"-->
-    <!--                (click)="openDeleteDialog(selection.selected[0])">-->
-    <!--          <mat-icon>delete</mat-icon>-->
-    <!--          Delete-->
-    <!--        </button>-->
-    <!--      </mat-header-cell>-->
-    <!--    </ng-container>-->
-
-    <!--    <mat-header-row *matHeaderRowDef="['actions']"></mat-header-row>-->
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
   </mat-table>

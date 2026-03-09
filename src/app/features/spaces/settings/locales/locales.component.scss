@@ -2,10 +2,18 @@ table {
   width: 100%;
 }
 
-mat-cell.mat-column-actions {
-  max-width: 100px;
-}
-
-mat-header-cell.mat-column-actions {
-  max-width: 100px;
+mat-header-cell,
+mat-cell {
+  &.mat-column-id {
+    max-width: 100px;
+  }
+  &.mat-column-isTranslatable {
+    max-width: 115px;
+  }
+  &.mat-column-isFallback {
+    max-width: 90px;
+  }
+  &.mat-column-actions {
+    max-width: 100px;
+  }
 }

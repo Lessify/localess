@@ -1,4 +1,6 @@
 import { Timestamp } from 'firebase-admin/firestore';
+import { zTranslationUpdateSchema } from './translation.zod';
+import { z } from 'zod';
 
 export enum TranslationType {
   STRING = 'STRING',
@@ -27,4 +29,12 @@ export interface PublishTranslationsData {
 // Import and Export
 export interface TranslationExport extends Omit<Translation, 'autoTranslate' | 'createdAt' | 'updatedAt'> {
   id: string;
+}
+
+export type TranslationUpdate = z.infer<typeof zTranslationUpdateSchema>;
+
+export interface TranslateLocaleData {
+  spaceId: string;
+  sourceLocaleId: string;
+  targetLocaleId: string;
 }

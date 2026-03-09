@@ -11,7 +11,6 @@ mat-form-field {
 
 mat-header-cell,
 mat-cell {
-
   &.mat-column-active {
     max-width: 75px;
   }
@@ -21,7 +20,7 @@ mat-cell {
   }
 
   &.mat-column-role {
-    max-width: 150px;
+    max-width: 160px;
   }
 
   &.mat-column-createdAt {
@@ -33,6 +32,6 @@ mat-cell {
   }
 
   &.mat-column-actions {
-    max-width: 125px;
+    max-width: 100px;
   }
 }

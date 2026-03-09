@@ -36,6 +36,8 @@ export class FormErrorHandlerService {
             return `Should contain only a-z, A-Z, and 0-9. Should start with a-z or A-Z and end with a-z or A-Z or 0-9.`;
           case `^${CommonPattern.ENUM_VALUE}$`:
             return `Should contain only a-z, A-Z, 0-9 and underscore (_). Should start with a-z and end with a-z or A-Z or 0-9.`;
+          case CommonPattern.SCHEMA_FIELD_NAME_TRANSLATION:
+            return '_i18n_ is reserved for translations. Please avoid using it in the field name.';
           default:
             return `Doesn't match the pattern ${errors['pattern'].requiredPattern}`;
         }
@@ -63,6 +65,7 @@ export class FormErrorHandlerService {
       }
       console.log(errors);
     }
+    console.log('No matching error handler found for errors:', errors);
 
     return null;
   }

@@ -7,9 +7,22 @@ export enum TranslationType {
 }
 
 export enum TranslationStatus {
-  TRANSLATED = 'TRANSLATED',
-  PARTIALLY_TRANSLATED = 'PARTIALLY_TRANSLATED',
-  UNTRANSLATED = 'UNTRANSLATED',
+  TRANSLATED = 'TRANSLATION_TRANSLATED',
+  PARTIALLY_TRANSLATED = 'TRANSLATION_PARTIALLY_TRANSLATED',
+  UNTRANSLATED = 'TRANSLATION_UNTRANSLATED',
+}
+
+export function isTranslationStatus(value: string): value is TranslationStatus {
+  return Object.values(TranslationStatus).includes(value as TranslationStatus);
+}
+
+export enum LocaleStatus {
+  TRANSLATED = 'LOCALE_TRANSLATED',
+  UNTRANSLATED = 'LOCALE_UNTRANSLATED',
+}
+
+export function isLocaleStatus(value: string): value is LocaleStatus {
+  return Object.values(LocaleStatus).includes(value as LocaleStatus);
 }
 
 export interface Translation {
@@ -54,4 +67,10 @@ export interface TranslationCreateFS {
 export interface TranslationUpdate {
   labels: string[];
   description: string;
+}
+
+export interface TranslateLocaleData {
+  spaceId: string;
+  sourceLocaleId: string;
+  targetLocaleId: string;
 }

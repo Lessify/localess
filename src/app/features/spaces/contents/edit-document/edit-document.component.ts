@@ -6,66 +6,110 @@ import {
   computed,
   DestroyRef,
   ElementRef,
-  HostListener,
   inject,
   input,
+  linkedSignal,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideAlertCircle,
+  lucideArrowLeft,
+  lucideChevronDown,
+  lucideCircleQuestionMark,
+  lucideCopy,
+  lucideEarth,
+  lucideEllipsis,
+  lucideEllipsisVertical,
+  lucideFolderRoot,
+  lucideFormInput,
+  lucideFullscreen,
+  lucideHistory,
+  lucideLanguages,
+  lucidePencil,
+  lucidePlus,
+  lucideRefreshCcw,
+  lucideSave,
+  lucideTriangleAlert,
+  lucideUpload,
+  lucideVectorSquare,
+  lucideWebhookOff,
+} from '@ng-icons/lucide';
+import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
 import { StatusComponent } from '@shared/components/status';
-import { AnimateDirective } from '@shared/directives/animate.directive';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentHistory } from '@shared/models/content-history.model';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
-import { DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { Space, SpaceEnvironment } from '@shared/models/space.model';
+import { SpaceEnvironment } from '@shared/models/space.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { ContentHistoryService } from '@shared/services/content-history.service';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { SpaceService } from '@shared/services/space.service';
 import { TokenService } from '@shared/services/token.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
-import { combineLatest, Observable } from 'rxjs';
-import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmLabelImports } from '@spartan-ng/helm/label';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmResizableImports } from '@spartan-ng/helm/resizable';
+import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { NgScrollbarModule } from 'ngx-scrollbar';
+import { Observable } from 'rxjs';
 import { v4 } from 'uuid';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
 import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
-import { CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
+import { TokenPermission } from '@shared/models/token.model';
+import { ClipboardModule } from '@angular/cdk/clipboard';
+import {
+  TranslateLocaleDialogComponent,
+  TranslateLocaleDialogModel,
+  TranslateLocaleDialogReturn,
+} from '@shared/components/translate-locale-dialog';
+import { filter, switchMap } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
+import { PlatformService } from '@shared/services/platform.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'll-content-document-edit',
   templateUrl: './edit-document.component.html',
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:message)': 'contentIdLink($event)',
+    '(window:keydown)': 'captureKeyboard($event)',
+  },
   imports: [
-    MatToolbarModule,
-    MatIconModule,
-    MatButtonToggleModule,
+    ClipboardModule,
     MatTooltipModule,
     MatButtonModule,
     MatMenuModule,
@@ -74,26 +118,67 @@ import { CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/
     CommonModule,
     StatusComponent,
     MatDividerModule,
-    MatProgressBarModule,
     MatSidenavModule,
     MatCardModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
     EditDocumentSchemaComponent,
-    MatExpansionModule,
-    AnimateDirective,
-    DragDropModule,
+    HlmResizableImports,
+    HlmBreadCrumbImports,
+    HlmIconImports,
+    HlmButtonImports,
+    HlmToggleGroupImports,
+    HlmTooltipImports,
+    BrnSelectImports,
+    HlmDropdownMenuImports,
+    HlmSpinnerImports,
+    HlmProgressImports,
+    HlmSheetImports,
+    HlmScrollAreaImports,
+    NgScrollbarModule,
+    HlmInputGroupImports,
+    HlmButtonGroupImports,
+    HlmLabelImports,
+    HlmAccordionImports,
+    HlmKbdImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideFolderRoot,
+      lucideArrowLeft,
+      lucideFormInput,
+      lucideVectorSquare,
+      lucideAlertCircle,
+      lucideTriangleAlert,
+      lucideSave,
+      lucideUpload,
+      lucideHistory,
+      lucideEllipsisVertical,
+      lucidePencil,
+      lucideEarth,
+      lucideFullscreen,
+      tablerDeviceMobile,
+      tablerDeviceTablet,
+      tablerDeviceLaptop,
+      tablerDeviceDesktop,
+      lucideRefreshCcw,
+      lucideChevronDown,
+      lucidePlus,
+      lucideCircleQuestionMark,
+      lucideEllipsis,
+      lucideWebhookOff,
+      lucideCopy,
+      lucideLanguages,
+    }),
   ],
 })
 export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   private readonly router = inject(Router);
+  readonly platformService = inject(PlatformService);
   private readonly cd = inject(ChangeDetectorRef);
-  private readonly spaceService = inject(SpaceService);
-  private readonly schemaService = inject(SchemaService);
   private readonly contentService = inject(ContentService);
   private readonly contentHistoryService = inject(ContentHistoryService);
   private readonly tokenService = inject(TokenService);
   private readonly notificationService = inject(NotificationService);
+  private readonly dialog = inject(MatDialog);
   private readonly contentHelperService = inject(ContentHelperService);
   private readonly sanitizer = inject(DomSanitizer);
   readonly fe = inject(FormErrorHandlerService);
@@ -101,130 +186,124 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   // Input
   spaceId = input.required<string>();
   contentId = input.required<string>();
+  document = input.required<ContentDocument>();
+  documents = computed(() => this.spaceStore.documents());
+  schemas = computed(() => this.spaceStore.schemas());
+  // Computed out of inputs
+  rootSchema = computed(() => this.schemas().find(it => it.id === this.document().schema));
+  documentUpdatedAt = linkedSignal(() => this.document().updatedAt.seconds);
+  documentPublishedAt = linkedSignal(() => this.document().publishedAt?.seconds);
+  //Store
+  spaceStore = inject(SpaceStore);
+  settingsStore = inject(LocalSettingsStore);
 
   preview = viewChild<ElementRef<HTMLIFrameElement>>('preview');
 
-  showHistory = false;
+  showHistory = signal(false);
 
-  selectedSpace?: Space;
-  selectedLocale: Locale = DEFAULT_LOCALE;
+  selectedSpace = computed(() => this.spaceStore.selectedSpace());
+  // Environments
+  availableEnvironments = computed(() => this.selectedSpace()?.environments || []);
+  selectedEnvironment = linkedSignal<SpaceEnvironment | undefined>(() => {
+    const envs = this.availableEnvironments();
+    if (envs.length > 0) {
+      return envs[0];
+    } else {
+      return undefined;
+    }
+  });
+  iframeUrl = computed(() => {
+    const env = this.selectedEnvironment();
+    const locale = this.selectedLocale();
+    if (env) {
+      const localePart = locale.id !== CONTENT_DEFAULT_LOCALE.id ? locale.id + '/' : '';
+      return this.sanitizer.bypassSecurityTrustResourceUrl(`${env.url}${localePart}${this.document().fullSlug}`);
+    } else {
+      return undefined;
+    }
+  });
+  // Locales
+  availableLocales = computed<Locale[]>(() => [CONTENT_DEFAULT_LOCALE, ...(this.selectedSpace()?.locales || [])]);
+  availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
+
+  selectedLocale = signal(CONTENT_DEFAULT_LOCALE);
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);
   clickSchemaField = signal<string | undefined>(undefined);
-  schemaPath = signal<SchemaPathItem[]>([]);
+  schemaPath = linkedSignal<SchemaPathItem[]>(() => {
+    const rootSchema = this.rootSchema();
+    if (rootSchema) {
+      return [
+        {
+          contentId: this.documentData._id,
+          schemaName: this.documentData.schema,
+          fieldName: '',
+        },
+      ];
+    }
+    return [];
+  });
   isSamePath = computed(() => {
     const uiPath = this.schemaPath().map(it => it.contentId);
     return ObjectUtils.isEqual(uiPath, this.hoverSchemaPath());
   });
-  schemas = signal<Schema[]>([]);
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
-  selectedEnvironment?: SpaceEnvironment;
-  iframeUrl?: SafeUrl;
-  availableLocales = signal<Locale[]>([DEFAULT_LOCALE]);
-  availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
-  document = signal<ContentDocument | undefined>(undefined);
+
   documentData: ContentData = { _id: '', _schema: '', schema: '' };
   selectedDocumentData: ContentData = { _id: '', _schema: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
-  rootSchema?: Schema;
+
   contentErrors: ContentError[] = [];
-  documents: ContentDocument[] = [];
 
   availableToken?: string = undefined;
 
   //Loadings
-  isLoading = signal(true);
+  isLoading = signal(false);
   isPublishLoading = signal(false);
   isSaveLoading = signal(false);
-  //Store
-  spaceStore = inject(SpaceStore);
-  settingsStore = inject(LocalSettingsStore);
+
   // Subscriptions
   history$?: Observable<ContentHistory[]>;
 
   private destroyRef = inject(DestroyRef);
 
-  // Resize
-  inResizeMode = signal(false);
-  editorFormWidth = signal(this.settingsStore.editorFormWidth());
-  private dragStartX: number = 0;
-  private dragStartW: number = 0;
+  isResizing = signal(false);
 
-  constructor() {
-    toObservable(this.spaceStore.selectedSpaceId)
-      .pipe(
-        distinctUntilChanged(),
-        filter(it => it !== undefined), // Skip initial data
-        switchMap(it =>
-          combineLatest([
-            this.spaceService.findById(it!).pipe(filter(it => it !== undefined)),
-            this.contentService.findById(it!, this.contentId()),
-            this.contentService.findAllDocuments(it!),
-            this.schemaService.findAll(it!),
-          ]),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: ([space, document, documents, schemas]) => {
-          this.selectedSpace = space;
-          this.availableLocales.set([DEFAULT_LOCALE, ...space.locales]);
-          this.documents = documents;
-          //console.log(ObjectUtils.clone(document))
-
-          if (document.kind === ContentKind.DOCUMENT) {
-            this.document.set(document);
-            this.rootSchema = schemas.find(it => it.id === document.schema);
-            if (document.data === undefined) {
-              this.documentData = {
-                _id: v4(),
-                _schema: this.rootSchema?.id || '',
-                schema: this.rootSchema?.id || '',
-              };
-            } else if (typeof document.data === 'string') {
-              this.documentData = JSON.parse(document.data);
-            } else {
-              this.documentData = ObjectUtils.clone(document.data);
-            }
-          }
-
-          // Generate initial path only once
-          if (this.rootSchema && this.schemaPath().length == 0) {
-            this.schemaPath.set([
-              {
-                contentId: this.documentData._id,
-                schemaName: this.documentData.schema,
-                fieldName: '',
-              },
-            ]);
-          }
-
-          // Select content base on path
-          this.navigateToSchemaBackwards(this.schemaPath()[this.schemaPath().length - 1]);
-          // Select Environment
-          if (this.selectedEnvironment === undefined && space.environments && space.environments.length > 0) {
-            this.changeEnvironment(space.environments[0]);
-          }
-          this.schemas.set(schemas);
-          this.generateDocumentIdsTree();
-          this.isLoading.set(false);
-          this.cd.markForCheck();
-        },
-      });
-  }
+  constructor() {}
 
   ngOnInit(): void {
-    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId());
+    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId()).pipe(takeUntilDestroyed(this.destroyRef));
+    const document = this.document();
+    // Initialize document data
+    if (document.kind === ContentKind.DOCUMENT) {
+      if (document.data === undefined) {
+        this.documentData = {
+          _id: v4(),
+          _schema: this.rootSchema()?.id || '',
+          schema: this.rootSchema()?.id || '',
+        };
+      } else if (typeof document.data === 'string') {
+        this.documentData = JSON.parse(document.data);
+      } else {
+        this.documentData = ObjectUtils.clone(document.data);
+      }
+      this.selectedDocumentData = this.documentData;
+    }
+    this.generateDocumentIdsTree();
   }
 
   get isFormDirty(): boolean {
-    const data = this.document()?.data;
+    const data = this.document().data;
     if (data === undefined) {
       return false;
-    } else if (typeof data === 'string') {
-      return data !== JSON.stringify(this.contentHelperService.clone(this.documentData));
     }
-    return JSON.stringify(data) !== JSON.stringify(this.contentHelperService.clone(this.documentData));
+
+    // Normalize both original and current data for comparison
+    const originalData = typeof data === 'string' ? JSON.parse(data) : data;
+    const normalizedOriginal = this.contentHelperService.clone(originalData);
+    const normalizedCurrent = this.contentHelperService.clone(this.documentData);
+
+    return !ObjectUtils.isEqual(normalizedOriginal, normalizedCurrent);
   }
 
   publish(): void {
@@ -233,9 +312,30 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       next: () => {
         this.notificationService.success('Content has been published.');
         this.sendEventToApp({ type: 'publish' });
+        this.documentPublishedAt.set(Date.now() / 100);
       },
       error: () => {
         this.notificationService.error('Content can not be published.');
+      },
+      complete: () => {
+        setTimeout(() => {
+          this.isPublishLoading.set(false);
+          this.cd.markForCheck();
+        }, 1000);
+      },
+    });
+  }
+
+  unpublish(): void {
+    this.isPublishLoading.set(true);
+    this.contentService.unpublish(this.spaceId(), this.contentId()).subscribe({
+      next: () => {
+        this.notificationService.success('Content has been unpublished.');
+        this.sendEventToApp({ type: 'unpublish' });
+        this.documentPublishedAt.set(undefined);
+      },
+      error: () => {
+        this.notificationService.error('Content can not be unpublished.');
       },
       complete: () => {
         setTimeout(() => {
@@ -253,8 +353,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     //console.log('documentData', this.documentData)
     //console.log('document', this.document)
     this.contentErrors = [];
-    this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), DEFAULT_LOCALE.id));
-    for (const locale of this.selectedSpace?.locales || []) {
+    this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), CONTENT_DEFAULT_LOCALE.id));
+    for (const locale of this.selectedSpace()?.locales || []) {
       this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), locale.id));
     }
 
@@ -265,18 +365,20 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         .map(it => this.contentHelperService.extractReferences(this.documentData, this.schemas(), it.id))
         .reduce(
           (acc, val) => {
-            const inUseAssets = acc[0];
-            const inUseReferences = acc[1];
-            val[0].forEach(it => inUseAssets.add(it));
-            val[1].forEach(it => inUseReferences.add(it));
-            return [inUseAssets, inUseReferences];
+            const [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc] = acc;
+            const [inUseAssetsVal, inUseLinksVal, inUseReferencesVal] = val;
+            inUseAssetsVal.forEach(it => inUseAssetsAcc.add(it));
+            inUseLinksVal.forEach(it => inUseLinksAcc.add(it));
+            inUseReferencesVal.forEach(it => inUseReferencesAcc.add(it));
+            return [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc];
           },
-          [new Set<string>(), new Set<string>()],
+          [new Set<string>(), new Set<string>(), new Set<string>()],
         );
       this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData, refs).subscribe({
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
           this.sendEventToApp({ type: 'save' });
+          this.documentUpdatedAt.set(Date.now() / 100);
         },
         error: () => {
           this.notificationService.error('Content can not be saved.');
@@ -306,6 +408,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       url.searchParams.set('version', version);
     }
     url.searchParams.set('token', token);
+    // url.searchParams.set('resolveReference', 'true');
+    // url.searchParams.set('resolveLink', 'true');
     window.open(url, '_blank');
   }
 
@@ -313,13 +417,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     if (this.availableToken) {
       this.openApiV1InNewTab(locale, this.availableToken, 'draft');
     } else {
-      this.tokenService.findFirst(this.spaceId()).subscribe({
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.CONTENT_DRAFT).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
             this.availableToken = tokens[0].id;
             this.openApiV1InNewTab(locale, this.availableToken, 'draft');
           } else {
-            this.notificationService.error('Please create Access Token in your Space Settings');
+            this.notificationService.error('Please create Access Token with Content Draft Permission in your Space Settings');
           }
         },
       });
@@ -330,21 +434,17 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     if (this.availableToken) {
       this.openApiV1InNewTab(locale, this.availableToken);
     } else {
-      this.tokenService.findFirst(this.spaceId()).subscribe({
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.CONTENT_PUBLIC).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
             this.availableToken = tokens[0].id;
             this.openApiV1InNewTab(locale, this.availableToken);
           } else {
-            this.notificationService.error('Please create Access Token in your Space Settings');
+            this.notificationService.error('Please create Access Token with Content Public Permission in your Space Settings');
           }
         },
       });
     }
-  }
-
-  onLocaleChanged(locale: Locale): void {
-    this.selectedLocale = locale;
   }
 
   onSchemaChange(event: SchemaSelectChange): void {
@@ -373,7 +473,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
     //console.group('navigateToSchemaBackwards');
-    //console.log('pathItem', pathItem);
+    console.log('pathItem', pathItem);
     const idx = this.schemaPath().findIndex(it => it.contentId == pathItem.contentId);
     this.schemaPath.update(it => {
       it.splice(idx + 1);
@@ -402,11 +502,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     // Send Message to iFrame about Schema Selection
     this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
     //console.groupEnd();
-  }
-
-  changeEnvironment(env: SpaceEnvironment): void {
-    this.selectedEnvironment = env;
-    this.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(env.url + this.document()?.fullSlug || '');
   }
 
   generateDocumentIdsTree() {
@@ -445,7 +540,14 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     //console.groupEnd()
   }
 
-  @HostListener('window:message', ['$event'])
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (this.platformService.isActionSave(event)) {
+      event.preventDefault();
+      this.save();
+    }
+  }
+
   contentIdLink(event: MessageEvent<EventToEditor>): void {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       //console.log('MessageEvent', event);
@@ -529,48 +631,62 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   onFormChange(event: string) {
-    console.debug('onFormChange', event);
-    this.sendEventToApp({ type: 'input', data: this.documentData });
+    const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    console.debug('onFormChange', event, data);
+    this.sendEventToApp({ type: 'input', data: data });
   }
 
   onStructureChange(event: string) {
-    console.debug('onStructureChange', event);
+    const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    console.debug('onStructureChange', event, data);
     this.generateDocumentIdsTree();
-    this.sendEventToApp({ type: 'change', data: this.documentData });
+    this.sendEventToApp({ type: 'change', data: data });
   }
 
   sendEventToApp(event: EventToApp) {
     const contentWindow = this.preview()?.nativeElement.contentWindow;
-    if (contentWindow && this.selectedEnvironment) {
-      const url = new URL(this.selectedEnvironment.url);
+    const selectedEnvironment = this.selectedEnvironment();
+    if (contentWindow && selectedEnvironment) {
+      const url = new URL(selectedEnvironment.url);
       contentWindow.postMessage(event, url.origin);
     }
   }
 
-  onDragStarted(event: CdkDragStart) {
-    if (event.event instanceof MouseEvent) {
-      this.dragStartX = event.event.clientX;
-    }
-    this.dragStartW = this.editorFormWidth();
-    this.inResizeMode.set(true);
+  protected reloadEnvironment() {
+    const environment = this.selectedEnvironment();
+    this.selectedEnvironment.set(undefined);
+    this.selectedEnvironment.set(environment);
   }
 
-  onDragMoved(event: CdkDragMove) {
-    console.debug('onDragMoved', event);
-    if (event.event instanceof MouseEvent) {
-      const newFormWidth = this.dragStartW - event.distance.x;
-      if (newFormWidth <= 1000 && newFormWidth >= 400) {
-        this.editorFormWidth.set(newFormWidth);
-      }
-    }
-    // Reset transform so the resizer stays positioned at the sidebar edge
-    const element = event.source.element.nativeElement;
-    element.style.transform = 'none';
+  copiedSlug() {
+    this.notificationService.success(`Slug copied to clipboard.`);
   }
 
-  onDragEnded(event: CdkDragEnd) {
-    console.debug('onDragEnded', event);
-    this.inResizeMode.set(false);
-    this.settingsStore.setEditorFormWidth(this.editorFormWidth());
+  copiedFullSlug() {
+    this.notificationService.success(`Full Slug copied to clipboard.`);
+  }
+
+  openTranslateLocaleDialog(): void {
+    this.dialog
+      .open<TranslateLocaleDialogComponent, TranslateLocaleDialogModel, TranslateLocaleDialogReturn>(TranslateLocaleDialogComponent, {
+        panelClass: 'sm',
+        data: {
+          locales: this.availableLocales(),
+          description: 'Save all your changes before running the Translation, otherwise you will lose all changes.',
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it !== undefined),
+        switchMap(it => this.contentService.translateLocale(this.spaceId(), this.contentId(), it.sourceLocale, it.targetLocale)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Locale Translate run with success.');
+        },
+        error: () => {
+          this.notificationService.error('Locale Translate failed.');
+        },
+      });
   }
 }

@@ -1,21 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatButtonModule } from '@angular/material/button';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { ContentDocument, LinkContent } from '@shared/models/content.model';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-icons/lucide';
+import { ContentDocument, LinkContent, LinkContentType } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldLink } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { debounceTime, Observable, of, startWith } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmSwitchImports } from '@spartan-ng/helm/switch';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 
 @Component({
   selector: 'll-link-select',
@@ -24,16 +24,24 @@ import { map } from 'rxjs/operators';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatInputModule,
-    MatAutocompleteModule,
     CommonModule,
-    MatSlideToggleModule,
-    MatExpansionModule,
-    MatTooltipModule,
+    HlmFieldImports,
+    HlmTooltipImports,
+    HlmIconImports,
+    HlmSwitchImports,
+    HlmDropdownMenuImports,
+    HlmButtonImports,
+    HlmInputImports,
+    HlmComboboxImports,
+    HlmAccordionImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideInfo,
+      lucideLanguages,
+      lucideLink,
+      lucideFileSymlink,
+    }),
   ],
 })
 export class LinkSelectComponent implements OnInit {
@@ -54,18 +62,46 @@ export class LinkSelectComponent implements OnInit {
   });
 
   // Search
-  searchCtrl: FormControl = new FormControl();
-  filteredContent: Observable<ContentDocument[]> = of([]);
+  search = signal('');
+  filteredOptions = computed(() => {
+    const search = this.search().toLowerCase();
+    if (search) {
+      return this.documents().filter(it => it.name.toLowerCase().includes(search) || it.fullSlug.toLowerCase().includes(search));
+    }
+    return this.documents();
+  });
 
-  // Subscriptions
+  // Combobox selected value
+  selectedDocument = signal<ContentDocument | null>(null);
+
+  // Stores
   settingsStore = inject(LocalSettingsStore);
 
   constructor() {
+    // Sync combobox selection with form control
     effect(() => {
-      if (this.default() && !this.component().translatable) {
-        this.searchCtrl.disable();
-      } else {
-        this.searchCtrl.enable();
+      const selected = this.selectedDocument();
+      const control = this.form().get('uri');
+      if (!control) return;
+
+      const newValue = selected?.id ?? null;
+      if (control.value !== newValue) {
+        control.setValue(newValue);
+      }
+    });
+
+    // Initialize combobox from form value
+    effect(() => {
+      const control = this.form().get('uri');
+      const selected = this.selectedDocument();
+      if (!control) return;
+
+      const formValue = control.value;
+      if (formValue && !selected) {
+        const doc = this.documents().find(it => it.id === formValue);
+        if (doc) {
+          this.selectedDocument.set(doc);
+        }
       }
     });
   }
@@ -79,38 +115,32 @@ export class LinkSelectComponent implements OnInit {
         target: this.default()?.target || '_self',
       });
     }
-    if (this.form().value.type === 'content' && this.form().value.uri !== null) {
-      this.searchCtrl.patchValue(this.documents().find(it => it.id === this.form().value.uri));
+
+    // Initialize selected document from form value
+    const initialUri = this.form().get('uri')?.value;
+    if (initialUri) {
+      const doc = this.documents().find(it => it.id === initialUri);
+      if (doc) {
+        this.selectedDocument.set(doc);
+      }
     }
-
-    this.filteredContent = this.searchCtrl.valueChanges.pipe(
-      startWith(''),
-      debounceTime(300),
-      map(search => this.documents().filter(it => it.name.includes(search) || it.fullSlug.includes(search)) || []),
-    );
   }
 
-  onTypeChange(type: string): void {
+  onTypeChange(type: LinkContentType): void {
     this.form().patchValue({ uri: null, type });
-    this.searchCtrl.reset();
+    this.selectedDocument.set(null);
   }
+
+  itemToString = (item: ContentDocument): string => {
+    return item ? `${item.name} | ${item.fullSlug}` : '';
+  };
 
   displayContent(content?: ContentDocument): string {
     return content ? `${content.name} | ${content.fullSlug}` : '';
   }
 
-  contentSelected(event: MatAutocompleteSelectedEvent): void {
-    const content = event.option.value as ContentDocument;
-    this.form().controls['uri'].setValue(content.id);
-  }
-
-  contentReset(): void {
-    this.searchCtrl.setValue('');
-    this.form().controls['uri'].setValue(null);
-  }
-
-  targetChange(event: MatSlideToggleChange): void {
-    if (event.checked) {
+  targetChange(checked: boolean): void {
+    if (checked) {
       this.form().controls['target'].setValue('_blank');
     } else {
       this.form().controls['target'].setValue('_self');

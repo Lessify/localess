@@ -2,6 +2,8 @@ import { computed, inject } from '@angular/core';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { ContentDocument } from '@shared/models/content.model';
+import { Schema } from '@shared/models/schema.model';
 import { Space, SpaceEnvironment } from '@shared/models/space.model';
 import { SpaceService } from '@shared/services/space.service';
 import { pipe, switchMap } from 'rxjs';
@@ -15,6 +17,8 @@ export type SpaceState = {
   contentPath: PathItem[];
   assetPath: PathItem[];
   environment: SpaceEnvironment | undefined;
+  schemas: Schema[];
+  documents: ContentDocument[];
 };
 
 export type PathItem = {
@@ -28,6 +32,8 @@ const initialState: SpaceState = {
   contentPath: DEFAULT_PATH,
   assetPath: DEFAULT_PATH,
   environment: undefined,
+  schemas: [],
+  documents: [],
 };
 
 const initialStateFactory = (): SpaceState => {
@@ -129,6 +135,14 @@ export const SpaceStore = signalStore(
         console.log('changeEnvironment', environment);
         patchState(state, { environment });
       },
+      updateSchemas: (schemas: Schema[]) => {
+        console.log('updateSchemas', schemas);
+        patchState(state, { schemas });
+      },
+      updateDocuments: (documents: ContentDocument[]) => {
+        console.log('updateDocuments', documents);
+        patchState(state, { documents });
+      },
     };
   }),
   withComputed(state => {
@@ -138,6 +152,7 @@ export const SpaceStore = signalStore(
       assetPath: computed(() => state.assetPath()),
       environment: computed(() => state.environment()),
       selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),
+      documents: computed(() => state.documents()),
     };
   }),
   withHooks({

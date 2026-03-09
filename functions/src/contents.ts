@@ -2,32 +2,40 @@ import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten, DocumentSnapshot } from 'firebase-functions/v2/firestore';
 import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
-import { canPerform } from './utils/security-utils';
+import { AuthData, canPerform } from './utils/user-auth-utils';
 import { BATCH_MAX, bucket, firestoreService } from './config';
 import {
   Content,
+  ContentData,
   ContentDocument,
   ContentDocumentStorage,
   ContentHistory,
   ContentHistoryType,
   ContentKind,
-  ContentLink,
   PublishContentData,
   Schema,
+  SchemaComponent,
+  SchemaFieldKind,
+  SchemaType,
   Space,
+  TranslateContentLocaleData,
   UserPermission,
+  WebHookEvent,
+  WebHookPayload,
 } from './models';
 import {
   extractContent,
   findAllContentsByParentSlug,
   findContentById,
   findContentsHistory,
-  findDocumentsToPublishByStartFullSlug,
+  findDocumentsToPublishByParentSlug,
   findSchemas,
   findSpaceById,
   spaceContentCachePath,
 } from './services';
-import { AuthData } from 'firebase-functions/lib/common/providers/https';
+import { translateWithGoogle } from './services/translate.service';
+import { triggerWebHooksForEvent } from './utils/webhook-utils';
+import { isSchemaFieldKindAITranslatable } from './utils/translate.utils';
 
 // Publish
 const publish = onCall<PublishContentData>(async request => {
@@ -46,17 +54,29 @@ const publish = onCall<PublishContentData>(async request => {
     if (content.kind === ContentKind.DOCUMENT) {
       await publishDocument(spaceId, space, contentId, content, contentSnapshot, schemas, auth);
     } else if (content.kind === ContentKind.FOLDER) {
-      const documentsSnapshot = await findDocumentsToPublishByStartFullSlug(spaceId, `${content.fullSlug}/`).get();
+      const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
       for (const documentSnapshot of documentsSnapshot.docs) {
         const document = documentSnapshot.data() as ContentDocument;
+        const isAlreadyPublished = document.publishedAt ? document.publishedAt.seconds > document.updatedAt.seconds : false;
+        logger.info('[Content::contentPublish] check', document.fullSlug, 'isAlreadyPublished', isAlreadyPublished);
         // SKIP if the page was already published, by comparing publishedAt and updatedAt
-        if (document.publishedAt && document.publishedAt.seconds > document.updatedAt.seconds) continue;
-        await publishDocument(spaceId, space, contentId, document, documentSnapshot, schemas, auth);
+        if (isAlreadyPublished) continue;
+        await publishDocument(spaceId, space, documentSnapshot.id, document, documentSnapshot, schemas, auth);
       }
     }
-    // Save Cache
-    logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${contentId}/cache.json`);
-    await bucket.file(`spaces/${spaceId}/contents/${contentId}/cache.json`).save('');
+
+    // Trigger webhooks for content published event
+    const webhookPayload: WebHookPayload = {
+      event: WebHookEvent.CONTENT_PUBLISHED,
+      spaceId,
+      timestamp: new Date().toISOString(),
+      data: {
+        contentId,
+        content,
+      },
+    };
+    await triggerWebHooksForEvent(spaceId, webhookPayload);
+
     return;
   } else {
     logger.info(`[Content::contentPublish] Content ${contentId} does not exist.`);
@@ -83,29 +103,6 @@ async function publishDocument(
   schemas: Map<string, Schema>,
   auth?: AuthData
 ) {
-  let aggReferences: Record<string, ContentLink> | undefined;
-  if (document.references && document.references.length > 0) {
-    aggReferences = {};
-    for (const refId of document.references) {
-      const contentSnapshot = await findContentById(spaceId, refId).get();
-      const content = contentSnapshot.data() as Content;
-      const link: ContentLink = {
-        id: contentSnapshot.id,
-        kind: content.kind,
-        name: content.name,
-        slug: content.slug,
-        fullSlug: content.fullSlug,
-        parentSlug: content.parentSlug,
-        createdAt: content.createdAt.toDate().toISOString(),
-        updatedAt: content.updatedAt.toDate().toISOString(),
-      };
-      if (content.kind === ContentKind.DOCUMENT) {
-        link.publishedAt = content.publishedAt?.toDate().toISOString();
-      }
-      aggReferences[refId] = link;
-    }
-  }
-
   for (const locale of space.locales) {
     const documentStorage: ContentDocumentStorage = {
       id: documentId,
@@ -126,22 +123,97 @@ async function publishDocument(
         documentStorage.data = extractContent(document.data, schemas, locale.id);
       }
     }
-    if (aggReferences) {
-      documentStorage.links = aggReferences;
+    if (document.links && document.links.length > 0) {
+      documentStorage.links = document.links;
+    }
+    if (document.references && document.references.length > 0) {
+      documentStorage.references = document.references;
     }
     // Save generated JSON
     logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
     await bucket.file(`spaces/${spaceId}/contents/${documentId}/${locale.id}.json`).save(JSON.stringify(documentStorage));
-    // Update publishedAt
-    await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
-    const addHistory: WithFieldValue<ContentHistory> = {
-      type: ContentHistoryType.PUBLISHED,
-      name: auth?.token['name'] || FieldValue.delete(),
-      email: auth?.token.email || FieldValue.delete(),
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    await findContentsHistory(spaceId, documentId).add(addHistory);
   }
+  // Update publishedAt
+  await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
+  const addHistory: WithFieldValue<ContentHistory> = {
+    type: ContentHistoryType.PUBLISHED,
+    name: auth?.token['name'] || FieldValue.delete(),
+    email: auth?.token.email || FieldValue.delete(),
+    createdAt: FieldValue.serverTimestamp(),
+  };
+  await findContentsHistory(spaceId, documentId).add(addHistory);
+}
+
+// Unpublish
+const unpublish = onCall<PublishContentData>(async request => {
+  logger.info('[Content::contentUnpublish] data: ' + JSON.stringify(request.data));
+  logger.info('[Content::contentUnpublish] context.auth: ' + JSON.stringify(request.auth));
+  const { auth, data } = request;
+  if (!canPerform(UserPermission.CONTENT_PUBLISH, auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { spaceId, contentId } = data;
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  const contentSnapshot = await findContentById(spaceId, contentId).get();
+  if (spaceSnapshot.exists && contentSnapshot.exists) {
+    const space: Space = spaceSnapshot.data() as Space;
+    const content: Content = contentSnapshot.data() as Content;
+    if (content.kind === ContentKind.DOCUMENT) {
+      await unpublishDocument(spaceId, space, contentId, contentSnapshot, auth);
+    } else if (content.kind === ContentKind.FOLDER) {
+      const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
+      for (const documentSnapshot of documentsSnapshot.docs) {
+        const document = documentSnapshot.data() as ContentDocument;
+        // SKIP if the document is not published
+        if (!document.publishedAt) continue;
+        await unpublishDocument(spaceId, space, documentSnapshot.id, documentSnapshot, auth);
+      }
+    }
+
+    // Trigger webhooks for content unpublished event
+    const webhookPayload: WebHookPayload = {
+      event: WebHookEvent.CONTENT_UNPUBLISHED,
+      spaceId,
+      timestamp: new Date().toISOString(),
+      data: {
+        contentId,
+        content,
+      },
+    };
+    await triggerWebHooksForEvent(spaceId, webhookPayload);
+
+    return;
+  } else {
+    logger.info(`[Content::contentUnpublish] Content ${contentId} does not exist.`);
+    throw new HttpsError('not-found', 'Content not found');
+  }
+});
+
+/**
+ * Unpublish Document
+ * @param {string} spaceId space id
+ * @param {Space} space
+ * @param {string} documentId
+ * @param {DocumentSnapshot} documentSnapshot
+ * @param {AuthData} auth
+ */
+async function unpublishDocument(spaceId: string, space: Space, documentId: string, documentSnapshot: DocumentSnapshot, auth?: AuthData) {
+  for (const locale of space.locales) {
+    // Delete published JSON files
+    logger.info(`[Content::contentUnpublish] Delete file spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
+    try {
+      await bucket.file(`spaces/${spaceId}/contents/${documentId}/${locale.id}.json`).delete();
+    } catch (error) {
+      logger.warn(`[Content::contentUnpublish] File not found or already deleted: ${error}`);
+    }
+  }
+  // Clear publishedAt timestamp
+  await documentSnapshot.ref.update({ publishedAt: FieldValue.delete() });
+  const addHistory: WithFieldValue<ContentHistory> = {
+    type: ContentHistoryType.UNPUBLISHED,
+    name: auth?.token['name'] || FieldValue.delete(),
+    email: auth?.token.email || FieldValue.delete(),
+    createdAt: FieldValue.serverTimestamp(),
+  };
+  await findContentsHistory(spaceId, documentId).add(addHistory);
 }
 
 // Firestore events
@@ -171,28 +243,6 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
       const space: Space = spaceSnapshot.data() as Space;
       const document: ContentDocument = contentAfter;
       const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
-      let aggReferences: Record<string, ContentLink> | undefined;
-      if (document.references && document.references.length > 0) {
-        aggReferences = {};
-        for (const refId of document.references) {
-          const contentSnapshot = await findContentById(spaceId, refId).get();
-          const content = contentSnapshot.data() as Content;
-          const link: ContentLink = {
-            id: contentSnapshot.id,
-            kind: content.kind,
-            name: content.name,
-            slug: content.slug,
-            fullSlug: content.fullSlug,
-            parentSlug: content.parentSlug,
-            createdAt: content.createdAt.toDate().toISOString(),
-            updatedAt: content.updatedAt.toDate().toISOString(),
-          };
-          if (content.kind === ContentKind.DOCUMENT) {
-            link.publishedAt = content.publishedAt?.toDate().toISOString();
-          }
-          aggReferences[refId] = link;
-        }
-      }
       for (const locale of space.locales) {
         const documentStorage: ContentDocumentStorage = {
           id: event.data.after.id,
@@ -212,16 +262,29 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
             documentStorage.data = extractContent(document.data, schemas, locale.id);
           }
         }
-        if (aggReferences) {
-          documentStorage.links = aggReferences;
+        if (document.links && document.links.length > 0) {
+          documentStorage.links = document.links;
+        }
+        if (document.references && document.references.length > 0) {
+          documentStorage.references = document.references;
         }
         // Save generated JSON
         logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);
         await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`).save(JSON.stringify(documentStorage));
-        // Save Cache
-        logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/cache.json`);
-        await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/cache.json`).save('');
       }
+
+      // Trigger webhooks for content saved/updated event
+      const webhookPayload: WebHookPayload = {
+        event: WebHookEvent.CONTENT_UPDATED,
+        spaceId,
+        timestamp: new Date().toISOString(),
+        data: {
+          contentId,
+          content: contentAfter,
+          previousContent: contentBefore,
+        },
+      };
+      await triggerWebHooksForEvent(spaceId, webhookPayload);
     }
   } else {
     // In case it is a PAGE, skip recursion as PAGE doesn't have child
@@ -282,7 +345,20 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
 
   const content = event.data.data() as Content;
   logger.info(`[Content::onDelete] eventId='${event.id}' id='${event.data.id}' fullSlug='${content.fullSlug}'`);
-  // Logic related to delete, in case a folder is deleted it should be cascaded to all childs
+
+  // Trigger webhooks for content deleted event
+  const webhookPayload: WebHookPayload = {
+    event: WebHookEvent.CONTENT_DELETED,
+    spaceId,
+    timestamp: new Date().toISOString(),
+    data: {
+      contentId,
+      content,
+    },
+  };
+  await triggerWebHooksForEvent(spaceId, webhookPayload);
+
+  // Logic related to delete, in case a folder is deleted it should be cascaded to all children
   if (content.kind === ContentKind.DOCUMENT) {
     await bucket.deleteFiles({
       prefix: `spaces/${spaceId}/contents/${contentId}`,
@@ -386,9 +462,113 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
   return;
 });
 
+/**
+ * Recursively collect translatable fields that have a source value but no target translation.
+ * Each task carries the source value and a setter that writes the translation directly into parsedData.
+ * @param {ContentData} data Parsed content data node (mutated in-place via setters)
+ * @param {Map<string, Schema>} schemas Schema map
+ * @param {string} sourceLocaleId Source locale identifier
+ * @param {string} targetLocaleId Target locale identifier
+ * @return {Array} List of { fieldName, sourceValue, setter } entries
+ */
+function collectTranslatableTasks(
+  data: ContentData,
+  schemas: Map<string, Schema>,
+  sourceLocaleId: string | undefined,
+  targetLocaleId: string
+): Array<{ fieldName: string; sourceValue: string; setter: (value: string) => void }> {
+  const tasks: Array<{ fieldName: string; sourceValue: string; setter: (value: string) => void }> = [];
+  const schema = schemas.get(data.schema);
+  if (!schema || (schema.type !== SchemaType.ROOT && schema.type !== SchemaType.NODE)) return tasks;
+
+  for (const field of (schema as SchemaComponent).fields || []) {
+    if (!isSchemaFieldKindAITranslatable(field.kind)) {
+      continue;
+    }
+    if (field.kind === SchemaFieldKind.SCHEMA) {
+      const nested: ContentData | undefined = data[field.name];
+      if (nested) {
+        tasks.push(...collectTranslatableTasks(nested, schemas, sourceLocaleId, targetLocaleId));
+      }
+    } else if (field.kind === SchemaFieldKind.SCHEMAS) {
+      const items: ContentData[] | undefined = data[field.name];
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          tasks.push(...collectTranslatableTasks(item, schemas, sourceLocaleId, targetLocaleId));
+        }
+      }
+    } else if (field.translatable) {
+      const targetKey = `${field.name}_i18n_${targetLocaleId}`;
+      const sourceValue: string | undefined = sourceLocaleId ? data[`${field.name}_i18n_${sourceLocaleId}`] : data[field.name];
+      const targetValue: string | undefined = data[targetKey];
+      if (sourceValue && !targetValue) {
+        tasks.push({ fieldName: field.name, sourceValue, setter: value => (data[targetKey] = value) });
+      }
+    }
+  }
+  return tasks;
+}
+
+// Translate Content Locale
+const translateLocale = onCall<TranslateContentLocaleData>(async request => {
+  logger.info('[Content::translateLocale] data: ' + JSON.stringify(request.data));
+  logger.info('[Content::translateLocale] context.auth: ' + JSON.stringify(request.auth));
+  const { auth, data } = request;
+  if (!canPerform(UserPermission.CONTENT_UPDATE, auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { spaceId, contentId, sourceLocaleId, targetLocaleId } = data;
+
+  const [contentSnapshot, schemasSnapshot] = await Promise.all([findContentById(spaceId, contentId).get(), findSchemas(spaceId).get()]);
+
+  if (!contentSnapshot.exists) {
+    logger.info(`[Content::translateLocale] Content ${contentId} does not exist.`);
+    throw new HttpsError('not-found', 'Content not found');
+  }
+
+  const document = contentSnapshot.data() as ContentDocument;
+  if (document.kind !== ContentKind.DOCUMENT || !document.data) {
+    logger.info(`[Content::translateLocale] Content ${contentId} has no translatable data.`);
+    return;
+  }
+
+  const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
+  const parsedData: ContentData = typeof document.data === 'string' ? JSON.parse(document.data) : document.data;
+  const tasks = collectTranslatableTasks(parsedData, schemas, sourceLocaleId, targetLocaleId);
+
+  if (tasks.length === 0) {
+    logger.info(`[Content::translateLocale] No translatable fields found for content ${contentId}.`);
+    return;
+  }
+
+  // Translate all fields concurrently
+  const results = await Promise.all(
+    tasks.map(async ({ fieldName, sourceValue, setter }) => {
+      try {
+        const translatedValue = await translateWithGoogle(sourceValue, sourceLocaleId, targetLocaleId);
+        return { fieldName, setter, translatedValue };
+      } catch (e) {
+        logger.error(`[Content::translateLocale] Failed to translate field '${fieldName}': ${e}`);
+        return { fieldName, setter, translatedValue: null };
+      }
+    })
+  );
+
+  // Apply translated values back into parsedData via setters, then persist as JSON string
+  let counter = 0;
+  for (const { setter, translatedValue } of results) {
+    if (translatedValue) {
+      setter(translatedValue);
+      counter++;
+    }
+  }
+  await contentSnapshot.ref.update({ data: JSON.stringify(parsedData), updatedAt: FieldValue.serverTimestamp() });
+  logger.info(`[Content::translateLocale] Successfully updated ${counter} fields for content ${contentId}.`);
+});
+
 export const content = {
   publish: publish,
+  unpublish: unpublish,
   onupdate: onContentUpdate,
   ondelete: onContentDelete,
   onwrite: onContentWrite,
+  translatelocale: translateLocale,
 };

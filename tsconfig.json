@@ -1,4 +1,3 @@
-/* To learn more about this file see: https://angular.io/config/tsconfig. */
 {
   "compileOnSave": false,
   "compilerOptions": {
@@ -29,6 +28,132 @@
       ],
       "@core/*": [
         "src/app/core/*"
+      ],
+      "@spartan-ng/helm/button": [
+        "./libs/ui/button/src/index.ts"
+      ],
+      "@spartan-ng/helm/utils": [
+        "./libs/ui/utils/src/index.ts"
+      ],
+      "@spartan-ng/helm/typography": [
+        "./libs/ui/typography/src/index.ts"
+      ],
+      "@spartan-ng/helm/sidebar": [
+        "./libs/ui/sidebar/src/index.ts"
+      ],
+      "@spartan-ng/helm/icon": [
+        "./libs/ui/icon/src/index.ts"
+      ],
+      "@spartan-ng/helm/input": [
+        "./libs/ui/input/src/index.ts"
+      ],
+      "@spartan-ng/helm/separator": [
+        "./libs/ui/separator/src/index.ts"
+      ],
+      "@spartan-ng/helm/sheet": [
+        "./libs/ui/sheet/src/index.ts"
+      ],
+      "@spartan-ng/helm/tooltip": [
+        "./libs/ui/tooltip/src/index.ts"
+      ],
+      "@spartan-ng/helm/skeleton": [
+        "./libs/ui/skeleton/src/index.ts"
+      ],
+      "@spartan-ng/helm/avatar": [
+        "./libs/ui/avatar/src/index.ts"
+      ],
+      "@spartan-ng/helm/badge": [
+        "./libs/ui/badge/src/index.ts"
+      ],
+      "@spartan-ng/helm/breadcrumb": [
+        "./libs/ui/breadcrumb/src/index.ts"
+      ],
+      "@spartan-ng/helm/spinner": [
+        "./libs/ui/spinner/src/index.ts"
+      ],
+      "@spartan-ng/helm/toggle-group": [
+        "./libs/ui/toggle-group/src/index.ts"
+      ],
+      "@spartan-ng/helm/toggle": [
+        "./libs/ui/toggle/src/index.ts"
+      ],
+      "@spartan-ng/helm/dropdown-menu": [
+        "./libs/ui/dropdown-menu/src/index.ts"
+      ],
+      "@spartan-ng/helm/card": [
+        "./libs/ui/card/src/index.ts"
+      ],
+      "@spartan-ng/helm/progress": [
+        "./libs/ui/progress/src/index.ts"
+      ],
+      "@spartan-ng/helm/form-field": [
+        "./libs/ui/form-field/src/index.ts"
+      ],
+      "@spartan-ng/helm/select": [
+        "./libs/ui/select/src/index.ts"
+      ],
+      "@spartan-ng/helm/scroll-area": [
+        "./libs/ui/scroll-area/src/index.ts"
+      ],
+      "@spartan-ng/helm/item": [
+        "./libs/ui/item/src/index.ts"
+      ],
+      "@spartan-ng/helm/kbd": [
+        "./libs/ui/kbd/src/index.ts"
+      ],
+      "@spartan-ng/helm/input-group": [
+        "./libs/ui/input-group/src/index.ts"
+      ],
+      "@spartan-ng/helm/textarea": [
+        "./libs/ui/textarea/src/index.ts"
+      ],
+      "@spartan-ng/helm/button-group": [
+        "./libs/ui/button-group/src/index.ts"
+      ],
+      "@spartan-ng/helm/label": [
+        "./libs/ui/label/src/index.ts"
+      ],
+      "@spartan-ng/helm/field": [
+        "./libs/ui/field/src/index.ts"
+      ],
+      "@spartan-ng/helm/command": [
+        "./libs/ui/command/src/index.ts"
+      ],
+      "@spartan-ng/helm/popover": [
+        "./libs/ui/popover/src/index.ts"
+      ],
+      "@spartan-ng/helm/resizable": [
+        "./libs/ui/resizable/src/index.ts"
+      ],
+      "@spartan-ng/helm/aspect-ratio": [
+        "./libs/ui/aspect-ratio/src/index.ts"
+      ],
+      "@spartan-ng/helm/tabs": [
+        "./libs/ui/tabs/src/index.ts"
+      ],
+      "@spartan-ng/helm/checkbox": [
+        "./libs/ui/checkbox/src/index.ts"
+      ],
+      "@spartan-ng/helm/switch": [
+        "./libs/ui/switch/src/index.ts"
+      ],
+      "@spartan-ng/helm/radio-group": [
+        "./libs/ui/radio-group/src/index.ts"
+      ],
+      "@spartan-ng/helm/autocomplete": [
+        "./libs/ui/autocomplete/src/index.ts"
+      ],
+      "@spartan-ng/helm/dialog": [
+        "./libs/ui/dialog/src/index.ts"
+      ],
+      "@spartan-ng/helm/accordion": [
+        "./libs/ui/accordion/src/index.ts"
+      ],
+      "@spartan-ng/helm/combobox": [
+        "./libs/ui/combobox/src/index.ts"
+      ],
+      "@spartan-ng/helm/sonner": [
+        "./libs/ui/sonner/src/index.ts"
       ]
     },
     "useDefineForClassFields": false
@@ -37,6 +162,6 @@
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "strictTemplates": false // Has some issues with optional checkers in HTML, to be fixed
+    "strictTemplates": false
   }
 }

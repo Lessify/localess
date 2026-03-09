@@ -1,5 +1,7 @@
 @if (openApiDocument$ | async; as openApiDocument) {
   <elements-api apiDescriptionDocument="{{ openApiDocument }}" router="memory" layout="sidebar" />
 } @else {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }

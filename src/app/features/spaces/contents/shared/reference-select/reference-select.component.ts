@@ -1,16 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatError } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFileSymlink, lucideTrash } from '@ng-icons/lucide';
 import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '@shared/components/references-select-dialog';
 import { StatusComponent } from '@shared/components/status';
 import { Content, ContentDocument } from '@shared/models/content.model';
@@ -18,6 +13,11 @@ import { SchemaFieldKind, SchemaFieldReference } from '@shared/models/schema.mod
 import { Space } from '@shared/models/space.model';
 import { ContentService } from '@shared/services/content.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({
   selector: 'll-reference-select',
@@ -26,16 +26,20 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatDividerModule,
-    MatListModule,
     StatusComponent,
-    MatError,
     MatExpansionModule,
     CommonModule,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmIconImports,
+    HlmTooltipImports,
+    HlmItemImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideFileSymlink,
+      lucideTrash,
+    }),
   ],
 })
 export class ReferenceSelectComponent implements OnInit {

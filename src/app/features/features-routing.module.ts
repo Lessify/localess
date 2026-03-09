@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { AuthGuard, customClaims } from '@angular/fire/auth-guard';
 import { RouterModule, Routes } from '@angular/router';
+import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { UserPermission } from '@shared/models/user.model';
 import { pipe } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -154,6 +155,12 @@ const routes: Routes = [
         path: 'welcome',
         title: 'Welcome',
         loadComponent: () => import('./welcome/welcome.component').then(m => m.WelcomeComponent),
+        data: {
+          breadcrumb: {
+            label: 'Welcome',
+            route: '/welcome',
+          } satisfies BreadcrumbItem,
+        },
       },
       {
         path: 'spaces/:spaceId/dashboard',
@@ -167,6 +174,10 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionTranslationRead,
+          breadcrumb: {
+            label: 'Translations',
+            helpUrl: 'https://localess.org/docs/translations/overview',
+          } satisfies BreadcrumbItem,
         },
       },
       {
@@ -176,6 +187,10 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionContentRead,
+          breadcrumb: {
+            label: 'Contents',
+            helpUrl: 'https://localess.org/docs/content/overview',
+          } satisfies BreadcrumbItem,
         },
       },
       {
@@ -185,6 +200,10 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionAssetRead,
+          breadcrumb: {
+            label: 'Assets',
+            helpUrl: 'https://localess.org/docs/assets/overview',
+          } satisfies BreadcrumbItem,
         },
       },
       {
@@ -194,6 +213,10 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSchemaRead,
+          breadcrumb: {
+            label: 'Schemas',
+            helpUrl: 'https://localess.org/docs/schemas/overview',
+          } satisfies BreadcrumbItem,
         },
       },
       {
@@ -203,12 +226,20 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionTranslationRead,
+          breadcrumb: {
+            label: 'Tasks',
+          } satisfies BreadcrumbItem,
         },
       },
       {
         path: 'spaces/:spaceId/open-api',
         title: 'Open API',
         loadChildren: () => import('./spaces/open-api/open-api.module').then(m => m.OpenApiModule),
+        data: {
+          breadcrumb: {
+            label: 'Open API',
+          } satisfies BreadcrumbItem,
+        },
       },
       {
         path: 'spaces/:spaceId/settings',
@@ -217,6 +248,9 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSpaceManagement,
+          breadcrumb: {
+            label: 'Settings',
+          } satisfies BreadcrumbItem,
         },
       },
       {
@@ -226,6 +260,9 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionUserManagement,
+          breadcrumb: {
+            label: 'Users',
+          } satisfies BreadcrumbItem,
         },
       },
       {
@@ -235,6 +272,9 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSpaceManagement,
+          breadcrumb: {
+            label: 'Spaces',
+          } satisfies BreadcrumbItem,
         },
       },
       {
@@ -244,6 +284,9 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: {
           authGuardPipe: hasPermissionSettingsManagement,
+          breadcrumb: {
+            label: 'Settings',
+          } satisfies BreadcrumbItem,
         },
       },
     ],

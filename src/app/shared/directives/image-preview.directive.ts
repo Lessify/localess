@@ -1,16 +1,18 @@
-import { Directive, ElementRef, HostListener, input, inject } from '@angular/core';
+import { Directive, ElementRef, input, inject } from '@angular/core';
 
 @Directive({
   selector: 'img[llImagePreview]',
-  standalone: true,
+  host: {
+    '(mouseenter)': 'onMouseOver()',
+    '(mouseleave)': 'onMouseOut()',
+  },
 })
 export class ImagePreviewDirective {
   private hostElement = inject<ElementRef<HTMLImageElement>>(ElementRef);
 
   scale = input<number>(2, { alias: 'llImagePreview' });
 
-  @HostListener('mouseenter')
-  public onMouseOver() {
+  onMouseOver() {
     if (this.hostElement.nativeElement.parentElement) {
       this.hostElement.nativeElement.parentElement.style.overflow = 'visible';
     }
@@ -20,8 +22,7 @@ export class ImagePreviewDirective {
     this.hostElement.nativeElement.style.transition = 'transform 0.3s ease-in-out';
   }
 
-  @HostListener('mouseleave')
-  public onMouseOut() {
+  onMouseOut() {
     this.hostElement.nativeElement.style.transform = 'scale(1)';
     this.hostElement.nativeElement.style.zIndex = '';
     this.hostElement.nativeElement.style.cursor = '';

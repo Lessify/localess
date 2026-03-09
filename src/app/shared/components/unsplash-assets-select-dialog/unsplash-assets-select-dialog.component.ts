@@ -10,12 +10,12 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog.model';
 
 @Component({
@@ -25,7 +25,6 @@ import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatDialogModule,
-    MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
@@ -36,6 +35,7 @@ import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog
     MatCardModule,
     MatCheckboxModule,
     NgOptimizedImage,
+    HlmProgressImports,
   ],
 })
 export class UnsplashAssetsSelectDialogComponent implements OnInit {

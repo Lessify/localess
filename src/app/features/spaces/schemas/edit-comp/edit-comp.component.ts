@@ -1,27 +1,38 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AnimateDirective } from '@shared/directives/animate.directive';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideArrowLeft,
+  lucideCalendar,
+  lucideCircleX,
+  lucideClock,
+  lucideFile,
+  lucideFileDigit,
+  lucideFileImage,
+  lucideFileMusic,
+  lucideFileSymlink,
+  lucideFileText,
+  lucideFileVideoCamera,
+  lucideGripVertical,
+  lucideLink,
+  lucideList,
+  lucidePalette,
+  lucidePaperclip,
+  lucidePencilRuler,
+  lucideSave,
+  lucideTextInitial,
+  lucideToggleLeft,
+  lucideToyBrick,
+  lucideTrash,
+  lucideType,
+} from '@ng-icons/lucide';
+import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import {
   AssetFileType,
@@ -31,7 +42,6 @@ import {
   SchemaField,
   SchemaFieldKind,
   schemaFieldKindDescriptions,
-  SchemaFieldOptionSelectable,
   SchemaType,
 } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -40,45 +50,102 @@ import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
+import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { NgScrollbarModule } from 'ngx-scrollbar';
 import { combineLatest } from 'rxjs';
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
+import { PlatformService } from '@shared/services/platform.service';
 
 @Component({
   selector: 'll-schema-edit-comp',
   templateUrl: './edit-comp.component.html',
   styleUrl: './edit-comp.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'captureKeyboard($event)',
+  },
   imports: [
-    MatToolbarModule,
-    MatButtonModule,
-    MatIconModule,
     CanUserPerformPipe,
     CommonModule,
-    MatTooltipModule,
-    MatProgressBarModule,
+    HlmTabsImports,
     ReactiveFormsModule,
-    MatTabsModule,
-    MatSidenavModule,
-    MatListModule,
-    MatFormFieldModule,
     DragDropModule,
-    MatInputModule,
-    MatDividerModule,
-    TextFieldModule,
-    MatSelectModule,
-    MatChipsModule,
     MatExpansionModule,
     EditFieldComponent,
-    AnimateDirective,
+    HlmProgressImports,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmSpinnerImports,
+    HlmTooltipImports,
+    HlmSheetImports,
+    HlmInputGroupImports,
+    HlmFieldImports,
+    HlmItemImports,
+    HlmInputImports,
+    HlmTextareaImports,
+    HlmBadgeImports,
+    HlmSelectImports,
+    BrnSelectImports,
+    HlmScrollAreaImports,
+    NgScrollbarModule,
+    HlmKbdImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideSave,
+      lucideArrowLeft,
+      lucideTrash,
+      lucideGripVertical,
+      lucideCircleX,
+      lucideType,
+      lucideTextInitial,
+      lucidePencilRuler,
+      tablerMarkdown,
+      tablerNumber,
+      lucidePalette,
+      lucideCalendar,
+      lucideClock,
+      lucideToggleLeft,
+      lucideList,
+      lucideLink,
+      lucideFileSymlink,
+      lucidePaperclip,
+      lucideToyBrick,
+      lucideFile,
+      lucideFileImage,
+      lucideFileVideoCamera,
+      lucideFileMusic,
+      lucideFileDigit,
+      lucideFileText,
+    }),
   ],
 })
 export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
+  readonly platformService = inject(PlatformService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
   private readonly notificationService = inject(NotificationService);
+
+  readonly PREVIEW_TYPES = ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'];
 
   // Input
   spaceId = input.required<string>();
@@ -89,7 +156,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   schemaFieldKindDescriptions = schemaFieldKindDescriptions;
   assetFileTypeDescriptions = assetFileTypeDescriptions;
 
-  selectedFieldIdx?: number;
+  selectedFieldIdx = signal<number | undefined>(undefined);
 
   fieldReservedNames: string[] = [];
   newFieldName = this.fb.control('', [...SchemaValidator.FIELD_NAME, CommonValidator.reservedName(this.fieldReservedNames)]);
@@ -108,8 +175,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     labels: this.fb.control<string[] | undefined>([]),
     fields: this.fb.array<SchemaField>([]),
   });
-
-  readonly separatorKeysCodes = [ENTER, COMMA, SPACE] as const;
 
   ngOnInit(): void {
     this.loadData(this.spaceId(), this.schemaId());
@@ -142,8 +207,15 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     return this.form.dirty;
   }
 
-  addLabel(event: MatChipInputEvent): void {
-    const { value, chipInput } = event;
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (this.platformService.isActionSave(event)) {
+      event.preventDefault();
+      this.save();
+    }
+  }
+
+  addLabel(value: string): void {
     if (value) {
       const labels = this.form.controls['labels'].value;
       if (labels instanceof Array) {
@@ -152,8 +224,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
         this.form.controls['labels'].setValue([value]);
       }
     }
-    chipInput.clear();
-    this.form.markAsDirty();
   }
 
   removeLabel(label: string): void {
@@ -177,11 +247,25 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     return this.fields.at(index);
   }
 
-  generateOptionForm(option?: SchemaFieldOptionSelectable): FormGroup {
-    return this.fb.group({
-      name: this.fb.control(option?.name, SchemaValidator.FIELD_OPTION_NAME),
-      value: this.fb.control(option?.value, SchemaValidator.FIELD_OPTION_VALUE),
-    });
+  selectComponent(index: number) {
+    this.selectedFieldIdx.set(index);
+  }
+
+  removeComponent(event: MouseEvent, index: number) {
+    // Prevent Default
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    // Remove name from reserved names
+    const cValue = this.fieldControlAt(index, 'name')?.value;
+    if (cValue) {
+      const idx = this.fieldReservedNames.indexOf(cValue);
+      if (idx !== -1) {
+        this.fieldReservedNames.splice(index, 1);
+      }
+    }
+    // Remove
+    this.fields.removeAt(index);
+    this.form.markAsDirty();
   }
 
   addField(element?: SchemaField) {
@@ -247,9 +331,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        element.options?.forEach(it => options.push(this.generateOptionForm(it)));
-        fieldForm.addControl('options', options);
         fieldForm.addControl('source', this.fb.control<string>(element.source, SchemaValidator.FIELD_OPTION_SOURCE));
         break;
       }
@@ -259,10 +340,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
         fieldForm.addControl('source', this.fb.control<string>(element.source, SchemaValidator.FIELD_OPTION_SOURCE));
-        const options: FormArray = this.fb.array<SchemaFieldOptionSelectable>([], SchemaValidator.FIELD_OPTIONS);
-        element.options?.forEach(it => options.push(this.generateOptionForm(it)));
-        fieldForm.addControl('options', options);
-
         fieldForm.addControl('minValues', this.fb.control<number | undefined>(element.minValues, SchemaValidator.FIELD_MIN_VALUES));
         fieldForm.addControl('maxValues', this.fb.control<number | undefined>(element.maxValues, SchemaValidator.FIELD_MAX_VALUES));
         break;
@@ -284,10 +361,18 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        fieldForm.addControl(
-          'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
-        );
+        // Fallback to first file type if exists
+        if (element.fileTypes && element.fileTypes.length > 0) {
+          fieldForm.addControl(
+            'fileType',
+            this.fb.control<AssetFileType | undefined>(element.fileTypes[0], SchemaValidator.FIELD_FILE_TYPES),
+          );
+        } else {
+          fieldForm.addControl(
+            'fileType',
+            this.fb.control<AssetFileType | undefined>(element.fileType || AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES),
+          );
+        }
         break;
       }
       case SchemaFieldKind.ASSETS: {
@@ -295,10 +380,18 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        fieldForm.addControl(
-          'fileTypes',
-          this.fb.control<AssetFileType[] | undefined>(element.fileTypes || [AssetFileType.ANY], SchemaValidator.FIELD_FILE_TYPES),
-        );
+        // Fallback to first file type if exists
+        if (element.fileTypes && element.fileTypes.length > 0) {
+          fieldForm.addControl(
+            'fileType',
+            this.fb.control<AssetFileType | undefined>(element.fileTypes[0], SchemaValidator.FIELD_FILE_TYPES),
+          );
+        } else {
+          fieldForm.addControl(
+            'fileType',
+            this.fb.control<AssetFileType | undefined>(element.fileType || AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES),
+          );
+        }
         break;
       }
       case SchemaFieldKind.SCHEMA: {
@@ -322,28 +415,6 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
       this.selectComponent(this.fields.length - 1);
       this.form.markAsDirty();
     }
-  }
-
-  removeComponent(event: Event, index: number): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    // Remove name from reserved names
-    const cValue = this.fieldControlAt(index, 'name')?.value;
-    if (cValue) {
-      const idx = this.fieldReservedNames.indexOf(cValue);
-      if (idx !== -1) {
-        this.fieldReservedNames.splice(index, 1);
-      }
-    }
-    // Remove
-    this.fields.removeAt(index);
-    this.form.markAsDirty();
-  }
-
-  // handle form array element selection, by enforcing refresh
-  selectComponent(index: number): void {
-    this.selectedFieldIdx = index;
   }
 
   save(): void {

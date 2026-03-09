@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
-import { activate } from '@angular/fire/remote-config';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
+import { provideIcons } from '@ng-icons/core';
+import { lucideLayoutDashboard } from '@ng-icons/lucide';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 interface TabItem {
   icon: string;
@@ -16,22 +16,26 @@ interface TabItem {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatToolbarModule, MatTabsModule, RouterModule, MatIconModule],
+  imports: [RouterModule, HlmTabsImports, HlmIconImports],
+  providers: [
+    provideIcons({
+      lucideLayoutDashboard,
+    }),
+  ],
 })
 export class SettingsComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly cd = inject(ChangeDetectorRef);
 
-  activeTab = 'ui';
-  tabItems: TabItem[] = [{ icon: 'palette', label: 'UI', link: 'ui' }];
+  activeTab = signal('ui');
+  tabItems: TabItem[] = [{ icon: 'lucideLayoutDashboard', label: 'UI', link: 'ui' }];
 
   constructor() {
-    const router = this.router;
-
-    const idx = router.url.lastIndexOf('/');
-    this.activeTab = router.url.substring(idx + 1);
+    const idx = this.router.url.lastIndexOf('/');
+    this.activeTab.set(this.router.url.substring(idx + 1));
   }
 
-  protected readonly activate = activate;
+  onTabActivated(tabLink: string) {
+    this.activeTab.set(tabLink);
+    this.router.navigate(['features', 'admin', 'settings', tabLink]);
+  }
 }

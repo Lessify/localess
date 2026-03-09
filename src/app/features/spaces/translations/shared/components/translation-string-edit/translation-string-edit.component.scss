@@ -1,0 +1,27 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  overflow: auto;
+  pointer-events: none;
+  padding: 0.75rem 0.75rem; /* py-3 px-3 to match textarea padding */
+}
+
+.highlights {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: transparent;
+  font-size: 14px;
+  line-height: 20px;
+  font-family: inherit;
+  letter-spacing: normal;
+}

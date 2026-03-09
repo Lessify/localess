@@ -9,10 +9,6 @@ mat-form-field {
   }
 }
 
-.schema-id {
-  color: var(--mat-sys-secondary);
-}
-
 mat-row {
   cursor: pointer;
 }
@@ -32,6 +28,6 @@ mat-cell {
   }
 
   &.mat-column-actions {
-    max-width: 125px;
+    max-width: 90px;
   }
 }

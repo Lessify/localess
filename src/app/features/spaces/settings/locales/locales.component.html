@@ -1,17 +1,13 @@
-<mat-toolbar class="border-b">
-  <mat-toolbar-row>
-    Locales
-    <span class="spacer"></span>
-    <div class="actions">
-      <button mat-flat-button (click)="openAddDialog()">
-        <mat-icon>add</mat-icon>
-        Add Locale
-      </button>
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+<div class="flex items-center justify-end gap-2 p-2">
+  <button hlmBtn (click)="openAddDialog()">
+    <ng-icon hlm size="sm" name="lucidePlus" />
+    Add Locale
+  </button>
+</div>
 @if (isLoading()) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
 <div class="my-3">
   <mat-table [dataSource]="dataSource" matSort>
@@ -23,36 +19,53 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element"> {{ element.name }}</mat-cell>
     </ng-container>
-    <ng-container matColumnDef="isLocaleTranslatable">
+    <ng-container matColumnDef="isTranslatable">
       <mat-header-cell *matHeaderCellDef> Translatable</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <mat-icon color="primary">{{ isSupport(element.id) ? 'check' : 'clear' }}</mat-icon>
+        @if (isSupport(element.id)) {
+          <ng-icon name="lucideCheck" />
+        } @else {
+          <ng-icon name="lucideX" />
+        }
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="fallback">
+    <ng-container matColumnDef="isFallback">
       <mat-header-cell *matHeaderCellDef> Fallback</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @if (spaceStore.selectedSpace()?.localeFallback?.id === element.id) {
-          <button mat-icon-button disabled>
-            <mat-icon color="accent" matTooltip="Fallback">check_circle</mat-icon>
-          </button>
-        } @else {
-          <button mat-icon-button (click)="markAsFallback(element)">
-            <mat-icon matTooltip="Mark as Fallback">check_circle_outline</mat-icon>
-          </button>
+          <ng-icon name="lucideCheck" />
         }
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <button
-          mat-icon-button
-          (click)="openDeleteDialog(element)"
-          matTooltip="Delete"
-          [disabled]="spaceStore.selectedSpace()?.localeFallback?.id === element.id">
-          <mat-icon>delete</mat-icon>
+        <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
         </button>
+        <ng-template #actionsMenu>
+          <hlm-dropdown-menu class="text-nowrap">
+            @if (spaceStore.selectedSpace()?.localeFallback?.id !== element.id) {
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem (click)="markAsFallback(element)">
+                  <ng-icon hlm size="sm" name="lucideCheck" />
+                  Set as Fallback
+                </button>
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+            }
+            <hlm-dropdown-menu-group>
+              <button
+                hlmDropdownMenuItem
+                variant="destructive"
+                [disabled]="spaceStore.selectedSpace()?.localeFallback?.id === element.id"
+                (click)="openDeleteDialog(element)">
+                <ng-icon hlm size="sm" name="lucideTrash" />
+                Delete
+              </button>
+            </hlm-dropdown-menu-group>
+          </hlm-dropdown-menu>
+        </ng-template>
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>

@@ -1,23 +1,36 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideCheck,
+  lucideEllipsisVertical,
+  lucideInfo,
+  lucideLock,
+  lucideMail,
+  lucidePencil,
+  lucideRefreshCcw,
+  lucideTrash,
+  lucideUserPlus,
+  lucideX,
+} from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { AnimateDirective } from '@shared/directives/animate.directive';
 import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap } from 'rxjs/operators';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogModel } from './user-dialog/user-dialog.model';
@@ -30,18 +43,32 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
   styleUrls: ['./users.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
-    MatTooltipModule,
     MatTableModule,
-    MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
     MatSortModule,
-    MatIconModule,
     CommonModule,
-    MatButtonModule,
     MatPaginatorModule,
-    AnimateDirective,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmTooltipImports,
+    HlmProgressImports,
+    HlmSpinnerImports,
+    HlmDropdownMenuImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideUserPlus,
+      lucideRefreshCcw,
+      lucidePencil,
+      lucideTrash,
+      lucideCheck,
+      lucideX,
+      lucideMail,
+      lucideEllipsisVertical,
+      lucideInfo,
+      lucideLock,
+    }),
   ],
 })
 export class UsersComponent implements OnInit {
@@ -113,7 +140,7 @@ export class UsersComponent implements OnInit {
       });
   }
 
-  editDialog(element: User): void {
+  openEditDialog(element: User): void {
     this.dialog
       .open<UserDialogComponent, UserDialogModel, UserDialogModel>(UserDialogComponent, {
         panelClass: 'sm',
@@ -139,7 +166,7 @@ export class UsersComponent implements OnInit {
       });
   }
 
-  deleteDialog(element: User): void {
+  openDeleteDialog(element: User): void {
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {

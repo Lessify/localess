@@ -4,13 +4,12 @@ import { getState, patchState, signalStore, withComputed, withHooks, withMethods
 const LS_KEY = 'LL-SETTINGS-STATE';
 
 export type Theme = 'light' | 'dark' | 'auto';
-export type EditorSize = '' | 'sm' | 'md' | 'lg';
+export type EditorSize = '' | 'sm' | 'md' | 'lg' | 'xl';
 export type DataLayout = 'list' | 'grid';
 export type TranslationLayout = 'list' | 'tree';
 
 export interface LocalSettingsState {
   theme: Theme;
-  mainMenuExpended: boolean;
   debugEnabled: boolean;
   editorEnabled: boolean;
   editorSize: EditorSize;
@@ -22,11 +21,10 @@ export interface LocalSettingsState {
 
 export const initialState: LocalSettingsState = {
   theme: 'auto',
-  mainMenuExpended: true,
   debugEnabled: false,
   editorEnabled: false,
   editorSize: '',
-  editorFormWidth: 700,
+  editorFormWidth: 35,
   assetLayout: 'list',
   assetDialogLayout: 'list',
   translationLayout: 'list',
@@ -38,12 +36,14 @@ function setDocumentTheme(theme: Theme) {
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
       document.documentElement.style.colorScheme = 'light';
+      document.documentElement.setAttribute('data-theme', 'light');
       break;
     }
     case 'dark': {
       document.documentElement.classList.remove('light');
       document.documentElement.classList.add('dark');
       document.documentElement.style.colorScheme = 'dark';
+      document.documentElement.setAttribute('data-theme', 'dark');
       break;
     }
   }
@@ -81,10 +81,6 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { debugEnabled });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), debugEnabled }));
       },
-      setMainMenuExpended: (mainMenuExpended: boolean): void => {
-        patchState(store, { mainMenuExpended });
-        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), mainMenuExpended }));
-      },
       setEditorEnabled: (editorEnabled: boolean): void => {
         patchState(store, { editorEnabled });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), editorEnabled }));
@@ -115,7 +111,6 @@ export const LocalSettingsStore = signalStore(
     return {
       theme: computed(() => store.theme()),
       debugEnabled: computed(() => store.debugEnabled()),
-      mainMenuExpended: computed(() => store.mainMenuExpended()),
       editorEnabled: computed(() => store.editorEnabled()),
       editorSize: computed(() => store.editorSize()),
       editorFormWidth: computed(() => store.editorFormWidth()),

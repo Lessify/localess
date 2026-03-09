@@ -10,6 +10,38 @@
         <mat-error>{{ fe.errors(errors) }}</mat-error>
       }
     </mat-form-field>
+    <br />
+    <b>Permissions</b>
+    <mat-selection-list formControlName="permissions">
+      <div mat-subheader>Translation</div>
+      <mat-list-option value="TRANSLATION_PUBLIC">
+        <span matListItemTitle>Public</span>
+        <span matListItemLine>Access to published only version.</span>
+      </mat-list-option>
+      <mat-list-option value="TRANSLATION_DRAFT">
+        <span matListItemTitle>Draft</span>
+        <span matListItemLine>Access to draft and published version.</span>
+      </mat-list-option>
+      <mat-divider></mat-divider>
+      <div mat-subheader>Content</div>
+      <mat-list-option value="CONTENT_PUBLIC">
+        <span matListItemTitle>Public</span>
+        <span matListItemLine>Access to published only version.</span>
+      </mat-list-option>
+      <mat-list-option value="CONTENT_DRAFT">
+        <span matListItemTitle>Draft</span>
+        <span matListItemLine>Access to draft and published version.</span>
+      </mat-list-option>
+      <mat-divider></mat-divider>
+      <div mat-subheader>Development</div>
+      <mat-list-option value="DEV_TOOLS">
+        <span matListItemTitle>Development Tools</span>
+        <span matListItemLine>Access to development tools like CLI, where you can manage and sync data.</span>
+      </mat-list-option>
+    </mat-selection-list>
+    @if (form.controls['permissions'].errors; as errors) {
+      <mat-error>{{ fe.errors(errors) }}</mat-error>
+    }
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

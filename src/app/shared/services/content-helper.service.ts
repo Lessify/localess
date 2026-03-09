@@ -9,8 +9,8 @@ import {
   isReferenceContent,
   ReferenceContent,
 } from '@shared/models/content.model';
-import { DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
+import { isSchemaArray, Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { v4 } from 'uuid';
 
@@ -18,9 +18,15 @@ import { v4 } from 'uuid';
 export class ContentHelperService {
   private readonly fb = inject(FormBuilder);
 
+  /**
+   * Validate Content Data against Schemas and locale
+   * @param {ContentData} data - document
+   * @param {Schema[]} schemas
+   * @param {string} locale
+   */
   validateContent(data: ContentData, schemas: Schema[], locale: string): ContentError[] {
     //console.group('validateContent');
-    const isDefaultLocale = DEFAULT_LOCALE.id === locale;
+    const isDefaultLocale = CONTENT_DEFAULT_LOCALE.id === locale;
     const errors: ContentError[] = [];
     const schemasById = new Map<string, Schema>(schemas.map(it => [it.id, it]));
     const contentIteration = [data];
@@ -157,13 +163,15 @@ export class ContentHelperService {
    * @param {ContentData} data - document
    * @param {Schema[]} schemas
    * @param {string} locale
+   * @return {[Set<string>, Set<string>, Set<string>]} [inUseAssets, inUseLinks, inUseReferences]
    */
-  extractReferences(data: ContentData | undefined, schemas: Schema[], locale: string): [Set<string>, Set<string>] {
+  extractReferences(data: ContentData | undefined, schemas: Schema[], locale: string): [Set<string>, Set<string>, Set<string>] {
     //console.group('extractReferences', locale);
     const inUseAssets = new Set<string>();
+    const inUseLinks = new Set<string>();
     const inUseReferences = new Set<string>();
     const schemasById = new Map<string, Schema>(schemas.map(it => [it.id, it]));
-    if (data === undefined) return [inUseAssets, inUseReferences];
+    if (data === undefined) return [inUseAssets, inUseLinks, inUseReferences];
     const contentIteration = [data];
     // Iterative traversing content and extracting references.
     let selectedContent = contentIteration.pop();
@@ -191,7 +199,7 @@ export class ContentHelperService {
             } else if (isReferenceContent(content)) {
               inUseReferences.add(content.uri);
             } else if (isLinkContent(content) && content.type === 'content') {
-              inUseReferences.add(content.uri);
+              inUseLinks.add(content.uri);
             }
           }
         });
@@ -216,13 +224,20 @@ export class ContentHelperService {
     }
     //console.log(inUseAssets, inUseReferences);
     //console.groupEnd();
-    return [inUseAssets, inUseReferences];
+    return [inUseAssets, inUseLinks, inUseReferences];
   }
 
+  /**
+   * Extract Schema Content based on locale
+   * @param data
+   * @param schema
+   * @param locale
+   * @param full
+   */
   extractSchemaContent(data: ContentData, schema: SchemaComponent, locale: string, full: boolean): Record<string, any> {
     //console.group('extractSchemaContent')
     //console.log('data',data)
-    const isDefaultLocale = locale === DEFAULT_LOCALE.id;
+    const isDefaultLocale = locale === CONTENT_DEFAULT_LOCALE.id;
     const result: Record<string, any> = {};
     schema.fields
       ?.filter(it => full || ![SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS].includes(it.kind))
@@ -237,12 +252,62 @@ export class ContentHelperService {
           value = data[field.name];
         }
         if (value !== undefined) {
-          result[field.name] = value;
+          if (isSchemaArray(field)) {
+            if (Array.isArray(value)) {
+              result[field.name] = value;
+            }
+          } else {
+            if (!Array.isArray(value)) {
+              result[field.name] = value;
+            }
+          }
         }
       });
     //console.log('result',result)
     //console.groupEnd()
     return result;
+  }
+
+  /**
+   * extract Locale Content
+   * @param {ContentData} content content
+   * @param {Schema[]} schemas schema
+   * @param {string} locale locale
+   * @return {ContentData} content
+   */
+  extractContent(content: ContentData, schemas: Map<string, Schema>, locale: string): ContentData {
+    const extractedContentData: ContentData = {
+      _id: content._id,
+      _schema: content._schema || content.schema,
+      schema: content.schema,
+    };
+    const schema = schemas.get(content.schema);
+    if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
+      for (const field of schema?.fields || []) {
+        if (field.kind === SchemaFieldKind.SCHEMA) {
+          const fieldContent: ContentData | undefined = content[field.name];
+          if (fieldContent) {
+            extractedContentData[field.name] = this.extractContent(fieldContent, schemas, locale);
+          }
+        } else if (field.kind === SchemaFieldKind.SCHEMAS) {
+          const fieldContent: ContentData[] | undefined = content[field.name];
+          if (fieldContent && Array.isArray(fieldContent)) {
+            extractedContentData[field.name] = fieldContent.map(it => this.extractContent(it, schemas, locale));
+          }
+        } else {
+          if (field.translatable) {
+            let value = content[`${field.name}_i18n_${locale}`];
+            if (value === undefined) {
+              value = content[field.name];
+            }
+            extractedContentData[field.name] = value;
+          } else {
+            extractedContentData[field.name] = content[field.name];
+          }
+        }
+      }
+    }
+    return extractedContentData;
   }
 
   clone<T>(source: T, generateNewID = false): T {
@@ -507,17 +572,6 @@ export class ContentHelperService {
     return form;
   }
 
-  assetsContentToFormArray(uris: AssetContent[]): FormArray {
-    return this.fb.array(
-      uris.map(it =>
-        this.fb.group({
-          uri: this.fb.control(it.uri, Validators.required),
-          kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-        }),
-      ),
-    );
-  }
-
   assetContentToForm(asset: AssetContent): FormGroup {
     return this.fb.group({
       uri: this.fb.control(asset.uri),
@@ -529,24 +583,6 @@ export class ContentHelperService {
     return this.fb.group({
       uri: this.fb.control(reference.uri),
       kind: this.fb.control(reference.kind),
-    });
-  }
-
-  assetsFormArray(uris: string[]): FormArray {
-    return this.fb.array(
-      uris.map(it =>
-        this.fb.group({
-          uri: this.fb.control(it, Validators.required),
-          kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
-        }),
-      ),
-    );
-  }
-
-  assetFormGroup(uri: string): FormGroup {
-    return this.fb.group({
-      uri: this.fb.control(uri, Validators.required),
-      kind: this.fb.control(SchemaFieldKind.ASSET, Validators.required),
     });
   }
 }

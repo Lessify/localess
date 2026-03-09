@@ -50,6 +50,7 @@ package-lock.json
 yarn.lock
 
 # Generated
+libs/
 src/app/shared/generated/
 firebase-export*
 

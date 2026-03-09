@@ -9,8 +9,8 @@ import { tap } from 'rxjs/operators';
 export class TranslateService {
   private readonly functions = inject(Functions);
 
-  translate(data: TranslateData): Observable<string | undefined> {
-    const translate = httpsCallableData<TranslateData, string | undefined>(this.functions, 'translate');
+  translate(data: TranslateData): Observable<string> {
+    const translate = httpsCallableData<TranslateData, string>(this.functions, 'translate');
     return translate(data).pipe(tap(console.log), traceUntilFirst('Functions:Translate:translate'));
   }
 }

@@ -6,7 +6,7 @@ export class ContentValidator {
     Validators.required,
     CommonValidator.noSpaceAround,
     Validators.minLength(2),
-    Validators.maxLength(50),
+    Validators.maxLength(250),
   ];
 
   public static SLUG: ValidatorFn[] = [
@@ -14,7 +14,7 @@ export class ContentValidator {
     CommonValidator.noSpace,
     Validators.pattern(CommonPattern.URL_SLUG),
     Validators.minLength(2),
-    Validators.maxLength(50),
+    Validators.maxLength(250),
   ];
 
   public static SCHEMA: ValidatorFn[] = [Validators.required];

@@ -1,9 +1,9 @@
 <div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
   <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <img class="mx-auto h-10 w-auto my-2" ngSrc="assets/logo-adaptive.svg" alt="Localess" height="16" width="16" />
-    <h2 class="mt-6 text-center text-2xl font-bold leading-9 tracking-tight"> Sign in to your account </h2>
+    <img class="mx-auto my-2 h-10 w-auto" ngSrc="assets/logo-adaptive.svg" alt="Localess" height="16" width="16" />
+    <h2 class="mt-6 text-center text-2xl leading-9 font-bold tracking-tight"> Sign in to your account </h2>
     @if (message) {
-      <div class="mt-2 text-center text-sm leading-5 text-red-600"> {{ message }} </div>
+      <div class="text-destructive mt-2 text-center text-sm leading-5"> {{ message }} </div>
     }
   </div>
 
@@ -13,17 +13,25 @@
         <mat-form-field>
           <mat-label>Email</mat-label>
           <input matInput type="text" formControlName="email" required />
+          @if (form.controls['email'].errors; as errors) {
+            <mat-error>{{ fe.errors(errors) }}</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field>
           <mat-label>Password</mat-label>
           <input matInput type="password" formControlName="password" required />
+          @if (form.controls['password'].errors; as errors) {
+            <mat-error>{{ fe.errors(errors) }}</mat-error>
+          }
         </mat-form-field>
 
+        @if (hasAuthError()) {
+          <div class="text-destructive text-center text-sm"> User or password is wrong </div>
+        }
+
         <div>
-          <button mat-flat-button class="w-full" (click)="loginWithEmailAndPassword(form.value.email, form.value.password)">
-            Sign in
-          </button>
+          <button mat-flat-button class="w-full" [disabled]="!form.valid" (click)="loginWithEmailAndPassword()"> Sign in </button>
         </div>
         <div>
           <button mat-stroked-button class="w-full" routerLink="/reset">Forgot Password ?</button>
@@ -33,7 +41,7 @@
       @if (isGoogleAuthEnabled || isMicrosoftAuthEnabled) {
         <div>
           <div class="relative mt-10">
-            <div class="relative flex justify-center text-sm font-medium leading-6">
+            <div class="relative flex justify-center text-sm leading-6 font-medium">
               <span class="px-6">Or continue with</span>
             </div>
           </div>
@@ -48,7 +56,6 @@
           </div>
         </div>
       }
-
       @if (settingsStore.debugEnabled()) {
         <div class="mt-6">
           <p>

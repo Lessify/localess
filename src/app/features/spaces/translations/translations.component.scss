@@ -1,41 +1,10 @@
-.search-buttons {
-  width: 10em;
-}
-
-.disabled {
-  pointer-events: none;
-  opacity: 0.5;
-}
-
 .selected {
   //--mat-button-toggle-selected-state-background-color #dae2f9
   background-color: var(--mat-sys-secondary-container);
 }
 
-mat-sidenav {
-  width: 30%;
-}
-
-mat-form-field {
-  width: 100%;
-
-  input {
-    width: 100%;
-  }
-}
-
-mat-form-field.with-button {
-  width: calc(100% - 50px);
-
-  input {
-    width: 100%;
-  }
-}
-
 .overlay {
-  height: calc(100vh - 216px);
-  padding: inherit;
-  border: 1px solid #efefef;
+  height: calc(100vh - 165px);
 }
 
 :host ::ng-deep .cdk-virtual-scroll-content-wrapper {

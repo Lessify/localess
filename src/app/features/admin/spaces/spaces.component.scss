@@ -5,7 +5,7 @@ table {
 mat-header-cell,
 mat-cell {
   &.mat-column-id {
-    max-width: 250px;
+    max-width: 230px;
   }
 
   &.mat-column-createdAt {
@@ -17,6 +17,6 @@ mat-cell {
   }
 
   &.mat-column-actions {
-    max-width: 140px;
+    max-width: 160px;
   }
 }

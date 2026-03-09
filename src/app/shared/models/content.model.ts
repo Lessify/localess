@@ -34,10 +34,6 @@ export interface ContentBase {
   parentSlug: string;
   fullSlug: string;
 
-  //Lock
-  locked?: boolean;
-  lockedBy?: string;
-
   updatedBy?: {
     name: string;
     email: string;
@@ -53,6 +49,7 @@ export interface ContentDocument<T extends ContentData = ContentData> extends Co
   data?: T | string;
   publishedAt?: Timestamp;
   assets?: string[];
+  links?: string[];
   references?: string[];
 }
 
@@ -118,9 +115,11 @@ export interface AssetContent {
   uri: string;
 }
 
+export type LinkContentType = 'url' | 'content';
+
 export interface LinkContent {
   kind: 'LINK';
-  type: 'url' | 'content';
+  type: LinkContentType;
   target: '_blank' | '_self';
   uri: string;
 }
@@ -140,4 +139,11 @@ export function isLinkContent(arg: any): arg is LinkContent {
 
 export function isReferenceContent(arg: any): arg is ReferenceContent {
   return arg.kind === 'REFERENCE';
+}
+
+export interface TranslateContentLocaleData {
+  spaceId: string;
+  contentId: string;
+  sourceLocaleId?: string;
+  targetLocaleId: string;
 }

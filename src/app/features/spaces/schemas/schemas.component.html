@@ -1,108 +1,163 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    Schemas
-    <a mat-icon-button target="_blank" href="https://localess.org/docs/schemas/overview" matTooltip="Help Article">
-      <mat-icon>help</mat-icon>
-    </a>
-    <span class="spacer"></span>
-    <div class="actions">
-      @if ('SCHEMA_CREATE' | canUserPerform | async) {
-        <button mat-flat-button (click)="openAddDialog()">
-          <mat-icon>add</mat-icon>
-          Add Schema
-        </button>
-      }
-      @if (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async) {
-        <button mat-icon-button [matMenuTriggerFor]="extraMenu">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #extraMenu="matMenu">
-          @if ('SCHEMA_IMPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openImportDialog()">
-              <mat-icon>cloud_upload</mat-icon>
-              <span>Import</span>
-            </button>
-          }
-          @if ('SCHEMA_EXPORT' | canUserPerform | async) {
-            <button mat-menu-item (click)="openExportDialog()">
-              <mat-icon>cloud_download</mat-icon>
-              <span>Export</span>
-            </button>
-          }
-        </mat-menu>
-      }
-    </div>
-  </mat-toolbar-row>
-</mat-toolbar>
+<div class="flex items-center justify-end gap-2 p-2">
+  @if ('SCHEMA_CREATE' | canUserPerform | async) {
+    <button hlmBtn (click)="openAddDialog()">
+      <ng-icon hlm size="sm" name="lucidePlus" />
+      Add Schema
+    </button>
+  }
+  @if (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async) {
+    <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+      <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+    </button>
+    <ng-template #extraMenu>
+      <hlm-dropdown-menu class="w-50">
+        @if ('SCHEMA_IMPORT' | canUserPerform | async) {
+          <button hlmDropdownMenuItem (click)="openImportDialog()">
+            <ng-icon hlm size="sm" name="lucideUploadCloud" />
+            Import
+          </button>
+        }
+        @if ('SCHEMA_EXPORT' | canUserPerform | async) {
+          <button hlmDropdownMenuItem (click)="openExportDialog()">
+            <ng-icon hlm size="sm" name="lucideCloudDownload" />
+            Export
+          </button>
+        }
+      </hlm-dropdown-menu>
+    </ng-template>
+  }
+</div>
+
 @if (isLoading) {
-  <mat-progress-bar mode="query" />
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
 }
-<div class="px-2 mx-auto mt-3">
-  <div>
-    <mat-form-field appearance="fill">
-      <mat-label>Filter</mat-label>
-      <input matInput (keyup)="applyFilter($event)" placeholder="Filter names, descriptions and labels ..." />
-    </mat-form-field>
-  </div>
+<div class="mx-auto mt-3 px-2">
+  <form [formGroup]="filterForm">
+    <fieldset hlmFieldSet>
+      <div hlmFieldGroup class="mb-3 grid grid-cols-4 gap-2">
+        <div hlmInputGroup>
+          <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" />
+          <div hlmInputGroupAddon>
+            <ng-icon hlm size="sm" name="lucideSearch" />
+          </div>
+        </div>
+        <div hlmField class="col-span-2">
+          <hlm-popover sideOffset="5">
+            <div hlmButtonGroup>
+              <button class="justify-between" hlmPopoverTrigger hlmBtn variant="outline">
+                <ng-icon hlm size="sm" name="lucideCirclePlus" class="opacity-50" />
+                Labels
+              </button>
+              @let labels = filterForm.controls.labels.value;
+              @if (labels && labels.length > 0) {
+                <div class="flex items-center gap-1 rounded-md border px-2 shadow-xs">
+                  <span hlmBadge variant="secondary">{{ labels.length }}</span>
+                </div>
+              }
+            </div>
+            <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
+              <hlm-command-input placeholder="Search label..." />
+              <div *hlmCommandEmptyState hlmCommandEmpty>No results found.</div>
+              <hlm-command-list>
+                <hlm-command-group>
+                  @for (label of allLabels(); track label) {
+                    <button hlm-command-item [value]="label" (selected)="selectLabel(label)">
+                      <span>{{ label }}</span>
+                      <ng-icon
+                        hlm
+                        size="sm"
+                        class="ml-auto"
+                        [class.opacity-0]="!filterForm.value.labels?.includes(label)"
+                        name="lucideCheck"
+                        hlmCommandIcon />
+                    </button>
+                  }
+                </hlm-command-group>
+              </hlm-command-list>
+            </hlm-command>
+          </hlm-popover>
+        </div>
+      </div>
+    </fieldset>
+  </form>
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="type">
       <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
       <mat-cell *matCellDef="let element">
         @let descriptor = schemaTypeDescriptions[element.type];
-        <mat-icon [matTooltip]="descriptor.description">{{ descriptor.icon }}</mat-icon>
-        &nbsp; {{ descriptor.name }}
+        <ng-icon hlm size="sm" [name]="descriptor.icon" [hlmTooltip]="descriptor.description" class="mr-2" />
+        {{ descriptor.name }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef mat-sort-header="displayName"> Name</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        {{ element.displayName }} &nbsp;<span class="schema-id">#{{ element.id }}</span>
+        <div [title]="element.displayName">
+          <div class="line-clamp-1">{{ element.displayName }}</div>
+          <div class="text-muted-foreground line-clamp-1">#{{ element.id }}</div>
+        </div>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="description">
       <mat-header-cell *matHeaderCellDef> Description</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        {{ element.description }}
-      </mat-cell>
+      <mat-cell *matCellDef="let element"> {{ element.description }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="labels">
       <mat-header-cell *matHeaderCellDef> Labels</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <mat-chip-set>
+        <div class="flex items-center gap-1 px-2">
           @for (label of element.labels; track label) {
-            <mat-chip [highlighted]="filterLabels().includes(label)">{{ label }}</mat-chip>
+            <span hlmBadge [variant]="filterForm.controls.labels.value?.includes(label) ? 'secondary' : 'outline'"> {{ label }} </span>
           }
-        </mat-chip-set>
+        </div>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.createdAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
         {{ element.createdAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [matTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
         {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="actions">
       <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
       <mat-cell *matCellDef="let element">
-        @let inUse = schemasInUse()[element.id];
-        <div [matTooltip]="inUse ? 'Used by : ' + inUse.join(', ') : undefined">
-          @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-            <button mat-icon-button (click)="openEditIdDialog($event, element)" matTooltip="Edit ID" [disabled]="inUse">
-              <mat-icon>rebase_edit</mat-icon>
-            </button>
-          }
-          @if ('SCHEMA_DELETE' | canUserPerform | async) {
-            <button mat-icon-button (click)="openDeleteDialog($event, element)" matTooltip="Delete" [disabled]="inUse">
-              <mat-icon>delete</mat-icon>
-            </button>
-          }
-        </div>
+        <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+        </button>
+        <ng-template #actionsMenu>
+          @let inUse = schemasInUse()[element.id];
+          <hlm-dropdown-menu [hlmTooltip]="inUse ? 'Used by : \n' + inUse.join('\n ') : ''">
+            @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem (click)="openEditIdDialog($event, element)" [disabled]="inUse !== undefined">
+                  <ng-icon hlm size="sm" name="lucideReplace" />
+                  Edit ID
+                </button>
+              </hlm-dropdown-menu-group>
+            }
+            @if ('SCHEMA_DELETE' | canUserPerform | async) {
+              <hlm-dropdown-menu-separator />
+              <hlm-dropdown-menu-group>
+                <button
+                  hlmDropdownMenuItem
+                  variant="destructive"
+                  (click)="openDeleteDialog($event, element)"
+                  [disabled]="inUse !== undefined">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                  Delete
+                </button>
+              </hlm-dropdown-menu-group>
+            }
+          </hlm-dropdown-menu>
+        </ng-template>
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>

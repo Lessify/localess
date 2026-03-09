@@ -198,6 +198,11 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
       }
     }
   } else {
+    if (asset.kind === AssetKind.FILE && asset.inProgress) {
+      await assetRef.update({
+        inProgress: FieldValue.delete(),
+      });
+    }
     return;
   }
   await assetRef.update(update);

@@ -2,7 +2,7 @@ import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { authService } from './config';
-import { canPerform } from './utils/security-utils';
+import { canPerform } from './utils/user-auth-utils';
 import { User, UserInvite, UserPermission } from './models';
 import { beforeUserCreated, beforeUserSignedIn } from 'firebase-functions/v2/identity';
 import { findUserById } from './services';

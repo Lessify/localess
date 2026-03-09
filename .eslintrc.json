@@ -1,6 +1,11 @@
 {
   "root": true,
-  "ignorePatterns": ["projects/**/*", "src/app/shared/generated/**/*"],
+  "ignorePatterns": [
+    "projects/**/*",
+    "src/app/shared/generated/**/*",
+    "src/app/shared/components/ui/**/*",
+    "src/app/shared/utils/**/*"
+  ],
   "plugins": [
     "prettier"
   ],

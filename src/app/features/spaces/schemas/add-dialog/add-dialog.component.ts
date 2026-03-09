@@ -10,9 +10,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NameUtils } from '@core/utils/name-utils.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFileBox, lucideList, lucideWorkflow } from '@ng-icons/lucide';
 import { SchemaType, schemaTypeDescriptions } from '@shared/models/schema.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { AddDialogModel } from './add-dialog.model';
 
 @Component({
@@ -29,6 +32,14 @@ import { AddDialogModel } from './add-dialog.model';
     MatIconModule,
     MatSelectModule,
     MatTooltipModule,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideList,
+      lucideFileBox,
+      lucideWorkflow,
+    }),
   ],
 })
 export class AddDialogComponent {

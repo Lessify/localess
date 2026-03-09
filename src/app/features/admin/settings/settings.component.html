@@ -1,19 +1,15 @@
-<mat-toolbar>
-  <mat-toolbar-row>
-    Settings
-    <span class="spacer"></span>
-  </mat-toolbar-row>
-</mat-toolbar>
-<div class="px-2 mx-auto mt-3">
-  <nav mat-tab-nav-bar [tabPanel]="tabPanel" mat-stretch-tabs="false" mat-align-tabs="center">
-    @for (tabItem of tabItems; track tabItem.label) {
-      <a mat-tab-link [routerLink]="tabItem.link" (click)="activeTab = tabItem.link" [active]="activeTab === tabItem.link">
-        <mat-icon>{{ tabItem.icon }}</mat-icon>
-        &nbsp;
-        <span>{{ tabItem.label }}</span>
-      </a>
-    }
-  </nav>
-  <mat-tab-nav-panel #tabPanel></mat-tab-nav-panel>
-  <router-outlet></router-outlet>
+<div class="mx-auto mt-3 px-2">
+  <hlm-tabs [tab]="activeTab()" class="w-full" (tabActivated)="onTabActivated($event)">
+    <hlm-tabs-list class="self-center" variant="line">
+      @for (tabItem of tabItems; track tabItem.label) {
+        <button [hlmTabsTrigger]="tabItem.link">
+          <ng-icon [name]="tabItem.icon" />
+          {{ tabItem.label }}
+        </button>
+      }
+    </hlm-tabs-list>
+    <div>
+      <router-outlet></router-outlet>
+    </div>
+  </hlm-tabs>
 </div>

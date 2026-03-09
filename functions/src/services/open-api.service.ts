@@ -147,10 +147,19 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
         },
         {
           type: 'object',
-          description: 'References of all links used in the content.',
+          description: 'All links used in the content.',
           properties: {
             links: {
               $ref: '#/components/schemas/Links',
+            },
+          },
+        },
+        {
+          type: 'object',
+          description: 'All references used in the content.',
+          properties: {
+            references: {
+              $ref: '#/components/schemas/References',
             },
           },
         },
@@ -282,6 +291,51 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
         },
       },
     },
+    References: {
+      description: 'Key-Value Object. Where Key is Unique identifier for the Content object and Value is Content.',
+      type: 'object',
+      additionalProperties: {
+        $ref: '#/components/schemas/Content',
+      },
+      example: {
+        '4pLYWyN47c076mSfpWIy': {
+          id: '4pLYWyN47c076mSfpWIy',
+          kind: 'DOCUMENT',
+          name: 'Options',
+          slug: 'options',
+          fullSlug: 'docs/schemas/options',
+          parentSlug: 'docs/schemas',
+          createdAt: '2024-05-01T09:56:00.923Z',
+          updatedAt: '2024-05-01T09:57:06.445Z',
+          publishedAt: '2024-05-01T13:03:31.672Z',
+          data: {},
+        },
+        '5L2ELYsmaM6C0fOBzKp0': {
+          id: '5L2ELYsmaM6C0fOBzKp0',
+          kind: 'DOCUMENT',
+          name: 'Translations',
+          slug: 'translations',
+          fullSlug: 'docs/api/translations',
+          parentSlug: 'docs/api',
+          createdAt: '2024-05-04T14:03:54.100Z',
+          updatedAt: '2024-05-07T14:03:57.457Z',
+          publishedAt: '2024-05-07T11:05:46.094Z',
+          data: {},
+        },
+        '7fUavXjDpFuHGdWgTFXy': {
+          id: '7fUavXjDpFuHGdWgTFXy',
+          kind: 'DOCUMENT',
+          name: 'Overview',
+          slug: 'overview',
+          fullSlug: 'docs/content/overview',
+          parentSlug: 'docs/content',
+          createdAt: '2024-04-30T20:57:41.827Z',
+          updatedAt: '2024-04-30T21:31:47.344Z',
+          publishedAt: '2024-05-01T13:02:41.814Z',
+          data: {},
+        },
+      },
+    },
   };
   const rootSchemas: string[] = [];
   for (const [key, item] of schemasById.entries()) {
@@ -311,7 +365,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
     openapi: '3.0.3',
     info: {
       title: 'Localess Open API Specification',
-      version: '2.5.1',
+      version: '3.0.0',
       description: 'Fetch data from Localess via REST API',
       contact: {
         name: 'Lessify Team',
@@ -366,6 +420,17 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               schema: {
                 type: 'string',
                 example: '1706217382028',
+              },
+            },
+            {
+              name: 'version',
+              in: 'query',
+              description: 'Translation version.',
+              required: false,
+              schema: {
+                type: 'string',
+                enum: ['draft'],
+                example: 'draft',
               },
             },
             {
@@ -559,6 +624,26 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
                 example: 'fb6oTcVjbnyLCMhO2iLY',
               },
             },
+            {
+              name: 'resolveReference',
+              in: 'query',
+              description: 'Resolve all references.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
+              },
+            },
+            {
+              name: 'resolveLink',
+              in: 'query',
+              description: 'Resolve all links.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
+              },
+            },
           ],
           responses: {
             '200': {
@@ -647,6 +732,26 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               schema: {
                 type: 'string',
                 example: 'fb6oTcVjbnyLCMhO2iLY',
+              },
+            },
+            {
+              name: 'resolveReference',
+              in: 'query',
+              description: 'Resolve all references.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
+              },
+            },
+            {
+              name: 'resolveLink',
+              in: 'query',
+              description: 'Resolve all links.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
               },
             },
           ],
@@ -902,58 +1007,31 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, Sch
     ];
   }
   if (field.kind === SchemaFieldKind.OPTION) {
-    if (field.source === undefined || field.source === 'self') {
-      return [
-        field.name,
-        {
-          type: 'string',
-          description: field.description,
-          enum: field.options?.map(it => it.value),
-        },
-      ];
-    } else {
-      const name = field.source || 'unknown';
-      const pascalName = name[0].toUpperCase() + name.slice(1);
-      return [
-        field.name,
-        {
-          description: field.description,
-          $ref: `#/components/schemas/${pascalName}`,
-        },
-      ];
-    }
+    const name = field.source || 'unknown';
+    const pascalName = name[0].toUpperCase() + name.slice(1);
+    return [
+      field.name,
+      {
+        description: field.description,
+        $ref: `#/components/schemas/${pascalName}`,
+      },
+    ];
   }
   if (field.kind === SchemaFieldKind.OPTIONS) {
-    if (field.source === undefined || field.source === 'self') {
-      return [
-        field.name,
-        {
-          type: 'array',
-          description: field.description,
-          minItems: field.minValues,
-          maxItems: field.maxValues,
-          items: {
-            type: 'string',
-            enum: field.options?.map(it => it.value),
-          },
+    const name = field.source;
+    const pascalName = name[0].toUpperCase() + name.slice(1);
+    return [
+      field.name,
+      {
+        type: 'array',
+        description: field.description,
+        minItems: field.minValues,
+        maxItems: field.maxValues,
+        items: {
+          $ref: `#/components/schemas/${pascalName}`,
         },
-      ];
-    } else {
-      const name = field.source;
-      const pascalName = name[0].toUpperCase() + name.slice(1);
-      return [
-        field.name,
-        {
-          type: 'array',
-          description: field.description,
-          minItems: field.minValues,
-          maxItems: field.maxValues,
-          items: {
-            $ref: `#/components/schemas/${pascalName}`,
-          },
-        },
-      ];
-    }
+      },
+    ];
   }
   if (field.kind === SchemaFieldKind.LINK) {
     return [

@@ -1,22 +1,32 @@
-import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideBookCopy,
+  lucideCloudDownload,
+  lucideCopy,
+  lucideEllipsisVertical,
+  lucideExternalLink,
+  lucideFilePlus,
+  lucideFolder,
+  lucideFolderInput,
+  lucideFolderPlus,
+  lucideFolderRoot,
+  lucideLink,
+  lucidePencil,
+  lucidePlus,
+  lucideTrash,
+  lucideUpload,
+  lucideUploadCloud,
+  lucideWebhookOff,
+} from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { StatusComponent } from '@shared/components/status';
@@ -37,6 +47,12 @@ import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
@@ -45,6 +61,8 @@ import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { ExportDialogComponent, ExportDialogModel, ExportDialogReturn } from './export-dialog';
 import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { TokenPermission } from '@shared/models/token.model';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'll-contents',
@@ -52,22 +70,40 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
-    MatIconModule,
-    MatTooltipModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatMenuModule,
-    MatDividerModule,
-    MatProgressBarModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
+    ClipboardModule,
     MatTableModule,
     MatSortModule,
-    MatCheckboxModule,
     StatusComponent,
     MatPaginatorModule,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmDropdownMenuImports,
+    HlmBreadCrumbImports,
+    HlmProgressImports,
+    HlmTooltipImports,
+  ],
+  providers: [
+    provideIcons({
+      lucidePlus,
+      lucideEllipsisVertical,
+      lucideCloudDownload,
+      lucideUploadCloud,
+      lucideLink,
+      lucideFolderPlus,
+      lucideFilePlus,
+      lucideExternalLink,
+      lucideFolderRoot,
+      lucideUpload,
+      lucidePencil,
+      lucideCopy,
+      lucideFolderInput,
+      lucideTrash,
+      lucideFolder,
+      lucideWebhookOff,
+      lucideBookCopy,
+    }),
   ],
 })
 export class ContentsComponent {
@@ -90,8 +126,7 @@ export class ContentsComponent {
 
   isLoading = signal(true);
   dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = [/*'select',*/ 'status', 'name', 'slug', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
-  selection = new SelectionModel<Content>(true, [], undefined, (o1, o2) => o1.id === o2.id);
+  displayedColumns: string[] = ['status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
 
   schemas: Schema[] = [];
   schemasMapById: Map<string, Schema> = new Map<string, Schema>();
@@ -130,7 +165,6 @@ export class ContentsComponent {
           this.dataSource.sort = this.sort();
           this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
-          this.selection.clear();
           this.cd.markForCheck();
         },
       });
@@ -185,10 +219,7 @@ export class ContentsComponent {
       });
   }
 
-  openEditDialog(event: Event, element: Content): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openEditDialog(element: Content): void {
     this.dialog
       .open<EditDialogComponent, EditDialogModel, ContentUpdate>(EditDialogComponent, {
         panelClass: 'sm',
@@ -205,7 +236,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Content has been updated.');
         },
@@ -215,10 +245,7 @@ export class ContentsComponent {
       });
   }
 
-  openDeleteDialog(event: Event, element: Content): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openDeleteDialog(element: Content): void {
     let title = '';
     let content = '';
     let messageSuccess = '';
@@ -248,7 +275,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success(messageSuccess);
         },
@@ -259,10 +285,7 @@ export class ContentsComponent {
       });
   }
 
-  openMoveDialog(event: Event, element: Content) {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openMoveDialog(element: Content) {
     this.dialog
       .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
         panelClass: 'sm',
@@ -277,7 +300,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Document has been moved.');
         },
@@ -287,10 +309,7 @@ export class ContentsComponent {
       });
   }
 
-  openCloneDialog(event: Event, element: ContentDocument): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openCloneDialog(element: ContentDocument): void {
     this.dialog
       .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
         data: {
@@ -305,7 +324,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success(`Document '${element.name}' has been cloned.`);
         },
@@ -316,10 +334,7 @@ export class ContentsComponent {
       });
   }
 
-  openPublishDialog(event: Event, element: Content): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openPublishDialog(element: Content): void {
     let title = '';
     let content = '';
     let messageSuccess = '';
@@ -358,22 +373,43 @@ export class ContentsComponent {
       });
   }
 
-  // TABLE
-  /** Whether the number of selected elements matches the total number of rows. */
-  isAllSelected() {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.length;
-    return numSelected === numRows;
-  }
-
-  /** Selects all rows if they are not all selected; otherwise clear selection. */
-  toggleAllRows() {
-    if (this.isAllSelected()) {
-      this.selection.clear();
-      return;
+  openUnpublishDialog(element: Content): void {
+    let title = '';
+    let content = '';
+    let messageSuccess = '';
+    let messageError = '';
+    if (element.kind === ContentKind.FOLDER) {
+      title = 'Unpublish Folder';
+      content = `Are you sure about unpublishing the Folder with the name: ${element.name}.\n All sub folders and documents will be unpublished.`;
+      messageSuccess = `Folder '${element.name}' has been unpublished.`;
+      messageError = `Folder '${element.name}' can not be unpublished.`;
+    } else if (element.kind === ContentKind.DOCUMENT) {
+      title = 'Unpublish Document';
+      content = `Are you sure about unpublishing the Document with the name: ${element.name}.`;
+      messageSuccess = `Document '${element.name}' has been unpublished.`;
+      messageError = `Document '${element.name}' can not be unpublished.`;
     }
-
-    this.selection.select(...this.dataSource.data);
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
+        data: {
+          title: title,
+          content: content,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it || false),
+        switchMap(() => this.contentService.unpublish(this.spaceId(), element.id)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(messageSuccess);
+        },
+        error: (err: unknown) => {
+          console.error(err);
+          this.notificationService.success(messageError);
+        },
+      });
   }
 
   onRowSelect(element: Content): void {
@@ -388,7 +424,6 @@ export class ContentsComponent {
     }
 
     if (element.kind === ContentKind.FOLDER) {
-      this.selection.clear();
       const contentPath = ObjectUtils.clone(this.spaceStore.contentPath() || []);
       contentPath.push({
         name: element.name,
@@ -400,7 +435,6 @@ export class ContentsComponent {
 
   navigateToSlug(pathItem: PathItem) {
     this.isLoading.set(true);
-    this.selection.clear();
     const contentPath = ObjectUtils.clone(this.spaceStore.contentPath() || []);
     const idx = contentPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     contentPath.splice(idx + 1);
@@ -417,13 +451,13 @@ export class ContentsComponent {
     if (this.availableToken) {
       this.openApiV1InNewTab(this.availableToken);
     } else {
-      this.tokenService.findFirst(this.spaceId()).subscribe({
+      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.CONTENT_PUBLIC).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
             this.availableToken = tokens[0].id;
             this.openApiV1InNewTab(this.availableToken);
           } else {
-            this.notificationService.error('Please create Access Token in your Space Settings');
+            this.notificationService.error('Please create Access Token with Content Public Permission in your Space Settings');
           }
         },
       });
@@ -483,5 +517,13 @@ export class ContentsComponent {
           this.notificationService.error('Content Export Task can not be created.');
         },
       });
+  }
+
+  copiedSlug() {
+    this.notificationService.success(`Slug copied to clipboard.`);
+  }
+
+  copiedFullSlug() {
+    this.notificationService.success(`Full Slug copied to clipboard.`);
   }
 }

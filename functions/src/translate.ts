@@ -1,6 +1,6 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { canPerform } from './utils/security-utils';
+import { canPerform } from './utils/user-auth-utils';
 import { TranslateData, UserPermission } from './models';
 import { translateCloud } from './services/translate.service';
 import { isEmulatorEnabled } from './config';

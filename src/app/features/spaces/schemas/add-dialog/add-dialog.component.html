@@ -27,13 +27,13 @@
       <mat-select formControlName="type" required>
         <mat-select-trigger>
           @let selectedType = schemaTypeDescriptions[type];
-          <mat-icon>{{ selectedType.icon }}</mat-icon>
+          <ng-icon hlm size="sm" [name]="selectedType.icon" class="mr-2" />
           {{ selectedType.name }}
         </mat-select-trigger>
         @for (type of types; track type) {
           @let descriptor = schemaTypeDescriptions[type];
           <mat-option [value]="type" [matTooltip]="descriptor.description">
-            <mat-icon>{{ descriptor.icon }}</mat-icon>
+            <ng-icon hlm size="sm" [name]="descriptor.icon" class="mr-2" />
             {{ descriptor.name }}
           </mat-option>
         }

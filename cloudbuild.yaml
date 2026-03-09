@@ -1,12 +1,46 @@
 steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'enable-apis'
+    entrypoint: 'bash'
+    allowFailure: true
+    args:
+      - '-c'
+      - |
+        gcloud services enable \
+          firebasestorage.googleapis.com \
+          firebaseextensions.googleapis.com \
+          cloudfunctions.googleapis.com \
+          cloudbuild.googleapis.com \
+          artifactregistry.googleapis.com \
+          run.googleapis.com \
+          eventarc.googleapis.com \
+          pubsub.googleapis.com \
+          storage.googleapis.com \
+          translate.googleapis.com \
+          cloudbilling.googleapis.com \
+          --project=$PROJECT_ID
   - name: 'node:22'
     id: 'install-deps'
     entrypoint: npm
-    args: ['install']
+    args: [ 'install' ]
   - name: 'node:22'
     id: 'install-functions-deps'
     entrypoint: npm
-    args: ['--prefix', 'functions', 'install', '--platform=linuxmusl']
+    args: [ '--prefix', 'functions', 'install', '--platform=linuxmusl' ]
+  - name: ghcr.io/lessify/firebase:edge
+    id: 'Pull Firebase Apps SDK Config'
+    args: [ 'apps:sdkconfig', '--project=$PROJECT_ID', 'web', '--out=src/environments/firebase-config-tmp.json' ]
+  - name: 'node:22'
+    id: 'Copy Firebase Apps SDK Config'
+    args: [ 'mv', '-f', 'src/environments/firebase-config-tmp.json', 'src/environments/firebase-config.json' ]
+  - name: 'node:22'
+    id: 'version-generate'
+    entrypoint: npm
+    args:
+      - 'run'
+      - 'version:generate'
+    env:
+      - 'COMMIT_SHA=$COMMIT_SHA'
   - name: 'node:22'
     id: 'build-prod'
     entrypoint: npm
@@ -14,13 +48,6 @@ steps:
       - 'run'
       - 'build:prod'
     env:
-      - 'LOCALESS_FIREBASE_PROJECT_ID=${_LOCALESS_FIREBASE_PROJECT_ID}'
-      - 'LOCALESS_FIREBASE_APP_ID=${_LOCALESS_FIREBASE_APP_ID}'
-      - 'LOCALESS_FIREBASE_STORAGE_BUCKET=${_LOCALESS_FIREBASE_STORAGE_BUCKET}'
-      - 'LOCALESS_FIREBASE_API_KEY=${_LOCALESS_FIREBASE_API_KEY}'
-      - 'LOCALESS_FIREBASE_AUTH_DOMAIN=${_LOCALESS_FIREBASE_AUTH_DOMAIN}'
-      - 'LOCALESS_FIREBASE_MESSAGING_SENDER_ID=${_LOCALESS_FIREBASE_MESSAGING_SENDER_ID}'
-      - 'LOCALESS_FIREBASE_MEASUREMENT_ID=${_LOCALESS_FIREBASE_MEASUREMENT_ID}'
       - 'LOCALESS_AUTH_CUSTOM_DOMAIN=${_LOCALESS_AUTH_CUSTOM_DOMAIN}'
       - 'LOCALESS_AUTH_PROVIDERS=${_LOCALESS_AUTH_PROVIDERS}'
       - 'LOCALESS_LOGIN_MESSAGE=${_LOCALESS_LOGIN_MESSAGE}'
@@ -28,9 +55,6 @@ steps:
   # deploy to firebase
   - name: ghcr.io/lessify/firebase:edge
     id: 'firebase-deploy'
-    args: ['deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force']
-  - name: 'gcr.io/cloud-builders/gsutil'
-    id: 'gsutil-cors'
-    args: ['cors', 'set', 'cors.json', 'gs://${_LOCALESS_FIREBASE_STORAGE_BUCKET}']
+    args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force' ]
 options:
   logging: CLOUD_LOGGING_ONLY

@@ -141,21 +141,14 @@ export interface SchemaFieldSchema extends SchemaFieldBase {
   schemas?: string[];
 }
 
-export interface SchemaFieldOptionSelectable {
-  name: string;
-  value: string;
-}
-
 export interface SchemaFieldOption extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTION;
-  source: string | 'self';
-  options?: SchemaFieldOptionSelectable[];
+  source: string;
 }
 
 export interface SchemaFieldOptions extends SchemaFieldBase {
   kind: SchemaFieldKind.OPTIONS;
-  source: string | 'self';
-  options?: SchemaFieldOptionSelectable[];
+  source: string;
   minValues?: number;
   maxValues?: number;
 }
@@ -177,11 +170,13 @@ export interface SchemaFieldReferences extends SchemaFieldBase {
 export interface SchemaFieldAsset extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSET;
   fileTypes?: AssetFileType[];
+  fileType?: AssetFileType;
 }
 
 export interface SchemaFieldAssets extends SchemaFieldBase {
   kind: SchemaFieldKind.ASSETS;
   fileTypes?: AssetFileType[];
+  fileType?: AssetFileType;
 }
 
 export enum AssetFileType {

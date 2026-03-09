@@ -1,30 +1,43 @@
-import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { BreadcrumbComponent, BreadcrumbItemComponent } from '@shared/components/breadcrumb';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideCloudDownload,
+  lucideDownload,
+  lucideEllipsisVertical,
+  lucideFile,
+  lucideFileDigit,
+  lucideFileImage,
+  lucideFileMusic,
+  lucideFileSymlink,
+  lucideFileText,
+  lucideFileUp,
+  lucideFileVideoCamera,
+  lucideFolder,
+  lucideFolderInput,
+  lucideFolderPlus,
+  lucideFolderRoot,
+  lucideLayoutGrid,
+  lucideLayoutList,
+  lucideLoaderCircle,
+  lucidePencil,
+  lucideRefreshCcwDot,
+  lucideTrash,
+  lucideUpload,
+  lucideUploadCloud,
+} from '@ng-icons/lucide';
+import { tablerBrandUnsplash } from '@ng-icons/tabler-icons';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
+import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
-import { AnimateDirective } from '@shared/directives/animate.directive';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
   Asset,
@@ -36,6 +49,7 @@ import {
   AssetFolderUpdate,
   AssetKind,
 } from '@shared/models/asset.model';
+import { AssetFileType, assetFileTypeDescriptions } from '@shared/models/schema.model';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
@@ -46,6 +60,15 @@ import { TaskService } from '@shared/services/task.service';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Subject } from 'rxjs';
 import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
@@ -59,8 +82,7 @@ import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-di
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogReturn } from './import-dialog/import-dialog.model';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
-import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
-import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
+import { HlmCardImports } from '@spartan-ng/helm/card';
 
 @Component({
   selector: 'll-assets',
@@ -68,31 +90,53 @@ import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog
   styleUrls: ['./assets.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatToolbarModule,
-    MatIconModule,
-    MatButtonToggleModule,
-    MatTooltipModule,
-    MatBadgeModule,
     CanUserPerformPipe,
     CommonModule,
-    MatButtonModule,
-    MatMenuModule,
-    MatDividerModule,
-    MatProgressBarModule,
-    BreadcrumbComponent,
-    BreadcrumbItemComponent,
     FileDragAndDropDirective,
     MatTableModule,
-    MatCheckboxModule,
-    MatProgressSpinnerModule,
     MatSortModule,
     TimeDurationPipe,
     FormatFileSizePipe,
-    MatCardModule,
     MatPaginatorModule,
-    MatListModule,
     NgOptimizedImage,
-    AnimateDirective,
+    HlmButtonImports,
+    HlmIconImports,
+    HlmBadgeImports,
+    HlmDropdownMenuImports,
+    HlmToggleGroupImports,
+    HlmTooltipImports,
+    HlmBreadCrumbImports,
+    HlmProgressImports,
+    HlmSpinnerImports,
+    HlmCardImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideLoaderCircle,
+      lucideFileUp,
+      lucideFolderPlus,
+      lucideUpload,
+      lucideFileSymlink,
+      tablerBrandUnsplash,
+      lucideEllipsisVertical,
+      lucideCloudDownload,
+      lucideUploadCloud,
+      lucideRefreshCcwDot,
+      lucideLayoutGrid,
+      lucideLayoutList,
+      lucideFolderRoot,
+      lucideDownload,
+      lucidePencil,
+      lucideFolderInput,
+      lucideTrash,
+      lucideFolder,
+      lucideFile,
+      lucideFileImage,
+      lucideFileVideoCamera,
+      lucideFileMusic,
+      lucideFileText,
+      lucideFileDigit,
+    }),
   ],
 })
 export class AssetsComponent implements OnInit {
@@ -113,8 +157,7 @@ export class AssetsComponent implements OnInit {
 
   private destroyRef = inject(DestroyRef);
   dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
-  displayedColumns: string[] = [/*'select',*/ 'icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
-  selection = new SelectionModel<Asset>(true, [], undefined, (o1, o2) => o1.id === o2.id);
+  displayedColumns: string[] = ['icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
   assets: Asset[] = [];
   fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
   now = Date.now();
@@ -149,7 +192,6 @@ export class AssetsComponent implements OnInit {
           this.dataSource.sort = this.sort() || null;
           this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
-          this.selection.clear();
           this.cd.markForCheck();
         },
       });
@@ -290,18 +332,15 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  openEditDialog(event: Event, element: Asset): void {
+  openEditDialog(element: Asset): void {
     if (element.kind === AssetKind.FILE) {
-      this.openEditFileDialog(event, element);
+      this.openEditFileDialog(element);
     } else if (element.kind === AssetKind.FOLDER) {
-      this.openEditFolderDialog(event, element);
+      this.openEditFolderDialog(element);
     }
   }
 
-  openEditFolderDialog(event: Event, element: Asset): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openEditFolderDialog(element: Asset): void {
     this.dialog
       .open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdate>(EditFolderDialogComponent, {
         panelClass: 'sm',
@@ -317,7 +356,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Folder has been updated.');
         },
@@ -327,10 +365,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  openEditFileDialog(event: Event, element: Asset): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openEditFileDialog(element: Asset): void {
     this.dialog
       .open<EditFileDialogComponent, EditFileDialogModel, AssetFileUpdate>(EditFileDialogComponent, {
         panelClass: 'sm',
@@ -346,7 +381,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('File has been updated.');
         },
@@ -356,11 +390,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  openDeleteDialog(event: Event, element: Asset): void {
-    console.log(element);
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openDeleteDialog(element: Asset): void {
     let title = '';
     let content = '';
     if (element.kind === AssetKind.FOLDER) {
@@ -384,7 +414,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success(`Asset '${element.name}' has been deleted.`);
         },
@@ -395,10 +424,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  openMoveDialog(event: Event, element: Asset) {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  openMoveDialog(element: Asset) {
     this.dialog
       .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
         panelClass: 'sm',
@@ -413,7 +439,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Asset has been moved.');
         },
@@ -421,24 +446,6 @@ export class AssetsComponent implements OnInit {
           this.notificationService.error('Asset can not be moved.');
         },
       });
-  }
-
-  // TABLE
-  /** Whether the number of selected elements matches the total number of rows. */
-  isAllSelected() {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.length;
-    return numSelected === numRows;
-  }
-
-  /** Selects all rows if they are not all selected; otherwise clear selection. */
-  toggleAllRows() {
-    if (this.isAllSelected()) {
-      this.selection.clear();
-      return;
-    }
-
-    this.selection.select(...this.dataSource.data);
   }
 
   onAssetSelect(element: Asset): void {
@@ -459,7 +466,6 @@ export class AssetsComponent implements OnInit {
         });
     } else if (element.kind === AssetKind.FOLDER) {
       this.isLoading.set(true);
-      this.selection.clear();
       const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
       assetPath.push({
         name: element.name,
@@ -471,7 +477,6 @@ export class AssetsComponent implements OnInit {
 
   navigateToSlug(pathItem: PathItem) {
     this.isLoading.set(true);
-    this.selection.clear();
     const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
     const idx = assetPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
     assetPath.splice(idx + 1);
@@ -479,12 +484,12 @@ export class AssetsComponent implements OnInit {
   }
 
   fileIcon(type: string): string {
-    if (type.startsWith('audio/')) return 'audio_file';
-    if (type.startsWith('text/')) return 'description';
-    if (type.startsWith('image/')) return 'image';
-    if (type.startsWith('font/')) return 'font_download';
-    if (type.startsWith('video/')) return 'video_file';
-    return 'file_present';
+    if (type.startsWith('audio/')) return assetFileTypeDescriptions[AssetFileType.AUDIO].icon;
+    if (type.startsWith('text/')) return assetFileTypeDescriptions[AssetFileType.TEXT].icon;
+    if (type.startsWith('image/')) return assetFileTypeDescriptions[AssetFileType.IMAGE].icon;
+    if (type.startsWith('video/')) return assetFileTypeDescriptions[AssetFileType.VIDEO].icon;
+    if (type.startsWith('application/')) return assetFileTypeDescriptions[AssetFileType.APPLICATION].icon;
+    return assetFileTypeDescriptions[AssetFileType.ANY].icon;
   }
 
   filePreview(type: string): boolean {
@@ -561,7 +566,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.selection.clear();
           this.cd.markForCheck();
           this.notificationService.success('Assets Regenerate Metadata Task has been created.', [
             {
@@ -577,10 +581,7 @@ export class AssetsComponent implements OnInit {
       });
   }
 
-  onDownload(event: Event, element: Asset): void {
-    // Prevent Default
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  onDownload(element: Asset): void {
     if (element.kind !== AssetKind.FILE) return;
     window.open(`/api/v1/spaces/${this.spaceId()}/assets/${element.id}?download`);
   }

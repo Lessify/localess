@@ -1,94 +1,123 @@
-@if (rootSchema) {
-  <form [formGroup]="form" *ngIf="!isFormLoading" #schemaForm>
+@if (rootSchema && !isFormLoading()) {
+  <form [formGroup]="form" #schemaForm class="flex flex-col gap-4 pb-2">
     @for (field of rootSchema.fields; track field.name) {
       @switch (field.kind) {
         <!--TEXT-->
         @case ('TEXT') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="text"
-              [formControlName]="field.name"
-              [attr.minlength]="field.minLength"
-              [attr.maxlength]="field.maxLength"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <button
-                [matMenuTriggerFor]="tMenu"
-                [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
-                mat-icon-button
-                matSuffix
-                matTooltip="Translate the field with AI">
-                <mat-icon>translate</mat-icon>
-                <mat-menu #tMenu="matMenu">
-                  @for (locale of availableLocales(); track locale.id) {
-                    @if (locale.id !== selectedLocaleId()) {
-                      <button mat-menu-item (click)="translate(field.name, locale.id, selectedLocaleId())">
-                        Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
-                      </button>
-                    }
-                  }
-                </mat-menu>
-              </button>
-            }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="text"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                [attr.minlength]="field.minLength"
+                [attr.maxlength]="field.maxLength"
+                autocomplete="off" />
+              @if (field.translatable && !isDefaultLocale()) {
+                <div hlmInputGroupAddon align="inline-end">
+                  <button
+                    hlmInputGroupButton
+                    variant="ghost"
+                    size="icon-xs"
+                    align="end"
+                    [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
+                    [hlmDropdownMenuTrigger]="translationMenu"
+                    hlmTooltip="Translate the field with AI">
+                    <ng-icon name="lucideLanguages" />
+                  </button>
+                  <ng-template #translationMenu>
+                    <hlm-dropdown-menu>
+                      @for (locale of availableLocales(); track locale.id) {
+                        @if (locale.id !== selectedLocaleId()) {
+                          <button hlmDropdownMenuItem (click)="translate(field.name, locale.id, selectedLocaleId())">
+                            Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
+                          </button>
+                        }
+                      }
+                    </hlm-dropdown-menu>
+                  </ng-template>
+                </div>
+              }
+            </div>
             @if (field.maxLength) {
-              <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
+              <p hlmFieldDescription class="content-end">
+                {{ field.maxLength - form.controls[field.name]?.value?.length || 0 }} characters left
+              </p>
             }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-          </mat-form-field>
+          </div>
         }
         <!--TEXTAREA-->
         @case ('TEXTAREA') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <textarea
-              [id]="'schema-field-' + field.name"
-              matInput
-              cdkTextareaAutosize
-              cdkAutosizeMinRows="6"
-              cdkAutosizeMaxRows="12"
-              [formControlName]="field.name"
-              [attr.minLength]="field.minLength"
-              [attr.maxlength]="field.maxLength"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off"></textarea>
-            @if (field.translatable) {
-              <button
-                [matMenuTriggerFor]="tMenu"
-                [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
-                mat-icon-button
-                matSuffix
-                matTooltip="Translate the field with AI">
-                <mat-icon>translate</mat-icon>
-                <mat-menu #tMenu="matMenu">
-                  @for (locale of availableLocales(); track locale.id) {
-                    @if (locale.id !== selectedLocaleId()) {
-                      <button mat-menu-item (click)="translate(field.name, locale.id, selectedLocaleId())">
-                        Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
-                      </button>
-                    }
-                  }
-                </mat-menu>
-              </button>
-            }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <textarea
+                hlmInputGroupTextarea
+                type="text"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                [attr.minlength]="field.minLength"
+                [attr.maxlength]="field.maxLength"
+                autocomplete="off">
+              </textarea>
+              @if (field.translatable && !isDefaultLocale()) {
+                <div hlmInputGroupAddon align="inline-end">
+                  <button
+                    hlmInputGroupButton
+                    variant="ghost"
+                    size="icon-xs"
+                    align="end"
+                    [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false"
+                    [hlmDropdownMenuTrigger]="translationMenu"
+                    hlmTooltip="Translate the field with AI">
+                    <ng-icon name="lucideLanguages" />
+                  </button>
+                  <ng-template #translationMenu>
+                    <hlm-dropdown-menu>
+                      @for (locale of availableLocales(); track locale.id) {
+                        @if (locale.id !== selectedLocaleId()) {
+                          <button hlmDropdownMenuItem (click)="translate(field.name, locale.id, selectedLocaleId())">
+                            Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
+                          </button>
+                        }
+                      }
+                    </hlm-dropdown-menu>
+                  </ng-template>
+                </div>
+              }
+            </div>
             @if (field.maxLength) {
-              <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
+              <p hlmFieldDescription class="content-end">
+                {{ field.maxLength - form.controls[field.name]?.value?.length || 0 }} characters left
+              </p>
             }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-          </mat-form-field>
+          </div>
         }
         <!--RICH_TEXT-->
         @case ('RICH_TEXT') {
@@ -98,209 +127,215 @@
         }
         <!--MARKDOWN-->
         @case ('MARKDOWN') {
-          <mat-form-field floatLabel="always">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" animationDuration="0" fitInkBarToContent="true">
-              <mat-tab label="Write" bodyClass="border rounded-sm border-gray-400">
-                <textarea
-                  #mdText
-                  matInput
-                  rows="6"
-                  style="height: {{ mdText.scrollHeight > 144 ? mdText.scrollHeight : 144 }}px"
-                  [formControlName]="field.name"
-                  [attr.minLength]="field.minLength"
-                  [attr.maxlength]="field.maxLength"
-                  [placeholder]="!isDefaultLocale && data[field.name]"
-                  autocomplete="off"></textarea>
-              </mat-tab>
-              <mat-tab label="Preview">
-                <markdown [data]="mdText.value || 'Preview content will render here.'"></markdown>
-              </mat-tab>
-            </mat-tab-group>
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
-            }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (field.maxLength) {
-              <mat-hint align="end"> {{ form.controls[field.name]?.value?.length || 0 }} /{{ field.maxLength }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          @if (form.controls[field.name]; as control) {
+            <ll-markdown-editor
+              [data]="data"
+              [form]="control"
+              [component]="field"
+              [default]="isDefaultLocale() ? undefined : data[field.name]"
+              [selectedLocale]="selectedLocale()"
+              [availableLocales]="availableLocales()" />
+          }
         }
         <!--NUMBER-->
         @case ('NUMBER') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="number"
-              [formControlName]="field.name"
-              [attr.min]="field.minValue"
-              [attr.max]="field.maxValue"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="number"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                [attr.min]="field.minValue"
+                [attr.max]="field.maxValue"
+                autocomplete="off" />
+            </div>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--COLOR-->
         @case ('COLOR') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="color"
-              [formControlName]="field.name"
-              [attr.min]="field.minValue"
-              [attr.max]="field.maxValue"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="color"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                autocomplete="off" />
+            </div>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--DATE-->
         @case ('DATE') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="date"
-              [formControlName]="field.name"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="date"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                autocomplete="off" />
+            </div>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--DATE TIME-->
         @case ('DATETIME') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <input
-              [id]="'schema-field-' + field.name"
-              matInput
-              type="datetime-local"
-              [formControlName]="field.name"
-              [placeholder]="!isDefaultLocale() && data[field.name]"
-              autocomplete="off" />
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel [for]="'schema-field-' + field.name">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+              }
+            </label>
+            <div hlmInputGroup>
+              <input
+                hlmInputGroupInput
+                type="datetime-local"
+                [id]="'schema-field-' + field.name"
+                [formControlName]="field.name"
+                [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                autocomplete="off" />
+            </div>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--BOOLEAN-->
         @case ('BOOLEAN') {
-          <br />
-          &nbsp;&nbsp;
-          <mat-slide-toggle [formControlName]="field.name">{{ field.displayName || field.name }}</mat-slide-toggle>
-          &nbsp;
-          @if (field.translatable) {
-            <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
-          }
-          <br />
-          @if (field.description) {
-            <mat-hint style="font-size: 12px; padding: 0 16px">{{ field.description }}</mat-hint>
-          }
-          @if (form.controls[field.name].errors; as errors) {
-            <mat-error>{{ fe.errors(errors) }}</mat-error>
-          }
-          <br />
+          <div hlmField orientation="horizontal" class="gap-2">
+            <hlm-switch [id]="'schema-field-' + field.name" [formControlName]="field.name" />
+            <div hlmFieldContent>
+              <label hlmFieldLabel [for]="'schema-field-' + field.name">
+                {{ field.displayName || field.name }}
+                @if (field.description) {
+                  <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
+                }
+                @if (field.translatable) {
+                  <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+                }
+              </label>
+              @if (form.controls[field.name]?.errors; as errors) {
+                <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+              }
+            </div>
+          </div>
         }
         <!--OPTION-->
         @case ('OPTION') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <mat-select [formControlName]="field.name">
-              @if (!field.required) {
-                <mat-option>-- None --</mat-option>
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel for="kind">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
               }
-              <!--Handle source not defined in previous versions-->
-              @if (field.source === undefined || field.source === 'self') {
-                @for (option of field.options; track option.value) {
-                  <mat-option [value]="option.value"> {{ option.name }}</mat-option>
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+              }
+            </label>
+            <hlm-select
+              scrollable="true"
+              [id]="'schema-field-' + field.name"
+              [formControlName]="field.name"
+              [placeholder]="(!isDefaultLocale() && data[field.name]) || ''">
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value />
+              </hlm-select-trigger>
+              <hlm-select-content class="max-h-96">
+                <hlm-select-scroll-up />
+                @if (!field.required) {
+                  <hlm-option>-- None --</hlm-option>
                 }
-              } @else {
                 @if (schemaEnumMapById().get(field.source); as source) {
                   @for (option of source.values; track option.value) {
-                    <mat-option [value]="option.value"> {{ option.name }}</mat-option>
+                    <hlm-option [value]="option.value"> {{ option.name }}</hlm-option>
                   }
                 }
-              }
-            </mat-select>
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+                <hlm-select-scroll-down />
+              </hlm-select-content>
+            </hlm-select>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--OPTIONS-->
         @case ('OPTIONS') {
-          <mat-form-field [floatLabel]="isDefaultLocale() ? 'auto' : 'always'">
-            <mat-label>{{ field.displayName || field.name }}</mat-label>
-            <mat-select [formControlName]="field.name" multiple>
-              <!--Handle source not defined in previous versions-->
-              @if (field.source === undefined || field.source === 'self') {
-                @for (option of field.options; track option.value) {
-                  <mat-option [value]="option.value"> {{ option.name }}</mat-option>
-                }
-              } @else {
+          <div hlmField class="gap-2">
+            <label hlmFieldLabel for="kind">
+              {{ field.displayName || field.name }}
+              @if (field.description) {
+                <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
+              }
+              @if (field.translatable) {
+                <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
+              }
+            </label>
+            <hlm-select
+              scrollable="true"
+              [multiple]="true"
+              [id]="'schema-field-' + field.name"
+              [formControlName]="field.name"
+              [placeholder]="(!isDefaultLocale() && data[field.name]) || ''">
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value />
+              </hlm-select-trigger>
+              <hlm-select-content class="max-h-96">
+                <hlm-select-scroll-up />
                 @if (schemaEnumMapById().get(field.source); as source) {
                   @for (option of source.values; track option.value) {
-                    <mat-option [value]="option.value"> {{ option.name }}</mat-option>
+                    <hlm-option [value]="option.value"> {{ option.name }}</hlm-option>
                   }
                 }
-              }
-            </mat-select>
-            @if (field.translatable) {
-              <mat-icon matIconSuffix matTooltip="The field is translatable">language</mat-icon>
+                <hlm-select-scroll-down />
+              </hlm-select-content>
+            </hlm-select>
+            @if (form.controls[field.name]?.errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
-            @if (field.description) {
-              <mat-hint>{{ field.description }}</mat-hint>
-            }
-            @if (form.controls[field.name].errors; as errors) {
-              <mat-error>{{ fe.errors(errors) }}</mat-error>
-            }
-          </mat-form-field>
+          </div>
         }
         <!--LINK-->
         @case ('LINK') {
@@ -338,147 +373,194 @@
         }
         <!--SCHEMA-->
         @case ('SCHEMA') {
-          <mat-card class="ll-not-shadow">
-            <mat-card-header>
-              <mat-card-title-group>
-                <mat-card-title> {{ field.displayName || field.name }}</mat-card-title>
-                @if (field.description) {
-                  <mat-card-subtitle>{{ field.description }}</mat-card-subtitle>
-                }
-                <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema" [disabled]="data[field.name]">
-                  <mat-icon>add_circle</mat-icon>
+          <div hlmFieldGroup>
+            <fieldset hlmFieldSet class="gap-2">
+              <legend hlmFieldLegend class="flex w-full justify-between">
+                {{ field.displayName || field.name }}
+                <button
+                  hlmBtn
+                  variant="ghost"
+                  size="sm"
+                  [hlmDropdownMenuTrigger]="menu"
+                  hlmTooltip="Add Schema"
+                  [disabled]="data[field.name]">
+                  <ng-icon hlm size="sm" name="lucideCirclePlus" />
                 </button>
-                <mat-menu #schemasMenu="matMenu">
-                  @for (sch of filterSchema(field.schemas); track sch.id) {
-                    <button mat-menu-item (click)="addSchemaOne(field, sch)" [matTooltip]="sch.description">
-                      {{ sch.displayName || sch.id }}
-                    </button>
-                  }
-                </mat-menu>
-              </mat-card-title-group>
-            </mat-card-header>
-            <mat-divider></mat-divider>
-            <mat-card-content>
-              <mat-action-list>
-                @if (data[field.name]; as item) {
-                  <mat-list-item
-                    [id]="item._id"
-                    [ngClass]="{ 'schema-hover': hoverSchemaPath()?.includes(item._id) }"
-                    (click)="navigationTo(item._id, field.name, item.schema)">
-                    @if (schemaCompNodeById().get(item.schema); as sch) {
-                      <div matListItemTitle>
-                        {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
-                        @if (sch.previewField) {
-                          <div matListItemLine>
-                            {{ previewText(item, sch, selectedLocaleId()) }}
+                <ng-template #menu>
+                  <hlm-dropdown-menu class="w-60">
+                    @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                      <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltip]="sch.description || ''">
+                        {{ sch.displayName || sch.id }}
+                      </button>
+                    }
+                  </hlm-dropdown-menu>
+                </ng-template>
+              </legend>
+              @if (field.description) {
+                <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
+              }
+              <hlm-field-separator />
+              <div hlmFieldGroup>
+                <div hlmItemGroup class="gap-2">
+                  @if (data[field.name]; as item) {
+                    <div
+                      [id]="item._id"
+                      hlmItem
+                      variant="outline"
+                      role="listitem"
+                      class="cursor-pointer"
+                      [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
+                      (click)="navigationTo(item._id, field.name, item.schema)"
+                      (keydown)="navigationTo(item._id, field.name, item.schema)">
+                      <div hlmItemContent class="min-w-0 overflow-hidden">
+                        @if (schemaCompNodeById().get(item.schema); as sch) {
+                          <div hlmItemTitle class="line-clamp-1">
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                          </div>
+                          @if (sch.previewField) {
+                            <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
+                          }
+                        } @else {
+                          <div hlmItemTitle class="text-destructive line-clamp-1">
+                            Schema with ID <b>#{{ item.schema }}</b> can't be found.
                           </div>
                         }
                       </div>
-                    } @else {
-                      <div matListItemTitle>
-                        <span class="error">
-                          Schema with ID <b>#{{ item.schema }}</b> can't be found.
-                        </span>
+                      <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltip="Delete">
+                          <ng-icon hlm size="sm" name="lucideTrash" />
+                        </button>
                       </div>
-                    }
-                    <mat-action-list matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                      <button mat-icon-button (click)="removeSchemaOne(field)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </mat-action-list>
-                  </mat-list-item>
-                }
-              </mat-action-list>
-            </mat-card-content>
-          </mat-card>
+                    </div>
+                  }
+                </div>
+              </div>
+            </fieldset>
+          </div>
         }
         <!--SCHEMAS-->
         @case ('SCHEMAS') {
-          <mat-card class="ll-not-shadow">
-            <mat-card-header>
-              <mat-card-title-group>
-                <mat-card-title> {{ field.displayName || field.name }}</mat-card-title>
-                @if (field.description) {
-                  <mat-card-subtitle>{{ field.description }}</mat-card-subtitle>
-                }
-                <button mat-icon-button [matMenuTriggerFor]="schemasMenu" matTooltip="Add Schema at the end">
-                  <mat-icon>add_circle</mat-icon>
+          <div hlmFieldGroup>
+            <fieldset hlmFieldSet class="gap-2">
+              <legend hlmFieldLegend class="flex w-full justify-between">
+                {{ field.displayName || field.name }}
+                <button hlmBtn variant="ghost" size="sm" [hlmDropdownMenuTrigger]="menu" hlmTooltip="Add Schema at the end">
+                  <ng-icon hlm size="sm" name="lucideCirclePlus" />
                 </button>
-                <mat-menu #schemasMenu="matMenu">
-                  @for (sch of filterSchema(field.schemas); track sch.id) {
-                    <button mat-menu-item (click)="addSchemaMany(field, sch)" [matTooltip]="sch.description">
-                      {{ sch.displayName || sch.id }}
-                    </button>
-                  }
-                </mat-menu>
-              </mat-card-title-group>
-            </mat-card-header>
-            <mat-divider></mat-divider>
-            <mat-card-content>
-              <mat-action-list cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
-                @for (item of data[field.name]; track item; let index = $index) {
-                  <mat-list-item
-                    [id]="item._id"
-                    [ngClass]="{ 'schema-hover': hoverSchemaPath()?.includes(item._id) }"
-                    cdkDrag
-                    cdkDragPreviewContainer="parent"
-                    (click)="navigationTo(item._id, field.name, item.schema)">
-                    @if (schemaCompNodeById().get(item.schema); as sch) {
-                      <div matListItemTitle>
-                        {{ sch.displayName }} <span class="schema-id">#{{ sch.id }}</span>
-                        @if (sch.previewField) {
-                          <div matListItemLine>
-                            {{ previewText(item, sch, selectedLocaleId()) }}
+                <ng-template #menu>
+                  <hlm-dropdown-menu class="w-60">
+                    @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                      <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltip]="sch.description || ''">
+                        {{ sch.displayName || sch.id }}
+                      </button>
+                    }
+                  </hlm-dropdown-menu>
+                </ng-template>
+              </legend>
+              @if (field.description) {
+                <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
+              }
+              <hlm-field-separator />
+              <div hlmFieldGroup>
+                <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
+                  @for (item of data[field.name] || []; track item; let index = $index) {
+                    <div
+                      [id]="item._id"
+                      hlmItem
+                      variant="outline"
+                      role="listitem"
+                      class="cursor-pointer"
+                      [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
+                      cdkDrag
+                      cdkDragPreviewContainer="parent"
+                      (click)="navigationTo(item._id, field.name, item.schema)"
+                      (keydown)="navigationTo(item._id, field.name, item.schema)">
+                      <div hlmItemContent class="min-w-0 overflow-hidden">
+                        @if (schemaCompNodeById().get(item.schema); as sch) {
+                          <div hlmItemTitle class="line-clamp-1">
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                          </div>
+                          @if (sch.previewField) {
+                            <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
+                          }
+                        } @else {
+                          <div hlmItemTitle class="text-destructive line-clamp-1">
+                            Schema with ID <b>#{{ item.schema }}</b> can't be found.
                           </div>
                         }
                       </div>
-                    } @else {
-                      <div matListItemTitle>
-                        <span class="error">
-                          Schema with ID <b>#{{ item.schema }}</b> can't be found.
-                        </span>
+                      <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                        <button
+                          hlmBtn
+                          variant="outline"
+                          size="sm"
+                          [hlmDropdownMenuTrigger]="schemasMenuAbove"
+                          hlmTooltip="Add Schema above">
+                          <ng-icon hlm size="sm" name="tablerRowInsertTop" />
+                        </button>
+                        <ng-template #schemasMenuAbove>
+                          <hlm-dropdown-menu class="w-60">
+                            @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                              <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch, index)" [hlmTooltip]="sch.description || ''">
+                                {{ sch.displayName || sch.id }}
+                              </button>
+                            }
+                          </hlm-dropdown-menu>
+                        </ng-template>
+                        <button
+                          hlmBtn
+                          variant="outline"
+                          size="sm"
+                          [hlmDropdownMenuTrigger]="schemasMenuBelow"
+                          hlmTooltip="Add Schema below">
+                          <ng-icon hlm size="sm" name="tablerRowInsertBottom" />
+                        </button>
+                        <ng-template #schemasMenuBelow>
+                          <hlm-dropdown-menu class="w-60">
+                            @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                              <button
+                                hlmDropdownMenuItem
+                                (click)="addSchemaMany(field, sch, index + 1)"
+                                [hlmTooltip]="sch.description || ''">
+                                {{ sch.displayName || sch.id }}
+                              </button>
+                            }
+                          </hlm-dropdown-menu>
+                        </ng-template>
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="outline"
+                          (click)="duplicateSchemaMany(data[field.name], item, index)"
+                          hlmTooltip="Clone the schema">
+                          <ng-icon hlm size="sm" name="lucideBookCopy" />
+                        </button>
+                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltip="Delete">
+                          <ng-icon hlm size="sm" name="lucideTrash" />
+                        </button>
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="ghost"
+                          cdkDragHandle
+                          class="cursor-grab active:cursor-grabbing"
+                          hlmTooltip="Move">
+                          <ng-icon hlm size="sm" name="lucideGripVertical" />
+                        </button>
                       </div>
-                    }
-                    <mat-action-list matListItemMeta (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuAbove" matTooltip="Add Schema above">
-                        <mat-icon>add_row_above</mat-icon>
-                      </button>
-                      <mat-menu #schemasMenuAbove="matMenu">
-                        @for (sch of filterSchema(field.schemas); track sch.id) {
-                          <button mat-menu-item (click)="addSchemaMany(field, sch, index)" [matTooltip]="sch.description">
-                            {{ sch.displayName || sch.id }}
-                          </button>
-                        }
-                      </mat-menu>
-                      <button mat-icon-button [matMenuTriggerFor]="schemasMenuBelow" matTooltip="Add Schema below">
-                        <mat-icon>add_row_below</mat-icon>
-                      </button>
-                      <mat-menu #schemasMenuBelow="matMenu">
-                        @for (sch of filterSchema(field.schemas); track sch.id) {
-                          <button mat-menu-item (click)="addSchemaMany(field, sch, index + 1)" [matTooltip]="sch.description">
-                            {{ sch.displayName || sch.id }}
-                          </button>
-                        }
-                      </mat-menu>
-                      <button mat-icon-button (click)="duplicateSchemaMany(data[field.name], item, index)">
-                        <mat-icon>content_copy</mat-icon>
-                      </button>
-                      <button mat-icon-button (click)="removeSchemaMany(field, item._id)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                      &nbsp;&nbsp;
-                      <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-                    </mat-action-list>
-                  </mat-list-item>
-                }
-              </mat-action-list>
-            </mat-card-content>
-          </mat-card>
+                    </div>
+                  }
+                </div>
+              </div>
+            </fieldset>
+          </div>
         }
         @default {
           {{ field.kind }} is not implemented
         }
       }
+    } @empty {
+      <div>No fields available in this schema.</div>
     }
   </form>
 }
@@ -486,16 +568,21 @@
   <br />
   <mat-divider />
   <br />
-  <mat-accordion>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>EditDocumentSchema Form => {{ form?.valid }}</mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre>isDefaultLocale = {{ isDefaultLocale() }}</pre>
-      Value :
-      <pre>{{ form.value | json }}</pre>
-      Error :
-      <pre>{{ form.errors | json }}</pre>
-    </mat-expansion-panel>
-  </mat-accordion>
+  <hlm-accordion>
+    <hlm-accordion-item>
+      <h3 class="contents">
+        <button hlmAccordionTrigger>
+          EditDocumentSchema Form => {{ form?.valid }}
+          <ng-icon name="lucideChevronDown" hlm hlmAccIcon />
+        </button>
+      </h3>
+      <hlm-accordion-content>
+        <pre>isDefaultLocale = {{ isDefaultLocale() }}</pre>
+        Value :
+        <pre>{{ form.value | json }}</pre>
+        Error :
+        <pre>{{ form.errors | json }}</pre>
+      </hlm-accordion-content>
+    </hlm-accordion-item>
+  </hlm-accordion>
 }

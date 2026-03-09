@@ -41,7 +41,7 @@
               "src/scripts"
             ],
             "styles": [
-              "src/tailwind.css",
+              "src/styles.css",
               "src/styles.scss"
             ],
             "scripts": [
@@ -51,7 +51,7 @@
             "browser": "src/main.ts",
             "stylePreprocessorOptions": {
               "sass": {
-                "silenceDeprecations": ["mixed-decls", "color-functions", "global-builtin", "import"]
+                "silenceDeprecations": ["color-functions", "global-builtin", "import"]
               }
             }
           },
@@ -102,7 +102,8 @@
               "buildTarget": "localess:build:production"
             },
             "development": {
-              "buildTarget": "localess:build:development"
+              "buildTarget": "localess:build:development",
+              "hmr": true
             }
           },
           "defaultConfiguration": "development"
@@ -119,13 +120,10 @@
             "main": "src/test.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.spec.json",
-            "karmaConfig": "karma.conf.js",
+            "karmaConfig": "karma.conf.cjs",
             "inlineStyleLanguage": "scss",
             "assets": ["src/favicon.ico", "src/assets"],
-            "styles": [
-              "src/tailwind.css",
-              "src/styles.scss"
-            ],
+            "styles": ["src/styles.css", "src/styles.scss"],
             "scripts": []
           }
         },

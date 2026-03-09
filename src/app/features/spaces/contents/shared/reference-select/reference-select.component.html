@@ -1,47 +1,49 @@
 <form [formGroup]="form()">
-  <mat-card class="ll-not-shadow">
-    <mat-card-header>
-      <mat-card-title-group>
-        <mat-card-title>
-          {{ component().displayName || component().name }}
-        </mat-card-title>
-        @if (component().description; as description) {
-          <mat-card-subtitle>{{ description }}</mat-card-subtitle>
-        }
-        <button mat-icon-button matTooltip="Add References" (click)="openReferenceSelectDialog()">
-          <mat-icon>add_link</mat-icon>
+  <div hlmFieldGroup>
+    <fieldset hlmFieldSet class="gap-2">
+      <legend hlmFieldLegend class="flex w-full justify-between">
+        {{ component().displayName || component().name }}
+        <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Reference" (click)="openReferenceSelectDialog()">
+          <ng-icon hlm size="sm" name="lucideFileSymlink" />
         </button>
-      </mat-card-title-group>
-    </mat-card-header>
-    <mat-divider></mat-divider>
-    <mat-card-content>
-      @if (content && content.kind === 'DOCUMENT') {
-        <mat-list>
-          <mat-list-item>
-            <div matListItemIcon class="self-center!">
-              @if (content?.publishedAt === undefined) {
-                <ll-status mode="offline" matTooltip="Not published" />
-              } @else if (content?.publishedAt?.seconds > content?.updatedAt?.seconds) {
-                <ll-status mode="online" matTooltip="Published" />
-              } @else if (content?.publishedAt && content?.publishedAt?.seconds < content?.updatedAt?.seconds) {
-                <ll-status mode="away" matTooltip="Draft" />
-              }
-            </div>
-            <div matListItemTitle>{{ content.name }} #{{ content.slug }}</div>
-            <code matListItemLine>{{ content.fullSlug }}</code>
-            <div matListItemMeta>
-              <button mat-icon-button (click)="deleteReference()">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
-          </mat-list-item>
-        </mat-list>
+      </legend>
+      @if (component().description; as description) {
+        <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
       }
+      <hlm-field-separator />
+      <div hlmFieldGroup>
+        <div hlmItemGroup class="gap-2">
+          @if (content && content.kind === 'DOCUMENT') {
+            <div hlmItem variant="outline" role="listitem">
+              <div hlmItemMedia>
+                @if (content.publishedAt === undefined) {
+                  <ll-status mode="offline" hlmTooltip="Not published" />
+                } @else if (content.publishedAt.seconds > content.updatedAt.seconds) {
+                  <ll-status mode="online" hlmTooltip="Published" />
+                } @else if (content.publishedAt.seconds < content.updatedAt.seconds) {
+                  <ll-status mode="away" hlmTooltip="Draft" />
+                }
+              </div>
+              <div hlmItemContent class="min-w-0 overflow-hidden">
+                <div hlmItemTitle class="line-clamp-1 w-full truncate">
+                  {{ content.name }} <span class="accent-muted-foreground">#{{ content.slug }}</span>
+                </div>
+                <p hlmItemDescription class="line-clamp-1 truncate"> {{ content.fullSlug }} </p>
+              </div>
+              <div role="none" hlmItemActions>
+                <button hlmBtn size="icon" variant="outline" (click)="deleteReference()" hlmTooltip="Delete">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
       @if (form().controls['uri'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-card-content>
-  </mat-card>
+    </fieldset>
+  </div>
 </form>
 @if (settingsStore.debugEnabled()) {
   <mat-accordion>
