@@ -13,33 +13,29 @@
           }
         }
       }
+      <ul hlmSidebarMenu>
+        @if (spaceStore.spaces().length > 0) {
+          <li hlmSidebarMenuItem>
+            <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom">
+              <ng-icon hlm name="tablerSpaces" />
+              <span>{{ spaceStore.selectedSpace()?.name }}</span>
+              <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
+            </button>
+            <ng-template #spaceMenu>
+              <hlm-dropdown-menu class="w-60">
+                @for (space of spaceStore.spaces(); track space.id) {
+                  <button hlmDropdownMenuRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
+                    <hlm-dropdown-menu-radio-indicator />
+                    <span> {{ space.name }} </span>
+                  </button>
+                }
+              </hlm-dropdown-menu>
+            </ng-template>
+          </li>
+        }
+      </ul>
     </div>
     <div hlmSidebarContent>
-      <div hlmSidebarGroup>
-        <div hlmSidebarGroupContent>
-          <ul hlmSidebarMenu>
-            @if (spaceStore.spaces().length > 0) {
-              <li hlmSidebarMenuItem>
-                <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom">
-                  <ng-icon hlm name="tablerSpaces" />
-                  <span>{{ spaceStore.selectedSpace()?.name }}</span>
-                  <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
-                </button>
-                <ng-template #spaceMenu>
-                  <hlm-dropdown-menu class="w-60">
-                    @for (space of spaceStore.spaces(); track space.id) {
-                      <button hlmDropdownMenuRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
-                        <hlm-dropdown-menu-radio-indicator />
-                        <span> {{ space.name }} </span>
-                      </button>
-                    }
-                  </hlm-dropdown-menu>
-                </ng-template>
-              </li>
-            }
-          </ul>
-        </div>
-      </div>
       @if (spaceStore.selectedSpace()) {
         <div hlmSidebarGroup>
           <div hlmSidebarGroupLabel>Space</div>
@@ -78,66 +74,55 @@
           </div>
         </div>
       }
-      <div hlmSidebarGroup class="mt-auto">
-        <div hlmSidebarGroupContent>
-          <ul hlmSidebarMenu>
-            <li hlmSidebarMenuItem hlmTooltip="Welcome">
-              <button
-                hlmSidebarMenuButton
-                routerLink="/features/welcome"
-                routerLinkActive
-                #rla="routerLinkActive"
-                [isActive]="rla.isActive">
-                <ng-icon hlm name="lucideCircleQuestionMark" />
-                Welcome
-              </button>
-            </li>
-            <li hlmSidebarMenuItem hlmTooltip="Support">
-              <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="menu" side="right">
-                <ng-icon hlm name="lucideLifeBuoy" />
-                Support
-                <hlm-dropdown-menu-item-sub-indicator />
-              </button>
-            </li>
-            <ng-template #menu>
-              <hlm-dropdown-menu>
-                @for (menuItem of communitySideMenu; track menuItem.label) {
-                  <button hlmDropdownMenuItem (click)="openNewTab(menuItem.link)">
-                    <ng-icon [name]="menuItem.icon" />
-                    {{ menuItem.label }}
-                    <ng-icon name="lucideExternalLink" class="ml-auto" />
-                  </button>
-                }
-              </hlm-dropdown-menu>
-            </ng-template>
-
-            <li hlmSidebarMenuItem hlmTooltip="Sponsor Us">
-              <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/sponsoring')">
-                <ng-icon hlm name="lucideHeartHandshake" />
-                Sponsor Us
-              </button>
-            </li>
-            @if (latestRelease && latestRelease.tag_name > 'v' + version) {
-              <li hlmSidebarMenuItem [hlmTooltip]="'A new version is available : ' + latestRelease.name">
-                <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
-                  <ng-icon hlm name="lucideShieldAlert" class="flash motion-safe:animate-pulse" />
-                  Version: {{ version }}
-                </button>
-              </li>
-            } @else {
-              <li hlmSidebarMenuItem hlmTooltip="You are on the latest version.">
-                <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2')">
-                  <ng-icon hlm name="lucideShieldCheck" />
-                  Version: {{ version }}
-                </button>
-              </li>
-            }
-          </ul>
-        </div>
-      </div>
     </div>
     <div hlmSidebarFooter>
       <ul hlmSidebarMenu>
+        <li hlmSidebarMenuItem hlmTooltip="Welcome">
+          <button hlmSidebarMenuButton routerLink="/features/welcome" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
+            <ng-icon hlm name="lucideCircleQuestionMark" />
+            Welcome
+          </button>
+        </li>
+        <li hlmSidebarMenuItem hlmTooltip="Support">
+          <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="menu" side="right">
+            <ng-icon hlm name="lucideLifeBuoy" />
+            Support
+            <hlm-dropdown-menu-item-sub-indicator />
+          </button>
+        </li>
+        <ng-template #menu>
+          <hlm-dropdown-menu>
+            @for (menuItem of communitySideMenu; track menuItem.label) {
+              <button hlmDropdownMenuItem (click)="openNewTab(menuItem.link)">
+                <ng-icon [name]="menuItem.icon" />
+                {{ menuItem.label }}
+                <ng-icon name="lucideExternalLink" class="ml-auto" />
+              </button>
+            }
+          </hlm-dropdown-menu>
+        </ng-template>
+
+        <li hlmSidebarMenuItem hlmTooltip="Sponsor Us">
+          <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/sponsoring')">
+            <ng-icon hlm name="lucideHeartHandshake" />
+            Sponsor Us
+          </button>
+        </li>
+        @if (latestRelease && latestRelease.tag_name > 'v' + version) {
+          <li hlmSidebarMenuItem [hlmTooltip]="'A new version is available : ' + latestRelease.name">
+            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2#' + latestRelease.tag_name)">
+              <ng-icon hlm name="lucideShieldAlert" class="flash motion-safe:animate-pulse" />
+              Version: {{ version }}
+            </button>
+          </li>
+        } @else {
+          <li hlmSidebarMenuItem hlmTooltip="You are on the latest version.">
+            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v2')">
+              <ng-icon hlm name="lucideShieldCheck" />
+              Version: {{ version }}
+            </button>
+          </li>
+        }
         <li hlmSidebarMenuItem>
           <button hlmSidebarMenuButton size="lg" [hlmDropdownMenuTrigger]="userMenu" side="right" class="flex gap-2">
             <hlm-avatar>
