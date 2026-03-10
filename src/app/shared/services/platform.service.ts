@@ -12,11 +12,11 @@ export class PlatformService {
 
   actionSaveLabel = `${this.funKeyLabel} + S`;
   isActionSave(event: KeyboardEvent): boolean {
-    return this.isApple ? event.metaKey : event.ctrlKey && event.key.toLowerCase() === 's';
+    return (this.isApple ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 's';
   }
 
   actionAddLabel = `${this.funKeyLabel} + N`;
   isActionAdd(event: KeyboardEvent): boolean {
-    return this.isApple ? event.metaKey : event.ctrlKey && event.key.toLowerCase() === 'n';
+    return (this.isApple ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'n';
   }
 }
