@@ -17,6 +17,7 @@ export interface LocalSettingsState {
   assetLayout: DataLayout;
   assetDialogLayout: DataLayout;
   translationLayout: TranslationLayout;
+  lastSeenVersion: string;
 }
 
 export const initialState: LocalSettingsState = {
@@ -28,6 +29,7 @@ export const initialState: LocalSettingsState = {
   assetLayout: 'list',
   assetDialogLayout: 'list',
   translationLayout: 'list',
+  lastSeenVersion: '',
 };
 
 function setDocumentTheme(theme: Theme) {
@@ -105,6 +107,10 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { translationLayout });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), translationLayout }));
       },
+      setLastSeenVersion: (lastSeenVersion: string): void => {
+        patchState(store, { lastSeenVersion });
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), lastSeenVersion }));
+      },
     };
   }),
   withComputed(store => {
@@ -117,6 +123,7 @@ export const LocalSettingsStore = signalStore(
       assetLayout: computed(() => store.assetLayout()),
       assetDialogLayout: computed(() => store.assetDialogLayout()),
       translationLayout: computed(() => store.translationLayout()),
+      lastSeenVersion: computed(() => store.lastSeenVersion()),
     };
   }),
   withHooks({

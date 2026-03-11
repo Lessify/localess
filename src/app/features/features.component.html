@@ -108,19 +108,21 @@
             Sponsor Us
           </button>
         </li>
-        @if (latestRelease && latestRelease.tag_name > 'v' + version) {
-          <li hlmSidebarMenuItem [hlmTooltip]="'A new version is available : ' + latestRelease.name">
-            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v3#' + latestRelease.tag_name)">
-              <ng-icon hlm name="lucideShieldAlert" class="flash motion-safe:animate-pulse" />
+        @if (latestRelease) {
+          @let hasNewVersion = latestRelease.tag_name > 'v' + version;
+          <li hlmSidebarMenuItem [hlmTooltip]="hasNewVersion ? 'A new version is available.' : 'You are on the latest version.'">
+            <button hlmSidebarMenuButton (click)="openNewTabChangelog(latestRelease.tag_name)">
+              @if (hasNewVersion) {
+                <ng-icon hlm name="lucideShieldAlert" class="flash motion-safe:animate-pulse" />
+              } @else {
+                <ng-icon hlm name="lucideShieldCheck" />
+              }
               Version: {{ version }}
-            </button>
-          </li>
-        } @else {
-          <li hlmSidebarMenuItem hlmTooltip="You are on the latest version.">
-            <button hlmSidebarMenuButton (click)="openNewTab('https://localess.org/changelog/v3')">
-              <ng-icon hlm name="lucideShieldCheck" />
-              Version: {{ version }}
-              <ng-icon hlm name="lucideBellDot" class="text-destructive ml-auto" />
+              @if (localeSettingsStore.lastSeenVersion() === latestRelease.tag_name) {
+                <ng-icon hlm name="lucideBell" class="ml-auto" />
+              } @else {
+                <ng-icon hlm name="lucideBellDot" class="text-destructive ml-auto" />
+              }
             </button>
           </li>
         }
@@ -205,7 +207,7 @@
           aria-label="Switch theme"
           hlmTooltip="Switch theme"
           position="bottom">
-          <ng-icon hlm [name]="settingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
+          <ng-icon hlm [name]="localeSettingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
         </button>
       </div>
     </header>
@@ -224,7 +226,10 @@
           <fieldset hlmFieldSet>
             <div hlmFieldGroup class="gap-4">
               <div hlmField orientation="horizontal">
-                <hlm-switch id="enableDebug" [checked]="settingsStore.debugEnabled()" (checkedChange)="settingsStore.setDebug($event)" />
+                <hlm-switch
+                  id="enableDebug"
+                  [checked]="localeSettingsStore.debugEnabled()"
+                  (checkedChange)="localeSettingsStore.setDebug($event)" />
                 <label hlmFieldLabel for="enableDebug">Enable Debug</label>
               </div>
             </div>

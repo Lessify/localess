@@ -8,6 +8,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/ro
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
   lucideBadgeInfo,
+  lucideBell,
   lucideBellDot,
   lucideBookOpen,
   lucideChevronDown,
@@ -146,6 +147,7 @@ interface SideMenuItem {
       lucideSun,
       lucideCode,
       lucideBadgeInfo,
+      lucideBell,
       lucideBellDot,
     }),
   ],
@@ -159,9 +161,12 @@ export class FeaturesComponent implements OnInit {
   private readonly schemaService = inject(SchemaService);
   private readonly versionService = inject(VersionService);
   public readonly sidebarService = inject(HlmSidebarService);
+  public readonly spaceStore = inject(SpaceStore);
+  public readonly userStore = inject(UserStore);
+  public readonly localeSettingsStore = inject(LocalSettingsStore);
+  public readonly appSettingsStore = inject(AppSettingsStore);
 
   // Settings
-  isSettingsMenuExpended = signal(false);
   isDebug = environment.debug;
   showDebugSettings = signal(false);
 
@@ -221,10 +226,6 @@ export class FeaturesComponent implements OnInit {
   ];
 
   private destroyRef = inject(DestroyRef);
-  spaceStore = inject(SpaceStore);
-  userStore = inject(UserStore);
-  settingsStore = inject(LocalSettingsStore);
-  appSettingsStore = inject(AppSettingsStore);
 
   breadcrumbs = signal<BreadcrumbItem[]>([]);
 
@@ -320,20 +321,18 @@ export class FeaturesComponent implements OnInit {
     return await signOut(this.auth);
   }
 
-  onSettingsMenuExpendedChangeState(): void {
-    this.isSettingsMenuExpended.update(it => !it);
-  }
-
   openNewTab(link: string): void {
     window.open(link);
   }
 
-  onDebugEnabledChangeState() {
-    this.settingsStore.setDebug(!this.settingsStore.debugEnabled());
+  openNewTabChangelog(tagName: string): void {
+    const [major] = tagName.split('.');
+    window.open('https://localess.org/changelog/' + major + '#' + tagName);
+    this.localeSettingsStore.setLastSeenVersion(tagName);
   }
 
   switchTheme() {
-    this.settingsStore.setTheme(this.settingsStore.theme() === 'dark' ? 'light' : 'dark');
+    this.localeSettingsStore.setTheme(this.localeSettingsStore.theme() === 'dark' ? 'light' : 'dark');
   }
 
   private buildBreadcrumbs(route: ActivatedRoute): BreadcrumbItem[] {
