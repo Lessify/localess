@@ -16,6 +16,10 @@ export enum WebHookEvent {
   CONTENT_UNPUBLISHED = 'content.unpublished',
   CONTENT_DELETED = 'content.deleted',
   CONTENT_UPDATED = 'content.updated',
+  TRANSLATION_PUBLISHED = 'translation.published',
+  TRANSLATION_ADDED = 'translation.added',
+  TRANSLATION_UPDATED = 'translation.updated',
+  TRANSLATION_DELETED = 'translation.deleted',
 }
 
 export type WebHookStatus = 'success' | 'failure';
@@ -24,12 +28,16 @@ export interface WebHookPayload {
   event: WebHookEvent;
   spaceId: string;
   timestamp: string;
-  data: ContentWebHookPayloadData;
+  data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
   signature?: string;
 }
 
 export interface ContentWebHookPayloadData {
   contentId: string;
+}
+
+export interface TranslationWebHookPayloadData {
+  translationId?: string;
 }
 
 export interface WebHookLog {

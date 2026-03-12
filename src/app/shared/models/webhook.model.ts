@@ -17,6 +17,10 @@ export enum WebHookEvent {
   CONTENT_UNPUBLISHED = 'content.unpublished',
   CONTENT_DELETED = 'content.deleted',
   CONTENT_UPDATED = 'content.updated',
+  TRANSLATION_PUBLISHED = 'translation.published',
+  TRANSLATION_ADDED = 'translation.added',
+  TRANSLATION_UPDATED = 'translation.updated',
+  TRANSLATION_DELETED = 'translation.deleted',
 }
 
 export type WebHookStatus = 'success' | 'failure';

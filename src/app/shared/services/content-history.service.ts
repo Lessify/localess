@@ -9,8 +9,11 @@ import { map } from 'rxjs/operators';
 export class ContentHistoryService {
   private readonly firestore = inject(Firestore);
 
-  findAll(spaceId: string, id: string): Observable<ContentHistory[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(30)];
+  findAll(spaceId: string, id: string, max?: number): Observable<ContentHistory[]> {
+    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc')];
+    if (max) {
+      queryConstrains.push(limit(max));
+    }
     return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents/${id}/histories`), ...queryConstrains), {
       idField: 'id',
     }).pipe(

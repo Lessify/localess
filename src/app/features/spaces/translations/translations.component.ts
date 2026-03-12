@@ -326,7 +326,7 @@ export class TranslationsComponent implements OnInit {
           this.isLoading.set(false);
         },
       });
-    this.history$ = this.translateHistoryService.findAll(this.spaceId()).pipe(takeUntilDestroyed(this.destroyRef));
+    this.history$ = this.translateHistoryService.findAll(this.spaceId(), 30).pipe(takeUntilDestroyed(this.destroyRef));
   }
 
   publish(): void {

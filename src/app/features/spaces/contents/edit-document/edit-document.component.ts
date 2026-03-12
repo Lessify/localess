@@ -272,7 +272,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   constructor() {}
 
   ngOnInit(): void {
-    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId()).pipe(takeUntilDestroyed(this.destroyRef));
+    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId(), 30).pipe(takeUntilDestroyed(this.destroyRef));
     const document = this.document();
     // Initialize document data
     if (document.kind === ContentKind.DOCUMENT) {
