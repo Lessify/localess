@@ -25,6 +25,8 @@ import { provideIcons } from '@ng-icons/core';
 import {
   lucideEllipsisVertical,
   lucideHistory,
+  lucideMailCheck,
+  lucideMailX,
   lucidePencil,
   lucidePlus,
   lucideShieldAlert,
@@ -35,6 +37,7 @@ import {
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { Observable } from 'rxjs';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 
 @Component({
   selector: 'll-space-settings-webhooks',
@@ -56,6 +59,7 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
     HlmIconImports,
     HlmItemImports,
     HlmDropdownMenuImports,
+    TimeDurationPipe,
   ],
   providers: [
     provideIcons({
@@ -67,6 +71,8 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
       lucideHistory,
       lucideWebhook,
       lucideWebhookOff,
+      lucideMailCheck,
+      lucideMailX,
     }),
   ],
 })

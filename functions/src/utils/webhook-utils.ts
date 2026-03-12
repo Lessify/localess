@@ -52,17 +52,15 @@ export async function triggerWebHook(spaceId: string, webhookId: string, webhook
       signal: AbortSignal.timeout(30000), // 30 second timeout
     });
 
-    const responseTime = Date.now() - startTime;
+    const responseTime = (Date.now() - startTime) / 1000; // in seconds
     const status: WebHookStatus = response.ok ? 'success' : 'failure';
 
     // Log the webhook execution
     await logWebHookExecution(spaceId, webhookId, {
-      webhookId: webhookId,
       event: payload.event,
-      url: webhook.url,
       status: status,
       statusCode: response.status,
-      responseTime: responseTime,
+      duration: responseTime,
       createdAt: FieldValue.serverTimestamp(),
     });
 
@@ -77,11 +75,9 @@ export async function triggerWebHook(spaceId: string, webhookId: string, webhook
 
     // Log the failed execution
     await logWebHookExecution(spaceId, webhookId, {
-      webhookId: webhookId,
       event: payload.event,
-      url: webhook.url,
       status: 'failure',
-      responseTime: responseTime,
+      duration: responseTime,
       errorMessage: error.message,
       createdAt: FieldValue.serverTimestamp(),
     });

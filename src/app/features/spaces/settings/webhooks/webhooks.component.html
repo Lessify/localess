@@ -113,12 +113,22 @@
       <div hlmItemGroup>
         @for (item of logs$ | async; track item.id) {
           <div hlmItem>
-            <div hlmItemMedia variant="icon">
-              <ng-icon hlm name="lucideShieldAlert" size="sm" />
+            <div hlmItemMedia variant="icon" [hlmTooltip]="item.status">
+              @if (item.status === 'success') {
+                <ng-icon hlm name="lucideMailCheck" size="sm" />
+              } @else {
+                <ng-icon hlm name="lucideMailX" size="sm" class="text-destructive" />
+              }
             </div>
             <div hlmItemContent class="truncate">
-              <div hlmItemTitle>{{ item.webhookId }}</div>
-              <p hlmItemDescription> {{ item.url }} </p>
+              <div hlmItemTitle>{{ item.event }}</div>
+              <p hlmItemDescription>
+                Duration: {{ item.duration | timeDuration }}
+                @if (item.errorMessage) {
+                  <br />
+                  <span [hlmTooltip]="item.errorMessage">Error: {{ item.errorMessage }}</span>
+                }
+              </p>
             </div>
             <div hlmItemContent class="flex-none text-center">
               <p hlmItemDescription>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</p>

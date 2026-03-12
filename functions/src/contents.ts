@@ -72,7 +72,6 @@ const publish = onCall<PublishContentData>(async request => {
       timestamp: new Date().toISOString(),
       data: {
         contentId,
-        content,
       },
     };
     await triggerWebHooksForEvent(spaceId, webhookPayload);
@@ -175,7 +174,6 @@ const unpublish = onCall<PublishContentData>(async request => {
       timestamp: new Date().toISOString(),
       data: {
         contentId,
-        content,
       },
     };
     await triggerWebHooksForEvent(spaceId, webhookPayload);
@@ -280,8 +278,6 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
         timestamp: new Date().toISOString(),
         data: {
           contentId,
-          content: contentAfter,
-          previousContent: contentBefore,
         },
       };
       await triggerWebHooksForEvent(spaceId, webhookPayload);
@@ -353,7 +349,6 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
     timestamp: new Date().toISOString(),
     data: {
       contentId,
-      content,
     },
   };
   await triggerWebHooksForEvent(spaceId, webhookPayload);

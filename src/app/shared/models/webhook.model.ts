@@ -23,12 +23,10 @@ export type WebHookStatus = 'success' | 'failure';
 
 export interface WebHookLog {
   id: string;
-  webhookId: string;
   event: WebHookEvent;
-  url: string;
   status: WebHookStatus;
   statusCode?: number;
-  responseTime?: number;
+  duration: number;
   errorMessage?: string;
   createdAt: Timestamp;
 }

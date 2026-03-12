@@ -24,23 +24,19 @@ export interface WebHookPayload {
   event: WebHookEvent;
   spaceId: string;
   timestamp: string;
-  data: WebHookPayloadData;
+  data: ContentWebHookPayloadData;
   signature?: string;
 }
 
-export interface WebHookPayloadData {
+export interface ContentWebHookPayloadData {
   contentId: string;
-  content: any;
-  previousContent?: any;
 }
 
 export interface WebHookLog {
-  webhookId: string;
   event: WebHookEvent;
-  url: string;
   status: WebHookStatus;
   statusCode?: number;
-  responseTime?: number;
+  duration: number;
   errorMessage?: string;
   createdAt: Timestamp;
 }
