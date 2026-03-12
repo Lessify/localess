@@ -120,7 +120,7 @@ export class WebhooksComponent {
       const spaceId = this.spaceStore.selectedSpaceId();
       const webhook = this.selectedWebhook();
       if (spaceId && webhook) {
-        this.logs$ = this.webhookService.findLogs(spaceId, webhook.id).pipe(takeUntilDestroyed(this.destroyRef));
+        this.logs$ = this.webhookService.findLogs(spaceId, webhook.id, 20).pipe(takeUntilDestroyed(this.destroyRef));
       }
     });
   }

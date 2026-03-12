@@ -7,8 +7,10 @@ import {
   doc,
   docData,
   Firestore,
+  limit,
   orderBy,
   query,
+  QueryConstraint,
   serverTimestamp,
   UpdateData,
   updateDoc,
@@ -92,8 +94,12 @@ export class WebHookService {
     return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/webhooks/${id}`))).pipe(traceUntilFirst('Firestore:WebHooks:delete'));
   }
 
-  findLogs(spaceId: string, webhookId: string): Observable<WebHookLog[]> {
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/webhooks/${webhookId}/logs`), orderBy('createdAt', 'desc')), {
+  findLogs(spaceId: string, webhookId: string, max?: number): Observable<WebHookLog[]> {
+    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc')];
+    if (max) {
+      queryConstrains.push(limit(max));
+    }
+    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/webhooks/${webhookId}/logs`), ...queryConstrains), {
       idField: 'id',
     }).pipe(
       traceUntilFirst('Firestore:WebHooks:findLogs'),
