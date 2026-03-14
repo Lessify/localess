@@ -10,8 +10,8 @@ import { requireTokenPermissions, RequestWithToken } from './middleware/query-au
 export const DEV_TOOLS = Router();
 
 DEV_TOOLS.get('/api/v1/spaces/:spaceId', requireTokenPermissions([TokenPermission.DEV_TOOLS]), async (req: RequestWithToken, res) => {
-  logger.info('v1 spaces params : ' + JSON.stringify(req.params));
-  logger.info('v1 spaces query : ' + JSON.stringify(req.query));
+  logger.info('[V1:SpaceById] params : ' + JSON.stringify(req.params));
+  logger.info('[V1:SpaceById] query : ' + JSON.stringify(req.query));
   const { spaceId } = req.params;
 
   const spaceSnapshot = await findSpaceById(spaceId).get();
@@ -38,13 +38,13 @@ DEV_TOOLS.get(
   '/api/v1/spaces/:spaceId/open-api',
   requireTokenPermissions([TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
-    logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
-    logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
+    logger.info('[V1:OpenApi] params: ' + JSON.stringify(req.params));
+    logger.info('[V1:OpenApi] query: ' + JSON.stringify(req.query));
     const { spaceId } = req.params;
 
     const spaceSnapshot = await findSpaceById(spaceId).get();
     if (!spaceSnapshot.exists) {
-      logger.info('v1 spaces content Space not exist: ' + spaceId);
+      logger.info('[V1:OpenApi] Space not exist: ' + spaceId);
       res
         .status(404)
         .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)

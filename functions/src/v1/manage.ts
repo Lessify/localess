@@ -14,8 +14,8 @@ MANAGE.post(
   '/api/v1/spaces/:spaceId/translations/:locale',
   requireTokenPermissions([TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
-    logger.info('v1 spaces translations update params : ' + JSON.stringify(req.params));
-    logger.info('v1 spaces translations update body : ' + JSON.stringify(req.body));
+    logger.info('[V1:Translations:update] params : ' + JSON.stringify(req.params));
+    logger.info('[V1:Translations:update] body : ' + JSON.stringify(req.body));
     // req.token contains the validated token object
     // req.tokenId contains the token string
     const { spaceId, locale } = req.params;
@@ -25,7 +25,7 @@ MANAGE.post(
       const spaceSnapshot = await findSpaceById(spaceId).get();
       const space = spaceSnapshot.data() as Space;
       if (!space.locales.some(it => it.id === locale)) {
-        logger.error(`Locale ${locale} is not in space locales`);
+        logger.error(`[V1:Translations:update] Locale ${locale} is not in space locales`);
         res
           .status(400)
           .send(new HttpsError('invalid-argument', 'Locale not supported by this space', `Locale ${locale} is not in space locales`));
@@ -37,15 +37,19 @@ MANAGE.post(
         const snapshots = await Promise.all(fetchPromises);
         const translationIds = snapshots.filter(it => !it.exists).map(it => it.id);
         if (translationIds.length === 0) {
-          logger.info('No missing translations to add');
+          logger.info('[V1:Translations:update] No missing translations to add');
           res.status(200).send({ message: 'No missing translations to add' });
           return;
         }
         if (dryRun) {
-          logger.info(`[DryRun] Would add ${translationIds.length} missing translations`, translationIds);
+          logger.info(`[V1:Translations:update] [DryRun] Would add ${translationIds.length} missing translations`, translationIds);
           res
             .status(200)
-            .send({ message: `[DryRun] Would add ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
+            .send({
+              message: `[V1:Translations:update] [DryRun] Would add ${translationIds.length} missing translations`,
+              ids: translationIds,
+              dryRun: true,
+            });
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
@@ -63,7 +67,7 @@ MANAGE.post(
           bulk.create(ref, data);
         });
         await bulk.close();
-        logger.info(`Added ${translationIds.length} missing translations`, translationIds);
+        logger.info(`[V1:Translations:update] Added ${translationIds.length} missing translations`, translationIds);
         res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });
         return;
       } else if (type === 'update-existing') {
@@ -72,15 +76,15 @@ MANAGE.post(
         const snapshots = await Promise.all(fetchPromises);
         const translationIds = snapshots.filter(it => it.exists).map(it => it.id);
         if (translationIds.length === 0) {
-          logger.info('No translations to update');
+          logger.info('[V1:Translations:update] No translations to update');
           res.status(200).send({ message: 'No translations to update' });
           return;
         }
         if (dryRun) {
-          logger.info(`[DryRun] Would update ${translationIds.length} translations`, translationIds);
+          logger.info(`[V1:Translations:update] [DryRun] Would update ${translationIds.length} translations`, translationIds);
           res
             .status(200)
-            .send({ message: `[DryRun] Would update ${translationIds.length} translations`, ids: translationIds, dryRun: true });
+            .send({ message: `[V1:Translations:update] [DryRun] Would update ${translationIds.length} translations`, ids: translationIds, dryRun: true });
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
@@ -94,7 +98,7 @@ MANAGE.post(
           bulk.update(ref, data);
         });
         await bulk.close();
-        logger.info(`Updated ${translationIds.length} translations`, translationIds);
+        logger.info(`[V1:Translations:update] Updated ${translationIds.length} translations`, translationIds);
         res.status(200).send({ message: `Updated ${translationIds.length} translations`, ids: translationIds });
         return;
       } else if (type === 'delete-missing') {
@@ -102,15 +106,15 @@ MANAGE.post(
         const translationsSnapshot = await findTranslations(spaceId).get();
         const translationIds = translationsSnapshot.docs.filter(it => values[it.id] === undefined).map(it => it.id);
         if (translationIds.length === 0) {
-          logger.info('No translations to delete');
+          logger.info('[V1:Translations:update] No translations to delete');
           res.status(200).send({ message: 'No translations to delete' });
           return;
         }
         if (dryRun) {
-          logger.info(`[DryRun] Would delete ${translationIds.length} missing translations`, translationIds);
+          logger.info(`[V1:Translations:update] [DryRun] Would delete ${translationIds.length} missing translations`, translationIds);
           res
             .status(200)
-            .send({ message: `[DryRun] Would delete ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
+            .send({ message: `[V1:Translations:update] [DryRun] Would delete ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
           return;
         }
         const bulk = firestoreService.bulkWriter();
@@ -119,12 +123,12 @@ MANAGE.post(
           bulk.delete(ref);
         });
         await bulk.close();
-        logger.info(`Delete ${translationIds.length} missing translations`, translationIds);
+        logger.info(`[V1:Translations:update] Delete ${translationIds.length} missing translations`, translationIds);
         res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });
         return;
       }
     }
-    logger.error('Bad request body', body.error);
+    logger.error('[V1:Translations:update] Bad request body', body.error);
     res.status(400).send(new HttpsError('invalid-argument', 'Bad request body', body.error));
   }
 );

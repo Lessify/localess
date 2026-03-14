@@ -24,13 +24,13 @@ import {
   resolveLinks,
   resolveReferences,
   spaceContentCachePath,
-  translationLocaleCachePath,
   spaceTranslationCachePath,
+  translationLocaleCachePath,
 } from '../services';
 import {
+  RequestWithToken,
   requireContentPermissions,
   requireTokenPermissions,
-  RequestWithToken,
   requireTranslationPermissions,
 } from './middleware/query-auth.middleware';
 
@@ -38,8 +38,8 @@ import {
 export const CDN = Router();
 
 CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermissions(), async (req: RequestWithToken, res) => {
-  logger.info('v1 spaces translations params : ' + JSON.stringify(req.params));
-  logger.info('v1 spaces translations query : ' + JSON.stringify(req.query));
+  logger.info('[V1:Translations] params : ' + JSON.stringify(req.params));
+  logger.info('[V1:Translations] query : ' + JSON.stringify(req.query));
   const { spaceId, locale } = req.params;
   const { cv, version } = req.query;
   const token = req.tokenId;
@@ -57,7 +57,7 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
   const [exists] = await bucket.file(cachePath).exists();
   if (exists) {
     const [metadata] = await bucket.file(cachePath).getMetadata();
-    logger.info('v1 spaces translations cache meta : ' + JSON.stringify(metadata));
+    logger.info('[V1:Translations] cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`;
       if (version) {
@@ -66,7 +66,7 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
       if (token) {
         url += `&token=${token}`;
       }
-      logger.info(`v1 spaces translate redirect to => ${url}`);
+      logger.info(`[V1:Translations] redirect to => ${url}`);
       res.redirect(url);
       return;
     } else {
@@ -99,8 +99,8 @@ CDN.get(
   '/api/v1/spaces/:spaceId/links',
   requireTokenPermissions([TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
-    logger.info('v1 spaces links params: ' + JSON.stringify(req.params));
-    logger.info('v1 spaces links query: ' + JSON.stringify(req.query));
+    logger.info('[V1:Links] params: ' + JSON.stringify(req.params));
+    logger.info('[V1:Links] query: ' + JSON.stringify(req.query));
     const { spaceId } = req.params;
     const { kind, parentSlug, excludeChildren, cv } = req.query;
     const token = req.tokenId;
@@ -118,7 +118,7 @@ CDN.get(
     const [exists] = await bucket.file(cachePath).exists();
     if (exists) {
       const [metadata] = await bucket.file(cachePath).getMetadata();
-      logger.info('v1 spaces links cache meta : ' + JSON.stringify(metadata));
+      logger.info('[V1:Links] cache meta : ' + JSON.stringify(metadata));
       if (cv === undefined || cv != metadata.generation) {
         let url = `/api/v1/spaces/${spaceId}/links?cv=${metadata.generation}`;
         if (parentSlug !== undefined) {
@@ -192,8 +192,8 @@ CDN.get(
 );
 
 CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermissions(), async (req: RequestWithToken, res) => {
-  logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
-  logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
+  logger.info('[V1:ContentBySlug] params: ' + JSON.stringify(req.params));
+  logger.info('[V1:ContentBySlug] query: ' + JSON.stringify(req.query));
   const { spaceId } = req.params;
   const { cv, locale, version, resolveReference, resolveLink } = req.query;
   const token = req.tokenId;
@@ -212,7 +212,6 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
   }
 
   const contentsSnapshot = await findContentByFullSlug(spaceId, fullSlug).get();
-  // logger.info('v1 spaces contents', contentsSnapshot.size);
   if (contentsSnapshot.empty) {
     // No records in database
     res.status(404).send(new HttpsError('not-found', 'Slug not found'));
@@ -222,11 +221,10 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
   }
   const cacheCheckPath = spaceContentCachePath(spaceId);
   const cacheCheckFile = bucket.file(cacheCheckPath);
-  logger.info('v1 spaces content cachePath: ' + cacheCheckPath);
+  logger.info('[V1:ContentBySlug] cachePath: ' + cacheCheckPath);
   const [exists] = await cacheCheckFile.exists();
   if (exists) {
     const [metadata] = await cacheCheckFile.getMetadata();
-    // logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
     if (cv === undefined || cv != metadata.generation) {
       let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?cv=${metadata.generation}`;
       if (locale) {
@@ -244,40 +242,40 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
       if (resolveLink) {
         url += `&resolveLink=${resolveLink}`;
       }
-      logger.info(`v1 spaces content redirect to => ${url}`);
+      logger.info(`[V1:ContentBySlug] redirect to => ${url}`);
       res.redirect(url);
       return;
     } else {
       const space = spaceSnapshot.data() as Space;
       const actualLocale = identifySpaceLocale(space, locale as string | undefined);
-      logger.info(`v1 spaces content slug locale identified as => ${actualLocale}`);
+      logger.info(`[V1:ContentBySlug] locale identified as => ${actualLocale}`);
       const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
-      bucket
-        .file(filePath)
-        .download()
-        .then(async content => {
-          const contentData: ContentDocumentStorage = JSON.parse(content.toString());
-          const { links, references, ...rest } = contentData;
-          const response: ContentDocumentApi = { ...rest };
-          if (resolveLink === 'true') {
-            logger.info(`v1 spaces content id resolve links => ${links}`);
-            response.links = await resolveLinks(spaceId, contentData);
-          }
-          if (resolveReference === 'true') {
-            logger.info(`v1 spaces content slug resolve refs => ${references}`);
-            response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
-          }
-          res
-            .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-            .contentType('application/json; charset=utf-8')
-            .send(response);
-        })
-        .catch(() => {
-          res
-            .status(404)
-            .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-            .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
-        });
+      try {
+        const content = await bucket.file(filePath).download();
+        const contentData: ContentDocumentStorage = JSON.parse(content.toString());
+        const { links, references, ...rest } = contentData;
+        const response: ContentDocumentApi = { ...rest };
+        if (resolveLink === 'true') {
+          logger.info(`[V1:ContentBySlug] resolve links => ${JSON.stringify(links)}`);
+          response.links = await resolveLinks(spaceId, contentData);
+        }
+        if (resolveReference === 'true') {
+          logger.info(`[V1:ContentBySlug] resolve refs => ${JSON.stringify(references)}`);
+          response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
+        }
+        res
+          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+          .contentType('application/json; charset=utf-8')
+          .send(response);
+        return;
+      } catch (e) {
+        logger.error('[V1:ContentBySlug]', e);
+        res
+          .status(404)
+          .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+          .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
+        return;
+      }
     }
   } else {
     res
@@ -289,15 +287,15 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
 });
 
 CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions(), async (req: RequestWithToken, res) => {
-  logger.info('v1 spaces content params: ' + JSON.stringify(req.params));
-  logger.info('v1 spaces content query: ' + JSON.stringify(req.query));
+  logger.info('[V1:ContentById] params: ' + JSON.stringify(req.params));
+  logger.info('[V1:ContentById] query: ' + JSON.stringify(req.query));
   const { spaceId, contentId } = req.params;
   const { cv, locale, version, resolveReference, resolveLink } = req.query;
   const token = req.tokenId;
 
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (!spaceSnapshot.exists) {
-    logger.info('v1 spaces content Space not exist: ' + spaceId);
+    logger.info('[V1:ContentById] Space not exist: ' + spaceId);
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -307,7 +305,7 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
 
   const cacheCheckPath = spaceContentCachePath(spaceId);
   const cacheCheckFile = bucket.file(cacheCheckPath);
-  logger.info('v1 spaces content cachePath: ' + cacheCheckPath);
+  logger.info('[V1:ContentById] cachePath: ' + cacheCheckPath);
   const [exists] = await cacheCheckFile.exists();
   if (exists) {
     const [metadata] = await cacheCheckFile.getMetadata();
@@ -329,40 +327,40 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
       if (resolveLink) {
         url += `&resolveLink=${resolveLink}`;
       }
-      logger.info(`v1 spaces content redirect to => ${url}`);
+      logger.info(`[V1:ContentById] redirect to => ${url}`);
       res.redirect(url);
       return;
     } else {
       const space = spaceSnapshot.data() as Space;
       const actualLocale = identifySpaceLocale(space, locale as string | undefined);
-      logger.info(`v1 spaces content id locale identified as => ${actualLocale}`);
+      logger.info(`[V1:ContentById] locale identified as => ${actualLocale}`);
       const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
-      bucket
-        .file(filePath)
-        .download()
-        .then(async content => {
-          const contentData: ContentDocumentStorage = JSON.parse(content.toString());
-          const { links, references, ...rest } = contentData;
-          const response: ContentDocumentApi = { ...rest };
-          if (resolveLink === 'true') {
-            logger.info(`v1 spaces content id resolve links => ${links}`);
-            response.links = await resolveLinks(spaceId, contentData);
-          }
-          if (resolveReference === 'true') {
-            logger.info(`v1 spaces content id resolve refs => ${references}`);
-            response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
-          }
-          res
-            .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-            .contentType('application/json; charset=utf-8')
-            .send(response);
-        })
-        .catch(() => {
-          res
-            .status(404)
-            .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-            .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
-        });
+      try {
+        const content = await bucket.file(filePath).download()
+        const contentData: ContentDocumentStorage = JSON.parse(content.toString());
+        const { links, references, ...rest } = contentData;
+        const response: ContentDocumentApi = { ...rest };
+        if (resolveLink === 'true') {
+          logger.info(`[V1:ContentById] resolve links => ${JSON.stringify(links)}`);
+          response.links = await resolveLinks(spaceId, contentData);
+        }
+        if (resolveReference === 'true') {
+          logger.info(`[V1:ContentById] resolve refs => ${JSON.stringify(references)}`);
+          response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
+        }
+        res
+          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+          .contentType('application/json; charset=utf-8')
+          .send(response);
+        return;
+      } catch (e) {
+        logger.error('[V1:ContentById]', e);
+        res
+          .status(404)
+          .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+          .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
+        return;
+      }
     }
   } else {
     res
@@ -374,8 +372,8 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
 });
 
 CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
-  logger.info('v1 spaces asset params: ' + JSON.stringify(req.params));
-  logger.info('v1 spaces asset query: ' + JSON.stringify(req.query));
+  logger.info('[V1:AssetById] params: ' + JSON.stringify(req.params));
+  logger.info('[V1:AssetById] query: ' + JSON.stringify(req.query));
   const { spaceId, assetId } = req.params;
   const { w: width, download, thumbnail } = req.query;
 
@@ -383,7 +381,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   const [exists] = await assetFile.exists();
   const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
   let overwriteType: string | undefined;
-  logger.info(`v1 spaces asset: ${exists} & ${assetSnapshot.exists}`);
+  logger.info(`[V1:AssetById] asset: ${exists} & ${assetSnapshot.exists}`);
   if (exists && assetSnapshot.exists) {
     const asset = assetSnapshot.data() as AssetFile;
     const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
