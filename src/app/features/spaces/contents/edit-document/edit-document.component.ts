@@ -403,7 +403,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   openApiV1InNewTab(locale: string, token: string, version?: 'draft'): void {
     const url = new URL(`${location.origin}/api/v1/spaces/${this.spaceId()}/contents/${this.contentId()}`);
-    url.searchParams.set('locale', locale);
+    if (locale !== CONTENT_DEFAULT_LOCALE.id) {
+      url.searchParams.set('locale', locale);
+    }
     if (version) {
       url.searchParams.set('version', version);
     }
