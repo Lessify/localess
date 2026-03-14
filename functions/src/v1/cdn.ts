@@ -255,11 +255,11 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
         const contentData: ContentDocumentStorage = JSON.parse(content.toString());
         const { links, references, ...rest } = contentData;
         const response: ContentDocumentApi = { ...rest };
-        if (resolveLink === 'true') {
+        if (resolveLink === 'true' && links && links.length > 0) {
           logger.info(`[V1:ContentBySlug] resolve links => ${JSON.stringify(links)}`);
           response.links = await resolveLinks(spaceId, contentData);
         }
-        if (resolveReference === 'true') {
+        if (resolveReference === 'true' && references && references.length > 0) {
           logger.info(`[V1:ContentBySlug] resolve refs => ${JSON.stringify(references)}`);
           response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
         }
@@ -340,11 +340,11 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
         const contentData: ContentDocumentStorage = JSON.parse(content.toString());
         const { links, references, ...rest } = contentData;
         const response: ContentDocumentApi = { ...rest };
-        if (resolveLink === 'true') {
+        if (resolveLink === 'true' && links && links.length > 0) {
           logger.info(`[V1:ContentById] resolve links => ${JSON.stringify(links)}`);
           response.links = await resolveLinks(spaceId, contentData);
         }
-        if (resolveReference === 'true') {
+        if (resolveReference === 'true' && references && references.length > 0) {
           logger.info(`[V1:ContentById] resolve refs => ${JSON.stringify(references)}`);
           response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
         }
