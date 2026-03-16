@@ -255,8 +255,8 @@
     } @else {
       <div class="flex flex-row flex-wrap gap-4 pb-2">
         @for (item of dataSource.connect() | async; track item.id) {
-          <hlm-card class="max-w-60 min-w-48 flex-1 cursor-pointer overflow-hidden pt-0" (click)="onAssetSelect(item)">
-            <div class="border-b">
+          <hlm-card class="max-w-60 min-w-48 flex-1 overflow-hidden pt-0">
+            <div class="cursor-pointer border-b" aria-hidden="true" (click)="onAssetSelect(item)" (keydown)="onAssetSelect(item)">
               @if (item.kind === 'FILE' && item.inProgress) {
                 <div class="flex aspect-square w-full flex-col place-items-center justify-center">
                   <hlm-spinner />
