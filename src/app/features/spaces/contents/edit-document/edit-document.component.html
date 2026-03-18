@@ -116,7 +116,8 @@
         }
       </div>
     }
-    @let publishedAt = documentPublishedAt(); @let updatedAt = documentUpdatedAt();
+    @let publishedAt = documentPublishedAt();
+    @let updatedAt = documentUpdatedAt();
     @if (publishedAt === undefined) {
       <ll-status mode="offline" matTooltip="Not published" />
     } @else if (publishedAt > updatedAt) {
@@ -193,42 +194,37 @@
         <div id="browser" class="browser flex h-full flex-col overflow-hidden rounded-t-xl border">
           @if (selectedEnvironment(); as environment) {
             <div id="browser-toolbar" class="flex flex-wrap items-center gap-2 border-b p-2">
-              <button hlmBtn size="icon" variant="ghost" hlmTooltip="Reload" (click)="reloadEnvironment()">
+              <button hlmBtn size="icon" variant="outline" hlmTooltip="Reload" (click)="reloadEnvironment()">
                 <ng-icon hlm size="sm" name="lucideRefreshCcw" />
               </button>
               <div class="flex-grow">
                 <div class="w-full min-w-80" hlmButtonGroup>
-                  <div hlmButtonGroupText>
-                    <label hlmLabel for="url">{{ environment.name }}</label>
-                  </div>
-                  <div hlmInputGroup>
-                    <input
-                      class="truncate"
-                      hlmInputGroupInput
-                      readonly
-                      id="url"
-                      placeholder="Select Environment"
-                      [value]="environment.url"
-                      [title]="environment.url" />
-                    <div hlmInputGroupAddon align="inline-end">
-                      <button hlmBtn size="icon" variant="link" [hlmDropdownMenuTrigger]="envMenu">
-                        <ng-icon hlm size="sm" name="lucideChevronDown" />
-                      </button>
-                      <ng-template #envMenu>
-                        <hlm-dropdown-menu>
-                          @for (env of availableEnvironments(); track env.name) {
-                            <button
-                              hlmDropdownMenuRadio
-                              (click)="selectedEnvironment.set(env)"
-                              [checked]="env.name === selectedEnvironment()?.name">
-                              <hlm-dropdown-menu-radio-indicator />
-                              <span>{{ env.name }} | {{ env.url }}</span>
-                            </button>
-                          }
-                        </hlm-dropdown-menu>
-                      </ng-template>
-                    </div>
-                  </div>
+                  <button hlmBtn variant="outline" [hlmDropdownMenuTrigger]="envMenu">
+                    {{ environment.name }}
+                    <ng-icon hlm size="sm" name="lucideChevronDown" />
+                  </button>
+                  <ng-template #envMenu>
+                    <hlm-dropdown-menu class="text-nowrap">
+                      @for (env of availableEnvironments(); track env.name) {
+                        <button
+                          hlmDropdownMenuRadio
+                          (click)="selectedEnvironment.set(env)"
+                          [checked]="env.name === selectedEnvironment()?.name"
+                          [hlmTooltip]="env.url">
+                          <hlm-dropdown-menu-checkbox-indicator />
+                          <span>{{ env.name }}</span>
+                        </button>
+                      }
+                    </hlm-dropdown-menu>
+                  </ng-template>
+                  <input
+                    class="truncate"
+                    hlmInput
+                    readonly
+                    id="url"
+                    placeholder="Select Environment"
+                    [value]="environment.url"
+                    [title]="environment.url" />
                 </div>
               </div>
               <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorSize()">

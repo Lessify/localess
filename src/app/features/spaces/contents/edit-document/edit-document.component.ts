@@ -70,8 +70,6 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
-import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmResizableImports } from '@spartan-ng/helm/resizable';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
@@ -98,6 +96,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { PlatformService } from '@shared/services/platform.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -134,11 +133,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     HlmSheetImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
-    HlmInputGroupImports,
     HlmButtonGroupImports,
-    HlmLabelImports,
     HlmAccordionImports,
     HlmKbdImports,
+    HlmInputImports,
   ],
   providers: [
     provideIcons({
