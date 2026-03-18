@@ -235,18 +235,22 @@ export async function resolveReferences(
   const resolvedReferences: Record<string, ContentDocumentApi> = {};
   await Promise.all(
     content.references.map(async refId => {
-      try {
-        const refCachePath = contentLocaleCachePath(spaceId, refId, locale, version);
-        const [exists] = await bucket.file(refCachePath).exists();
+      if (refId) {
+        try {
+          const refCachePath = contentLocaleCachePath(spaceId, refId, locale, version);
+          const [exists] = await bucket.file(refCachePath).exists();
 
-        if (exists) {
-          const [fileContent] = await bucket.file(refCachePath).download();
-          resolvedReferences[refId] = JSON.parse(fileContent.toString());
-        } else {
-          logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found at ${refCachePath}`);
+          if (exists) {
+            const [fileContent] = await bucket.file(refCachePath).download();
+            resolvedReferences[refId] = JSON.parse(fileContent.toString());
+          } else {
+            logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found at ${refCachePath}`);
+          }
+        } catch (error) {
+          logger.error(`[ReferenceResolver::resolveReferences] Failed to resolve reference ${refId}:`, error);
         }
-      } catch (error) {
-        logger.error(`[ReferenceResolver::resolveReferences] Failed to resolve reference ${refId}:`, error);
+      } else {
+        logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found.`);
       }
     })
   );
