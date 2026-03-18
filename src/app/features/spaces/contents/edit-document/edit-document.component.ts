@@ -288,6 +288,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.selectedDocumentData = this.documentData;
     }
     this.generateDocumentIdsTree();
+    const availableEnvironments = this.availableEnvironments();
+    const storedEnvironment = this.spaceStore.environment();
+    if (storedEnvironment) {
+      const environment = availableEnvironments.find(it => it.name === storedEnvironment.name) ?? availableEnvironments[0];
+      this.selectedEnvironment.set(environment);
+    }
   }
 
   get isFormDirty(): boolean {
@@ -656,6 +662,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     const environment = this.selectedEnvironment();
     this.selectedEnvironment.set(undefined);
     this.selectedEnvironment.set(environment);
+  }
+
+  protected onEnvironmentSelection(environment: SpaceEnvironment): void {
+    this.selectedEnvironment.set(environment);
+    this.spaceStore.changeEnvironment(environment);
   }
 
   copiedSlug() {
