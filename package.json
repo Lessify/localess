@@ -2,7 +2,7 @@
   "name": "localess",
   "version": "3.0.1",
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "scripts": {
     "ng": "ng",
@@ -101,7 +101,7 @@
     "@tailwindcss/postcss": "^4.2.1",
     "@types/file-saver-es": "^2.0.3",
     "@types/jasmine": "~3.10.7",
-    "@types/node": "^22.18.3",
+    "@types/node": "^24",
     "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",
