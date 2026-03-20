@@ -250,6 +250,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   documentData: ContentData = { _id: '', _schema: '', schema: '' };
   selectedDocumentData: ContentData = { _id: '', _schema: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
+  private savedDocumentData = signal<ContentData | undefined>(undefined);
 
   contentErrors: ContentError[] = [];
 
@@ -286,6 +287,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         this.documentData = ObjectUtils.clone(document.data);
       }
       this.selectedDocumentData = this.documentData;
+      this.savedDocumentData.set(ObjectUtils.clone(this.documentData));
     }
     this.generateDocumentIdsTree();
     const availableEnvironments = this.availableEnvironments();
@@ -297,12 +299,16 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   get isFormDirty(): boolean {
+    const saved = this.savedDocumentData();
+    if (saved !== undefined) {
+      return !ObjectUtils.isEqual(this.contentHelperService.clone(saved), this.contentHelperService.clone(this.documentData));
+    }
+
     const data = this.document().data;
     if (data === undefined) {
       return false;
     }
 
-    // Normalize both original and current data for comparison
     const originalData = typeof data === 'string' ? JSON.parse(data) : data;
     const normalizedOriginal = this.contentHelperService.clone(originalData);
     const normalizedCurrent = this.contentHelperService.clone(this.documentData);
@@ -383,6 +389,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           this.notificationService.success('Content has been saved in draft.');
           this.sendEventToApp({ type: 'save' });
           this.documentUpdatedAt.set(Date.now() / 100);
+          this.savedDocumentData.set(ObjectUtils.clone(this.documentData));
         },
         error: () => {
           this.notificationService.error('Content can not be saved.');
