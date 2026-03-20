@@ -19,18 +19,18 @@ steps:
           translate.googleapis.com \
           cloudbilling.googleapis.com \
           --project=$PROJECT_ID
-  - name: 'node:22'
+  - name: 'node:24'
     id: 'install-deps'
     entrypoint: npm
     args: [ 'install' ]
-  - name: 'node:22'
+  - name: 'node:24'
     id: 'install-functions-deps'
     entrypoint: npm
     args: [ '--prefix', 'functions', 'install', '--platform=linuxmusl' ]
   - name: ghcr.io/lessify/firebase:edge
     id: 'Pull Firebase Apps SDK Config'
     args: [ 'apps:sdkconfig', '--project=$PROJECT_ID', 'web', '--out=src/environments/firebase-config-tmp.json' ]
-  - name: 'node:22'
+  - name: 'node:24'
     id: 'Copy Firebase Apps SDK Config'
     args: [ 'mv', '-f', 'src/environments/firebase-config-tmp.json', 'src/environments/firebase-config.json' ]
   - name: 'node:22'
