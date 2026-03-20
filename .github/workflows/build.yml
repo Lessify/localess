@@ -1,4 +1,4 @@
-name: Run Unit Tests
+name: Build and Lint
 
 on:
   push:
