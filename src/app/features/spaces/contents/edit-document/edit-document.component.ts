@@ -221,10 +221,31 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
   });
   // Locales
-  availableLocales = computed<Locale[]>(() => [CONTENT_DEFAULT_LOCALE, ...(this.selectedSpace()?.locales || [])]);
+  availableLocales = computed<Locale[]>(() => {
+    const space = this.selectedSpace();
+    if (space) {
+      const { locales, localeFallback } = space;
+      return locales.map(locale => {
+        if (locale.id === localeFallback.id) {
+          return {
+            id: CONTENT_DEFAULT_LOCALE.id,
+            name: `${locale.name} (${CONTENT_DEFAULT_LOCALE.name})`,
+          };
+        }
+        return locale;
+      });
+    }
+    return [];
+  });
   availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
 
-  selectedLocale = signal(CONTENT_DEFAULT_LOCALE);
+  selectedLocale = linkedSignal<Locale>(() => {
+    const locales = this.availableLocales();
+    if (locales.length > 0) {
+      return locales[0];
+    }
+    return CONTENT_DEFAULT_LOCALE;
+  });
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);
   clickSchemaField = signal<string | undefined>(undefined);
