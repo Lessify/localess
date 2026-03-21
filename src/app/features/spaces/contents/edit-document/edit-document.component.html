@@ -116,15 +116,7 @@
         }
       </div>
     }
-    @let publishedAt = documentPublishedAt();
-    @let updatedAt = documentUpdatedAt();
-    @if (publishedAt === undefined) {
-      <ll-status mode="offline" matTooltip="Not published" />
-    } @else if (publishedAt > updatedAt) {
-      <ll-status mode="online" matTooltip="Published" />
-    } @else if (publishedAt < updatedAt) {
-      <ll-status mode="away" matTooltip="Draft" />
-    }
+    <ll-document-status [updatedAt]="documentUpdatedAt()" [publishedAt]="documentPublishedAt()" />
 
     <button hlmBtn size="icon" variant="ghost" hlmTooltip="Hisotry" (click)="showHistory.set(!showHistory())">
       <ng-icon hlm size="sm" name="lucideHistory" />

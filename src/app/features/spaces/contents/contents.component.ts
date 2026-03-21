@@ -29,7 +29,6 @@ import {
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { StatusComponent } from '@shared/components/status';
 import {
   Content,
   ContentDocument,
@@ -63,6 +62,7 @@ import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
 import { TokenPermission } from '@shared/models/token.model';
 import { ClipboardModule } from '@angular/cdk/clipboard';
+import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
 @Component({
   selector: 'll-contents',
@@ -75,7 +75,6 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
     ClipboardModule,
     MatTableModule,
     MatSortModule,
-    StatusComponent,
     MatPaginatorModule,
     HlmButtonImports,
     HlmIconImports,
@@ -83,6 +82,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
     HlmBreadCrumbImports,
     HlmProgressImports,
     HlmTooltipImports,
+    DocumentStatusComponent,
   ],
   providers: [
     provideIcons({

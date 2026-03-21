@@ -16,13 +16,7 @@
           @if (content && content.kind === 'DOCUMENT') {
             <div hlmItem variant="outline" role="listitem">
               <div hlmItemMedia>
-                @if (content.publishedAt === undefined) {
-                  <ll-status mode="offline" hlmTooltip="Not published" />
-                } @else if (content.publishedAt.seconds > content.updatedAt.seconds) {
-                  <ll-status mode="online" hlmTooltip="Published" />
-                } @else if (content.publishedAt.seconds < content.updatedAt.seconds) {
-                  <ll-status mode="away" hlmTooltip="Draft" />
-                }
+                <ll-document-status [updatedAt]="content.updatedAt.seconds" [publishedAt]="content.publishedAt?.seconds" />
               </div>
               <div hlmItemContent class="min-w-0 overflow-hidden">
                 <div hlmItemTitle class="line-clamp-1 w-full truncate">

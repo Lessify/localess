@@ -25,7 +25,6 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolderRoot } from '@ng-icons/lucide';
-import { StatusComponent } from '@shared/components/status';
 import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
 import { Schema, SchemaType } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
@@ -37,6 +36,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { BehaviorSubject, combineLatest } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ReferencesSelectDialogModel } from './references-select-dialog.model';
+import { DocumentStatusComponent } from '../document-status/document-status.component';
 
 @Component({
   selector: 'll-references-select-dialog',
@@ -48,7 +48,6 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
     MatTableModule,
     MatSortModule,
     MatCheckboxModule,
-    StatusComponent,
     MatTooltipModule,
     MatIconModule,
     CommonModule,
@@ -57,6 +56,7 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
     HlmBreadCrumbImports,
     HlmIconImports,
     HlmProgressImports,
+    DocumentStatusComponent,
   ],
   providers: [
     provideIcons({

@@ -77,13 +77,7 @@
       <mat-cell *matCellDef="let element">
         @switch (element.kind) {
           @case ('DOCUMENT') {
-            @if (element.publishedAt === undefined) {
-              <ll-status mode="offline" hlmTooltip="Not published" />
-            } @else if (element.publishedAt.seconds > element.updatedAt?.seconds) {
-              <ll-status mode="online" hlmTooltip="Published" />
-            } @else if (element.publishedAt.seconds < element.updatedAt?.seconds) {
-              <ll-status mode="away" hlmTooltip="Draft" />
-            }
+            <ll-document-status [updatedAt]="element.updatedAt?.seconds" [publishedAt]="element.publishedAt?.seconds" />
           }
           @case ('FOLDER') {
             <ng-icon hlm name="lucideFolder" />

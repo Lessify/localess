@@ -49,7 +49,6 @@ import {
   lucideWebhookOff,
 } from '@ng-icons/lucide';
 import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
-import { StatusComponent } from '@shared/components/status';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentHistory } from '@shared/models/content-history.model';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
@@ -97,6 +96,7 @@ import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { PlatformService } from '@shared/services/platform.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HlmInputImports } from '@spartan-ng/helm/input';
+import { DocumentStatusComponent } from '../shared/document-status/document-status.component';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -115,7 +115,6 @@ import { HlmInputImports } from '@spartan-ng/helm/input';
     MatBadgeModule,
     CanUserPerformPipe,
     CommonModule,
-    StatusComponent,
     MatDividerModule,
     MatSidenavModule,
     MatCardModule,
@@ -137,6 +136,7 @@ import { HlmInputImports } from '@spartan-ng/helm/input';
     HlmAccordionImports,
     HlmKbdImports,
     HlmInputImports,
+    DocumentStatusComponent,
   ],
   providers: [
     provideIcons({
