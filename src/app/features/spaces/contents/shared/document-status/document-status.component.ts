@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { provideIcons } from '@ng-icons/core';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { lucideCircleDot, lucideCircleDotDashed, lucideCircleSmall, lucideDot } from '@ng-icons/lucide';
+import { lucideCircleArrowUp, lucideCircleDotDashed, lucideCircleFadingArrowUp } from '@ng-icons/lucide';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({
@@ -15,10 +15,9 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   imports: [HlmIconImports, HlmTooltipImports],
   providers: [
     provideIcons({
-      lucideCircleDot,
       lucideCircleDotDashed,
-      lucideCircleSmall,
-      lucideDot,
+      lucideCircleArrowUp,
+      lucideCircleFadingArrowUp,
     }),
   ],
 })
@@ -44,11 +43,11 @@ export class DocumentStatusComponent {
     const publishedAt = this.publishedAt();
     if (publishedAt) {
       if (publishedAt > updatedAt) {
-        return 'lucideCircleDot';
+        return 'lucideCircleArrowUp';
       } else if (publishedAt < updatedAt) {
-        return 'lucideCircleDotDashed';
+        return 'lucideCircleFadingArrowUp';
       }
     }
-    return 'lucideDot';
+    return 'lucideCircleDotDashed';
   });
 }
