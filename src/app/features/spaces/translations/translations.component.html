@@ -227,19 +227,9 @@
               <div hlmItemContent>
                 <div hlmItemTitle class="break-all">
                   @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
-                    <hlm-spinner class="size-6" />
+                    <hlm-spinner class="size-6 items-center" />
                   } @else {
-                    @switch (identifyTranslationStatus(translation)) {
-                      @case ('TRANSLATION_TRANSLATED') {
-                        <ll-status mode="online" hlmTooltip="Translated" />
-                      }
-                      @case ('TRANSLATION_PARTIALLY_TRANSLATED') {
-                        <ll-status mode="away" hlmTooltip="Partially Translated" />
-                      }
-                      @case ('TRANSLATION_UNTRANSLATED') {
-                        <ll-status mode="offline" hlmTooltip="Untranslated" />
-                      }
-                    }
+                    <ll-translation-status [status]="identifyTranslationStatus(translation)" />
                   }
                   {{ translation.id }}
                 </div>
@@ -279,17 +269,7 @@
                     @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
                       <hlm-spinner class="size-4" />
                     } @else {
-                      @switch (identifyTranslationStatus(translation)) {
-                        @case ('TRANSLATION_TRANSLATED') {
-                          <ll-status mode="online" hlmTooltip="Translated" />
-                        }
-                        @case ('TRANSLATION_PARTIALLY_TRANSLATED') {
-                          <ll-status mode="away" hlmTooltip="Partially Translated" />
-                        }
-                        @case ('TRANSLATION_UNTRANSLATED') {
-                          <ll-status mode="offline" hlmTooltip="Untranslated" />
-                        }
-                      }
+                      <ll-translation-status [status]="identifyTranslationStatus(translation)" />
                     }
                     <div>{{ node.name }}</div>
                   </div>

@@ -48,7 +48,6 @@ import {
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { StatusComponent } from '@shared/components/status';
 import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { TranslationHistory } from '@shared/models/translation-history.model';
 import {
@@ -114,6 +113,7 @@ import {
 } from '@shared/components/translate-locale-dialog';
 import { PlatformService } from '@shared/services/platform.service';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
+import { TranslationStatusComponent } from './shared/components/translation-status/translation-status.component';
 
 @Component({
   selector: 'll-translations',
@@ -128,7 +128,7 @@ import { HlmKbdImports } from '@spartan-ng/helm/kbd';
     CanUserPerformPipe,
     ReactiveFormsModule,
     ScrollingModule,
-    StatusComponent,
+    TranslationStatusComponent,
     TranslationStringViewComponent,
     TranslationPluralViewComponent,
     TranslationArrayViewComponent,
