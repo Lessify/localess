@@ -97,6 +97,7 @@ import { PlatformService } from '@shared/services/platform.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { DocumentStatusComponent } from '../shared/document-status/document-status.component';
+import { HlmItemImports } from '@spartan-ng/helm/item';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -134,6 +135,7 @@ import { DocumentStatusComponent } from '../shared/document-status/document-stat
     NgScrollbarModule,
     HlmButtonGroupImports,
     HlmAccordionImports,
+    HlmItemImports,
     HlmKbdImports,
     HlmInputImports,
     DocumentStatusComponent,

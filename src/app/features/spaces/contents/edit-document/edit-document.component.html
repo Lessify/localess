@@ -356,123 +356,113 @@
   }
 </div>
 <hlm-sheet side="right" [state]="showHistory() ? 'open' : 'closed'" (closed)="showHistory.set(false)">
-  <hlm-sheet-content *hlmSheetPortal="let ctx">
+  <hlm-sheet-content *hlmSheetPortal="let ctx" class="sm:max-w-md">
     <hlm-sheet-header>
       <h3 hlmSheetTitle>History</h3>
     </hlm-sheet-header>
     <ng-scrollbar hlm>
       @if (showHistory()) {
-        <div class="m-4 flow-root">
-          <ul role="list">
-            @for (item of history$ | async; track item.id; let isLast = $last) {
-              <li>
-                <div class="relative pb-5">
-                  <div class="relative flex space-x-2">
-                    @switch (item.type) {
-                      @case ('PUBLISHED') {
-                        <div class="px-2">
-                          <ng-icon hlm size="sm" name="lucideUpload" />
-                        </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
-                          <div>
-                            <p class="text-sm">
-                              Published by
-                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
-                            </p>
-                          </div>
-                          <div class="text-right text-sm whitespace-nowrap">
-                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                          </div>
-                        </div>
-                      }
-                      @case ('UNPUBLISHED') {
-                        <div class="px-2">
-                          <ng-icon hlm size="sm" name="lucideWebhookOff" />
-                        </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
-                          <div>
-                            <p class="text-sm">
-                              Unpublished by
-                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
-                            </p>
-                          </div>
-                          <div class="text-right text-sm whitespace-nowrap">
-                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                          </div>
-                        </div>
-                      }
-                      @case ('CREATE') {
-                        <div class="px-2">
-                          <ng-icon hlm size="sm" name="lucidePlus" />
-                        </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
-                          <div>
-                            <p class="text-sm">
-                              Created with name <span class="font-medium break-all">{{ item.cName }}</span> and slug
-                              <span class="font-medium break-all">{{ item.cSlug }}</span> by
-                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
-                            </p>
-                          </div>
-                          <div class="text-right text-sm whitespace-nowrap">
-                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                          </div>
-                        </div>
-                      }
-                      @case ('UPDATE') {
-                        <div class="px-2">
-                          <ng-icon hlm size="sm" name="lucidePencil" />
-                        </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
-                          <div>
-                            <p class="text-sm">
-                              Updated with
-                              @if (item.cName) {
-                                name <span class="font-medium break-all">{{ item.cName }}</span>
-                              }
-                              @if (item.cSlug) {
-                                @if (item.cName) {
-                                  and
-                                }
-                                slug <span class="font-medium break-all">{{ item.cSlug }}</span>
-                              }
-                              @if (item.cParentSlug) {
-                                parent slug <span class="font-medium break-all">{{ item.cParentSlug }}</span>
-                              } @else if (item.cData) {
-                                content
-                              } @else {
-                                nothing
-                              }
-                              by
-                              <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
-                            </p>
-                          </div>
-                          <div class="text-right text-sm whitespace-nowrap">
-                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                          </div>
-                        </div>
-                      }
-                      @default {
-                        <div class="px-2">
-                          <ng-icon hlm size="sm" name="lucidePencil" />
-                        </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4">
-                          <div>
-                            <p class="text-sm">Unknown</p> by
-                            <span class="font-medium" [matTooltip]="item.email || 'Unknown'"> {{ item.name || 'Unknown' }} </span>
-                          </div>
-                          <div class="text-right text-sm whitespace-nowrap">
-                            <time>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</time>
-                          </div>
-                        </div>
-                      }
-                    }
+        <div hlmItemGroup>
+          @for (item of history$ | async; track item.id) {
+            @switch (item.type) {
+              @case ('PUBLISHED') {
+                <div hlmItem class="p-2">
+                  <div hlmItemMedia variant="icon">
+                    <ng-icon hlm name="lucideUpload" size="sm" />
+                  </div>
+                  <div hlmItemContent>
+                    <div hlmItemTitle>{{ item.type }}</div>
+                    <p hlmItemDescription class="line-clamp-4 text-wrap"> Published by {{ item.name || 'Unknown' }} </p>
+                  </div>
+                  <div hlmItemContent class="flex-none text-center">
+                    <p hlmItemDescription>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</p>
                   </div>
                 </div>
-              </li>
-            } @empty {
-              No Records found
+              }
+              @case ('UNPUBLISHED') {
+                <div hlmItem class="p-2">
+                  <div hlmItemMedia variant="icon">
+                    <ng-icon hlm name="lucideWebhookOff" size="sm" />
+                  </div>
+                  <div hlmItemContent>
+                    <div hlmItemTitle>{{ item.type }}</div>
+                    <p hlmItemDescription class="line-clamp-4 text-wrap"> Unpublished by {{ item.name || 'Unknown' }} </p>
+                  </div>
+                  <div hlmItemContent class="flex-none text-center">
+                    <p hlmItemDescription>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</p>
+                  </div>
+                </div>
+              }
+              @case ('CREATE') {
+                <div hlmItem class="p-2">
+                  <div hlmItemMedia variant="icon">
+                    <ng-icon hlm name="lucidePlus" size="sm" />
+                  </div>
+                  <div hlmItemContent>
+                    <div hlmItemTitle>{{ item.type }}</div>
+                    <p hlmItemDescription class="line-clamp-4 text-wrap">
+                      Created with name
+                      <b class="break-all">{{ item.cName }}</b>
+                      and slug
+                      <b class="break-all">{{ item.cSlug }}</b>
+                      by {{ item.name || 'Unknown' }}
+                    </p>
+                  </div>
+                  <div hlmItemContent class="flex-none text-center">
+                    <p hlmItemDescription>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</p>
+                  </div>
+                </div>
+              }
+              @case ('UPDATE') {
+                <div hlmItem class="p-2">
+                  <div hlmItemMedia variant="icon">
+                    <ng-icon hlm name="lucidePencil" size="sm" />
+                  </div>
+                  <div hlmItemContent>
+                    <div hlmItemTitle>{{ item.type }}</div>
+                    <p hlmItemDescription class="line-clamp-4 text-wrap">
+                      Updated with
+                      @if (item.cName || item.cSlug) {
+                        @if (item.cName) {
+                          name <b class="break-all">{{ item.cName }}</b>
+                        }
+                        @if (item.cName && item.cSlug) {
+                          and
+                        }
+                        @if (item.cSlug) {
+                          slug <b class="break-all">{{ item.cSlug }}</b>
+                        }
+                      } @else if (item.cParentSlug) {
+                        parent slug <b class="break-all">{{ item.cParentSlug }}</b>
+                      } @else if (item.cData) {
+                        content
+                      } @else {
+                        nothing
+                      }
+                      by {{ item.name || 'Unknown' }}
+                    </p>
+                  </div>
+                  <div hlmItemContent class="flex-none text-center">
+                    <p hlmItemDescription>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</p>
+                  </div>
+                </div>
+              }
+              @default {
+                <div hlmItem class="p-2">
+                  <div hlmItemMedia variant="icon">
+                    <ng-icon hlm name="lucideCircleQuestionMark" size="sm" />
+                  </div>
+                  <div hlmItemContent>
+                    <div hlmItemTitle>Unknown</div>
+                    <p hlmItemDescription class="line-clamp-4 text-wrap"> Unknown by {{ item.name || 'Unknown' }}</p>
+                  </div>
+                  <div hlmItemContent class="flex-none text-center">
+                    <p hlmItemDescription>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</p>
+                  </div>
+                </div>
+              }
             }
-          </ul>
+          }
         </div>
       }
     </ng-scrollbar>
