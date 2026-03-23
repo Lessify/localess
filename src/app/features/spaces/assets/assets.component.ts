@@ -89,6 +89,9 @@ import { HlmCardImports } from '@spartan-ng/helm/card';
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:paste)': 'onPaste($event)',
+  },
   imports: [
     CanUserPerformPipe,
     CommonModule,
@@ -586,7 +589,7 @@ export class AssetsComponent implements OnInit {
     window.open(`/api/v1/spaces/${this.spaceId()}/assets/${element.id}?download`);
   }
 
-  filesDragAndDrop(event: File[]) {
+  filesUpload(event: File[]) {
     event.forEach(file => {
       this.fileUploadQueue.update(files => {
         files.push(file);
@@ -594,5 +597,28 @@ export class AssetsComponent implements OnInit {
       });
       this.fileUploadQueue$.next(file);
     });
+  }
+
+  onPaste(event: ClipboardEvent): void {
+    const clipboardData = event.clipboardData;
+    if (!clipboardData) return;
+
+    const files: File[] = [];
+
+    for (let i = 0; i < clipboardData.items.length; i++) {
+      console.log(event);
+      const item = clipboardData.items[i];
+      if (item.kind !== 'file') continue;
+      const file = item.getAsFile();
+      if (!file) continue;
+      // Screenshots have no filename — generate one from the mime type and timestamp
+      const namedFile = file.name ? file : new File([file], `paste-${Date.now()}.${file.type.split('/')[1] || 'bin'}`, { type: file.type });
+      files.push(namedFile);
+    }
+
+    if (files.length > 0) {
+      event.preventDefault();
+      this.filesUpload(files);
+    }
   }
 }

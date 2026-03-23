@@ -98,7 +98,7 @@
       }
     </ol>
   </nav>
-  <div llFileDragDrop (filesChanges)="filesDragAndDrop($event)">
+  <div llFileDragDrop (filesChanges)="filesUpload($event)">
     @if (settingsStore.assetLayout() === 'list') {
       <mat-table [dataSource]="dataSource" matSort>
         <ng-container matColumnDef="icon">
