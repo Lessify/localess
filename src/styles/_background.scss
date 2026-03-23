@@ -1,25 +1,8 @@
 .file-drag-and-drop-wrapper {
-  background-color: var(--mat-sys-primary-container) !important;
-  outline: var(--mat-sys-primary) solid 3px !important;
+  background-color: var(--primary-foreground) !important;
+  outline: var(--primary) solid 3px !important;
   opacity: 0.5;
 }
-
-
-//.file-drag-and-drop-wrapper::after {
-//  content: "Drop it here";
-//  position: absolute;
-//  white-space: pre;
-//  background-image: url("/assets/cloud_upload.svg");
-//  background-position: top;
-//  background-size: 100px;
-//  background-repeat: no-repeat;
-//  inset: 0;
-//  font-weight: bold;
-//  text-align: center;
-//  font-size: 30px;
-//  top: 30vh;
-//  //animation: bounce 2s ease infinite;
-//}
 
 @keyframes bounce {
   0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
