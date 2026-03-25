@@ -310,7 +310,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         this.documentData = ObjectUtils.clone(document.data);
       }
       this.selectedDocumentData = this.documentData;
-      this.savedDocumentData.set(ObjectUtils.clone(this.documentData));
+      this.savedDocumentData.set(this.contentHelperService.clone(this.documentData));
     }
     this.generateDocumentIdsTree();
     const availableEnvironments = this.availableEnvironments();
@@ -412,7 +412,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           this.notificationService.success('Content has been saved in draft.');
           this.sendEventToApp({ type: 'save' });
           this.documentUpdatedAt.set(Date.now() / 100);
-          this.savedDocumentData.set(ObjectUtils.clone(this.documentData));
+          this.savedDocumentData.set(this.contentHelperService.clone(this.documentData));
         },
         error: () => {
           this.notificationService.error('Content can not be saved.');
