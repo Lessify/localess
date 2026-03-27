@@ -20,12 +20,18 @@ import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputImports } from '@spartan-ng/helm/input';
+import { PlatformService } from '@shared/services/platform.service';
+import { HlmKbd } from '@spartan-ng/helm/kbd';
+import { HlmSpinner } from '@spartan-ng/helm/spinner';
 
 @Component({
   selector: 'll-space-settings-visual-editor',
   templateUrl: './visual-editor.component.html',
   styleUrls: ['./visual-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'captureKeyboard($event)',
+  },
   imports: [
     ReactiveFormsModule,
     DragDropModule,
@@ -37,6 +43,8 @@ import { HlmInputImports } from '@spartan-ng/helm/input';
     HlmTooltipImports,
     HlmFieldImports,
     HlmInputImports,
+    HlmKbd,
+    HlmSpinner,
   ],
   providers: [
     provideIcons({
@@ -48,13 +56,18 @@ import { HlmInputImports } from '@spartan-ng/helm/input';
   ],
 })
 export class VisualEditorComponent {
+  readonly platformService = inject(PlatformService);
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
   private readonly spaceService = inject(SpaceService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
 
+  //Loadings
   isLoading = signal(true);
+  isSaveLoading = signal(false);
+
+  // Stores
   spaceStore = inject(SpaceStore);
 
   // Form
@@ -99,6 +112,7 @@ export class VisualEditorComponent {
   }
 
   save(): void {
+    this.isSaveLoading.set(true);
     this.spaceService.updateEnvironments(this.spaceStore.selectedSpaceId()!, this.form.value.environments).subscribe({
       next: () => {
         this.notificationService.success('Space has been updated.');
@@ -106,6 +120,9 @@ export class VisualEditorComponent {
       error: (err: unknown) => {
         console.error(err);
         this.notificationService.error('Space can not be updated.');
+      },
+      complete: () => {
+        this.isSaveLoading.set(false);
       },
     });
   }
@@ -115,5 +132,13 @@ export class VisualEditorComponent {
     const tmp = this.environments.at(event.previousIndex);
     this.environments.removeAt(event.previousIndex);
     this.environments.insert(event.currentIndex, tmp);
+  }
+
+  captureKeyboard(event: KeyboardEvent): void {
+    // Ctrl + S to Save
+    if (this.platformService.isActionSave(event)) {
+      event.preventDefault();
+      this.save();
+    }
   }
 }

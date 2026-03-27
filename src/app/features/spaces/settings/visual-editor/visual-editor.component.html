@@ -3,9 +3,14 @@
     <ng-icon hlm size="sm" name="lucidePlus" />
     Add Environment
   </button>
-  <button hlmBtn [disabled]="!form.valid" (click)="save()">
-    <ng-icon hlm size="sm" name="lucideSave" />
+  <button hlmBtn [disabled]="!form.valid || isSaveLoading()" (click)="save()">
+    @if (isSaveLoading()) {
+      <hlm-spinner class="size-4" />
+    } @else {
+      <ng-icon hlm size="sm" name="lucideSave" />
+    }
     Save
+    <kbd hlmKbd>{{ platformService.actionSaveLabel }}</kbd>
   </button>
 </div>
 
