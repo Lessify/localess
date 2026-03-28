@@ -48,7 +48,7 @@ import {
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
-import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { TranslationHistory } from '@shared/models/translation-history.model';
 import {
   isLocaleStatus,
@@ -214,6 +214,23 @@ export class TranslationsComponent implements OnInit {
   $filterForm = toSignal(this.filterForm.valueChanges.pipe(debounceTime(500)));
 
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
+  // Locales
+  availableLocales = computed(() => {
+    const space = this.selectedSpace();
+    if (space) {
+      const { locales, localeFallback } = space;
+      return locales.map(locale => {
+        if (locale.id === localeFallback.id) {
+          return {
+            id: locale.id,
+            name: `${locale.name} (${CONTENT_DEFAULT_LOCALE.name})`,
+          };
+        }
+        return locale;
+      });
+    }
+    return [];
+  });
   showHistory = signal(false);
 
   // Translations
