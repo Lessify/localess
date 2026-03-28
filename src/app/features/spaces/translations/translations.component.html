@@ -85,7 +85,7 @@
         </hlm-dropdown-menu-group>
         <hlm-dropdown-menu-separator />
         <hlm-dropdown-menu-group>
-          @for (locale of space.locales; track locale.id) {
+          @for (locale of availableLocales(); track locale.id) {
             <button hlmDropdownMenuItem (click)="openPublishedV1InNewTab(locale.id)">
               <ng-icon hlm size="sm" name="lucideEarth" />
               <span>Published {{ locale.name }} JSON</span>
@@ -111,7 +111,7 @@
                   <hlm-select-value />
                 </hlm-select-trigger>
                 <hlm-select-content>
-                  @for (locale of space.locales; track locale.id) {
+                  @for (locale of availableLocales(); track locale.id) {
                     <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
                   }
                 </hlm-select-content>
@@ -302,7 +302,7 @@
                           <hlm-select-value />
                         </hlm-select-trigger>
                         <hlm-select-content>
-                          @for (locale of space.locales; track locale.id) {
+                          @for (locale of availableLocales(); track locale.id) {
                             <hlm-option [value]="locale">{{ locale.name }}</hlm-option>
                           }
                         </hlm-select-content>
@@ -317,7 +317,7 @@
                           <hlm-select-value />
                         </hlm-select-trigger>
                         <hlm-select-content>
-                          @for (locale of space.locales; track locale.id) {
+                          @for (locale of availableLocales(); track locale.id) {
                             <hlm-option [value]="locale">{{ locale.name }}</hlm-option>
                           }
                         </hlm-select-content>
@@ -342,7 +342,7 @@
               <div class="flex items-center">
                 <div aria-hidden="true" class="w-full border-t"></div>
                 <div class="relative flex justify-center">
-                  <span class="bg-background px-2 text-sm">{{ selectedSourceLocale().name }}</span>
+                  <span class="bg-background px-2 text-sm text-nowrap">{{ selectedSourceLocale().name }}</span>
                 </div>
                 <div aria-hidden="true" class="w-full border-t"></div>
               </div>
@@ -364,7 +364,7 @@
                 <div class="flex items-center">
                   <div aria-hidden="true" class="w-full border-t"></div>
                   <div class="relative flex justify-center">
-                    <span class="bg-background px-2 text-sm">{{ selectedTargetLocale().name }}</span>
+                    <span class="bg-background px-2 text-sm text-nowrap">{{ selectedTargetLocale().name }}</span>
                   </div>
                   <div aria-hidden="true" class="w-full border-t"></div>
                 </div>
