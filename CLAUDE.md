@@ -1,0 +1,103 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+# Development
+npm start              # Dev server with proxy (http://localhost:4200)
+npm run emulator       # Firebase emulator with persistence
+npm run emulator:debug # Firebase emulator with debug output
+
+# Build
+npm run build          # Default build
+npm run build:prod     # Production build (optimized)
+npm run build:docker   # Docker-specific build
+
+# Code quality
+npm run lint           # ESLint check
+npm run lint:fix       # Auto-fix lint issues
+npm run prettier:fix   # Format code
+
+# Testing
+npm test               # Karma + Jasmine test runner
+
+# Firebase Functions (from /functions directory)
+cd functions && npm run build   # Compile TypeScript functions
+cd functions && npm run serve   # Run functions locally
+```
+
+## Architecture Overview
+
+**Localess** is a Translation & Content Management System (CMS) built with Angular 21+, NgRx Signals, and Firebase.
+
+### Tech Stack
+- **Frontend**: Angular 21 (standalone components, signals, OnPush)
+- **State**: NgRx Signals (`@ngrx/signals`)
+- **Backend**: Firebase (Firestore, Auth, Storage, Functions, Hosting)
+- **UI**: Angular Material + custom Spartan/Helm component library (`libs/ui/`)
+- **Styling**: Tailwind CSS 4 + SCSS
+- **Rich Text**: TipTap editor
+- **Functions**: Express.js on Firebase Functions (Europe-west6)
+
+### Application Structure
+
+```
+src/app/
+├── core/          # Singleton services: error handler, HTTP interceptors, title service
+├── shared/        # Cross-feature code
+│   ├── models/    # TypeScript interfaces for all domain types
+│   ├── services/  # 24+ Firebase-backed domain services
+│   ├── stores/    # 4 NgRx Signal stores (UserStore, SpaceStore, AppSettingsStore, LocalSettingsStore)
+│   ├── guards/    # Permission-based route guards using Firebase custom claims
+│   └── components/# Shared dialogs, snackbars, logo
+├── features/      # Lazy-loaded feature routes
+│   ├── admin/     # Space & user administration
+│   └── spaces/    # Main workspace: contents, translations, schemas, assets, tasks, dashboard
+├── login/         # Auth (Email, Google, Microsoft)
+├── setup/         # Initial setup wizard
+└── app.config.ts  # Root provider configuration (Firebase, HTTP, etc.)
+
+functions/src/     # Firebase Cloud Functions backend
+libs/ui/           # 44+ reusable Spartan/Helm UI components
+```
+
+### State Management
+
+Four NgRx Signal stores initialized at app startup:
+- **`UserStore`**: Auth state, role, granular permissions (derived from Firebase custom claims)
+- **`SpaceStore`**: Selected workspace, content hierarchy, schemas, documents
+- **`AppSettingsStore`**: Global UI settings
+- **`LocalSettingsStore`**: User preferences (persisted to localStorage)
+
+### Routing & Guards
+
+- Root redirects to `/features`, authenticated via `authGuard()`
+- Feature routes use granular permission guards (e.g., `canManageTranslations`, `canReadSchemas`)
+- All features are lazy-loaded
+
+### Firebase Services Pattern
+
+Domain services (in `shared/services/`) wrap Firestore CRUD operations. Functions are deployed to `europe-west6`. The public REST API is exposed via the `publicv1` Firebase Function rewrite at `/api/v1/**`.
+
+## Angular Code Conventions
+
+These apply to all Angular code in this project (from `.github/copilot-instructions.md`):
+
+- **Standalone components**: Do NOT add `standalone: true` in `@Component`/`@Directive`/`@Pipe` decorators (it's the default)
+- **Change detection**: Always set `changeDetection: ChangeDetectionStrategy.OnPush`
+- **Signals**: Use `signal()` for local state, `computed()` for derived state; use `update()`/`set()`, never `mutate()`
+- **Inputs/Outputs**: Use `input()` and `output()` functions, not `@Input()`/`@Output()` decorators
+- **Injection**: Use `inject()` function, not constructor injection
+- **Control flow**: Use `@if`, `@for`, `@switch` — not `*ngIf`, `*ngFor`, `*ngSwitch`
+- **CSS bindings**: Use `[class]` bindings — not `ngClass`; use `[style]` bindings — not `ngStyle`
+- **Host bindings**: Put in the `host` object of `@Component`/`@Directive` — not `@HostBinding`/`@HostListener`
+- **Forms**: Reactive forms only (no template-driven)
+- **Services**: `providedIn: 'root'` for singletons
+- **Images**: Use `NgOptimizedImage` for static images
+- **TypeScript**: Strict mode, avoid `any` (use `unknown`), prefer type inference
+
+## Environment & Emulator Setup
+
+Three environment configurations: `development`, `production`, `docker`. Firebase emulators support Firestore, Auth, Storage, and Functions locally. The proxy config (`proxy.conf.cjs`) forwards API calls during development.
