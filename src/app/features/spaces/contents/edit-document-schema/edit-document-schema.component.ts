@@ -298,6 +298,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                   } else {
                     this.data[`${field.name}_i18n_${this.selectedLocaleId()}`] = value;
                   }
+                } else {
+                  // Non-translatable fields (e.g. references) are shared across all locales
+                  if (value === null) {
+                    delete this.data[field.name];
+                  } else {
+                    this.data[field.name] = value;
+                  }
                 }
               }
             }
