@@ -6,7 +6,6 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFileSymlink, lucideTrash } from '@ng-icons/lucide';
-import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '../references-select-dialog';
 import { Content, ContentDocument } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldReference } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
@@ -17,7 +16,9 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+
 import { DocumentStatusComponent } from '../document-status/document-status.component';
+import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '../references-select-dialog';
 
 @Component({
   selector: 'll-reference-select',

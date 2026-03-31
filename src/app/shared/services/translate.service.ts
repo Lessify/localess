@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { TranslateData } from '@shared/models/translate.model';

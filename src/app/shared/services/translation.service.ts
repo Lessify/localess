@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import {
   collection,
@@ -18,6 +18,7 @@ import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
+
 import {
   TranslateLocaleData,
   Translation,

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { collection, collectionData, Firestore, limit, orderBy, query, QueryConstraint } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { ContentHistory } from '@shared/models/content-history.model';

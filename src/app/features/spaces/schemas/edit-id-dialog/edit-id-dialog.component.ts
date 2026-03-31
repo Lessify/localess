@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -9,6 +9,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { NameUtils } from '@core/utils/name-utils.service';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+
 import { EditIdDialogModel } from './edit-id-dialog.model';
 
 @Component({

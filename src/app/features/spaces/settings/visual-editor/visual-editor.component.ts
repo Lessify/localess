@@ -4,25 +4,25 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideGripVertical, lucidePlus, lucideSave, lucideTrash } from '@ng-icons/lucide';
 import { SpaceEnvironment } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
+import { PlatformService } from '@shared/services/platform.service';
 import { SpaceService } from '@shared/services/space.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
-import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { filter } from 'rxjs/operators';
-import { provideIcons } from '@ng-icons/core';
-import { lucideGripVertical, lucidePlus, lucideSave, lucideTrash } from '@ng-icons/lucide';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmItemImports } from '@spartan-ng/helm/item';
-import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
-import { PlatformService } from '@shared/services/platform.service';
+import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmKbd } from '@spartan-ng/helm/kbd';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinner } from '@spartan-ng/helm/spinner';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-visual-editor',

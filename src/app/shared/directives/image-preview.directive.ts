@@ -1,4 +1,4 @@
-import { Directive, ElementRef, input, inject } from '@angular/core';
+import { Directive, ElementRef, inject, input } from '@angular/core';
 
 @Directive({
   selector: 'img[llImagePreview]',

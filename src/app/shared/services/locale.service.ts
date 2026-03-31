@@ -1,7 +1,8 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { arrayRemove, arrayUnion, doc, Firestore, serverTimestamp, UpdateData, updateDoc } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable, of } from 'rxjs';
+
 import { Locale } from '../models/locale.model';
 import { Space } from '../models/space.model';
 

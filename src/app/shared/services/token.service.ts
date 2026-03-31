@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
   addDoc,
   collection,
@@ -18,10 +18,10 @@ import {
   WithFieldValue,
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
+import { UpdateData } from '@firebase/firestore';
 import { Token, TokenForm, TokenFS, TokenPermission } from '@shared/models/token.model';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { UpdateData } from '@firebase/firestore';
 
 @Injectable({ providedIn: 'root' })
 export class TokenService {

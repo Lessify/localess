@@ -1,3 +1,4 @@
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -13,9 +14,11 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -49,26 +52,37 @@ import {
   lucideWebhookOff,
 } from '@ng-icons/lucide';
 import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
+import {
+  TranslateLocaleDialogComponent,
+  TranslateLocaleDialogModel,
+  TranslateLocaleDialogReturn,
+} from '@shared/components/translate-locale-dialog';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { ContentHistory } from '@shared/models/content-history.model';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
+import { ContentHistory } from '@shared/models/content-history.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { SpaceEnvironment } from '@shared/models/space.model';
+import { TokenPermission } from '@shared/models/token.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { ContentService } from '@shared/services/content.service';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { ContentHistoryService } from '@shared/services/content-history.service';
-import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
+import { PlatformService } from '@shared/services/platform.service';
 import { TokenService } from '@shared/services/token.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmResizableImports } from '@spartan-ng/helm/resizable';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
@@ -78,26 +92,13 @@ import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { Observable } from 'rxjs';
+import { filter, switchMap } from 'rxjs/operators';
 import { v4 } from 'uuid';
+
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
-import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
-import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
-import { TokenPermission } from '@shared/models/token.model';
-import { ClipboardModule } from '@angular/cdk/clipboard';
-import {
-  TranslateLocaleDialogComponent,
-  TranslateLocaleDialogModel,
-  TranslateLocaleDialogReturn,
-} from '@shared/components/translate-locale-dialog';
-import { filter, switchMap } from 'rxjs/operators';
-import { MatDialog } from '@angular/material/dialog';
-import { HlmKbdImports } from '@spartan-ng/helm/kbd';
-import { PlatformService } from '@shared/services/platform.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { HlmInputImports } from '@spartan-ng/helm/input';
 import { DocumentStatusComponent } from '../shared/document-status/document-status.component';
-import { HlmItemImports } from '@spartan-ng/helm/item';
+import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
 
 @Component({
   selector: 'll-content-document-edit',

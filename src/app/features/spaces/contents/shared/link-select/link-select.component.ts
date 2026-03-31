@@ -7,6 +7,7 @@ import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-
 import { ContentDocument, LinkContent, LinkContentType } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldLink } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -15,7 +16,6 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 
 @Component({
   selector: 'll-link-select',

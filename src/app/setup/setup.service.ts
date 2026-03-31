@@ -1,7 +1,8 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { Observable } from 'rxjs';
+
 import { Setup } from './setup.model';
 
 @Injectable()

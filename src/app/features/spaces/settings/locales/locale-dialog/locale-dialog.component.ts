@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -7,9 +7,9 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { LocaleValidator } from '@shared/validators/locale.validator';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
-import { HlmButtonImports } from '@spartan-ng/helm/button';
 
 @Component({
   selector: 'll-locale-dialog',

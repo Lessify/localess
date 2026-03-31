@@ -1,4 +1,5 @@
 import { ValidatorFn, Validators } from '@angular/forms';
+
 import { CommonPattern, CommonValidator } from './common.validator';
 
 export class ContentValidator {

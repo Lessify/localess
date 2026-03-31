@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Router, RouterModule } from '@angular/router';
 import { provideIcons } from '@ng-icons/core';
 import { lucideLayoutDashboard } from '@ng-icons/lucide';
-import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 
 interface TabItem {
   icon: string;

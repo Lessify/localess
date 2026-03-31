@@ -36,10 +36,10 @@ import {
   ContentUpdate,
   TranslateContentLocaleData,
 } from '@shared/models/content.model';
+import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
 
 @Injectable({ providedIn: 'root' })
 export class ContentService {

@@ -19,6 +19,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { UserStore } from '@shared/stores/user.store';
 import { EMPTY, Observable } from 'rxjs';
+
 import { environment } from '../../environments/environment';
 
 @Component({

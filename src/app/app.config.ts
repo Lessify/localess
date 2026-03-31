@@ -24,6 +24,7 @@ import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
 import { CoreModule } from '@core/core.module';
 import { provideMarkdown } from 'ngx-markdown';
+
 import { environment } from '../environments/environment';
 import { routes } from './app-routing';
 

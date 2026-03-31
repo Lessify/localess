@@ -5,6 +5,7 @@ import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { UserPermission } from '@shared/models/user.model';
 import { pipe } from 'rxjs';
 import { map } from 'rxjs/operators';
+
 import { FeaturesComponent } from './features.component';
 
 const ROLE_ADMIN = 'admin';

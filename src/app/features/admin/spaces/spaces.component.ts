@@ -16,10 +16,11 @@ import { SpaceService } from '@shared/services/space.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap } from 'rxjs/operators';
+
 import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
 import { SpaceDialogModel } from './space-dialog/space-dialog.model';
-import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({
   selector: 'll-spaces',

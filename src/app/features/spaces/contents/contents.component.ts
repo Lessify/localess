@@ -1,3 +1,4 @@
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -39,6 +40,7 @@ import {
   sortContent,
 } from '@shared/models/content.model';
 import { Schema, SchemaType, sortSchema } from '@shared/models/schema.model';
+import { TokenPermission } from '@shared/models/token.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
@@ -54,14 +56,13 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
+
 import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
 import { AddFolderDialogComponent, AddFolderDialogModel } from './add-folder-dialog';
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { ExportDialogComponent, ExportDialogModel, ExportDialogReturn } from './export-dialog';
 import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
 import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
-import { TokenPermission } from '@shared/models/token.model';
-import { ClipboardModule } from '@angular/cdk/clipboard';
 import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
 @Component({

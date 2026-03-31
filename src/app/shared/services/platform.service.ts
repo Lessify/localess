@@ -1,5 +1,5 @@
-import { inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { inject, Injectable, PLATFORM_ID } from '@angular/core';
 
 const APPLE_USER_AGENT = /(Mac|iPhone|iPod|iPad)/i;
 

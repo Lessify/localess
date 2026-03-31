@@ -1,4 +1,5 @@
 import { FieldValue, Timestamp } from '@angular/fire/firestore';
+
 import { Locale } from './locale.model';
 
 export interface Space {

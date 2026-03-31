@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
 import { Timestamp } from '@angular/fire/firestore';
 import { provideIcons } from '@ng-icons/core';
 import { lucideRotateCw } from '@ng-icons/lucide';

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { ContentFolder } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
+
 import { MoveDialogModel } from './move-dialog.model';
 
 @Component({

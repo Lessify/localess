@@ -46,6 +46,7 @@ import {
 } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
+import { PlatformService } from '@shared/services/platform.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
@@ -58,6 +59,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
@@ -68,9 +70,8 @@ import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { combineLatest } from 'rxjs';
+
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
-import { HlmKbdImports } from '@spartan-ng/helm/kbd';
-import { PlatformService } from '@shared/services/platform.service';
 
 @Component({
   selector: 'll-schema-edit-comp',

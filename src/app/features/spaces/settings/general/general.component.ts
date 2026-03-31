@@ -4,20 +4,20 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCopy, lucideSave } from '@ng-icons/lucide';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
-import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { filter } from 'rxjs/operators';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { provideIcons } from '@ng-icons/core';
-import { lucideCopy, lucideSave } from '@ng-icons/lucide';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
-import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
-import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-general',

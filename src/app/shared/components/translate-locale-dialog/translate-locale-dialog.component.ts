@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { TranslateLocaleDialogModel } from './translate-locale-dialog.model';
-import { HlmFieldImports } from '@spartan-ng/helm/field';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+
+import { TranslateLocaleDialogModel } from './translate-locale-dialog.model';
 
 @Component({
   selector: 'll-translate-locale-dialog',

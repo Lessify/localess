@@ -48,8 +48,13 @@ import {
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  TranslateLocaleDialogComponent,
+  TranslateLocaleDialogModel,
+  TranslateLocaleDialogReturn,
+} from '@shared/components/translate-locale-dialog';
 import { CONTENT_DEFAULT_LOCALE, Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { TranslationHistory } from '@shared/models/translation-history.model';
+import { TokenPermission } from '@shared/models/token.model';
 import {
   isLocaleStatus,
   isTranslationStatus,
@@ -59,14 +64,16 @@ import {
   TranslationStatus,
   TranslationUpdate,
 } from '@shared/models/translation.model';
+import { TranslationHistory } from '@shared/models/translation-history.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
+import { PlatformService } from '@shared/services/platform.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
-import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { TranslationService } from '@shared/services/translation.service';
+import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
@@ -79,6 +86,7 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
@@ -91,6 +99,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { debounceTime, EMPTY, Observable } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
+
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
 import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
@@ -102,18 +111,10 @@ import { TranslationArrayEditComponent } from './shared/components/translation-a
 import { TranslationArrayViewComponent } from './shared/components/translation-array-view/translation-array-view.component';
 import { TranslationPluralEditComponent } from './shared/components/translation-plural-edit/translation-plural-edit.component';
 import { TranslationPluralViewComponent } from './shared/components/translation-plural-view/translation-plural-view.component';
+import { TranslationStatusComponent } from './shared/components/translation-status/translation-status.component';
 import { TranslationStringEditComponent } from './shared/components/translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from './shared/components/translation-string-view/translation-string-view.component';
 import { TranslationNode } from './shared/models/translation.model';
-import { TokenPermission } from '@shared/models/token.model';
-import {
-  TranslateLocaleDialogComponent,
-  TranslateLocaleDialogModel,
-  TranslateLocaleDialogReturn,
-} from '@shared/components/translate-locale-dialog';
-import { PlatformService } from '@shared/services/platform.service';
-import { HlmKbdImports } from '@spartan-ng/helm/kbd';
-import { TranslationStatusComponent } from './shared/components/translation-status/translation-status.component';
 
 @Component({
   selector: 'll-translations',

@@ -1,12 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+
+import { DangerZoneComponent } from './danger-zone/danger-zone.component';
 import { GeneralComponent } from './general/general.component';
 import { LocalesComponent } from './locales/locales.component';
 import { SettingsComponent } from './settings.component';
 import { TokensComponent } from './tokens/tokens.component';
 import { VisualEditorComponent } from './visual-editor/visual-editor.component';
 import { WebhooksComponent } from './webhooks/webhooks.component';
-import { DangerZoneComponent } from './danger-zone/danger-zone.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'general', pathMatch: 'full' },

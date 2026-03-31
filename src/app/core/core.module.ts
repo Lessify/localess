@@ -1,5 +1,5 @@
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { ErrorHandler, NgModule, inject } from '@angular/core';
+import { ErrorHandler, inject, NgModule } from '@angular/core';
 import { TitleStrategy } from '@angular/router';
 
 import { AppErrorHandler } from './error-handler/app-error-handler.service';

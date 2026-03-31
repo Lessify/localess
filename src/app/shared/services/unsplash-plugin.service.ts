@@ -1,8 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { UnsplashRandomResult, UnsplashSearchParams, UnsplashSearchResult } from '@shared/models/unsplash-plugin.model';
 import { Observable } from 'rxjs';
+
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })

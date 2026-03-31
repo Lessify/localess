@@ -7,7 +7,6 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFile, lucideFilePlusCorner, lucideGripVertical, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
-import { AssetsSelectDialogModel, AssetsSelectDialogComponent } from '../assets-select-dialog';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
@@ -22,6 +21,8 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+
+import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-select-dialog';
 
 @Component({
   selector: 'll-assets-select',

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ErrorHandler, Injectable, inject } from '@angular/core';
+import { ErrorHandler, inject, Injectable } from '@angular/core';
 import { NotificationService } from '@shared/services/notification.service';
 import { toast } from 'ngx-sonner';
 

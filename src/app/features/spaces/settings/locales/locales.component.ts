@@ -4,21 +4,22 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceStore } from '@shared/stores/space.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap } from 'rxjs/operators';
+
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
-import { provideIcons } from '@ng-icons/core';
-import { lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
-import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 
 @Component({
   selector: 'll-space-settings-locales',

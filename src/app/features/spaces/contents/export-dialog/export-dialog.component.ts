@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Content } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
+
 import { ExportDialogModel } from './export-dialog.model';
 
 @Component({

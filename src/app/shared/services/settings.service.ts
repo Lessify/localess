@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { doc, docData, Firestore, serverTimestamp, setDoc, UpdateData } from '@angular/fire/firestore';
 import { Functions } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';

@@ -4,8 +4,14 @@ import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideEye, lucideEyeOff, lucideInfo, lucideLanguages } from '@ng-icons/lucide';
+import { ContentData } from '@shared/models/content.model';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { SchemaFieldMarkdown } from '@shared/models/schema.model';
+import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { NotificationService } from '@shared/services/notification.service';
+import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
@@ -13,12 +19,6 @@ import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { common, createLowlight } from 'lowlight';
 import { MarkdownComponent } from 'ngx-markdown';
-import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { TranslateService } from '@shared/services/translate.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { ContentData } from '@shared/models/content.model';
 
 @Component({
   selector: 'll-markdown-editor',

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
   addDoc,
   collection,
@@ -19,6 +19,7 @@ import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+
 import { Locale } from '../models/locale.model';
 import { Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUpdate } from '../models/space.model';
 

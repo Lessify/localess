@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, inject, input, OnInit, ViewEncapsulation } from '@angular/core';
 import { OpenApiService } from '@shared/services/open-api.service';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { Observable } from 'rxjs';

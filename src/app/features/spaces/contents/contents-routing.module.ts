@@ -5,6 +5,7 @@ import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { ContentDocument } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { tap } from 'rxjs/operators';
+
 import { ContentsComponent } from './contents.component';
 import { EditDocumentComponent } from './edit-document/edit-document.component';
 

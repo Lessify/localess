@@ -6,20 +6,21 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { isTokenV2, PERMISSION_TEXT, Token, TokenForm, TokenPermission } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
 import { SpaceStore } from '@shared/stores/space.store';
-import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { filter, switchMap } from 'rxjs/operators';
-import { TokenDialogComponent } from './token-dialog/token-dialog.component';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { provideIcons } from '@ng-icons/core';
-import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { filter, switchMap } from 'rxjs/operators';
+
+import { TokenDialogComponent } from './token-dialog/token-dialog.component';
 
 @Component({
   selector: 'll-space-settings-tokens',

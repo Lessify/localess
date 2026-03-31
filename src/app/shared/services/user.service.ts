@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
   collection,
   collectionData,
@@ -15,6 +15,7 @@ import { Functions, httpsCallableData } from '@angular/fire/functions';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+
 import { User, UserInvite, UserUpdate } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })

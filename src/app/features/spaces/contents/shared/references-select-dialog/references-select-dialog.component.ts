@@ -35,8 +35,9 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { BehaviorSubject, combineLatest } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { ReferencesSelectDialogModel } from './references-select-dialog.model';
+
 import { DocumentStatusComponent } from '../document-status/document-status.component';
+import { ReferencesSelectDialogModel } from './references-select-dialog.model';
 
 @Component({
   selector: 'll-references-select-dialog',

@@ -9,8 +9,8 @@ import {
   effect,
   ElementRef,
   inject,
-  input,
   Input,
+  input,
   OnChanges,
   OnInit,
   output,
@@ -56,14 +56,15 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { debounceTime } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { v4 } from 'uuid';
+
 import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
 import { AssetsSelectComponent } from '../shared/assets-select/assets-select.component';
 import { LinkSelectComponent } from '../shared/link-select/link-select.component';
+import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-editor.component';
 import { ReferenceSelectComponent } from '../shared/reference-select/reference-select.component';
 import { ReferencesSelectComponent } from '../shared/references-select/references-select.component';
 import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
 import { SchemaSelectChange } from './edit-document-schema.model';
-import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-editor.component';
 
 @Component({
   selector: 'll-content-document-schema-edit',

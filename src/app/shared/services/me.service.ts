@@ -1,8 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Auth, updateEmail, updatePassword, updateProfile } from '@angular/fire/auth';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+
 import { MeUpdate } from '../models/me.model';
 
 @Injectable({ providedIn: 'root' })

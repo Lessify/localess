@@ -1,17 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
-import { NotificationService } from '@shared/services/notification.service';
-import { SpaceStore } from '@shared/stores/space.store';
-import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { HlmFieldImports } from '@spartan-ng/helm/field';
-import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { MatDialog } from '@angular/material/dialog';
-import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
-import { filter, switchMap } from 'rxjs/operators';
-import { TranslationService } from '@shared/services/translation.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideShredder } from '@ng-icons/lucide';
+import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { NotificationService } from '@shared/services/notification.service';
+import { TranslationService } from '@shared/services/translation.service';
+import { SpaceStore } from '@shared/stores/space.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { filter, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-danger-zone',

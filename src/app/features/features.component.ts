@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, signal, Signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, Signal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
 import { Auth, signOut } from '@angular/fire/auth';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
@@ -42,9 +41,11 @@ import { ReposService } from '@shared/generated/github/services/repos.service';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { Space } from '@shared/models/space.model';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
+import { Version } from '@shared/models/version.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentService } from '@shared/services/content.service';
 import { SchemaService } from '@shared/services/schema.service';
+import { VersionService } from '@shared/services/version.service';
 import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -58,15 +59,14 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
+import { HlmToasterImports } from '@spartan-ng/helm/sonner';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { cva } from 'class-variance-authority';
-import { filter, interval, mergeMap } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { VersionService } from '@shared/services/version.service';
-import { Version } from '@shared/models/version.model';
-import { HlmToasterImports } from '@spartan-ng/helm/sonner';
 import { toast } from 'ngx-sonner';
+import { filter, interval, mergeMap } from 'rxjs';
+
+import { environment } from '../../environments/environment';
 
 const appTextVariants = cva(
   'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xl font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] ',

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { provideIcons } from '@ng-icons/core';
-import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { lucideCircleArrowUp, lucideCircleDotDashed, lucideCircleFadingArrowUp } from '@ng-icons/lucide';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({

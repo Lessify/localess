@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { Space } from '@shared/models/space.model';
-import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideFingerprintPattern,
@@ -11,7 +9,9 @@ import {
   lucideVectorSquare,
   lucideWebhook,
 } from '@ng-icons/lucide';
+import { Space } from '@shared/models/space.model';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 
 interface TabItem {
   icon: string;

@@ -4,10 +4,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { TokenValidator } from '@shared/validators/token.validator';
-import { TokenForm } from '@shared/models/token.model';
 import { MatListModule } from '@angular/material/list';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { TokenForm } from '@shared/models/token.model';
+import { TokenValidator } from '@shared/validators/token.validator';
 
 @Component({
   selector: 'll-token-dialog',

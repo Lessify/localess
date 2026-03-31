@@ -13,6 +13,7 @@ import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
+import { PlatformService } from '@shared/services/platform.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
@@ -23,6 +24,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
@@ -30,9 +32,8 @@ import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
+
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
-import { PlatformService } from '@shared/services/platform.service';
-import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 
 @Component({
   selector: 'll-schema-edit-enum',
