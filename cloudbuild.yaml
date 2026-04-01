@@ -33,7 +33,7 @@ steps:
   - name: 'node:24'
     id: 'Copy Firebase Apps SDK Config'
     args: [ 'mv', '-f', 'src/environments/firebase-config-tmp.json', 'src/environments/firebase-config.json' ]
-  - name: 'node:22'
+  - name: 'node:24'
     id: 'version-generate'
     entrypoint: npm
     args:
@@ -41,7 +41,7 @@ steps:
       - 'version:generate'
     env:
       - 'COMMIT_SHA=$COMMIT_SHA'
-  - name: 'node:22'
+  - name: 'node:24'
     id: 'build-prod'
     entrypoint: npm
     args:
