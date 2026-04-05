@@ -902,11 +902,6 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
         enum: [id],
         description: 'Unique identifier for the Schema object.',
       },
-      schema: {
-        type: 'string',
-        enum: [id],
-        description: 'Unique identifier for the Schema object. Will be deprecated in future in favor of `_schema`.',
-      },
     };
     for (const item of schema.fields?.sort((a, b) => a.name.localeCompare(b.name)) || []) {
       const [name, schema] = fieldToOpenApiSchemaDefinition(item);
