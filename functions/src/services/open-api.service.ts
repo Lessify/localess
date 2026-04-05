@@ -1093,7 +1093,7 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, Sch
             };
           }) || [],
         discriminator: {
-          propertyName: 'schema',
+          propertyName: '_schema',
         },
       },
     ];
@@ -1114,7 +1114,7 @@ export function fieldToOpenApiSchemaDefinition(field: SchemaField): [string, Sch
               };
             }) || [],
           discriminator: {
-            propertyName: 'schema',
+            propertyName: '_schema',
           },
         },
       },
