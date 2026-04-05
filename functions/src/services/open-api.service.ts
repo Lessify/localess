@@ -1,7 +1,5 @@
 import { Schema, SchemaField, SchemaFieldKind, SchemaType } from '../models';
-import { OpenAPIObject } from 'openapi3-ts/oas30';
-import { ReferenceObject, SchemaObject } from 'openapi3-ts/dist/model/openapi30';
-
+import { OpenAPIObject, ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 /**
  * Generate Open API
  * @param {Map<string, Schema>} schemasById
