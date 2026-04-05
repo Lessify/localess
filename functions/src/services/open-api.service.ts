@@ -888,7 +888,7 @@ export function schemaToOpenApiSchemaDefinition(id: string, schema: Schema): [st
     ];
   }
   if (schema.type === SchemaType.NODE || schema.type === SchemaType.ROOT) {
-    const required = ['_id', 'schema'];
+    const required = ['_id', '_schema'];
     schema.fields?.filter(it => it.required === true).forEach(it => required.push(it.name));
     const schemasDefinition: Record<string, SchemaObject | ReferenceObject> = {
       _id: {
