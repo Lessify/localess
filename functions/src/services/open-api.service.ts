@@ -352,7 +352,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       };
     }),
     discriminator: {
-      propertyName: 'schema',
+      propertyName: '_schema',
     },
   };
 
