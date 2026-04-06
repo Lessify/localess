@@ -264,8 +264,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
       this.form.valueChanges
         .pipe(
+          debounceTime(500),
           filter(it => Object.keys(it).length !== 0),
-          tap(formValue => {
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe({
+          next: formValue => {
             //console.group('form');
             //console.log(Object.getOwnPropertyNames(formValue));
             //console.log('formValue', ObjectUtils.clone(formValue));
@@ -304,14 +308,11 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                 }
               }
             }
+
             this.formChange.emit(JSON.stringify(formValue));
             //console.log('After data', ObjectUtils.clone(this.data));
             //console.groupEnd();
-          }),
-          debounceTime(500),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
+          },
           error: (err: unknown) => console.error(err),
           complete: () => console.log('completed'),
         });
