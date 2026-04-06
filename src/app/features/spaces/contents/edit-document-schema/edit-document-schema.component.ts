@@ -20,7 +20,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { MatDividerModule } from '@angular/material/divider';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideBookCopy, lucideCirclePlus, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
@@ -51,10 +50,10 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { debounceTime } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { debounceTime, filter } from 'rxjs/operators';
 import { v4 } from 'uuid';
 
 import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
@@ -81,7 +80,6 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     ReferencesSelectComponent,
     AssetSelectComponent,
     AssetsSelectComponent,
-    MatDividerModule,
     DragDropModule,
     HlmFieldImports,
     HlmButtonImports,
@@ -95,6 +93,7 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     HlmSelectImports,
     MarkdownEditorComponent,
     HlmAccordionImports,
+    HlmSeparatorImports,
   ],
   providers: [
     provideIcons({

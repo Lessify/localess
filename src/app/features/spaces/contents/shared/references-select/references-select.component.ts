@@ -3,19 +3,20 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFileSymlink, lucideTrash } from '@ng-icons/lucide';
+import { lucideChevronDown, lucideFileSymlink, lucideTrash } from '@ng-icons/lucide';
 import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldReferences } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
 import { ContentService } from '@shared/services/content.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 import { DocumentStatusComponent } from '../document-status/document-status.component';
@@ -28,7 +29,6 @@ import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '..
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DragDropModule,
-    MatExpansionModule,
     CommonModule,
     HlmButtonImports,
     HlmFieldImports,
@@ -36,11 +36,14 @@ import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '..
     HlmTooltipImports,
     HlmItemImports,
     DocumentStatusComponent,
+    HlmSeparatorImports,
+    HlmAccordionImports,
   ],
   providers: [
     provideIcons({
       lucideFileSymlink,
       lucideTrash,
+      lucideChevronDown,
     }),
   ],
 })

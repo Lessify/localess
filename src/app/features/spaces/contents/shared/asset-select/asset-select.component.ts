@@ -3,10 +3,9 @@ import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } fro
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFile, lucideFilePlusCorner, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
+import { lucideChevronDown, lucideFile, lucideFilePlusCorner, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
@@ -16,10 +15,12 @@ import { Space } from '@shared/models/space.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { AssetService } from '@shared/services/asset.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmItemImports } from '@spartan-ng/helm/item';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-select-dialog';
@@ -35,13 +36,14 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-
     CommonModule,
     ImagePreviewDirective,
     FormatFileSizePipe,
-    MatExpansionModule,
     NgOptimizedImage,
     HlmButtonImports,
     HlmFieldImports,
     HlmIconImports,
     HlmTooltipImports,
     HlmItemImports,
+    HlmSeparatorImports,
+    HlmAccordionImports,
   ],
   providers: [
     provideIcons({
@@ -49,6 +51,7 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-
       lucideTrash,
       lucideFile,
       lucideLanguages,
+      lucideChevronDown,
     }),
   ],
 })
