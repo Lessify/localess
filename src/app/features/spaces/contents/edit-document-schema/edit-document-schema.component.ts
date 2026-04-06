@@ -310,7 +310,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
             }
 
             this.formChange.emit(JSON.stringify(formValue));
-            this.cd.markForCheck();
+            this.cd.detectChanges();
             //console.log('After data', ObjectUtils.clone(this.data));
             //console.groupEnd();
           },
