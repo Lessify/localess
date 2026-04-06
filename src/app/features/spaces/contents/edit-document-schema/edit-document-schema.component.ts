@@ -53,7 +53,7 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { debounceTime, filter } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 import { v4 } from 'uuid';
 
 import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
@@ -264,7 +264,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
       this.form.valueChanges
         .pipe(
-          debounceTime(500),
           filter(it => Object.keys(it).length !== 0),
           takeUntilDestroyed(this.destroyRef),
         )
@@ -310,7 +309,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
             }
 
             this.formChange.emit(JSON.stringify(formValue));
-            this.cd.detectChanges();
             //console.log('After data', ObjectUtils.clone(this.data));
             //console.groupEnd();
           },
