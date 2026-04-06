@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -46,7 +46,6 @@ import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '..
 export class ReferenceSelectComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly contentService = inject(ContentService);
 
   // Input
@@ -54,7 +53,7 @@ export class ReferenceSelectComponent implements OnInit {
   component = input.required<SchemaFieldReference>();
   space = input.required<Space>();
 
-  content?: Content;
+  content = signal<Content | undefined>(undefined);
 
   // Settings
   settingsStore = inject(LocalSettingsStore);
@@ -71,8 +70,7 @@ export class ReferenceSelectComponent implements OnInit {
     if (id) {
       this.contentService.findById(this.space().id, id).subscribe({
         next: content => {
-          this.content = content;
-          this.cd.markForCheck();
+          this.content.set(content);
         },
       });
     }
@@ -91,21 +89,18 @@ export class ReferenceSelectComponent implements OnInit {
       .subscribe({
         next: selectedDocuments => {
           if (selectedDocuments && selectedDocuments.length > 0) {
-            this.content = undefined;
-            this.cd.detectChanges();
-            this.content = selectedDocuments[0];
+            this.content.set(selectedDocuments[0]);
             this.form().patchValue({
-              uri: this.content.id,
+              uri: selectedDocuments[0].id,
               kind: SchemaFieldKind.REFERENCE,
             });
-            this.cd.markForCheck();
           }
         },
       });
   }
 
   deleteReference() {
-    this.content = undefined;
+    this.content.set(undefined);
     this.form().controls['uri'].setValue(null);
   }
 }

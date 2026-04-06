@@ -1,6 +1,6 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -56,7 +56,6 @@ export class AssetsSelectComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly assetService = inject(AssetService);
 
   // Inputs
@@ -66,7 +65,7 @@ export class AssetsSelectComponent implements OnInit {
   // Outputs
   assetsChange = output<string[]>();
 
-  assets: AssetFile[] = [];
+  assets = signal<AssetFile[]>([]);
   // Settings
   settingsStore = inject(LocalSettingsStore);
 
@@ -84,11 +83,12 @@ export class AssetsSelectComponent implements OnInit {
         next: assets => {
           const byId = new Map<string, Asset>(assets.map(item => [item.id, item]));
           // Make sure to have assets display in exactly the same order
-          this.assets = ids
-            .map(it => byId.get(it))
-            .filter(asset => asset?.kind === AssetKind.FILE)
-            .map(it => it as AssetFile);
-          this.cd.markForCheck();
+          this.assets.set(
+            ids
+              .map(it => byId.get(it))
+              .filter(asset => asset?.kind === AssetKind.FILE)
+              .map(it => it as AssetFile),
+          );
         },
       });
     }
@@ -125,12 +125,10 @@ export class AssetsSelectComponent implements OnInit {
       .subscribe({
         next: selectedAssets => {
           if (selectedAssets) {
-            this.assets.push(...selectedAssets);
+            this.assets.update(current => [...current, ...selectedAssets]);
             this.form().clear();
-            this.assets.forEach(it => this.form().push(this.assetToForm(it)));
-            this.assetsChange.emit(this.assets.map(it => it.id));
-            //this.form?.root.updateValueAndValidity()
-            //this.cd.markForCheck();
+            this.assets().forEach(it => this.form().push(this.assetToForm(it)));
+            this.assetsChange.emit(this.assets().map(it => it.id));
           }
         },
       });
@@ -144,10 +142,9 @@ export class AssetsSelectComponent implements OnInit {
   }
 
   deleteAsset(idx: number) {
-    this.assets.splice(idx, 1);
+    this.assets.update(current => current.filter((_, i) => i !== idx));
     this.form().removeAt(idx);
-    this.assetsChange.emit(this.assets.map(it => it.id));
-    //this.form?.root.updateValueAndValidity()
+    this.assetsChange.emit(this.assets().map(it => it.id));
   }
 
   assetDropDrop(event: CdkDragDrop<string[]>) {
@@ -156,8 +153,12 @@ export class AssetsSelectComponent implements OnInit {
     if (tmp) {
       this.form().removeAt(event.previousIndex);
       this.form().insert(event.currentIndex, tmp);
-      moveItemInArray(this.assets, event.previousIndex, event.currentIndex);
-      this.assetsChange.emit(this.assets.map(it => it.id));
+      this.assets.update(current => {
+        const arr = [...current];
+        moveItemInArray(arr, event.previousIndex, event.currentIndex);
+        return arr;
+      });
+      this.assetsChange.emit(this.assets().map(it => it.id));
     }
   }
 }

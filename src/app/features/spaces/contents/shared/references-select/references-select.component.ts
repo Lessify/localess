@@ -1,6 +1,6 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -48,7 +48,6 @@ export class ReferencesSelectComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly contentService = inject(ContentService);
 
   // Input
@@ -58,7 +57,7 @@ export class ReferencesSelectComponent implements OnInit {
   // Outputs
   referencesChange = output<string[]>();
 
-  contents: ContentDocument[] = [];
+  contents = signal<ContentDocument[]>([]);
   // Settings
   settingsStore = inject(LocalSettingsStore);
 
@@ -72,12 +71,13 @@ export class ReferencesSelectComponent implements OnInit {
       this.contentService.findByIds(this.space().id, ids).subscribe({
         next: contents => {
           const byId = new Map<string, Content>(contents.map(item => [item.id, item]));
-          // Make sure to have assets display in exactly the same order
-          this.contents = ids
-            .map(it => byId.get(it))
-            .filter(content => content?.kind === ContentKind.DOCUMENT)
-            .map(it => it as ContentDocument);
-          this.cd.markForCheck();
+          // Make sure to have contents display in exactly the same order
+          this.contents.set(
+            ids
+              .map(it => byId.get(it))
+              .filter(content => content?.kind === ContentKind.DOCUMENT)
+              .map(it => it as ContentDocument),
+          );
         },
       });
     }
@@ -96,12 +96,11 @@ export class ReferencesSelectComponent implements OnInit {
       .subscribe({
         next: selectedDocuments => {
           if (selectedDocuments) {
-            this.contents.push(...selectedDocuments);
+            this.contents.update(current => [...current, ...selectedDocuments]);
             this.form().clear();
-            this.contents.forEach(it => this.form().push(this.documentToForm(it)));
-            this.referencesChange.emit(this.contents.map(it => it.id));
+            this.contents().forEach(it => this.form().push(this.documentToForm(it)));
+            this.referencesChange.emit(this.contents().map(it => it.id));
           }
-          this.cd.markForCheck();
         },
       });
   }
@@ -114,9 +113,9 @@ export class ReferencesSelectComponent implements OnInit {
   }
 
   deleteReference(idx: number) {
-    this.contents.splice(idx, 1);
+    this.contents.update(current => current.filter((_, i) => i !== idx));
     this.form().removeAt(idx);
-    this.referencesChange.emit(this.contents.map(it => it.id));
+    this.referencesChange.emit(this.contents().map(it => it.id));
   }
 
   referenceDropDrop(event: CdkDragDrop<string[]>) {
@@ -125,8 +124,12 @@ export class ReferencesSelectComponent implements OnInit {
     if (tmp) {
       this.form().removeAt(event.previousIndex);
       this.form().insert(event.currentIndex, tmp);
-      moveItemInArray(this.contents, event.previousIndex, event.currentIndex);
-      this.referencesChange.emit(this.contents.map(it => it.id));
+      this.contents.update(current => {
+        const arr = [...current];
+        moveItemInArray(arr, event.previousIndex, event.currentIndex);
+        return arr;
+      });
+      this.referencesChange.emit(this.contents().map(it => it.id));
     }
   }
 }

@@ -13,23 +13,25 @@
       <hlm-field-separator />
       <div hlmFieldGroup>
         <div hlmItemGroup class="gap-2">
-          @if (content && content.kind === 'DOCUMENT') {
-            <div hlmItem variant="outline" role="listitem">
-              <div hlmItemMedia>
-                <ll-document-status [updatedAt]="content.updatedAt.seconds" [publishedAt]="content.publishedAt?.seconds" />
-              </div>
-              <div hlmItemContent class="min-w-0 overflow-hidden">
-                <div hlmItemTitle class="line-clamp-1 w-full truncate">
-                  {{ content.name }} <span class="accent-muted-foreground">#{{ content.slug }}</span>
+          @if (content(); as content) {
+            @if (content.kind === 'DOCUMENT') {
+              <div hlmItem variant="outline" role="listitem">
+                <div hlmItemMedia>
+                  <ll-document-status [updatedAt]="content.updatedAt.seconds" [publishedAt]="content.publishedAt?.seconds" />
                 </div>
-                <p hlmItemDescription class="line-clamp-1 truncate"> {{ content.fullSlug }} </p>
+                <div hlmItemContent class="min-w-0 overflow-hidden">
+                  <div hlmItemTitle class="line-clamp-1 w-full truncate">
+                    {{ content.name }} <span class="accent-muted-foreground">#{{ content.slug }}</span>
+                  </div>
+                  <p hlmItemDescription class="line-clamp-1 truncate"> {{ content.fullSlug }} </p>
+                </div>
+                <div role="none" hlmItemActions>
+                  <button hlmBtn size="icon" variant="outline" (click)="deleteReference()" hlmTooltip="Delete">
+                    <ng-icon hlm size="sm" name="lucideTrash" />
+                  </button>
+                </div>
               </div>
-              <div role="none" hlmItemActions>
-                <button hlmBtn size="icon" variant="outline" (click)="deleteReference()" hlmTooltip="Delete">
-                  <ng-icon hlm size="sm" name="lucideTrash" />
-                </button>
-              </div>
-            </div>
+            }
           }
         </div>
       </div>

@@ -98,6 +98,13 @@ These apply to all Angular code in this project (from `.github/copilot-instructi
 - **Images**: Use `NgOptimizedImage` for static images
 - **TypeScript**: Strict mode, avoid `any` (use `unknown`), prefer type inference
 
+## After Making Changes
+
+After every code change, always run the following in order:
+
+1. `npm run build` — verify the project compiles without errors
+2. `npm run lint:fix` — auto-fix lint and prettier issues
+
 ## Environment & Emulator Setup
 
 Three environment configurations: `development`, `production`, `docker`. Firebase emulators support Firestore, Auth, Storage, and Functions locally. The proxy config (`proxy.conf.cjs`) forwards API calls during development.

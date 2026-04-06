@@ -1,5 +1,5 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -55,7 +55,6 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-
 export class AssetSelectComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly assetService = inject(AssetService);
 
   // Input
@@ -63,7 +62,7 @@ export class AssetSelectComponent implements OnInit {
   component = input.required<SchemaFieldAsset>();
   space = input.required<Space>();
   hover = input(false);
-  asset?: AssetFile;
+  asset = signal<AssetFile | undefined>(undefined);
 
   //Settings
   settingsStore = inject(LocalSettingsStore);
@@ -80,8 +79,7 @@ export class AssetSelectComponent implements OnInit {
     if (id) {
       this.assetService.findById(this.space().id, id).subscribe({
         next: asset => {
-          this.asset = asset as AssetFile;
-          this.cd.markForCheck();
+          this.asset.set(asset as AssetFile);
         },
       });
     }
@@ -118,22 +116,18 @@ export class AssetSelectComponent implements OnInit {
       .subscribe({
         next: selectedAssets => {
           if (selectedAssets && selectedAssets.length > 0) {
-            this.asset = undefined;
-            this.cd.detectChanges();
-            this.asset = selectedAssets[0];
+            this.asset.set(selectedAssets[0]);
             this.form().patchValue({
-              uri: this.asset.id,
+              uri: selectedAssets[0].id,
               kind: SchemaFieldKind.ASSET,
             });
-            // this.assets.forEach(it => this.form?.push(this.assetToForm(it)))
-            this.cd.markForCheck();
           }
         },
       });
   }
 
   deleteAsset() {
-    this.asset = undefined;
+    this.asset.set(undefined);
     this.form().controls['uri'].setValue(null);
     //this.form?.reset();
   }
