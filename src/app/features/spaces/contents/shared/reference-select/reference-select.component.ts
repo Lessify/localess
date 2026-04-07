@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -48,6 +48,7 @@ import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '..
 })
 export class ReferenceSelectComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
+  private readonly cd = inject(ChangeDetectorRef);
   private readonly dialog = inject(MatDialog);
   private readonly contentService = inject(ContentService);
 
@@ -98,6 +99,7 @@ export class ReferenceSelectComponent implements OnInit {
               kind: SchemaFieldKind.REFERENCE,
             });
           }
+          this.cd.markForCheck();
         },
       });
   }

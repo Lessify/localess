@@ -53,7 +53,7 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { debounceTime, filter, tap } from 'rxjs/operators';
+import { debounceTime, filter } from 'rxjs/operators';
 import { v4 } from 'uuid';
 
 import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';

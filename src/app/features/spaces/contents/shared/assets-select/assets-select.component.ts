@@ -1,6 +1,6 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -57,6 +57,7 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-
 })
 export class AssetsSelectComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(MatDialog);
   private readonly assetService = inject(AssetService);
@@ -133,6 +134,7 @@ export class AssetsSelectComponent implements OnInit {
             this.assets().forEach(it => this.form().push(this.assetToForm(it)));
             this.assetsChange.emit(this.assets().map(it => it.id));
           }
+          this.cd.markForCheck();
         },
       });
   }
