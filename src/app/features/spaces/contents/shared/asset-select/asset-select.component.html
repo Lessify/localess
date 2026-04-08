@@ -16,53 +16,51 @@
         <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
       }
       <hlm-field-separator />
-      <div hlmFieldGroup>
-        <div hlmItemGroup class="gap-2">
-          @if (asset(); as asset) {
-            @if (asset.kind === 'FILE') {
-              <div
-                hlmItem
-                variant="outline"
-                role="listitem"
-                class="cursor-pointer"
-                [ngClass]="{ 'border-primary border': hover() }"
-                (click)="openImagePreview(asset)"
-                (keydown)="openImagePreview(asset)">
-                @if (asset.type.startsWith('image/')) {
-                  <div hlmItemMedia variant="image">
-                    <img
-                      [llImagePreview]="2.5"
-                      class="image-bg rounded-sm! border object-contain!"
-                      width="200"
-                      height="200"
-                      alt="thumbnail"
-                      loading="lazy"
-                      [loaderParams]="{ thumbnail: true }"
-                      ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
-                  </div>
-                } @else {
-                  <div hlmItemMedia variant="icon">
-                    <ng-icon name="lucideFile" />
-                  </div>
-                }
-                <div hlmItemContent class="min-w-0 overflow-hidden">
-                  <div hlmItemTitle class="line-clamp-1 w-full truncate"> {{ asset.name }}{{ asset.extension }} </div>
-                  <p hlmItemDescription class="line-clamp-1 truncate">
-                    {{ asset.size | formatFileSize }}
-                    @if (asset.metadata; as metadata) {
-                      | W{{ metadata.width }} x H{{ metadata.height }}
-                    }
-                  </p>
+      <div hlmItemGroup class="gap-2">
+        @if (asset(); as asset) {
+          @if (asset.kind === 'FILE') {
+            <div
+              hlmItem
+              variant="outline"
+              role="listitem"
+              class="cursor-pointer"
+              [ngClass]="{ 'border-primary border': hover() }"
+              (click)="openImagePreview(asset)"
+              (keydown)="openImagePreview(asset)">
+              @if (asset.type.startsWith('image/')) {
+                <div hlmItemMedia variant="image">
+                  <img
+                    [llImagePreview]="2.5"
+                    class="image-bg rounded-sm! border object-contain!"
+                    width="200"
+                    height="200"
+                    alt="thumbnail"
+                    loading="lazy"
+                    [loaderParams]="{ thumbnail: true }"
+                    ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
                 </div>
-                <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                  <button hlmBtn size="icon" variant="outline" (click)="deleteAsset()" hlmTooltip="Delete">
-                    <ng-icon hlm size="sm" name="lucideTrash" />
-                  </button>
+              } @else {
+                <div hlmItemMedia variant="icon">
+                  <ng-icon name="lucideFile" />
                 </div>
+              }
+              <div hlmItemContent class="min-w-0 overflow-hidden">
+                <div hlmItemTitle class="line-clamp-1 w-full truncate"> {{ asset.name }}{{ asset.extension }} </div>
+                <p hlmItemDescription class="line-clamp-1 truncate">
+                  {{ asset.size | formatFileSize }}
+                  @if (asset.metadata; as metadata) {
+                    | W{{ metadata.width }} x H{{ metadata.height }}
+                  }
+                </p>
               </div>
-            }
+              <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                <button hlmBtn size="icon" variant="outline" (click)="deleteAsset()" hlmTooltip="Delete">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                </button>
+              </div>
+            </div>
           }
-        </div>
+        }
       </div>
       @if (form().controls['uri'].errors; as errors) {
         <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>

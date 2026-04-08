@@ -15,55 +15,53 @@
       <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
     }
     <hlm-field-separator />
-    <div hlmFieldGroup>
-      <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="assetDropDrop($event)">
-        @for (asset of assets(); track asset.id; let idx = $index) {
-          <div
-            hlmItem
-            variant="outline"
-            role="listitem"
-            class="cursor-pointer"
-            cdkDrag
-            cdkDragPreviewContainer="parent"
-            (click)="openImagePreview(asset)"
-            (keydown)="openImagePreview(asset)">
-            @if (asset.type.startsWith('image/')) {
-              <div hlmItemMedia variant="image">
-                <img
-                  [llImagePreview]="2.5"
-                  class="image-bg rounded-sm! border object-contain!"
-                  width="200"
-                  height="200"
-                  alt="thumbnail"
-                  loading="lazy"
-                  [loaderParams]="{ thumbnail: true }"
-                  ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
-              </div>
-            } @else {
-              <div hlmItemMedia variant="icon">
-                <ng-icon name="lucideFile" />
-              </div>
-            }
-            <div hlmItemContent class="min-w-0 overflow-hidden">
-              <div hlmItemTitle class="line-clamp-1 w-full truncate"> {{ asset.name }}{{ asset.extension }} </div>
-              <p hlmItemDescription class="line-clamp-1 truncate">
-                {{ asset.size | formatFileSize }}
-                @if (asset.metadata; as metadata) {
-                  | W{{ metadata.width }} x H{{ metadata.height }}
-                }
-              </p>
+    <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="assetDropDrop($event)">
+      @for (asset of assets(); track asset.id; let idx = $index) {
+        <div
+          hlmItem
+          variant="outline"
+          role="listitem"
+          class="cursor-pointer"
+          cdkDrag
+          cdkDragPreviewContainer="parent"
+          (click)="openImagePreview(asset)"
+          (keydown)="openImagePreview(asset)">
+          @if (asset.type.startsWith('image/')) {
+            <div hlmItemMedia variant="image">
+              <img
+                [llImagePreview]="2.5"
+                class="image-bg rounded-sm! border object-contain!"
+                width="200"
+                height="200"
+                alt="thumbnail"
+                loading="lazy"
+                [loaderParams]="{ thumbnail: true }"
+                ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
             </div>
-            <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-              <button hlmBtn size="icon" variant="outline" (click)="deleteAsset(idx)" hlmTooltip="Delete">
-                <ng-icon hlm size="sm" name="lucideTrash" />
-              </button>
-              <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
-                <ng-icon hlm size="sm" name="lucideGripVertical" />
-              </button>
+          } @else {
+            <div hlmItemMedia variant="icon">
+              <ng-icon name="lucideFile" />
             </div>
+          }
+          <div hlmItemContent class="min-w-0 overflow-hidden">
+            <div hlmItemTitle class="line-clamp-1 w-full truncate"> {{ asset.name }}{{ asset.extension }} </div>
+            <p hlmItemDescription class="line-clamp-1 truncate">
+              {{ asset.size | formatFileSize }}
+              @if (asset.metadata; as metadata) {
+                | W{{ metadata.width }} x H{{ metadata.height }}
+              }
+            </p>
           </div>
-        }
-      </div>
+          <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+            <button hlmBtn size="icon" variant="outline" (click)="deleteAsset(idx)" hlmTooltip="Delete">
+              <ng-icon hlm size="sm" name="lucideTrash" />
+            </button>
+            <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+              <ng-icon hlm size="sm" name="lucideGripVertical" />
+            </button>
+          </div>
+        </div>
+      }
     </div>
     @if (form().errors; as errors) {
       <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>

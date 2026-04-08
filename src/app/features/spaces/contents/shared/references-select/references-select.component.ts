@@ -1,6 +1,6 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -49,7 +49,6 @@ import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '..
 })
 export class ReferencesSelectComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly cd = inject(ChangeDetectorRef);
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(MatDialog);
   private readonly contentService = inject(ContentService);
@@ -105,7 +104,6 @@ export class ReferencesSelectComponent implements OnInit {
             this.contents().forEach(it => this.form().push(this.documentToForm(it)));
             this.referencesChange.emit(this.contents().map(it => it.id));
           }
-          this.cd.markForCheck();
         },
       });
   }

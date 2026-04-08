@@ -1,5 +1,5 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -57,7 +57,6 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-
 })
 export class AssetSelectComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly dialog = inject(MatDialog);
   private readonly assetService = inject(AssetService);
 
@@ -126,7 +125,6 @@ export class AssetSelectComponent implements OnInit {
               kind: SchemaFieldKind.ASSET,
             });
           }
-          this.cd.markForCheck();
         },
       });
   }

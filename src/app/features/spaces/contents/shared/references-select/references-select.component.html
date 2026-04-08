@@ -10,30 +10,28 @@
       <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
     }
     <hlm-field-separator />
-    <div hlmFieldGroup>
-      <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="referenceDropDrop($event)">
-        @for (content of contents(); track content.id; let index = $index) {
-          <div hlmItem variant="outline" role="listitem" cdkDrag cdkDragPreviewContainer="parent">
-            <div hlmItemMedia>
-              <ll-document-status [updatedAt]="content.updatedAt.seconds" [publishedAt]="content.publishedAt?.seconds" />
-            </div>
-            <div hlmItemContent class="min-w-0 overflow-hidden">
-              <div hlmItemTitle class="line-clamp-1 w-full truncate">
-                {{ content.name }} <span class="accent-muted-foreground">#{{ content.slug }}</span>
-              </div>
-              <p hlmItemDescription class="line-clamp-1 truncate"> {{ content.fullSlug }} </p>
-            </div>
-            <div role="none" hlmItemActions>
-              <button hlmBtn size="icon" variant="outline" (click)="deleteReference(index)" hlmTooltip="Delete">
-                <ng-icon hlm size="sm" name="lucideTrash" />
-              </button>
-              <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
-                <ng-icon hlm size="sm" name="lucideGripVertical" />
-              </button>
-            </div>
+    <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="referenceDropDrop($event)">
+      @for (content of contents(); track content.id; let index = $index) {
+        <div hlmItem variant="outline" role="listitem" cdkDrag cdkDragPreviewContainer="parent">
+          <div hlmItemMedia>
+            <ll-document-status [updatedAt]="content.updatedAt.seconds" [publishedAt]="content.publishedAt?.seconds" />
           </div>
-        }
-      </div>
+          <div hlmItemContent class="min-w-0 overflow-hidden">
+            <div hlmItemTitle class="line-clamp-1 w-full truncate">
+              {{ content.name }} <span class="accent-muted-foreground">#{{ content.slug }}</span>
+            </div>
+            <p hlmItemDescription class="line-clamp-1 truncate"> {{ content.fullSlug }} </p>
+          </div>
+          <div role="none" hlmItemActions>
+            <button hlmBtn size="icon" variant="outline" (click)="deleteReference(index)" hlmTooltip="Delete">
+              <ng-icon hlm size="sm" name="lucideTrash" />
+            </button>
+            <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+              <ng-icon hlm size="sm" name="lucideGripVertical" />
+            </button>
+          </div>
+        </div>
+      }
     </div>
     @if (form().errors; as errors) {
       <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
