@@ -400,40 +400,38 @@
                 <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
               }
               <hlm-field-separator />
-              <div hlmFieldGroup>
-                <div hlmItemGroup class="gap-2">
-                  @if (data[field.name]; as item) {
-                    <div
-                      [id]="item._id"
-                      hlmItem
-                      variant="outline"
-                      role="listitem"
-                      class="cursor-pointer"
-                      [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
-                      (click)="navigationTo(item._id, field.name, item.schema)"
-                      (keydown)="navigationTo(item._id, field.name, item.schema)">
-                      <div hlmItemContent class="min-w-0 overflow-hidden">
-                        @if (schemaCompNodeById().get(item.schema); as sch) {
-                          <div hlmItemTitle class="line-clamp-1">
-                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
-                          </div>
-                          @if (sch.previewField) {
-                            <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
-                          }
-                        } @else {
-                          <div hlmItemTitle class="text-destructive line-clamp-1">
-                            Schema with ID <b>#{{ item.schema }}</b> can't be found.
-                          </div>
+              <div hlmItemGroup class="gap-2">
+                @if (data[field.name]; as item) {
+                  <div
+                    [id]="item._id"
+                    hlmItem
+                    variant="outline"
+                    role="listitem"
+                    class="cursor-pointer"
+                    [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
+                    (click)="navigationTo(item._id, field.name, item.schema)"
+                    (keydown)="navigationTo(item._id, field.name, item.schema)">
+                    <div hlmItemContent class="min-w-0 overflow-hidden">
+                      @if (schemaCompNodeById().get(item.schema); as sch) {
+                        <div hlmItemTitle class="line-clamp-1">
+                          {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                        </div>
+                        @if (sch.previewField) {
+                          <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
                         }
-                      </div>
-                      <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltip="Delete">
-                          <ng-icon hlm size="sm" name="lucideTrash" />
-                        </button>
-                      </div>
+                      } @else {
+                        <div hlmItemTitle class="text-destructive line-clamp-1">
+                          Schema with ID <b>#{{ item.schema }}</b> can't be found.
+                        </div>
+                      }
                     </div>
-                  }
-                </div>
+                    <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                      <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltip="Delete">
+                        <ng-icon hlm size="sm" name="lucideTrash" />
+                      </button>
+                    </div>
+                  </div>
+                }
               </div>
             </fieldset>
           </div>
@@ -461,96 +459,75 @@
                 <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
               }
               <hlm-field-separator />
-              <div hlmFieldGroup>
-                <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
-                  @for (item of data[field.name] || []; track item; let index = $index) {
-                    <div
-                      [id]="item._id"
-                      hlmItem
-                      variant="outline"
-                      role="listitem"
-                      class="cursor-pointer"
-                      [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
-                      cdkDrag
-                      cdkDragPreviewContainer="parent"
-                      (click)="navigationTo(item._id, field.name, item.schema)"
-                      (keydown)="navigationTo(item._id, field.name, item.schema)">
-                      <div hlmItemContent class="min-w-0 overflow-hidden">
-                        @if (schemaCompNodeById().get(item.schema); as sch) {
-                          <div hlmItemTitle class="line-clamp-1">
-                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
-                          </div>
-                          @if (sch.previewField) {
-                            <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
-                          }
-                        } @else {
-                          <div hlmItemTitle class="text-destructive line-clamp-1">
-                            Schema with ID <b>#{{ item.schema }}</b> can't be found.
-                          </div>
+              <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
+                @for (item of data[field.name] || []; track item; let index = $index) {
+                  <div
+                    [id]="item._id"
+                    hlmItem
+                    variant="outline"
+                    role="listitem"
+                    class="cursor-pointer"
+                    [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
+                    cdkDrag
+                    cdkDragPreviewContainer="parent"
+                    (click)="navigationTo(item._id, field.name, item.schema)"
+                    (keydown)="navigationTo(item._id, field.name, item.schema)">
+                    <div hlmItemContent class="min-w-0 overflow-hidden">
+                      @if (schemaCompNodeById().get(item.schema); as sch) {
+                        <div hlmItemTitle class="line-clamp-1">
+                          {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                        </div>
+                        @if (sch.previewField) {
+                          <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
                         }
-                      </div>
-                      <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                        <button
-                          hlmBtn
-                          variant="outline"
-                          size="sm"
-                          [hlmDropdownMenuTrigger]="schemasMenuAbove"
-                          hlmTooltip="Add Schema above">
-                          <ng-icon hlm size="sm" name="tablerRowInsertTop" />
-                        </button>
-                        <ng-template #schemasMenuAbove>
-                          <hlm-dropdown-menu class="w-60">
-                            @for (sch of filterSchema(field.schemas || []); track sch.id) {
-                              <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch, index)" [hlmTooltip]="sch.description || ''">
-                                {{ sch.displayName || sch.id }}
-                              </button>
-                            }
-                          </hlm-dropdown-menu>
-                        </ng-template>
-                        <button
-                          hlmBtn
-                          variant="outline"
-                          size="sm"
-                          [hlmDropdownMenuTrigger]="schemasMenuBelow"
-                          hlmTooltip="Add Schema below">
-                          <ng-icon hlm size="sm" name="tablerRowInsertBottom" />
-                        </button>
-                        <ng-template #schemasMenuBelow>
-                          <hlm-dropdown-menu class="w-60">
-                            @for (sch of filterSchema(field.schemas || []); track sch.id) {
-                              <button
-                                hlmDropdownMenuItem
-                                (click)="addSchemaMany(field, sch, index + 1)"
-                                [hlmTooltip]="sch.description || ''">
-                                {{ sch.displayName || sch.id }}
-                              </button>
-                            }
-                          </hlm-dropdown-menu>
-                        </ng-template>
-                        <button
-                          hlmBtn
-                          size="icon"
-                          variant="outline"
-                          (click)="duplicateSchemaMany(data[field.name], item, index)"
-                          hlmTooltip="Clone the schema">
-                          <ng-icon hlm size="sm" name="lucideBookCopy" />
-                        </button>
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltip="Delete">
-                          <ng-icon hlm size="sm" name="lucideTrash" />
-                        </button>
-                        <button
-                          hlmBtn
-                          size="icon"
-                          variant="ghost"
-                          cdkDragHandle
-                          class="cursor-grab active:cursor-grabbing"
-                          hlmTooltip="Move">
-                          <ng-icon hlm size="sm" name="lucideGripVertical" />
-                        </button>
-                      </div>
+                      } @else {
+                        <div hlmItemTitle class="text-destructive line-clamp-1">
+                          Schema with ID <b>#{{ item.schema }}</b> can't be found.
+                        </div>
+                      }
                     </div>
-                  }
-                </div>
+                    <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
+                      <button hlmBtn variant="outline" size="sm" [hlmDropdownMenuTrigger]="schemasMenuAbove" hlmTooltip="Add Schema above">
+                        <ng-icon hlm size="sm" name="tablerRowInsertTop" />
+                      </button>
+                      <ng-template #schemasMenuAbove>
+                        <hlm-dropdown-menu class="w-60">
+                          @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                            <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch, index)" [hlmTooltip]="sch.description || ''">
+                              {{ sch.displayName || sch.id }}
+                            </button>
+                          }
+                        </hlm-dropdown-menu>
+                      </ng-template>
+                      <button hlmBtn variant="outline" size="sm" [hlmDropdownMenuTrigger]="schemasMenuBelow" hlmTooltip="Add Schema below">
+                        <ng-icon hlm size="sm" name="tablerRowInsertBottom" />
+                      </button>
+                      <ng-template #schemasMenuBelow>
+                        <hlm-dropdown-menu class="w-60">
+                          @for (sch of filterSchema(field.schemas || []); track sch.id) {
+                            <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch, index + 1)" [hlmTooltip]="sch.description || ''">
+                              {{ sch.displayName || sch.id }}
+                            </button>
+                          }
+                        </hlm-dropdown-menu>
+                      </ng-template>
+                      <button
+                        hlmBtn
+                        size="icon"
+                        variant="outline"
+                        (click)="duplicateSchemaMany(data[field.name], item, index)"
+                        hlmTooltip="Clone the schema">
+                        <ng-icon hlm size="sm" name="lucideBookCopy" />
+                      </button>
+                      <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltip="Delete">
+                        <ng-icon hlm size="sm" name="lucideTrash" />
+                      </button>
+                      <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+                        <ng-icon hlm size="sm" name="lucideGripVertical" />
+                      </button>
+                    </div>
+                  </div>
+                }
               </div>
             </fieldset>
           </div>
