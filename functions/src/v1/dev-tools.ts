@@ -57,3 +57,27 @@ DEV_TOOLS.get(
     res.json(generateOpenApi(schemaById));
   }
 );
+
+DEV_TOOLS.get(
+  '/api/v1/spaces/:spaceId/schemas',
+  requireTokenPermissions([TokenPermission.DEV_TOOLS]),
+  async (req: RequestWithToken, res) => {
+    logger.info('[V1:Schemas] params: ' + JSON.stringify(req.params));
+    logger.info('[V1:Schemas] query: ' + JSON.stringify(req.query));
+    const { spaceId } = req.params;
+
+    const spaceSnapshot = await findSpaceById(spaceId).get();
+    if (!spaceSnapshot.exists) {
+      logger.info('[V1:OpenApi] Space not exist: ' + spaceId);
+      res
+        .status(404)
+        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+        .send(new HttpsError('not-found', 'Not found'));
+      return;
+    }
+
+    const schemasSnapshot = await findSchemas(spaceId).get();
+    const schemaById = new Map<string, Schema>(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
+    res.json(schemaById);
+  }
+);
