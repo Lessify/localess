@@ -4,7 +4,7 @@ import { HttpsError } from 'firebase-functions/v2/https';
 import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE } from '../config';
 import { Schema, Space, TokenPermission } from '../models';
 import { findSchemas, findSpaceById, generateOpenApi } from '../services';
-import { requireTokenPermissions, RequestWithToken } from './middleware/query-auth.middleware';
+import { RequestWithToken, requireTokenPermissions } from './middleware/query-auth.middleware';
 
 // eslint-disable-next-line new-cap
 export const DEV_TOOLS = Router();
@@ -77,7 +77,10 @@ DEV_TOOLS.get(
     }
 
     const schemasSnapshot = await findSchemas(spaceId).get();
-    const schemaById = new Map<string, Schema>(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
-    res.json(schemaById);
+    const schemas: Record<string, Schema> = {};
+    schemasSnapshot.docs.forEach(it => {
+      schemas[it.id] = it.data() as Schema;
+    });
+    res.json(schemas);
   }
 );
