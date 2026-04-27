@@ -19,33 +19,36 @@
             hlmTooltip="Change link type"
             [hlmDropdownMenuTrigger]="linkTypeMenu"
             [disabled]="default() && !component().translatable">
-            <ng-icon [name]="form().value.type === 'content' ? 'lucideFileSymlink' : 'lucideLink'" />
+            <ng-icon [name]="linkType() === 'content' ? 'lucideFileSymlink' : 'lucideLink'" />
           </button>
           <ng-template #linkTypeMenu>
             <hlm-dropdown-menu>
-              <button hlmDropdownMenuRadio [checked]="form().value.type === 'url'" (click)="onTypeChange('url')">
+              <button hlmDropdownMenuRadio [checked]="linkType() === 'url'" (click)="onTypeChange('url')">
                 <hlm-dropdown-menu-radio-indicator />
                 <ng-icon name="lucideLink" class="mr-2" />
                 <span>Public URL</span>
               </button>
-              <button hlmDropdownMenuRadio [checked]="form().value.type === 'content'" (click)="onTypeChange('content')">
+              <button hlmDropdownMenuRadio [checked]="linkType() === 'content'" (click)="onTypeChange('content')">
                 <hlm-dropdown-menu-radio-indicator />
                 <ng-icon name="lucideFileSymlink" class="mr-2" />
                 <span>Internal Reference</span>
               </button>
             </hlm-dropdown-menu>
           </ng-template>
-          @switch (form().value.type) {
+          @switch (linkType()) {
             @case ('url') {
-              <input
-                hlmInput
-                [id]="component().name"
-                type="url"
-                formControlName="uri"
-                autocomplete="off"
-                [readonly]="default() && !component().translatable"
-                [required]="component().required || false"
-                [placeholder]="displayContent(defaultDocument()) || default()?.uri || 'https://'" />
+              @if (default() && !component().translatable) {
+                <input hlmInput type="url" [readonly]="true" [value]="default()?.uri || ''" />
+              } @else {
+                <input
+                  hlmInput
+                  [id]="component().name"
+                  type="url"
+                  formControlName="uri"
+                  autocomplete="off"
+                  [required]="component().required || false"
+                  [placeholder]="default()?.uri || 'https://'" />
+              }
             }
             @case ('content') {
               @if (default() && !component().translatable) {

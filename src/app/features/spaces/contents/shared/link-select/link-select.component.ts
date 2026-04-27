@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
@@ -16,6 +17,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { map, startWith, switchMap } from 'rxjs';
 
 @Component({
   selector: 'll-link-select',
@@ -61,6 +63,19 @@ export class LinkSelectComponent implements OnInit {
     return undefined;
   });
 
+  // Reactive link type - tracks form value changes including patchValue/reset
+  linkType = toSignal(
+    toObservable(this.form).pipe(
+      switchMap(form =>
+        form.valueChanges.pipe(
+          map(v => v.type as string),
+          startWith(form.value.type as string),
+        ),
+      ),
+    ),
+    { initialValue: 'url' },
+  );
+
   // Search
   search = signal('');
   filteredOptions = computed(() => {
@@ -78,8 +93,9 @@ export class LinkSelectComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
 
   constructor() {
-    // Sync combobox selection with form control
+    // Sync combobox selection with form control (only for content type)
     effect(() => {
+      if (this.linkType() !== 'content') return;
       const selected = this.selectedDocument();
       const control = this.form().get('uri');
       if (!control) return;
@@ -90,19 +106,12 @@ export class LinkSelectComponent implements OnInit {
       }
     });
 
-    // Initialize combobox from form value
+    // Initialize combobox when form or documents change (only for content type)
     effect(() => {
-      const control = this.form().get('uri');
-      const selected = this.selectedDocument();
-      if (!control) return;
-
-      const formValue = control.value;
-      if (formValue && !selected) {
-        const doc = this.documents().find(it => it.id === formValue);
-        if (doc) {
-          this.selectedDocument.set(doc);
-        }
-      }
+      if (this.linkType() !== 'content') return;
+      const uriValue = this.form().get('uri')?.value;
+      const doc = uriValue ? this.documents().find(it => it.id === uriValue) : null;
+      this.selectedDocument.set(doc ?? null);
     });
   }
 
@@ -114,15 +123,6 @@ export class LinkSelectComponent implements OnInit {
         type: this.default()?.type || 'url',
         target: this.default()?.target || '_self',
       });
-    }
-
-    // Initialize selected document from form value
-    const initialUri = this.form().get('uri')?.value;
-    if (initialUri) {
-      const doc = this.documents().find(it => it.id === initialUri);
-      if (doc) {
-        this.selectedDocument.set(doc);
-      }
     }
   }
 
