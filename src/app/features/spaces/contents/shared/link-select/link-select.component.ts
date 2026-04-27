@@ -93,20 +93,6 @@ export class LinkSelectComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
 
   constructor() {
-    // Sync combobox selection with form control (only for content type)
-    effect(() => {
-      if (this.linkType() !== 'content') return;
-      const selected = this.selectedDocument();
-      const control = this.form().get('uri');
-      if (!control) return;
-
-      const newValue = selected?.id ?? null;
-      if (control.value !== newValue) {
-        control.setValue(newValue);
-      }
-    });
-
-    // Initialize combobox when form or documents change (only for content type)
     effect(() => {
       if (this.linkType() !== 'content') return;
       const uriValue = this.form().get('uri')?.value;
@@ -129,6 +115,13 @@ export class LinkSelectComponent implements OnInit {
   onTypeChange(type: LinkContentType): void {
     this.form().patchValue({ uri: null, type });
     this.selectedDocument.set(null);
+  }
+
+  onDocumentSelect(doc: ContentDocument | null): void {
+    this.selectedDocument.set(doc);
+    this.form()
+      .get('uri')
+      ?.setValue(doc?.id ?? null);
   }
 
   itemToString = (item: ContentDocument): string => {

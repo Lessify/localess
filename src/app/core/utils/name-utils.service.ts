@@ -3,7 +3,7 @@ export class NameUtils {
     const replace = '';
     return input
       .toLowerCase()
-      .replace(' ', replace)
+      .replace(/\s+/g, replace)
       .replace(/[^\w\d\s_-]/g, replace);
   }
   public static slug(input: string): string {

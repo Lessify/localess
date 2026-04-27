@@ -54,7 +54,12 @@
               @if (default() && !component().translatable) {
                 <input hlmInput [readonly]="true" [value]="displayContent(defaultDocument())" />
               } @else {
-                <hlm-combobox class="w-full" [(value)]="selectedDocument" [(search)]="search" [itemToString]="itemToString">
+                <hlm-combobox
+                  class="w-full"
+                  [value]="selectedDocument()"
+                  (valueChange)="onDocumentSelect($event)"
+                  [(search)]="search"
+                  [itemToString]="itemToString">
                   <hlm-combobox-input placeholder="Select a document" showClear />
                   <hlm-combobox-content *hlmComboboxPortal>
                     <hlm-combobox-empty>No document found.</hlm-combobox-empty>
