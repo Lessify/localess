@@ -299,7 +299,10 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                     this.data[`${field.name}_i18n_${this.selectedLocaleId()}`] = value;
                   }
                 } else {
-                  // Non-translatable fields (e.g. references) are shared across all locales
+                  // Non-translatable fields are disabled on non-default locales and are
+                  // excluded from form.value (value === undefined). Skip them so the
+                  // shared value in this.data is never overwritten with undefined.
+                  if (value === undefined) continue;
                   if (value === null) {
                     delete this.data[field.name];
                   } else {
