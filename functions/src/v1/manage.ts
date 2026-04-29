@@ -43,13 +43,11 @@ MANAGE.post(
         }
         if (dryRun) {
           logger.info(`[V1:Translations:update] [DryRun] Would add ${translationIds.length} missing translations`, translationIds);
-          res
-            .status(200)
-            .send({
-              message: `[V1:Translations:update] [DryRun] Would add ${translationIds.length} missing translations`,
-              ids: translationIds,
-              dryRun: true,
-            });
+          res.status(200).send({
+            message: `[V1:Translations:update] [DryRun] Would add ${translationIds.length} missing translations`,
+            ids: translationIds,
+            dryRun: true,
+          });
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
@@ -82,9 +80,11 @@ MANAGE.post(
         }
         if (dryRun) {
           logger.info(`[V1:Translations:update] [DryRun] Would update ${translationIds.length} translations`, translationIds);
-          res
-            .status(200)
-            .send({ message: `[V1:Translations:update] [DryRun] Would update ${translationIds.length} translations`, ids: translationIds, dryRun: true });
+          res.status(200).send({
+            message: `[V1:Translations:update] [DryRun] Would update ${translationIds.length} translations`,
+            ids: translationIds,
+            dryRun: true,
+          });
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
@@ -112,9 +112,11 @@ MANAGE.post(
         }
         if (dryRun) {
           logger.info(`[V1:Translations:update] [DryRun] Would delete ${translationIds.length} missing translations`, translationIds);
-          res
-            .status(200)
-            .send({ message: `[V1:Translations:update] [DryRun] Would delete ${translationIds.length} missing translations`, ids: translationIds, dryRun: true });
+          res.status(200).send({
+            message: `[V1:Translations:update] [DryRun] Would delete ${translationIds.length} missing translations`,
+            ids: translationIds,
+            dryRun: true,
+          });
           return;
         }
         const bulk = firestoreService.bulkWriter();

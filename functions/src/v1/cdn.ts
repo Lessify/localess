@@ -37,6 +37,22 @@ import {
 // eslint-disable-next-line new-cap
 export const CDN = Router();
 
+/**
+ * Resolves the locale file path to use for a request.
+ * Returns the primary path if the file exists, the fallback path if it does,
+ * or null if neither exists.
+ * @param {string} primaryPath The primary file path to check
+ * @param {string} fallbackPath The fallback file path to check if the primary does not exist
+ * @return {string | null} The resolved file path or null if neither exists
+ */
+async function resolveLocaleFilePath(primaryPath: string, fallbackPath: string): Promise<string | null> {
+  const [primaryExists] = await bucket.file(primaryPath).exists();
+  if (primaryExists) return primaryPath;
+  if (primaryPath === fallbackPath) return null;
+  const [fallbackExists] = await bucket.file(fallbackPath).exists();
+  return fallbackExists ? fallbackPath : null;
+}
+
 CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermissions(), async (req: RequestWithToken, res) => {
   logger.info('[V1:Translations] params : ' + JSON.stringify(req.params));
   logger.info('[V1:Translations] query : ' + JSON.stringify(req.query));
@@ -76,18 +92,22 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
         actualLocale = space.localeFallback.id;
       }
       const filePath = translationLocaleCachePath(spaceId, actualLocale, version as string | undefined);
-      bucket
-        .file(filePath)
-        .download()
-        .then(content => {
-          res
-            .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-            .contentType('application/json; charset=utf-8')
-            .send(content.toString());
-        })
-        .catch(() => {
-          res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
-        });
+      const fallbackFilePath = translationLocaleCachePath(spaceId, space.localeFallback.id, version as string | undefined);
+      const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
+      if (!resolvedPath) {
+        res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+        return;
+      }
+      try {
+        const [content] = await bucket.file(resolvedPath).download();
+        res
+          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+          .contentType('application/json; charset=utf-8')
+          .send(content.toString());
+      } catch (e) {
+        logger.error('[V1:Translations]', e);
+        res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+      }
     }
   } else {
     res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
@@ -250,8 +270,18 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
       const actualLocale = identifySpaceLocale(space, locale as string | undefined);
       logger.info(`[V1:ContentBySlug] locale identified as => ${actualLocale}`);
       const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
+      const fallbackFilePath = contentLocaleCachePath(spaceId, contentId, space.localeFallback.id, version as string | undefined);
+      const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
+      if (!resolvedPath) {
+        res
+          .status(404)
+          .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+          .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
+        return;
+      }
+      const resolvedLocale = resolvedPath === filePath ? actualLocale : space.localeFallback.id;
       try {
-        const content = await bucket.file(filePath).download();
+        const [content] = await bucket.file(resolvedPath).download();
         const contentData: ContentDocumentStorage = JSON.parse(content.toString());
         const { links, references, ...rest } = contentData;
         const response: ContentDocumentApi = { ...rest };
@@ -261,7 +291,7 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
         }
         if (resolveReference === 'true' && references && references.length > 0) {
           logger.info(`[V1:ContentBySlug] resolve refs => ${JSON.stringify(references)}`);
-          response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
+          response.references = await resolveReferences(spaceId, contentData, resolvedLocale, version as string | undefined);
         }
         res
           .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -335,8 +365,18 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
       const actualLocale = identifySpaceLocale(space, locale as string | undefined);
       logger.info(`[V1:ContentById] locale identified as => ${actualLocale}`);
       const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
+      const fallbackFilePath = contentLocaleCachePath(spaceId, contentId, space.localeFallback.id, version as string | undefined);
+      const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
+      if (!resolvedPath) {
+        res
+          .status(404)
+          .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+          .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
+        return;
+      }
+      const resolvedLocale = resolvedPath === filePath ? actualLocale : space.localeFallback.id;
       try {
-        const content = await bucket.file(filePath).download()
+        const [content] = await bucket.file(resolvedPath).download();
         const contentData: ContentDocumentStorage = JSON.parse(content.toString());
         const { links, references, ...rest } = contentData;
         const response: ContentDocumentApi = { ...rest };
@@ -346,7 +386,7 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
         }
         if (resolveReference === 'true' && references && references.length > 0) {
           logger.info(`[V1:ContentById] resolve refs => ${JSON.stringify(references)}`);
-          response.references = await resolveReferences(spaceId, contentData, actualLocale, version as string | undefined);
+          response.references = await resolveReferences(spaceId, contentData, resolvedLocale, version as string | undefined);
         }
         res
           .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
