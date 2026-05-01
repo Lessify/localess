@@ -8,7 +8,6 @@ import { AppUiColor } from '@shared/models/settings.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SettingsService } from '@shared/services/settings.service';
 import { SettingsValidator } from '@shared/validators/settings.validator';
-import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -21,16 +20,7 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
   templateUrl: './ui.component.html',
   styleUrls: ['./ui.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    ReactiveFormsModule,
-    HlmProgressImports,
-    HlmButtonImports,
-    HlmIconImports,
-    HlmFieldImports,
-    HlmInputImports,
-    HlmSelectImports,
-    BrnSelectImports,
-  ],
+  imports: [ReactiveFormsModule, HlmProgressImports, HlmButtonImports, HlmIconImports, HlmFieldImports, HlmInputImports, HlmSelectImports],
   providers: [
     provideIcons({
       lucideSave,
@@ -47,6 +37,8 @@ export class UiComponent {
   private destroyRef = inject(DestroyRef);
 
   isLoading = signal(true);
+
+  colorToString = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);
 
   // Form
   form: FormGroup = this.fb.group({

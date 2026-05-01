@@ -41,7 +41,6 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -89,7 +88,6 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     HlmItemImports,
     HlmInputGroupImports,
     HlmSwitchImports,
-    BrnSelectImports,
     HlmSelectImports,
     MarkdownEditorComponent,
     HlmAccordionImports,
@@ -175,6 +173,15 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
           .map(it => [it.id, it]),
       ),
   );
+  optionItemToStringMap = computed(() => {
+    const map = new Map<string, (v: string | string[]) => string>();
+    for (const [id, schema] of this.schemaEnumMapById()) {
+      const values = schema.values ?? [];
+      const toLabel = (v: string) => values.find(o => o.value === v)?.name ?? v;
+      map.set(id, (value: string | string[]) => (Array.isArray(value) ? value.map(toLabel).join(', ') : toLabel(value)));
+    }
+    return map;
+  });
   schemaFieldsMap: Map<string, SchemaField> = new Map<string, SchemaField>();
   //Loadings
   isFormLoading = signal(true);

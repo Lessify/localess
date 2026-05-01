@@ -51,7 +51,6 @@ import { SchemaService } from '@shared/services/schema.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
-import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -102,7 +101,6 @@ import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
     HlmTextareaImports,
     HlmBadgeImports,
     HlmSelectImports,
-    BrnSelectImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
     HlmKbdImports,

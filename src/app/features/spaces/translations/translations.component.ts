@@ -76,7 +76,6 @@ import { TranslationService } from '@shared/services/translation.service';
 import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
-import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
@@ -149,7 +148,6 @@ import { TranslationNode } from './shared/models/translation.model';
     NgScrollbarModule,
     HlmSpinnerImports,
     HlmSelectImports,
-    BrnSelectImports,
     HlmFieldImports,
     HlmPopoverImports,
     HlmCommandImports,
@@ -666,10 +664,14 @@ export class TranslationsComponent implements OnInit {
     });
   }
 
+  localeIdToString = (id: string): string => this.availableLocales().find(l => l.id === id)?.name ?? id;
+
+  localeToString = (locale: Locale): string => locale?.name ?? '';
+
   // Labels
-  compareLocale(a: Locale, b: Locale): boolean {
-    return a.id === b.id;
-  }
+  compareLocale = (a: Locale, b: Locale | null): boolean => {
+    return a.id === b?.id;
+  };
 
   selectLabel(label: string): void {
     const current = this.filterForm.controls.labels.value || [];

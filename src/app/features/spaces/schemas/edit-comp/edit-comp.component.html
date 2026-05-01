@@ -163,12 +163,12 @@
                     <hlm-select-trigger class="w-full">
                       <hlm-select-value />
                     </hlm-select-trigger>
-                    <hlm-select-content>
+                    <hlm-select-content *hlmSelectPortal>
                       @for (field of fields.controls; track field.value.name) {
                         @if (PREVIEW_TYPES.includes(field.value.kind)) {
-                          <hlm-option [value]="field.value.name">
+                          <hlm-select-item [value]="field.value.name">
                             {{ field.value.displayName }} <span class="text-muted-foreground">#{{ field.value.name }}</span>
-                          </hlm-option>
+                          </hlm-select-item>
                         }
                       }
                     </hlm-select-content>

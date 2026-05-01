@@ -73,7 +73,6 @@ import { PlatformService } from '@shared/services/platform.service';
 import { TokenService } from '@shared/services/token.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
-import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -127,7 +126,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     HlmButtonImports,
     HlmToggleGroupImports,
     HlmTooltipImports,
-    BrnSelectImports,
     HlmDropdownMenuImports,
     HlmSpinnerImports,
     HlmProgressImports,

@@ -39,7 +39,6 @@ import {
 } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SchemaValidator } from '@shared/validators/schema.validator';
-import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
@@ -63,7 +62,6 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
     HlmInputImports,
     HlmTooltipImports,
     HlmInputGroupImports,
-    BrnSelectImports,
     HlmSelectImports,
     HlmSwitchImports,
     HlmTextareaImports,
@@ -137,6 +135,19 @@ export class EditFieldComponent {
       .filter(it => it.type === SchemaType.ENUM)
       .sort(sortSchema),
   );
+
+  schemaIdToString = (id: string | string[]): string => {
+    const toLabel = (i: string) => {
+      const schema = this.nodeSchemas().find(s => s.id === i);
+      return schema?.displayName ? `${schema.id} (${schema.displayName})` : (schema?.id ?? i);
+    };
+    return Array.isArray(id) ? id.map(toLabel).join(', ') : toLabel(id);
+  };
+
+  enumSchemaIdToString = (id: string): string => {
+    const schema = this.enumSchemas().find(s => s.id === id);
+    return schema?.displayName ? `${schema.id} (${schema.displayName})` : (schema?.id ?? id);
+  };
 
   settingsStore = inject(LocalSettingsStore);
 

@@ -8,9 +8,9 @@
           <hlm-select-trigger class="w-full">
             <hlm-select-value />
           </hlm-select-trigger>
-          <hlm-select-content>
+          <hlm-select-content *hlmSelectPortal>
             @for (locale of data.locales; track locale.id) {
-              <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
+              <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
             }
           </hlm-select-content>
         </hlm-select>
@@ -21,9 +21,9 @@
           <hlm-select-trigger class="w-full">
             <hlm-select-value />
           </hlm-select-trigger>
-          <hlm-select-content>
+          <hlm-select-content *hlmSelectPortal>
             @for (locale of data.locales; track locale.id) {
-              <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
+              <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
             }
           </hlm-select-content>
         </hlm-select>

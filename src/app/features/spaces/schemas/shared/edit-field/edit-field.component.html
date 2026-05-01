@@ -28,26 +28,26 @@
         </div>
         <div hlmField>
           <label hlmFieldLabel for="kind"> Kind </label>
-          <hlm-select scrollable="true" formControlName="kind" id="kind">
+          <hlm-select formControlName="kind" id="kind">
             <hlm-select-trigger class="w-full">
-              <hlm-select-value>
-                <div *brnSelectValue="let value">
-                  @let descriptor = schemaFieldKindDescriptions[value];
-                  <ng-icon [name]="descriptor.icon" class="mr-1" />
-                  {{ descriptor.name }}
-                </div>
-              </hlm-select-value>
+              <hlm-select-placeholder>Select kind</hlm-select-placeholder>
+              <ng-template hlmSelectValueTemplate let-value>
+                @if (schemaFieldKindDescriptions[value]; as descriptor) {
+                  <div>
+                    <ng-icon [name]="descriptor.icon" class="mr-1" />
+                    {{ descriptor.name }}
+                  </div>
+                }
+              </ng-template>
             </hlm-select-trigger>
-            <hlm-select-content class="max-h-96">
-              <hlm-select-scroll-up />
+            <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
               @for (kind of fieldKinds; track kind) {
                 @let descriptor = schemaFieldKindDescriptions[kind];
-                <hlm-option [value]="kind" [hlmTooltip]="descriptor.description" (click)="selectFieldKind(kind)">
+                <hlm-select-item [value]="kind" [hlmTooltip]="descriptor.description" (click)="selectFieldKind(kind)">
                   <ng-icon [name]="descriptor.icon" class="mr-1" />
                   {{ descriptor.name }}
-                </hlm-option>
+                </hlm-select-item>
               }
-              <hlm-select-scroll-down />
             </hlm-select-content>
           </hlm-select>
           @if (form.controls['kind']?.errors; as errors) {
@@ -155,21 +155,19 @@
           }
           <div hlmField>
             <label hlmFieldLabel for="source"> Source </label>
-            <hlm-select scrollable="true" formControlName="source" id="source">
+            <hlm-select formControlName="source" id="source" [itemToString]="enumSchemaIdToString">
               <hlm-select-trigger class="w-full">
                 <hlm-select-value />
               </hlm-select-trigger>
-              <hlm-select-content class="max-h-96">
-                <hlm-select-scroll-up />
+              <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
                 @for (schema of enumSchemas(); track schema.id) {
-                  <hlm-option [value]="schema.id" [hlmTooltip]="schema.description || ''">
+                  <hlm-select-item [value]="schema.id" [hlmTooltip]="schema.description || ''">
                     {{ schema.id }}
                     @if (schema.displayName) {
                       ({{ schema.displayName }})
                     }
-                  </hlm-option>
+                  </hlm-select-item>
                 }
-                <hlm-select-scroll-down />
               </hlm-select-content>
             </hlm-select>
             @if (form.controls['source']?.errors; as errors) {
@@ -181,23 +179,21 @@
         @if (['SCHEMA', 'SCHEMAS'].includes(form.value.kind)) {
           <div hlmField>
             <label hlmFieldLabel for="schemas"> Schema </label>
-            <hlm-select scrollable="true" multiple="true" formControlName="schemas" id="schemas">
+            <hlm-select-multiple formControlName="schemas" id="schemas" [itemToString]="schemaIdToString">
               <hlm-select-trigger class="w-full">
                 <hlm-select-value />
               </hlm-select-trigger>
-              <hlm-select-content class="max-h-96">
-                <hlm-select-scroll-up />
+              <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
                 @for (schema of nodeSchemas(); track schema.id) {
-                  <hlm-option [value]="schema.id" [hlmTooltip]="schema.description || ''">
+                  <hlm-select-item [value]="schema.id" [hlmTooltip]="schema.description || ''">
                     {{ schema.id }}
                     @if (schema.displayName; as displayName) {
                       ({{ displayName }})
                     }
-                  </hlm-option>
+                  </hlm-select-item>
                 }
-                <hlm-select-scroll-down />
               </hlm-select-content>
-            </hlm-select>
+            </hlm-select-multiple>
             @if (form.controls['schemas']?.errors; as errors) {
               <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
@@ -224,21 +220,21 @@
             <label hlmFieldLabel for="fileType"> File Type </label>
             <hlm-select formControlName="fileType" id="fileType">
               <hlm-select-trigger class="w-full">
-                <hlm-select-value>
-                  <div *brnSelectValue="let value">
-                    @let descriptor = assetFileTypeDescriptions[value];
+                <hlm-select-placeholder>Select file type</hlm-select-placeholder>
+                <ng-template hlmSelectValueTemplate let-value>
+                  @if (assetFileTypeDescriptions[value]; as descriptor) {
                     <ng-icon [name]="descriptor.icon" class="mr-1" />
                     {{ descriptor.name }}
-                  </div>
-                </hlm-select-value>
+                  }
+                </ng-template>
               </hlm-select-trigger>
-              <hlm-select-content>
+              <hlm-select-content *hlmSelectPortal>
                 @for (fileType of assetTypes; track fileType) {
                   @let descriptor = assetFileTypeDescriptions[fileType];
-                  <hlm-option [value]="fileType" [hlmTooltip]="descriptor.description">
+                  <hlm-select-item [value]="fileType" [hlmTooltip]="descriptor.description">
                     <ng-icon [name]="descriptor.icon" class="mr-1" />
                     {{ descriptor.name }}
-                  </hlm-option>
+                  </hlm-select-item>
                 }
               </hlm-select-content>
             </hlm-select>

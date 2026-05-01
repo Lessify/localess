@@ -106,13 +106,13 @@
         <fieldset hlmFieldSet>
           <div hlmFieldGroup class="mb-3 grid grid-cols-4 gap-2">
             <div hlmField>
-              <hlm-select formControlName="locale" placeholder="Search Locale">
+              <hlm-select formControlName="locale" [itemToString]="localeIdToString">
                 <hlm-select-trigger class="w-full">
-                  <hlm-select-value />
+                  <hlm-select-value placeholder="Search Locale" />
                 </hlm-select-trigger>
-                <hlm-select-content>
+                <hlm-select-content *hlmSelectPortal>
                   @for (locale of availableLocales(); track locale.id) {
-                    <hlm-option [value]="locale.id">{{ locale.name }}</hlm-option>
+                    <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
                   }
                 </hlm-select-content>
               </hlm-select>
@@ -297,13 +297,13 @@
                 <fieldset hlmFieldSet>
                   <div hlmFieldGroup class="flex flex-row justify-center gap-2">
                     <div hlmField>
-                      <hlm-select [(value)]="selectedSourceLocale" [compareWith]="compareLocale" placeholder="Source Locale">
+                      <hlm-select [(value)]="selectedSourceLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
                         <hlm-select-trigger class="w-full">
-                          <hlm-select-value />
+                          <hlm-select-value placeholder="Source Locale" />
                         </hlm-select-trigger>
-                        <hlm-select-content>
+                        <hlm-select-content *hlmSelectPortal>
                           @for (locale of availableLocales(); track locale.id) {
-                            <hlm-option [value]="locale">{{ locale.name }}</hlm-option>
+                            <hlm-select-item [value]="locale">{{ locale.name }}</hlm-select-item>
                           }
                         </hlm-select-content>
                       </hlm-select>
@@ -312,13 +312,13 @@
                       <ng-icon hlm size="sm" name="lucideArrowRight" />
                     </button>
                     <div hlmField>
-                      <hlm-select [(value)]="selectedTargetLocale" [compareWith]="compareLocale" placeholder="Target Locale">
+                      <hlm-select [(value)]="selectedTargetLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
                         <hlm-select-trigger class="w-full">
-                          <hlm-select-value />
+                          <hlm-select-value placeholder="Target Locale" />
                         </hlm-select-trigger>
-                        <hlm-select-content>
+                        <hlm-select-content *hlmSelectPortal>
                           @for (locale of availableLocales(); track locale.id) {
-                            <hlm-option [value]="locale">{{ locale.name }}</hlm-option>
+                            <hlm-select-item [value]="locale">{{ locale.name }}</hlm-select-item>
                           }
                         </hlm-select-content>
                       </hlm-select>

@@ -276,24 +276,21 @@
               }
             </label>
             <hlm-select
-              scrollable="true"
               [id]="'schema-field-' + field.name"
               [formControlName]="field.name"
-              [placeholder]="(!isDefaultLocale() && data[field.name]) || ''">
+              [itemToString]="optionItemToStringMap().get(field.source)">
               <hlm-select-trigger class="w-full">
-                <hlm-select-value />
+                <hlm-select-value [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
               </hlm-select-trigger>
-              <hlm-select-content class="max-h-96">
-                <hlm-select-scroll-up />
+              <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
                 @if (!field.required) {
-                  <hlm-option>-- None --</hlm-option>
+                  <hlm-select-item [value]="undefined">-- None --</hlm-select-item>
                 }
                 @if (schemaEnumMapById().get(field.source); as source) {
                   @for (option of source.values; track option.value) {
-                    <hlm-option [value]="option.value"> {{ option.name }}</hlm-option>
+                    <hlm-select-item [value]="option.value"> {{ option.name }}</hlm-select-item>
                   }
                 }
-                <hlm-select-scroll-down />
               </hlm-select-content>
             </hlm-select>
             @if (form.controls[field.name]?.errors; as errors) {
@@ -313,25 +310,21 @@
                 <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
               }
             </label>
-            <hlm-select
-              scrollable="true"
-              [multiple]="true"
+            <hlm-select-multiple
               [id]="'schema-field-' + field.name"
               [formControlName]="field.name"
-              [placeholder]="(!isDefaultLocale() && data[field.name]) || ''">
+              [itemToString]="optionItemToStringMap().get(field.source)">
               <hlm-select-trigger class="w-full">
-                <hlm-select-value />
+                <hlm-select-value [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
               </hlm-select-trigger>
-              <hlm-select-content class="max-h-96">
-                <hlm-select-scroll-up />
+              <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
                 @if (schemaEnumMapById().get(field.source); as source) {
                   @for (option of source.values; track option.value) {
-                    <hlm-option [value]="option.value"> {{ option.name }}</hlm-option>
+                    <hlm-select-item [value]="option.value"> {{ option.name }}</hlm-select-item>
                   }
                 }
-                <hlm-select-scroll-down />
               </hlm-select-content>
-            </hlm-select>
+            </hlm-select-multiple>
             @if (form.controls[field.name]?.errors; as errors) {
               <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }

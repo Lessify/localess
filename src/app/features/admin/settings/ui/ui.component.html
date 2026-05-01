@@ -17,15 +17,15 @@
       <div hlmFieldGroup>
         <div hlmField>
           <label hlmFieldLabel for="color">Color</label>
-          <hlm-select id="color" formControlName="color">
+          <hlm-select id="color" formControlName="color" [itemToString]="colorToString">
             <hlm-select-trigger class="w-full">
               <hlm-select-value />
             </hlm-select-trigger>
-            <hlm-select-content class="max-h-96">
-              <hlm-option value="primary">Primary</hlm-option>
-              <hlm-option value="secondary">Secondary</hlm-option>
-              <hlm-option value="outline">Outline</hlm-option>
-              <hlm-option value="destructive">Destructive</hlm-option>
+            <hlm-select-content *hlmSelectPortal class="max-h-96">
+              <hlm-select-item value="primary">Primary</hlm-select-item>
+              <hlm-select-item value="secondary">Secondary</hlm-select-item>
+              <hlm-select-item value="outline">Outline</hlm-select-item>
+              <hlm-select-item value="destructive">Destructive</hlm-select-item>
             </hlm-select-content>
           </hlm-select>
           @if (form.controls['color'].errors; as errors) {
