@@ -110,7 +110,7 @@ export const schemaFieldKindDescriptions: Record<SchemaFieldKind, FieldKindDescr
   TEXT: { name: 'Text', icon: 'lucideType', description: 'Short text field, titles or headlines' },
   TEXTAREA: { name: 'Text Area', icon: 'lucideTextInitial', description: 'Long text field, description' },
   RICH_TEXT: {
-    name: 'Rich Text (Beta)',
+    name: 'Rich Text',
     icon: 'lucidePencilRuler',
     description: 'Rich text field, text that includes formatting commands for page layout such as bold, underline, italic, etc.',
   },
