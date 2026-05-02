@@ -92,7 +92,9 @@
                         <span hlmBadge variant="outline">Enum: {{ field.value.source }}</span>
                       }
                       @if (field.value.schemas) {
-                        @if (field.value.schemas.length === 1) {
+                        @if (field.value.schemas.length === 0) {
+                          <span hlmBadge variant="destructive">Schema: None</span>
+                        } @else if (field.value.schemas.length === 1) {
                           <span hlmBadge variant="outline">Schema: {{ field.value.schemas[0] }}</span>
                         } @else {
                           <span hlmBadge variant="outline" [hlmTooltip]="field.value.schemas.join('\n')">
@@ -161,6 +163,7 @@
                   <label hlmFieldLabel for="previewField"> Preview Field </label>
                   <hlm-select formControlName="previewField" id="previewField">
                     <hlm-select-trigger class="w-full">
+                      <hlm-select-placeholder>Select a field to be used as preview</hlm-select-placeholder>
                       <hlm-select-value />
                     </hlm-select-trigger>
                     <hlm-select-content *hlmSelectPortal>

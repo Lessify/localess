@@ -181,6 +181,7 @@
             <label hlmFieldLabel for="schemas"> Schema </label>
             <hlm-select-multiple formControlName="schemas" id="schemas" [itemToString]="schemaIdToString">
               <hlm-select-trigger class="w-full">
+                <hlm-select-placeholder>Select schemas</hlm-select-placeholder>
                 <hlm-select-value />
               </hlm-select-trigger>
               <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
@@ -223,8 +224,10 @@
                 <hlm-select-placeholder>Select file type</hlm-select-placeholder>
                 <ng-template hlmSelectValueTemplate let-value>
                   @if (assetFileTypeDescriptions[value]; as descriptor) {
-                    <ng-icon [name]="descriptor.icon" class="mr-1" />
-                    {{ descriptor.name }}
+                    <div>
+                      <ng-icon [name]="descriptor.icon" class="mr-1" />
+                      {{ descriptor.name }}
+                    </div>
                   }
                 </ng-template>
               </hlm-select-trigger>
