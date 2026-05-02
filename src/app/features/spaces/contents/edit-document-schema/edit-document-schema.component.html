@@ -281,11 +281,19 @@
               [itemToString]="optionItemToStringMap().get(field.source)">
               <hlm-select-trigger class="w-full">
                 <hlm-select-value [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
+                @if (form.controls[field.name]?.value) {
+                  <span
+                    role="button"
+                    tabindex="0"
+                    class="hover:bg-muted ml-auto rounded p-0.5"
+                    (click)="$event.stopPropagation(); form.controls[field.name].setValue(null)"
+                    (keydown.enter)="$event.stopPropagation(); form.controls[field.name].setValue(null)"
+                    (keydown.space)="$event.stopPropagation(); form.controls[field.name].setValue(null)">
+                    <ng-icon hlm size="sm" name="lucideX" />
+                  </span>
+                }
               </hlm-select-trigger>
               <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
-                @if (!field.required) {
-                  <hlm-select-item [value]="undefined">-- None --</hlm-select-item>
-                }
                 @if (schemaEnumMapById().get(field.source); as source) {
                   @for (option of source.values; track option.value) {
                     <hlm-select-item [value]="option.value"> {{ option.name }}</hlm-select-item>
@@ -316,6 +324,17 @@
               [itemToString]="optionItemToStringMap().get(field.source)">
               <hlm-select-trigger class="w-full">
                 <hlm-select-value [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
+                @if (form.controls[field.name]?.value) {
+                  <span
+                    role="button"
+                    tabindex="0"
+                    class="hover:bg-muted ml-auto rounded p-0.5"
+                    (click)="$event.stopPropagation(); form.controls[field.name].setValue(null)"
+                    (keydown.enter)="$event.stopPropagation(); form.controls[field.name].setValue(null)"
+                    (keydown.space)="$event.stopPropagation(); form.controls[field.name].setValue(null)">
+                    <ng-icon hlm size="sm" name="lucideX" />
+                  </span>
+                }
               </hlm-select-trigger>
               <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
                 @if (schemaEnumMapById().get(field.source); as source) {
