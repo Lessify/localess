@@ -376,14 +376,14 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       },
     },
     externalDocs: {
-      url: 'https://localess.org/docs/api/overview',
+      url: 'https://localess.org/docs/openapi',
       description: 'Localess Documentation',
     },
     paths: {
       '/api/v1/spaces/{spaceId}/translations/{locale}': {
         get: {
           tags: ['Translations'],
-          summary: 'Retrieve all Translations by Locale',
+          summary: 'Get Translations',
           description:
             'The endpoint allows you to retrieve all translations by locale. ' +
             'In case Locale is not present in the Localess, it will return the default locale translations. ' +
@@ -464,7 +464,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       '/api/v1/spaces/{spaceId}/links': {
         get: {
           tags: ['Contents'],
-          summary: 'Retrieve Links to all Contents',
+          summary: 'Get Links',
           description:
             'The endpoint allows you to retrieve all Content summery metadata mainly used to recreate content tree. ' +
             'In case cache version is not present, it will redirect to the latest version.',
@@ -555,7 +555,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       '/api/v1/spaces/{spaceId}/contents/slugs/{contentSlug}': {
         get: {
           tags: ['Contents'],
-          summary: 'Retrieve Content by Slug',
+          summary: 'Get Content by Slug',
           description:
             'The endpoint allows you to retrieve a specific Content by the content full slug. ' +
             'In case cache version is not present, it will redirect to the latest version.',
@@ -665,7 +665,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       '/api/v1/spaces/{spaceId}/contents/{contentId}': {
         get: {
           tags: ['Contents'],
-          summary: 'Retrieve Content By ID',
+          summary: 'Get Content By ID',
           description:
             'The endpoint allows you to retrieve a specific Content by Unique identifier for the Content object. ' +
             'In case cache version is not present, it will redirect to the latest version.',
@@ -775,7 +775,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       '/api/v1/spaces/{spaceId}/assets/{assetId}': {
         get: {
           tags: ['Assets'],
-          summary: 'Retrieve Asset By ID',
+          summary: 'Get Asset By ID',
           description: 'The endpoint allows you to retrieve a specific Asset by Unique identifier for the Asset object.',
           operationId: 'getAssetById',
           parameters: [
