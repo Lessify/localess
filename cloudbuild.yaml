@@ -27,7 +27,7 @@ steps:
     id: 'install-functions-deps'
     entrypoint: npm
     args: [ '--prefix', 'functions', 'install', '--platform=linuxmusl' ]
-  - name: us-docker.pkg.dev/firebase-cli/us/firebase
+  - name: "us-docker.pkg.dev/firebase-cli/us/firebase"
     id: 'Pull Firebase Apps SDK Config'
     args: [ 'apps:sdkconfig', '--project=$PROJECT_ID', 'web', '--out=src/environments/firebase-config-tmp.json' ]
   - name: 'node:24'
@@ -53,7 +53,7 @@ steps:
       - 'LOCALESS_LOGIN_MESSAGE=${_LOCALESS_LOGIN_MESSAGE}'
       - 'LOCALESS_UNSPLASH_ENABLE=${_LOCALESS_UNSPLASH_ENABLE}'
   # deploy to firebase
-  - name: us-docker.pkg.dev/firebase-cli/us/firebase
+  - name: "us-docker.pkg.dev/firebase-cli/us/firebase"
     id: 'firebase-deploy'
     args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force' ]
 options:
