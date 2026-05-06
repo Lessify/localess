@@ -53,7 +53,7 @@ steps:
       - 'LOCALESS_LOGIN_MESSAGE=${_LOCALESS_LOGIN_MESSAGE}'
       - 'LOCALESS_UNSPLASH_ENABLE=${_LOCALESS_UNSPLASH_ENABLE}'
   # deploy to firebase
-  - name: ghcr.io/lessify/firebase:edge
+  - name: us-docker.pkg.dev/firebase-cli/us/firebase
     id: 'firebase-deploy'
     args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force' ]
 options:
