@@ -219,8 +219,8 @@ export class FeaturesComponent implements OnInit {
   ];
 
   communitySideMenu: SideMenuItem[] = [
-    { link: 'https://localess.org/home', label: 'Visit Localess.ORG', icon: 'lucideEarth' },
-    { link: 'https://localess.org/docs/introduction', label: 'Documentation', icon: 'lucideBookOpen' },
+    { link: 'https://localess.org', label: 'Visit Localess.ORG', icon: 'lucideEarth' },
+    { link: 'https://localess.org/docs', label: 'Documentation', icon: 'lucideBookOpen' },
     { link: 'https://github.com/Lessify/localess', label: 'Code', icon: 'lucideCode' },
     { link: 'https://github.com/Lessify/localess/issues', label: 'Feedback', icon: 'lucideSend' },
   ];

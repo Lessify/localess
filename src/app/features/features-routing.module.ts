@@ -177,7 +177,7 @@ const routes: Routes = [
           authGuardPipe: hasPermissionTranslationRead,
           breadcrumb: {
             label: 'Translations',
-            helpUrl: 'https://localess.org/docs/translations/overview',
+            helpUrl: 'https://localess.org/docs/translations',
           } satisfies BreadcrumbItem,
         },
       },
@@ -190,7 +190,7 @@ const routes: Routes = [
           authGuardPipe: hasPermissionContentRead,
           breadcrumb: {
             label: 'Contents',
-            helpUrl: 'https://localess.org/docs/content/overview',
+            helpUrl: 'https://localess.org/docs/content',
           } satisfies BreadcrumbItem,
         },
       },
@@ -203,7 +203,7 @@ const routes: Routes = [
           authGuardPipe: hasPermissionAssetRead,
           breadcrumb: {
             label: 'Assets',
-            helpUrl: 'https://localess.org/docs/assets/overview',
+            helpUrl: 'https://localess.org/docs/assets',
           } satisfies BreadcrumbItem,
         },
       },
@@ -216,7 +216,7 @@ const routes: Routes = [
           authGuardPipe: hasPermissionSchemaRead,
           breadcrumb: {
             label: 'Schemas',
-            helpUrl: 'https://localess.org/docs/schemas/overview',
+            helpUrl: 'https://localess.org/docs/schemas',
           } satisfies BreadcrumbItem,
         },
       },
