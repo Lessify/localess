@@ -4,7 +4,16 @@ import { logger } from 'firebase-functions';
 import { HttpsError } from 'firebase-functions/v2/https';
 import os from 'os';
 import sharp from 'sharp';
-import { bucket, CACHE_ASSET_MAX_AGE, CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, firestoreService, TEN_MINUTES } from '../config';
+import {
+  bucket,
+  CACHE_ASSET_MAX_AGE,
+  CACHE_MAX_AGE,
+  CACHE_REDIRECT_DRAFT_MAX_AGE,
+  CACHE_REDIRECT_MAX_AGE,
+  CACHE_SHARE_MAX_AGE,
+  firestoreService,
+  TEN_MINUTES,
+} from '../config';
 import {
   AssetFile,
   Content,
@@ -70,48 +79,49 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
   }
 
   const cachePath = spaceTranslationCachePath(spaceId);
-  const [exists] = await bucket.file(cachePath).exists();
-  if (exists) {
-    const [metadata] = await bucket.file(cachePath).getMetadata();
-    logger.info('[V1:Translations] cache meta : ' + JSON.stringify(metadata));
-    if (cv === undefined || cv != metadata.generation) {
-      let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${metadata.generation}`;
-      if (version) {
-        url += `&version=${version}`;
-      }
-      if (token) {
-        url += `&token=${token}`;
-      }
-      logger.info(`[V1:Translations] redirect to => ${url}`);
-      res.redirect(url);
-      return;
-    } else {
-      const space = spaceSnapshot.data() as Space;
-      let actualLocale = locale;
-      if (!space.locales.some(it => it.id === locale)) {
-        actualLocale = space.localeFallback.id;
-      }
-      const filePath = translationLocaleCachePath(spaceId, actualLocale, version as string | undefined);
-      const fallbackFilePath = translationLocaleCachePath(spaceId, space.localeFallback.id, version as string | undefined);
-      const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
-      if (!resolvedPath) {
-        res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
-        return;
-      }
-      try {
-        const [content] = await bucket.file(resolvedPath).download();
-        res
-          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .contentType('application/json; charset=utf-8')
-          .send(content.toString());
-      } catch (e) {
-        logger.error('[V1:Translations]', e);
-        res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
-      }
-    }
-  } else {
+  let cacheMetadata: Record<string, unknown>;
+  try {
+    [cacheMetadata] = await bucket.file(cachePath).getMetadata();
+  } catch {
     res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
     return;
+  }
+  logger.info('[V1:Translations] cache meta : ' + JSON.stringify(cacheMetadata));
+  if (cv === undefined || cv != cacheMetadata['generation']) {
+    let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${cacheMetadata['generation']}`;
+    if (version) {
+      url += `&version=${version}`;
+    }
+    if (token) {
+      url += `&token=${token}`;
+    }
+    logger.info(`[V1:Translations] redirect to => ${url}`);
+    const redirectAge = version ? CACHE_REDIRECT_DRAFT_MAX_AGE : CACHE_REDIRECT_MAX_AGE;
+    res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    return;
+  } else {
+    const space = spaceSnapshot.data() as Space;
+    let actualLocale = locale;
+    if (!space.locales.some(it => it.id === locale)) {
+      actualLocale = space.localeFallback.id;
+    }
+    const filePath = translationLocaleCachePath(spaceId, actualLocale, version as string | undefined);
+    const fallbackFilePath = translationLocaleCachePath(spaceId, space.localeFallback.id, version as string | undefined);
+    const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
+    if (!resolvedPath) {
+      res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+      return;
+    }
+    try {
+      const [content] = await bucket.file(resolvedPath).download();
+      res
+        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+        .contentType('application/json; charset=utf-8')
+        .send(content.toString());
+    } catch (e) {
+      logger.error('[V1:Translations]', e);
+      res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+    }
   }
 });
 
@@ -135,77 +145,77 @@ CDN.get(
     }
 
     const cachePath = spaceContentCachePath(spaceId);
-    const [exists] = await bucket.file(cachePath).exists();
-    if (exists) {
-      const [metadata] = await bucket.file(cachePath).getMetadata();
-      logger.info('[V1:Links] cache meta : ' + JSON.stringify(metadata));
-      if (cv === undefined || cv != metadata.generation) {
-        let url = `/api/v1/spaces/${spaceId}/links?cv=${metadata.generation}`;
-        if (parentSlug !== undefined) {
-          url += `&parentSlug=${parentSlug}`;
-        }
-        if (excludeChildren === 'true') {
-          url += `&excludeChildren=${excludeChildren}`;
-        }
-        if (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER) {
-          url += `&kind=${kind}`;
-        }
-        if (token) {
-          url += `&token=${token}`;
-        }
-        res.redirect(url);
-        return;
-      } else {
-        let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
-        if (parentSlug) {
-          if (excludeChildren === 'true') {
-            contentsQuery = contentsQuery.where('parentSlug', '==', parentSlug);
-          } else {
-            contentsQuery = contentsQuery.where('parentSlug', '>=', parentSlug).where('parentSlug', '<', `${parentSlug}/~`);
-          }
-        } else {
-          if (excludeChildren === 'true') {
-            contentsQuery = contentsQuery.where('parentSlug', '==', '');
-          }
-        }
-        if (kind && (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER)) {
-          contentsQuery = contentsQuery.where('kind', '==', kind);
-        }
-        const contentsSnapshot = await contentsQuery.get();
-
-        const response: Record<string, ContentLink> = contentsSnapshot.docs
-          .map(contentSnapshot => {
-            const content = contentSnapshot.data() as Content;
-            const link: ContentLink = {
-              id: contentSnapshot.id,
-              kind: content.kind,
-              name: content.name,
-              slug: content.slug,
-              fullSlug: content.fullSlug,
-              parentSlug: content.parentSlug,
-              createdAt: content.createdAt.toDate().toISOString(),
-              updatedAt: content.updatedAt.toDate().toISOString(),
-            };
-            if (content.kind === ContentKind.DOCUMENT) {
-              link.publishedAt = content.publishedAt?.toDate().toISOString();
-            }
-            return link;
-          })
-          .reduce(
-            (acc, item) => {
-              acc[item.id] = item;
-              return acc;
-            },
-            {} as Record<string, ContentLink>
-          );
-        res
-          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .contentType('application/json; charset=utf-8')
-          .send(response);
-        return;
-      }
-    } else {
+    let cacheMetadata: Record<string, unknown>;
+    try {
+      [cacheMetadata] = await bucket.file(cachePath).getMetadata();
+    } catch {
       res.status(404).send(new HttpsError('not-found', 'File not found, Publish first.'));
+      return;
+    }
+    logger.info('[V1:Links] cache meta : ' + JSON.stringify(cacheMetadata));
+    if (cv === undefined || cv != cacheMetadata['generation']) {
+      let url = `/api/v1/spaces/${spaceId}/links?cv=${cacheMetadata['generation']}`;
+      if (parentSlug !== undefined) {
+        url += `&parentSlug=${parentSlug}`;
+      }
+      if (excludeChildren === 'true') {
+        url += `&excludeChildren=${excludeChildren}`;
+      }
+      if (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER) {
+        url += `&kind=${kind}`;
+      }
+      if (token) {
+        url += `&token=${token}`;
+      }
+      res.header('Cache-Control', `public, max-age=${CACHE_REDIRECT_MAX_AGE}, s-maxage=${CACHE_REDIRECT_MAX_AGE}`).redirect(url);
+      return;
+    } else {
+      let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
+      if (parentSlug) {
+        if (excludeChildren === 'true') {
+          contentsQuery = contentsQuery.where('parentSlug', '==', parentSlug);
+        } else {
+          contentsQuery = contentsQuery.where('parentSlug', '>=', parentSlug).where('parentSlug', '<', `${parentSlug}/~`);
+        }
+      } else {
+        if (excludeChildren === 'true') {
+          contentsQuery = contentsQuery.where('parentSlug', '==', '');
+        }
+      }
+      if (kind && (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER)) {
+        contentsQuery = contentsQuery.where('kind', '==', kind);
+      }
+      const contentsSnapshot = await contentsQuery.get();
+
+      const response: Record<string, ContentLink> = contentsSnapshot.docs
+        .map(contentSnapshot => {
+          const content = contentSnapshot.data() as Content;
+          const link: ContentLink = {
+            id: contentSnapshot.id,
+            kind: content.kind,
+            name: content.name,
+            slug: content.slug,
+            fullSlug: content.fullSlug,
+            parentSlug: content.parentSlug,
+            createdAt: content.createdAt.toDate().toISOString(),
+            updatedAt: content.updatedAt.toDate().toISOString(),
+          };
+          if (content.kind === ContentKind.DOCUMENT) {
+            link.publishedAt = content.publishedAt?.toDate().toISOString();
+          }
+          return link;
+        })
+        .reduce(
+          (acc, item) => {
+            acc[item.id] = item;
+            return acc;
+          },
+          {} as Record<string, ContentLink>
+        );
+      res
+        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+        .contentType('application/json; charset=utf-8')
+        .send(response);
       return;
     }
   }
@@ -240,79 +250,79 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
     contentId = contentsSnapshot.docs[0].id;
   }
   const cacheCheckPath = spaceContentCachePath(spaceId);
-  const cacheCheckFile = bucket.file(cacheCheckPath);
   logger.info('[V1:ContentBySlug] cachePath: ' + cacheCheckPath);
-  const [exists] = await cacheCheckFile.exists();
-  if (exists) {
-    const [metadata] = await cacheCheckFile.getMetadata();
-    if (cv === undefined || cv != metadata.generation) {
-      let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?cv=${metadata.generation}`;
-      if (locale) {
-        url += `&locale=${locale}`;
-      }
-      if (version) {
-        url += `&version=${version}`;
-      }
-      if (token) {
-        url += `&token=${token}`;
-      }
-      if (resolveReference) {
-        url += `&resolveReference=${resolveReference}`;
-      }
-      if (resolveLink) {
-        url += `&resolveLink=${resolveLink}`;
-      }
-      logger.info(`[V1:ContentBySlug] redirect to => ${url}`);
-      res.redirect(url);
-      return;
-    } else {
-      const space = spaceSnapshot.data() as Space;
-      const actualLocale = identifySpaceLocale(space, locale as string | undefined);
-      logger.info(`[V1:ContentBySlug] locale identified as => ${actualLocale}`);
-      const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
-      const fallbackFilePath = contentLocaleCachePath(spaceId, contentId, space.localeFallback.id, version as string | undefined);
-      const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
-      if (!resolvedPath) {
-        res
-          .status(404)
-          .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-          .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
-        return;
-      }
-      const resolvedLocale = resolvedPath === filePath ? actualLocale : space.localeFallback.id;
-      try {
-        const [content] = await bucket.file(resolvedPath).download();
-        const contentData: ContentDocumentStorage = JSON.parse(content.toString());
-        const { links, references, ...rest } = contentData;
-        const response: ContentDocumentApi = { ...rest };
-        if (resolveLink === 'true' && links && links.length > 0) {
-          logger.info(`[V1:ContentBySlug] resolve links => ${JSON.stringify(links)}`);
-          response.links = await resolveLinks(spaceId, contentData);
-        }
-        if (resolveReference === 'true' && references && references.length > 0) {
-          logger.info(`[V1:ContentBySlug] resolve refs => ${JSON.stringify(references)}`);
-          response.references = await resolveReferences(spaceId, contentData, resolvedLocale, version as string | undefined);
-        }
-        res
-          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .contentType('application/json; charset=utf-8')
-          .send(response);
-        return;
-      } catch (e) {
-        logger.error('[V1:ContentBySlug]', e);
-        res
-          .status(404)
-          .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-          .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
-        return;
-      }
-    }
-  } else {
+  let cacheMetadata: Record<string, unknown>;
+  try {
+    [cacheMetadata] = await bucket.file(cacheCheckPath).getMetadata();
+  } catch {
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
       .send(new HttpsError('not-found', 'File not found, Publish first. The content is cached for 10 minutes.'));
     return;
+  }
+  if (cv === undefined || cv != cacheMetadata['generation']) {
+    let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?cv=${cacheMetadata['generation']}`;
+    if (locale) {
+      url += `&locale=${locale}`;
+    }
+    if (version) {
+      url += `&version=${version}`;
+    }
+    if (token) {
+      url += `&token=${token}`;
+    }
+    if (resolveReference) {
+      url += `&resolveReference=${resolveReference}`;
+    }
+    if (resolveLink) {
+      url += `&resolveLink=${resolveLink}`;
+    }
+    logger.info(`[V1:ContentBySlug] redirect to => ${url}`);
+    const redirectAge = version ? CACHE_REDIRECT_DRAFT_MAX_AGE : CACHE_REDIRECT_MAX_AGE;
+    res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    return;
+  } else {
+    const space = spaceSnapshot.data() as Space;
+    const actualLocale = identifySpaceLocale(space, locale as string | undefined);
+    logger.info(`[V1:ContentBySlug] locale identified as => ${actualLocale}`);
+    const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
+    const fallbackFilePath = contentLocaleCachePath(spaceId, contentId, space.localeFallback.id, version as string | undefined);
+    const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
+    if (!resolvedPath) {
+      res
+        .status(404)
+        .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+        .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
+      return;
+    }
+    const resolvedLocale = resolvedPath === filePath ? actualLocale : space.localeFallback.id;
+    try {
+      const [content] = await bucket.file(resolvedPath).download();
+      const contentData: ContentDocumentStorage = JSON.parse(content.toString());
+      const { links, references, ...rest } = contentData;
+      const response: ContentDocumentApi = { ...rest };
+      if (resolveLink === 'true' && links && links.length > 0) {
+        logger.info(`[V1:ContentBySlug] resolve links => ${JSON.stringify(links)}`);
+        response.links = await resolveLinks(spaceId, contentData);
+      }
+      if (resolveReference === 'true' && references && references.length > 0) {
+        logger.info(`[V1:ContentBySlug] resolve refs => ${JSON.stringify(references)}`);
+        response.references = await resolveReferences(spaceId, contentData, resolvedLocale, version as string | undefined);
+      }
+      res
+        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+        .contentType('application/json; charset=utf-8')
+        .send(response);
+      return;
+    } catch (e) {
+      logger.error('[V1:ContentBySlug]', e);
+      res
+        .status(404)
+        .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+        .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
+      return;
+    }
   }
 });
 
@@ -334,80 +344,79 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
   }
 
   const cacheCheckPath = spaceContentCachePath(spaceId);
-  const cacheCheckFile = bucket.file(cacheCheckPath);
   logger.info('[V1:ContentById] cachePath: ' + cacheCheckPath);
-  const [exists] = await cacheCheckFile.exists();
-  if (exists) {
-    const [metadata] = await cacheCheckFile.getMetadata();
-    // logger.info('v1 spaces content cache meta : ' + JSON.stringify(metadata));
-    if (cv === undefined || cv != metadata.generation) {
-      let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?cv=${metadata.generation}`;
-      if (locale) {
-        url += `&locale=${locale}`;
-      }
-      if (version) {
-        url += `&version=${version}`;
-      }
-      if (token) {
-        url += `&token=${token}`;
-      }
-      if (resolveReference) {
-        url += `&resolveReference=${resolveReference}`;
-      }
-      if (resolveLink) {
-        url += `&resolveLink=${resolveLink}`;
-      }
-      logger.info(`[V1:ContentById] redirect to => ${url}`);
-      res.redirect(url);
-      return;
-    } else {
-      const space = spaceSnapshot.data() as Space;
-      const actualLocale = identifySpaceLocale(space, locale as string | undefined);
-      logger.info(`[V1:ContentById] locale identified as => ${actualLocale}`);
-      const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
-      const fallbackFilePath = contentLocaleCachePath(spaceId, contentId, space.localeFallback.id, version as string | undefined);
-      const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
-      if (!resolvedPath) {
-        res
-          .status(404)
-          .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-          .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
-        return;
-      }
-      const resolvedLocale = resolvedPath === filePath ? actualLocale : space.localeFallback.id;
-      try {
-        const [content] = await bucket.file(resolvedPath).download();
-        const contentData: ContentDocumentStorage = JSON.parse(content.toString());
-        const { links, references, ...rest } = contentData;
-        const response: ContentDocumentApi = { ...rest };
-        if (resolveLink === 'true' && links && links.length > 0) {
-          logger.info(`[V1:ContentById] resolve links => ${JSON.stringify(links)}`);
-          response.links = await resolveLinks(spaceId, contentData);
-        }
-        if (resolveReference === 'true' && references && references.length > 0) {
-          logger.info(`[V1:ContentById] resolve refs => ${JSON.stringify(references)}`);
-          response.references = await resolveReferences(spaceId, contentData, resolvedLocale, version as string | undefined);
-        }
-        res
-          .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
-          .contentType('application/json; charset=utf-8')
-          .send(response);
-        return;
-      } catch (e) {
-        logger.error('[V1:ContentById]', e);
-        res
-          .status(404)
-          .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
-          .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
-        return;
-      }
-    }
-  } else {
+  let cacheMetadata: Record<string, unknown>;
+  try {
+    [cacheMetadata] = await bucket.file(cacheCheckPath).getMetadata();
+  } catch {
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
       .send(new HttpsError('not-found', 'File not found, Publish first. The content is cached for 10 minutes.'));
     return;
+  }
+  if (cv === undefined || cv != cacheMetadata['generation']) {
+    let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?cv=${cacheMetadata['generation']}`;
+    if (locale) {
+      url += `&locale=${locale}`;
+    }
+    if (version) {
+      url += `&version=${version}`;
+    }
+    if (token) {
+      url += `&token=${token}`;
+    }
+    if (resolveReference) {
+      url += `&resolveReference=${resolveReference}`;
+    }
+    if (resolveLink) {
+      url += `&resolveLink=${resolveLink}`;
+    }
+    logger.info(`[V1:ContentById] redirect to => ${url}`);
+    const redirectAge = version ? CACHE_REDIRECT_DRAFT_MAX_AGE : CACHE_REDIRECT_MAX_AGE;
+    res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    return;
+  } else {
+    const space = spaceSnapshot.data() as Space;
+    const actualLocale = identifySpaceLocale(space, locale as string | undefined);
+    logger.info(`[V1:ContentById] locale identified as => ${actualLocale}`);
+    const filePath = contentLocaleCachePath(spaceId, contentId, actualLocale, version as string | undefined);
+    const fallbackFilePath = contentLocaleCachePath(spaceId, contentId, space.localeFallback.id, version as string | undefined);
+    const resolvedPath = await resolveLocaleFilePath(filePath, fallbackFilePath);
+    if (!resolvedPath) {
+      res
+        .status(404)
+        .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+        .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
+      return;
+    }
+    const resolvedLocale = resolvedPath === filePath ? actualLocale : space.localeFallback.id;
+    try {
+      const [content] = await bucket.file(resolvedPath).download();
+      const contentData: ContentDocumentStorage = JSON.parse(content.toString());
+      const { links, references, ...rest } = contentData;
+      const response: ContentDocumentApi = { ...rest };
+      if (resolveLink === 'true' && links && links.length > 0) {
+        logger.info(`[V1:ContentById] resolve links => ${JSON.stringify(links)}`);
+        response.links = await resolveLinks(spaceId, contentData);
+      }
+      if (resolveReference === 'true' && references && references.length > 0) {
+        logger.info(`[V1:ContentById] resolve refs => ${JSON.stringify(references)}`);
+        response.references = await resolveReferences(spaceId, contentData, resolvedLocale, version as string | undefined);
+      }
+      res
+        .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
+        .contentType('application/json; charset=utf-8')
+        .send(response);
+      return;
+    } catch (e) {
+      logger.error('[V1:ContentById]', e);
+      res
+        .status(404)
+        .header('Cache-Control', `public, max-age=${TEN_MINUTES}, s-maxage=${TEN_MINUTES}`)
+        .send(new HttpsError('not-found', 'File not found, on path. Please Publish again. The content is cached for 10 minutes.'));
+      return;
+    }
   }
 });
 

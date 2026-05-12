@@ -12,6 +12,40 @@ export interface RequestWithToken extends Request {
   tokenId?: string;
 }
 
+interface TokenCacheEntry {
+  token: Token;
+  expiresAt: number;
+}
+
+// In-memory token cache scoped to the single Function instance (maxInstances: 1).
+// Tokens are short-lived (5 min TTL) to pick up revocations quickly while
+// drastically reducing Firestore reads during traffic spikes.
+const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
+const tokenCache = new Map<string, TokenCacheEntry>();
+
+/**
+ * Returns a cached token or fetches it from Firestore, caching the result for TOKEN_CACHE_TTL_MS.
+ * Returns null when the token does not exist.
+ * @param {string} spaceId - The space ID the token belongs to
+ * @param {string} tokenId - The token ID to look up
+ * @return {Promise<Token | null>} The token or null if not found
+ */
+async function getCachedToken(spaceId: string, tokenId: string): Promise<Token | null> {
+  const cacheKey = `${spaceId}:${tokenId}`;
+  const cached = tokenCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.token;
+  }
+  const tokenSnapshot = await findTokenById(spaceId, tokenId).get();
+  if (!tokenSnapshot.exists) {
+    tokenCache.delete(cacheKey);
+    return null;
+  }
+  const token = tokenSnapshot.data() as Token;
+  tokenCache.set(cacheKey, { token, expiresAt: Date.now() + TOKEN_CACHE_TTL_MS });
+  return token;
+}
+
 /**
  * Middleware factory that creates an authentication middleware checking for specific token permissions
  * @param {TokenPermission[]} requiredPermissions - List of permissions that the token must have
@@ -35,15 +69,13 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
     }
 
     try {
-      // Fetch token from Firestore
-      const tokenSnapshot = await findTokenById(spaceId, tokenId as string).get();
+      // Fetch token from cache or Firestore
+      const token = await getCachedToken(spaceId, tokenId as string);
 
-      if (!tokenSnapshot.exists) {
+      if (!token) {
         res.status(401).send(new HttpsError('unauthenticated', 'Token not found'));
         return;
       }
-
-      const token = tokenSnapshot.data() as Token;
 
       // Check if token has any of the required permissions
       const hasPermission = canPerformAny(requiredPermissions, token);
@@ -99,15 +131,13 @@ export function requireContentPermissions() {
     }
 
     try {
-      // Fetch token from Firestore
-      const tokenSnapshot = await findTokenById(spaceId, tokenId as string).get();
+      // Fetch token from cache or Firestore
+      const token = await getCachedToken(spaceId, tokenId as string);
 
-      if (!tokenSnapshot.exists) {
+      if (!token) {
         res.status(401).send(new HttpsError('unauthenticated', 'Token not found'));
         return;
       }
-
-      const token = tokenSnapshot.data() as Token;
 
       // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
       const hasRequiredPermission =
@@ -162,15 +192,13 @@ export function requireTranslationPermissions() {
     }
 
     try {
-      // Fetch token from Firestore
-      const tokenSnapshot = await findTokenById(spaceId, tokenId as string).get();
+      // Fetch token from cache or Firestore
+      const token = await getCachedToken(spaceId, tokenId as string);
 
-      if (!tokenSnapshot.exists) {
+      if (!token) {
         res.status(401).send(new HttpsError('unauthenticated', 'Token not found'));
         return;
       }
-
-      const token = tokenSnapshot.data() as Token;
 
       // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
       const hasRequiredPermission =

@@ -12,12 +12,17 @@ export const BATCH_MAX = 500;
 // TIME
 export const MINUTE = 60;
 export const TEN_MINUTES = 10 * MINUTE;
+export const FIVE_MINUTES = 10 * MINUTE;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 // HTTP
 export const CACHE_MAX_AGE = DAY;
 export const CACHE_ASSET_MAX_AGE = DAY * 365;
 export const CACHE_SHARE_MAX_AGE = DAY * 7;
+// Short TTL for redirect responses so CDN caches them and avoids stampedes on publish
+export const CACHE_REDIRECT_MAX_AGE = FIVE_MINUTES;
+// Shorter TTL for draft redirects — draft content changes more frequently
+export const CACHE_REDIRECT_DRAFT_MAX_AGE = MINUTE;
 // AUTH ROLE
 export const ROLE_ADMIN = 'admin';
 export const ROLE_CUSTOM = 'custom';

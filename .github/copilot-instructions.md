@@ -112,3 +112,35 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 - Design services around a single responsibility
 - Use the `providedIn: 'root'` option for singleton services
 - Use the `inject()` function instead of constructor injection
+
+## Project Knowledge Base
+
+Detailed documentation lives in `docs/`. Read the relevant file when working on the corresponding area:
+
+| Topic | File | Read when working on |
+|-------|------|----------------------|
+| Domain concepts (Space, Content, Schema, Translation, Asset) | [docs/concepts.md](../docs/concepts.md) | Any new feature, onboarding |
+| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](../docs/cdn-caching.md) | `functions/src/v1/cdn.ts`, public API |
+| Publish flow & cache invalidation | [docs/publish-flow.md](../docs/publish-flow.md) | Content/translation publish, tasks |
+| API token auth & permissions | [docs/auth-tokens.md](../docs/auth-tokens.md) | Middleware, token management, public API |
+| Firebase billing & cost optimization | [docs/billing.md](../docs/billing.md) | Functions, Storage, cost analysis |
+| Frontend architecture, routing, libs/ui | [docs/frontend-architecture.md](../docs/frontend-architecture.md) | Any Angular feature work |
+| NgRx Signal stores, state patterns | [docs/frontend-state.md](../docs/frontend-state.md) | Adding/editing stores or components |
+| User roles, route guards, UI permissions | [docs/frontend-permissions.md](../docs/frontend-permissions.md) | Auth, guards, user management |
+| **Feature modules — Admin** | | |
+| Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](../docs/features/admin/overview.md) | Any admin feature |
+| Admin → Users | [docs/features/admin/admin-users.md](../docs/features/admin/admin-users.md) | `features/admin/users/` |
+| Admin → Spaces | [docs/features/admin/admin-spaces.md](../docs/features/admin/admin-spaces.md) | `features/admin/spaces/` |
+| Admin → Settings | [docs/features/admin/admin-settings.md](../docs/features/admin/admin-settings.md) | `features/admin/settings/` |
+| **Feature modules — Spaces** | | |
+| Spaces overview | [docs/features/spaces/overview.md](../docs/features/spaces/overview.md) | Any space feature |
+| Dashboard | [docs/features/spaces/dashboard.md](../docs/features/spaces/dashboard.md) | `features/spaces/dashboard/` |
+| Translations | [docs/features/spaces/translations.md](../docs/features/spaces/translations.md) | `features/spaces/translations/` |
+| Contents | [docs/features/spaces/contents.md](../docs/features/spaces/contents.md) | `features/spaces/contents/` |
+| Assets | [docs/features/spaces/assets.md](../docs/features/spaces/assets.md) | `features/spaces/assets/` |
+| Schemas | [docs/features/spaces/schemas.md](../docs/features/spaces/schemas.md) | `features/spaces/schemas/` |
+| Tasks | [docs/features/spaces/tasks.md](../docs/features/spaces/tasks.md) | `features/spaces/tasks/` |
+| Space Settings | [docs/features/spaces/settings.md](../docs/features/spaces/settings.md) | `features/spaces/settings/` |
+| Open API | [docs/features/spaces/open-api.md](../docs/features/spaces/open-api.md) | `features/spaces/open-api/` |
+| **Feature modules — Me** | | |
+| Me / User profile | [docs/features/me.md](../docs/features/me.md) | `features/me/` |
