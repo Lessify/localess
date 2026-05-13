@@ -27,6 +27,12 @@ steps:
     id: 'install-functions-deps'
     entrypoint: npm
     args: [ '--prefix', 'functions', 'install', '--platform=linuxmusl' ]
+  - name: 'bash'
+    id: 'generate-functions-env'
+    args:
+      - '-c'
+      - |
+        echo "REGION=${_REGION}" > functions/.env
   - name: ghcr.io/lessify/firebase:edge
     id: 'Pull Firebase Apps SDK Config'
     args: [ 'apps:sdkconfig', '--project=$PROJECT_ID', 'web', '--out=src/environments/firebase-config-tmp.json' ]
@@ -58,3 +64,5 @@ steps:
     args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force' ]
 options:
   logging: CLOUD_LOGGING_ONLY
+substitutions:
+  _REGION: europe-west6

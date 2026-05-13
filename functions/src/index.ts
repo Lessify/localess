@@ -2,7 +2,7 @@ import { setGlobalOptions } from 'firebase-functions/v2';
 
 setGlobalOptions({
   timeoutSeconds: 540,
-  region: 'europe-west6',
+  region: process.env['REGION'] ?? 'europe-west6',
   concurrency: 600,
   cpu: 1,
   minInstances: 0,
