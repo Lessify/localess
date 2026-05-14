@@ -20,12 +20,18 @@
 }
 
 <div class="mx-auto mt-3 px-2">
-  <div>
-    <mat-form-field appearance="fill">
-      <mat-label>Filter</mat-label>
-      <input matInput (keyup)="applyFilter($event)" placeholder="Filter emails and names ..." />
-    </mat-form-field>
-  </div>
+  <form [formGroup]="filterForm">
+    <fieldset hlmFieldSet>
+      <div hlmFieldGroup class="mb-3">
+        <div hlmInputGroup>
+          <input hlmInputGroupInput placeholder="Search emails and names..." formControlName="search" type="search" />
+          <div hlmInputGroupAddon>
+            <ng-icon hlm size="sm" name="lucideSearch" />
+          </div>
+        </div>
+      </div>
+    </fieldset>
+  </form>
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="email">
       <mat-header-cell *matHeaderCellDef mat-sort-header="email"> Email</mat-header-cell>

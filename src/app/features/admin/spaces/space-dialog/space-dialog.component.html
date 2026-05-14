@@ -1,18 +1,26 @@
 <h2 mat-dialog-title>Space Form</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Name</mat-label>
-      <input matInput type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
-      <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/30</mat-hint>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="name">Name</label>
+      <input
+        hlmInput
+        id="name"
+        type="text"
+        formControlName="name"
+        required
+        minlength="3"
+        maxlength="30"
+        autocomplete="off"
+        class="w-full" />
+      <hlm-field-description class="text-right">{{ form.controls['name'].value?.length || 0 }}/30</hlm-field-description>
       @if (form.controls['name'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

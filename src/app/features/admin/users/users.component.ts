@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -16,6 +15,7 @@ import {
   lucideMail,
   lucidePencil,
   lucideRefreshCcw,
+  lucideSearch,
   lucideTrash,
   lucideUserPlus,
   lucideX,
@@ -27,10 +27,13 @@ import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { debounceTime } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
@@ -44,18 +47,19 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
   styleUrls: ['./users.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatTableModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSortModule,
     CommonModule,
+    MatTableModule,
+    MatSortModule,
     MatPaginatorModule,
+    ReactiveFormsModule,
     HlmButtonImports,
     HlmIconImports,
     HlmTooltipImports,
     HlmProgressImports,
     HlmSpinnerImports,
     HlmDropdownMenuImports,
+    HlmFieldImports,
+    HlmInputGroupImports,
   ],
   providers: [
     provideIcons({
@@ -69,6 +73,7 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
       lucideEllipsisVertical,
       lucideInfo,
       lucideLock,
+      lucideSearch,
     }),
   ],
 })
@@ -77,6 +82,7 @@ export class UsersComponent implements OnInit {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
   private readonly userService = inject(UserService);
+  private readonly fb = inject(FormBuilder);
 
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
@@ -86,10 +92,19 @@ export class UsersComponent implements OnInit {
   dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
   displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'createdAt', 'updatedAt', 'actions'];
 
+  filterForm = this.fb.group({
+    search: this.fb.control<string>('', []),
+  });
+
   private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.loadData();
+    this.filterForm.valueChanges.pipe(debounceTime(300)).subscribe({
+      next: value => {
+        this.dataSource.filter = (value.search ?? '').toLowerCase();
+      },
+    });
   }
 
   loadData(): void {
@@ -111,10 +126,6 @@ export class UsersComponent implements OnInit {
           this.cd.markForCheck();
         },
       });
-  }
-
-  applyFilter(event: KeyboardEvent) {
-    this.dataSource.filter = (event.target as HTMLInputElement).value.toLowerCase();
   }
 
   userFilterPredicate(data: User, filter: string): boolean {
