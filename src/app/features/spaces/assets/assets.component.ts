@@ -513,12 +513,13 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Assets Import Task has been created.', [
-            {
+          this.notificationService.success('Assets Import Task has been created.', {
+            action: {
+              type: 'route',
               label: 'To Tasks',
               link: `/features/spaces/${this.spaceId()}/tasks`,
             },
-          ]);
+          });
         },
         error: () => {
           this.notificationService.error('Assets Import Task can not be created.');
@@ -541,12 +542,13 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Assets Export Task has been created.', [
-            {
+          this.notificationService.success('Assets Export Task has been created.', {
+            action: {
+              type: 'route',
               label: 'To Tasks',
               link: `/features/spaces/${this.spaceId()}/tasks`,
             },
-          ]);
+          });
         },
         error: (err: unknown) => {
           console.error(err);
@@ -571,12 +573,13 @@ export class AssetsComponent implements OnInit {
       .subscribe({
         next: () => {
           this.cd.markForCheck();
-          this.notificationService.success('Assets Regenerate Metadata Task has been created.', [
-            {
+          this.notificationService.success('Assets Regenerate Metadata Task has been created.', {
+            action: {
+              type: 'route',
               label: 'To Tasks',
               link: `/features/spaces/${this.spaceId()}/tasks`,
             },
-          ]);
+          });
         },
         error: (err: unknown) => {
           console.error(err);

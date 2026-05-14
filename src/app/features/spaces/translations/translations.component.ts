@@ -498,12 +498,13 @@ export class TranslationsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Translation Import Task has been created.', [
-            {
+          this.notificationService.success('Translation Import Task has been created.', {
+            action: {
+              type: 'route',
               label: 'To Tasks',
               link: `/features/spaces/${this.spaceId()}/tasks`,
             },
-          ]);
+          });
         },
         error: () => {
           this.notificationService.error('Translation Import Task can not be created.');
@@ -534,12 +535,13 @@ export class TranslationsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Translation Export Task has been created.', [
-            {
+          this.notificationService.success('Translation Export Task has been created.', {
+            action: {
+              type: 'route',
               label: 'To Tasks',
               link: `/features/spaces/${this.spaceId()}/tasks`,
             },
-          ]);
+          });
         },
         error: (err: unknown) => {
           console.error(err);
@@ -751,12 +753,13 @@ export class TranslationsComponent implements OnInit {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error('Can not be translation.', [
-            {
+          this.notificationService.error('Can not be translation.', {
+            action: {
+              type: 'link',
               label: 'Documentation',
               link: 'https://localess.org/docs/setup/firebase#errors-in-the-user-interface',
             },
-          ]);
+          });
         },
         complete: () => {
           console.log('complete');

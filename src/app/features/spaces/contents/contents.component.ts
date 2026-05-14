@@ -478,12 +478,13 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Content Import Task has been created.', [
-            {
+          this.notificationService.success('Content Import Task has been created.', {
+            action: {
+              type: 'route',
               label: 'To Tasks',
               link: `/features/spaces/${this.spaceId()}/tasks`,
             },
-          ]);
+          });
         },
         error: () => {
           this.notificationService.error('Content Import Task can not be created.');
@@ -506,12 +507,13 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Content Export Task has been created.', [
-            {
+          this.notificationService.success('Content Export Task has been created.', {
+            action: {
+              type: 'route',
               label: 'To Tasks',
               link: `/features/spaces/${this.spaceId()}/tasks`,
             },
-          ]);
+          });
         },
         error: (err: unknown) => {
           console.error(err);

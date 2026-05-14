@@ -3,12 +3,13 @@ import { Analytics } from '@angular/fire/analytics';
 import { Performance } from '@angular/fire/performance';
 import { MatIconRegistry } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
+import { HlmToasterImports } from '@spartan-ng/helm/sonner';
 
 @Component({
   selector: 'll-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [RouterModule],
+  imports: [RouterModule, HlmToasterImports],
 })
 export class AppComponent {
   private readonly performance = inject(Performance);

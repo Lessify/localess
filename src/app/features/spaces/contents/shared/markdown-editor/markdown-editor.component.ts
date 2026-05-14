@@ -94,12 +94,13 @@ export class MarkdownEditorComponent {
           },
           error: err => {
             console.error(err);
-            this.notificationService.error('Can not be translation.', [
-              {
+            this.notificationService.error('Can not be translation.', {
+              action: {
+                type: 'link',
                 label: 'Documentation',
                 link: 'https://localess.org/docs/setup/firebase#errors-in-the-user-interface',
               },
-            ]);
+            });
           },
         });
     }

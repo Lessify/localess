@@ -44,6 +44,7 @@ import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/u
 import { Version } from '@shared/models/version.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentService } from '@shared/services/content.service';
+import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { VersionService } from '@shared/services/version.service';
 import { AppSettingsStore } from '@shared/stores/app-settings.store';
@@ -59,11 +60,9 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
-import { HlmToasterImports } from '@spartan-ng/helm/sonner';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { cva } from 'class-variance-authority';
-import { toast } from 'ngx-sonner';
 import { filter, interval, mergeMap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
@@ -116,7 +115,6 @@ interface SideMenuItem {
     HlmFieldImports,
     HlmSwitchImports,
     ReactiveFormsModule,
-    HlmToasterImports,
   ],
   providers: [
     provideIcons({
@@ -160,6 +158,7 @@ export class FeaturesComponent implements OnInit {
   private readonly contentService = inject(ContentService);
   private readonly schemaService = inject(SchemaService);
   private readonly versionService = inject(VersionService);
+  private readonly notificationService = inject(NotificationService);
   public readonly sidebarService = inject(HlmSidebarService);
   public readonly spaceStore = inject(SpaceStore);
   public readonly userStore = inject(UserStore);
@@ -293,17 +292,12 @@ export class FeaturesComponent implements OnInit {
           if (currentVersion.version !== remoteVersion.version) {
             window.location.reload();
           } else if (currentVersion.gitCommitSha !== remoteVersion.gitCommitSha) {
-            toast.info('New version is available', {
+            this.notificationService.info('New version is available', {
               position: 'bottom-left',
-              description: 'We’ve just rolled out an update! Refresh the page to get the latest improvements.',
+              description: "We've just rolled out an update! Refresh the page to get the latest improvements.",
               duration: 300000,
-              action: {
-                label: 'Reload',
-                onClick: () => window.location.reload(),
-              },
-              cancel: {
-                label: 'Skip',
-              },
+              action: { type: 'action', label: 'Reload', onClick: () => window.location.reload() },
+              cancel: { label: 'Skip' },
             });
           }
         } else {
