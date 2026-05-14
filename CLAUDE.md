@@ -123,6 +123,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Frontend architecture, routing, libs/ui | [docs/frontend-architecture.md](docs/frontend-architecture.md) | Any Angular feature work |
 | NgRx Signal stores, state patterns | [docs/frontend-state.md](docs/frontend-state.md) | Adding/editing stores or components |
 | User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |
+| Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
 | Admin → Users | [docs/features/admin/admin-users.md](docs/features/admin/admin-users.md) | `features/admin/users/` |

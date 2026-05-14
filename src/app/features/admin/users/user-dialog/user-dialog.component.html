@@ -1,179 +1,62 @@
 <h2 mat-dialog-title>User</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Role</mat-label>
-      <mat-select formControlName="role">
-        <mat-option [value]="undefined">None</mat-option>
-        <mat-option [value]="'custom'">Custom</mat-option>
-        <mat-option [value]="'admin'">Admin</mat-option>
-      </mat-select>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="role">Role</label>
+      <hlm-select id="role" formControlName="role" [itemToString]="roleItemToString">
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value placeholder="None" />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          <hlm-select-item [value]="null">None</hlm-select-item>
+          <hlm-select-item value="custom">Custom</hlm-select-item>
+          <hlm-select-item value="admin">Admin</hlm-select-item>
+        </hlm-select-content>
+      </hlm-select>
       @if (form.controls['role'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
 
     @if (form.value.role === 'custom') {
-      <br />
-      <mat-slide-toggle
-        formControlName="lock"
-        matTooltip="When Enabled the user will not be able to change his password and other personal data.">
-        Lock User
-      </mat-slide-toggle>
-      <br />
-      <br />
-      <b>Permissions</b>
-      <mat-selection-list formControlName="permissions">
-        <div mat-subheader>Administration</div>
-        <mat-list-option value="USER_MANAGEMENT">
-          <span matListItemTitle>User Management</span>
-          <span matListItemLine>Invite, Delete users and change roles.</span>
-        </mat-list-option>
-        <mat-list-option value="SPACE_MANAGEMENT">
-          <span matListItemTitle>Space Management</span>
-          <span matListItemLine>Create, Update and Delete. </span>
-        </mat-list-option>
-        <mat-list-option value="SETTINGS_MANAGEMENT">
-          <span matListItemTitle>Settings Management</span>
-          <span matListItemLine>Change system settings. </span>
-        </mat-list-option>
+      <div class="flex items-center gap-3">
+        <hlm-switch
+          formControlName="lock"
+          id="lock"
+          [hlmTooltip]="'When Enabled the user will not be able to change his password and other personal data.'" />
+        <label hlmLabel for="lock">Lock User</label>
+      </div>
 
-        <mat-divider></mat-divider>
-        <div mat-subheader>Translation</div>
-        <mat-list-option value="TRANSLATION_READ">
-          <span matListItemTitle>Read</span>
-          <span matListItemLine>Read Translation.</span>
-        </mat-list-option>
-        <mat-list-option value="TRANSLATION_CREATE">
-          <span matListItemTitle>Create</span>
-          <span matListItemLine>Create Translation.</span>
-        </mat-list-option>
-        <mat-list-option value="TRANSLATION_UPDATE">
-          <span matListItemTitle>Updated</span>
-          <span matListItemLine>Updated Translation.</span>
-        </mat-list-option>
-        <mat-list-option value="TRANSLATION_DELETE">
-          <span matListItemTitle>Delete</span>
-          <span matListItemLine>Delete Translation.</span>
-        </mat-list-option>
-        <mat-list-option value="TRANSLATION_PUBLISH">
-          <span matListItemTitle>Publish</span>
-          <span matListItemLine>Publish Translation.</span>
-        </mat-list-option>
-        <mat-list-option value="TRANSLATION_EXPORT">
-          <span matListItemTitle>Export</span>
-          <span matListItemLine>Export Translation.</span>
-        </mat-list-option>
-        <mat-list-option value="TRANSLATION_IMPORT">
-          <span matListItemTitle>Import</span>
-          <span matListItemLine>Import Translation.</span>
-        </mat-list-option>
+      <div class="flex flex-col gap-4">
+        <p class="text-sm font-semibold">Permissions</p>
 
-        <mat-divider></mat-divider>
-        <div mat-subheader>Schema</div>
-        <mat-list-option value="SCHEMA_READ">
-          <span matListItemTitle>Read</span>
-          <span matListItemLine>Read Schema.</span>
-        </mat-list-option>
-        <mat-list-option value="SCHEMA_CREATE">
-          <span matListItemTitle>Create</span>
-          <span matListItemLine>Create Schema.</span>
-        </mat-list-option>
-        <mat-list-option value="SCHEMA_UPDATE">
-          <span matListItemTitle>Updated</span>
-          <span matListItemLine>Updated Schema.</span>
-        </mat-list-option>
-        <mat-list-option value="SCHEMA_DELETE">
-          <span matListItemTitle>Delete</span>
-          <span matListItemLine>Delete Schema.</span>
-        </mat-list-option>
-        <mat-list-option value="SCHEMA_EXPORT">
-          <span matListItemTitle>Export</span>
-          <span matListItemLine>Export Schema.</span>
-        </mat-list-option>
-        <mat-list-option value="SCHEMA_IMPORT">
-          <span matListItemTitle>Import</span>
-          <span matListItemLine>Import Schema.</span>
-        </mat-list-option>
-
-        <mat-divider></mat-divider>
-        <div mat-subheader>Content</div>
-        <mat-list-option value="CONTENT_READ">
-          <span matListItemTitle>Read</span>
-          <span matListItemLine>Read Content.</span>
-        </mat-list-option>
-        <mat-list-option value="CONTENT_CREATE">
-          <span matListItemTitle>Create</span>
-          <span matListItemLine>Create Content.</span>
-        </mat-list-option>
-        <mat-list-option value="CONTENT_UPDATE">
-          <span matListItemTitle>Updated</span>
-          <span matListItemLine>Updated Content.</span>
-        </mat-list-option>
-        <mat-list-option value="CONTENT_DELETE">
-          <span matListItemTitle>Delete</span>
-          <span matListItemLine>Delete Content.</span>
-        </mat-list-option>
-        <mat-list-option value="CONTENT_PUBLISH">
-          <span matListItemTitle>Publish and Unpublish</span>
-          <span matListItemLine>Publish and Unpublish Content.</span>
-        </mat-list-option>
-        <mat-list-option value="CONTENT_EXPORT">
-          <span matListItemTitle>Export</span>
-          <span matListItemLine>Export Content.</span>
-        </mat-list-option>
-        <mat-list-option value="CONTENT_IMPORT">
-          <span matListItemTitle>Import</span>
-          <span matListItemLine>Import Content.</span>
-        </mat-list-option>
-
-        <mat-divider></mat-divider>
-        <div mat-subheader>Asset</div>
-        <mat-list-option value="ASSET_READ">
-          <span matListItemTitle>Read</span>
-          <span matListItemLine>Read Asset.</span>
-        </mat-list-option>
-        <mat-list-option value="ASSET_CREATE">
-          <span matListItemTitle>Create</span>
-          <span matListItemLine>Create Asset.</span>
-        </mat-list-option>
-        <mat-list-option value="ASSET_UPDATE">
-          <span matListItemTitle>Updated</span>
-          <span matListItemLine>Updated Asset.</span>
-        </mat-list-option>
-        <mat-list-option value="ASSET_DELETE">
-          <span matListItemTitle>Delete</span>
-          <span matListItemLine>Delete Asset.</span>
-        </mat-list-option>
-        <mat-list-option value="ASSET_EXPORT">
-          <span matListItemTitle>Export</span>
-          <span matListItemLine>Export Asset.</span>
-        </mat-list-option>
-        <mat-list-option value="ASSET_REGEN_METADATA">
-          <span matListItemTitle>Regenerate Metadata</span>
-          <span matListItemLine>Regenerate Metadata related to media files.</span>
-        </mat-list-option>
-        <mat-list-option value="ASSET_IMPORT">
-          <span matListItemTitle>Import</span>
-          <span matListItemLine>Import Asset.</span>
-        </mat-list-option>
-
-        <mat-divider></mat-divider>
-        <div mat-subheader>Development</div>
-        <mat-list-option value="DEV_OPEN_API">
-          <span matListItemTitle>Open API</span>
-          <span matListItemLine>Access to Open API</span>
-        </mat-list-option>
-      </mat-selection-list>
+        @for (group of permissionGroups; track group.label; let last = $last) {
+          <div class="flex flex-col gap-2">
+            <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
+            <div class="flex flex-col gap-2">
+              @for (perm of group.permissions; track perm.id) {
+                <div class="flex items-start gap-3">
+                  <hlm-checkbox
+                    [inputId]="perm.id"
+                    [checked]="isPermissionSelected(perm.id)"
+                    (checkedChange)="togglePermission(perm.id, $event)" />
+                  <div class="grid gap-1.5 leading-none">
+                    <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
+                    <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+          @if (!last) {
+            <hlm-separator />
+          }
+        }
+      </div>
     }
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>
-
-@if (settingsStore.debugEnabled()) {
-  <pre>{{ form.value | json }}</pre>
-}

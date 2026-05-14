@@ -1,17 +1,19 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmLabelImports } from '@spartan-ng/helm/label';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
+import { HlmSwitchImports } from '@spartan-ng/helm/switch';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+
+import { USER_PERMISSION_GROUPS } from '../user-permissions';
 
 @Component({
   selector: 'll-user-invite-dialog',
@@ -21,15 +23,15 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatSlideToggleModule,
-    MatTooltipModule,
-    MatListModule,
-    MatDividerModule,
-    MatButtonModule,
-    CommonModule,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmInputImports,
+    HlmSelectImports,
+    HlmSwitchImports,
+    HlmCheckboxImports,
+    HlmLabelImports,
+    HlmSeparatorImports,
+    HlmTooltipImports,
   ],
 })
 export class UserInviteDialogComponent {
@@ -46,4 +48,21 @@ export class UserInviteDialogComponent {
   });
 
   settingsStore = inject(LocalSettingsStore);
+
+  protected readonly permissionGroups = USER_PERMISSION_GROUPS;
+
+  protected readonly roleItemToString = (value: string): string => {
+    const labels: Record<string, string> = { custom: 'Custom', admin: 'Admin' };
+    return labels[value] ?? value;
+  };
+
+  isPermissionSelected(permission: string): boolean {
+    return this.form.controls['permissions'].value?.includes(permission) ?? false;
+  }
+
+  togglePermission(permission: string, checked: boolean): void {
+    const current: string[] = this.form.controls['permissions'].value ?? [];
+    const updated = checked ? [...current, permission] : current.filter((p: string) => p !== permission);
+    this.form.controls['permissions'].setValue(updated);
+  }
 }

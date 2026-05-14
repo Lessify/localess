@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-> Related: [State Management](frontend-state.md) · [User Roles & Permissions](frontend-permissions.md) · [Concepts](concepts.md)
+> Related: [State Management](frontend-state.md) · [User Roles & Permissions](frontend-permissions.md) · [Concepts](concepts.md) · [Spartan UI Migration](spartan-ui-migration.md)
 
 ## Tech Stack
 
@@ -8,7 +8,7 @@
 |-------|-----------|
 | Framework | Angular 21 (standalone, zoneless, signals) |
 | State | NgRx Signals (`@ngrx/signals`) |
-| UI Components | Angular Material + custom Spartan/Helm (`libs/ui/`) |
+| UI Components | Angular Material (being migrated) + Spartan/Helm (`libs/ui/`) |
 | Styling | Tailwind CSS 4 + SCSS |
 | Backend SDK | AngularFire (Firestore, Auth, Storage, Functions, Remote Config) |
 | Rich Text | TipTap editor |
