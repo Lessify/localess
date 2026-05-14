@@ -1,23 +1,24 @@
 <h2 mat-dialog-title>Schema Import</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <button mat-stroked-button (click)="fileInput.click()">
-      <mat-icon>upload_file</mat-icon>
-      Upload File
-    </button>
-    <br />
-    {{ fileName }}
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div class="flex flex-col gap-2">
+      <button hlmBtn type="button" variant="outline" (click)="fileInput.click()">
+        <ng-icon hlm size="sm" name="lucideUpload" />
+        Upload File
+      </button>
+      @if (fileName) {
+        <p class="text-muted-foreground text-sm">{{ fileName }}</p>
+      }
+      @if (fileWrong) {
+        <p class="text-destructive text-sm">The selected file does not comply with import extension (<b>*.lls.zip</b>).</p>
+      }
+    </div>
   </form>
-  @if (fileWrong) {
-    <mat-error>The selected file does not comply with import extension (<b>*.lls.zip</b>).</mat-error>
-  }
-  <br />
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">
-    <mat-icon>cloud_upload</mat-icon>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    <ng-icon hlm size="sm" name="lucideUploadCloud" />
     Import
   </button>
 </mat-dialog-actions>

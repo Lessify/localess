@@ -1,50 +1,50 @@
 <h2 mat-dialog-title>Token Form</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Name</mat-label>
-      <input matInput type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
-      <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/30</mat-hint>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="name">Name</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="name" type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon
+        >
+      </div>
       @if (form.controls['name'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
-    <br />
-    <b>Permissions</b>
-    <mat-selection-list formControlName="permissions">
-      <div mat-subheader>Translation</div>
-      <mat-list-option value="TRANSLATION_PUBLIC">
-        <span matListItemTitle>Public</span>
-        <span matListItemLine>Access to published only version.</span>
-      </mat-list-option>
-      <mat-list-option value="TRANSLATION_DRAFT">
-        <span matListItemTitle>Draft</span>
-        <span matListItemLine>Access to draft and published version.</span>
-      </mat-list-option>
-      <mat-divider></mat-divider>
-      <div mat-subheader>Content</div>
-      <mat-list-option value="CONTENT_PUBLIC">
-        <span matListItemTitle>Public</span>
-        <span matListItemLine>Access to published only version.</span>
-      </mat-list-option>
-      <mat-list-option value="CONTENT_DRAFT">
-        <span matListItemTitle>Draft</span>
-        <span matListItemLine>Access to draft and published version.</span>
-      </mat-list-option>
-      <mat-divider></mat-divider>
-      <div mat-subheader>Development</div>
-      <mat-list-option value="DEV_TOOLS">
-        <span matListItemTitle>Development Tools</span>
-        <span matListItemLine>Access to development tools like CLI, where you can manage and sync data.</span>
-      </mat-list-option>
-    </mat-selection-list>
-    @if (form.controls['permissions'].errors; as errors) {
-      <mat-error>{{ fe.errors(errors) }}</mat-error>
-    }
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <p class="text-sm font-semibold">Permissions</p>
+      @for (group of permissionGroups; track group.label; let last = $last) {
+        <div class="flex flex-col gap-2">
+          <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
+          <div class="flex flex-col gap-2">
+            @for (perm of group.permissions; track perm.id) {
+              <div class="flex items-start gap-3">
+                <hlm-checkbox
+                  [inputId]="perm.id"
+                  [checked]="isPermissionSelected(perm.id)"
+                  (checkedChange)="togglePermission(perm.id, $event)" />
+                <div class="grid gap-1.5 leading-none">
+                  <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
+                  <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+        @if (!last) {
+          <hlm-separator />
+        }
+      }
+      @if (form.controls['permissions'].errors; as errors) {
+        <p class="text-destructive text-sm">{{ fe.errors(errors) }}</p>
+      }
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

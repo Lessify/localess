@@ -1,11 +1,13 @@
 import { KeyValue } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { provideIcons } from '@ng-icons/core';
+import { lucideUpload, lucideUploadCloud } from '@ng-icons/lucide';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
 
 import { ImportDialogModel } from './import-dialog.model';
 
@@ -14,9 +16,10 @@ import { ImportDialogModel } from './import-dialog.model';
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatIconModule],
+  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmSelectImports],
+  providers: [provideIcons({ lucideUpload, lucideUploadCloud })],
 })
-export class ImportDialogComponent {
+export class ImportDialogComponent implements OnInit {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
   data = inject<ImportDialogModel>(MAT_DIALOG_DATA);
@@ -35,6 +38,23 @@ export class ImportDialogComponent {
     file: this.fb.control<File | undefined>(undefined, [Validators.required]),
   });
 
+  protected readonly kindItemToString = (value: string): string => {
+    return this.exportKinds.find(k => k.key === value)?.value ?? value;
+  };
+
+  protected readonly localeItemToString = (value: string): string => {
+    return this.data.locales.find(l => l.id === value)?.name ?? value;
+  };
+
+  ngOnInit(): void {
+    this.form.controls['kind'].valueChanges.subscribe(value => {
+      this.fileAccept = value === 'FLAT' ? '.json' : '.llt.zip';
+      this.fileName = '';
+      this.fileWrong = false;
+      this.cd.markForCheck();
+    });
+  }
+
   async onFileChange(event: Event): Promise<void> {
     if (event.target && event.target instanceof HTMLInputElement) {
       const target = event.target as HTMLInputElement;
@@ -46,18 +66,6 @@ export class ImportDialogComponent {
         });
       }
     }
-    this.cd.markForCheck();
-  }
-
-  onKindSelectionChange(event: MatSelectChange): void {
-    console.log(event);
-    if (event.value === 'FULL') {
-      this.fileAccept = '.llt.zip';
-    } else if (event.value === 'FLAT') {
-      this.fileAccept = '.json';
-    }
-    this.fileName = '';
-    this.fileWrong = false;
     this.cd.markForCheck();
   }
 }

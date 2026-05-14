@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { WebHook, WebHookEvent } from '@shared/models/webhook.model';
 import { WebhookValidator } from '@shared/validators/webhook.validator';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
 
 @Component({
   selector: 'll-webhook-dialog',
@@ -18,11 +18,11 @@ import { WebhookValidator } from '@shared/validators/webhook.validator';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatButtonModule,
-    MatInputModule,
-    MatSlideToggleModule,
-    MatSelectModule,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmInputGroupImports,
+    HlmInputImports,
+    HlmSelectImports,
   ],
 })
 export class WebhookDialogComponent {
@@ -38,4 +38,6 @@ export class WebhookDialogComponent {
     events: this.fb.control(this.data?.events || [], WebhookValidator.EVENTS),
     secret: this.fb.control(this.data?.secret || ''),
   });
+
+  protected readonly eventItemToString = (value: string): string => value;
 }

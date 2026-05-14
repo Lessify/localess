@@ -5,7 +5,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
-import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 import { SpaceDialogModel } from './space-dialog.model';
 
@@ -14,7 +14,7 @@ import { SpaceDialogModel } from './space-dialog.model';
   templateUrl: './space-dialog.component.html',
   styleUrls: ['./space-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmInputImports],
+  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmInputGroupImports],
 })
 export class SpaceDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

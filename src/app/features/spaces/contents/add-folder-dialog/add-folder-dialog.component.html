@@ -1,30 +1,37 @@
 <h2 mat-dialog-title>Add Folder</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Name</mat-label>
-      <input matInput type="text" formControlName="name" autocomplete="off" />
-      <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/250</mat-hint>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="name">Name</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="name" type="text" formControlName="name" autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['name'].value?.length || 0 }}/250</hlm-input-group-addon
+        >
+      </div>
       @if (form.controls['name'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Slug</mat-label>
-      <input matInput type="text" formControlName="slug" autocomplete="off" />
-      <button mat-icon-button matSuffix (click)="normalizeSlug()">
-        <mat-icon>auto_fix_normal</mat-icon>
-      </button>
-      <mat-hint align="end">{{ form.controls['slug'].value?.length || 0 }}/250</mat-hint>
+    </div>
+
+    <div hlmField>
+      <label hlmFieldLabel for="slug">Slug</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="slug" type="text" formControlName="slug" autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['slug'].value?.length || 0 }}/250</hlm-input-group-addon
+        >
+        <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeSlug()" hlmTooltip="Normalize Slug">
+          <ng-icon hlm size="sm" name="lucideWandSparkles" />
+        </button>
+      </div>
       @if (form.controls['slug'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>
-<!--{{form.value | json}}-->

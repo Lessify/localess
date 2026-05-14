@@ -1,31 +1,24 @@
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCircleX } from '@ng-icons/lucide';
 import { Translation } from '@shared/models/translation.model';
 import { TranslationValidator } from '@shared/validators/translation.validator';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 @Component({
   selector: 'll-translation-edit-dialog',
   templateUrl: './edit-dialog.component.html',
   styleUrls: ['./edit-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatDialogModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    TextFieldModule,
-    MatChipsModule,
-    MatIconModule,
-    MatButtonModule,
-  ],
+  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmInputGroupImports, HlmInputImports],
+  providers: [provideIcons({ lucideCircleX })],
 })
 export class EditDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -43,29 +36,21 @@ export class EditDialogComponent implements OnInit {
     }
   }
 
-  addLabel(event: MatChipInputEvent): void {
-    const input = event.chipInput?.inputElement;
-    const value: string = event.value;
-
-    if ((value || '').trim()) {
-      const labels: any = this.form.controls['labels'].value;
+  addLabel(value: string): void {
+    if (value.trim()) {
+      const labels: string[] = this.form.controls['labels'].value;
       if (labels instanceof Array) {
-        labels.push(value);
+        this.form.controls['labels'].setValue([...labels, value.trim()]);
       } else {
-        this.form.controls['labels'].setValue([value]);
+        this.form.controls['labels'].setValue([value.trim()]);
       }
-    }
-    // Reset the input value
-    if (input) {
-      input.value = '';
     }
   }
 
   removeLabel(label: string): void {
-    const labels: any = this.form.controls['labels'].value;
+    const labels: string[] = this.form.controls['labels'].value;
     if (labels instanceof Array) {
-      const index: number = labels.indexOf(label);
-      labels.splice(index, 1);
+      this.form.controls['labels'].setValue(labels.filter(l => l !== label));
     }
   }
 }

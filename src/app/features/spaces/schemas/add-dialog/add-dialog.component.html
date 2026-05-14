@@ -1,50 +1,62 @@
 <h2 mat-dialog-title>Create new Schema</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Display Name</mat-label>
-      <input matInput type="text" formControlName="displayName" autocomplete="off" />
-      <mat-hint align="end">{{ form.controls['displayName'].value?.length || 0 }}/50</mat-hint>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="displayName">Display Name</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="displayName" type="text" formControlName="displayName" autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['displayName'].value?.length || 0 }}/50</hlm-input-group-addon
+        >
+      </div>
       @if (form.controls['displayName'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Id</mat-label>
-      <input matInput type="text" formControlName="id" required autocomplete="off" />
-      <button mat-icon-button matSuffix (click)="normalizeId()">
-        <mat-icon>auto_fix_normal</mat-icon>
-      </button>
-      <mat-hint>Will be used in OpenAPI Schema Name.</mat-hint>
-      <mat-hint align="end">{{ form.controls['id'].value?.length || 0 }}/50</mat-hint>
+    </div>
+
+    <div hlmField>
+      <label hlmFieldLabel for="id">ID</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="id" type="text" formControlName="id" required autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['id'].value?.length || 0 }}/50</hlm-input-group-addon
+        >
+        <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeId()" hlmTooltip="Normalize ID">
+          <ng-icon hlm size="sm" name="lucideWandSparkles" />
+        </button>
+      </div>
+      <hlm-field-description>Will be used in OpenAPI Schema Name.</hlm-field-description>
       @if (form.controls['id'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Type</mat-label>
-      <mat-select formControlName="type" required>
-        <mat-select-trigger>
-          @let selectedType = schemaTypeDescriptions[type];
-          <ng-icon hlm size="sm" [name]="selectedType.icon" class="mr-2" />
-          {{ selectedType.name }}
-        </mat-select-trigger>
-        @for (type of types; track type) {
-          @let descriptor = schemaTypeDescriptions[type];
-          <mat-option [value]="type" [matTooltip]="descriptor.description">
-            <ng-icon hlm size="sm" [name]="descriptor.icon" class="mr-2" />
-            {{ descriptor.name }}
-          </mat-option>
-        }
-      </mat-select>
+    </div>
+
+    <div hlmField>
+      <label hlmFieldLabel for="type">Type</label>
+      <hlm-select id="type" formControlName="type" [itemToString]="typeItemToString">
+        <hlm-select-trigger class="w-full">
+          <span class="flex items-center gap-2">
+            <ng-icon hlm size="sm" [name]="schemaTypeDescriptions[type].icon" />
+            <hlm-select-value />
+          </span>
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (t of types; track t) {
+            @let descriptor = schemaTypeDescriptions[t];
+            <hlm-select-item [value]="t" [hlmTooltip]="descriptor.description">
+              <ng-icon hlm size="sm" [name]="descriptor.icon" class="mr-2" />
+              {{ descriptor.name }}
+            </hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
       @if (form.controls['type'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

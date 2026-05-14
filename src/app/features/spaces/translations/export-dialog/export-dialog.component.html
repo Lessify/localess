@@ -1,42 +1,51 @@
 <h2 mat-dialog-title>Translations Export</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Type</mat-label>
-      <mat-select formControlName="kind" required>
-        @for (kind of exportKinds; track kind.key) {
-          <mat-option [value]="kind.key"> {{ kind.value }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="kind">Type</label>
+      <hlm-select id="kind" formControlName="kind" [itemToString]="kindItemToString">
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (kind of exportKinds; track kind.key) {
+            <hlm-select-item [value]="kind.key">{{ kind.value }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    </div>
 
     @if (form.value.kind === 'FLAT') {
-      <mat-form-field>
-        <mat-label>Locale</mat-label>
-        <mat-select formControlName="locale" required>
-          @for (locale of data.locales; track locale.id) {
-            <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <div hlmField>
+        <label hlmFieldLabel for="locale">Locale</label>
+        <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value placeholder="Select locale..." />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (locale of data.locales; track locale.id) {
+              <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
     }
 
-    <mat-form-field>
-      <mat-label>From Date</mat-label>
-      <input matInput [matDatepicker]="picker" readonly [max]="today" (click)="picker.open()" (dateChange)="dateChange($event)" />
-      <mat-datepicker-toggle matIconSuffix (click)="picker.select(null)">
-        <mat-icon matDatepickerToggleIcon>clear</mat-icon>
-      </mat-datepicker-toggle>
-      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-    </mat-form-field>
+    <div hlmField>
+      <label hlmFieldLabel for="fromDate">From Date</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="fromDate" type="date" [max]="todayIso" #dateInput (change)="dateChange($event)" />
+        <button hlmInputGroupButton type="button" variant="ghost" (click)="clearDate(dateInput)">
+          <ng-icon hlm size="sm" name="lucideX" />
+        </button>
+      </div>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">
-    <mat-icon>cloud_download</mat-icon>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    <ng-icon hlm size="sm" name="lucideCloudDownload" />
     Export
   </button>
 </mat-dialog-actions>

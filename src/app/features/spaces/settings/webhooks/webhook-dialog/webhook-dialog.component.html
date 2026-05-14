@@ -1,44 +1,53 @@
 <h2 mat-dialog-title>{{ data ? 'Edit' : 'Add' }} Webhook</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Name</mat-label>
-      <input matInput type="text" formControlName="name" required minlength="3" maxlength="50" autocomplete="off" />
-      <mat-hint align="end">{{ form.controls['name'].value?.length || 0 }}/50</mat-hint>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="name">Name</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="name" type="text" formControlName="name" required minlength="3" maxlength="50" autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['name'].value?.length || 0 }}/50</hlm-input-group-addon
+        >
+      </div>
       @if (form.controls['name'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
 
-    <mat-form-field>
-      <mat-label>URL</mat-label>
-      <input matInput type="url" formControlName="url" required autocomplete="off" />
+    <div hlmField>
+      <label hlmFieldLabel for="url">URL</label>
+      <input hlmInput id="url" type="url" formControlName="url" required autocomplete="off" class="w-full" />
       @if (form.controls['url'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
 
-    <mat-form-field>
-      <mat-label>Events</mat-label>
-      <mat-select formControlName="events" multiple required>
-        @for (event of webhookEvents; track event) {
-          <mat-option [value]="event">{{ event }}</mat-option>
-        }
-      </mat-select>
+    <div hlmField>
+      <label hlmFieldLabel for="events">Events</label>
+      <hlm-select-multiple id="events" formControlName="events" [itemToString]="eventItemToString">
+        <hlm-select-trigger class="w-full">
+          <hlm-select-placeholder>Select events...</hlm-select-placeholder>
+          <hlm-select-value />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (event of webhookEvents; track event) {
+            <hlm-select-item [value]="event">{{ event }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select-multiple>
       @if (form.controls['events'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
 
-    <mat-form-field>
-      <mat-label>Secret (Optional)</mat-label>
-      <input matInput type="password" formControlName="secret" autocomplete="off" />
-      <mat-hint>Used to sign webhook payloads</mat-hint>
-    </mat-form-field>
+    <div hlmField>
+      <label hlmFieldLabel for="secret">Secret (Optional)</label>
+      <input hlmInput id="secret" type="password" formControlName="secret" autocomplete="off" class="w-full" />
+      <hlm-field-description>Used to sign webhook payloads.</hlm-field-description>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

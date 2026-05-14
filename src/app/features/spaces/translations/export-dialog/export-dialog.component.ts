@@ -1,13 +1,14 @@
 import { KeyValue } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDatepickerInputEvent, MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCloudDownload, lucideX } from '@ng-icons/lucide';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
 
 import { ExportDialogModel } from './export-dialog.model';
 
@@ -19,19 +20,19 @@ import { ExportDialogModel } from './export-dialog.model';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatIconModule,
-    MatDatepickerModule,
-    MatButtonModule,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmIconImports,
+    HlmInputGroupImports,
+    HlmSelectImports,
   ],
+  providers: [provideIcons({ lucideCloudDownload, lucideX })],
 })
 export class ExportDialogComponent {
   private readonly fb = inject(FormBuilder);
   data = inject<ExportDialogModel>(MAT_DIALOG_DATA);
 
-  today = new Date();
+  todayIso = new Date().toISOString().split('T')[0];
 
   exportKinds: KeyValue<string, string>[] = [
     { key: 'FULL', value: 'FULL' },
@@ -44,9 +45,21 @@ export class ExportDialogComponent {
     fromDate: this.fb.control(undefined),
   });
 
-  dateChange(event: MatDatepickerInputEvent<unknown>): void {
-    if (event.value instanceof Date) {
-      this.form.controls['fromDate'].setValue(event.value.getTime());
-    }
+  protected readonly kindItemToString = (value: string): string => {
+    return this.exportKinds.find(k => k.key === value)?.value ?? value;
+  };
+
+  protected readonly localeItemToString = (value: string): string => {
+    return this.data.locales.find(l => l.id === value)?.name ?? value;
+  };
+
+  dateChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.form.controls['fromDate'].setValue(value ? new Date(value).getTime() : undefined);
+  }
+
+  clearDate(input: HTMLInputElement): void {
+    input.value = '';
+    this.form.controls['fromDate'].setValue(undefined);
   }
 }

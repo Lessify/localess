@@ -1,12 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideSave } from '@ng-icons/lucide';
 import { AssetValidator } from '@shared/validators/asset.validator';
 import { CommonValidator } from '@shared/validators/common.validator';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 import { EditFolderDialogModel } from './edit-folder-dialog.model';
 
@@ -15,7 +18,8 @@ import { EditFolderDialogModel } from './edit-folder-dialog.model';
   templateUrl: './edit-folder-dialog.component.html',
   styleUrls: ['./edit-folder-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, MatFormFieldModule, ReactiveFormsModule, MatInputModule, MatButtonModule],
+  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmInputGroupImports],
+  providers: [provideIcons({ lucideSave })],
 })
 export class EditFolderDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

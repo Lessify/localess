@@ -4,7 +4,7 @@
     <div hlmFieldGroup class="w-full">
       <div hlmField>
         <label hlmFieldLabel for="sourceLocale">Source Locale</label>
-        <hlm-select id="sourceLocale" formControlName="sourceLocale">
+        <hlm-select id="sourceLocale" formControlName="sourceLocale" [itemToString]="localeItemToString">
           <hlm-select-trigger class="w-full">
             <hlm-select-value />
           </hlm-select-trigger>
@@ -17,7 +17,7 @@
       </div>
       <div hlmField>
         <label hlmFieldLabel for="targetLocale">Target Locale</label>
-        <hlm-select id="targetLocale" formControlName="targetLocale">
+        <hlm-select id="targetLocale" formControlName="targetLocale" [itemToString]="localeItemToString">
           <hlm-select-trigger class="w-full">
             <hlm-select-value />
           </hlm-select-trigger>

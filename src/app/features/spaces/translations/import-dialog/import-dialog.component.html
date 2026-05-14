@@ -1,43 +1,54 @@
 <h2 mat-dialog-title>Translations Import</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Type</mat-label>
-      <mat-select formControlName="kind" required (selectionChange)="onKindSelectionChange($event)">
-        @for (kind of exportKinds; track kind.key) {
-          <mat-option [value]="kind.key"> {{ kind.value }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="kind">Type</label>
+      <hlm-select id="kind" formControlName="kind" [itemToString]="kindItemToString">
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (kind of exportKinds; track kind.key) {
+            <hlm-select-item [value]="kind.key">{{ kind.value }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    </div>
 
     @if (form.value.kind === 'FLAT') {
-      <mat-form-field>
-        <mat-label>Type</mat-label>
-        <mat-select formControlName="locale" required>
-          @for (locale of data.locales; track locale.id) {
-            <mat-option [value]="locale.id"> {{ locale.name }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <div hlmField>
+        <label hlmFieldLabel for="locale">Locale</label>
+        <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value placeholder="Select locale..." />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (locale of data.locales; track locale.id) {
+              <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
     }
 
-    <button mat-stroked-button (click)="fileInput.click()">
-      <mat-icon>upload_file</mat-icon>
-      Upload File
-    </button>
-    <br />
-    {{ fileName }}
+    <div class="flex flex-col gap-2">
+      <button hlmBtn type="button" variant="outline" (click)="fileInput.click()">
+        <ng-icon hlm size="sm" name="lucideUpload" />
+        Upload File
+      </button>
+      @if (fileName) {
+        <p class="text-muted-foreground text-sm">{{ fileName }}</p>
+      }
+      @if (fileWrong) {
+        <p class="text-destructive text-sm">The selected file does not comply with import extension (*{{ fileAccept }}).</p>
+      }
+    </div>
   </form>
-  @if (fileWrong) {
-    <mat-error>The selected file does not comply with import extension (*{{ fileAccept }}).</mat-error>
-  }
-  <br />
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">
-    <mat-icon>cloud_upload</mat-icon>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    <ng-icon hlm size="sm" name="lucideUploadCloud" />
     Import
   </button>
 </mat-dialog-actions>

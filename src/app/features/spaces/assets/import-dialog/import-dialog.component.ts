@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
-import { MatError } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
+import { provideIcons } from '@ng-icons/core';
+import { lucideUpload, lucideUploadCloud } from '@ng-icons/lucide';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 @Component({
   selector: 'll-asset-import-dialog',
   templateUrl: './import-dialog.component.html',
   styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatError],
+  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmIconImports],
+  providers: [provideIcons({ lucideUpload, lucideUploadCloud })],
 })
 export class ImportDialogComponent {
   private readonly cd = inject(ChangeDetectorRef);

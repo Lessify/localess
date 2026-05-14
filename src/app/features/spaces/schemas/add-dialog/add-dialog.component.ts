@@ -1,21 +1,21 @@
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NameUtils } from '@core/utils/name-utils.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFileBox, lucideList, lucideWorkflow } from '@ng-icons/lucide';
+import { lucideFileBox, lucideList, lucideWandSparkles, lucideWorkflow } from '@ng-icons/lucide';
 import { SchemaType, schemaTypeDescriptions } from '@shared/models/schema.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 import { AddDialogModel } from './add-dialog.model';
 
@@ -27,19 +27,20 @@ import { AddDialogModel } from './add-dialog.model';
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSelectModule,
-    MatTooltipModule,
+    HlmButtonImports,
+    HlmFieldImports,
     HlmIconImports,
+    HlmInputImports,
+    HlmInputGroupImports,
+    HlmSelectImports,
+    HlmTooltipImports,
   ],
   providers: [
     provideIcons({
       lucideList,
       lucideFileBox,
       lucideWorkflow,
+      lucideWandSparkles,
     }),
   ],
 })
@@ -71,8 +72,12 @@ export class AddDialogComponent {
     return this.form.controls['type'].value;
   }
 
-  normalizeId() {
-    if (this.form.value.slug) {
+  protected readonly typeItemToString = (value: string): string => {
+    return schemaTypeDescriptions[value as SchemaType]?.name ?? value;
+  };
+
+  normalizeId(): void {
+    if (this.form.value.id) {
       this.form.controls['id'].setValue(NameUtils.schemaId(this.form.value.id));
     }
   }

@@ -1,69 +1,73 @@
 <h2 mat-dialog-title>Add Translation</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>ID</mat-label>
-      <input matInput type="text" #id formControlName="id" required autocomplete="off" />
-      <mat-hint align="end">{{ id.value?.length || 0 }}/150</mat-hint>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="id">ID</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="id" type="text" formControlName="id" required autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['id'].value?.length || 0 }}/150</hlm-input-group-addon
+        >
+      </div>
       @if (form.controls['id'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
-    @if (false) {
-      <mat-form-field>
-        <mat-label>Type</mat-label>
-        <mat-select formControlName="type" required>
-          @for (type of translationTypes; track type) {
-            <mat-option [value]="type"> {{ type }}</mat-option>
-          }
-        </mat-select>
-        @if (form.controls['type'].errors; as errors) {
-          <mat-error>{{ fe.errors(errors) }}</mat-error>
-        }
-      </mat-form-field>
-    }
-    <mat-form-field>
-      <mat-label>Description</mat-label>
-      <textarea matInput #description formControlName="description" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6">
-      </textarea>
-      <mat-hint align="end">{{ description.value?.length || 0 }}/250</mat-hint>
+    </div>
+
+    <div hlmField>
+      <label hlmFieldLabel for="description">Description</label>
+      <hlm-input-group>
+        <textarea hlmInputGroupTextarea id="description" formControlName="description"></textarea>
+        <hlm-input-group-addon align="block-end">
+          <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['description'].value?.length || 0 }}/250</span>
+        </hlm-input-group-addon>
+      </hlm-input-group>
       @if (form.controls['description'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Value</mat-label>
-      <textarea matInput #defaultValue formControlName="value" cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="6"></textarea>
-      <mat-hint align="end">{{ defaultValue.value?.length || 0 }}/1000</mat-hint>
+    </div>
+
+    <div hlmField>
+      <label hlmFieldLabel for="value">Value</label>
+      <hlm-input-group>
+        <textarea hlmInputGroupTextarea id="value" formControlName="value"></textarea>
+        <hlm-input-group-addon align="block-end">
+          <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['value'].value?.length || 0 }}/1000</span>
+        </hlm-input-group-addon>
+      </hlm-input-group>
       @if (form.controls['value'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
 
-    <mat-form-field>
-      <mat-chip-grid #chipList aria-label="Label Selection">
+    <div hlmField>
+      <label hlmFieldLabel for="labels">Labels</label>
+      <input
+        #labelInput
+        hlmInput
+        id="labels"
+        type="text"
+        autocomplete="off"
+        placeholder="Add label..."
+        class="w-full"
+        (keydown.enter)="$event.preventDefault(); addLabel(labelInput.value); labelInput.value = ''" />
+      <div class="flex flex-wrap gap-2">
         @for (label of form.controls['labels'].value; track label) {
-          <mat-chip-row selectable removable (removed)="removeLabel(label)">
+          <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
+            <ng-icon hlm size="xs" name="lucideCircleX" />
             {{ label }}
-            <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip-row>
+          </button>
         }
-        <input
-          matInput
-          placeholder="Add Label..."
-          [matChipInputFor]="chipList"
-          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-          matChipInputAddOnBlur
-          (matChipInputTokenEnd)="addLabel($event)" />
-      </mat-chip-grid>
-    </mat-form-field>
+      </div>
+    </div>
 
-    <mat-checkbox formControlName="autoTranslate">Translate other locales with Google Translate ?</mat-checkbox>
+    <div class="flex items-center gap-3">
+      <hlm-switch formControlName="autoTranslate" id="autoTranslate" />
+      <label hlmLabel for="autoTranslate">Translate other locales with Google Translate?</label>
+    </div>
   </form>
-  <br />
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

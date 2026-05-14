@@ -2,7 +2,7 @@
 <mat-dialog-content>
   <p class="whitespace-pre-wrap"> {{ data.content }} </p>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="false">Cancel</button>
-  <button mat-button [mat-dialog-close]="true">OK</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="false">Cancel</button>
+  <button hlmBtn variant="destructive" [mat-dialog-close]="true">OK</button>
 </mat-dialog-actions>

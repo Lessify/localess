@@ -3,17 +3,12 @@
   <form [formGroup]="form" class="flex flex-col gap-4 py-2">
     <div hlmField>
       <label hlmFieldLabel for="name">Name</label>
-      <input
-        hlmInput
-        id="name"
-        type="text"
-        formControlName="name"
-        required
-        minlength="3"
-        maxlength="30"
-        autocomplete="off"
-        class="w-full" />
-      <hlm-field-description class="text-right">{{ form.controls['name'].value?.length || 0 }}/30</hlm-field-description>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="name" type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon
+        >
+      </div>
       @if (form.controls['name'].errors; as errors) {
         <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }

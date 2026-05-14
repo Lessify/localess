@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
 
 import { ConfirmationDialogModel } from './confirmation-dialog.model';
 
@@ -9,7 +9,7 @@ import { ConfirmationDialogModel } from './confirmation-dialog.model';
   templateUrl: './confirmation-dialog.component.html',
   styleUrls: ['./confirmation-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, MatButtonModule],
+  imports: [MatDialogModule, HlmButtonImports],
 })
 export class ConfirmationDialogComponent {
   data = inject<ConfirmationDialogModel>(MAT_DIALOG_DATA);

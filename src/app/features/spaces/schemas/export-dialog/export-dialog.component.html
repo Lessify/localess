@@ -1,22 +1,21 @@
 <h2 mat-dialog-title>Schema Export</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>From Date</mat-label>
-      <input matInput [matDatepicker]="picker" readonly [max]="today" (click)="picker.open()" (dateChange)="dateChange($event)" />
-      <mat-datepicker-toggle matIconSuffix (click)="picker.select(null)">
-        <mat-icon matDatepickerToggleIcon>clear</mat-icon>
-      </mat-datepicker-toggle>
-      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-    </mat-form-field>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="fromDate">From Date</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="fromDate" type="date" [max]="todayIso" #dateInput (change)="dateChange($event)" />
+        <button hlmInputGroupButton type="button" variant="ghost" (click)="clearDate(dateInput)">
+          <ng-icon hlm size="sm" name="lucideX" />
+        </button>
+      </div>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">
-    <mat-icon>cloud_download</mat-icon>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    <ng-icon hlm size="sm" name="lucideCloudDownload" />
     Export
   </button>
 </mat-dialog-actions>

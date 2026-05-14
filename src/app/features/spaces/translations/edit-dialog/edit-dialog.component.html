@@ -1,41 +1,42 @@
 <h2 mat-dialog-title>Edit Translation</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Description</mat-label>
-      <textarea
-        matInput
-        #description
-        maxlength="250"
-        formControlName="description"
-        cdkTextareaAutosize
-        cdkAutosizeMinRows="2"
-        cdkAutosizeMaxRows="6"></textarea>
-      <mat-hint align="end">{{ description.value?.length || 0 }}/250</mat-hint>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="description">Description</label>
+      <hlm-input-group>
+        <textarea hlmInputGroupTextarea id="description" formControlName="description"></textarea>
+        <hlm-input-group-addon align="block-end">
+          <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['description'].value?.length || 0 }}/250</span>
+        </hlm-input-group-addon>
+      </hlm-input-group>
       @if (form.controls['description'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
-    <mat-form-field>
-      <mat-chip-grid #chipList [attr.aria-label]="'Select Label'">
+    </div>
+
+    <div hlmField>
+      <label hlmFieldLabel for="labels">Labels</label>
+      <input
+        #labelInput
+        hlmInput
+        id="labels"
+        type="text"
+        autocomplete="off"
+        placeholder="Add label..."
+        class="w-full"
+        (keydown.enter)="$event.preventDefault(); addLabel(labelInput.value); labelInput.value = ''" />
+      <div class="flex flex-wrap gap-2">
         @for (label of form.controls['labels'].value; track label) {
-          <mat-chip-row selectable removable (removed)="removeLabel(label)">
+          <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
+            <ng-icon hlm size="xs" name="lucideCircleX" />
             {{ label }}
-            <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip-row>
+          </button>
         }
-        <input
-          matInput
-          placeholder="Add Label..."
-          [matChipInputFor]="chipList"
-          matChipInputAddOnBlur
-          (matChipInputTokenEnd)="addLabel($event)" />
-      </mat-chip-grid>
-    </mat-form-field>
+      </div>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

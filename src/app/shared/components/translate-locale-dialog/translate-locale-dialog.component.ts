@@ -22,4 +22,8 @@ export class TranslateLocaleDialogComponent {
     sourceLocale: this.fb.control(this.data.locales[0].id, [Validators.required]),
     targetLocale: this.fb.control(this.data.locales[0].id, [Validators.required]),
   });
+
+  protected readonly localeItemToString = (value: string): string => {
+    return this.data.locales.find(l => l.id === value)?.name ?? value;
+  };
 }
