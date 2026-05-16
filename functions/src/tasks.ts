@@ -46,7 +46,7 @@ import {
   zTranslationFlatExportSchema,
 } from './models';
 import { BATCH_MAX, bucket, firestoreService } from './config';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { zip } from 'compressing';
 import {
   docAssetToExport,
@@ -69,11 +69,24 @@ import { ZodError } from 'zod';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
 
+/**
+ * Stream a local file to GCS without loading it entirely into memory.
+ */
+function streamFileToStorage(localPath: string, gcsDestination: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    createReadStream(localPath)
+      .pipe(bucket.file(gcsDestination).createWriteStream({ resumable: false }))
+      .on('finish', resolve)
+      .on('error', reject);
+  });
+}
+
 // Firestore events
 const onTaskCreate = onDocumentCreated(
   {
     document: 'spaces/{spaceId}/tasks/{taskId}',
-    memory: '1GiB',
+    memory: '4GiB',
+    timeoutSeconds: 3600,
   },
   async event => {
     const { spaceId, taskId } = event.params;
@@ -279,7 +292,6 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
   await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
   logger.info('[Task:onCreate:assetsExport] zip completed');
   logger.info('[Task:onCreate:assetsExport] zip uploading');
-  // await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(assetsExportZipFile));
   await bucket.upload(assetsExportZipFile, {
     destination: `spaces/${spaceId}/tasks/${taskId}/original`,
     resumable: false,
@@ -360,12 +372,8 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
       count = 0;
       for (const [key, value] of ids) {
         logger.info(`[Task:onCreate:assetsImport] Save File ${key}`);
-        await bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
+        await streamFileToStorage(value, `spaces/${spaceId}/assets/${key}/original`);
       }
-      // ids.forEach((value, key) => {
-      //   logger.info(`[Task:onCreate] Save File ${key}`);
-      //   bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
-      // });
       ids.clear();
     }
   }
@@ -375,12 +383,8 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
     await batch.commit();
     for (const [key, value] of ids) {
       logger.info(`[Task:onCreate:assetsImport] Save File ${key}`);
-      await bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
+      await streamFileToStorage(value, `spaces/${spaceId}/assets/${key}/original`);
     }
-    // ids.forEach((value, key) => {
-    //   logger.info(`[Task:onCreate] Save File ${key}`);
-    //   await bucket.file(`spaces/${spaceId}/assets/${key}/original`).save(readFileSync(value));
-    // });
     ids.clear();
   }
   logger.info('[Task:onCreate:assetsImport] bulk total changes : ' + totalChanges);

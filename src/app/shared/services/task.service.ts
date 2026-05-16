@@ -14,7 +14,7 @@ import {
   serverTimestamp,
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
-import { getDownloadURL, ref, Storage, uploadBytes } from '@angular/fire/storage';
+import { getDownloadURL, ref, Storage, uploadBytesResumable, UploadTaskSnapshot } from '@angular/fire/storage';
 import { WithFieldValue } from '@firebase/firestore';
 import {
   Task,
@@ -81,7 +81,7 @@ export class TaskService {
       updatedAt: serverTimestamp(),
     };
 
-    return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
+    return from(uploadBytesResumable(ref(this.storage, tmpPath), file) as unknown as Promise<UploadTaskSnapshot>).pipe(
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create'),
     );
@@ -124,7 +124,7 @@ export class TaskService {
       updatedAt: serverTimestamp(),
     };
 
-    return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
+    return from(uploadBytesResumable(ref(this.storage, tmpPath), file) as unknown as Promise<UploadTaskSnapshot>).pipe(
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create'),
     );
@@ -157,7 +157,7 @@ export class TaskService {
       updatedAt: serverTimestamp(),
     };
 
-    return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
+    return from(uploadBytesResumable(ref(this.storage, tmpPath), file) as unknown as Promise<UploadTaskSnapshot>).pipe(
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create'),
     );
@@ -197,7 +197,8 @@ export class TaskService {
       addEntity.type = 'flat-json';
       addEntity.locale = locale;
     }
-    return from(uploadBytes(ref(this.storage, tmpPath), file)).pipe(
+
+    return from(uploadBytesResumable(ref(this.storage, tmpPath), file) as unknown as Promise<UploadTaskSnapshot>).pipe(
       switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
       traceUntilFirst('Firestore:Tasks:create'),
     );
