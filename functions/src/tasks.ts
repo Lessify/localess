@@ -26,6 +26,7 @@ import {
   SchemaEnum,
   SchemaExport,
   SchemaType,
+  Space,
   Task,
   TaskAssetExport,
   TaskContentExport,
@@ -49,6 +50,7 @@ import { BATCH_MAX, bucket, firestoreService } from './config';
 import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { zip } from 'compressing';
 import {
+  acquireTranslationImportLock,
   docAssetToExport,
   docContentToExport,
   findAssetById,
@@ -60,8 +62,11 @@ import {
   findContentsByStartFullSlug,
   findSchemaById,
   findSchemas,
+  findSpaceById,
   findTranslationById,
   findTranslations,
+  generateTranslationsDraft,
+  releaseTranslationImportLock,
   updateMetadataByRef,
 } from './services';
 import { tmpdir } from 'os';
@@ -825,47 +830,58 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
     return parse.error;
   }
   logger.info(`[Task:onCreate:translationsImport] valid=${translations.length}`);
-  let totalChanges = 0;
-  let count = 0;
-  let batch = firestoreService.batch();
-  for (const translation of translations as TranslationExport[]) {
-    const translationRef = findTranslationById(spaceId, translation.id);
-    const translationSnapshot = await translationRef.get();
-    if (translationSnapshot.exists) {
-      const update: UpdateData<Translation> = {
-        type: translation.type,
-        locales: translation.locales,
-        description: translation.description || FieldValue.delete(),
-        labels: translation.labels || FieldValue.delete(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      batch.update(translationRef, update);
-    } else {
-      const add: WithFieldValue<Translation> = {
-        type: translation.type,
-        locales: translation.locales,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      if (translation.description) add.description = translation.description;
-      if (translation.labels) add.labels = translation.labels;
-      batch.set(translationRef, add);
+  await acquireTranslationImportLock(spaceId, taskId);
+  try {
+    let totalChanges = 0;
+    let count = 0;
+    let batch = firestoreService.batch();
+    for (const translation of translations as TranslationExport[]) {
+      const translationRef = findTranslationById(spaceId, translation.id);
+      const translationSnapshot = await translationRef.get();
+      if (translationSnapshot.exists) {
+        const update: UpdateData<Translation> = {
+          type: translation.type,
+          locales: translation.locales,
+          description: translation.description || FieldValue.delete(),
+          labels: translation.labels || FieldValue.delete(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        batch.update(translationRef, update);
+      } else {
+        const add: WithFieldValue<Translation> = {
+          type: translation.type,
+          locales: translation.locales,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        if (translation.description) add.description = translation.description;
+        if (translation.labels) add.labels = translation.labels;
+        batch.set(translationRef, add);
+      }
+      totalChanges++;
+      count++;
+      if (count === BATCH_MAX) {
+        logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
     }
-    totalChanges++;
-    count++;
-    if (count === BATCH_MAX) {
+    logger.info('[Task:onCreate:translationsImport] end remaining: ' + count);
+    if (count > 0) {
       logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
       await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
     }
+    logger.info('[Task:onCreate:translationsImport] bulk total changes : ' + totalChanges);
+  } finally {
+    await releaseTranslationImportLock(spaceId);
   }
-  logger.info('[Task:onCreate:translationsImport] end remaining: ' + count);
-  if (count > 0) {
-    logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
-    await batch.commit();
+  // Generate draft files once after all translations are imported
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (spaceSnapshot.exists) {
+    logger.info('[Task:onCreate:translationsImport] Generating draft files');
+    await generateTranslationsDraft(spaceId, spaceSnapshot.data() as Space);
   }
-  logger.info('[Task:onCreate:translationsImport] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -900,46 +916,57 @@ async function translationsImportJsonFlat(
       const tr = it.data() as Translation;
       origTransMap.set(it.id, tr);
     });
-  let totalChanges = 0;
-  let count = 0;
-  let batch = firestoreService.batch();
-  for (const id of Object.getOwnPropertyNames(translations)) {
-    const ot = origTransMap.get(id);
-    if (ot) {
-      // update
-      if (ot.locales[task.locale] !== translations[id]) {
-        const update: UpdateData<Translation> = {
+  await acquireTranslationImportLock(spaceId, taskId);
+  try {
+    let totalChanges = 0;
+    let count = 0;
+    let batch = firestoreService.batch();
+    for (const id of Object.getOwnPropertyNames(translations)) {
+      const ot = origTransMap.get(id);
+      if (ot) {
+        // update
+        if (ot.locales[task.locale] !== translations[id]) {
+          const update: UpdateData<Translation> = {
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+          update[`locales.${task.locale}`] = translations[id];
+          batch.update(findTranslationById(spaceId, id), update);
+          totalChanges++;
+        }
+      } else {
+        const add: any = {
+          type: TranslationType.STRING,
+          locales: {},
+          createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };
-        update[`locales.${task.locale}`] = translations[id];
-        batch.update(findTranslationById(spaceId, id), update);
+        add.locales[task.locale] = translations[id];
+        batch.set(firestoreService.doc(`spaces/${spaceId}/translations/${id}`), add);
         totalChanges++;
       }
-    } else {
-      const add: any = {
-        type: TranslationType.STRING,
-        locales: {},
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      add.locales[task.locale] = translations[id];
-      batch.set(firestoreService.doc(`spaces/${spaceId}/translations/${id}`), add);
-      totalChanges++;
+      count++;
+      if (count === BATCH_MAX) {
+        logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
     }
-    count++;
-    if (count === BATCH_MAX) {
+    logger.info('[Task:onCreate] end remaining: ' + count);
+    if (count > 0) {
       logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
       await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
     }
+    logger.info('[Task:onCreate] batch total changes : ' + totalChanges);
+  } finally {
+    await releaseTranslationImportLock(spaceId);
   }
-  logger.info('[Task:onCreate] end remaining: ' + count);
-  if (count > 0) {
-    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
-    await batch.commit();
+  // Generate draft files once after all translations are imported
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (spaceSnapshot.exists) {
+    logger.info('[Task:onCreate:translationsImportJsonFlat] Generating draft files');
+    await generateTranslationsDraft(spaceId, spaceSnapshot.data() as Space);
   }
-  logger.info('[Task:onCreate] batch total changes : ' + totalChanges);
   return undefined;
 }
 

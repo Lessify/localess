@@ -2,7 +2,7 @@ import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore
 import { logger } from 'firebase-functions/v2';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { bucket, firestoreService } from './config';
+import { firestoreService } from './config';
 import {
   PublishTranslationsData,
   Space,
@@ -12,7 +12,8 @@ import {
   TranslationHistoryType,
   UserPermission,
 } from './models';
-import { deleteTranslations, findSpaceById, findTranslations, findTranslationsHistory, spaceTranslationCachePath } from './services';
+import { deleteTranslations, findSpaceById, findTranslations, findTranslationsHistory } from './services';
+import { getTranslationImportLock, saveTranslationFiles } from './services/translation.service';
 import { translateCloud, translateWithGoogle } from './services/translate.service';
 import { canPerform } from './utils/user-auth-utils';
 import { triggerWebHooksForEvent } from './utils/webhook-utils';
@@ -29,31 +30,8 @@ const publish = onCall<PublishTranslationsData>(async request => {
   const translationsSnapshot = await findTranslations(spaceId).get();
   if (spaceSnapshot.exists && !translationsSnapshot.empty) {
     const space: Space = spaceSnapshot.data() as Space;
-    const progress: Record<string, number> = {};
-    for (const locale of space.locales) {
-      let counter = 0;
-      const localeStorage: Record<string, string> = {};
-      for (const translation of translationsSnapshot.docs) {
-        const tr = translation.data() as Translation;
-        let value = tr.locales[locale.id];
-        if (value) {
-          counter++;
-          // check the value is not empty string
-          value = value || tr.locales[space.localeFallback.id];
-        } else {
-          value = tr.locales[space.localeFallback.id];
-        }
-        localeStorage[translation.id] = value;
-      }
-      progress[locale.id] = counter;
-      // Save generated JSON
-      logger.info(`[translationsPublish] Save file to spaces/${spaceId}/translations/${locale.id}.json`);
-      await bucket.file(`spaces/${spaceId}/translations/${locale.id}.json`).save(JSON.stringify(localeStorage));
-    }
+    const progress = await saveTranslationFiles(spaceId, space, translationsSnapshot.docs);
     await spaceSnapshot.ref.update('progress.translations', progress);
-    // Save Cache
-    logger.info(`[translationsPublish] Save file to ${spaceTranslationCachePath(spaceId)}`);
-    await bucket.file(spaceTranslationCachePath(spaceId)).save('');
     const addHistory: WithFieldValue<TranslationHistory> = {
       type: TranslationHistoryType.PUBLISHED,
       name: auth?.token['name'] || FieldValue.delete(),
@@ -133,6 +111,14 @@ const onWriteToDraft = onDocumentWritten('spaces/{spaceId}/translations/{transla
   // No Data
   if (!event.data) return;
 
+  // Skip draft generation when a translation import task is in progress.
+  // The import task will generate the draft once at the end.
+  const importLock = await getTranslationImportLock(spaceId);
+  if (importLock.exists) {
+    logger.info(`[Translation:onWriteToDraft] translationId='${translationId}' Import lock active, skipping draft generation`);
+    return;
+  }
+
   const { before, after } = event.data;
   const beforeData = before.data() as Translation | undefined;
   const afterData = after.data() as Translation | undefined;
@@ -161,24 +147,7 @@ const onWriteToDraft = onDocumentWritten('spaces/{spaceId}/translations/{transla
 
     if (spaceSnapshot.exists && !translationsSnapshot.empty) {
       const space: Space = spaceSnapshot.data() as Space;
-
-      for (const locale of space.locales) {
-        const localeStorage: Record<string, string> = {};
-        for (const translation of translationsSnapshot.docs) {
-          const tr = translation.data() as Translation;
-          let value = tr.locales[locale.id];
-          if (value) {
-            // check the value is not empty string
-            value = value || tr.locales[space.localeFallback.id];
-          } else {
-            value = tr.locales[space.localeFallback.id];
-          }
-          localeStorage[translation.id] = value;
-        }
-        // Save generated JSON to draft
-        logger.info(`[Translation:onWriteToDraft] Save file to spaces/${spaceId}/translations/draft/${locale.id}.json`);
-        await bucket.file(`spaces/${spaceId}/translations/draft/${locale.id}.json`).save(JSON.stringify(localeStorage));
-      }
+      await saveTranslationFiles(spaceId, space, translationsSnapshot.docs, 'draft');
     }
   } else if (beforeData) {
     // For delete, regenerate draft files without the deleted translation
@@ -191,32 +160,10 @@ const onWriteToDraft = onDocumentWritten('spaces/{spaceId}/translations/{transla
 
     if (spaceSnapshot.exists) {
       const space: Space = spaceSnapshot.data() as Space;
-
-      for (const locale of space.locales) {
-        const localeStorage: Record<string, string> = {};
-
-        // Only include remaining translations (deleted one is already removed from collection)
-        if (!translationsSnapshot.empty) {
-          for (const translation of translationsSnapshot.docs) {
-            const tr = translation.data() as Translation;
-            let value = tr.locales[locale.id];
-            if (value) {
-              value = value || tr.locales[space.localeFallback.id];
-            } else {
-              value = tr.locales[space.localeFallback.id];
-            }
-            localeStorage[translation.id] = value;
-          }
-        }
-
-        // Save generated JSON to draft (will be empty object if no translations left)
-        logger.info(`[Translation:onWriteToDraft] Save file to spaces/${spaceId}/translations/draft/${locale.id}.json`);
-        await bucket.file(`spaces/${spaceId}/translations/draft/${locale.id}.json`).save(JSON.stringify(localeStorage));
-      }
+      // translationsSnapshot may be empty when the last translation was deleted
+      await saveTranslationFiles(spaceId, space, translationsSnapshot.docs, 'draft');
     }
   }
-  logger.info(`[Translation:onWriteToDraft] Save file to ${spaceTranslationCachePath(spaceId)}`);
-  await bucket.file(spaceTranslationCachePath(spaceId)).save('');
   return;
 });
 
