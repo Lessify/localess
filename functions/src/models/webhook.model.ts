@@ -14,12 +14,9 @@ export interface WebHook {
 export enum WebHookEvent {
   CONTENT_PUBLISHED = 'content.published',
   CONTENT_UNPUBLISHED = 'content.unpublished',
-  CONTENT_DELETED = 'content.deleted',
-  CONTENT_UPDATED = 'content.updated',
+  CONTENT_CHANGED = 'content.changed',
   TRANSLATION_PUBLISHED = 'translation.published',
-  TRANSLATION_ADDED = 'translation.added',
-  TRANSLATION_UPDATED = 'translation.updated',
-  TRANSLATION_DELETED = 'translation.deleted',
+  TRANSLATION_CHANGED = 'translation.changed',
 }
 
 export type WebHookStatus = 'success' | 'failure';

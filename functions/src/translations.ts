@@ -164,25 +164,6 @@ const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{trans
   }
   await findTranslationsHistory(spaceId).add(addHistory);
 
-  // Trigger webhook based on operation type
-  let webhookEvent: WebHookEvent | undefined;
-  if (beforeData && afterData) {
-    webhookEvent = WebHookEvent.TRANSLATION_UPDATED;
-  } else if (beforeData) {
-    webhookEvent = WebHookEvent.TRANSLATION_DELETED;
-  } else if (afterData) {
-    webhookEvent = WebHookEvent.TRANSLATION_ADDED;
-  }
-  if (webhookEvent) {
-    const webhookPayload: WebHookPayload = {
-      event: webhookEvent,
-      spaceId,
-      timestamp: new Date().toISOString(),
-      data: { translationId },
-    };
-    await triggerWebHooksForEvent(spaceId, webhookPayload);
-  }
-
   const countSnapshot = await findTranslationsHistory(spaceId).count().get();
   const { count } = countSnapshot.data();
   if (count > 30) {

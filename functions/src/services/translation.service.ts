@@ -1,6 +1,8 @@
 import { bucket, firestoreService } from '../config';
 import { DocumentReference, QueryDocumentSnapshot, Query, Timestamp } from 'firebase-admin/firestore';
 import { Space, Translation } from '../models';
+import { triggerWebHooksForEvent } from '../utils/webhook-utils';
+import { WebHookEvent, WebHookPayload } from '../models/webhook.model';
 
 /**
  * find Translation by ID
@@ -108,10 +110,18 @@ export async function saveTranslationFiles(
  * Fetches all translations for the space and generates the draft JSON files
  * for every locale.  Called once at the end of a translation import task
  * instead of triggering a draft regeneration per individual document write.
+ * Fires a TRANSLATION_PUBLISHED webhook once after files are written.
  * @param {string} spaceId
  * @param {Space} space
  */
 export async function generateTranslationsDraft(spaceId: string, space: Space): Promise<void> {
   const translationsSnapshot = await findTranslations(spaceId).get();
   await saveTranslationFiles(spaceId, space, translationsSnapshot.docs, 'draft');
+  const webhookPayload: WebHookPayload = {
+    event: WebHookEvent.TRANSLATION_CHANGED,
+    spaceId,
+    timestamp: new Date().toISOString(),
+    data: {},
+  };
+  await triggerWebHooksForEvent(spaceId, webhookPayload);
 }

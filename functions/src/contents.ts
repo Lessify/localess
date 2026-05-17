@@ -273,7 +273,7 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
 
       // Trigger webhooks for content saved/updated event
       const webhookPayload: WebHookPayload = {
-        event: WebHookEvent.CONTENT_UPDATED,
+        event: WebHookEvent.CONTENT_CHANGED,
         spaceId,
         timestamp: new Date().toISOString(),
         data: {
@@ -320,7 +320,7 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
 
   // Trigger webhooks for content deleted event
   const webhookPayload: WebHookPayload = {
-    event: WebHookEvent.CONTENT_DELETED,
+    event: WebHookEvent.CONTENT_CHANGED,
     spaceId,
     timestamp: new Date().toISOString(),
     data: {
