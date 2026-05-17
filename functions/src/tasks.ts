@@ -46,11 +46,10 @@ import {
   zTranslationExportArraySchema,
   zTranslationFlatExportSchema,
 } from './models';
-import { BATCH_MAX, bucket, firestoreService } from './config';
+import { bucket, firestoreService } from './config';
 import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { zip } from 'compressing';
 import {
-  acquireTranslationImportLock,
   docAssetToExport,
   docContentToExport,
   findAssetById,
@@ -66,7 +65,6 @@ import {
   findTranslationById,
   findTranslations,
   generateTranslationsDraft,
-  releaseTranslationImportLock,
   updateMetadataByRef,
 } from './services';
 import { tmpdir } from 'os';
@@ -76,6 +74,9 @@ const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
 
 /**
  * Stream a local file to GCS without loading it entirely into memory.
+ * @param {string} localPath - path to local file
+ * @param {string} gcsDestination - destination path in GCS
+ * @return {Promise<void>}
  */
 function streamFileToStorage(localPath: string, gcsDestination: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
@@ -198,7 +199,7 @@ const onTaskCreate = onDocumentCreated(
         };
       }
     } else if (isTaskTranslationImport(task)) {
-      let errors: any;
+      let errors: ZodError | 'WRONG_METADATA' | undefined;
       if (task.locale) {
         errors = await translationsImportJsonFlat(spaceId, taskId, task);
       } else {
@@ -329,8 +330,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
   }
   logger.info(`[Task:onCreate:assetsImport] valid=${assets.length}`);
   let totalChanges = 0;
-  let count = 0;
-  let batch = firestoreService.batch();
+  const bulk = firestoreService.bulkWriter();
   const ids = new Map<string, string>();
   for (const asset of assets as AssetExport[]) {
     const assetRef = findAssetById(spaceId, asset.id);
@@ -356,7 +356,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
       if (asset.alt) add.alt = asset.alt;
       if (asset.metadata) add.metadata = asset.metadata;
       if (asset.source) add.source = asset.source;
-      batch.set(assetRef, add);
+      bulk.set(assetRef, add);
       ids.set(asset.id, assetTmpPath);
     } else if (asset.kind === AssetKind.FOLDER) {
       const add: WithFieldValue<AssetFolder> = {
@@ -366,31 +366,15 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       };
-      batch.set(assetRef, add);
+      bulk.set(assetRef, add);
     }
     totalChanges++;
-    count++;
-    if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate:assetsImport] batch.commit() : ' + totalChanges);
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-      for (const [key, value] of ids) {
-        logger.info(`[Task:onCreate:assetsImport] Save File ${key}`);
-        await streamFileToStorage(value, `spaces/${spaceId}/assets/${key}/original`);
-      }
-      ids.clear();
-    }
   }
-  logger.info('[Task:onCreate:assetsImport] end remaining: ' + count);
-  if (count > 0) {
-    logger.info('[Task:onCreate:assetsImport] batch.commit() : ' + totalChanges);
-    await batch.commit();
-    for (const [key, value] of ids) {
-      logger.info(`[Task:onCreate:assetsImport] Save File ${key}`);
-      await streamFileToStorage(value, `spaces/${spaceId}/assets/${key}/original`);
-    }
-    ids.clear();
+  logger.info('[Task:onCreate:assetsImport] bulk.close() : ' + totalChanges);
+  await bulk.close();
+  for (const [key, value] of ids) {
+    logger.info(`[Task:onCreate:assetsImport] Save File ${key}`);
+    await streamFileToStorage(value, `spaces/${spaceId}/assets/${key}/original`);
   }
   logger.info('[Task:onCreate:assetsImport] bulk total changes : ' + totalChanges);
   return undefined;
@@ -513,8 +497,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
   }
   logger.info(`[Task:onCreate] valid=${contents.length}`);
   let totalChanges = 0;
-  let count = 0;
-  let batch = firestoreService.batch();
+  const bulk = firestoreService.bulkWriter();
   for (const content of contents as ContentExport[]) {
     const contentRef = findContentById(spaceId, content.id);
     const contentSnapshot = await contentRef.get();
@@ -531,7 +514,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
           updatedAt: FieldValue.serverTimestamp(),
         };
         if (content.data) update.data = content.data;
-        batch.update(contentRef, update);
+        bulk.update(contentRef, update);
       } else if (content.kind === ContentKind.FOLDER) {
         const update: UpdateData<ContentFolder> = {
           kind: ContentKind.FOLDER,
@@ -541,7 +524,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
           fullSlug: content.fullSlug,
           updatedAt: FieldValue.serverTimestamp(),
         };
-        batch.update(contentRef, update);
+        bulk.update(contentRef, update);
       }
     } else {
       // Add Content
@@ -557,7 +540,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
           updatedAt: FieldValue.serverTimestamp(),
         };
         if (content.data) add.data = content.data;
-        batch.set(contentRef, add);
+        bulk.set(contentRef, add);
       } else if (content.kind === ContentKind.FOLDER) {
         const add: WithFieldValue<ContentFolder> = {
           kind: ContentKind.FOLDER,
@@ -568,23 +551,13 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };
-        batch.set(contentRef, add);
+        bulk.set(contentRef, add);
       }
     }
     totalChanges++;
-    count++;
-    if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
   }
-  logger.info('[Task:onCreate] end remaining: ' + count);
-  if (count > 0) {
-    logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
-    await batch.commit();
-  }
+  logger.info('[Task:onCreate] bulk.close() : ' + totalChanges);
+  await bulk.close();
   logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
   return undefined;
 }
@@ -666,8 +639,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
   }
   logger.info(`[Task:onCreate:schemasImport] valid=${schemas.length}`);
   let totalChanges = 0;
-  let count = 0;
-  let batch = firestoreService.batch();
+  const bulk = firestoreService.bulkWriter();
   for (const schema of schemas as SchemaExport[]) {
     const schemaRef = findSchemaById(spaceId, schema.id);
     const schemaSnapshot = await schemaRef.get();
@@ -682,7 +654,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
           fields: schema.fields || FieldValue.delete(),
           updatedAt: FieldValue.serverTimestamp(),
         };
-        batch.update(schemaRef, update);
+        bulk.update(schemaRef, update);
       } else if (schema.type === SchemaType.ENUM) {
         const update: UpdateData<SchemaEnum> = {
           type: schema.type,
@@ -692,7 +664,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
           values: schema.values || FieldValue.delete(),
           updatedAt: FieldValue.serverTimestamp(),
         };
-        batch.update(schemaRef, update);
+        bulk.update(schemaRef, update);
       }
     } else {
       if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
@@ -706,7 +678,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
         if (schema.previewField) add.previewField = schema.previewField;
         if (schema.labels) add.labels = schema.labels;
         if (schema.fields) add.fields = schema.fields;
-        batch.set(schemaRef, add);
+        bulk.set(schemaRef, add);
       } else if (schema.type === SchemaType.ENUM) {
         const add: WithFieldValue<SchemaEnum> = {
           type: schema.type,
@@ -717,23 +689,13 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
         if (schema.description) add.description = schema.description;
         if (schema.labels) add.labels = schema.labels;
         if (schema.values) add.values = schema.values;
-        batch.set(schemaRef, add);
+        bulk.set(schemaRef, add);
       }
     }
     totalChanges++;
-    count++;
-    if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate:schemasImport] batch.commit() : ' + totalChanges);
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
   }
-  logger.info('[Task:onCreate:schemasImport] end remaining: ' + count);
-  if (count > 0) {
-    logger.info('[Task:onCreate:schemasImport] batch.commit() : ' + totalChanges);
-    await batch.commit();
-  }
+  logger.info('[Task:onCreate:schemasImport] bulk.close() : ' + totalChanges);
+  await bulk.close();
   logger.info('[Task:onCreate:schemasImport] bulk total changes : ' + totalChanges);
   return undefined;
 }
@@ -830,52 +792,36 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
     return parse.error;
   }
   logger.info(`[Task:onCreate:translationsImport] valid=${translations.length}`);
-  await acquireTranslationImportLock(spaceId, taskId);
-  try {
-    let totalChanges = 0;
-    let count = 0;
-    let batch = firestoreService.batch();
-    for (const translation of translations as TranslationExport[]) {
-      const translationRef = findTranslationById(spaceId, translation.id);
-      const translationSnapshot = await translationRef.get();
-      if (translationSnapshot.exists) {
-        const update: UpdateData<Translation> = {
-          type: translation.type,
-          locales: translation.locales,
-          description: translation.description || FieldValue.delete(),
-          labels: translation.labels || FieldValue.delete(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        batch.update(translationRef, update);
-      } else {
-        const add: WithFieldValue<Translation> = {
-          type: translation.type,
-          locales: translation.locales,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        if (translation.description) add.description = translation.description;
-        if (translation.labels) add.labels = translation.labels;
-        batch.set(translationRef, add);
-      }
-      totalChanges++;
-      count++;
-      if (count === BATCH_MAX) {
-        logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
-        await batch.commit();
-        batch = firestoreService.batch();
-        count = 0;
-      }
+  let totalChanges = 0;
+  const bulk = firestoreService.bulkWriter();
+  for (const translation of translations as TranslationExport[]) {
+    const translationRef = findTranslationById(spaceId, translation.id);
+    const translationSnapshot = await translationRef.get();
+    if (translationSnapshot.exists) {
+      const update: UpdateData<Translation> = {
+        type: translation.type,
+        locales: translation.locales,
+        description: translation.description || FieldValue.delete(),
+        labels: translation.labels || FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      bulk.update(translationRef, update);
+    } else {
+      const add: WithFieldValue<Translation> = {
+        type: translation.type,
+        locales: translation.locales,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      if (translation.description) add.description = translation.description;
+      if (translation.labels) add.labels = translation.labels;
+      bulk.set(translationRef, add);
     }
-    logger.info('[Task:onCreate:translationsImport] end remaining: ' + count);
-    if (count > 0) {
-      logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
-      await batch.commit();
-    }
-    logger.info('[Task:onCreate:translationsImport] bulk total changes : ' + totalChanges);
-  } finally {
-    await releaseTranslationImportLock(spaceId);
+    totalChanges++;
   }
+  logger.info('[Task:onCreate:translationsImport] bulk.close() : ' + totalChanges);
+  await bulk.close();
+  logger.info('[Task:onCreate:translationsImport] bulk total changes : ' + totalChanges);
   // Generate draft files once after all translations are imported
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (spaceSnapshot.exists) {
@@ -916,51 +862,35 @@ async function translationsImportJsonFlat(
       const tr = it.data() as Translation;
       origTransMap.set(it.id, tr);
     });
-  await acquireTranslationImportLock(spaceId, taskId);
-  try {
-    let totalChanges = 0;
-    let count = 0;
-    let batch = firestoreService.batch();
-    for (const id of Object.getOwnPropertyNames(translations)) {
-      const ot = origTransMap.get(id);
-      if (ot) {
-        // update
-        if (ot.locales[task.locale] !== translations[id]) {
-          const update: UpdateData<Translation> = {
-            updatedAt: FieldValue.serverTimestamp(),
-          };
-          update[`locales.${task.locale}`] = translations[id];
-          batch.update(findTranslationById(spaceId, id), update);
-          totalChanges++;
-        }
-      } else {
-        const add: any = {
-          type: TranslationType.STRING,
-          locales: {},
-          createdAt: FieldValue.serverTimestamp(),
+  let totalChanges = 0;
+  const bulk = firestoreService.bulkWriter();
+  for (const id of Object.getOwnPropertyNames(translations)) {
+    const ot = origTransMap.get(id);
+    if (ot) {
+      // update
+      if (ot.locales[task.locale] !== translations[id]) {
+        const update: UpdateData<Translation> = {
           updatedAt: FieldValue.serverTimestamp(),
         };
-        add.locales[task.locale] = translations[id];
-        batch.set(firestoreService.doc(`spaces/${spaceId}/translations/${id}`), add);
+        update[`locales.${task.locale}`] = translations[id];
+        bulk.update(findTranslationById(spaceId, id), update);
         totalChanges++;
       }
-      count++;
-      if (count === BATCH_MAX) {
-        logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
-        await batch.commit();
-        batch = firestoreService.batch();
-        count = 0;
-      }
+    } else {
+      const add: any = {
+        type: TranslationType.STRING,
+        locales: {},
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      add.locales[task.locale] = translations[id];
+      bulk.set(firestoreService.doc(`spaces/${spaceId}/translations/${id}`), add);
+      totalChanges++;
     }
-    logger.info('[Task:onCreate] end remaining: ' + count);
-    if (count > 0) {
-      logger.info('[Task:onCreate] batch.commit() : ' + totalChanges);
-      await batch.commit();
-    }
-    logger.info('[Task:onCreate] batch total changes : ' + totalChanges);
-  } finally {
-    await releaseTranslationImportLock(spaceId);
   }
+  logger.info('[Task:onCreate] bulk.close() : ' + totalChanges);
+  await bulk.close();
+  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
   // Generate draft files once after all translations are imported
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (spaceSnapshot.exists) {

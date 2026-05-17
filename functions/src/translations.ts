@@ -13,7 +13,7 @@ import {
   UserPermission,
 } from './models';
 import { deleteTranslations, findSpaceById, findTranslations, findTranslationsHistory } from './services';
-import { getTranslationImportLock, saveTranslationFiles } from './services/translation.service';
+import { generateTranslationsDraft, saveTranslationFiles } from './services/translation.service';
 import { translateCloud, translateWithGoogle } from './services/translate.service';
 import { canPerform } from './utils/user-auth-utils';
 import { triggerWebHooksForEvent } from './utils/webhook-utils';
@@ -103,68 +103,18 @@ const onCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId
   return;
 });
 
-const onWriteToDraft = onDocumentWritten('spaces/{spaceId}/translations/{translationId}', async event => {
-  logger.info(`[Translation:onWriteToDraft] eventId='${event.id}'`);
-  logger.info(`[Translation:onWriteToDraft] params='${JSON.stringify(event.params)}'`);
-  const { spaceId, translationId } = event.params;
-
-  // No Data
-  if (!event.data) return;
-
-  // Skip draft generation when a translation import task is in progress.
-  // The import task will generate the draft once at the end.
-  const importLock = await getTranslationImportLock(spaceId);
-  if (importLock.exists) {
-    logger.info(`[Translation:onWriteToDraft] translationId='${translationId}' Import lock active, skipping draft generation`);
-    return;
+const publishDraft = onCall<{ spaceId: string }>(async request => {
+  logger.info('[Translation:PublishDraft] data: ' + JSON.stringify(request.data));
+  logger.info('[Translation:PublishDraft] context.auth: ' + JSON.stringify(request.auth));
+  const { auth, data } = request;
+  if (!canPerform(UserPermission.TRANSLATION_UPDATE, auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  const { spaceId } = data;
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (!spaceSnapshot.exists) {
+    throw new HttpsError('not-found', 'Space not found');
   }
-
-  const { before, after } = event.data;
-  const beforeData = before.data() as Translation | undefined;
-  const afterData = after.data() as Translation | undefined;
-
-  // Skip if both before and after are undefined (shouldn't happen)
-  if (!beforeData && !afterData) {
-    logger.warn(`[Translation:onWriteToDraft] eventId='${event.id}' Both before and after data are undefined`);
-    return;
-  }
-
-  // Check if locales have changed (skip regeneration if only metadata changed)
-  if (beforeData && afterData) {
-    const localesChanged = JSON.stringify(beforeData.locales) !== JSON.stringify(afterData.locales);
-    if (!localesChanged) {
-      logger.info(`[Translation:onWriteToDraft] translationId='${translationId}' Locales unchanged, skipping draft generation`);
-      return;
-    }
-  }
-
-  // For create or update, generate draft files
-  if (afterData) {
-    logger.info(`[Translation:onWriteToDraft] eventId='${event.id}' translationId='${translationId}' Generating draft files`);
-
-    const spaceSnapshot = await findSpaceById(spaceId).get();
-    const translationsSnapshot = await findTranslations(spaceId).get();
-
-    if (spaceSnapshot.exists && !translationsSnapshot.empty) {
-      const space: Space = spaceSnapshot.data() as Space;
-      await saveTranslationFiles(spaceId, space, translationsSnapshot.docs, 'draft');
-    }
-  } else if (beforeData) {
-    // For delete, regenerate draft files without the deleted translation
-    logger.info(
-      `[Translation:onWriteToDraft] eventId='${event.id}' translationId='${translationId}' Regenerating draft files after delete`
-    );
-
-    const spaceSnapshot = await findSpaceById(spaceId).get();
-    const translationsSnapshot = await findTranslations(spaceId).get();
-
-    if (spaceSnapshot.exists) {
-      const space: Space = spaceSnapshot.data() as Space;
-      // translationsSnapshot may be empty when the last translation was deleted
-      await saveTranslationFiles(spaceId, space, translationsSnapshot.docs, 'draft');
-    }
-  }
-  return;
+  const space = spaceSnapshot.data() as Space;
+  await generateTranslationsDraft(spaceId, space);
 });
 
 const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{translationId}', async event => {
@@ -241,9 +191,9 @@ const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{trans
       .limit(count - 30)
       .get();
     if (historySnapshot.size > 0) {
-      const batch = firestoreService.batch();
-      historySnapshot.docs.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
+      const bulk = firestoreService.bulkWriter();
+      historySnapshot.docs.forEach(doc => bulk.delete(doc.ref));
+      await bulk.close();
     }
   }
   return;
@@ -300,8 +250,8 @@ const translateLocale = onCall<TranslateLocaleData>(async request => {
 
 export const translation = {
   publish: publish,
+  publishdraft: publishDraft,
   oncreate: onCreate,
-  onwritetodraft: onWriteToDraft,
   onwritetohistory: onWriteToHistory,
   deleteall: deleteAll,
   translatelocale: translateLocale,

@@ -36,12 +36,47 @@ Draft files are separate from published files. Consumers must pass `?version=dra
 
 ```
 1. User clicks "Publish Translations" in the UI
-2. Function reads all Translation documents from Firestore for the Space
-3. Function groups by locale, writes flat key/value JSON to Storage:
+2. Angular calls Firebase Function (translation-publish onCall)
+3. Function reads all Translation documents from Firestore for the Space
+4. Function groups by locale, writes flat key/value JSON to Storage:
      spaces/{spaceId}/translations/{locale}.json   (one per locale)
-4. Function updates the cache marker:
+5. Function updates the cache marker:
      spaces/{spaceId}/translations/cache.json      (new generation = new cv)
 ```
+
+---
+
+## Translation Draft Flow
+
+Draft JSON files are kept in sync so consumers can preview unpublished changes via `?version=draft`.
+
+### Frontend saves (add / edit / rename / delete)
+
+```
+1. User saves a translation key in the UI
+2. Angular TranslationService writes to Firestore
+3. On success, TranslationService calls translation-publishdraft onCall
+4. Function reads all translations and writes draft JSON to Storage:
+     spaces/{spaceId}/translations/draft/{locale}.json
+```
+
+### Import Task (TRANSLATION_IMPORT / TRANSLATION_IMPORT_FLAT)
+
+```
+1. Task Function processes all rows via BulkWriter
+2. After bulk.close(), Function calls generateTranslationsDraft() once
+3. Draft files written for all locales in a single pass
+```
+
+### CLI Manage API (POST /api/v1/spaces/:spaceId/translations/:locale)
+
+```
+1. Manage endpoint processes all rows via BulkWriter
+2. After bulk.close(), endpoint calls generateTranslationsDraft() once
+3. Draft files written for all locales in a single pass
+```
+
+> **Note:** There is no Firestore trigger watching translation writes. Draft generation is always triggered explicitly — either by the frontend calling `translation-publishdraft` or by the import/manage flow calling `generateTranslationsDraft()` directly at the end.
 
 ---
 
@@ -96,6 +131,8 @@ Resolution is done at request time by reading additional Storage files. This add
 ## Implementation Files
 
 - `functions/src/contents.ts` — publish content Firebase Function
-- `functions/src/translations.ts` — publish translations Firebase Function
+- `functions/src/translations.ts` — `publish` onCall, `publishDraft` onCall, `onWriteToHistory` trigger
 - `functions/src/services/content.service.ts` — `contentLocaleCachePath`, `spaceContentCachePath`
-- `functions/src/services/translation.service.ts` — `translationLocaleCachePath`, `spaceTranslationCachePath`
+- `functions/src/services/translation.service.ts` — `saveTranslationFiles`, `generateTranslationsDraft`, `translationLocaleCachePath`, `spaceTranslationCachePath`
+- `functions/src/tasks.ts` — `translationsImport`, `translationsImportJsonFlat` (call `generateTranslationsDraft` at end)
+- `functions/src/v1/manage.ts` — CLI push endpoint (calls `generateTranslationsDraft` at end)

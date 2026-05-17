@@ -1,5 +1,5 @@
 import { bucket, firestoreService } from '../config';
-import { DocumentReference, DocumentSnapshot, QueryDocumentSnapshot, Query, Timestamp, WithFieldValue } from 'firebase-admin/firestore';
+import { DocumentReference, QueryDocumentSnapshot, Query, Timestamp } from 'firebase-admin/firestore';
 import { Space, Translation } from '../models';
 
 /**
@@ -58,46 +58,6 @@ export function translationLocaleCachePath(spaceId: string, locale: string, vers
  */
 export function spaceTranslationCachePath(spaceId: string): string {
   return `spaces/${spaceId}/translations/cache.json`;
-}
-
-/**
- * Returns the Firestore reference for the translation import lock document.
- * The lock is set while a translation import task is running so that the
- * onWriteToDraft trigger can skip per-document draft regeneration and let
- * the import task generate the draft once at the end.
- * @param {string} spaceId
- * @return {DocumentReference} reference to the lock document
- */
-export function translationImportLockRef(spaceId: string): DocumentReference {
-  return firestoreService.doc(`spaces/${spaceId}/locks/translationImport`);
-}
-
-/**
- * Acquires the translation import lock for the given space.
- * @param {string} spaceId
- * @param {string} taskId
- */
-export async function acquireTranslationImportLock(spaceId: string, taskId: string): Promise<void> {
-  const data: WithFieldValue<{ active: boolean; taskId: string }> = { active: true, taskId };
-  await translationImportLockRef(spaceId).set(data);
-}
-
-/**
- * Releases the translation import lock for the given space.
- * @param {string} spaceId
- */
-export async function releaseTranslationImportLock(spaceId: string): Promise<void> {
-  await translationImportLockRef(spaceId).delete();
-}
-
-/**
- * Returns a snapshot of the translation import lock document.
- * Callers can use snapshot.exists to determine whether an import is in progress.
- * @param {string} spaceId
- * @return {Promise<DocumentSnapshot>}
- */
-export async function getTranslationImportLock(spaceId: string): Promise<DocumentSnapshot> {
-  return translationImportLockRef(spaceId).get();
 }
 
 /**

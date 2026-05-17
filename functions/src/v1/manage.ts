@@ -4,14 +4,7 @@ import { HttpsError } from 'firebase-functions/https';
 import { logger } from 'firebase-functions/v2';
 import { firestoreService } from '../config';
 import { Space, TokenPermission, Translation, TranslationType, zTranslationUpdateSchema } from '../models';
-import {
-  acquireTranslationImportLock,
-  findSpaceById,
-  findTranslationById,
-  findTranslations,
-  generateTranslationsDraft,
-  releaseTranslationImportLock,
-} from '../services';
+import { findSpaceById, findTranslationById, findTranslations, generateTranslationsDraft } from '../services';
 import { RequestWithToken, requireTokenPermissions } from './middleware/api-key-auth.middleware';
 
 // eslint-disable-next-line new-cap
@@ -71,12 +64,7 @@ MANAGE.post(
           };
           bulk.create(ref, data);
         });
-        await acquireTranslationImportLock(spaceId, 'manage-api');
-        try {
-          await bulk.close();
-        } finally {
-          await releaseTranslationImportLock(spaceId);
-        }
+        await bulk.close();
         await generateTranslationsDraft(spaceId, space);
         logger.info(`[V1:Translations:update] Added ${translationIds.length} missing translations`, translationIds);
         res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });
@@ -110,12 +98,7 @@ MANAGE.post(
           data[`locales.${locale}`] = values[id];
           bulk.update(ref, data);
         });
-        await acquireTranslationImportLock(spaceId, 'manage-api');
-        try {
-          await bulk.close();
-        } finally {
-          await releaseTranslationImportLock(spaceId);
-        }
+        await bulk.close();
         await generateTranslationsDraft(spaceId, space);
         logger.info(`[V1:Translations:update] Updated ${translationIds.length} translations`, translationIds);
         res.status(200).send({ message: `Updated ${translationIds.length} translations`, ids: translationIds });
@@ -143,12 +126,7 @@ MANAGE.post(
           const ref = findTranslationById(spaceId, id);
           bulk.delete(ref);
         });
-        await acquireTranslationImportLock(spaceId, 'manage-api');
-        try {
-          await bulk.close();
-        } finally {
-          await releaseTranslationImportLock(spaceId);
-        }
+        await bulk.close();
         await generateTranslationsDraft(spaceId, space);
         logger.info(`[V1:Translations:update] Delete ${translationIds.length} missing translations`, translationIds);
         res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });

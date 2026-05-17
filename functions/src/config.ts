@@ -7,8 +7,6 @@ import { TranslationServiceClient } from '@google-cloud/translate';
 import { FIREBASE_CONFIG, FirebaseConfig } from './models';
 import { getRemoteConfig } from 'firebase-admin/remote-config';
 
-// BATCH OPERATION
-export const BATCH_MAX = 500;
 // TIME
 export const MINUTE = 60;
 export const TEN_MINUTES = 10 * MINUTE;

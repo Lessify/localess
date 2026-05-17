@@ -3,7 +3,7 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten, DocumentSnapshot } from 'firebase-functions/v2/firestore';
 import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
 import { AuthData, canPerform } from './utils/user-auth-utils';
-import { BATCH_MAX, bucket, firestoreService } from './config';
+import { bucket, firestoreService } from './config';
 import {
   Content,
   ContentData,
@@ -287,8 +287,7 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
     if (contentAfter.kind === ContentKind.DOCUMENT) return;
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
-    let count = 0;
-    let batch = firestoreService.batch();
+    const bulk = firestoreService.bulkWriter();
     const contentsSnapshot = await findAllContentsByParentSlug(spaceId, contentBefore.fullSlug).get();
     for (const item of contentsSnapshot.docs) {
       const content = item.data() as Content;
@@ -297,18 +296,9 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
         fullSlug: `${contentAfter.fullSlug}/${content.slug}`,
         updatedAt: FieldValue.serverTimestamp(),
       };
-      batch.update(item.ref, update);
-      count++;
-      if (count === BATCH_MAX) {
-        await batch.commit();
-        batch = firestoreService.batch();
-        count = 0;
-      }
+      bulk.update(item.ref, update);
     }
-    // Clean history batch
-    if (count > 0) {
-      await batch.commit();
-    }
+    await bulk.close();
     return;
   }
   return;
@@ -320,24 +310,10 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
   const { spaceId, contentId } = event.params;
   // No Data
   if (!event.data) return;
-  let batch = firestoreService.batch();
-  let count = 0;
-  logger.info(`[Content::onDelete] eventId='${event.id}' delete History`);
-  const contentsHistorySnapshot = await findContentsHistory(spaceId, contentId).get();
-  for (const item of contentsHistorySnapshot.docs) {
-    batch.delete(item.ref);
-    count++;
-    if (count === BATCH_MAX) {
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  // Clean history batch
-  if (count > 0) {
-    await batch.commit();
-    count = 0;
-  }
+
+  // Delete the document and all nested subcollections (history, etc.)
+  logger.info(`[Content::onDelete] eventId='${event.id}' delete document and subcollections`);
+  await firestoreService.recursiveDelete(event.data.ref);
 
   const content = event.data.data() as Content;
   logger.info(`[Content::onDelete] eventId='${event.id}' id='${event.data.id}' fullSlug='${content.fullSlug}'`);
@@ -359,23 +335,11 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
       prefix: `spaces/${spaceId}/contents/${contentId}`,
     });
   } else if (content.kind === ContentKind.FOLDER) {
-    batch = firestoreService.batch();
-    // cascade changes to all child's in case it is a FOLDER
-    // It will create recursion
+    // cascade delete to all content documents that use this folder as parent (sibling documents, not subcollections)
+    const folderBulk = firestoreService.bulkWriter();
     const contentsSnapshot = await findAllContentsByParentSlug(spaceId, content.fullSlug).get();
-    for (const item of contentsSnapshot.docs) {
-      batch.delete(item.ref);
-      count++;
-      if (count === BATCH_MAX) {
-        await batch.commit();
-        batch = firestoreService.batch();
-        count = 0;
-      }
-    }
-    // Clean sub content batch
-    if (count > 0) {
-      await batch.commit();
-    }
+    contentsSnapshot.docs.forEach(item => folderBulk.delete(item.ref));
+    await folderBulk.close();
   }
   return;
 });
@@ -449,9 +413,9 @@ const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}'
       .limit(count - 30)
       .get();
     if (historySnapshot.size > 0) {
-      const batch = firestoreService.batch();
-      historySnapshot.docs.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
+      const bulk = firestoreService.bulkWriter();
+      historySnapshot.docs.forEach(doc => bulk.delete(doc.ref));
+      await bulk.close();
     }
   }
   return;

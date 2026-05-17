@@ -70,7 +70,7 @@ The main component is one of the most complex in the app. It renders a hierarchi
 
 | Service | Purpose |
 |---------|---------|
-| `TranslationService` | CRUD + publish |
+| `TranslationService` | CRUD + publish + publishDraft (called automatically after every write) |
 | `TranslationHistoryService` | Load and display edit history per key |
 | `LocaleService` | Load space locales |
 | `TaskService` | Create import/export tasks |
@@ -78,3 +78,7 @@ The main component is one of the most complex in the app. It renders a hierarchi
 | `TranslateService` | AI translation (Google Translate / DeepL) |
 | `NotificationService` | Snackbar feedback |
 | `PlatformService` | Platform detection (keyboard shortcuts differ per OS) |
+
+## Draft Generation
+
+Every write operation in `TranslationService` (create, update, updateId, updateLocale, delete) automatically chains a call to `translation-publishdraft` onCall after the Firestore write succeeds. This keeps the draft Storage files (`draft/{locale}.json`) in sync without a Firestore trigger.

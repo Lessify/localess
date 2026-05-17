@@ -95,6 +95,7 @@ export class TranslationService {
 
     return from(setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`), addEntity)).pipe(
       traceUntilFirst('Firestore:Translations:create'),
+      switchMap(() => this.publishDraft(spaceId)),
     );
   }
 
@@ -121,6 +122,7 @@ export class TranslationService {
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
       traceUntilFirst('Firestore:Translations:update'),
+      switchMap(() => this.publishDraft(spaceId)),
     );
   }
 
@@ -147,6 +149,7 @@ export class TranslationService {
     return from(setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${newId}`), addEntity)).pipe(
       traceUntilFirst('Firestore:Translations:updateId'),
       switchMap(() => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`)))),
+      switchMap(() => this.publishDraft(spaceId)),
     );
   }
 
@@ -163,18 +166,25 @@ export class TranslationService {
     }
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
       traceUntilFirst('Firestore:Translations:updateLocale'),
+      switchMap(() => this.publishDraft(spaceId)),
     );
   }
 
   delete(spaceId: string, id: string): Observable<void> {
     return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`))).pipe(
       traceUntilFirst('Firestore:Translations:delete'),
+      switchMap(() => this.publishDraft(spaceId)),
     );
   }
 
   publish(spaceId: string): Observable<void> {
     const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-publish');
     return translationsPublish({ spaceId }).pipe(traceUntilFirst('Functions:Translations:publish'));
+  }
+
+  publishDraft(spaceId: string): Observable<void> {
+    const translationsPublishDraft = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-publishdraft');
+    return translationsPublishDraft({ spaceId }).pipe(traceUntilFirst('Functions:Translations:publishDraft'));
   }
 
   deleteAll(spaceId: string): Observable<void> {
@@ -184,6 +194,9 @@ export class TranslationService {
 
   translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string): Observable<void> {
     const translateLocale = httpsCallableData<TranslateLocaleData, void>(this.functions, 'translation-translatelocale');
-    return translateLocale({ spaceId, sourceLocaleId, targetLocaleId }).pipe(traceUntilFirst('Functions:Translations:translateLocale'));
+    return translateLocale({ spaceId, sourceLocaleId, targetLocaleId }).pipe(
+      traceUntilFirst('Functions:Translations:translateLocale'),
+      switchMap(() => this.publishDraft(spaceId)),
+    );
   }
 }

@@ -120,6 +120,8 @@ spaces/
   {spaceId}/
     contents/
       {contentId}
+        history/
+          {historyId}
     translations/
       {translationId}
     schemas/
@@ -130,4 +132,9 @@ spaces/
       {taskId}
     tokens/
       {tokenId}
+    translations-history/
+      {historyId}
 ```
+
+> When a Space is deleted, `firestoreService.recursiveDelete()` removes the space document and all nested subcollections in one call.
+> When a Content document is deleted, `firestoreService.recursiveDelete()` removes the content document and its `history` subcollection. Child folder contents (sibling documents referencing the folder via `parentSlug`) are cascade-deleted via the `onContentDelete` trigger.
