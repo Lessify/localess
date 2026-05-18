@@ -4,6 +4,7 @@ import { bucket, firestoreService } from '../config';
 import {
   Content,
   ContentData,
+  ContentDocument,
   ContentDocumentApi,
   ContentDocumentExport,
   ContentDocumentStorage,
@@ -289,4 +290,30 @@ export async function resolveLinks(spaceId: string, content: ContentDocumentStor
     })
   );
   return resolvedLinks;
+}
+
+/**
+ * Returns true if any imported field differs from the existing Firestore content document.
+ * Compares kind, name, slug, parentSlug, and fullSlug for all content types.
+ * For DOCUMENT content, also compares schema, data, assets, links, and references.
+ * @param {Content} existing - the current Firestore content document
+ * @param {ContentExport} imported - the content data parsed from the import file
+ * @return {boolean} true if at least one field has changed
+ */
+export function isContentChanged(existing: Content, imported: ContentExport): boolean {
+  if (existing.kind !== imported.kind) return true;
+  if (existing.name !== imported.name) return true;
+  if (existing.slug !== imported.slug) return true;
+  if (existing.parentSlug !== imported.parentSlug) return true;
+  if (existing.fullSlug !== imported.fullSlug) return true;
+  if (existing.kind === ContentKind.DOCUMENT && imported.kind === ContentKind.DOCUMENT) {
+    const e = existing as ContentDocument;
+    const i = imported as ContentDocumentExport;
+    if (e.schema !== i.schema) return true;
+    if (JSON.stringify(e.data ?? null) !== JSON.stringify(i.data ?? null)) return true;
+    if (JSON.stringify(e.assets ?? []) !== JSON.stringify(i.assets ?? [])) return true;
+    if (JSON.stringify(e.links ?? []) !== JSON.stringify(i.links ?? [])) return true;
+    if (JSON.stringify(e.references ?? []) !== JSON.stringify(i.references ?? [])) return true;
+  }
+  return false;
 }

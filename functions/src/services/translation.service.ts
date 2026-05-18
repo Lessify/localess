@@ -1,8 +1,9 @@
 import { bucket, firestoreService } from '../config';
 import { DocumentReference, QueryDocumentSnapshot, Query, Timestamp } from 'firebase-admin/firestore';
-import { Space, Translation } from '../models';
+import { Space, Translation, TranslationExport } from '../models';
 import { triggerWebHooksForEvent } from '../utils/webhook-utils';
 import { WebHookEvent, WebHookPayload } from '../models/webhook.model';
+import { isLabelsEqual } from '../utils/import-utils';
 
 /**
  * find Translation by ID
@@ -124,4 +125,32 @@ export async function generateTranslationsDraft(spaceId: string, space: Space): 
     data: {},
   };
   await triggerWebHooksForEvent(spaceId, webhookPayload);
+}
+
+/**
+ * Returns true if any imported field differs from the existing Firestore translation document.
+ * Compares type, locales (deep), description, and labels.
+ * @param {Translation} existing - the current Firestore translation document
+ * @param {TranslationExport} imported - the translation data parsed from the import file
+ * @return {boolean} true if at least one field has changed
+ */
+export function isTranslationChanged(existing: Translation, imported: TranslationExport): boolean {
+  if (existing.type !== imported.type) return true;
+  if (!isLocalesEqual(existing.locales, imported.locales)) return true;
+  if ((existing.description ?? undefined) !== (imported.description ?? undefined)) return true;
+  if (!isLabelsEqual(existing.labels, imported.labels)) return true;
+  return false;
+}
+
+/**
+ * Returns true if two locale maps are equal (same keys and values).
+ * @param {Record<string, string>} a - first locale map
+ * @param {Record<string, string>} b - second locale map
+ * @return {boolean} true if both maps have identical keys and values
+ */
+export function isLocalesEqual(a: Record<string, string>, b: Record<string, string>): boolean {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every(k => a[k] === b[k]);
 }

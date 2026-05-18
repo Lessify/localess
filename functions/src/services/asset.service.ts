@@ -1,7 +1,7 @@
 import { DocumentReference, FieldValue, Query, Timestamp, UpdateData } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { bucket, firestoreService } from '../config';
-import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFolderExport, AssetKind } from '../models';
+import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFolderExport, AssetKind, AssetMetadata } from '../models';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import os from 'os';
@@ -214,4 +214,44 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
 export async function updateMetadataByPath(assetRefPath: string): Promise<void> {
   const assetRef = firestoreService.doc(assetRefPath);
   return updateMetadataByRef(assetRef);
+}
+
+/**
+ * Returns true if any imported field differs from the existing Firestore asset document.
+ * Compares name, parentPath, and kind for all asset types.
+ * For FILE assets, also compares extension, type, size, alt, source, and metadata.
+ * @param {Asset} existing - the current Firestore asset document
+ * @param {AssetExport} imported - the asset data parsed from the import file
+ * @return {boolean} true if at least one field has changed
+ */
+export function isAssetChanged(existing: Asset, imported: AssetExport): boolean {
+  if (existing.name !== imported.name) return true;
+  if (existing.parentPath !== imported.parentPath) return true;
+  if (existing.kind !== imported.kind) return true;
+  if (existing.kind === AssetKind.FILE && imported.kind === AssetKind.FILE) {
+    const e = existing as AssetFile;
+    const i = imported as AssetFileExport;
+    if (e.extension !== i.extension) return true;
+    if (e.type !== i.type) return true;
+    if (e.size !== i.size) return true;
+    if ((e.alt ?? undefined) !== (i.alt ?? undefined)) return true;
+    if ((e.source ?? undefined) !== (i.source ?? undefined)) return true;
+    if (!isAssetMetadataEqual(e.metadata, i.metadata)) return true;
+  }
+  return false;
+}
+
+/**
+ * Returns true if two AssetMetadata objects differ in format, width, or height.
+ * Handles the AssetMetadata union type by casting to the common base shape.
+ * @param {AssetMetadata | undefined} a - first metadata object
+ * @param {AssetMetadata | undefined} b - second metadata object
+ * @return {boolean} true if both are equal
+ */
+export function isAssetMetadataEqual(a?: AssetMetadata, b?: AssetMetadata): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  return (a as { format?: string; width?: number; height?: number }).format === (b as { format?: string; width?: number; height?: number }).format &&
+    (a as { width?: number }).width === (b as { width?: number }).width &&
+    (a as { height?: number }).height === (b as { height?: number }).height;
 }

@@ -65,6 +65,10 @@ import {
   findTranslationById,
   findTranslations,
   generateTranslationsDraft,
+  isAssetChanged,
+  isContentChanged,
+  isSchemaChanged,
+  isTranslationChanged,
   updateMetadataByRef,
 } from './services';
 import { tmpdir } from 'os';
@@ -329,46 +333,79 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
     return parse.error;
   }
   logger.info(`[Task:onCreate:assetsImport] valid=${assets.length}`);
+
+  // Load all existing assets into a map to avoid per-document reads
+  const origAssetMap = new Map<string, Asset>();
+  const assetsSnapshot = await findAssets(spaceId).get();
+  assetsSnapshot.docs
+    .filter(it => it.exists)
+    .forEach(it => origAssetMap.set(it.id, it.data() as Asset));
+
   let totalChanges = 0;
   const bulk = firestoreService.bulkWriter();
   const ids = new Map<string, string>();
   for (const asset of assets as AssetExport[]) {
     const assetRef = findAssetById(spaceId, asset.id);
-    const assetSnapshot = await assetRef.get();
-    // Skip Existing Files
-    if (assetSnapshot.exists) continue;
-    if (asset.kind === AssetKind.FILE) {
-      // Skip if file is not present
-      const assetTmpPath = `${tmpTaskFolder}/assets/${asset.id}`;
-      if (!existsSync(assetTmpPath)) continue;
-      const add: WithFieldValue<AssetFile> = {
-        kind: AssetKind.FILE,
-        name: asset.name,
-        parentPath: asset.parentPath,
-        inProgress: true,
-        extension: asset.extension,
-        type: asset.type,
-        size: asset.size,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      // Optional Fields
-      if (asset.alt) add.alt = asset.alt;
-      if (asset.metadata) add.metadata = asset.metadata;
-      if (asset.source) add.source = asset.source;
-      bulk.set(assetRef, add);
-      ids.set(asset.id, assetTmpPath);
-    } else if (asset.kind === AssetKind.FOLDER) {
-      const add: WithFieldValue<AssetFolder> = {
-        kind: AssetKind.FOLDER,
-        name: asset.name,
-        parentPath: asset.parentPath,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      bulk.set(assetRef, add);
+    const existing = origAssetMap.get(asset.id);
+    if (existing) {
+      if (isAssetChanged(existing, asset)) {
+        if (asset.kind === AssetKind.FILE) {
+          const update: UpdateData<AssetFile> = {
+            name: asset.name,
+            parentPath: asset.parentPath,
+            extension: asset.extension,
+            type: asset.type,
+            size: asset.size,
+            alt: asset.alt || FieldValue.delete(),
+            source: asset.source || FieldValue.delete(),
+            metadata: asset.metadata || FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+          bulk.update(assetRef, update);
+        } else if (asset.kind === AssetKind.FOLDER) {
+          const update: UpdateData<AssetFolder> = {
+            name: asset.name,
+            parentPath: asset.parentPath,
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+          bulk.update(assetRef, update);
+        }
+        totalChanges++;
+      }
+    } else {
+      if (asset.kind === AssetKind.FILE) {
+        // Skip if file is not present
+        const assetTmpPath = `${tmpTaskFolder}/assets/${asset.id}`;
+        if (!existsSync(assetTmpPath)) continue;
+        const add: WithFieldValue<AssetFile> = {
+          kind: AssetKind.FILE,
+          name: asset.name,
+          parentPath: asset.parentPath,
+          inProgress: true,
+          extension: asset.extension,
+          type: asset.type,
+          size: asset.size,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        // Optional Fields
+        if (asset.alt) add.alt = asset.alt;
+        if (asset.metadata) add.metadata = asset.metadata;
+        if (asset.source) add.source = asset.source;
+        bulk.set(assetRef, add);
+        ids.set(asset.id, assetTmpPath);
+      } else if (asset.kind === AssetKind.FOLDER) {
+        const add: WithFieldValue<AssetFolder> = {
+          kind: AssetKind.FOLDER,
+          name: asset.name,
+          parentPath: asset.parentPath,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        bulk.set(assetRef, add);
+      }
+      totalChanges++;
     }
-    totalChanges++;
   }
   logger.info('[Task:onCreate:assetsImport] bulk.close() : ' + totalChanges);
   await bulk.close();
@@ -495,39 +532,48 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
     logger.warn(`[Task:onCreate:contentsImport] invalid=${JSON.stringify(parse.error)}`);
     return parse.error;
   }
-  logger.info(`[Task:onCreate] valid=${contents.length}`);
+  logger.info(`[Task:onCreate:contentsImport] valid=${contents.length}`);
+
+  // Load all existing contents into a map to avoid per-document reads
+  const origContentMap = new Map<string, Content>();
+  const contentsSnapshot = await findContents(spaceId).get();
+  contentsSnapshot.docs
+    .filter(it => it.exists)
+    .forEach(it => origContentMap.set(it.id, it.data() as Content));
+
   let totalChanges = 0;
   const bulk = firestoreService.bulkWriter();
   for (const content of contents as ContentExport[]) {
     const contentRef = findContentById(spaceId, content.id);
-    const contentSnapshot = await contentRef.get();
-    if (contentSnapshot.exists) {
-      // Update Content
-      if (content.kind === ContentKind.DOCUMENT) {
-        const update: UpdateData<ContentDocument> = {
-          kind: ContentKind.DOCUMENT,
-          name: content.name,
-          slug: content.slug,
-          parentSlug: content.parentSlug,
-          fullSlug: content.fullSlug,
-          schema: content.schema,
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        if (content.data) update.data = content.data;
-        bulk.update(contentRef, update);
-      } else if (content.kind === ContentKind.FOLDER) {
-        const update: UpdateData<ContentFolder> = {
-          kind: ContentKind.FOLDER,
-          name: content.name,
-          slug: content.slug,
-          parentSlug: content.parentSlug,
-          fullSlug: content.fullSlug,
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        bulk.update(contentRef, update);
+    const existing = origContentMap.get(content.id);
+    if (existing) {
+      if (isContentChanged(existing, content)) {
+        if (content.kind === ContentKind.DOCUMENT) {
+          const update: UpdateData<ContentDocument> = {
+            kind: ContentKind.DOCUMENT,
+            name: content.name,
+            slug: content.slug,
+            parentSlug: content.parentSlug,
+            fullSlug: content.fullSlug,
+            schema: content.schema,
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+          if (content.data) update.data = content.data;
+          bulk.update(contentRef, update);
+        } else if (content.kind === ContentKind.FOLDER) {
+          const update: UpdateData<ContentFolder> = {
+            kind: ContentKind.FOLDER,
+            name: content.name,
+            slug: content.slug,
+            parentSlug: content.parentSlug,
+            fullSlug: content.fullSlug,
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+          bulk.update(contentRef, update);
+        }
+        totalChanges++;
       }
     } else {
-      // Add Content
       if (content.kind === ContentKind.DOCUMENT) {
         const add: WithFieldValue<ContentDocument> = {
           kind: ContentKind.DOCUMENT,
@@ -553,12 +599,12 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
         };
         bulk.set(contentRef, add);
       }
+      totalChanges++;
     }
-    totalChanges++;
   }
-  logger.info('[Task:onCreate] bulk.close() : ' + totalChanges);
+  logger.info('[Task:onCreate:contentsImport] bulk.close() : ' + totalChanges);
   await bulk.close();
-  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate:contentsImport] bulk total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -638,33 +684,44 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
     return parse.error;
   }
   logger.info(`[Task:onCreate:schemasImport] valid=${schemas.length}`);
+
+  // Load all existing schemas into a map to avoid per-document reads
+  const origSchemaMap = new Map<string, Schema>();
+  const schemasSnapshot = await findSchemas(spaceId).get();
+  schemasSnapshot.docs
+    .filter(it => it.exists)
+    .forEach(it => origSchemaMap.set(it.id, it.data() as Schema));
+
   let totalChanges = 0;
   const bulk = firestoreService.bulkWriter();
   for (const schema of schemas as SchemaExport[]) {
     const schemaRef = findSchemaById(spaceId, schema.id);
-    const schemaSnapshot = await schemaRef.get();
-    if (schemaSnapshot.exists) {
-      if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
-        const update: UpdateData<SchemaComponent> = {
-          type: schema.type,
-          displayName: schema.displayName || FieldValue.delete(),
-          description: schema.description || FieldValue.delete(),
-          previewField: schema.previewField || FieldValue.delete(),
-          labels: schema.labels || FieldValue.delete(),
-          fields: schema.fields || FieldValue.delete(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        bulk.update(schemaRef, update);
-      } else if (schema.type === SchemaType.ENUM) {
-        const update: UpdateData<SchemaEnum> = {
-          type: schema.type,
-          displayName: schema.displayName || FieldValue.delete(),
-          description: schema.description || FieldValue.delete(),
-          labels: schema.labels || FieldValue.delete(),
-          values: schema.values || FieldValue.delete(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        bulk.update(schemaRef, update);
+    const existing = origSchemaMap.get(schema.id);
+    if (existing) {
+      if (isSchemaChanged(existing, schema)) {
+        if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
+          const update: UpdateData<SchemaComponent> = {
+            type: schema.type,
+            displayName: schema.displayName || FieldValue.delete(),
+            description: schema.description || FieldValue.delete(),
+            previewField: schema.previewField || FieldValue.delete(),
+            labels: schema.labels || FieldValue.delete(),
+            fields: schema.fields || FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+          bulk.update(schemaRef, update);
+        } else if (schema.type === SchemaType.ENUM) {
+          const update: UpdateData<SchemaEnum> = {
+            type: schema.type,
+            displayName: schema.displayName || FieldValue.delete(),
+            description: schema.description || FieldValue.delete(),
+            labels: schema.labels || FieldValue.delete(),
+            values: schema.values || FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+          bulk.update(schemaRef, update);
+        }
+        totalChanges++;
       }
     } else {
       if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
@@ -691,8 +748,8 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
         if (schema.values) add.values = schema.values;
         bulk.set(schemaRef, add);
       }
+      totalChanges++;
     }
-    totalChanges++;
   }
   logger.info('[Task:onCreate:schemasImport] bulk.close() : ' + totalChanges);
   await bulk.close();
@@ -792,20 +849,31 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
     return parse.error;
   }
   logger.info(`[Task:onCreate:translationsImport] valid=${translations.length}`);
+
+  // Load all existing translations into a map to avoid per-document reads
+  const origTransMap = new Map<string, Translation>();
+  const translationsSnapshot = await findTranslations(spaceId).get();
+  translationsSnapshot.docs
+    .filter(it => it.exists)
+    .forEach(it => origTransMap.set(it.id, it.data() as Translation));
+
   let totalChanges = 0;
   const bulk = firestoreService.bulkWriter();
   for (const translation of translations as TranslationExport[]) {
     const translationRef = findTranslationById(spaceId, translation.id);
-    const translationSnapshot = await translationRef.get();
-    if (translationSnapshot.exists) {
-      const update: UpdateData<Translation> = {
-        type: translation.type,
-        locales: translation.locales,
-        description: translation.description || FieldValue.delete(),
-        labels: translation.labels || FieldValue.delete(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      bulk.update(translationRef, update);
+    const existing = origTransMap.get(translation.id);
+    if (existing) {
+      if (isTranslationChanged(existing, translation)) {
+        const update: UpdateData<Translation> = {
+          type: translation.type,
+          locales: translation.locales,
+          description: translation.description || FieldValue.delete(),
+          labels: translation.labels || FieldValue.delete(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        bulk.update(translationRef, update);
+        totalChanges++;
+      }
     } else {
       const add: WithFieldValue<Translation> = {
         type: translation.type,
@@ -816,8 +884,8 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
       if (translation.description) add.description = translation.description;
       if (translation.labels) add.labels = translation.labels;
       bulk.set(translationRef, add);
+      totalChanges++;
     }
-    totalChanges++;
   }
   logger.info('[Task:onCreate:translationsImport] bulk.close() : ' + totalChanges);
   await bulk.close();
@@ -853,7 +921,7 @@ async function translationsImportJsonFlat(
     logger.warn(`[Task:onCreate:translationsImportJsonFlat] invalid=${JSON.stringify(parse.error)}`);
     return parse.error;
   }
-  logger.info(`[Task:onCreate] valid=${Object.getOwnPropertyNames(translations).length}`);
+  logger.info(`[Task:onCreate:translationsImportJsonFlat] valid=${Object.getOwnPropertyNames(translations).length}`);
   const origTransMap = new Map<string, Translation>();
   const translationsSnapshot = await findTranslations(spaceId).get();
   translationsSnapshot.docs
@@ -888,9 +956,9 @@ async function translationsImportJsonFlat(
       totalChanges++;
     }
   }
-  logger.info('[Task:onCreate] bulk.close() : ' + totalChanges);
+  logger.info('[Task:onCreate:translationsImportJsonFlat] bulk.close() : ' + totalChanges);
   await bulk.close();
-  logger.info('[Task:onCreate] bulk total changes : ' + totalChanges);
+  logger.info('[Task:onCreate:translationsImportJsonFlat] bulk total changes : ' + totalChanges);
   // Generate draft files once after all translations are imported
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (spaceSnapshot.exists) {
