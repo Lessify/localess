@@ -605,6 +605,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
   logger.info('[Task:onCreate:contentsImport] bulk.close() : ' + totalChanges);
   await bulk.close();
   logger.info('[Task:onCreate:contentsImport] bulk total changes : ' + totalChanges);
+  // The Draft Generation will be executed on the onDocumentUpdated
   return undefined;
 }
 
