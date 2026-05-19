@@ -1,10 +1,36 @@
 <h2 mat-dialog-title>Contents Export</h2>
 <mat-dialog-content>
-  <p class="text-muted-foreground py-2 text-sm">All contents will be exported.</p>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="path">Path</label>
+      <hlm-combobox
+        id="path"
+        [(search)]="search"
+        [filter]="noOpFilter"
+        [value]="selectedItem()"
+        (valueChange)="onValueChange($event)"
+        [itemToString]="displayItem">
+        <hlm-combobox-input placeholder="Search document or folder..." showClear />
+        <hlm-combobox-content *hlmComboboxPortal>
+          <hlm-combobox-empty>No results found.</hlm-combobox-empty>
+          <div hlmComboboxList>
+            @for (content of filteredContents(); track content.id) {
+              <hlm-combobox-item [value]="content">
+                <ng-icon hlm size="sm" [name]="content.kind === ContentKind.FOLDER ? 'lucideFolder' : 'lucideFileText'" />
+                {{ content.name }}
+                <span class="text-muted-foreground text-xs">| {{ content.fullSlug }}</span>
+              </hlm-combobox-item>
+            }
+          </div>
+        </hlm-combobox-content>
+      </hlm-combobox>
+      <hlm-field-description>Will export only a specific Document or Folder with sub-Documents.</hlm-field-description>
+    </div>
+  </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="flex gap-2">
   <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="{}">
+  <button hlmBtn [mat-dialog-close]="form.value">
     <ng-icon hlm size="sm" name="lucideCloudDownload" />
     Export
   </button>

@@ -591,7 +591,7 @@ filteredItems = toSignal(
   toObservable(this.search).pipe(
     startWith(''),
     debounceTime(500),
-    switchMap(it => (it ? this.myService.findAllByName(this.spaceId, it, 5) : of([]))),
+    switchMap(it => this.myService.findAllByName(this.spaceId, it, 5)),
   ),
   { initialValue: [] as MyType[] },
 );
@@ -604,8 +604,58 @@ protected readonly noOpFilter = (): boolean => true;
 
 onValueChange(item: MyType | null): void {
   this.selectedItem.set(item);
-  this.form.controls['path'].setValue(item?.id ?? null);
+  this.form.controls['path'].setValue(item?.id ?? undefined);
 }
+```
+
+> ⚠️ **Common bug — empty dropdown on open:** Do **not** guard the `switchMap` with `it ? service.find(...) : of([])`. When the combobox opens the search string is `''` (falsy), which returns an empty array and the dropdown appears blank. Always call the service unconditionally — pass the empty string and let the service return the first N results.
+>
+> ```typescript
+> // ❌ Wrong — dropdown is empty on open
+> switchMap(it => (it ? this.myService.findAllByName(spaceId, it, 5) : of([])))
+>
+> // ✅ Correct — service always called, returns first 5 items on open
+> switchMap(it => this.myService.findAllByName(spaceId, it, 5))
+> ```
+
+### Icons inside combobox items
+
+Use `<ng-icon hlm size="sm" [name]="..." />` inside `<hlm-combobox-item>` to show a leading icon. Bind the icon name dynamically using the item's `kind` discriminant:
+
+```html
+<hlm-combobox-item [value]="item">
+  <ng-icon hlm size="sm" [name]="item.kind === 'FOLDER' ? 'lucideFolder' : 'lucideFileText'" />
+  {{ item.name }}
+</hlm-combobox-item>
+```
+
+Expose the enum on the component class so the template can reference it:
+
+```typescript
+readonly MyKind = MyKind; // e.g. ContentKind, AssetKind
+```
+
+Register all icon variants in `provideIcons`:
+
+```typescript
+providers: [provideIcons({ lucideFolder, lucideFileText, lucidePaperclip })],
+```
+
+### Secondary text (slug / path) in combobox items
+
+Show supplementary info (e.g. `fullSlug`) as a muted inline span **inside** the item, and include it in `displayItem` so the trigger shows it after selection:
+
+```html
+<hlm-combobox-item [value]="content">
+  <ng-icon hlm size="sm" [name]="..." />
+  {{ content.name }}
+  <span class="text-muted-foreground text-xs">| {{ content.fullSlug }}</span>
+</hlm-combobox-item>
+```
+
+```typescript
+protected readonly displayItem = (item?: Content): string =>
+  item ? `${item.name} | ${item.fullSlug}` : '';
 ```
 
 ### Client-side search (static list)
