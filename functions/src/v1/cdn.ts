@@ -36,6 +36,8 @@ import {
   spaceTranslationCachePath,
   translationLocaleCachePath,
 } from '../services';
+import { applySharpTransforms, ImageFormat, isImageFormat } from '../utils/image-transform';
+import { resolveLocaleFilePath } from '../utils/locale-utils';
 import {
   RequestWithToken,
   requireContentPermissions,
@@ -45,22 +47,6 @@ import {
 
 // eslint-disable-next-line new-cap
 export const CDN = Router();
-
-/**
- * Resolves the locale file path to use for a request.
- * Returns the primary path if the file exists, the fallback path if it does,
- * or null if neither exists.
- * @param {string} primaryPath The primary file path to check
- * @param {string} fallbackPath The fallback file path to check if the primary does not exist
- * @return {string | null} The resolved file path or null if neither exists
- */
-async function resolveLocaleFilePath(primaryPath: string, fallbackPath: string): Promise<string | null> {
-  const [primaryExists] = await bucket.file(primaryPath).exists();
-  if (primaryExists) return primaryPath;
-  if (primaryPath === fallbackPath) return null;
-  const [fallbackExists] = await bucket.file(fallbackPath).exists();
-  return fallbackExists ? fallbackPath : null;
-}
 
 CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermissions(), async (req: RequestWithToken, res) => {
   logger.info('[V1:Translations] params : ' + JSON.stringify(req.params));
@@ -424,7 +410,15 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info('[V1:AssetById] params: ' + JSON.stringify(req.params));
   logger.info('[V1:AssetById] query: ' + JSON.stringify(req.query));
   const { spaceId, assetId } = req.params;
-  const { w: width, download, thumbnail } = req.query;
+  const { w: widthRaw, h: heightRaw, q: qualityRaw, f: formatRaw, download, thumbnail } = req.query;
+  const widthParsed = parseInt(widthRaw?.toString() ?? '', 10);
+  const width = Number.isFinite(widthParsed) && widthParsed > 0 ? widthParsed : undefined;
+  const heightParsed = parseInt(heightRaw?.toString() ?? '', 10);
+  const height = Number.isFinite(heightParsed) && heightParsed > 0 ? heightParsed : undefined;
+  const qualityParsed = parseInt(qualityRaw?.toString() ?? '', 10);
+  const quality = Number.isFinite(qualityParsed) ? Math.min(100, Math.max(1, qualityParsed)) : 85;
+  const rawFormatStr = formatRaw?.toString();
+  const format: ImageFormat | undefined = isImageFormat(rawFormatStr) ? rawFormatStr : undefined;
 
   const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
   const [exists] = await assetFile.exists();
@@ -435,46 +429,68 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const asset = assetSnapshot.data() as AssetFile;
     const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
     let filename = `${asset.name}${asset.extension}`;
+    const formatMimeMap: Record<string, string> = { webp: 'image/webp', jpeg: 'image/jpeg', png: 'image/png' };
+    const formatExtMap: Record<string, string> = { webp: '.webp', jpeg: '.jpg', png: '.png' };
+    const outputType: string | undefined = format ? formatMimeMap[format] : undefined;
+    const outputExt: string = format ? formatExtMap[format] : asset.extension;
+
+    const suffix = [width ? `w${width}` : '', height ? `h${height}` : '', format ? `f${format}` : ''].filter(Boolean).join('-');
     // apply resize for valid 'w' parameter and images
-    if (asset.type.startsWith('image/') && width && !Number.isNaN(width)) {
+    if (asset.type.startsWith('image/') && (width !== undefined || height !== undefined || format !== undefined)) {
       if (asset.type === 'image/webp' || asset.type === 'image/gif') {
         // possible animated or single frame webp/gif
         const [file] = await assetFile.download();
         let sharpFile = sharp(file);
         const sharpFileMetadata = await sharpFile.metadata();
         const isAnimated = sharpFileMetadata.pages !== undefined;
-        if (thumbnail && isAnimated) {
-          // Thumbnail with Animation: Remove animations, to reduce load
-          filename = `${asset.name}-w${width}-thumbnail${asset.extension}`;
-          sharpFile = sharp(file, { page: 0, pages: 1 });
-          await sharpFile.resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
-        } else if (thumbnail && !isAnimated) {
-          // thumbnail without Animation
-          filename = `${asset.name}-w${width}-thumbnail${asset.extension}`;
-          // single frame webp/gif
-          await sharpFile.resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
-        } else {
-          // Animated
-          filename = `${asset.name}-w${width}${asset.extension}`;
-          // animated webp/gif
-          // TODO no way now to resize animated files
+        if (thumbnail) {
+          const thumbnailSuffix = suffix ? `${suffix}-thumbnail` : 'thumbnail';
+          filename = `${asset.name}-${thumbnailSuffix}${outputExt}`;
+          if (isAnimated) {
+            sharpFile = sharp(file, { page: 0, pages: 1 });
+          }
+          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format });
+          await sharpFile.toFile(tempFilePath);
+          overwriteType = outputType;
+        } else if (isAnimated) {
+          // TODO: no way to resize animated files
+          filename = `${asset.name}${asset.extension}`;
           await assetFile.download({ destination: tempFilePath });
+        } else {
+          if (suffix) {
+            filename = `${asset.name}-${suffix}${outputExt}`;
+          }
+          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format });
+          await sharpFile.toFile(tempFilePath);
+          overwriteType = outputType;
         }
       } else if (asset.type === 'image/svg+xml') {
         // svg, cannot resize
         await assetFile.download({ destination: tempFilePath });
       } else {
-        // other images
-        filename = `${asset.name}-w${width}${asset.extension}`;
+        // other images (jpeg, png, tiff, avif, …)
+        if (suffix) {
+          filename = `${asset.name}-${suffix}${outputExt}`;
+        }
         const [file] = await assetFile.download();
-        await sharp(file).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
+        let pipeline = sharp(file);
+        if (!format) {
+          if (asset.type === 'image/jpeg') {
+            pipeline = pipeline.jpeg({ quality });
+          } else if (asset.type === 'image/webp') {
+            pipeline = pipeline.webp({ quality });
+          }
+        }
+        pipeline = applySharpTransforms(pipeline, { width, height, quality, format });
+        await pipeline.toFile(tempFilePath);
+        overwriteType = outputType;
       }
-    } else if (asset.type.startsWith('video/') && width && !Number.isNaN(width) && thumbnail) {
+    } else if (asset.type.startsWith('video/') && width !== undefined && thumbnail) {
       await assetFile.download({ destination: tempFilePath });
       await extractThumbnail(tempFilePath, `screenshot-${assetId}.webp`);
-      filename = `${asset.name}-w${width}-thumbnail.webp`;
-      overwriteType = 'image/webp';
-      await sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`).resize(parseInt(width.toString(), 10)).toFile(tempFilePath);
+      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format }).toFile(tempFilePath);
+      overwriteType = format ? formatMimeMap[format] : 'image/webp';
+      filename = `${asset.name}-${suffix || `w${width}`}-thumbnail${format ? formatExtMap[format] : '.webp'}`;
     } else {
       await assetFile.download({ destination: tempFilePath });
     }
