@@ -172,7 +172,7 @@ const onTaskCreate = onDocumentCreated(
         }
       }
     } else if (isTaskSchemaExport(task)) {
-      const metadata = await schemasExport(spaceId, taskId, task);
+      const metadata = await schemasExport(spaceId, taskId);
       (updateToFinished as UpdateData<TaskSchemaExport>).file = {
         name: `schema-export-${taskId}.lls.zip`,
         size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
@@ -615,9 +615,9 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
  * @param {string} taskId original task
  * @param {Task} task original task
  */
-async function schemasExport(spaceId: string, taskId: string, task: TaskSchemaExport): Promise<any> {
+async function schemasExport(spaceId: string, taskId: string): Promise<any> {
   const exportSchemas: SchemaExport[] = [];
-  const schemasSnapshot = await findSchemas(spaceId, task.fromDate).get();
+  const schemasSnapshot = await findSchemas(spaceId).get();
   schemasSnapshot.docs
     .filter(it => it.exists)
     .forEach(doc => {
@@ -646,7 +646,6 @@ async function schemasExport(spaceId: string, taskId: string, task: TaskSchemaEx
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'SCHEMA',
-    fromDate: task.fromDate,
   };
   // Create TMP Folder
   mkdirSync(tmpTaskFolder);
@@ -766,7 +765,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
  */
 async function translationsExport(spaceId: string, taskId: string, task: TaskTranslationExport): Promise<any> {
   const exportTranslations: TranslationExport[] = [];
-  const translationsSnapshot = await findTranslations(spaceId, task.fromDate).get();
+  const translationsSnapshot = await findTranslations(spaceId).get();
   translationsSnapshot.docs
     .filter(it => it.exists)
     .forEach(doc => {
@@ -787,9 +786,7 @@ async function translationsExport(spaceId: string, taskId: string, task: TaskTra
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'TRANSLATION',
-    fromDate: task.fromDate,
   };
-  // Create TMP Folder
   mkdirSync(tmpTaskFolder);
   // Create assets.json
   writeFileSync(`${tmpTaskFolder}/translations.json`, JSON.stringify(exportTranslations));
@@ -813,7 +810,7 @@ async function translationsExport(spaceId: string, taskId: string, task: TaskTra
  */
 async function translationsExportJsonFlat(spaceId: string, taskId: string, task: TaskTranslationExport): Promise<any> {
   const exportTranslations: Record<string, string> = {};
-  const translationsSnapshot = await findTranslations(spaceId, task.fromDate).get();
+  const translationsSnapshot = await findTranslations(spaceId).get();
   translationsSnapshot.docs
     .filter(it => it.exists)
     .forEach(doc => {

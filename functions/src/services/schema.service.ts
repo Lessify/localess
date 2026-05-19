@@ -14,7 +14,7 @@ export function findSchemaById(spaceId: string, id: string): DocumentReference {
 }
 
 /**
- * find Contents
+ * find Schemas
  * @param {string} spaceId Space identifier
  * @param {number} fromDate Space identifier
  * @return {Query} collection

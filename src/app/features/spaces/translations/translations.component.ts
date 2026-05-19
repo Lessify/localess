@@ -526,9 +526,9 @@ export class TranslationsComponent implements OnInit {
         switchMap(it => {
           console.log(it);
           if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationExportTask(this.spaceId(), it.fromDate, it.locale);
+            return this.taskService.createTranslationExportTask(this.spaceId(), it.locale);
           } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationExportTask(this.spaceId(), it.fromDate);
+            return this.taskService.createTranslationExportTask(this.spaceId());
           }
           return EMPTY;
         }),

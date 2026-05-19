@@ -30,16 +30,6 @@
         </hlm-select>
       </div>
     }
-
-    <div hlmField>
-      <label hlmFieldLabel for="fromDate">From Date</label>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput id="fromDate" type="date" [max]="todayIso" #dateInput (change)="dateChange($event)" />
-        <button hlmInputGroupButton type="button" variant="ghost" (click)="clearDate(dateInput)">
-          <ng-icon hlm size="sm" name="lucideX" />
-        </button>
-      </div>
-    </div>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="flex gap-2">

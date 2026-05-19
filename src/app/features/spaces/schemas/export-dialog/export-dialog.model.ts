@@ -1,6 +1,1 @@
-export interface ExportDialogReturn {
-  /**
-   * number of milliseconds.
-   */
-  fromDate?: number;
-}
+export type ExportDialogReturn = Record<string, never>;

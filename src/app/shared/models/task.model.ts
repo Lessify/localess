@@ -73,8 +73,6 @@ export interface TaskContentImport extends TaskBase {
 
 export interface TaskSchemaExport extends TaskBase {
   kind: TaskKind.SCHEMA_EXPORT;
-  // Export Only change since this date
-  fromDate?: number;
   // Exported file
   file?: TaskFile;
 }
@@ -88,8 +86,6 @@ export interface TaskSchemaImport extends TaskBase {
 
 export interface TaskTranslationExport extends TaskBase {
   kind: TaskKind.TRANSLATION_EXPORT;
-  // Export Only change since this date
-  fromDate?: number;
   // Export locale
   locale?: string;
   // Exported file

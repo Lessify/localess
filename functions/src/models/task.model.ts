@@ -73,8 +73,6 @@ export interface TaskContentImport extends TaskBase {
 
 export interface TaskSchemaExport extends TaskBase {
   kind: TaskKind.SCHEMA_EXPORT;
-  // Export Only change since this date
-  fromDate?: number;
   // Exported file
   file?: TaskFile;
 }
@@ -89,8 +87,6 @@ export interface TaskSchemaImport extends TaskBase {
 export interface TaskTranslationExport extends TaskBase {
   kind: TaskKind.TRANSLATION_EXPORT;
   type: 'full' | 'flat-json' | 'nested-json';
-  // Export Only change since this date
-  fromDate?: number;
   // Export locale
   locale?: string;
   // Exported file
@@ -125,7 +121,6 @@ export type TaskImport = TaskAssetImport | TaskContentImport | TaskSchemaImport 
 // FireStore
 export interface TaskExportMetadata {
   kind: 'ASSET' | 'CONTENT' | 'SCHEMA' | 'TRANSLATION';
-  fromDate?: number;
   path?: string;
 }
 

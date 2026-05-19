@@ -130,16 +130,13 @@ export class TaskService {
     );
   }
 
-  createSchemaExportTask(spaceId: string, fromDate?: number): Observable<DocumentReference> {
+  createSchemaExportTask(spaceId: string): Observable<DocumentReference> {
     const addEntity: WithFieldValue<TaskSchemaExportFS> = {
       kind: TaskKind.SCHEMA_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    if (fromDate) {
-      addEntity.fromDate = fromDate;
-    }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity)).pipe(traceUntilFirst('Firestore:Tasks:create'));
   }
 
@@ -163,16 +160,13 @@ export class TaskService {
     );
   }
 
-  createTranslationExportTask(spaceId: string, fromDate?: number, locale?: string): Observable<DocumentReference> {
+  createTranslationExportTask(spaceId: string, locale?: string): Observable<DocumentReference> {
     const addEntity: WithFieldValue<TaskTranslationExportFS> = {
       kind: TaskKind.TRANSLATION_EXPORT,
       status: TaskStatus.INITIATED,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    if (fromDate) {
-      addEntity.fromDate = fromDate;
-    }
     if (locale) {
       addEntity.locale = locale;
     }

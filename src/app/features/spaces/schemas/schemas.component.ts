@@ -323,7 +323,7 @@ export class SchemasComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createSchemaExportTask(this.spaceId(), it?.fromDate)),
+        switchMap(() => this.taskService.createSchemaExportTask(this.spaceId())),
       )
       .subscribe({
         next: () => {
