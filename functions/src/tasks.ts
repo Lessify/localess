@@ -890,11 +890,13 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
   logger.info('[Task:onCreate:translationsImport] bulk.close() : ' + totalChanges);
   await bulk.close();
   logger.info('[Task:onCreate:translationsImport] bulk total changes : ' + totalChanges);
-  // Generate draft files once after all translations are imported
-  const spaceSnapshot = await findSpaceById(spaceId).get();
-  if (spaceSnapshot.exists) {
-    logger.info('[Task:onCreate:translationsImport] Generating draft files');
-    await generateTranslationsDraft(spaceId, spaceSnapshot.data() as Space);
+  if(totalChanges > 0) {
+    // Generate draft files once after all translations are imported
+    const spaceSnapshot = await findSpaceById(spaceId).get();
+    if (spaceSnapshot.exists) {
+      logger.info('[Task:onCreate:translationsImport] Generating draft files');
+      await generateTranslationsDraft(spaceId, spaceSnapshot.data() as Space);
+    }
   }
   return undefined;
 }
@@ -959,11 +961,13 @@ async function translationsImportJsonFlat(
   logger.info('[Task:onCreate:translationsImportJsonFlat] bulk.close() : ' + totalChanges);
   await bulk.close();
   logger.info('[Task:onCreate:translationsImportJsonFlat] bulk total changes : ' + totalChanges);
-  // Generate draft files once after all translations are imported
-  const spaceSnapshot = await findSpaceById(spaceId).get();
-  if (spaceSnapshot.exists) {
-    logger.info('[Task:onCreate:translationsImportJsonFlat] Generating draft files');
-    await generateTranslationsDraft(spaceId, spaceSnapshot.data() as Space);
+  if (totalChanges > 0) {
+    // Generate draft files once after all translations are imported
+    const spaceSnapshot = await findSpaceById(spaceId).get();
+    if (spaceSnapshot.exists) {
+      logger.info('[Task:onCreate:translationsImportJsonFlat] Generating draft files');
+      await generateTranslationsDraft(spaceId, spaceSnapshot.data() as Space);
+    }
   }
   return undefined;
 }
