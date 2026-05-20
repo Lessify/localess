@@ -53,3 +53,6 @@ Thumbs.db
 .runtimeconfig.json
 firebase-export
 firebase-export-*
+
+#Superpowers
+/docs/superpowers

@@ -25,7 +25,8 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to `space.localeFallback`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
-- **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f` params). Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG and animated GIF/WebP are passed through unsized. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
+- **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f` params). `q` defaults to `85`, clamped to `1–100`; ignored for PNG. Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG and animated GIF/WebP are passed through unsized. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
+- **`thumbnail` param** — Only meaningful for animated WebP/GIF (extracts first frame) and video (requires `w`; extracts a frame via FFmpeg). Has no effect on other image types.
 - **`download` param** — Switches `Content-Disposition` from `inline` to `form-data` (forces browser download).
 
 #### Asset resize combinations (`w` / `h`)
