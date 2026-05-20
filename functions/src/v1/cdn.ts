@@ -429,8 +429,8 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const asset = assetSnapshot.data() as AssetFile;
     const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
     let filename = `${asset.name}${asset.extension}`;
-    const formatMimeMap: Record<string, string> = { webp: 'image/webp', jpeg: 'image/jpeg', png: 'image/png' };
-    const formatExtMap: Record<string, string> = { webp: '.webp', jpeg: '.jpg', png: '.png' };
+    const formatMimeMap: Record<string, string> = { webp: 'image/webp', jpeg: 'image/jpeg', png: 'image/png', avif: 'image/avif' };
+    const formatExtMap: Record<string, string> = { webp: '.webp', jpeg: '.jpg', png: '.png', avif: '.avif' };
     const outputType: string | undefined = format ? formatMimeMap[format] : undefined;
     const outputExt: string = format ? formatExtMap[format] : asset.extension;
 

@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 
-export const VALID_FORMATS = ['webp', 'jpeg', 'png'] as const;
+export const VALID_FORMATS = ['webp', 'jpeg', 'png', 'avif'] as const;
 export type ImageFormat = (typeof VALID_FORMATS)[number];
 
 export function isImageFormat(v: unknown): v is ImageFormat {
@@ -25,6 +25,8 @@ export function applySharpTransforms(
     pipeline = pipeline.webp({ quality: opts.quality });
   } else if (opts.format === 'png') {
     pipeline = pipeline.png();
+  } else if (opts.format === 'avif') {
+    pipeline = pipeline.avif({ quality: opts.quality });
   }
   return pipeline;
 }
