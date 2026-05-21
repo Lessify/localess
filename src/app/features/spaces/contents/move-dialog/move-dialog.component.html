@@ -1,35 +1,43 @@
 <h2 mat-dialog-title>Move Document</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Folder</mat-label>
-      <input matInput [matAutocomplete]="auto" [formControl]="searchCtrl" required />
-      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayContent" (optionSelected)="contentSelected($event)">
-        @if (!searchCtrl.value) {
-          <mat-option [value]="{ name: 'Root', fullSlug: '~' }">
-            <mat-icon>home</mat-icon>
-            <span>Root</span> | <small>~</small>
-          </mat-option>
-        }
-        @for (link of filteredContent | async; track link.id) {
-          <mat-option [value]="link">
-            <mat-icon>folder</mat-icon>
-            <span>{{ link.name }}</span> |
-            <small>{{ link.fullSlug }}</small>
-          </mat-option>
-        }
-      </mat-autocomplete>
-      <button mat-icon-button matTextSuffix (click)="contentReset()" [disabled]="searchCtrl.value === ''">
-        <mat-icon>clear</mat-icon>
-      </button>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="folder">Folder</label>
+      <hlm-combobox
+        id="folder"
+        [(search)]="search"
+        [filter]="noOpFilter"
+        [value]="selectedFolder()"
+        (valueChange)="onValueChange($event)"
+        [itemToString]="displayItem">
+        <hlm-combobox-input placeholder="Search folders..." showClear />
+        <hlm-combobox-content *hlmComboboxPortal>
+          <hlm-combobox-empty>No results found.</hlm-combobox-empty>
+          <div hlmComboboxList>
+            @if (!search()) {
+              <hlm-combobox-item [value]="rootFolder">
+                <ng-icon hlm size="sm" name="lucideHouse" />
+                Root
+                <span class="text-muted-foreground text-xs">| ~</span>
+              </hlm-combobox-item>
+            }
+            @for (folder of filteredFolders(); track folder.id) {
+              <hlm-combobox-item [value]="folder">
+                <ng-icon hlm size="sm" name="lucideFolder" />
+                {{ folder.name }}
+                <span class="text-muted-foreground text-xs">| {{ folder.fullSlug }}</span>
+              </hlm-combobox-item>
+            }
+          </div>
+        </hlm-combobox-content>
+      </hlm-combobox>
       @if (form.controls['path'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value" [disabled]="!form.valid">Move</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Move</button>
 </mat-dialog-actions>

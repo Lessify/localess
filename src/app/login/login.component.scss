@@ -1,9 +1,4 @@
 :host {
-  color: var(--mat-app-text-color);
-}
-mat-form-field {
-  width: 100%;
-  input {
-    width: 100%;
-  }
+  display: block;
+  height: 100%;
 }

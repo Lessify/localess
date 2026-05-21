@@ -2,12 +2,13 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject, signal } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { Router, RouterModule } from '@angular/router';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserStore } from '@shared/stores/user.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 
 import { SetupService } from './setup.service';
 
@@ -17,27 +18,26 @@ import { SetupService } from './setup.service';
   styleUrls: ['./setup.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [SetupService],
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
+  imports: [ReactiveFormsModule, RouterModule, NgOptimizedImage, HlmFieldImports, HlmInputImports, HlmButtonImports],
 })
 export class SetupComponent {
-  readonly auth = inject(Auth);
+  private readonly auth = inject(Auth);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly setupService = inject(SetupService);
   private readonly notificationService = inject(NotificationService);
   private readonly cd = inject(ChangeDetectorRef);
+  readonly fe = inject(FormErrorHandlerService);
+  readonly userStore = inject(UserStore);
 
   redirectToFeatures = ['features', 'welcome'];
   backCounter = signal(-1);
 
-  //Form
   form: FormGroup = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.minLength(2), Validators.email]),
     password: this.fb.control('', [Validators.required, Validators.minLength(6)]),
     displayName: this.fb.control(undefined),
   });
-
-  userStore = inject(UserStore);
 
   constructor() {
     effect(async () => {
@@ -53,8 +53,6 @@ export class SetupComponent {
       next: () => {
         this.backToLoginTimer();
         this.notificationService.success('Setup has been finished, you will be redirected in few seconds.');
-        //await signInWithCustomToken(this.auth, token);
-        //this.userStore.setAuthenticated(true);
       },
       error: () => {
         this.backToLoginTimer();

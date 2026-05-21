@@ -1,33 +1,31 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Auth, sendPasswordResetEmail, User } from '@angular/fire/auth';
+import { Auth, sendPasswordResetEmail } from '@angular/fire/auth';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { Router, RouterModule } from '@angular/router';
-import { EMPTY, Observable } from 'rxjs';
+import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 
 @Component({
   selector: 'll-reset',
   templateUrl: './reset.component.html',
   styleUrls: ['./reset.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
+  imports: [NgOptimizedImage, ReactiveFormsModule, RouterModule, HlmFieldImports, HlmInputImports, HlmButtonImports],
 })
 export class ResetComponent {
-  readonly auth = inject(Auth);
+  private readonly auth = inject(Auth);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  readonly fe = inject(FormErrorHandlerService);
 
   redirect = ['/login'];
 
-  //Form
   form: FormGroup = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.minLength(3), Validators.email]),
   });
-
-  public readonly user: Observable<User | null> = EMPTY;
 
   async passwordReset(): Promise<void> {
     await sendPasswordResetEmail(this.auth, this.form.value.email);

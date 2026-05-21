@@ -1,4 +1,4 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import {
   Auth,
@@ -11,13 +11,13 @@ import {
   User,
 } from '@angular/fire/auth';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { Router, RouterModule } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { UserStore } from '@shared/stores/user.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 import { EMPTY, Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
@@ -27,7 +27,7 @@ import { environment } from '../../environments/environment';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatFormFieldModule, ReactiveFormsModule, MatInputModule, MatButtonModule, RouterModule, NgOptimizedImage],
+  imports: [AsyncPipe, JsonPipe, NgOptimizedImage, ReactiveFormsModule, RouterModule, HlmFieldImports, HlmInputImports, HlmButtonImports],
 })
 export class LoginComponent {
   readonly auth = inject(Auth);

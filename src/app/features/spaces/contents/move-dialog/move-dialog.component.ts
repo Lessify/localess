@@ -1,16 +1,17 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatButtonModule } from '@angular/material/button';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFolder, lucideHouse } from '@ng-icons/lucide';
 import { ContentFolder } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
-import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { debounceTime, startWith, switchMap } from 'rxjs';
 
 import { MoveDialogModel } from './move-dialog.model';
 
@@ -19,50 +20,40 @@ import { MoveDialogModel } from './move-dialog.model';
   templateUrl: './move-dialog.component.html',
   styleUrls: ['./move-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatDialogModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatAutocompleteModule,
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-  ],
+  imports: [MatDialogModule, ReactiveFormsModule, HlmComboboxImports, HlmButtonImports, HlmFieldImports, HlmIconImports],
+  providers: [provideIcons({ lucideFolder, lucideHouse })],
 })
-export class MoveDialogComponent implements OnInit {
+export class MoveDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly contentService = inject(ContentService);
   readonly fe = inject(FormErrorHandlerService);
-  data = inject<MoveDialogModel>(MAT_DIALOG_DATA);
+  readonly data = inject<MoveDialogModel>(MAT_DIALOG_DATA);
 
   form: FormGroup = this.fb.group({
     path: this.fb.control(null, Validators.required),
   });
 
-  //Search
-  searchCtrl: FormControl = new FormControl();
-  filteredContent: Observable<ContentFolder[]> = of([]);
+  // fullSlug '~' acts as sentinel for root — id is never accessed for this item
+  readonly rootFolder: ContentFolder = { name: 'Root', fullSlug: '~' } as ContentFolder;
 
-  ngOnInit(): void {
-    this.filteredContent = this.searchCtrl.valueChanges.pipe(
+  readonly search = signal('');
+  readonly selectedFolder = signal<ContentFolder | null>(null);
+
+  readonly filteredFolders = toSignal(
+    toObservable(this.search).pipe(
       startWith(''),
       debounceTime(500),
       switchMap(it => this.contentService.findAllFoldersByName(this.data.spaceId, it, 5)),
-    );
-  }
+    ),
+    { initialValue: [] as ContentFolder[] },
+  );
 
-  displayContent(content?: ContentFolder): string {
-    return content ? `${content.name} | ${content.fullSlug}` : '';
-  }
+  protected readonly displayItem = (item?: ContentFolder): string => (item ? `${item.name} | ${item.fullSlug}` : '');
 
-  contentSelected(event: MatAutocompleteSelectedEvent): void {
-    const content = event.option.value as ContentFolder;
-    this.form?.controls['path'].setValue(content.fullSlug);
-  }
+  protected readonly noOpFilter = (): boolean => true;
 
-  contentReset() {
-    this.searchCtrl.setValue('');
-    this.form?.controls['path'].setValue(null);
+  protected onValueChange(folder: ContentFolder | null): void {
+    this.selectedFolder.set(folder);
+    this.form.controls['path'].setValue(folder ? folder.fullSlug : null);
   }
 }

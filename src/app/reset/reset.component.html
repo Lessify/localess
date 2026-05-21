@@ -1,24 +1,37 @@
-<div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
-  <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <img class="mx-auto my-2 h-10 w-auto" ngSrc="assets/logo-adaptive.svg" alt="Localess" height="16" width="16" />
-    <h2 class="mt-6 text-center text-2xl leading-9 font-bold tracking-tight">Forgot Password</h2>
+<div class="flex min-h-full">
+  <div class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+    <div class="mx-auto w-full max-w-sm lg:w-96">
+      <div>
+        <img class="h-10 w-auto" ngSrc="assets/logo-adaptive.svg" alt="Localess" height="16" width="16" />
+        <h2 class="mt-8 text-2xl font-bold tracking-tight">Forgot Password</h2>
+      </div>
+
+      <div class="mt-10">
+        <form class="space-y-6" [formGroup]="form">
+          <div hlmField>
+            <label hlmFieldLabel for="email">Email</label>
+            <input hlmInput id="email" type="email" formControlName="email" class="w-full" required />
+            <p hlmFieldDescription>Sends a password reset email to the given email address.</p>
+            @if (form.controls['email'].errors; as errors) {
+              <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+            }
+          </div>
+
+          <div>
+            <button hlmBtn class="w-full" (click)="passwordReset()">Reset Password</button>
+          </div>
+          <div>
+            <button hlmBtn variant="outline" class="w-full" routerLink="/login">Back to Login</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-[480px]">
-    <div class="px-6 py-12 shadow-sm sm:rounded-lg sm:px-12">
-      <form class="space-y-6" [formGroup]="form">
-        <mat-form-field>
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" required />
-          <mat-hint>Sends a password reset email to the given email address.</mat-hint>
-        </mat-form-field>
-        <div>
-          <button mat-flat-button class="w-full" (click)="passwordReset()">Reset Password</button>
-        </div>
-        <div>
-          <button mat-stroked-button class="w-full" routerLink="/features">Back to Login</button>
-        </div>
-      </form>
-    </div>
+  <div class="relative hidden w-0 flex-1 lg:block">
+    <img
+      class="absolute inset-0 size-full object-cover"
+      src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1908&q=80"
+      alt="" />
   </div>
 </div>

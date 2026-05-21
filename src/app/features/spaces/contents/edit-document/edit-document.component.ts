@@ -15,14 +15,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -110,15 +103,8 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
   },
   imports: [
     ClipboardModule,
-    MatTooltipModule,
-    MatButtonModule,
-    MatMenuModule,
-    MatBadgeModule,
     CanUserPerformPipe,
     CommonModule,
-    MatDividerModule,
-    MatSidenavModule,
-    MatCardModule,
     EditDocumentSchemaComponent,
     HlmResizableImports,
     HlmBreadCrumbImports,

@@ -1,16 +1,17 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatButtonModule } from '@angular/material/button';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideFolder, lucideHouse } from '@ng-icons/lucide';
 import { AssetFolder } from '@shared/models/asset.model';
 import { AssetService } from '@shared/services/asset.service';
-import { debounceTime, Observable, of, startWith, switchMap } from 'rxjs';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { debounceTime, startWith, switchMap } from 'rxjs';
 
 import { MoveDialogModel } from './move-dialog.model';
 
@@ -19,18 +20,10 @@ import { MoveDialogModel } from './move-dialog.model';
   templateUrl: './move-dialog.component.html',
   styleUrls: ['./move-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MatDialogModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatAutocompleteModule,
-    MatInputModule,
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-  ],
+  imports: [MatDialogModule, ReactiveFormsModule, HlmComboboxImports, HlmButtonImports, HlmFieldImports, HlmIconImports],
+  providers: [provideIcons({ lucideFolder, lucideHouse })],
 })
-export class MoveDialogComponent implements OnInit {
+export class MoveDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly assetService = inject(AssetService);
   readonly fe = inject(FormErrorHandlerService);
@@ -40,34 +33,37 @@ export class MoveDialogComponent implements OnInit {
     path: this.fb.control(null, Validators.required),
   });
 
-  //Search
-  searchCtrl: FormControl = new FormControl();
-  filteredFolders: Observable<AssetFolder[]> = of([]);
+  // parentPath '~' acts as sentinel — id is never accessed for this item (see onValueChange guard)
+  readonly rootFolder: AssetFolder = { name: 'Root', parentPath: '~' } as AssetFolder;
 
-  ngOnInit(): void {
-    this.filteredFolders = this.searchCtrl.valueChanges.pipe(
+  readonly search = signal('');
+  readonly selectedFolder = signal<AssetFolder | null>(null);
+
+  filteredFolders = toSignal(
+    toObservable(this.search).pipe(
       startWith(''),
       debounceTime(500),
       switchMap(it => this.assetService.findAllFoldersByName(this.data.spaceId, it, 5)),
-    );
-  }
+    ),
+    { initialValue: [] as AssetFolder[] },
+  );
 
-  displayContent(content?: AssetFolder): string {
-    if (content?.parentPath === '~') return `${content.name} | ${content.parentPath}`;
-    return content?.name || '';
-  }
+  protected readonly displayItem = (item?: AssetFolder): string => (item ? (item.parentPath === '~' ? `${item.name} | ~` : item.name) : '');
 
-  contentSelected(event: MatAutocompleteSelectedEvent): void {
-    const folder = event.option.value as AssetFolder;
-    let parentPath = '~';
-    if (folder.parentPath !== '~') {
+  protected readonly noOpFilter = (): boolean => true;
+
+  protected onValueChange(folder: AssetFolder | null): void {
+    this.selectedFolder.set(folder);
+    if (folder === null) {
+      this.form.controls['path'].setValue(null);
+      return;
+    }
+    let parentPath: string;
+    if (folder.parentPath === '~') {
+      parentPath = '~';
+    } else {
       parentPath = folder.parentPath ? `${folder.parentPath}/${folder.id}` : folder.id;
     }
-    this.form?.controls['path'].setValue(parentPath);
-  }
-
-  contentReset() {
-    this.searchCtrl.setValue('');
-    this.form?.controls['path'].setValue(null);
+    this.form.controls['path'].setValue(parentPath);
   }
 }
