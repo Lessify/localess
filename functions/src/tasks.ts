@@ -96,7 +96,7 @@ const onTaskCreate = onDocumentCreated(
   {
     document: 'spaces/{spaceId}/tasks/{taskId}',
     memory: '4GiB',
-    timeoutSeconds: 3600,
+    timeoutSeconds: 540,
   },
   async event => {
     const { spaceId, taskId } = event.params;
