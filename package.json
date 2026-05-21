@@ -101,6 +101,7 @@
     "@angular/build": "^21.2.6",
     "@angular/cli": "^21.2.6",
     "@angular/compiler-cli": "^21.2.7",
+    "@lessify/angular-tools": "^17.3.2",
     "@spartan-ng/cli": "^0.0.1-alpha.692",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/file-saver-es": "^2.0.3",
