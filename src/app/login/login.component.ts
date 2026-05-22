@@ -13,11 +13,16 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideMoon, lucideSun } from '@ng-icons/lucide';
+import { RandomBackgroundComponent } from '@shared/components/background/random';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { UserStore } from '@shared/stores/user.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
@@ -27,7 +32,20 @@ import { environment } from '../../environments/environment';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, JsonPipe, NgOptimizedImage, ReactiveFormsModule, RouterModule, HlmFieldImports, HlmInputImports, HlmButtonImports],
+  providers: [provideIcons({ lucideMoon, lucideSun })],
+  imports: [
+    AsyncPipe,
+    JsonPipe,
+    NgOptimizedImage,
+    ReactiveFormsModule,
+    RouterModule,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmIconImports,
+    HlmInputImports,
+    HlmTooltipImports,
+    RandomBackgroundComponent,
+  ],
 })
 export class LoginComponent {
   readonly auth = inject(Auth);
@@ -53,7 +71,11 @@ export class LoginComponent {
   parsedToken?: Promise<IdTokenResult>;
 
   userStore = inject(UserStore);
-  settingsStore = inject(LocalSettingsStore);
+  readonly settingsStore = inject(LocalSettingsStore);
+
+  switchTheme(): void {
+    this.settingsStore.setTheme(this.settingsStore.theme() === 'dark' ? 'light' : 'dark');
+  }
 
   constructor() {
     effect(async () => {

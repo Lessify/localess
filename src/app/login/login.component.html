@@ -1,5 +1,15 @@
 <div class="flex min-h-full">
-  <div class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+  <div class="relative flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+    <button
+      hlmBtn
+      size="icon-sm"
+      variant="ghost"
+      class="absolute top-3 right-3"
+      aria-label="Switch theme"
+      hlmTooltip="Switch theme"
+      (click)="switchTheme()">
+      <ng-icon hlm [name]="settingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
+    </button>
     <div class="mx-auto w-full max-w-sm lg:w-96">
       <div>
         <img class="h-10 w-auto" ngSrc="assets/logo-adaptive.svg" alt="Localess" height="16" width="16" />
@@ -109,9 +119,6 @@
   </div>
 
   <div class="relative hidden w-0 flex-1 lg:block">
-    <img
-      class="absolute inset-0 size-full object-cover"
-      src="https://images.unsplash.com/photo-1496917756835-20cb06e75b4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1908&q=80"
-      alt="" />
+    <ll-random-background class="absolute inset-0"></ll-random-background>
   </div>
 </div>

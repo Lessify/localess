@@ -1,0 +1,5 @@
+<div class="relative size-full overflow-hidden bg-[#030712]">
+  @for (m of meteors; track $index) {
+    <span class="meteor" [style.left]="m.left" [style.animation-delay]="m.delay" [style.animation-duration]="m.duration"> </span>
+  }
+</div>

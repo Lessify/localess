@@ -1,0 +1,40 @@
+:host {
+  display: block;
+}
+
+.meteor {
+  position: absolute;
+  top: -5%;
+  height: 2px;
+  width: 2px;
+  border-radius: 9999px;
+  background-color: #94a3b8;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.063);
+  animation: ll-meteor linear infinite;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 1px;
+    background: linear-gradient(to right, rgba(148, 163, 184, 0.8), transparent);
+  }
+}
+
+@keyframes ll-meteor {
+  0% {
+    transform: rotate(215deg) translateX(0);
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(215deg) translateX(-500px);
+    opacity: 0;
+  }
+}

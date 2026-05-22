@@ -63,7 +63,8 @@
       "@spartan-ng/helm/dialog": ["./libs/ui/dialog/src/index.ts"],
       "@spartan-ng/helm/accordion": ["./libs/ui/accordion/src/index.ts"],
       "@spartan-ng/helm/combobox": ["./libs/ui/combobox/src/index.ts"],
-      "@spartan-ng/helm/sonner": ["./libs/ui/sonner/src/index.ts"]
+      "@spartan-ng/helm/sonner": ["./libs/ui/sonner/src/index.ts"],
+      "@spartan-ng/helm/carousel": ["./libs/ui/carousel/src/index.ts"]
     },
     "useDefineForClassFields": false
   },

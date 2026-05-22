@@ -4,11 +4,17 @@ import { Auth } from '@angular/fire/auth';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideMoon, lucideSun } from '@ng-icons/lucide';
+import { BlueprintComponent } from '@shared/components/background';
 import { NotificationService } from '@shared/services/notification.service';
+import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { UserStore } from '@shared/stores/user.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 import { SetupService } from './setup.service';
 
@@ -17,8 +23,18 @@ import { SetupService } from './setup.service';
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [SetupService],
-  imports: [ReactiveFormsModule, RouterModule, NgOptimizedImage, HlmFieldImports, HlmInputImports, HlmButtonImports],
+  providers: [SetupService, provideIcons({ lucideMoon, lucideSun })],
+  imports: [
+    ReactiveFormsModule,
+    RouterModule,
+    NgOptimizedImage,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmIconImports,
+    HlmInputImports,
+    HlmTooltipImports,
+    BlueprintComponent,
+  ],
 })
 export class SetupComponent {
   private readonly auth = inject(Auth);
@@ -29,6 +45,11 @@ export class SetupComponent {
   private readonly cd = inject(ChangeDetectorRef);
   readonly fe = inject(FormErrorHandlerService);
   readonly userStore = inject(UserStore);
+  readonly settingsStore = inject(LocalSettingsStore);
+
+  switchTheme(): void {
+    this.settingsStore.setTheme(this.settingsStore.theme() === 'dark' ? 'light' : 'dark');
+  }
 
   redirectToFeatures = ['features', 'welcome'];
   backCounter = signal(-1);
