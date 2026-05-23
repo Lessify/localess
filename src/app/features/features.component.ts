@@ -243,7 +243,7 @@ export class FeaturesComponent implements OnInit {
       console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
       console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
       if (!this.userStore.isAuthenticated()) {
-        await this.router.navigate(['login']);
+        await this.router.navigate(['auth', 'login']);
       }
     });
 

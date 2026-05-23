@@ -1,4 +1,4 @@
-import { AsyncPipe, JsonPipe, NgOptimizedImage } from '@angular/common';
+import { AsyncPipe, JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import {
   Auth,
@@ -13,39 +13,21 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { provideIcons } from '@ng-icons/core';
-import { lucideMoon, lucideSun } from '@ng-icons/lucide';
-import { RandomBackgroundComponent } from '@shared/components/background/random';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { UserStore } from '@shared/stores/user.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
-import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
-import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, Observable } from 'rxjs';
 
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'll-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provideIcons({ lucideMoon, lucideSun })],
-  imports: [
-    AsyncPipe,
-    JsonPipe,
-    NgOptimizedImage,
-    ReactiveFormsModule,
-    RouterModule,
-    HlmButtonImports,
-    HlmFieldImports,
-    HlmIconImports,
-    HlmInputImports,
-    HlmTooltipImports,
-    RandomBackgroundComponent,
-  ],
+  imports: [AsyncPipe, JsonPipe, ReactiveFormsModule, RouterModule, HlmButtonImports, HlmFieldImports, HlmInputImports],
 })
 export class LoginComponent {
   readonly auth = inject(Auth);
@@ -56,13 +38,11 @@ export class LoginComponent {
   redirectToFeatures = ['features'];
   hasAuthError = signal(false);
 
-  //Form
   form = this.fb.group({
     email: this.fb.control<string>('', [Validators.required, Validators.minLength(2)]),
     password: this.fb.control<string>('', [Validators.required, Validators.minLength(2)]),
   });
 
-  //Login
   isGoogleAuthEnabled: boolean = environment.auth.providers.includes('GOOGLE');
   isMicrosoftAuthEnabled: boolean = environment.auth.providers.includes('MICROSOFT');
   message: string = environment.login.message;
@@ -72,10 +52,6 @@ export class LoginComponent {
 
   userStore = inject(UserStore);
   readonly settingsStore = inject(LocalSettingsStore);
-
-  switchTheme(): void {
-    this.settingsStore.setTheme(this.settingsStore.theme() === 'dark' ? 'light' : 'dark');
-  }
 
   constructor() {
     effect(async () => {

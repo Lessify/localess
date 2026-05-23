@@ -73,6 +73,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "embla-carousel-angular": "^20.0.0",
+    "embla-carousel-autoplay": "^8.6.0",
     "file-saver-es": "^2.0.5",
     "lowlight": "^3.3.0",
     "marked": "^17.0.6",

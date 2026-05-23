@@ -1,0 +1,32 @@
+<div class="relative w-full max-w-5xl px-14">
+  <hlm-carousel [plugins]="plugins" [options]="options">
+    <hlm-carousel-content>
+      @for (slide of slides; track $index) {
+        <div hlmCarouselItem>
+          <div class="flex flex-col items-center gap-5 px-4 text-center">
+            <img [ngSrc]="slide.src" [alt]="slide.alt" class="w-full rounded-xl border border-white/10 shadow-xl" [loading]="slide.loading" width="3452" height="1910" />
+            <h3 class="text-2xl font-bold tracking-tight text-white/95 drop-shadow-lg">{{ slide.title }}</h3>
+            <p class="max-w-4xl text-base leading-relaxed text-white/70 drop-shadow">{{ slide.description }}</p>
+          </div>
+        </div>
+      }
+    </hlm-carousel-content>
+    <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
+    <button hlm-carousel-previous></button>
+    <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
+    <button hlm-carousel-next></button>
+  </hlm-carousel>
+
+  <!-- Dot indicators -->
+  <div class="mt-6 flex justify-center gap-2">
+    @for (slide of slides; track $index) {
+      <div
+        class="h-1 rounded-full bg-white transition-all duration-300"
+        [class.w-5]="$index === carousel().currentSlide()"
+        [class.opacity-85]="$index === carousel().currentSlide()"
+        [class.w-1.5]="$index !== carousel().currentSlide()"
+        [class.opacity-25]="$index !== carousel().currentSlide()">
+      </div>
+    }
+  </div>
+</div>

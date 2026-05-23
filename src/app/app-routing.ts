@@ -9,7 +9,7 @@ export function authGuard(): Observable<boolean | UrlTree> | Promise<boolean | U
   if (userStore.isAuthenticated()) {
     return true;
   } else {
-    return router.createUrlTree(['/login']);
+    return router.createUrlTree(['auth', 'login']);
   }
 }
 
@@ -20,14 +20,8 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
-    path: 'login',
-    title: 'Login',
-    loadComponent: () => import('./login/login.component').then(m => m.LoginComponent),
-  },
-  {
-    path: 'reset',
-    title: 'Forgot Password',
-    loadComponent: () => import('./reset/reset.component').then(m => m.ResetComponent),
+    path: 'auth',
+    loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule),
   },
   {
     path: 'setup',
