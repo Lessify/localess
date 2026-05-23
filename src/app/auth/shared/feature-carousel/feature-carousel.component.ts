@@ -1,7 +1,7 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, viewChild } from '@angular/core';
 import { HlmCarousel, HlmCarouselImports } from '@spartan-ng/helm/carousel';
 import Autoplay from 'embla-carousel-autoplay';
-import { NgOptimizedImage } from '@angular/common';
 
 interface CarouselSlide {
   src: string;
