@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
 import { BeamsComponent } from '../beams';
 import { BeamsCollisionComponent } from '../beams-collision';
-import { BlueprintComponent } from '../blueprint';
 import { DotPatternComponent } from '../dot-pattern';
 import { GalaxyComponent } from '../galaxy';
 import { LaserGridComponent } from '../laser-grid';
@@ -13,7 +12,7 @@ import { PrismComponent } from '../prism';
 import { StarfieldComponent } from '../starfield';
 import { TopographyComponent } from '../topography';
 
-const BACKGROUND_COUNT = 12;
+const BACKGROUND_COUNT = 11;
 
 @Component({
   selector: 'll-random-background',
@@ -23,7 +22,6 @@ const BACKGROUND_COUNT = 12;
   imports: [
     BeamsComponent,
     BeamsCollisionComponent,
-    BlueprintComponent,
     DotPatternComponent,
     GalaxyComponent,
     LaserGridComponent,

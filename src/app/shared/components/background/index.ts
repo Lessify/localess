@@ -1,6 +1,5 @@
 export * from './beams';
 export * from './beams-collision';
-export * from './blueprint';
 export * from './dot-pattern';
 export * from './galaxy';
 export * from './laser-grid';

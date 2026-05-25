@@ -24,11 +24,6 @@ export const routes: Routes = [
     loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule),
   },
   {
-    path: 'setup',
-    title: 'Initial Setup',
-    loadComponent: () => import('./setup/setup.component').then(m => m.SetupComponent),
-  },
-  {
     path: 'features',
     loadChildren: () => import('./features/features.module').then(m => m.FeaturesModule),
     canActivate: [authGuard],
