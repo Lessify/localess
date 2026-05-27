@@ -106,10 +106,6 @@ import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
-import { TranslationArrayEditComponent } from './shared/components/translation-array-edit/translation-array-edit.component';
-import { TranslationArrayViewComponent } from './shared/components/translation-array-view/translation-array-view.component';
-import { TranslationPluralEditComponent } from './shared/components/translation-plural-edit/translation-plural-edit.component';
-import { TranslationPluralViewComponent } from './shared/components/translation-plural-view/translation-plural-view.component';
 import { TranslationStatusComponent } from './shared/components/translation-status/translation-status.component';
 import { TranslationStringEditComponent } from './shared/components/translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from './shared/components/translation-string-view/translation-string-view.component';
@@ -130,11 +126,7 @@ import { TranslationNode } from './shared/models/translation.model';
     ScrollingModule,
     TranslationStatusComponent,
     TranslationStringViewComponent,
-    TranslationPluralViewComponent,
-    TranslationArrayViewComponent,
     TranslationStringEditComponent,
-    TranslationPluralEditComponent,
-    TranslationArrayEditComponent,
     ClipboardModule,
     MatTreeModule,
     HlmButtonImports,

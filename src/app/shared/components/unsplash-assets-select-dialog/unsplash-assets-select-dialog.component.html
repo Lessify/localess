@@ -5,70 +5,71 @@
   </hlm-progress>
 }
 <mat-dialog-content>
-  <br />
-  <mat-form-field>
-    <mat-label>Search</mat-label>
-    <input matInput #si (keyup.enter)="search(si.value)" placeholder="Ex. Morning Coffee or Sunrise" />
-    <mat-icon matIconPrefix>search</mat-icon>
-    <mat-button-toggle-group
-      class="mr-1"
-      matTextSuffix
-      hideSingleSelectionIndicator="true"
-      (change)="orientation.set($event.value)"
-      [value]="orientation()">
-      <mat-button-toggle value="squarish" matTooltip="Squarish">
-        <mat-icon>crop_square</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="landscape" matTooltip="Landscape">
-        <mat-icon>crop_landscape</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="portrait" matTooltip="Portrait">
-        <mat-icon>crop_portrait</mat-icon>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
-    <button mat-stroked-button matTextSuffix color="accent" (click)="search(si.value)" [disabled]="si.value.length < 1">
-      <mat-icon>search</mat-icon>
-      Search
-    </button>
-    <mat-hint align="end">Remaining requests : {{ remaining() }} / {{ limit() }}</mat-hint>
-  </mat-form-field>
-</mat-dialog-content>
-<mat-dialog-content>
-  <div class="flex flex-wrap justify-start gap-2">
+  <div hlmField class="py-2">
+    <div class="flex items-center gap-2">
+      <div hlmInputGroup class="flex-1">
+        <hlm-input-group-addon>
+          <ng-icon hlm size="sm" name="lucideSearch" />
+        </hlm-input-group-addon>
+        <input hlmInputGroupInput #si placeholder="Ex. Morning Coffee or Sunrise" autocomplete="off" (keyup.enter)="search(si.value)" />
+        <hlm-input-group-addon align="inline-end">
+          <button hlmBtn size="icon" variant="ghost" type="button" (click)="search(si.value)" [disabled]="si.value.length < 1">
+            <ng-icon hlm size="sm" name="lucideSearch" />
+          </button>
+        </hlm-input-group-addon>
+      </div>
+      <hlm-toggle-group type="single" variant="outline" [value]="orientation()" (valueChange)="orientation.set($event)">
+        <button hlmToggleGroupItem value="squarish" hlmTooltip="Squarish">
+          <ng-icon hlm name="lucideSquare" />
+        </button>
+        <button hlmToggleGroupItem value="landscape" hlmTooltip="Landscape">
+          <ng-icon hlm name="lucideMonitor" />
+        </button>
+        <button hlmToggleGroupItem value="portrait" hlmTooltip="Portrait">
+          <ng-icon hlm name="lucideSmartphone" />
+        </button>
+      </hlm-toggle-group>
+    </div>
+    <hlm-field-description class="text-right">Remaining requests: {{ remaining() }} / {{ limit() }}</hlm-field-description>
+  </div>
+  <div class="flex flex-wrap justify-start gap-2 py-2">
     @for (item of assets(); track item.id) {
-      <mat-card class="digital-asset-card cursor-pointer" appearance="outlined" (click)="selection.toggle(item)">
-        <img class="image-bg object-contain" width="600" height="600" loading="lazy" alt="thumbnail" [ngSrc]="item.urls.regular" />
-        <mat-card-header>
-          <mat-card-subtitle class="break-all">{{ item.description || item.alt_description }}</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          W{{ item.width }} x H{{ item.height }}
-          <p [matTooltip]="item.updated_at | date: 'medium'"> {{ item.updated_at | date: 'mediumDate' }} </p>
-          <p>
-            by <a [href]="item.user.links.html + '?utm_source=localess&utm_medium=referral'" target="_blank">{{ item.user.name }}</a>
-          </p>
-        </mat-card-content>
-        <span class="spacer"></span>
-        <mat-card-actions align="end">
-          <mat-checkbox
+      <hlm-card class="w-48 cursor-pointer overflow-hidden pt-0" (click)="selection.toggle(item)">
+        <img class="h-48 w-full object-cover" width="600" height="600" loading="lazy" alt="thumbnail" [ngSrc]="item.urls.regular" />
+        <hlm-card-header class="p-2">
+          <p class="line-clamp-2 text-xs">{{ item.description || item.alt_description }}</p>
+          <p class="text-muted-foreground text-xs">W{{ item.width }} x H{{ item.height }}</p>
+        </hlm-card-header>
+        <hlm-card-footer class="flex items-center justify-between p-2">
+          <div class="text-xs">
+            <p [hlmTooltip]="item.updated_at | date: 'medium'">{{ item.updated_at | date: 'mediumDate' }}</p>
+            <p>
+              by
+              <a [href]="item.user.links.html + '?utm_source=localess&utm_medium=referral'" target="_blank" class="underline">
+                {{ item.user.name }}
+              </a>
+            </p>
+          </div>
+          <hlm-checkbox
             (click)="$event.stopPropagation()"
-            (change)="$event ? selection.toggle(item) : null"
-            [checked]="selection.isSelected(item)">
-          </mat-checkbox>
-        </mat-card-actions>
-      </mat-card>
+            [checked]="selection.isSelected(item)"
+            (checkedChange)="selection.toggle(item)" />
+        </hlm-card-footer>
+      </hlm-card>
     }
   </div>
   @if (showLoadMore()) {
     <div class="m-4 flex justify-center">
-      <button mat-stroked-button (click)="search(si.value, this.currentPage() + 1)"> Load More </button>
+      <button hlmBtn variant="outline" (click)="search(si.value, currentPage() + 1)">Load More</button>
     </div>
   }
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [disabled]="selection.isEmpty()" (click)="selection.clear()">Deselect All ({{ selection.selected.length }})</button>
-  <button mat-button [mat-dialog-close]="undefined">Close</button>
-  <button mat-flat-button [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">
+    Deselect All ({{ selection.selected.length }})
+  </button>
+  <button hlmBtn variant="ghost" [mat-dialog-close]="undefined">Close</button>
+  <button hlmBtn [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
     @if (selection.selected.length > 1) {
       Add Selected Assets ({{ selection.selected.length }})
     } @else {

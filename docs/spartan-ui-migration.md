@@ -25,9 +25,12 @@
 | `MatSlideToggleModule` | `hlm-switch` | `HlmSwitchImports` |
 | `MatCheckboxModule` (boolean toggle) | `hlm-switch` with `formControlName` | `HlmSwitchImports` |
 | `MatCheckboxModule` / `mat-selection-list` | `hlm-checkbox` | `HlmCheckboxImports` |
+| `MatButtonToggleModule` | `hlm-toggle-group` + `hlmToggleGroupItem` | `HlmToggleGroupImports` |
 | `MatChipsModule` (`mat-chip-grid`) | `hlmInput` + `hlmBtn` badges | see Chips section |
 | `MatDividerModule` | `hlm-separator` | `HlmSeparatorImports` |
 | `MatTooltipModule` | `hlmTooltip` directive | `HlmTooltipImports` |
+| `MatExpansionModule` | `hlm-accordion` + related | `HlmAccordionImports` |
+| `MatCardModule` | `hlm-card` + related | `HlmCardImports` |
 | `MatSnackBar` | `toast` from `ngx-sonner` | see Notifications section |
 
 ---
@@ -758,6 +761,159 @@ export class ExportDialogComponent {
 
 ---
 
+## `MatButtonToggleModule` → `hlm-toggle-group`
+
+The toggle group uses two distinct selectors — the group wrapper and a directive on native `<button>` elements.
+
+**❌ Wrong — `<hlm-toggle>` does not exist:**
+```html
+<hlm-toggle-group ...>
+  <hlm-toggle value="squarish">...</hlm-toggle>
+</hlm-toggle-group>
+```
+
+**✅ Correct — `hlmToggleGroupItem` attribute on `<button>`:**
+```html
+<hlm-toggle-group type="single" variant="outline" [value]="orientation()" (valueChange)="orientation.set($event)">
+  <button hlmToggleGroupItem value="squarish" hlmTooltip="Squarish">
+    <ng-icon hlm name="lucideSquare" />
+  </button>
+  <button hlmToggleGroupItem value="landscape" hlmTooltip="Landscape">
+    <ng-icon hlm name="lucideMonitor" />
+  </button>
+  <button hlmToggleGroupItem value="portrait" hlmTooltip="Portrait">
+    <ng-icon hlm name="lucideSmartphone" />
+  </button>
+</hlm-toggle-group>
+```
+
+Key rules:
+- `hlm-toggle-group` is the container (`[hlmToggleGroup]` or `<hlm-toggle-group>`)
+- Items are native `<button hlmToggleGroupItem value="...">` — no `<hlm-toggle>` component exists
+- `type="single"` for single selection, `type="multiple"` for multi
+- `variant="outline"` to match the Material outlined toggle appearance
+- `(valueChange)` emits the raw `value` string (not an event object — unlike Material's `(change)="$event.value"`)
+- Initial `undefined` value → nothing selected (matches Material's initial state)
+
+**Imports required:**
+```typescript
+imports: [..., HlmToggleGroupImports, HlmTooltipImports, HlmIconImports],
+providers: [provideIcons({ lucideSquare, lucideMonitor, lucideSmartphone })],
+```
+
+---
+
+## `MatExpansionModule` → `hlm-accordion`
+
+Replace `mat-accordion` / `mat-expansion-panel` with the `hlm-accordion` element selectors. The directive form (`div[hlmAccordion]`) also works but element selectors are preferred for consistency.
+
+```html
+<!-- ❌ Before -->
+<mat-accordion [multi]="true">
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>Form : {{ form?.valid }}</mat-panel-title>
+    </mat-expansion-panel-header>
+    <pre>{{ form.value | json }}</pre>
+  </mat-expansion-panel>
+</mat-accordion>
+
+<!-- ✅ After -->
+<hlm-accordion type="multiple">
+  <hlm-accordion-item>
+    <hlm-accordion-trigger>Form : {{ form?.valid }}</hlm-accordion-trigger>
+    <hlm-accordion-content>
+      <pre>{{ form.value | json }}</pre>
+    </hlm-accordion-content>
+  </hlm-accordion-item>
+</hlm-accordion>
+```
+
+- `[multi]="true"` → `type="multiple"` on `<hlm-accordion>`
+- `mat-expansion-panel` → `<hlm-accordion-item>`
+- `mat-panel-title` inside `mat-expansion-panel-header` → content of `<hlm-accordion-trigger>`
+- Expansion body → `<hlm-accordion-content>`
+
+**Import:** `HlmAccordionImports` from `@spartan-ng/helm/accordion`
+
+---
+
+## `MatCardModule` → `hlm-card`
+
+Replace `mat-card` with `<hlm-card>` and its sub-elements. The Spartan card is a standard flex container; layout is controlled via Tailwind.
+
+```html
+<!-- ❌ Before -->
+<mat-card appearance="outlined" class="cursor-pointer" (click)="selection.toggle(item)">
+  <img ... />
+  <mat-card-header>
+    <mat-card-subtitle>{{ item.name }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>...</mat-card-content>
+  <mat-card-actions align="end">
+    <mat-checkbox ... />
+  </mat-card-actions>
+</mat-card>
+
+<!-- ✅ After -->
+<hlm-card class="cursor-pointer overflow-hidden pt-0" (click)="selection.toggle(item)">
+  <img class="h-48 w-full object-cover" ... />
+  <hlm-card-header class="p-2">
+    <p class="line-clamp-1 text-sm">{{ item.name }}</p>
+    <p class="text-muted-foreground text-xs">{{ item.subtitle }}</p>
+  </hlm-card-header>
+  <hlm-card-footer class="flex items-center justify-between p-2">
+    <span class="text-xs">{{ item.date | date }}</span>
+    <hlm-checkbox (click)="$event.stopPropagation()" [checked]="selection.isSelected(item)" (checkedChange)="selection.toggle(item)" />
+  </hlm-card-footer>
+</hlm-card>
+```
+
+Key rules:
+- `pt-0` on `<hlm-card>` removes the default top padding so an image flush-fits to the card top
+- `overflow-hidden` clips the image to the card's rounded corners
+- Sub-elements: `<hlm-card-header>`, `<hlm-card-content>`, `<hlm-card-footer>`
+- No `hlmCardSubtitle` / `hlmCardTitle` directives are needed — apply Tailwind classes directly to `<p>` tags inside the header
+
+**Import:** `HlmCardImports` from `@spartan-ng/helm/card`
+
+---
+
+## Sticky Paginator in Dialogs
+
+By default, `<mat-paginator>` placed inside `<mat-dialog-actions>` scrolls with the page. To make it stick to the bottom of a scrollable dialog content area, move the paginator **into** `<mat-dialog-content>` and apply the global `mat-paginator-sticky` class:
+
+```html
+<!-- ❌ Before — paginator in actions, scrolls away -->
+<mat-dialog-content>
+  <!-- table / list -->
+</mat-dialog-content>
+<mat-dialog-actions>
+  <mat-paginator ... />
+  <button mat-button>Close</button>
+</mat-dialog-actions>
+
+<!-- ✅ After — paginator sticky at bottom of content -->
+<mat-dialog-content>
+  <!-- table / list -->
+  <mat-paginator class="mat-paginator-sticky" [length]="..." [pageSize]="..." (page)="..." />
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="ghost" [mat-dialog-close]="undefined">Close</button>
+</mat-dialog-actions>
+```
+
+The `mat-paginator-sticky` global class is defined in `src/styles/_mat-paginator.scss`:
+```scss
+.mat-paginator-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+```
+
+---
+
 ## Checklist for Migrating a Dialog
 
 1. **Keep** `MatDialogModule` for the dialog frame (`mat-dialog-title`, `mat-dialog-content`, `mat-dialog-actions`, `[mat-dialog-close]`)
@@ -778,5 +934,9 @@ export class ExportDialogComponent {
 16. **Autocomplete?** → Use `HlmComboboxImports` — **never** `HlmAutocompleteImports` (broken). Portal must be `<hlm-combobox-content *hlmComboboxPortal>`, not `<div *hlmComboboxPortal hlmComboboxContent>`.
 17. **File upload?** → `hlmBtn variant="outline"` + `lucideUpload` + hidden `<input type="file">` + `@if (fileWrong)` error paragraph
 18. **Export with no filter?** → Strip all form logic, return `{}` from confirm button; caller's `it?.path` resolves to `undefined` (full export)
-19. **Dead code blocks (`@if (false)`)** → remove them during migration
-20. Run `npm run build && npm run lint:fix`
+19. **Button toggle group?** → `<hlm-toggle-group type="single" variant="outline">` with `<button hlmToggleGroupItem value="...">` children. **Never `<hlm-toggle>`** — that element does not exist.
+20. **Accordion?** → `<hlm-accordion type="multiple">` with `<hlm-accordion-item>`, `<hlm-accordion-trigger>`, `<hlm-accordion-content>`. Use element selectors, not `div[hlmAccordion]`.
+21. **Card grid?** → `<hlm-card class="overflow-hidden pt-0">` with `<hlm-card-header>` / `<hlm-card-footer>`. Apply Tailwind classes directly to `<p>` tags — no `hlmCardTitle`/`hlmCardSubtitle` directives needed.
+22. **Paginator sticky at bottom of dialog?** → Move `<mat-paginator>` into `<mat-dialog-content>` with `class="mat-paginator-sticky"` (global class in `src/styles/_mat-paginator.scss`).
+23. **Dead code blocks (`@if (false)`)** → remove them during migration
+24. Run `npm run build && npm run lint:fix`

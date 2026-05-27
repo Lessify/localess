@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Analytics } from '@angular/fire/analytics';
 import { Performance } from '@angular/fire/performance';
-import { MatIconRegistry } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { HlmToasterImports } from '@spartan-ng/helm/sonner';
 
@@ -14,11 +13,6 @@ import { HlmToasterImports } from '@spartan-ng/helm/sonner';
 export class AppComponent {
   private readonly performance = inject(Performance);
   private readonly analytics = inject(Analytics);
-  private readonly iconRegistry = inject(MatIconRegistry);
 
-  constructor() {
-    const iconRegistry = this.iconRegistry;
-
-    iconRegistry.setDefaultFontSetClass('material-symbols-outlined');
-  }
+  constructor() {}
 }

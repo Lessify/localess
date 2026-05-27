@@ -3,7 +3,6 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -56,7 +55,6 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     CommonModule,
     MatDialogModule,
     MatPaginatorModule,
-    MatIconModule,
     CanUserPerformPipe,
     MatTableModule,
     TimeDurationPipe,

@@ -1,28 +1,30 @@
 <h2 mat-dialog-title>Edit Schema ID</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Id</mat-label>
-      <input matInput type="text" formControlName="id" required autocomplete="off" />
-      <button mat-icon-button matSuffix (click)="normalizeId()">
-        <mat-icon>auto_fix_normal</mat-icon>
-      </button>
-      <mat-hint>Will be used in OpenAPI Schema Name.</mat-hint>
-      <mat-hint align="end">{{ form.controls['id'].value?.length || 0 }}/50</mat-hint>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="id">Id</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="id" type="text" formControlName="id" maxlength="50" autocomplete="off" />
+        <hlm-input-group-addon align="inline-end">
+          <button hlmBtn size="icon" variant="ghost" type="button" (click)="normalizeId()">
+            <ng-icon hlm size="sm" name="lucideWand2" />
+          </button>
+          <span class="text-muted-foreground text-xs">{{ form.controls['id'].value?.length || 0 }}/50</span>
+        </hlm-input-group-addon>
+      </div>
+      <hlm-field-description>Will be used in OpenAPI Schema Name.</hlm-field-description>
       @if (form.controls['id'].errors; as errors) {
-        <mat-error>{{ fe.errors(errors) }}</mat-error>
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    </mat-form-field>
+    </div>
   </form>
-  <br />
-  <p class="warn">
+  <p class="text-destructive text-sm">
     <strong>Warning:</strong>
     Changing the ID will affect the relation between other Schema and OpenAPI Schema Name. It will also affect the API endpoint and the data
     stored in the database.
   </p>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-flat-button [mat-dialog-close]="form.value.id" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="ghost" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value.id" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

@@ -1,21 +1,23 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideMonitor, lucideSearch, lucideSmartphone, lucideSquare } from '@ng-icons/lucide';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCardImports } from '@spartan-ng/helm/card';
+import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog.model';
 
@@ -26,18 +28,19 @@ import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
-    MatButtonToggleModule,
-    MatTooltipModule,
-    MatButtonModule,
-    CommonModule,
-    MatCardModule,
-    MatCheckboxModule,
     NgOptimizedImage,
+    DatePipe,
+    HlmButtonImports,
+    HlmCardImports,
+    HlmCheckboxImports,
+    HlmFieldImports,
+    HlmIconImports,
+    HlmInputGroupImports,
     HlmProgressImports,
+    HlmToggleGroupImports,
+    HlmTooltipImports,
   ],
+  providers: [provideIcons({ lucideSearch, lucideSquare, lucideMonitor, lucideSmartphone })],
 })
 export class UnsplashAssetsSelectDialogComponent implements OnInit {
   private readonly unsplashPluginService = inject(UnsplashPluginService);

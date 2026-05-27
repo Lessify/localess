@@ -234,17 +234,7 @@
                   {{ translation.id }}
                 </div>
                 <p hlmItemDescription class="break-all">
-                  @switch (translation.type) {
-                    @case ('STRING') {
-                      <ll-translation-string-view [value]="translation.locales[filterForm.controls.locale.value || '']" />
-                    }
-                    @case ('PLURAL') {
-                      <ll-translation-plural-view [value]="translation.locales[filterForm.controls.locale.value || '']" />
-                    }
-                    @case ('ARRAY') {
-                      <ll-translation-array-view [value]="translation.locales[filterForm.controls.locale.value || '']" />
-                    }
-                  }
+                  <ll-translation-string-view [value]="translation.locales[filterForm.controls.locale.value || '']" />
                 </p>
               </div>
             </div>
@@ -347,17 +337,7 @@
                 <div aria-hidden="true" class="w-full border-t"></div>
               </div>
               <div class="mb-auto p-2 wrap-break-word">
-                @switch (translation.type) {
-                  @case ('STRING') {
-                    <ll-translation-string-view [value]="translation.locales[selectedSourceLocale().id]" />
-                  }
-                  @case ('PLURAL') {
-                    <ll-translation-plural-view [value]="translation.locales[selectedSourceLocale().id]" />
-                  }
-                  @case ('ARRAY') {
-                    <ll-translation-array-view [value]="translation.locales[selectedSourceLocale().id]" />
-                  }
-                }
+                <ll-translation-string-view [value]="translation.locales[selectedSourceLocale().id]" />
               </div>
 
               @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
@@ -369,21 +349,7 @@
                   <div aria-hidden="true" class="w-full border-t"></div>
                 </div>
                 <div class="p-2">
-                  @switch (translation.type) {
-                    @case ('STRING') {
-                      <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
-                    }
-                    @case ('PLURAL') {
-                      <ll-translation-plural-edit
-                        [value]="translation.locales[selectedTargetLocale().id]"
-                        (valueChange)="selectedTranslationLocaleValue.set($event)" />
-                    }
-                    @case ('ARRAY') {
-                      <ll-translation-array-edit
-                        [value]="translation.locales[selectedTargetLocale().id]"
-                        (valueChange)="selectedTranslationLocaleValue.set($event)" />
-                    }
-                  }
+                  <ll-translation-string-edit [(value)]="selectedTranslationLocaleValue" />
                 </div>
                 <hlm-separator />
                 <div class="flex flex-row-reverse p-2">

@@ -1,4 +1,3 @@
-import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom, provideZonelessChangeDetection } from '@angular/core';
@@ -17,9 +16,7 @@ import { connectFunctionsEmulator, getFunctions, provideFunctions } from '@angul
 import { getPerformance, providePerformance } from '@angular/fire/performance';
 import { getRemoteConfig, provideRemoteConfig } from '@angular/fire/remote-config';
 import { connectStorageEmulator, getStorage, provideStorage } from '@angular/fire/storage';
-import { MAT_CHIPS_DEFAULT_OPTIONS } from '@angular/material/chips';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
 import { CoreModule } from '@core/core.module';
@@ -100,21 +97,11 @@ export const appConfig: ApplicationConfig = {
       },
     },
     {
-      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
-      useValue: { appearance: 'outline' },
-    },
-    {
       provide: MAT_PAGINATOR_DEFAULT_OPTIONS,
       useValue: {
         pageSize: 20,
         pageSizeOptions: [10, 20, 50, 100],
         showFirstLastButtons: true,
-      },
-    },
-    {
-      provide: MAT_CHIPS_DEFAULT_OPTIONS,
-      useValue: {
-        separatorKeyCodes: [ENTER, COMMA],
       },
     },
   ],

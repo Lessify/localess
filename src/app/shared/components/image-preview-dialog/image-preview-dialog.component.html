@@ -8,23 +8,23 @@
     [loaderParams]="{ thumbnail: true }"
     ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ data.asset.id }}" />
 </mat-dialog-content>
-<mat-dialog-actions class="!justify-between">
-  <div>
+<mat-dialog-actions class="flex !justify-between">
+  <div class="text-sm">
     {{ data.asset.name }}{{ data.asset.extension }}
     @if (data.asset.size; as size) {
-      <span class="vertical-divider">&nbsp;</span>
+      <span class="border-border mx-1 inline-block h-4 border-r align-middle"></span>
       {{ size | formatFileSize }}
     }
     @if (data.asset.metadata; as metadata) {
       @if (metadata.width && metadata.height) {
-        <span class="vertical-divider">&nbsp;</span>
+        <span class="border-border mx-1 inline-block h-4 border-r align-middle"></span>
         W{{ metadata.width }} x H{{ metadata.height }}
       }
       @if (metadata.duration; as duration) {
-        <span class="vertical-divider">&nbsp;</span>
+        <span class="border-border mx-1 inline-block h-4 border-r align-middle"></span>
         Duration: {{ duration | timeDuration }}
       }
     }
   </div>
-  <button mat-stroked-button [mat-dialog-close]="undefined">Close</button>
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Close</button>
 </mat-dialog-actions>
