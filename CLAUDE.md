@@ -98,6 +98,10 @@ These apply to all Angular code in this project (from `.github/copilot-instructi
 - **Images**: Use `NgOptimizedImage` for static images
 - **TypeScript**: Strict mode, avoid `any` (use `unknown`), prefer type inference
 
+## Git Commits
+
+**Never create git commits unless the user explicitly asks.** Do not commit after making changes, after a migration, or at the end of a task. Only commit when the user says "commit" or "push".
+
 ## After Making Changes
 
 After every code change, always run the following in order:

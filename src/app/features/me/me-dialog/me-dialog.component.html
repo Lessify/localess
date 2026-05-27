@@ -1,18 +1,17 @@
 <h2 mat-dialog-title>User</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>Display Name</mat-label>
-      <input matInput type="text" formControlName="displayName" />
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Avatar</mat-label>
-      <input matInput type="text" formControlName="photoURL" />
-    </mat-form-field>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="displayName">Display Name</label>
+      <input hlmInput id="displayName" type="text" formControlName="displayName" class="w-full" />
+    </div>
+    <div hlmField>
+      <label hlmFieldLabel for="photoURL">Avatar URL</label>
+      <input hlmInput id="photoURL" type="text" formControlName="photoURL" class="w-full" />
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-stroked-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

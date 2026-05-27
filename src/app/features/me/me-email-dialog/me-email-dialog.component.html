@@ -1,15 +1,14 @@
 <h2 mat-dialog-title>Update Email</h2>
 <mat-dialog-content>
-  <br />
-  <form [formGroup]="form">
-    <mat-form-field>
-      <mat-label>New Password</mat-label>
-      <input matInput type="email" formControlName="newEmail" required />
-      <mat-hint>Minimum 6 character</mat-hint>
-    </mat-form-field>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="newEmail">New Email</label>
+      <input hlmInput id="newEmail" type="email" formControlName="newEmail" class="w-full" />
+      <hlm-field-description>Minimum 3 characters</hlm-field-description>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button [mat-dialog-close]="undefined">Cancel</button>
-  <button mat-stroked-button color="primary" [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
 </mat-dialog-actions>

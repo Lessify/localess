@@ -1,12 +1,12 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage, UpperCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
 import { MeService } from '@shared/services/me.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserStore } from '@shared/stores/user.store';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCardImports } from '@spartan-ng/helm/card';
+import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { filter, switchMap } from 'rxjs/operators';
 
 import { MeDialogComponent } from './me-dialog/me-dialog.component';
@@ -21,7 +21,7 @@ import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.m
   templateUrl: './me.component.html',
   styleUrls: ['./me.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatCardModule, CommonModule, MatDividerModule, MatButtonModule, NgOptimizedImage],
+  imports: [HlmCardImports, HlmSeparatorImports, HlmButtonImports, NgOptimizedImage, UpperCasePipe],
 })
 export class MeComponent {
   private readonly dialog = inject(MatDialog);

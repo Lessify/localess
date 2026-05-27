@@ -147,3 +147,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Open API | [docs/features/spaces/open-api.md](../docs/features/spaces/open-api.md) | `features/spaces/open-api/` |
 | **Feature modules — Me** | | |
 | Me / User profile | [docs/features/me.md](../docs/features/me.md) | `features/me/` |
+
+## Git Commits
+
+**Never create git commits unless the user explicitly asks.** Do not commit after making changes, after a migration, or at the end of a task. Only commit when the user says "commit" or "push".

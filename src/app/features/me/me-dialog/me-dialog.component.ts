@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 
 import { MeDialogModel } from './me-dialog.model';
 
@@ -12,7 +12,7 @@ import { MeDialogModel } from './me-dialog.model';
   templateUrl: './me-dialog.component.html',
   styleUrls: ['./me-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, MatFormFieldModule, ReactiveFormsModule, MatInputModule, MatButtonModule],
+  imports: [MatDialogModule, ReactiveFormsModule, HlmFieldImports, HlmInputImports, HlmButtonImports],
 })
 export class MeDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

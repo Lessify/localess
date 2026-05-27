@@ -1,43 +1,44 @@
 @if (userStore; as user) {
-  <div class="mx-auto mt-3 px-2">
-    <div class="row">
-      <div class="col"></div>
-      <div class="col-6">
-        <mat-card appearance="outlined">
-          <mat-card-header>
-            <img [ngSrc]="user.photoURL() || '/assets/account_circle.svg'" mat-card-avatar alt="circle" width="40" height="40" />
-            <mat-card-title>{{ user.displayName() }}</mat-card-title>
-          </mat-card-header>
-          <mat-divider></mat-divider>
-          <mat-card-content>
-            <br />
-            <div><b>Email : </b>{{ user.email() }}</div>
-            <div><b>Email Verified: </b>{{ user.emailVerified() ? 'Yes' : 'Not' }}</div>
-            <div><b>Role : </b>{{ user.role() | uppercase }}</div>
-            @if (user.role() === 'custom') {
-              <div><b>Permissions : </b></div>
+  <div class="mx-auto mt-6 max-w-lg px-4">
+    <div hlmCard>
+      <div hlmCardHeader>
+        <div class="flex items-center gap-3">
+          <img [ngSrc]="user.photoURL() || '/assets/account_circle.svg'" alt="avatar" width="40" height="40" class="rounded-full" />
+          <h2 hlmCardTitle>{{ user.displayName() }}</h2>
+        </div>
+      </div>
+      <hlm-separator />
+      <div hlmCardContent class="flex flex-col gap-2 py-2">
+        <div><b>Email:</b> {{ user.email() }}</div>
+        <div><b>Email Verified:</b> {{ user.emailVerified() ? 'Yes' : 'No' }}</div>
+        <div><b>Role:</b> {{ user.role() | uppercase }}</div>
+        @if (user.role() === 'custom') {
+          <div>
+            <b>Permissions:</b>
+            <ul class="ml-4 list-disc">
               @for (permission of user.permissions(); track permission) {
                 <li>{{ permission }}</li>
               }
-            }
-          </mat-card-content>
-          <mat-divider></mat-divider>
-          <mat-card-actions>
-            @if (user.isLocked()) {
-              Your account is locked.<br />
-              You can't manage your personal data and password.
-            } @else if (user.isPasswordProvider() && user.numberProviders() === 1) {
-              <button mat-stroked-button color="primary" (click)="openEditDialog()">Edit</button>
-              <button mat-stroked-button (click)="openUpdateEmailDialog()">Update Email</button>
-              <button mat-stroked-button (click)="openUpdatePasswordDialog()">Update Password</button>
-            } @else {
-              Your account is linked to an external authentication provider.<br />
-              You can't manage your personal data and password here.
-            }
-          </mat-card-actions>
-        </mat-card>
+            </ul>
+          </div>
+        }
       </div>
-      <div class="col"></div>
+      <hlm-separator />
+      <div hlmCardFooter class="flex flex-wrap gap-2">
+        @if (user.isLocked()) {
+          <p class="text-muted-foreground text-sm">Your account is locked. You can't manage your personal data and password.</p>
+        } @else {
+          <button hlmBtn variant="outline" (click)="openEditDialog()">Update Profile</button>
+          @if (user.isPasswordProvider()) {
+            <button hlmBtn variant="outline" (click)="openUpdateEmailDialog()">Update Email</button>
+            <button hlmBtn variant="outline" (click)="openUpdatePasswordDialog()">Update Password</button>
+          } @else if (user.isGoogleProvider() || user.isMicrosoftProvider()) {
+            <p class="text-muted-foreground text-sm">
+              Your account is linked to an external authentication provider. You can't manage your personal data and password here.
+            </p>
+          }
+        }
+      </div>
     </div>
   </div>
 }
