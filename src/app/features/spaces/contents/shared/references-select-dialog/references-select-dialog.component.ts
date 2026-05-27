@@ -13,26 +13,25 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFolderRoot } from '@ng-icons/lucide';
+import { lucideFolder, lucideFolderRoot } from '@ng-icons/lucide';
 import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
 import { Schema, SchemaType } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { PathItem } from '@shared/stores/space.store';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { BehaviorSubject, combineLatest } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
@@ -48,20 +47,20 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
     MatDialogModule,
     MatTableModule,
     MatSortModule,
-    MatCheckboxModule,
-    MatTooltipModule,
-    MatIconModule,
-    CommonModule,
     MatPaginatorModule,
-    MatButtonModule,
+    CommonModule,
     HlmBreadCrumbImports,
+    HlmButtonImports,
+    HlmCheckboxImports,
     HlmIconImports,
     HlmProgressImports,
+    HlmTooltipImports,
     DocumentStatusComponent,
   ],
   providers: [
     provideIcons({
       lucideFolderRoot,
+      lucideFolder,
     }),
   ],
 })
