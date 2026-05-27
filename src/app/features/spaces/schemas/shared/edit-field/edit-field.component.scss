@@ -2,19 +2,6 @@ mat-form-field {
   width: 100%;
 }
 
-.mat-expansion-panel-header-title {
-  justify-content: space-between;
-  align-items: center;
-}
-mat-expansion-panel {
-  mat-icon.cdk-drag-handle {
-    cursor: grab;
-  }
-  &.invalid {
-    border: solid 2px var(--mat-sys-error);
-  }
-}
-
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 4px;

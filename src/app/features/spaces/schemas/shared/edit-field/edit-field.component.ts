@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, Input, input } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -39,6 +38,7 @@ import {
 } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
@@ -55,7 +55,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    MatExpansionModule,
+    HlmAccordionImports,
     CommonModule,
     HlmFieldImports,
     HlmIconImports,
