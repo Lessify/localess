@@ -2,7 +2,6 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
@@ -36,9 +35,9 @@ import { PathItem } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
@@ -57,7 +56,6 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     CommonModule,
     MatDialogModule,
     MatPaginatorModule,
-    MatCheckboxModule,
     MatIconModule,
     CanUserPerformPipe,
     MatTableModule,
@@ -73,7 +71,7 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     HlmBadgeImports,
     HlmToggleGroupImports,
     HlmButtonImports,
-    HlmItemImports,
+    HlmCardImports,
     HlmCheckboxImports,
   ],
   providers: [

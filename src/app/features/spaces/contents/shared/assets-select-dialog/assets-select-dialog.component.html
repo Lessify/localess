@@ -57,11 +57,10 @@
         <mat-header-cell *matHeaderCellDef> #</mat-header-cell>
         <mat-cell *matCellDef="let row">
           @if (row.kind === 'FILE') {
-            <mat-checkbox
+            <hlm-checkbox
               (click)="$event.stopPropagation()"
-              (change)="$event ? selection.toggle(row) : null"
-              [checked]="selection.isSelected(row)">
-            </mat-checkbox>
+              [checked]="selection.isSelected(row)"
+              (checkedChange)="selection.toggle(row)" />
           }
         </mat-cell>
       </ng-container>
@@ -151,16 +150,10 @@
       <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></mat-row>
     </mat-table>
   } @else {
-    <div hlmItemGroup class="flex flex-row flex-wrap gap-4">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 pb-2">
       @for (item of dataSource.connect() | async; track item.id) {
-        <div
-          role="listitem"
-          hlmItem
-          variant="outline"
-          class="max-w-60 min-w-48 flex-1 cursor-pointer content-start items-baseline overflow-hidden p-0"
-          (click)="onAssetSelect(item)"
-          (keyup.enter)="onAssetSelect(item)">
-          <div hlmItemHeader class="border-b">
+        <hlm-card class="overflow-hidden pt-0">
+          <div class="cursor-pointer border-b" aria-hidden="true" (click)="onAssetSelect(item)" (keydown)="onAssetSelect(item)">
             @if (item.kind === 'FILE' && item.inProgress) {
               <div class="flex aspect-square w-full flex-col place-items-center justify-center">
                 <hlm-spinner />
@@ -197,11 +190,11 @@
               </div>
             }
           </div>
-          <div hlmItemContent class="px-4">
-            <div hlmItemTitle class="line-clamp-2" hlmTooltip="{{ item.name }}{{ item.extension }}">
+          <hlm-card-header>
+            <h3 hlmCardTitle class="line-clamp-2" hlmTooltip="{{ item.name }}{{ item.extension }}">
               {{ item.name }}{{ item.extension }}
-            </div>
-            <div hlmItemDescription>
+            </h3>
+            <div hlmCardDescription>
               @if (item.kind === 'FILE') {
                 @if (item.size; as size) {
                   <p>{{ size | formatFileSize }}</p>
@@ -217,19 +210,19 @@
               }
               <p [hlmTooltip]="item.updatedAt?.toDate() | date: 'medium'"> {{ item.updatedAt?.toDate() | date: 'mediumDate' }} </p>
             </div>
-          </div>
-          <div hlmItemFooter class="flex grow justify-end px-4 pb-4">
+          </hlm-card-header>
+          <hlm-card-footer class="mt-auto justify-end gap-2">
             @if (item.kind === 'FILE') {
-              <hlm-checkbox [checked]="selection.isSelected(item)" />
+              <hlm-checkbox [checked]="selection.isSelected(item)" (checkedChange)="selection.toggle(item)" />
             }
-          </div>
-        </div>
+          </hlm-card-footer>
+        </hlm-card>
       }
     </div>
   }
+  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <mat-paginator></mat-paginator>
+<mat-dialog-actions align="end" class="flex gap-2">
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">
     Deselect All ({{ selection.selected.length }})
   </button>
