@@ -2,11 +2,14 @@ import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/cor
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideX } from '@ng-icons/lucide';
 import { TokenForm } from '@shared/models/token.model';
 import { TokenValidator } from '@shared/validators/token.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
@@ -36,6 +39,12 @@ interface PermissionGroup {
     HlmInputGroupImports,
     HlmLabelImports,
     HlmSeparatorImports,
+    HlmIconImports,
+  ],
+  providers: [
+    provideIcons({
+      lucideX,
+    }),
   ],
 })
 export class TokenDialogComponent implements OnInit {
@@ -46,6 +55,7 @@ export class TokenDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({
     name: this.fb.control<string>('', TokenValidator.NAME),
     permissions: this.fb.control<string[]>([], TokenValidator.PERMISSIONS),
+    cacheTtl: this.fb.control<number | undefined>(undefined, TokenValidator.CACHE_TTL),
   });
 
   protected readonly permissionGroups: PermissionGroup[] = [
@@ -85,5 +95,9 @@ export class TokenDialogComponent implements OnInit {
     const current: string[] = this.form.controls['permissions'].value ?? [];
     const updated = checked ? [...current, permission] : current.filter((p: string) => p !== permission);
     this.form.controls['permissions'].setValue(updated);
+  }
+
+  resetCacheTtl(): void {
+    this.form.controls['cacheTtl'].setValue(null);
   }
 }

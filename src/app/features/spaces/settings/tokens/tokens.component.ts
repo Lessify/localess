@@ -61,7 +61,7 @@ export class TokensComponent {
   spaceStore = inject(SpaceStore);
 
   dataSource: MatTableDataSource<Token> = new MatTableDataSource<Token>([]);
-  displayedColumns: string[] = ['id', 'name', 'version', 'permissions', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'version', 'permissions', 'cacheTtl', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
@@ -113,6 +113,7 @@ export class TokensComponent {
         data: {
           name: element.name,
           permissions: isTokenV2(element) ? element.permissions : [],
+          cacheTtl: isTokenV2(element) ? element.cacheTtl : undefined,
         },
       })
       .afterClosed()

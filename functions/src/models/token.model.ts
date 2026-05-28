@@ -15,6 +15,7 @@ export type TokenV1 = TokenBase & { version: undefined };
 export interface TokenV2 extends TokenBase {
   version: 2;
   permissions: TokenPermission[];
+  cacheTtl?: number;
 }
 export interface TokenBase {
   version?: number;

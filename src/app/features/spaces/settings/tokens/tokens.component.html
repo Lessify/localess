@@ -33,6 +33,18 @@
         }
       </mat-cell>
     </ng-container>
+    <ng-container matColumnDef="cacheTtl">
+      <mat-header-cell *matHeaderCellDef> Cache TTL </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        @if (element.cacheTtl === 0) {
+          <span class="text-muted-foreground">No Cache</span>
+        } @else if (element.cacheTtl) {
+          <span>{{ element.cacheTtl }}s</span>
+        } @else {
+          <span class="text-muted-foreground">Default (60s)</span>
+        }
+      </mat-cell>
+    </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
       <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">

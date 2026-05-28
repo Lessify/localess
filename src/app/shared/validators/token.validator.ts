@@ -10,4 +10,5 @@ export class TokenValidator {
     Validators.maxLength(30),
   ];
   public static PERMISSIONS: ValidatorFn[] = [Validators.required, Validators.minLength(1)];
+  public static CACHE_TTL: ValidatorFn[] = [(Validators.min(0), Validators.max(31536000))];
 }

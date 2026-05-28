@@ -4,6 +4,7 @@ import {
   collection,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   DocumentReference,
@@ -66,6 +67,9 @@ export class TokenService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
+    if (model.cacheTtl != null) {
+      addEntity.cacheTtl = model.cacheTtl;
+    }
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tokens`), addEntity)).pipe(traceUntilFirst('Firestore:Tokens:create'));
   }
 
@@ -74,6 +78,7 @@ export class TokenService {
       version: 2,
       name: model.name,
       permissions: model.permissions,
+      cacheTtl: model.cacheTtl != null ? model.cacheTtl : deleteField(),
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/tokens/${id}`), update)).pipe(traceUntilFirst('Firestore:Tokens:update'));

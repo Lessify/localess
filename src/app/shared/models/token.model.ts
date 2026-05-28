@@ -15,6 +15,7 @@ export type TokenV1 = TokenBase & { version: undefined };
 export interface TokenV2 extends TokenBase {
   version: 2;
   permissions: TokenPermission[];
+  cacheTtl?: number;
 }
 export interface TokenBase {
   id: string;
@@ -25,7 +26,7 @@ export interface TokenBase {
 }
 
 // Form Edit model
-export type TokenForm = Pick<TokenV2, 'name' | 'permissions'>;
+export type TokenForm = Pick<TokenV2, 'name' | 'permissions' | 'cacheTtl'>;
 
 // Firestore create model
 export type TokenFS = Omit<TokenV2, 'id'>;

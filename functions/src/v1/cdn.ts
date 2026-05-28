@@ -8,8 +8,7 @@ import {
   bucket,
   CACHE_ASSET_MAX_AGE,
   CACHE_MAX_AGE,
-  CACHE_REDIRECT_DRAFT_MAX_AGE,
-  CACHE_REDIRECT_MAX_AGE,
+  CACHE_REDIRECT_MAX_AGE_DEFAULT,
   CACHE_SHARE_MAX_AGE,
   firestoreService,
   TEN_MINUTES,
@@ -21,6 +20,7 @@ import {
   ContentDocumentStorage,
   ContentKind,
   ContentLink,
+  isTokenV2,
   Space,
   TokenPermission,
 } from '../models';
@@ -82,8 +82,13 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
       url += `&token=${token}`;
     }
     logger.info(`[V1:Translations] redirect to => ${url}`);
-    const redirectAge = version ? CACHE_REDIRECT_DRAFT_MAX_AGE : CACHE_REDIRECT_MAX_AGE;
-    res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
+    if (tokenCacheTtl === 0) {
+      res.header('Cache-Control', 'no-cache').redirect(url);
+    } else {
+      const redirectAge = tokenCacheTtl ?? CACHE_REDIRECT_MAX_AGE_DEFAULT;
+      res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    }
     return;
   } else {
     const space = spaceSnapshot.data() as Space;
@@ -153,7 +158,13 @@ CDN.get(
       if (token) {
         url += `&token=${token}`;
       }
-      res.header('Cache-Control', `public, max-age=${CACHE_REDIRECT_MAX_AGE}, s-maxage=${CACHE_REDIRECT_MAX_AGE}`).redirect(url);
+      const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
+      if (tokenCacheTtl === 0) {
+        res.header('Cache-Control', 'no-cache').redirect(url);
+      } else {
+        const redirectAge = tokenCacheTtl ?? CACHE_REDIRECT_MAX_AGE_DEFAULT;
+        res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+      }
       return;
     } else {
       let contentsQuery: Query = firestoreService.collection(`spaces/${spaceId}/contents`);
@@ -265,8 +276,13 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
       url += `&resolveLink=${resolveLink}`;
     }
     logger.info(`[V1:ContentBySlug] redirect to => ${url}`);
-    const redirectAge = version ? CACHE_REDIRECT_DRAFT_MAX_AGE : CACHE_REDIRECT_MAX_AGE;
-    res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
+    if (tokenCacheTtl === 0) {
+      res.header('Cache-Control', 'no-cache').redirect(url);
+    } else {
+      const redirectAge = tokenCacheTtl ?? CACHE_REDIRECT_MAX_AGE_DEFAULT;
+      res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    }
     return;
   } else {
     const space = spaceSnapshot.data() as Space;
@@ -359,8 +375,13 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
       url += `&resolveLink=${resolveLink}`;
     }
     logger.info(`[V1:ContentById] redirect to => ${url}`);
-    const redirectAge = version ? CACHE_REDIRECT_DRAFT_MAX_AGE : CACHE_REDIRECT_MAX_AGE;
-    res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
+    if (tokenCacheTtl === 0) {
+      res.header('Cache-Control', 'no-cache').redirect(url);
+    } else {
+      const redirectAge = tokenCacheTtl ?? CACHE_REDIRECT_MAX_AGE_DEFAULT;
+      res.header('Cache-Control', `public, max-age=${redirectAge}, s-maxage=${redirectAge}`).redirect(url);
+    }
     return;
   } else {
     const space = spaceSnapshot.data() as Space;

@@ -18,9 +18,7 @@ export const CACHE_MAX_AGE = DAY;
 export const CACHE_ASSET_MAX_AGE = DAY * 365;
 export const CACHE_SHARE_MAX_AGE = DAY * 7;
 // Short TTL for redirect responses so CDN caches them and avoids stampedes on publish
-export const CACHE_REDIRECT_MAX_AGE = FIVE_MINUTES;
-// Shorter TTL for draft redirects — draft content changes more frequently
-export const CACHE_REDIRECT_DRAFT_MAX_AGE = MINUTE;
+export const CACHE_REDIRECT_MAX_AGE_DEFAULT = MINUTE;
 // AUTH ROLE
 export const ROLE_ADMIN = 'admin';
 export const ROLE_CUSTOM = 'custom';

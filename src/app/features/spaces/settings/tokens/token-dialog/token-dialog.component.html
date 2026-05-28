@@ -42,6 +42,37 @@
         <p class="text-destructive text-sm">{{ fe.errors(errors) }}</p>
       }
     </div>
+
+    <hlm-separator />
+
+    <div hlmField>
+      <label hlmFieldLabel for="cacheTtl">Cache TTL</label>
+      <div class="flex items-center gap-2">
+        <div hlmInputGroup class="flex-1">
+          <input
+            hlmInputGroupInput
+            id="cacheTtl"
+            type="number"
+            formControlName="cacheTtl"
+            min="0"
+            max="31536000"
+            autocomplete="off"
+            placeholder="60" />
+          <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">
+            seconds
+            <button hlmInputGroupButton size="icon-xs" (click)="resetCacheTtl()">
+              <ng-icon name="lucideX" />
+            </button>
+          </hlm-input-group-addon>
+        </div>
+      </div>
+      <hlm-field-description>
+        Override redirect cache duration in seconds. Use 0 to disable caching. Leave empty to use the default of 60 seconds.
+      </hlm-field-description>
+      @if (form.controls['cacheTtl'].errors; as errors) {
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+      }
+    </div>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="flex gap-2">
