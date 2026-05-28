@@ -1,6 +1,6 @@
 {
   "name": "localess",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "engines": {
     "node": "24"
   },
@@ -23,7 +23,10 @@
     "prettier:fix": "prettier --write ./src/app",
     "build:stats": "ng build --configuration production --stats-json",
     "generate:github": "ng-openapi-gen --includeTags repos -i api-docs/api.github.com.2022-11-28.yaml -o src/app/shared/generated/github",
-    "version:generate": "node scripts/generate-version.js"
+    "version:generate": "node scripts/generate-version.js",
+    "version:major": "node scripts/bump-version.mjs major",
+    "version:minor": "node scripts/bump-version.mjs minor",
+    "version:patch": "node scripts/bump-version.mjs patch"
   },
   "license": "MIT",
   "private": true,
