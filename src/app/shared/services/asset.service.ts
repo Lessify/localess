@@ -6,6 +6,7 @@ import {
   collectionCount,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   documentId,
@@ -27,11 +28,11 @@ import {
   AssetFile,
   AssetFileCreateFS,
   AssetFileImport,
-  AssetFileUpdate,
+  AssetFileUpdateForm,
   AssetFolder,
   AssetFolderCreate,
   AssetFolderCreateFS,
-  AssetFolderUpdate,
+  AssetFolderUpdateForm,
   AssetKind,
 } from '@shared/models/asset.model';
 import { AssetFileType } from '@shared/models/schema.model';
@@ -230,7 +231,7 @@ export class AssetService {
     return from(addDoc(collection(this.firestore, `spaces/${spaceId}/assets`), addEntity)).pipe(traceUntilFirst('Firestore:Assets:create'));
   }
 
-  updateFolder(spaceId: string, id: string, entity: AssetFolderUpdate): Observable<void> {
+  updateFolder(spaceId: string, id: string, entity: AssetFolderUpdateForm): Observable<void> {
     const update: UpdateData<AssetFolder> = {
       name: entity.name,
       updatedAt: serverTimestamp(),
@@ -240,9 +241,10 @@ export class AssetService {
     );
   }
 
-  updateFile(spaceId: string, id: string, entity: AssetFileUpdate): Observable<void> {
+  updateFile(spaceId: string, id: string, entity: AssetFileUpdateForm): Observable<void> {
     const update: UpdateData<AssetFile> = {
       name: entity.name,
+      alt: entity.alt ? entity.alt : deleteField(),
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(

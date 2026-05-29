@@ -93,13 +93,9 @@ export interface AssetFolderCreate {
   name: string;
 }
 
-export interface AssetFolderUpdate {
-  name: string;
-}
+export type AssetFolderUpdateForm = Pick<AssetFolder, 'name'>;
 
-export interface AssetFileUpdate {
-  name: string;
-}
+export type AssetFileUpdateForm = Pick<AssetFile, 'name' | 'alt'>;
 
 export interface AssetFileCreate {
   name: string;

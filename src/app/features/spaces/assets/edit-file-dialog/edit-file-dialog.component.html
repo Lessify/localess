@@ -13,6 +13,15 @@
         <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
     </div>
+    @if (isImage) {
+      <div hlmField>
+        <label hlmFieldLabel for="alt">Alt Text</label>
+        <div hlmInputGroup>
+          <textarea hlmInputGroupTextarea id="alt" formControlName="alt" maxlength="500" autocomplete="off" rows="3"></textarea>
+        </div>
+        <hlm-field-hint align="end" class="text-muted-foreground text-xs">{{ form.controls['alt'].value?.length || 0 }}/500</hlm-field-hint>
+      </div>
+    }
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="flex gap-2">

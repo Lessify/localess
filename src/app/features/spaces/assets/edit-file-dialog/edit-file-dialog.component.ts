@@ -26,8 +26,11 @@ export class EditFileDialogComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   data = inject<EditFileDialogModel>(MAT_DIALOG_DATA);
 
+  isImage = this.data.asset.type.startsWith('image/');
+
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', [...AssetValidator.NAME, CommonValidator.reservedName(this.data.reservedNames)]),
+    name: this.fb.control('', [...AssetValidator.NAME, CommonValidator.reservedName(this.data.reservedNames, this.data.asset.name)]),
+    alt: this.fb.control(''),
   });
 
   ngOnInit(): void {

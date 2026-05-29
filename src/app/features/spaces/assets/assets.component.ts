@@ -43,10 +43,10 @@ import {
   Asset,
   AssetFile,
   AssetFileImport,
-  AssetFileUpdate,
+  AssetFileUpdateForm,
   AssetFolder,
   AssetFolderCreate,
-  AssetFolderUpdate,
+  AssetFolderUpdateForm,
   AssetKind,
 } from '@shared/models/asset.model';
 import { AssetFileType, assetFileTypeDescriptions } from '@shared/models/schema.model';
@@ -346,7 +346,7 @@ export class AssetsComponent implements OnInit {
 
   openEditFolderDialog(element: Asset): void {
     this.dialog
-      .open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdate>(EditFolderDialogComponent, {
+      .open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdateForm>(EditFolderDialogComponent, {
         panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
@@ -356,7 +356,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFolder(this.spaceId(), element.id, it!)),
+        switchMap(it => this.assetService.updateFolder(this.spaceId(), element.id, it)),
       )
       .subscribe({
         next: () => {
@@ -371,7 +371,7 @@ export class AssetsComponent implements OnInit {
 
   openEditFileDialog(element: Asset): void {
     this.dialog
-      .open<EditFileDialogComponent, EditFileDialogModel, AssetFileUpdate>(EditFileDialogComponent, {
+      .open<EditFileDialogComponent, EditFileDialogModel, AssetFileUpdateForm>(EditFileDialogComponent, {
         panelClass: 'sm',
         data: {
           reservedNames: this.assets.map(it => it.name),
@@ -381,7 +381,7 @@ export class AssetsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFile(this.spaceId(), element.id, it!)),
+        switchMap(it => this.assetService.updateFile(this.spaceId(), element.id, it)),
       )
       .subscribe({
         next: () => {
