@@ -431,6 +431,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     url.searchParams.set('token', token);
     // url.searchParams.set('resolveReference', 'true');
     // url.searchParams.set('resolveLink', 'true');
+    // url.searchParams.set('resolveAsset', 'true');
     window.open(url, '_blank');
   }
 

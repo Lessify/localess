@@ -19,7 +19,7 @@ import {
   ContentDocumentApi,
   ContentDocumentStorage,
   ContentKind,
-  ContentLink,
+  ContentMetadata,
   isTokenV2,
   Space,
   TokenPermission,
@@ -30,6 +30,7 @@ import {
   findContentByFullSlug,
   findSpaceById,
   identifySpaceLocale,
+  resolveAssets,
   resolveLinks,
   resolveReferences,
   spaceContentCachePath,
@@ -184,10 +185,10 @@ CDN.get(
       }
       const contentsSnapshot = await contentsQuery.get();
 
-      const response: Record<string, ContentLink> = contentsSnapshot.docs
+      const response: Record<string, ContentMetadata> = contentsSnapshot.docs
         .map(contentSnapshot => {
           const content = contentSnapshot.data() as Content;
-          const link: ContentLink = {
+          const link: ContentMetadata = {
             id: contentSnapshot.id,
             kind: content.kind,
             name: content.name,
@@ -207,7 +208,7 @@ CDN.get(
             acc[item.id] = item;
             return acc;
           },
-          {} as Record<string, ContentLink>
+          {} as Record<string, ContentMetadata>
         );
       res
         .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -222,7 +223,7 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
   logger.info('[V1:ContentBySlug] params: ' + JSON.stringify(req.params));
   logger.info('[V1:ContentBySlug] query: ' + JSON.stringify(req.query));
   const { spaceId } = req.params;
-  const { cv, locale, version, resolveReference, resolveLink } = req.query;
+  const { cv, locale, version, resolveReference, resolveLink, resolveAsset } = req.query;
   const token = req.tokenId;
   const params: Record<string, unknown> = req.params;
   const slug = params['slug'] as string[];
@@ -275,6 +276,9 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
     if (resolveLink) {
       url += `&resolveLink=${resolveLink}`;
     }
+    if (resolveAsset) {
+      url += `&resolveAsset=${resolveAsset}`;
+    }
     logger.info(`[V1:ContentBySlug] redirect to => ${url}`);
     const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
     if (tokenCacheTtl === 0) {
@@ -302,8 +306,12 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
     try {
       const [content] = await bucket.file(resolvedPath).download();
       const contentData: ContentDocumentStorage = JSON.parse(content.toString());
-      const { links, references, ...rest } = contentData;
+      const { assets, links, references, ...rest } = contentData;
       const response: ContentDocumentApi = { ...rest };
+      if (resolveAsset === 'true' && assets && assets.length > 0) {
+        logger.info(`[V1:ContentBySlug] resolve assets => ${JSON.stringify(assets)}`);
+        response.assets = await resolveAssets(spaceId, contentData);
+      }
       if (resolveLink === 'true' && links && links.length > 0) {
         logger.info(`[V1:ContentBySlug] resolve links => ${JSON.stringify(links)}`);
         response.links = await resolveLinks(spaceId, contentData);
@@ -332,7 +340,7 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
   logger.info('[V1:ContentById] params: ' + JSON.stringify(req.params));
   logger.info('[V1:ContentById] query: ' + JSON.stringify(req.query));
   const { spaceId, contentId } = req.params;
-  const { cv, locale, version, resolveReference, resolveLink } = req.query;
+  const { cv, locale, version, resolveReference, resolveLink, resolveAsset } = req.query;
   const token = req.tokenId;
 
   const spaceSnapshot = await findSpaceById(spaceId).get();
@@ -374,6 +382,9 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
     if (resolveLink) {
       url += `&resolveLink=${resolveLink}`;
     }
+    if (resolveAsset) {
+      url += `&resolveAsset=${resolveAsset}`;
+    }
     logger.info(`[V1:ContentById] redirect to => ${url}`);
     const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
     if (tokenCacheTtl === 0) {
@@ -401,8 +412,12 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
     try {
       const [content] = await bucket.file(resolvedPath).download();
       const contentData: ContentDocumentStorage = JSON.parse(content.toString());
-      const { links, references, ...rest } = contentData;
+      const { assets, links, references, ...rest } = contentData;
       const response: ContentDocumentApi = { ...rest };
+      if (resolveAsset === 'true' && assets && assets.length > 0) {
+        logger.info(`[V1:ContentById] resolve assets => ${JSON.stringify(assets)}`);
+        response.assets = await resolveAssets(spaceId, contentData);
+      }
       if (resolveLink === 'true' && links && links.length > 0) {
         logger.info(`[V1:ContentById] resolve links => ${JSON.stringify(links)}`);
         response.links = await resolveLinks(spaceId, contentData);

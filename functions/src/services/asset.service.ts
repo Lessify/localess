@@ -1,7 +1,7 @@
 import { DocumentReference, FieldValue, Query, Timestamp, UpdateData } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { bucket, firestoreService } from '../config';
-import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFolderExport, AssetKind, AssetMetadata } from '../models';
+import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFileMetadata, AssetFolderExport, AssetKind } from '../models';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import os from 'os';
@@ -248,7 +248,7 @@ export function isAssetChanged(existing: Asset, imported: AssetExport): boolean 
  * @param {AssetMetadata | undefined} b - second metadata object
  * @return {boolean} true if both are equal
  */
-export function isAssetMetadataEqual(a?: AssetMetadata, b?: AssetMetadata): boolean {
+export function isAssetMetadataEqual(a?: AssetFileMetadata, b?: AssetFileMetadata): boolean {
   if (!a && !b) return true;
   if (!a || !b) return false;
   return (a as { format?: string; width?: number; height?: number }).format === (b as { format?: string; width?: number; height?: number }).format &&

@@ -28,11 +28,11 @@ export interface AssetFile extends AssetBase {
   type: string;
   size: number;
   alt?: string;
-  metadata?: AssetMetadata;
+  metadata?: AssetFileMetadata;
   source?: string;
 }
 
-export type AssetMetadata =
+export type AssetFileMetadata =
   | {
       format?: string;
       width?: number;

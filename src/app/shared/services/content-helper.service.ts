@@ -1,13 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
 import {
-  AssetContent,
+  ContentAsset,
   ContentData,
   ContentError,
-  isAssetContent,
-  isLinkContent,
-  isReferenceContent,
-  ReferenceContent,
+  ContentReference,
+  isContentAsset,
+  isContentLink,
+  isContentReference,
 } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { isSchemaArray, Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
@@ -47,13 +47,13 @@ export class ContentHelperService {
           if (content instanceof Array) {
             // Assets
             if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
-              const assets: AssetContent[] = content;
+              const assets: ContentAsset[] = content;
               const fa = form.controls[fieldName] as FormArray;
               assets.forEach(it => fa.push(this.assetContentToForm(it)));
             }
             // References
             if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
-              const references: ReferenceContent[] = content;
+              const references: ContentReference[] = content;
               const fa = form.controls[fieldName] as FormArray;
               references.forEach(it => fa.push(this.referenceContentToForm(it)));
             }
@@ -186,19 +186,19 @@ export class ContentHelperService {
           if (content instanceof Array) {
             if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
               // Assets
-              const assets: AssetContent[] = content;
+              const assets: ContentAsset[] = content;
               assets.forEach(it => inUseAssets.add(it.uri));
             } else if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
               // References
-              const references: ReferenceContent[] = content;
+              const references: ContentReference[] = content;
               references.forEach(it => inUseReferences.add(it.uri));
             }
           } else {
-            if (isAssetContent(content)) {
+            if (isContentAsset(content)) {
               inUseAssets.add(content.uri);
-            } else if (isReferenceContent(content)) {
+            } else if (isContentReference(content)) {
               inUseReferences.add(content.uri);
-            } else if (isLinkContent(content) && content.type === 'content') {
+            } else if (isContentLink(content) && content.type === 'content') {
               inUseLinks.add(content.uri);
             }
           }
@@ -326,11 +326,11 @@ export class ContentHelperService {
         if (target[fieldName] instanceof Object || typeof target[fieldName] === 'object') {
           target[fieldName] = this.clone(target[fieldName], generateNewID);
           if (Object.getOwnPropertyNames(target[fieldName]).some(it => it === 'kind')) {
-            if (isLinkContent(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
+            if (isContentLink(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
               delete target[fieldName];
-            } else if (isReferenceContent(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
+            } else if (isContentReference(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
               delete target[fieldName];
-            } else if (isAssetContent(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
+            } else if (isContentAsset(value) && (value.uri === undefined || value.uri === null || value.uri === '')) {
               delete target[fieldName];
             }
           }
@@ -572,14 +572,14 @@ export class ContentHelperService {
     return form;
   }
 
-  assetContentToForm(asset: AssetContent): FormGroup {
+  assetContentToForm(asset: ContentAsset): FormGroup {
     return this.fb.group({
       uri: this.fb.control(asset.uri),
       kind: this.fb.control(asset.kind),
     });
   }
 
-  referenceContentToForm(reference: ReferenceContent): FormGroup {
+  referenceContentToForm(reference: ContentReference): FormGroup {
     return this.fb.group({
       uri: this.fb.control(reference.uri),
       kind: this.fb.control(reference.kind),

@@ -110,34 +110,34 @@ export interface ContentFolderCreateFS extends ContentCreateFS {
 
 // Special Types
 
-export interface AssetContent {
+export interface ContentAsset {
   kind: 'ASSET';
   uri: string;
 }
 
 export type LinkContentType = 'url' | 'content';
 
-export interface LinkContent {
+export interface ContentLink {
   kind: 'LINK';
   type: LinkContentType;
   target: '_blank' | '_self';
   uri: string;
 }
 
-export interface ReferenceContent {
+export interface ContentReference {
   kind: 'REFERENCE';
   uri: string;
 }
 
-export function isAssetContent(arg: any): arg is AssetContent {
+export function isContentAsset(arg: any): arg is ContentAsset {
   return arg.kind === 'ASSET';
 }
 
-export function isLinkContent(arg: any): arg is LinkContent {
+export function isContentLink(arg: any): arg is ContentLink {
   return arg.kind === 'LINK';
 }
 
-export function isReferenceContent(arg: any): arg is ReferenceContent {
+export function isContentReference(arg: any): arg is ContentReference {
   return arg.kind === 'REFERENCE';
 }
 

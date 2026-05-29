@@ -24,7 +24,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { provideIcons } from '@ng-icons/core';
 import { lucideBookCopy, lucideCirclePlus, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash, lucideX } from '@ng-icons/lucide';
 import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icons';
-import { AssetContent, ContentData, ContentDocument, ReferenceContent } from '@shared/models/content.model';
+import { ContentAsset, ContentData, ContentDocument, ContentReference } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import {
   Schema,
@@ -368,13 +368,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         if (content instanceof Array) {
           // Assets
           if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
-            const assets: AssetContent[] = content;
+            const assets: ContentAsset[] = content;
             const fa = this.form.controls[fieldName] as FormArray;
             assets.forEach(it => fa.push(this.contentHelperService.assetContentToForm(it)));
           }
           // References
           if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
-            const references: ReferenceContent[] = content;
+            const references: ContentReference[] = content;
             const fa = this.form.controls[fieldName] as FormArray;
             references.forEach(it => fa.push(this.contentHelperService.referenceContentToForm(it)));
           }

@@ -22,6 +22,45 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
         'login.form.cancel': 'Cancel',
       },
     },
+    AssetMetadata: {
+      type: 'object',
+      description: 'Resolved Asset metadata returned when resolveAsset=true.',
+      required: ['id', 'name', 'extension', 'type'],
+      properties: {
+        id: {
+          type: 'string',
+          description: 'Unique identifier for the Asset.',
+          example: 'WLWc4vOACzG1QjK9AEo9',
+        },
+        name: {
+          type: 'string',
+          description: 'Name of the Asset.',
+          example: 'hero-image',
+        },
+        extension: {
+          type: 'string',
+          description: 'File extension of the Asset.',
+          example: '.jpg',
+        },
+        type: {
+          type: 'string',
+          description: 'MIME type of the Asset.',
+          example: 'image/jpeg',
+        },
+        alt: {
+          type: 'string',
+          description: 'Alternative text for the Asset.',
+          example: 'A hero image',
+        },
+      },
+      example: {
+        id: 'WLWc4vOACzG1QjK9AEo9',
+        name: 'hero-image',
+        extension: '.jpg',
+        type: 'image/jpeg',
+        alt: 'A hero image',
+      },
+    },
     ContentAsset: {
       type: 'object',
       description: 'Content Asset define reference to a Asset.',
@@ -140,6 +179,15 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
           properties: {
             data: {
               $ref: '#/components/schemas/ContentData',
+            },
+          },
+        },
+        {
+          type: 'object',
+          description: 'All assets used in the content.',
+          properties: {
+            assets: {
+              $ref: '#/components/schemas/Assets',
             },
           },
         },
@@ -286,6 +334,22 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
           createdAt: '2024-04-30T20:57:41.827Z',
           updatedAt: '2024-04-30T21:31:47.344Z',
           publishedAt: '2024-05-01T13:02:41.814Z',
+        },
+      },
+    },
+    Assets: {
+      description: 'Key-Value Object. Where Key is Unique identifier for the Asset object and Value is Asset Metadata.',
+      type: 'object',
+      additionalProperties: {
+        $ref: '#/components/schemas/AssetMetadata',
+      },
+      example: {
+        'WLWc4vOACzG1QjK9AEo9': {
+          id: 'WLWc4vOACzG1QjK9AEo9',
+          name: 'hero-image',
+          extension: '.jpg',
+          type: 'image/jpeg',
+          alt: 'A hero image',
         },
       },
     },
@@ -623,6 +687,16 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               },
             },
             {
+              name: 'resolveAsset',
+              in: 'query',
+              description: 'Resolve all assets.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
+              },
+            },
+            {
               name: 'resolveReference',
               in: 'query',
               description: 'Resolve all references.',
@@ -730,6 +804,16 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               schema: {
                 type: 'string',
                 example: 'fb6oTcVjbnyLCMhO2iLY',
+              },
+            },
+            {
+              name: 'resolveAsset',
+              in: 'query',
+              description: 'Resolve all assets.',
+              required: false,
+              schema: {
+                type: 'boolean',
+                example: 'true',
               },
             },
             {

@@ -5,7 +5,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-icons/lucide';
-import { ContentDocument, LinkContent, LinkContentType } from '@shared/models/content.model';
+import { ContentDocument, ContentLink, LinkContentType } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldLink } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
@@ -53,7 +53,7 @@ export class LinkSelectComponent implements OnInit {
   form = input.required<FormGroup>();
   component = input.required<SchemaFieldLink>();
   documents = input.required<ContentDocument[]>();
-  default = input<LinkContent>();
+  default = input<ContentLink>();
 
   defaultDocument = computed(() => {
     const defaultUri = this.default()?.uri;

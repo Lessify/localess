@@ -57,6 +57,7 @@ export interface ContentDocumentStorage {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  assets?: string[];
   links?: string[];
   references?: string[];
 }
@@ -73,7 +74,8 @@ export interface ContentDocumentApi {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
-  links?: Record<string, ContentLink>;
+  assets?: Record<string, AssetMetadata>;
+  links?: Record<string, ContentMetadata>;
   references?: Record<string, ContentDocumentApi>;
 }
 
@@ -83,7 +85,7 @@ export interface ContentData extends Record<string, any | ContentData | ContentD
   schema: string;
 }
 
-export interface ContentLink {
+export interface ContentMetadata {
   id: string;
   kind: ContentKind;
   name: string;
@@ -95,26 +97,34 @@ export interface ContentLink {
   publishedAt?: string;
 }
 
-export interface AssetContent {
+export interface AssetMetadata {
+  id: string;
+  name: string;
+  extension: string;
+  type: string;
+  alt?: string;
+}
+
+export interface ContentAsset {
   kind: 'ASSET';
   uri: string;
 }
 
-export interface LinkContent {
+export interface ContentLink {
   kind: 'LINK';
   type: 'url' | 'content';
   target: '_blank' | '_self';
   uri: string;
 }
 
-export interface ReferenceContent {
+export interface ContentReference {
   kind: 'REFERENCE';
   uri: string;
 }
 
-export interface RichTextContent {
+export interface ContentRichText {
   type?: string;
-  content?: RichTextContent[];
+  content?: ContentRichText[];
 }
 
 // Import and Export

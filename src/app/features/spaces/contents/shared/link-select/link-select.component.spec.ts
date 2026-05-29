@@ -1,7 +1,7 @@
 import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ContentDocument, ContentKind, LinkContent } from '@shared/models/content.model';
+import { ContentDocument, ContentKind, ContentLink } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldLink } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { LinkSelectComponent } from './link-select.component';
@@ -55,7 +55,7 @@ describe('LinkSelectComponent', () => {
     component = fixture.componentInstance;
   });
 
-  function setInputs(opts: { form: FormGroup; documents?: ContentDocument[]; default?: LinkContent }): void {
+  function setInputs(opts: { form: FormGroup; documents?: ContentDocument[]; default?: ContentLink }): void {
     fixture.componentRef.setInput('form', opts.form);
     fixture.componentRef.setInput('component', baseComponent);
     fixture.componentRef.setInput('documents', opts.documents ?? []);
@@ -309,7 +309,7 @@ describe('LinkSelectComponent', () => {
 
     it('should return the document matching the default uri', () => {
       const doc = makeDoc('abc');
-      const defaultLink: LinkContent = { kind: 'LINK', type: 'content', target: '_self', uri: 'abc' };
+      const defaultLink: ContentLink = { kind: 'LINK', type: 'content', target: '_self', uri: 'abc' };
 
       setInputs({ form: makeForm(), documents: [doc], default: defaultLink });
       fixture.detectChanges();
@@ -318,7 +318,7 @@ describe('LinkSelectComponent', () => {
     });
 
     it('should return undefined when default uri does not match any document', () => {
-      const defaultLink: LinkContent = { kind: 'LINK', type: 'content', target: '_self', uri: 'missing' };
+      const defaultLink: ContentLink = { kind: 'LINK', type: 'content', target: '_self', uri: 'missing' };
 
       setInputs({ form: makeForm(), documents: [makeDoc('other')], default: defaultLink });
       fixture.detectChanges();

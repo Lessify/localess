@@ -122,6 +122,9 @@ async function publishDocument(
         documentStorage.data = extractContent(document.data, schemas, locale.id);
       }
     }
+    if (document.assets && document.assets.length > 0) {
+      documentStorage.assets = document.assets;
+    }
     if (document.links && document.links.length > 0) {
       documentStorage.links = document.links;
     }
@@ -259,6 +262,9 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
           } else {
             documentStorage.data = extractContent(document.data, schemas, locale.id);
           }
+        }
+        if (document.assets && document.assets.length > 0) {
+          documentStorage.assets = document.assets;
         }
         if (document.links && document.links.length > 0) {
           documentStorage.links = document.links;

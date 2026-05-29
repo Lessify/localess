@@ -2,7 +2,10 @@ import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { bucket, firestoreService } from '../config';
 import {
+  AssetFile,
+  AssetKind,
   Content,
+  AssetMetadata,
   ContentData,
   ContentDocument,
   ContentDocumentApi,
@@ -11,11 +14,12 @@ import {
   ContentExport,
   ContentFolderExport,
   ContentKind,
-  ContentLink,
+  ContentMetadata,
   Schema,
   SchemaFieldKind,
   SchemaType,
 } from '../models';
+import { findAssetById } from './asset.service';
 
 /**
  * find Content by Full Slug
@@ -262,18 +266,18 @@ export async function resolveReferences(
  * Resolve links for a single content document
  * @param {string} spaceId Space identifier
  * @param {ContentDocumentStorage} content Content document
- * @return {Promise<Record<string, ContentLink>>} Map of reference ID to content
+ * @return {Promise<Record<string, ContentMetadata>>} Map of reference ID to content
  */
-export async function resolveLinks(spaceId: string, content: ContentDocumentStorage): Promise<Record<string, ContentLink> | undefined> {
+export async function resolveLinks(spaceId: string, content: ContentDocumentStorage): Promise<Record<string, ContentMetadata> | undefined> {
   if (!content.links || content.links.length === 0) {
     return undefined;
   }
-  const resolvedLinks: Record<string, ContentLink> = {};
+  const resolvedLinks: Record<string, ContentMetadata> = {};
   await Promise.all(
     content.links.map(async linkId => {
       const contentSnapshot = await findContentById(spaceId, linkId).get();
       const content = contentSnapshot.data() as Content;
-      const link: ContentLink = {
+      const link: ContentMetadata = {
         id: contentSnapshot.id,
         kind: content.kind,
         name: content.name,
@@ -290,6 +294,42 @@ export async function resolveLinks(spaceId: string, content: ContentDocumentStor
     })
   );
   return resolvedLinks;
+}
+
+/**
+ * Resolve assets for a single content document
+ * @param {string} spaceId Space identifier
+ * @param {ContentDocumentStorage} content Content document
+ * @return {Promise<Record<string, AssetMetadata>>} Map of asset ID to asset
+ */
+export async function resolveAssets(spaceId: string, content: ContentDocumentStorage): Promise<Record<string, AssetMetadata> | undefined> {
+  if (!content.assets || content.assets.length === 0) {
+    return undefined;
+  }
+  const resolvedAssets: Record<string, AssetMetadata> = {};
+  await Promise.all(
+    content.assets.map(async assetId => {
+      const assetSnapshot = await findAssetById(spaceId, assetId).get();
+      if (assetSnapshot.exists) {
+        const asset = assetSnapshot.data() as AssetFile;
+        if (asset.kind === AssetKind.FILE) {
+          const contentAsset: AssetMetadata = {
+            id: assetSnapshot.id,
+            name: asset.name,
+            extension: asset.extension,
+            type: asset.type,
+          };
+          if (asset.alt) {
+            contentAsset.alt = asset.alt;
+          }
+          resolvedAssets[assetId] = contentAsset;
+        }
+      } else {
+        logger.warn(`[resolveAssets] Asset ${assetId} not found in space ${spaceId}`);
+      }
+    })
+  );
+  return resolvedAssets;
 }
 
 /**
