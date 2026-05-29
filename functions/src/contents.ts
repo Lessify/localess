@@ -93,15 +93,26 @@ const publish = onCall<PublishContentData>(async request => {
  * @param {Map<string, Schema>} schemas
  * @param {AuthData} auth
  */
-async function publishDocument(
-  spaceId: string,
+/**
+ * Build and save a ContentDocumentStorage JSON file for every locale in the space.
+ * Extracts locale-specific content and copies assets, links, and references onto
+ * the storage object. The caller controls the destination path via pathFn (published
+ * vs draft) and whether publishedAt is stamped.
+ * @param {Space} space Space containing the locale list
+ * @param {string} documentId Content document identifier
+ * @param {ContentDocument} document Source Firestore content document
+ * @param {Map<string, Schema>} schemas Schema map used for locale extraction
+ * @param {Function} pathFn Maps a locale ID to the Cloud Storage path for that file
+ * @param {string} publishedAt ISO timestamp to stamp as publishedAt; omit for draft saves
+ */
+async function buildDocumentStorageForLocales(
   space: Space,
   documentId: string,
   document: ContentDocument,
-  documentSnapshot: DocumentSnapshot,
   schemas: Map<string, Schema>,
-  auth?: AuthData
-) {
+  pathFn: (localeId: string) => string,
+  publishedAt?: string
+): Promise<void> {
   for (const locale of space.locales) {
     const documentStorage: ContentDocumentStorage = {
       id: documentId,
@@ -113,8 +124,10 @@ async function publishDocument(
       parentSlug: document.parentSlug,
       createdAt: document.createdAt.toDate().toISOString(),
       updatedAt: document.updatedAt.toDate().toISOString(),
-      publishedAt: new Date().toISOString(),
     };
+    if (publishedAt) {
+      documentStorage.publishedAt = publishedAt;
+    }
     if (document.data) {
       if (typeof document.data === 'string') {
         documentStorage.data = extractContent(JSON.parse(document.data), schemas, locale.id);
@@ -131,10 +144,40 @@ async function publishDocument(
     if (document.references && document.references.length > 0) {
       documentStorage.references = document.references;
     }
-    // Save generated JSON
-    logger.info(`[Content::contentPublish] Save file to spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
-    await bucket.file(`spaces/${spaceId}/contents/${documentId}/${locale.id}.json`).save(JSON.stringify(documentStorage));
+    const path = pathFn(locale.id);
+    logger.info(`[Content] Save file to ${path}`);
+    await bucket.file(path).save(JSON.stringify(documentStorage));
   }
+}
+
+/**
+ * Publish a content document: writes locale JSON files to Cloud Storage,
+ * stamps publishedAt on the Firestore document, and records a PUBLISHED history entry.
+ * @param {string} spaceId Space identifier
+ * @param {Space} space Space containing locale list
+ * @param {string} documentId Content document identifier
+ * @param {ContentDocument} document Source Firestore content document
+ * @param {DocumentSnapshot} documentSnapshot Firestore snapshot used to update publishedAt
+ * @param {Map<string, Schema>} schemas Schema map used for locale extraction
+ * @param {AuthData} auth Caller auth context for history attribution
+ */
+async function publishDocument(
+  spaceId: string,
+  space: Space,
+  documentId: string,
+  document: ContentDocument,
+  documentSnapshot: DocumentSnapshot,
+  schemas: Map<string, Schema>,
+  auth?: AuthData
+) {
+  await buildDocumentStorageForLocales(
+    space,
+    documentId,
+    document,
+    schemas,
+    localeId => `spaces/${spaceId}/contents/${documentId}/${localeId}.json`,
+    new Date().toISOString()
+  );
   // Update publishedAt
   await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
   const addHistory: WithFieldValue<ContentHistory> = {
@@ -244,38 +287,13 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
       const space: Space = spaceSnapshot.data() as Space;
       const document: ContentDocument = contentAfter;
       const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
-      for (const locale of space.locales) {
-        const documentStorage: ContentDocumentStorage = {
-          id: event.data.after.id,
-          name: document.name,
-          kind: document.kind,
-          locale: locale.id,
-          slug: document.slug,
-          fullSlug: document.fullSlug,
-          parentSlug: document.parentSlug,
-          createdAt: document.createdAt.toDate().toISOString(),
-          updatedAt: document.updatedAt.toDate().toISOString(),
-        };
-        if (document.data) {
-          if (typeof document.data === 'string') {
-            documentStorage.data = extractContent(JSON.parse(document.data), schemas, locale.id);
-          } else {
-            documentStorage.data = extractContent(document.data, schemas, locale.id);
-          }
-        }
-        if (document.assets && document.assets.length > 0) {
-          documentStorage.assets = document.assets;
-        }
-        if (document.links && document.links.length > 0) {
-          documentStorage.links = document.links;
-        }
-        if (document.references && document.references.length > 0) {
-          documentStorage.references = document.references;
-        }
-        // Save generated JSON
-        logger.info(`[Content::onUpdate] Save file to spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`);
-        await bucket.file(`spaces/${spaceId}/contents/${contentId}/draft/${locale.id}.json`).save(JSON.stringify(documentStorage));
-      }
+      await buildDocumentStorageForLocales(
+        space,
+        contentId,
+        document,
+        schemas,
+        localeId => `spaces/${spaceId}/contents/${contentId}/draft/${localeId}.json`
+      );
 
       // Trigger webhooks for content saved/updated event
       const webhookPayload: WebHookPayload = {
