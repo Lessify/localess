@@ -427,7 +427,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
     openapi: '3.0.3',
     info: {
       title: 'Localess Open API Specification',
-      version: '3.1.1',
+      version: '3.2.0',
       description: 'Fetch data from Localess via REST API',
       contact: {
         name: 'Lessify Team',
