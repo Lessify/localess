@@ -189,6 +189,27 @@
               <button hlmBtn size="icon" variant="outline" hlmTooltip="Reload" (click)="reloadEnvironment()">
                 <ng-icon hlm size="sm" name="lucideRefreshCcw" />
               </button>
+              @switch (iframeStatus()) {
+                @case ('loading') {
+                  <span hlmTooltip="Loading page…" class="flex items-center">
+                    <hlm-spinner class="size-4" />
+                  </span>
+                }
+                @case ('loaded') {
+                  <ng-icon
+                    hlm
+                    size="sm"
+                    name="lucideCircleCheck"
+                    class="text-muted-foreground"
+                    hlmTooltip="Page loaded — no Localess SDK detected" />
+                }
+                @case ('connected') {
+                  <ng-icon hlm size="sm" name="lucideCircleCheck" class="text-green-500" hlmTooltip="Connected to Localess SDK" />
+                }
+                @case ('error') {
+                  <ng-icon hlm size="sm" name="lucideCircleX" class="text-destructive" hlmTooltip="Failed to load page" />
+                }
+              }
               <div class="flex-grow">
                 <div class="w-full min-w-80" hlmButtonGroup>
                   <button hlmBtn variant="outline" [hlmDropdownMenuTrigger]="envMenu">
@@ -270,7 +291,9 @@
                   #preview
                   [src]="url"
                   [class]="settingsStore.editorSize()"
-                  [class.resizing]="isResizing()">
+                  [class.resizing]="isResizing()"
+                  (load)="onIframeLoad()"
+                  (error)="onIframeError()">
                 </iframe>
               }
             </div>

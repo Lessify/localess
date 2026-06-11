@@ -25,7 +25,9 @@ import {
   lucideAlertCircle,
   lucideArrowLeft,
   lucideChevronDown,
+  lucideCircleCheck,
   lucideCircleQuestionMark,
+  lucideCircleX,
   lucideCopy,
   lucideEarth,
   lucideEllipsis,
@@ -152,6 +154,8 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
       lucideWebhookOff,
       lucideCopy,
       lucideLanguages,
+      lucideCircleCheck,
+      lucideCircleX,
     }),
   ],
 })
@@ -275,6 +279,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   private destroyRef = inject(DestroyRef);
 
   isResizing = signal(false);
+  iframeStatus = linkedSignal<'loading' | 'loaded' | 'connected' | 'error'>(() => {
+    this.iframeUrl();
+    return 'loading';
+  });
 
   constructor() {}
 
@@ -575,6 +583,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       //console.log('MessageEvent', event);
       if (event.data.type === 'ping') {
         this.sendEventToApp({ type: 'pong' });
+        this.iframeStatus.set('connected');
         return;
       }
       const { id, type, schema, field } = event.data;
@@ -672,6 +681,14 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       const url = new URL(selectedEnvironment.url);
       contentWindow.postMessage(event, url.origin);
     }
+  }
+
+  onIframeLoad(): void {
+    this.iframeStatus.set('loaded');
+  }
+
+  onIframeError(): void {
+    this.iframeStatus.set('error');
   }
 
   protected reloadEnvironment() {
