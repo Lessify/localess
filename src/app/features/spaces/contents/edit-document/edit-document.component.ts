@@ -684,7 +684,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   onIframeLoad(): void {
-    this.iframeStatus.set('loaded');
+    if (this.iframeStatus() === 'loading') {
+      this.iframeStatus.set('loaded');
+    }
   }
 
   onIframeError(): void {
