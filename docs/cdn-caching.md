@@ -73,7 +73,7 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 
 | | Published | Draft |
 |-|-----------|-------|
-| `version` query param | absent | `version=draft` or custom version ID |
+| `version` query param | absent | `version=draft` |
 | Storage path | `{id}/{locale}.json` | `{id}/draft/{locale}.json` |
 | Redirect TTL | 5 min | 1 min |
 | Required permission | `*_PUBLIC` or `*_DRAFT` | `*_DRAFT` or `DEV_TOOLS` |

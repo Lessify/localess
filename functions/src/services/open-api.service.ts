@@ -886,11 +886,45 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'w',
               in: 'query',
-              description: 'Asset width, in case it is a image (In Pixel). Otherwise it will be ignored.',
+              description: 'Asset width in pixels. Only applied to images; ignored otherwise.',
               required: false,
               schema: {
                 type: 'integer',
                 example: 250,
+              },
+            },
+            {
+              name: 'h',
+              in: 'query',
+              description: 'Asset height in pixels. Only applied to images; ignored otherwise.',
+              required: false,
+              schema: {
+                type: 'integer',
+                example: 250,
+              },
+            },
+            {
+              name: 'q',
+              in: 'query',
+              description: 'Image quality (1–100). Applies to JPEG and WebP. Defaults to 85.',
+              required: false,
+              schema: {
+                type: 'integer',
+                minimum: 1,
+                maximum: 100,
+                default: 85,
+                example: 85,
+              },
+            },
+            {
+              name: 'f',
+              in: 'query',
+              description: 'Output image format. Converts the image to the specified format.',
+              required: false,
+              schema: {
+                type: 'string',
+                enum: ['webp', 'jpeg', 'png', 'avif'],
+                example: 'webp',
               },
             },
             {
