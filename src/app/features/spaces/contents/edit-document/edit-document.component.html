@@ -189,27 +189,6 @@
               <button hlmBtn size="icon" variant="outline" hlmTooltip="Reload" (click)="reloadEnvironment()">
                 <ng-icon hlm size="sm" name="lucideRefreshCcw" />
               </button>
-              @switch (iframeStatus()) {
-                @case ('loading') {
-                  <span hlmTooltip="Loading page…" class="flex items-center">
-                    <hlm-spinner class="size-4" />
-                  </span>
-                }
-                @case ('loaded') {
-                  <ng-icon
-                    hlm
-                    size="sm"
-                    name="lucideCircleCheck"
-                    class="text-muted-foreground"
-                    hlmTooltip="Page loaded — no Localess SDK detected" />
-                }
-                @case ('connected') {
-                  <ng-icon hlm size="sm" name="lucideCircleCheck" class="text-green-500" hlmTooltip="Connected to Localess SDK" />
-                }
-                @case ('error') {
-                  <ng-icon hlm size="sm" name="lucideCircleX" class="text-destructive" hlmTooltip="Failed to load page" />
-                }
-              }
               <div class="flex-grow">
                 <div class="w-full min-w-80" hlmButtonGroup>
                   <button hlmBtn variant="outline" [hlmDropdownMenuTrigger]="envMenu">
@@ -230,14 +209,37 @@
                       }
                     </hlm-dropdown-menu>
                   </ng-template>
-                  <input
-                    class="truncate"
-                    hlmInput
-                    readonly
-                    id="url"
-                    placeholder="Select Environment"
-                    [value]="environment.url"
-                    [title]="environment.url" />
+                  <div hlmInputGroup class="flex-1">
+                    <input
+                      class="truncate"
+                      hlmInputGroupInput
+                      readonly
+                      id="url"
+                      placeholder="Select Environment"
+                      [value]="environment.url"
+                      [title]="environment.url" />
+                    <hlm-input-group-addon align="inline-end">
+                      @switch (iframeStatus()) {
+                        @case ('loading') {
+                          <hlm-spinner class="size-4" hlmTooltip="Loading page…" />
+                        }
+                        @case ('loaded') {
+                          <ng-icon
+                            hlm
+                            size="sm"
+                            name="lucideCircleCheck"
+                            class="text-muted-foreground"
+                            hlmTooltip="Page loaded — no Localess SDK detected" />
+                        }
+                        @case ('connected') {
+                          <ng-icon hlm size="sm" name="lucideCircleCheck" class="text-green-500" hlmTooltip="Connected to Localess SDK" />
+                        }
+                        @case ('error') {
+                          <ng-icon hlm size="sm" name="lucideCircleX" class="text-destructive" hlmTooltip="Failed to load page" />
+                        }
+                      }
+                    </hlm-input-group-addon>
+                  </div>
                 </div>
               </div>
               <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorSize()">
