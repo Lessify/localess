@@ -3,28 +3,39 @@ import { Pipe, PipeTransform } from '@angular/core';
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
 
+export type TimeDurationUnit = 'ms' | 's';
+
 @Pipe({
   name: 'timeDuration',
   standalone: true,
 })
 export class TimeDurationPipe implements PipeTransform {
-  transform(duration?: number | string): string {
-    if (duration != undefined) {
-      if (typeof duration === 'number') {
-        const hours = Math.trunc(duration / HOUR);
-        const minutes = Math.trunc((duration / MINUTE) % 60);
-        const seconds = Math.trunc(duration % 60);
-        if (hours === 0) {
-          if (minutes === 0) {
-            return `${seconds}s`;
-          }
-          return `${minutes}m ${seconds}s`;
-        }
-        return `${hours}h ${minutes}m ${seconds}s`;
-      } else {
-        return duration;
-      }
+  transform(duration?: number | string, unit: TimeDurationUnit = 's'): string {
+    if (duration == undefined) {
+      return '0s';
     }
-    return '';
+    if (typeof duration === 'string') {
+      return duration;
+    }
+    if (unit === 'ms') {
+      if (duration < 1000) {
+        return `${Math.trunc(duration)}ms`;
+      }
+      return this.format(duration / 1000);
+    }
+    return this.format(duration);
+  }
+
+  private format(seconds: number): string {
+    const hours = Math.trunc(seconds / HOUR);
+    const minutes = Math.trunc((seconds / MINUTE) % 60);
+    const secs = Math.trunc(seconds % 60);
+    if (hours === 0) {
+      if (minutes === 0) {
+        return `${secs}s`;
+      }
+      return `${minutes}m ${secs}s`;
+    }
+    return `${hours}h ${minutes}m ${secs}s`;
   }
 }

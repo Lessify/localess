@@ -200,7 +200,6 @@ export class FeaturesComponent implements OnInit {
     const selectedSpaceId = this.spaceStore.selectedSpaceId();
     const lastSuccessfulNavigation = this.router.lastSuccessfulNavigation();
     const url = lastSuccessfulNavigation?.finalUrl?.toString() ?? this.router.url;
-    console.log('url', url);
     console.log('User Side Menu Computed : Selected Space Id :', selectedSpaceId);
     console.log('User Side Menu Computed : User Role :', this.userStore.role());
     console.log('User Side Menu Computed : User Permissions :', this.userStore.permissions());

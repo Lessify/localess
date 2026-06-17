@@ -1,9 +1,11 @@
-import { createHmac } from 'crypto';
+import { createHmac, randomUUID } from 'crypto';
 import { logger } from 'firebase-functions/v2';
-import { WebHook, WebHookPayload, WebHookLog, WebHookStatus } from '../models';
+import { WebHook, WebHookPayload, WebHookLog, WebHookLogSuccess, WebHookLogFailure, WebHookStatus, WebHookErrorType } from '../models';
 import { FieldValue, WithFieldValue } from 'firebase-admin/firestore';
 import { findEnabledWebHooksByEvent } from '../services';
 import { firestoreService } from '../config';
+
+const MAX_RESPONSE_BODY_LENGTH = 4096;
 
 /**
  * Generate HMAC signature for webhook payload
@@ -24,7 +26,9 @@ export function generateSignature(secret: string, payload: string): string {
  */
 export async function triggerWebHook(spaceId: string, webhookId: string, webhook: WebHook, payload: WebHookPayload): Promise<void> {
   const startTime = Date.now();
+  const deliveryId = randomUUID();
   const payloadJson = JSON.stringify(payload);
+  const requestSize = Buffer.byteLength(payloadJson, 'utf8');
 
   // Add signature if secret is configured
   if (webhook.secret) {
@@ -35,6 +39,7 @@ export async function triggerWebHook(spaceId: string, webhookId: string, webhook
     'Content-Type': 'application/json',
     'User-Agent': 'Localess-WebHook/1.0',
     'X-Webhook-Event': payload.event,
+    'X-Webhook-Delivery': deliveryId,
     ...(webhook.headers || {}),
   };
 
@@ -52,35 +57,83 @@ export async function triggerWebHook(spaceId: string, webhookId: string, webhook
       signal: AbortSignal.timeout(30000), // 30 second timeout
     });
 
-    const responseTime = (Date.now() - startTime) / 1000; // in seconds
-    const status: WebHookStatus = response.ok ? 'success' : 'failure';
+    const duration = Date.now() - startTime; // in milliseconds
+    const responseTime = duration / 1000; // in seconds
 
-    // Log the webhook execution
-    await logWebHookExecution(spaceId, webhookId, {
-      event: payload.event,
-      status: status,
-      statusCode: response.status,
-      duration: responseTime,
-      createdAt: FieldValue.serverTimestamp(),
-    });
+    // Read response body (truncated) for debugging
+    let responseBody: string | undefined;
+    let responseBodyTruncated = false;
+    try {
+      const text = await response.text();
+      if (text) {
+        responseBody = text.slice(0, MAX_RESPONSE_BODY_LENGTH);
+        responseBodyTruncated = text.length > MAX_RESPONSE_BODY_LENGTH;
+      }
+    } catch (bodyError: any) {
+      logger.warn(`[triggerWebHook] Failed to read response body: ${bodyError.message}`);
+    }
 
     if (response.ok) {
-      logger.info(`[triggerWebHook] Webhook succeeded (${responseTime}ms)`);
+      // Log the successful execution
+      const log: WithFieldValue<WebHookLogSuccess> = {
+        event: payload.event,
+        status: WebHookStatus.SUCCESS,
+        url: webhook.url,
+        statusCode: response.status,
+        statusText: response.statusText,
+        requestSize: requestSize,
+        deliveryId: deliveryId,
+        data: payload.data,
+        duration: duration,
+        createdAt: FieldValue.serverTimestamp(),
+      };
+      if (responseBody !== undefined) {
+        log.responseBody = responseBody;
+        log.responseBodyTruncated = responseBodyTruncated;
+      }
+      await logWebHookExecution(spaceId, webhookId, log);
+      logger.info(`[triggerWebHook] Webhook succeeded (${responseTime}s)`);
     } else {
+      // Log the failed execution (HTTP error response received)
+      const log: WithFieldValue<WebHookLogFailure> = {
+        event: payload.event,
+        status: WebHookStatus.FAILURE,
+        errorType: WebHookErrorType.HTTP,
+        url: webhook.url,
+        statusCode: response.status,
+        statusText: response.statusText,
+        requestSize: requestSize,
+        deliveryId: deliveryId,
+        data: payload.data,
+        duration: duration,
+        createdAt: FieldValue.serverTimestamp(),
+      };
+      if (responseBody !== undefined) {
+        log.responseBody = responseBody;
+        log.responseBodyTruncated = responseBodyTruncated;
+      }
+      await logWebHookExecution(spaceId, webhookId, log);
       logger.error(`[triggerWebHook] Webhook failed: HTTP ${response.status}: ${response.statusText}`);
     }
   } catch (error: any) {
-    const responseTime = Date.now() - startTime;
+    const duration = Date.now() - startTime; // in milliseconds
+    const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
     logger.error(`[triggerWebHook] Webhook error: ${error.message}`);
 
-    // Log the failed execution
-    await logWebHookExecution(spaceId, webhookId, {
+    // Log the failed execution (no response received)
+    const log: WithFieldValue<WebHookLogFailure> = {
       event: payload.event,
-      status: 'failure',
-      duration: responseTime,
+      status: WebHookStatus.FAILURE,
+      errorType: isTimeout ? WebHookErrorType.TIMEOUT : WebHookErrorType.NETWORK,
+      url: webhook.url,
+      requestSize: requestSize,
       errorMessage: error.message,
+      deliveryId: deliveryId,
+      data: payload.data,
+      duration: duration,
       createdAt: FieldValue.serverTimestamp(),
-    });
+    };
+    await logWebHookExecution(spaceId, webhookId, log);
   }
 }
 

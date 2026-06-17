@@ -71,7 +71,8 @@ const publish = onCall<PublishContentData>(async request => {
       spaceId,
       timestamp: new Date().toISOString(),
       data: {
-        contentId,
+        id: contentId,
+        fullSlug: content.fullSlug,
       },
     };
     await triggerWebHooksForEvent(spaceId, webhookPayload);
@@ -219,7 +220,8 @@ const unpublish = onCall<PublishContentData>(async request => {
       spaceId,
       timestamp: new Date().toISOString(),
       data: {
-        contentId,
+        id: contentId,
+        fullSlug: content.fullSlug,
       },
     };
     await triggerWebHooksForEvent(spaceId, webhookPayload);
@@ -301,7 +303,8 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
         spaceId,
         timestamp: new Date().toISOString(),
         data: {
-          contentId,
+          id: contentId,
+          fullSlug: contentAfter.fullSlug,
         },
       };
       await triggerWebHooksForEvent(spaceId, webhookPayload);
@@ -348,7 +351,8 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
     spaceId,
     timestamp: new Date().toISOString(),
     data: {
-      contentId,
+      id: contentId,
+      fullSlug: content.fullSlug,
     },
   };
   await triggerWebHooksForEvent(spaceId, webhookPayload);

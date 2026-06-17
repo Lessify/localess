@@ -20,17 +20,56 @@ export enum WebHookEvent {
   TRANSLATION_CHANGED = 'translation.changed',
 }
 
-export type WebHookStatus = 'success' | 'failure';
+export enum WebHookStatus {
+  SUCCESS = 'success',
+  FAILURE = 'failure',
+}
 
-export interface WebHookLog {
+export enum WebHookErrorType {
+  TIMEOUT = 'timeout',
+  NETWORK = 'network',
+  HTTP = 'http',
+}
+
+export interface ContentWebHookPayloadData {
+  id: string;
+  fullSlug: string;
+}
+
+export type TranslationWebHookPayloadData = Record<string, never>;
+
+export type WebHookPayloadData = ContentWebHookPayloadData | TranslationWebHookPayloadData;
+
+export interface WebHookLogBase {
   id: string;
   event: WebHookEvent;
-  status: WebHookStatus;
-  statusCode?: number;
+  url: string;
+  requestSize: number;
+  data: WebHookPayloadData;
+  deliveryId: string;
   duration: number;
-  errorMessage?: string;
   createdAt: Timestamp;
 }
+
+export interface WebHookLogSuccess extends WebHookLogBase {
+  status: WebHookStatus.SUCCESS;
+  statusCode: number;
+  statusText: string;
+  responseBody?: string;
+  responseBodyTruncated?: boolean;
+}
+
+export interface WebHookLogFailure extends WebHookLogBase {
+  status: WebHookStatus.FAILURE;
+  errorType: WebHookErrorType;
+  statusCode?: number;
+  statusText?: string;
+  responseBody?: string;
+  responseBodyTruncated?: boolean;
+  errorMessage?: string;
+}
+
+export type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 
 // Service interfaces
 

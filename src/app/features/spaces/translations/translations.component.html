@@ -207,7 +207,10 @@
                 </hlm-command>
               </hlm-popover>
               @if (isFormChanged()) {
-                <button hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">Reset</button>
+                <button hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">
+                  Reset
+                  <ng-icon hlm name="lucideX" size="sm" class="ml-2" />
+                </button>
               }
             </div>
           </div>

@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { DevelopersComponent } from './developers.component';
 import { OpenApiComponent } from './open-api/open-api.component';
+import { WebhookDetailComponent } from './webhooks/webhook-detail/webhook-detail.component';
 import { WebhooksComponent } from './webhooks/webhooks.component';
 
 const routes: Routes = [
@@ -14,6 +15,10 @@ const routes: Routes = [
       {
         path: 'webhooks',
         component: WebhooksComponent,
+      },
+      {
+        path: 'webhooks/:webhookId',
+        component: WebhookDetailComponent,
       },
       {
         path: 'open-api',

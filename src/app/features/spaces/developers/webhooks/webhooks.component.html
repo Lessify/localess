@@ -38,12 +38,6 @@
         }
       </mat-cell>
     </ng-container>
-    <ng-container matColumnDef="createdAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-        {{ element.createdAt?.toDate() | date: 'mediumDate' }}
-      </mat-cell>
-    </ng-container>
     <ng-container matColumnDef="updatedAt">
       <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
       <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
@@ -58,13 +52,6 @@
         </button>
         <ng-template #actionsMenu>
           <hlm-dropdown-menu>
-            <hlm-dropdown-menu-group>
-              <button hlmDropdownMenuItem (click)="openLogsSheet(element)">
-                <ng-icon hlm size="sm" name="lucideHistory" />
-                View Logs
-              </button>
-            </hlm-dropdown-menu-group>
-            <hlm-dropdown-menu-separator />
             <hlm-dropdown-menu-group>
               <button hlmDropdownMenuItem (click)="openEditDialog(element)">
                 <ng-icon hlm size="sm" name="lucidePencil" />
@@ -82,60 +69,17 @@
             </hlm-dropdown-menu-group>
             <hlm-dropdown-menu-separator />
             <hlm-dropdown-menu-group>
-              <hlm-dropdown-menu-group>
-                <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
-                  <ng-icon hlm size="sm" name="lucideTrash" />
-                  Delete
-                </button>
-              </hlm-dropdown-menu-group>
+              <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
+                <ng-icon hlm size="sm" name="lucideTrash" />
+                Delete
+              </button>
             </hlm-dropdown-menu-group>
           </hlm-dropdown-menu>
         </ng-template>
       </mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns" class="cursor-pointer" (click)="navigateToDetail(row)"></mat-row>
   </mat-table>
   <mat-paginator class="mat-paginator-sticky"></mat-paginator>
 </div>
-
-<hlm-sheet side="right" [state]="isLogsSheetOpen() ? 'open' : 'closed'" (closed)="closeLogsSheet()">
-  <hlm-sheet-content *hlmSheetPortal="let ctx">
-    <hlm-sheet-header>
-      <h3 hlmSheetTitle>Webhook Logs</h3>
-      <p hlmSheetDescription>
-        @if (selectedWebhook()) {
-          Logs for <b>{{ selectedWebhook()?.name }}</b>
-        }
-      </p>
-    </hlm-sheet-header>
-    <ng-scrollbar hlm>
-      <div hlmItemGroup>
-        @for (item of logs$ | async; track item.id) {
-          <div hlmItem>
-            <div hlmItemMedia variant="icon" [hlmTooltip]="item.status">
-              @if (item.status === 'success') {
-                <ng-icon hlm name="lucideMailCheck" size="sm" />
-              } @else {
-                <ng-icon hlm name="lucideMailX" size="sm" class="text-destructive" />
-              }
-            </div>
-            <div hlmItemContent class="truncate">
-              <div hlmItemTitle>{{ item.event }}</div>
-              <p hlmItemDescription>
-                Duration: {{ item.duration | timeDuration }}
-                @if (item.errorMessage) {
-                  <br />
-                  <span [hlmTooltip]="item.errorMessage">Error: {{ item.errorMessage }}</span>
-                }
-              </p>
-            </div>
-            <div hlmItemContent class="flex-none text-center">
-              <p hlmItemDescription>{{ item.createdAt.toDate() | date: 'MMM dd, HH:mm' }}</p>
-            </div>
-          </div>
-        }
-      </div>
-    </ng-scrollbar>
-  </hlm-sheet-content>
-</hlm-sheet>

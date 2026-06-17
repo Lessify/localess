@@ -45,6 +45,7 @@ import {
   lucideTrash,
   lucideUpload,
   lucideUploadCloud,
+  lucideX,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
@@ -176,6 +177,7 @@ import { TranslationNode } from './shared/models/translation.model';
       lucideCircleQuestionMark,
       lucideChevronRight,
       lucideChevronDown,
+      lucideX,
     }),
   ],
 })

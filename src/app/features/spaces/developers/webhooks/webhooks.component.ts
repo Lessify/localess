@@ -1,16 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { Router } from '@angular/router';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideEllipsisVertical,
-  lucideHistory,
-  lucideMailCheck,
-  lucideMailX,
   lucidePencil,
   lucidePlus,
   lucideShieldAlert,
@@ -19,8 +17,7 @@ import {
   lucideWebhookOff,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
-import { WebHook, WebHookEvent, WebHookLog } from '@shared/models/webhook.model';
-import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
+import { WebHook, WebHookEvent } from '@shared/models/webhook.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { WebHookService } from '@shared/services/webhook.service';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -28,13 +25,8 @@ import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
-import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { NgScrollbarModule } from 'ngx-scrollbar';
-import { Observable } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 
 import { WebhookDialogComponent } from './webhook-dialog/webhook-dialog.component';
@@ -53,14 +45,9 @@ import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
     HlmProgressImports,
     HlmBadgeImports,
     HlmTooltipImports,
-    HlmSheetImports,
-    HlmScrollAreaImports,
-    NgScrollbarModule,
     HlmButtonImports,
     HlmIconImports,
-    HlmItemImports,
     HlmDropdownMenuImports,
-    TimeDurationPipe,
   ],
   providers: [
     provideIcons({
@@ -69,11 +56,8 @@ import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
       lucideEllipsisVertical,
       lucideTrash,
       lucidePencil,
-      lucideHistory,
       lucideWebhook,
       lucideWebhookOff,
-      lucideMailCheck,
-      lucideMailX,
     }),
   ],
 })
@@ -82,6 +66,7 @@ export class WebhooksComponent {
   private readonly dialog = inject(MatDialog);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly router = inject(Router);
 
   sort = viewChild.required(MatSort);
   paginator = viewChild.required(MatPaginator);
@@ -91,13 +76,6 @@ export class WebhooksComponent {
 
   dataSource: MatTableDataSource<WebHook> = new MatTableDataSource<WebHook>([]);
   displayedColumns: string[] = ['name', 'enabled', 'events', 'updatedAt', 'actions'];
-
-  // Sheet state and selected webhook for logs
-  protected readonly isLogsSheetOpen = signal(false);
-  protected readonly selectedWebhook = signal<WebHook | null>(null);
-
-  // Subscriptions
-  logs$?: Observable<WebHookLog[]>;
 
   private destroyRef = inject(DestroyRef);
 
@@ -117,13 +95,11 @@ export class WebhooksComponent {
           this.cd.markForCheck();
         },
       });
-    effect(() => {
-      const spaceId = this.spaceStore.selectedSpaceId();
-      const webhook = this.selectedWebhook();
-      if (spaceId && webhook) {
-        this.logs$ = this.webhookService.findLogs(spaceId, webhook.id, 20).pipe(takeUntilDestroyed(this.destroyRef));
-      }
-    });
+  }
+
+  navigateToDetail(webhook: WebHook): void {
+    const spaceId = this.spaceStore.selectedSpaceId()!;
+    this.router.navigate(['features', 'spaces', spaceId, 'developers', 'webhooks', webhook.id]);
   }
 
   openAddDialog(): void {
@@ -138,9 +114,7 @@ export class WebhooksComponent {
         switchMap(it => this.webhookService.create(spaceId!, it!)),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Webhook has been created.');
-        },
+        next: () => this.notificationService.success('Webhook has been created.'),
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Webhook can not be created.');
@@ -161,9 +135,7 @@ export class WebhooksComponent {
         switchMap(it => this.webhookService.update(spaceId!, element.id, it!)),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Webhook has been updated.');
-        },
+        next: () => this.notificationService.success('Webhook has been updated.'),
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Webhook can not be updated.');
@@ -174,9 +146,7 @@ export class WebhooksComponent {
   changeStatus(element: WebHook): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.webhookService.updateStatus(spaceId!, element.id, !element.enabled).subscribe({
-      next: () => {
-        this.notificationService.success(`Webhook '${element.name}' has been ${!element.enabled ? 'enabled' : 'disabled'}.`);
-      },
+      next: () => this.notificationService.success(`Webhook '${element.name}' has been ${!element.enabled ? 'enabled' : 'disabled'}.`),
       error: (err: unknown) => {
         console.error(err);
         this.notificationService.error(`Webhook '${element.name}' can not be ${!element.enabled ? 'enabled' : 'disabled'}.`);
@@ -199,24 +169,9 @@ export class WebhooksComponent {
         switchMap(() => this.webhookService.delete(spaceId!, element.id)),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success(`Webhook '${element.name}' has been deleted.`);
-        },
-        error: () => {
-          this.notificationService.error(`Webhook '${element.name}' can not be deleted.`);
-        },
+        next: () => this.notificationService.success(`Webhook '${element.name}' has been deleted.`),
+        error: () => this.notificationService.error(`Webhook '${element.name}' can not be deleted.`),
       });
-  }
-
-  openLogsSheet(webhook: WebHook) {
-    this.selectedWebhook.set(webhook);
-    this.isLogsSheetOpen.set(true);
-    //this.logs$ = this.webhookService.findLogs();
-  }
-
-  closeLogsSheet() {
-    this.isLogsSheetOpen.set(false);
-    this.selectedWebhook.set(null);
   }
 
   protected eventsToText(events: WebHookEvent[]) {
