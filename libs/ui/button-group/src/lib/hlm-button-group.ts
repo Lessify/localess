@@ -2,35 +2,35 @@ import { Directive, input } from '@angular/core';
 import { classes } from '@spartan-ng/helm/utils';
 import { cva } from 'class-variance-authority';
 
-export const buttonGroupVariants = cva(
-	"flex w-fit items-stretch has-[>[data-slot=button-group]]:gap-2 [&>*]:focus-visible:relative [&>*]:focus-visible:z-10 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
-	{
-		variants: {
-			orientation: {
-				horizontal:
-					'[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none',
-				vertical:
-					'flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none',
-			},
-		},
-		defaultVariants: {
-			orientation: 'horizontal',
-		},
-	},
+const buttonGroupVariants = cva(
+  "has-[>[data-slot=button-group]]:gap-2 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-10 [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
+  {
+    variants: {
+      orientation: {
+        horizontal:
+          '[&>[data-slot]:not(:has(~[data-slot]))]:rounded-e-md! [&>*:not(:first-child)]:rounded-s-none [&>*:not(:first-child)]:border-s-0 [&>*:not(:last-child)]:rounded-e-none',
+        vertical:
+          '[&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none',
+      },
+    },
+    defaultVariants: {
+      orientation: 'horizontal',
+    },
+  },
 );
 
 @Directive({
-	selector: '[hlmButtonGroup],hlm-button-group',
-	host: {
-		'data-slot': 'button-group',
-		role: 'group',
-		'[attr.data-orientation]': 'orientation()',
-	},
+  selector: '[hlmButtonGroup],hlm-button-group',
+  host: {
+    'data-slot': 'button-group',
+    role: 'group',
+    '[attr.data-orientation]': 'orientation()',
+  },
 })
 export class HlmButtonGroup {
-	constructor() {
-		classes(() => buttonGroupVariants({ orientation: this.orientation() }));
-	}
+  constructor() {
+    classes(() => buttonGroupVariants({ orientation: this.orientation() }));
+  }
 
-	public readonly orientation = input<'horizontal' | 'vertical'>('horizontal');
+  public readonly orientation = input<'horizontal' | 'vertical'>('horizontal');
 }

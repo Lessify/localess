@@ -3,7 +3,7 @@ import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({ selector: '[hlmSelectValuesContent],hlm-select-values-content' })
 export class HlmSelectValuesContent {
-	constructor() {
-		classes(() => 'flex gap-1');
-	}
+  constructor() {
+    classes(() => 'gap-2 flex');
+  }
 }

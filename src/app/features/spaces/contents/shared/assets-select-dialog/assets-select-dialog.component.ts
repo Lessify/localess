@@ -32,7 +32,7 @@ import { NotificationService } from '@shared/services/notification.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
-import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
@@ -61,7 +61,7 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     FormatFileSizePipe,
     MatSortModule,
     NgOptimizedImage,
-    HlmBreadCrumbImports,
+    HlmBreadcrumbImports,
     HlmIconImports,
     HlmProgressImports,
     HlmSpinnerImports,

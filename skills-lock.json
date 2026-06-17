@@ -66,6 +66,12 @@
       "sourceType": "github",
       "skillPath": "skills/firebase-security-rules-auditor/SKILL.md",
       "computedHash": "42e793406ca8980c47fcdbd309f02838316849bcbf8475001b4ecaa6a67606b8"
+    },
+    "spartan": {
+      "source": "spartan-ng/spartan",
+      "sourceType": "github",
+      "skillPath": "skills/spartan/SKILL.md",
+      "computedHash": "ff19e58436a95a3ffc48a723a937b7636ec552255894f1d2f8a97667c3af4e2c"
     }
   }
 }

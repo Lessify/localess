@@ -13,10 +13,10 @@ export * from './lib/hlm-carousel-previous';
 export * from './lib/hlm-carousel-slide-display';
 
 export const HlmCarouselImports = [
-	HlmCarousel,
-	HlmCarouselContent,
-	HlmCarouselItem,
-	HlmCarouselPrevious,
-	HlmCarouselNext,
-	HlmCarouselSlideDisplay,
+  HlmCarousel,
+  HlmCarouselContent,
+  HlmCarouselItem,
+  HlmCarouselPrevious,
+  HlmCarouselNext,
+  HlmCarouselSlideDisplay,
 ] as const;

@@ -3,14 +3,12 @@ import { BrnComboboxStatus } from '@spartan-ng/brain/combobox';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-	selector: '[hlmComboboxStatus],hlm-combobox-status',
-	hostDirectives: [BrnComboboxStatus],
-	host: {
-		'data-slot': 'combobox-status',
-	},
+  selector: '[hlmComboboxStatus],hlm-combobox-status',
+  hostDirectives: [BrnComboboxStatus],
+  host: { 'data-slot': 'combobox-status' },
 })
 export class HlmComboboxStatus {
-	constructor() {
-		classes(() => 'text-muted-foreground flex w-full items-center justify-center gap-2 py-2 text-center text-sm');
-	}
+  constructor() {
+    classes(() => 'text-muted-foreground gap-2 py-2 text-sm flex w-full items-center justify-center text-center');
+  }
 }

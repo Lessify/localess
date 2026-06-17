@@ -2,16 +2,14 @@ import { Directive } from '@angular/core';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-	selector: 'p[hlmItemDescription]',
-	host: {
-		'data-slot': 'item-description',
-	},
+  selector: '[hlmItemDescription],hlm-item-description',
+  host: { 'data-slot': 'item-description' },
 })
 export class HlmItemDescription {
-	constructor() {
-		classes(() => [
-			'text-muted-foreground line-clamp-2 text-sm leading-normal font-normal text-balance',
-			'[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4',
-		]);
-	}
+  constructor() {
+    classes(
+      () =>
+        'text-muted-foreground text-start text-sm leading-normal group-data-[size=xs]/item:text-xs [&>a:hover]:text-primary line-clamp-2 flex font-normal [&>a]:underline [&>a]:underline-offset-4',
+    );
+  }
 }

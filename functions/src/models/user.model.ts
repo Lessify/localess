@@ -86,4 +86,5 @@ export enum UserPermission {
   ASSET_EXPORT = 'ASSET_EXPORT',
   ASSET_IMPORT = 'ASSET_IMPORT',
   DEV_OPEN_API = 'DEV_OPEN_API',
+  DEV_WEBHOOK = 'DEV_WEBHOOK',
 }

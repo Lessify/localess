@@ -22,14 +22,14 @@ export * from './lib/hlm-dialog-trigger';
 export * from './lib/hlm-dialog.service';
 
 export const HlmDialogImports = [
-	HlmDialog,
-	HlmDialogContent,
-	HlmDialogDescription,
-	HlmDialogFooter,
-	HlmDialogHeader,
-	HlmDialogOverlay,
-	HlmDialogPortal,
-	HlmDialogTitle,
-	HlmDialogTrigger,
-	HlmDialogClose,
+  HlmDialog,
+  HlmDialogContent,
+  HlmDialogDescription,
+  HlmDialogFooter,
+  HlmDialogHeader,
+  HlmDialogOverlay,
+  HlmDialogPortal,
+  HlmDialogTitle,
+  HlmDialogTrigger,
+  HlmDialogClose,
 ] as const;

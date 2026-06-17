@@ -7,31 +7,29 @@ import { classes } from '@spartan-ng/helm/utils';
 import { HlmComboboxChipRemove } from './hlm-combobox-chip-remove';
 
 @Component({
-	selector: 'hlm-combobox-chip',
-	imports: [NgIcon, HlmComboboxChipRemove],
-	providers: [provideIcons({ lucideX })],
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	hostDirectives: [{ directive: BrnComboboxChip, inputs: ['value'] }],
-	host: {
-		'data-slot': 'combobox-chip',
-	},
-	template: `
-		<ng-content />
+  selector: 'hlm-combobox-chip',
+  imports: [NgIcon, HlmComboboxChipRemove],
+  providers: [provideIcons({ lucideX })],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [{ directive: BrnComboboxChip, inputs: ['value'] }],
+  host: { 'data-slot': 'combobox-chip' },
+  template: `
+    <ng-content />
 
-		@if (showRemove()) {
-			<button hlmComboboxChipRemove>
-				<ng-icon name="lucideX" />
-			</button>
-		}
-	`,
+    @if (showRemove()) {
+      <button hlmComboboxChipRemove>
+        <ng-icon name="lucideX" />
+      </button>
+    }
+  `,
 })
 export class HlmComboboxChip {
-	public readonly showRemove = input<boolean, BooleanInput>(true, { transform: booleanAttribute });
+  public readonly showRemove = input<boolean, BooleanInput>(true, { transform: booleanAttribute });
 
-	constructor() {
-		classes(
-			() =>
-				'bg-muted text-foreground flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm px-1.5 text-xs font-medium whitespace-nowrap has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0',
-		);
-	}
+  constructor() {
+    classes(
+      () =>
+        'bg-muted text-foreground flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm px-1.5 text-xs font-medium whitespace-nowrap has-data-[slot=combobox-chip-remove]:pe-0 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50',
+    );
+  }
 }

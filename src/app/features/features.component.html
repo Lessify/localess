@@ -1,9 +1,7 @@
 <div hlmSidebarWrapper>
   <hlm-sidebar collapsible="icon" variant="sidebar">
     <div hlmSidebarHeader>
-      <a routerLink="/">
-        <ll-logo [open]="sidebarService.open() || sidebarService.openMobile()" />
-      </a>
+      <a routerLink="/"> <ll-logo [open]="sidebarService.open() || sidebarService.openMobile()" /> </a>
       @if (sidebarService.open() || sidebarService.openMobile()) {
         @if (appSettingsStore.ui(); as ui) {
           @if (ui.text) {
@@ -17,16 +15,14 @@
         @if (spaceStore.spaces().length > 0) {
           <li hlmSidebarMenuItem>
             <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom">
-              <ng-icon hlm name="tablerSpaces" />
-              <span>{{ spaceStore.selectedSpace()?.name }}</span>
+              <ng-icon hlm name="tablerSpaces" /> <span>{{ spaceStore.selectedSpace()?.name }}</span>
               <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
             </button>
             <ng-template #spaceMenu>
               <hlm-dropdown-menu class="w-60">
                 @for (space of spaceStore.spaces(); track space.id) {
                   <button hlmDropdownMenuRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
-                    <hlm-dropdown-menu-radio-indicator />
-                    <span> {{ space.name }} </span>
+                    <hlm-dropdown-menu-radio-indicator /> <span> {{ space.name }} </span>
                   </button>
                 }
               </hlm-dropdown-menu>
@@ -43,12 +39,43 @@
             <ul hlmSidebarMenu>
               @for (item of userSideMenu(); track item.label) {
                 @if (item.permission | canUserPerform | async) {
-                  <li hlmSidebarMenuItem>
-                    <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
-                      <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" />
-                      <span>{{ item.label }}</span>
-                    </a>
-                  </li>
+                  @if (item.items) {
+                    <hlm-collapsible [expanded]="item.isOpen!()" (expandedChange)="item.isOpen!.set($event)">
+                      <li hlmSidebarMenuItem>
+                        <button hlmSidebarMenuButton hlmCollapsibleTrigger>
+                          <ng-icon hlm [name]="item.icon" />
+                          <span>{{ item.label }}</span>
+                          <ng-icon hlm name="lucideChevronRight" class="ml-auto transition-transform" [class.rotate-90]="item.isOpen!()" />
+                        </button>
+                        <hlm-collapsible-content>
+                          <ul hlmSidebarMenuSub>
+                            @for (subItem of item.items; track subItem.label) {
+                              @if (subItem.permission | canUserPerform | async) {
+                                <li hlmSidebarMenuSubItem>
+                                  <a
+                                    hlmSidebarMenuSubButton
+                                    [routerLink]="[subItem.link]"
+                                    routerLinkActive
+                                    #rlaSub="routerLinkActive"
+                                    [isActive]="rlaSub.isActive">
+                                    <ng-icon hlm [name]="subItem.icon" />
+                                    <span>{{ subItem.label }}</span>
+                                  </a>
+                                </li>
+                              }
+                            }
+                          </ul>
+                        </hlm-collapsible-content>
+                      </li>
+                    </hlm-collapsible>
+                  } @else {
+                    <li hlmSidebarMenuItem>
+                      <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
+                        <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" />
+                        <span>{{ item.label }}</span>
+                      </a>
+                    </li>
+                  }
                 }
               }
             </ul>
@@ -64,8 +91,7 @@
                 @if (item.permission | canUserPerform | async) {
                   <li hlmSidebarMenuItem>
                     <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
-                      <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" />
-                      <span>{{ item.label }}</span>
+                      <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" /> <span>{{ item.label }}</span>
                     </a>
                   </li>
                 }

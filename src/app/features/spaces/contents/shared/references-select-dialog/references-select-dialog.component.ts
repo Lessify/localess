@@ -26,7 +26,7 @@ import { Schema, SchemaType } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { PathItem } from '@shared/stores/space.store';
-import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -49,7 +49,7 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
     MatSortModule,
     MatPaginatorModule,
     CommonModule,
-    HlmBreadCrumbImports,
+    HlmBreadcrumbImports,
     HlmButtonImports,
     HlmCheckboxImports,
     HlmIconImports,

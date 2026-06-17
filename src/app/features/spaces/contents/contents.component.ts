@@ -48,7 +48,7 @@ import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
-import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -80,7 +80,7 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
     HlmButtonImports,
     HlmIconImports,
     HlmDropdownMenuImports,
-    HlmBreadCrumbImports,
+    HlmBreadcrumbImports,
     HlmProgressImports,
     HlmTooltipImports,
     DocumentStatusComponent,

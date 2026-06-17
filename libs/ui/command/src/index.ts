@@ -23,15 +23,15 @@ export * from './lib/hlm-command-separator';
 export * from './lib/hlm-command-shortcut';
 
 export const HlmCommandImports = [
-	HlmCommand,
-	HlmCommandDialog,
-	HlmCommandEmpty,
-	HlmCommandEmptyState,
-	HlmCommandGroup,
-	HlmCommandGroupLabel,
-	HlmCommandInput,
-	HlmCommandItem,
-	HlmCommandList,
-	HlmCommandSeparator,
-	HlmCommandShortcut,
+  HlmCommand,
+  HlmCommandDialog,
+  HlmCommandEmpty,
+  HlmCommandEmptyState,
+  HlmCommandGroup,
+  HlmCommandGroupLabel,
+  HlmCommandInput,
+  HlmCommandItem,
+  HlmCommandList,
+  HlmCommandSeparator,
+  HlmCommandShortcut,
 ] as const;

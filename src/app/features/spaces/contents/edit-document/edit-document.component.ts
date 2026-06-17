@@ -69,7 +69,7 @@ import { TokenService } from '@shared/services/token.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
-import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -109,7 +109,7 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     CommonModule,
     EditDocumentSchemaComponent,
     HlmResizableImports,
-    HlmBreadCrumbImports,
+    HlmBreadcrumbImports,
     HlmIconImports,
     HlmButtonImports,
     HlmToggleGroupImports,

@@ -3,14 +3,12 @@ import { BrnSheetDescription } from '@spartan-ng/brain/sheet';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-	selector: '[hlmSheetDescription]',
-	hostDirectives: [BrnSheetDescription],
-	host: {
-		'data-slot': 'sheet-description',
-	},
+  selector: '[hlmSheetDescription]',
+  hostDirectives: [BrnSheetDescription],
+  host: { 'data-slot': 'sheet-description' },
 })
 export class HlmSheetDescription {
-	constructor() {
-		classes(() => 'text-muted-foreground text-sm');
-	}
+  constructor() {
+    classes(() => 'text-muted-foreground text-sm');
+  }
 }

@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorHandler, inject, Injectable } from '@angular/core';
 import { NotificationService } from '@shared/services/notification.service';
-import { toast } from 'ngx-sonner';
+import { toast } from '@spartan-ng/brain/sonner';
 
 import { environment } from '../../../environments/environment';
 

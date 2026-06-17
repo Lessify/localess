@@ -233,12 +233,12 @@ const routes: Routes = [
         },
       },
       {
-        path: 'spaces/:spaceId/open-api',
-        title: 'Open API',
-        loadChildren: () => import('./spaces/open-api/open-api.module').then(m => m.OpenApiModule),
+        path: 'spaces/:spaceId/developers',
+        title: 'Developers',
+        loadChildren: () => import('./spaces/developers/developers.module').then(m => m.DevelopersModule),
         data: {
           breadcrumb: {
-            label: 'Open API',
+            label: 'Developers',
           } satisfies BreadcrumbItem,
         },
       },

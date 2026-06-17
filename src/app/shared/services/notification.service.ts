@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { ExternalToast, toast } from 'ngx-sonner';
+import { ExternalToast, toast } from '@spartan-ng/brain/sonner';
 
 export type ToastAction =
   | { type: 'route'; label: string; link: string }

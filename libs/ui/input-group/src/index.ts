@@ -13,10 +13,10 @@ export * from './lib/hlm-input-group-text';
 export * from './lib/hlm-input-group-textarea';
 
 export const HlmInputGroupImports = [
-	HlmInputGroup,
-	HlmInputGroupAddon,
-	HlmInputGroupButton,
-	HlmInputGroupInput,
-	HlmInputGroupText,
-	HlmInputGroupTextarea,
+  HlmInputGroup,
+  HlmInputGroupAddon,
+  HlmInputGroupButton,
+  HlmInputGroupInput,
+  HlmInputGroupText,
+  HlmInputGroupTextarea,
 ] as const;

@@ -67,6 +67,9 @@ export const USER_PERMISSION_GROUPS: UserPermissionGroup[] = [
   },
   {
     label: 'Development',
-    permissions: [{ id: 'DEV_OPEN_API', label: 'Open API', desc: 'Access to Open API.' }],
+    permissions: [
+      { id: 'DEV_OPEN_API', label: 'Open API', desc: 'Access to Open API.' },
+      { id: 'DEV_WEBHOOK', label: 'Webhooks', desc: 'Access to Webhooks.' },
+    ],
   },
 ];

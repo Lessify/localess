@@ -1,14 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { provideIcons } from '@ng-icons/core';
-import {
-  lucideFingerprintPattern,
-  lucideGlobe,
-  lucideLayoutDashboard,
-  lucideShredder,
-  lucideVectorSquare,
-  lucideWebhook,
-} from '@ng-icons/lucide';
+import { lucideFingerprintPattern, lucideGlobe, lucideLayoutDashboard, lucideShredder, lucideVectorSquare } from '@ng-icons/lucide';
 import { Space } from '@shared/models/space.model';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmTabsImports } from '@spartan-ng/helm/tabs';
@@ -33,7 +26,6 @@ interface TabItem {
       lucideGlobe,
       lucideVectorSquare,
       lucideFingerprintPattern,
-      lucideWebhook,
       lucideShredder,
     }),
   ],
@@ -51,7 +43,6 @@ export class SettingsComponent {
     { icon: 'lucideGlobe', label: 'Locales', link: 'locales' },
     { icon: 'lucideVectorSquare', label: 'Visual Editor', link: 'visual-editor' },
     { icon: 'lucideFingerprintPattern', label: 'Access Tokens', link: 'tokens' },
-    { icon: 'lucideWebhook', label: 'Webhooks', link: 'webhooks' },
     {
       icon: 'lucideShredder',
       label: 'Danger Zone',

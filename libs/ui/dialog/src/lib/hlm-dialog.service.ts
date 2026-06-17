@@ -5,27 +5,29 @@ import { HlmDialogContent } from './hlm-dialog-content';
 import { hlmDialogOverlayClass } from './hlm-dialog-overlay';
 
 export type HlmDialogOptions<DialogContext = unknown> = BrnDialogOptions & {
-	contentClass?: string;
-	context?: DialogContext;
+  contentClass?: string;
+  showCloseButton?: boolean;
+  context?: DialogContext;
 };
 
 @Injectable({
-	providedIn: 'root',
+  providedIn: 'root',
 })
 export class HlmDialogService {
-	private readonly _brnDialogService = inject(BrnDialogService);
+  private readonly _brnDialogService = inject(BrnDialogService);
 
-	public open(component: ComponentType<unknown> | TemplateRef<unknown>, options?: Partial<HlmDialogOptions>) {
-		const mergedOptions = {
-			...(options ?? {}),
-			backdropClass: cssClassesToArray(`${hlmDialogOverlayClass} ${options?.backdropClass ?? ''}`),
-			context: {
-				...(options?.context && typeof options.context === 'object' ? options.context : {}),
-				$component: component,
-				$dynamicComponentClass: options?.contentClass,
-			},
-		};
+  public open(component: ComponentType<unknown> | TemplateRef<unknown>, options?: Partial<HlmDialogOptions>) {
+    const mergedOptions = {
+      ...(options ?? {}),
+      backdropClass: cssClassesToArray(`${hlmDialogOverlayClass} ${options?.backdropClass ?? ''}`),
+      context: {
+        ...(options?.context && typeof options.context === 'object' ? options.context : {}),
+        $component: component,
+        $dynamicComponentClass: options?.contentClass,
+        $showCloseButton: options?.showCloseButton,
+      },
+    };
 
-		return this._brnDialogService.open(HlmDialogContent, undefined, mergedOptions.context, mergedOptions);
-	}
+    return this._brnDialogService.open(HlmDialogContent, undefined, mergedOptions.context, mergedOptions);
+  }
 }

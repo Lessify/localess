@@ -1,5 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, Signal, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  OnInit,
+  Signal,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth, signOut } from '@angular/fire/auth';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -11,9 +22,11 @@ import {
   lucideBellDot,
   lucideBookOpen,
   lucideChevronDown,
+  lucideChevronRight,
   lucideChevronsUpDown,
   lucideCircleQuestionMark,
   lucideCode,
+  lucideCode2,
   lucideEarth,
   lucideExternalLink,
   lucideFileCheck,
@@ -33,6 +46,7 @@ import {
   lucideToyBrick,
   lucideUserCircle,
   lucideUsers,
+  lucideWebhook,
 } from '@ng-icons/lucide';
 import { tablerApi, tablerSpaces } from '@ng-icons/tabler-icons';
 import { LogoComponent } from '@shared/components/logo';
@@ -52,8 +66,9 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
-import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCollapsibleImports } from '@spartan-ng/helm/collapsible';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -91,6 +106,8 @@ interface SideMenuItem {
   label: string;
   permission?: UserPermission | UserPermission[];
   color?: 'primary';
+  items?: SideMenuItem[];
+  isOpen?: WritableSignal<boolean>;
 }
 
 @Component({
@@ -110,11 +127,12 @@ interface SideMenuItem {
     HlmAvatarImports,
     HlmButtonImports,
     HlmSeparatorImports,
-    HlmBreadCrumbImports,
+    HlmBreadcrumbImports,
     HlmSheetImports,
     HlmFieldImports,
     HlmSwitchImports,
     ReactiveFormsModule,
+    HlmCollapsibleImports,
   ],
   providers: [
     provideIcons({
@@ -124,6 +142,9 @@ interface SideMenuItem {
       lucideImage,
       lucideToyBrick,
       lucideFileCheck,
+      lucideCode2,
+      lucideWebhook,
+      lucideChevronRight,
       tablerApi,
       lucideSettings,
       lucideUsers,
@@ -177,6 +198,9 @@ export class FeaturesComponent implements OnInit {
 
   userSideMenu: Signal<SideMenuItem[]> = computed(() => {
     const selectedSpaceId = this.spaceStore.selectedSpaceId();
+    const lastSuccessfulNavigation = this.router.lastSuccessfulNavigation();
+    const url = lastSuccessfulNavigation?.finalUrl?.toString() ?? this.router.url;
+    console.log('url', url);
     console.log('User Side Menu Computed : Selected Space Id :', selectedSpaceId);
     console.log('User Side Menu Computed : User Role :', this.userStore.role());
     console.log('User Side Menu Computed : User Permissions :', this.userStore.permissions());
@@ -198,7 +222,27 @@ export class FeaturesComponent implements OnInit {
         { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', permission: UserPermission.ASSET_READ },
         { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', permission: UserPermission.SCHEMA_READ },
         { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'lucideFileCheck', permission: USER_PERMISSIONS_IMPORT_EXPORT },
-        { link: `spaces/${selectedSpaceId}/open-api`, label: 'Open API', icon: 'tablerApi', permission: UserPermission.DEV_OPEN_API },
+        {
+          link: '',
+          label: 'Developers',
+          icon: 'lucideCode2',
+          permission: [UserPermission.DEV_OPEN_API, UserPermission.DEV_WEBHOOK],
+          isOpen: signal(url.includes(`/spaces/${selectedSpaceId}/developers/`)),
+          items: [
+            {
+              link: `spaces/${selectedSpaceId}/developers/webhooks`,
+              label: 'Webhooks',
+              icon: 'lucideWebhook',
+              permission: UserPermission.DEV_WEBHOOK,
+            },
+            {
+              link: `spaces/${selectedSpaceId}/developers/open-api`,
+              label: 'Open API',
+              icon: 'tablerApi',
+              permission: UserPermission.DEV_OPEN_API,
+            },
+          ],
+        },
         {
           link: `spaces/${selectedSpaceId}/settings`,
           label: 'Settings',
@@ -277,6 +321,13 @@ export class FeaturesComponent implements OnInit {
       .subscribe(() => {
         const breadcrumbs = this.buildBreadcrumbs(this.route.root);
         this.breadcrumbs.set(breadcrumbs);
+        // Auto-open sub-menus when navigating to a sub-route
+        for (const item of this.userSideMenu()) {
+          if (item.isOpen && item.items) {
+            const isActive = item.items.some(sub => this.router.url.includes(sub.link));
+            if (isActive) item.isOpen.set(true);
+          }
+        }
       });
   }
   ngOnInit(): void {

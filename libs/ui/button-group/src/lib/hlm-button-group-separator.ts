@@ -3,18 +3,19 @@ import { BrnSeparator, provideBrnSeparatorConfig } from '@spartan-ng/brain/separ
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-	selector: '[hlmButtonGroupSeparator],hlm-button-group-separator',
-	providers: [provideBrnSeparatorConfig({ orientation: 'vertical' })],
-	hostDirectives: [{ directive: BrnSeparator, inputs: ['orientation', 'decorative'] }],
-	host: {
-		'data-slot': 'button-group-separator',
-	},
+  selector: '[hlmButtonGroupSeparator],hlm-button-group-separator',
+  providers: [provideBrnSeparatorConfig({ orientation: 'vertical' })],
+  hostDirectives: [{ directive: BrnSeparator, inputs: ['orientation', 'decorative'] }],
+  host: {
+    'data-slot': 'button-group-separator',
+  },
 })
 export class HlmButtonGroupSeparator {
-	constructor() {
-		classes(
-			() =>
-				'bg-input relative inline-flex shrink-0 self-stretch data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-auto data-[orientation=vertical]:w-px',
-		);
-	}
+  constructor() {
+    classes(() => [
+      'bg-input relative self-stretch data-horizontal:mx-px data-horizontal:w-auto data-vertical:my-px data-vertical:h-auto',
+      // separator classes
+      'shrink-0 data-horizontal:h-px data-vertical:w-px data-vertical:self-stretch',
+    ]);
+  }
 }

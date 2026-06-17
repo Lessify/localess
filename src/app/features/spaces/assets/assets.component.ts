@@ -61,7 +61,7 @@ import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service'
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
-import { HlmBreadCrumbImports } from '@spartan-ng/helm/breadcrumb';
+import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -109,7 +109,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmDropdownMenuImports,
     HlmToggleGroupImports,
     HlmTooltipImports,
-    HlmBreadCrumbImports,
+    HlmBreadcrumbImports,
     HlmProgressImports,
     HlmSpinnerImports,
     HlmCardImports,

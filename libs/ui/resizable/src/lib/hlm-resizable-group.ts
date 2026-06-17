@@ -3,20 +3,20 @@ import { BrnResizableGroup } from '@spartan-ng/brain/resizable';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-	selector: '[hlmResizableGroup],hlm-resizable-group',
-	hostDirectives: [
-		{
-			directive: BrnResizableGroup,
-			inputs: ['direction', 'layout'],
-			outputs: ['dragEnd', 'dragStart', 'layoutChange'],
-		},
-	],
-	host: {
-		'data-slot': 'resizable-group',
-	},
+  selector: '[hlmResizableGroup],hlm-resizable-group',
+  hostDirectives: [
+    {
+      directive: BrnResizableGroup,
+      inputs: ['direction', 'layout'],
+      outputs: ['dragEnd', 'dragStart', 'layoutChange'],
+    },
+  ],
+  host: {
+    'data-slot': 'resizable-group',
+  },
 })
 export class HlmResizableGroup {
-	constructor() {
-		classes(() => 'group flex h-full w-full data-[panel-group-direction=vertical]:flex-col');
-	}
+  constructor() {
+    classes(() => 'group flex h-full w-full data-[panel-group-direction=vertical]:flex-col');
+  }
 }
