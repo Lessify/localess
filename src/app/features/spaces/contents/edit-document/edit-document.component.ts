@@ -74,7 +74,6 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
@@ -125,7 +124,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     HlmAccordionImports,
     HlmItemImports,
     HlmKbdImports,
-    HlmInputImports,
     HlmInputGroupImports,
     DocumentStatusComponent,
   ],
