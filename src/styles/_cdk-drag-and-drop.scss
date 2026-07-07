@@ -1,30 +1,9 @@
-mat-list, mat-nav-list, mat-action-list {
-  mat-list-item {
-    &.schema-hover {
-      outline: solid 2px var(--mat-sys-primary);
-      border-radius: 4px;
-    }
-
-    &.invalid {
-      //border: solid 1px var(--mat-sys-error);
-      background-color:var(--mat-sys-error-container);
-    }
-
-    .mat-mdc-list-item-meta {
-      margin-top: auto !important;
-      margin-bottom: auto !important;
-    }
-  }
-}
-
-
 // Drag And Drop
-mat-list, mat-nav-list, mat-action-list.cdk-drop-list {
+.cdk-drop-list {
   // This is the element that will be rendered next to the user's cursor as they're dragging an item in a sortable list.
   // By default the element looks exactly like the element that is being dragged.
   .cdk-drag-preview {
     box-sizing: border-box;
-    border-radius: 4px;
     box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
     0 8px 10px 1px rgba(0, 0, 0, 0.14),
     0 3px 14px 2px rgba(0, 0, 0, 0.12);

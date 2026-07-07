@@ -5,19 +5,13 @@ markdown {
 }
 
 @import 'styles/background';
+@import 'styles/cdk-drag-and-drop';
 @import 'styles/image';
 @import 'styles/layout';
 @import 'styles/markdown';
-@import 'styles/mat-card';
 @import 'styles/mat-dialog';
-@import 'styles/mat-divider';
-@import 'styles/mat-grid-list';
-@import 'styles/mat-list';
-@import 'styles/mat-menu';
 @import 'styles/mat-paginator';
-@import 'styles/mat-snack-bar';
 @import 'styles/mat-table';
-@import 'styles/mat-toolbar';
 @import 'styles/rich-text-editor';
 
 /* You can add global styles to this file, and also import other style files */
