@@ -92,7 +92,7 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
       (req as RequestWithToken).tokenId = tokenId as string;
 
       next();
-    } catch (error) {
+    } catch {
       res.status(500).send(new HttpsError('internal', 'Failed to verify token'));
     }
   };
@@ -162,7 +162,7 @@ export function requireContentPermissions() {
       (req as RequestWithToken).tokenId = tokenId as string;
 
       next();
-    } catch (error) {
+    } catch {
       res.status(500).send(new HttpsError('internal', 'Failed to verify token'));
     }
   };
@@ -225,7 +225,7 @@ export function requireTranslationPermissions() {
       (req as RequestWithToken).tokenId = tokenId as string;
 
       next();
-    } catch (error) {
+    } catch {
       res.status(500).send(new HttpsError('internal', 'Failed to verify token'));
     }
   };

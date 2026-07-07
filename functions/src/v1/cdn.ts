@@ -524,7 +524,9 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     } else if (asset.type.startsWith('video/') && width !== undefined && thumbnail) {
       await assetFile.download({ destination: tempFilePath });
       await extractThumbnail(tempFilePath, `screenshot-${assetId}.webp`);
-      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format }).toFile(tempFilePath);
+      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format }).toFile(
+        tempFilePath
+      );
       overwriteType = format ? formatMimeMap[format] : 'image/webp';
       filename = `${asset.name}-${suffix || `w${width}`}-thumbnail${format ? formatExtMap[format] : '.webp'}`;
     } else {

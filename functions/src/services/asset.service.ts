@@ -251,7 +251,10 @@ export function isAssetChanged(existing: Asset, imported: AssetExport): boolean 
 export function isAssetMetadataEqual(a?: AssetFileMetadata, b?: AssetFileMetadata): boolean {
   if (!a && !b) return true;
   if (!a || !b) return false;
-  return (a as { format?: string; width?: number; height?: number }).format === (b as { format?: string; width?: number; height?: number }).format &&
+  return (
+    (a as { format?: string; width?: number; height?: number }).format ===
+      (b as { format?: string; width?: number; height?: number }).format &&
     (a as { width?: number }).width === (b as { width?: number }).width &&
-    (a as { height?: number }).height === (b as { height?: number }).height;
+    (a as { height?: number }).height === (b as { height?: number }).height
+  );
 }

@@ -337,9 +337,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
   // Load all existing assets into a map to avoid per-document reads
   const origAssetMap = new Map<string, Asset>();
   const assetsSnapshot = await findAssets(spaceId).get();
-  assetsSnapshot.docs
-    .filter(it => it.exists)
-    .forEach(it => origAssetMap.set(it.id, it.data() as Asset));
+  assetsSnapshot.docs.filter(it => it.exists).forEach(it => origAssetMap.set(it.id, it.data() as Asset));
 
   let totalChanges = 0;
   const bulk = firestoreService.bulkWriter();
@@ -537,9 +535,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
   // Load all existing contents into a map to avoid per-document reads
   const origContentMap = new Map<string, Content>();
   const contentsSnapshot = await findContents(spaceId).get();
-  contentsSnapshot.docs
-    .filter(it => it.exists)
-    .forEach(it => origContentMap.set(it.id, it.data() as Content));
+  contentsSnapshot.docs.filter(it => it.exists).forEach(it => origContentMap.set(it.id, it.data() as Content));
 
   let totalChanges = 0;
   const bulk = firestoreService.bulkWriter();
@@ -688,9 +684,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
   // Load all existing schemas into a map to avoid per-document reads
   const origSchemaMap = new Map<string, Schema>();
   const schemasSnapshot = await findSchemas(spaceId).get();
-  schemasSnapshot.docs
-    .filter(it => it.exists)
-    .forEach(it => origSchemaMap.set(it.id, it.data() as Schema));
+  schemasSnapshot.docs.filter(it => it.exists).forEach(it => origSchemaMap.set(it.id, it.data() as Schema));
 
   let totalChanges = 0;
   const bulk = firestoreService.bulkWriter();
@@ -851,9 +845,7 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
   // Load all existing translations into a map to avoid per-document reads
   const origTransMap = new Map<string, Translation>();
   const translationsSnapshot = await findTranslations(spaceId).get();
-  translationsSnapshot.docs
-    .filter(it => it.exists)
-    .forEach(it => origTransMap.set(it.id, it.data() as Translation));
+  translationsSnapshot.docs.filter(it => it.exists).forEach(it => origTransMap.set(it.id, it.data() as Translation));
 
   let totalChanges = 0;
   const bulk = firestoreService.bulkWriter();
@@ -888,7 +880,7 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
   logger.info('[Task:onCreate:translationsImport] bulk.close() : ' + totalChanges);
   await bulk.close();
   logger.info('[Task:onCreate:translationsImport] bulk total changes : ' + totalChanges);
-  if(totalChanges > 0) {
+  if (totalChanges > 0) {
     // Generate draft files once after all translations are imported
     const spaceSnapshot = await findSpaceById(spaceId).get();
     if (spaceSnapshot.exists) {

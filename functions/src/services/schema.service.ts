@@ -41,7 +41,10 @@ export function isSchemaChanged(existing: Schema, imported: SchemaExport): boole
   if ((existing.displayName ?? undefined) !== (imported.displayName ?? undefined)) return true;
   if ((existing.description ?? undefined) !== (imported.description ?? undefined)) return true;
   if (!isLabelsEqual(existing.labels, imported.labels)) return true;
-  if ((existing.type === SchemaType.ROOT || existing.type === SchemaType.NODE) && (imported.type === SchemaType.ROOT || imported.type === SchemaType.NODE)) {
+  if (
+    (existing.type === SchemaType.ROOT || existing.type === SchemaType.NODE) &&
+    (imported.type === SchemaType.ROOT || imported.type === SchemaType.NODE)
+  ) {
     const e = existing as SchemaComponent;
     const i = imported as SchemaComponentExport;
     if ((e.previewField ?? undefined) !== (i.previewField ?? undefined)) return true;

@@ -217,10 +217,10 @@ const translateLocale = onCall<TranslateLocaleData>(async request => {
   let counter = 0;
   for (const { doc, translatedValue } of results) {
     if (translatedValue) {
-      const update: UpdateData<Translation> = {
+      const update = {
         [`locales.${targetLocaleId}`]: translatedValue,
-        updatedAt: FieldValue.serverTimestamp(),
-      };
+      } as UpdateData<Translation>;
+      update.updatedAt = FieldValue.serverTimestamp();
       bulk.update(doc.ref, update);
       counter++;
     }

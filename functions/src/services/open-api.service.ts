@@ -344,7 +344,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
         $ref: '#/components/schemas/AssetMetadata',
       },
       example: {
-        'WLWc4vOACzG1QjK9AEo9': {
+        WLWc4vOACzG1QjK9AEo9: {
           id: 'WLWc4vOACzG1QjK9AEo9',
           name: 'hero-image',
           extension: '.jpg',
