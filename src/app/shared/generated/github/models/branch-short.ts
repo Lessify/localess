@@ -6,9 +6,9 @@
  */
 export interface BranchShort {
   commit: {
-'sha': string;
-'url': string;
-};
+    sha: string;
+    url: string;
+  };
   name: string;
   protected: boolean;
 }

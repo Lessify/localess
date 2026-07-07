@@ -9,6 +9,6 @@ import { classes } from '@spartan-ng/helm/utils';
 })
 export class HlmSelectLabel {
   constructor() {
-    classes(() => 'text-muted-foreground px-2 py-1.5 text-xs flex');
+    classes(() => 'text-muted-foreground px-1.5 py-1 text-xs flex');
   }
 }

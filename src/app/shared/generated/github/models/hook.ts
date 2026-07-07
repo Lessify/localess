@@ -10,23 +10,22 @@ import { WebhookConfigUrl } from '../models/webhook-config-url';
  * Webhooks for repositories.
  */
 export interface Hook {
-
   /**
    * Determines whether the hook is actually triggered on pushes.
    */
   active: boolean;
   config: {
-'email'?: string;
-'password'?: string;
-'room'?: string;
-'subdomain'?: string;
-'url'?: WebhookConfigUrl;
-'insecure_ssl'?: WebhookConfigInsecureSsl;
-'content_type'?: WebhookConfigContentType;
-'digest'?: string;
-'secret'?: WebhookConfigSecret;
-'token'?: string;
-};
+    email?: string;
+    password?: string;
+    room?: string;
+    subdomain?: string;
+    url?: WebhookConfigUrl;
+    insecure_ssl?: WebhookConfigInsecureSsl;
+    content_type?: WebhookConfigContentType;
+    digest?: string;
+    secret?: WebhookConfigSecret;
+    token?: string;
+  };
   created_at: string;
   deliveries_url?: string;
 

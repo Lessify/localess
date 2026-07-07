@@ -7,9 +7,9 @@ import { BranchProtection } from '../models/branch-protection';
  */
 export interface ShortBranch {
   commit: {
-'sha': string;
-'url': string;
-};
+    sha: string;
+    url: string;
+  };
   name: string;
   protected: boolean;
   protection?: BranchProtection;

@@ -10,28 +10,26 @@ import { RepositoryRulesetConditions } from '../models/repository-ruleset-condit
  * A set of rules to apply when specified conditions are met.
  */
 export interface RepositoryRuleset {
-  '_links'?: {
-'self'?: {
-
-/**
- * The URL of the ruleset
- */
-'href'?: string;
-};
-'html'?: {
-
-/**
- * The html URL of the ruleset
- */
-'href'?: string;
-};
-};
+  _links?: {
+    self?: {
+      /**
+       * The URL of the ruleset
+       */
+      href?: string;
+    };
+    html?: {
+      /**
+       * The html URL of the ruleset
+       */
+      href?: string;
+    };
+  };
 
   /**
    * The actors that can bypass the rules in this ruleset
    */
   bypass_actors?: Array<RepositoryRulesetBypassActor>;
-  conditions?: (RepositoryRulesetConditions | OrgRulesetConditions);
+  conditions?: RepositoryRulesetConditions | OrgRulesetConditions;
   created_at?: string;
 
   /**

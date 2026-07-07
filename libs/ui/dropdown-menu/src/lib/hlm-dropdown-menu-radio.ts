@@ -2,6 +2,7 @@ import { type BooleanInput } from '@angular/cdk/coercion';
 import { CdkMenuItem, CdkMenuItemRadio, CdkMenuItemSelectable } from '@angular/cdk/menu';
 import { Directive, booleanAttribute, inject, input } from '@angular/core';
 import { classes } from '@spartan-ng/helm/utils';
+import { HlmDropdownMenuFocusOnHover } from './hlm-dropdown-menu-focus-on-hover';
 
 /** @internal. Use HlmDropdownMenuRadio instead. */
 @Directive({
@@ -28,6 +29,7 @@ export class HlmDropdownMenuRadioCdk extends CdkMenuItemRadio {
       inputs: ['cdkMenuItemDisabled: disabled', 'cdkMenuItemChecked: checked', 'keepOpen'],
       outputs: ['cdkMenuItemTriggered: triggered'],
     },
+    HlmDropdownMenuFocusOnHover,
   ],
   host: {
     'data-slot': 'dropdown-menu-radio-item',
@@ -41,7 +43,7 @@ export class HlmDropdownMenuRadio {
   constructor() {
     classes(
       () =>
-        "hover:bg-accent focus:bg-accent hover:text-accent-foreground focus:text-accent-foreground gap-2 rounded-sm py-1.5 ps-2 pe-8 text-sm data-inset:ps-8 [&_ng-icon:not([class*='text-'])]:text-[calc(var(--spacing)*4)] group/dropdown-menu-radio relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_ng-icon]:pointer-events-none [&_ng-icon]:shrink-0",
+        "hover:bg-accent focus:bg-accent hover:text-accent-foreground focus:text-accent-foreground hover:**:text-accent-foreground focus:**:text-accent-foreground gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-sm data-inset:ps-7 [&_ng-icon:not([class*='text-'])]:text-[length:--spacing(4)] group/dropdown-menu-radio relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_ng-icon]:pointer-events-none [&_ng-icon]:shrink-0",
     );
   }
 }

@@ -10,21 +10,21 @@ import { ProtectedBranchRequiredStatusCheck } from '../models/protected-branch-r
  */
 export interface BranchProtection {
   allow_deletions?: {
-'enabled'?: boolean;
-};
+    enabled?: boolean;
+  };
   allow_force_pushes?: {
-'enabled'?: boolean;
-};
+    enabled?: boolean;
+  };
 
   /**
    * Whether users can pull changes from upstream when the branch is locked. Set to `true` to allow fork syncing. Set to `false` to prevent fork syncing.
    */
   allow_fork_syncing?: {
-'enabled'?: boolean;
-};
+    enabled?: boolean;
+  };
   block_creations?: {
-'enabled'?: boolean;
-};
+    enabled?: boolean;
+  };
   enabled?: boolean;
   enforce_admins?: ProtectedBranchAdminEnforced;
 
@@ -32,21 +32,21 @@ export interface BranchProtection {
    * Whether to set the branch as read-only. If this is true, users will not be able to push to the branch.
    */
   lock_branch?: {
-'enabled'?: boolean;
-};
+    enabled?: boolean;
+  };
   name?: string;
   protection_url?: string;
   required_conversation_resolution?: {
-'enabled'?: boolean;
-};
+    enabled?: boolean;
+  };
   required_linear_history?: {
-'enabled'?: boolean;
-};
+    enabled?: boolean;
+  };
   required_pull_request_reviews?: ProtectedBranchPullRequestReview;
   required_signatures?: {
-'url': string;
-'enabled': boolean;
-};
+    url: string;
+    enabled: boolean;
+  };
   required_status_checks?: ProtectedBranchRequiredStatusCheck;
   restrictions?: BranchRestrictionPolicy;
   url?: string;

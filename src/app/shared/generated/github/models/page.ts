@@ -7,7 +7,6 @@ import { PagesSourceHash } from '../models/pages-source-hash';
  * The configuration for GitHub Pages for a repository.
  */
 export interface Page {
-
   /**
    * The process in which the Page will be built.
    */

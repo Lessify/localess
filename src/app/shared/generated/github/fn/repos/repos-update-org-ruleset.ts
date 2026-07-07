@@ -13,47 +13,50 @@ import { RepositoryRuleset } from '../../models/repository-ruleset';
 import { RepositoryRulesetBypassActor } from '../../models/repository-ruleset-bypass-actor';
 
 export interface ReposUpdateOrgRuleset$Params {
-
-/**
- * The organization name. The name is not case sensitive.
- */
+  /**
+   * The organization name. The name is not case sensitive.
+   */
   org: string;
 
-/**
- * The ID of the ruleset.
- */
+  /**
+   * The ID of the ruleset.
+   */
   ruleset_id: number;
-  
+
+  /**
+   * Request body
+   */
+  body?: {
     /**
-     * Request body
+     * The name of the ruleset.
      */
-    body?: {
+    name?: string;
 
-/**
- * The name of the ruleset.
- */
-'name'?: string;
+    /**
+     * The target of the ruleset.
+     */
+    target?: 'branch' | 'tag';
+    enforcement?: RepositoryRuleEnforcement;
 
-/**
- * The target of the ruleset.
- */
-'target'?: 'branch' | 'tag';
-'enforcement'?: RepositoryRuleEnforcement;
+    /**
+     * The actors that can bypass the rules in this ruleset
+     */
+    bypass_actors?: Array<RepositoryRulesetBypassActor>;
+    conditions?: OrgRulesetConditions;
 
-/**
- * The actors that can bypass the rules in this ruleset
- */
-'bypass_actors'?: Array<RepositoryRulesetBypassActor>;
-'conditions'?: OrgRulesetConditions;
-
-/**
- * An array of rules within the ruleset.
- */
-'rules'?: Array<RepositoryRule>;
-}
+    /**
+     * An array of rules within the ruleset.
+     */
+    rules?: Array<RepositoryRule>;
+  };
 }
 
-export function reposUpdateOrgRuleset(http: HttpClient, rootUrl: string, params: ReposUpdateOrgRuleset$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryRuleset>> {
+export function reposUpdateOrgRuleset(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposUpdateOrgRuleset$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<RepositoryRuleset>> {
   const rb = new RequestBuilder(rootUrl, reposUpdateOrgRuleset.PATH, 'put');
   if (params) {
     rb.path('org', params.org, {});
@@ -61,13 +64,11 @@ export function reposUpdateOrgRuleset(http: HttpClient, rootUrl: string, params:
     rb.body(params.body, 'application/json');
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<RepositoryRuleset>;
-    })
+    }),
   );
 }
 

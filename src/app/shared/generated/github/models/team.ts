@@ -16,12 +16,12 @@ export interface Team {
   parent: NullableTeamSimple | null;
   permission: string;
   permissions?: {
-'pull': boolean;
-'triage': boolean;
-'push': boolean;
-'maintain': boolean;
-'admin': boolean;
-};
+    pull: boolean;
+    triage: boolean;
+    push: boolean;
+    maintain: boolean;
+    admin: boolean;
+  };
   privacy?: string;
   repositories_url: string;
   slug: string;

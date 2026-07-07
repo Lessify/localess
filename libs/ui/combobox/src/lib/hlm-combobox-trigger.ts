@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { BooleanInput } from '@angular/cdk/coercion';
+import { booleanAttribute, ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown } from '@ng-icons/lucide';
 import { BrnComboboxAnchor, BrnComboboxPopoverTrigger, BrnComboboxTrigger } from '@spartan-ng/brain/combobox';
@@ -22,9 +23,10 @@ import type { ClassValue } from 'clsx';
       data-slot="combobox-trigger"
       [id]="buttonId()"
       [class]="_computedClass()"
-      [variant]="variant()">
+      [variant]="variant()"
+      [forceInvalid]="forceInvalid()">
       <ng-content />
-      <ng-icon name="lucideChevronDown" class="text-muted-foreground text-[calc(var(--spacing)*4)]" />
+      <ng-icon name="lucideChevronDown" class="text-muted-foreground text-[length:--spacing(4)]" />
     </button>
   `,
 })
@@ -39,4 +41,6 @@ export class HlmComboboxTrigger {
   public readonly buttonId = input<string>(`hlm-combobox-trigger-${HlmComboboxTrigger._id++}`);
 
   public readonly variant = input<ButtonVariants['variant']>('outline');
+
+  public readonly forceInvalid = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
 }

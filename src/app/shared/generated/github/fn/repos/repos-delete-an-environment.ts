@@ -6,26 +6,29 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-
 export interface ReposDeleteAnEnvironment$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The name of the environment.
- */
+  /**
+   * The name of the environment.
+   */
   environment_name: string;
 }
 
-export function reposDeleteAnEnvironment(http: HttpClient, rootUrl: string, params: ReposDeleteAnEnvironment$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function reposDeleteAnEnvironment(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposDeleteAnEnvironment$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, reposDeleteAnEnvironment.PATH, 'delete');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -33,13 +36,11 @@ export function reposDeleteAnEnvironment(http: HttpClient, rootUrl: string, para
     rb.path('environment_name', params.environment_name, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'text', accept: '*/*', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'text', accept: '*/*', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
-    })
+    }),
   );
 }
 

@@ -9,39 +9,43 @@ import { RequestBuilder } from '../../request-builder';
 import { Collaborator } from '../../models/collaborator';
 
 export interface ReposListCollaborators$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * Filter collaborators returned by their affiliation. `outside` means all outside collaborators of an organization-owned repository. `direct` means all collaborators with permissions to an organization-owned repository, regardless of organization membership status. `all` means all collaborators the authenticated user can see.
- */
+  /**
+   * Filter collaborators returned by their affiliation. `outside` means all outside collaborators of an organization-owned repository. `direct` means all collaborators with permissions to an organization-owned repository, regardless of organization membership status. `all` means all collaborators the authenticated user can see.
+   */
   affiliation?: 'outside' | 'direct' | 'all';
 
-/**
- * Filter collaborators by the permissions they have on the repository. If not specified, all collaborators will be returned.
- */
+  /**
+   * Filter collaborators by the permissions they have on the repository. If not specified, all collaborators will be returned.
+   */
   permission?: 'pull' | 'triage' | 'push' | 'maintain' | 'admin';
 
-/**
- * The number of results per page (max 100).
- */
+  /**
+   * The number of results per page (max 100).
+   */
   per_page?: number;
 
-/**
- * Page number of the results to fetch.
- */
+  /**
+   * Page number of the results to fetch.
+   */
   page?: number;
 }
 
-export function reposListCollaborators(http: HttpClient, rootUrl: string, params: ReposListCollaborators$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Collaborator>>> {
+export function reposListCollaborators(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposListCollaborators$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Array<Collaborator>>> {
   const rb = new RequestBuilder(rootUrl, reposListCollaborators.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -52,13 +56,11 @@ export function reposListCollaborators(http: HttpClient, rootUrl: string, params
     rb.query('page', params.page, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Array<Collaborator>>;
-    })
+    }),
   );
 }
 

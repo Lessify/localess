@@ -19,12 +19,12 @@ export interface Collaborator {
   node_id: string;
   organizations_url: string;
   permissions?: {
-'pull': boolean;
-'triage'?: boolean;
-'push': boolean;
-'maintain'?: boolean;
-'admin': boolean;
-};
+    pull: boolean;
+    triage?: boolean;
+    push: boolean;
+    maintain?: boolean;
+    admin: boolean;
+  };
   received_events_url: string;
   repos_url: string;
   role_name: string;

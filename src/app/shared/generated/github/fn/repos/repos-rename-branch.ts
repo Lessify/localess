@@ -9,31 +9,34 @@ import { RequestBuilder } from '../../request-builder';
 import { BranchWithProtection } from '../../models/branch-with-protection';
 
 export interface ReposRenameBranch$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The name of the branch. Cannot contain wildcard characters. To use wildcard characters in branch names, use [the GraphQL API](https://docs.github.com/graphql).
- */
+  /**
+   * The name of the branch. Cannot contain wildcard characters. To use wildcard characters in branch names, use [the GraphQL API](https://docs.github.com/graphql).
+   */
   branch: string;
-      body: {
-
-/**
- * The new name of the branch.
- */
-'new_name': string;
+  body: {
+    /**
+     * The new name of the branch.
+     */
+    new_name: string;
+  };
 }
-}
 
-export function reposRenameBranch(http: HttpClient, rootUrl: string, params: ReposRenameBranch$Params, context?: HttpContext): Observable<StrictHttpResponse<BranchWithProtection>> {
+export function reposRenameBranch(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposRenameBranch$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<BranchWithProtection>> {
   const rb = new RequestBuilder(rootUrl, reposRenameBranch.PATH, 'post');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -42,13 +45,11 @@ export function reposRenameBranch(http: HttpClient, rootUrl: string, params: Rep
     rb.body(params.body, 'application/json');
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<BranchWithProtection>;
-    })
+    }),
   );
 }
 

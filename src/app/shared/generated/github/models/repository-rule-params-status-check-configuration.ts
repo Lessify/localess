@@ -5,7 +5,6 @@
  * Required status check
  */
 export interface RepositoryRuleParamsStatusCheckConfiguration {
-
   /**
    * The status check context name that must be present on the commit.
    */

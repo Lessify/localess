@@ -9,24 +9,28 @@ import { RequestBuilder } from '../../request-builder';
 import { Hook } from '../../models/hook';
 
 export interface ReposGetWebhook$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The unique identifier of the hook.
- */
+  /**
+   * The unique identifier of the hook.
+   */
   hook_id: number;
 }
 
-export function reposGetWebhook(http: HttpClient, rootUrl: string, params: ReposGetWebhook$Params, context?: HttpContext): Observable<StrictHttpResponse<Hook>> {
+export function reposGetWebhook(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposGetWebhook$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Hook>> {
   const rb = new RequestBuilder(rootUrl, reposGetWebhook.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -34,13 +38,11 @@ export function reposGetWebhook(http: HttpClient, rootUrl: string, params: Repos
     rb.path('hook_id', params.hook_id, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Hook>;
-    })
+    }),
   );
 }
 

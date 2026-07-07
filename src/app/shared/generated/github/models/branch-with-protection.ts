@@ -7,10 +7,10 @@ import { Commit } from '../models/commit';
  * Branch With Protection
  */
 export interface BranchWithProtection {
-  '_links': {
-'html': string;
-'self': string;
-};
+  _links: {
+    html: string;
+    self: string;
+  };
   commit: Commit;
   name: string;
   pattern?: string;

@@ -6,11 +6,10 @@
  */
 export interface RepositoryRuleRequiredDeployments {
   parameters?: {
-
-/**
- * The environments that must be successfully deployed to before branches can be merged.
- */
-'required_deployment_environments': Array<string>;
-};
+    /**
+     * The environments that must be successfully deployed to before branches can be merged.
+     */
+    required_deployment_environments: Array<string>;
+  };
   type: 'required_deployments';
 }

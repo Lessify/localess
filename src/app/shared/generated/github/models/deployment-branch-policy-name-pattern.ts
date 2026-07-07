@@ -1,7 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export interface DeploymentBranchPolicyNamePattern {
-
   /**
    * The name pattern that branches must match in order to deploy to the environment.
    *

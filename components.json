@@ -1,5 +1,5 @@
 {
-  "style": "css",
+  "style": "nova",
   "packageManager": "npm",
   "tailwind": {
     "css": "src/styles.css",

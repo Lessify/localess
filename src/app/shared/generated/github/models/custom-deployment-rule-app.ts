@@ -5,7 +5,6 @@
  * A GitHub App that is providing a custom deployment protection rule.
  */
 export interface CustomDeploymentRuleApp {
-
   /**
    * The unique identifier of the deployment protection rule integration.
    */

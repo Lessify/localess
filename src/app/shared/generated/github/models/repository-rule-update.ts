@@ -6,11 +6,10 @@
  */
 export interface RepositoryRuleUpdate {
   parameters?: {
-
-/**
- * Branch can pull changes from its upstream repository
- */
-'update_allows_fetch_and_merge': boolean;
-};
+    /**
+     * Branch can pull changes from its upstream repository
+     */
+    update_allows_fetch_and_merge: boolean;
+  };
   type: 'update';
 }

@@ -9,34 +9,38 @@ import { RequestBuilder } from '../../request-builder';
 import { PullRequestSimple } from '../../models/pull-request-simple';
 
 export interface ReposListPullRequestsAssociatedWithCommit$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The SHA of the commit.
- */
+  /**
+   * The SHA of the commit.
+   */
   commit_sha: string;
 
-/**
- * The number of results per page (max 100).
- */
+  /**
+   * The number of results per page (max 100).
+   */
   per_page?: number;
 
-/**
- * Page number of the results to fetch.
- */
+  /**
+   * Page number of the results to fetch.
+   */
   page?: number;
 }
 
-export function reposListPullRequestsAssociatedWithCommit(http: HttpClient, rootUrl: string, params: ReposListPullRequestsAssociatedWithCommit$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<PullRequestSimple>>> {
+export function reposListPullRequestsAssociatedWithCommit(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposListPullRequestsAssociatedWithCommit$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Array<PullRequestSimple>>> {
   const rb = new RequestBuilder(rootUrl, reposListPullRequestsAssociatedWithCommit.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -46,13 +50,11 @@ export function reposListPullRequestsAssociatedWithCommit(http: HttpClient, root
     rb.query('page', params.page, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Array<PullRequestSimple>>;
-    })
+    }),
   );
 }
 

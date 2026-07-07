@@ -6,22 +6,25 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-
 export interface ReposDownloadTarballArchive$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
   ref: string;
 }
 
-export function reposDownloadTarballArchive(http: HttpClient, rootUrl: string, params: ReposDownloadTarballArchive$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function reposDownloadTarballArchive(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposDownloadTarballArchive$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, reposDownloadTarballArchive.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -29,13 +32,11 @@ export function reposDownloadTarballArchive(http: HttpClient, rootUrl: string, p
     rb.path('ref', params.ref, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'text', accept: '*/*', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'text', accept: '*/*', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
-    })
+    }),
   );
 }
 

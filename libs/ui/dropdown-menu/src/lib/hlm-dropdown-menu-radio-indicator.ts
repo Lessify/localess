@@ -15,7 +15,7 @@ export class HlmDropdownMenuRadioIndicator {
   constructor() {
     classes(
       () =>
-        'absolute end-2 flex items-center justify-center [&_ng-icon]:text-[calc(var(--spacing)*4)] pointer-events-none opacity-0 group-data-checked/dropdown-menu-radio:opacity-100',
+        'absolute end-2 flex items-center justify-center [&_ng-icon]:text-[length:--spacing(4)] pointer-events-none opacity-0 group-data-checked/dropdown-menu-radio:opacity-100',
     );
   }
 }

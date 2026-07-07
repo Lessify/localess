@@ -40,11 +40,11 @@ export interface Integration {
    * The set of permissions for the GitHub app
    */
   permissions: {
-    'issues': string;
-    'checks': string;
-    'metadata': string;
-    'contents': string;
-    'deployments': string;
+    issues: string;
+    checks: string;
+    metadata: string;
+    contents: string;
+    deployments: string;
     [key: string]: string;
   };
 

@@ -4,5 +4,4 @@
 /**
  * An object without any properties.
  */
-export interface EmptyObject {
-}
+export interface EmptyObject {}

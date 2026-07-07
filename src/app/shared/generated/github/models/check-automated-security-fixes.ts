@@ -5,7 +5,6 @@
  * Check Automated Security Fixes
  */
 export interface CheckAutomatedSecurityFixes {
-
   /**
    * Whether automated security fixes are enabled for the repository.
    */

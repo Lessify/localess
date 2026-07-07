@@ -9,24 +9,28 @@ import { RequestBuilder } from '../../request-builder';
 import { BranchShort } from '../../models/branch-short';
 
 export interface ReposListBranchesForHeadCommit$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The SHA of the commit.
- */
+  /**
+   * The SHA of the commit.
+   */
   commit_sha: string;
 }
 
-export function reposListBranchesForHeadCommit(http: HttpClient, rootUrl: string, params: ReposListBranchesForHeadCommit$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<BranchShort>>> {
+export function reposListBranchesForHeadCommit(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposListBranchesForHeadCommit$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Array<BranchShort>>> {
   const rb = new RequestBuilder(rootUrl, reposListBranchesForHeadCommit.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -34,13 +38,11 @@ export function reposListBranchesForHeadCommit(http: HttpClient, rootUrl: string
     rb.path('commit_sha', params.commit_sha, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Array<BranchShort>>;
-    })
+    }),
   );
 }
 

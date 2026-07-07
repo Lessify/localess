@@ -5,7 +5,6 @@
  * An actor that can bypass rules in a ruleset
  */
 export interface RepositoryRulesetBypassActor {
-
   /**
    * The ID of the actor that can bypass a ruleset
    */

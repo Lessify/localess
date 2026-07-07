@@ -7,16 +7,15 @@ import { RepositoryRuleParamsStatusCheckConfiguration } from '../models/reposito
  */
 export interface RepositoryRuleRequiredStatusChecks {
   parameters?: {
+    /**
+     * Status checks that are required.
+     */
+    required_status_checks: Array<RepositoryRuleParamsStatusCheckConfiguration>;
 
-/**
- * Status checks that are required.
- */
-'required_status_checks': Array<RepositoryRuleParamsStatusCheckConfiguration>;
-
-/**
- * Whether pull requests targeting a matching branch must be tested with the latest code. This setting will not take effect unless at least one status check is enabled.
- */
-'strict_required_status_checks_policy': boolean;
-};
+    /**
+     * Whether pull requests targeting a matching branch must be tested with the latest code. This setting will not take effect unless at least one status check is enabled.
+     */
+    strict_required_status_checks_policy: boolean;
+  };
   type: 'required_status_checks';
 }

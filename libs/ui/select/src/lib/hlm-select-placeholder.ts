@@ -11,7 +11,7 @@ export class HlmSelectPlaceholder {
   constructor() {
     classes(
       () =>
-        "gap-2 [&_ng-icon:not([class*='text-'])]:text-[calc(var(--spacing)*4)] flex items-center data-hidden:hidden [&_ng-icon]:pointer-events-none [&_ng-icon]:shrink-0",
+        "gap-2 [&_ng-icon:not([class*='text-'])]:text-[length:--spacing(4)] flex items-center data-hidden:hidden [&_ng-icon]:pointer-events-none [&_ng-icon]:shrink-0",
     );
   }
 }

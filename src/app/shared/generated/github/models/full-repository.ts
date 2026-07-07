@@ -107,12 +107,12 @@ export interface FullRepository {
   owner: SimpleUser;
   parent?: Repository;
   permissions?: {
-'admin': boolean;
-'maintain'?: boolean;
-'push': boolean;
-'triage'?: boolean;
-'pull': boolean;
-};
+    admin: boolean;
+    maintain?: boolean;
+    push: boolean;
+    triage?: boolean;
+    pull: boolean;
+  };
   private: boolean;
   pulls_url: string;
   pushed_at: string;

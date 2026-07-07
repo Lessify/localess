@@ -9,24 +9,28 @@ import { RequestBuilder } from '../../request-builder';
 import { Release } from '../../models/release';
 
 export interface ReposGetRelease$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The unique identifier of the release.
- */
+  /**
+   * The unique identifier of the release.
+   */
   release_id: number;
 }
 
-export function reposGetRelease(http: HttpClient, rootUrl: string, params: ReposGetRelease$Params, context?: HttpContext): Observable<StrictHttpResponse<Release>> {
+export function reposGetRelease(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposGetRelease$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Release>> {
   const rb = new RequestBuilder(rootUrl, reposGetRelease.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -34,13 +38,11 @@ export function reposGetRelease(http: HttpClient, rootUrl: string, params: Repos
     rb.path('release_id', params.release_id, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Release>;
-    })
+    }),
   );
 }
 

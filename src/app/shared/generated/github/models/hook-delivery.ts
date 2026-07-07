@@ -5,7 +5,6 @@
  * Delivery made by a webhook.
  */
 export interface HookDelivery {
-
   /**
    * The type of activity for the event that triggered the delivery.
    */
@@ -51,35 +50,33 @@ export interface HookDelivery {
    */
   repository_id: number | null;
   request: {
+    /**
+     * The request headers sent with the webhook delivery.
+     */
+    headers: {
+      [key: string]: any;
+    } | null;
 
-/**
- * The request headers sent with the webhook delivery.
- */
-'headers': ({
-[key: string]: any;
-}) | null;
-
-/**
- * The webhook payload.
- */
-'payload': ({
-[key: string]: any;
-}) | null;
-};
+    /**
+     * The webhook payload.
+     */
+    payload: {
+      [key: string]: any;
+    } | null;
+  };
   response: {
+    /**
+     * The response headers received when the delivery was made.
+     */
+    headers: {
+      [key: string]: any;
+    } | null;
 
-/**
- * The response headers received when the delivery was made.
- */
-'headers': ({
-[key: string]: any;
-}) | null;
-
-/**
- * The response payload received.
- */
-'payload': string | null;
-};
+    /**
+     * The response payload received.
+     */
+    payload: string | null;
+  };
 
   /**
    * Description of the status of the attempted delivery

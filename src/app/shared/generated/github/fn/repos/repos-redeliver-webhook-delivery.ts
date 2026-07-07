@@ -6,28 +6,30 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-
 export interface ReposRedeliverWebhookDelivery$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The unique identifier of the hook.
- */
+  /**
+   * The unique identifier of the hook.
+   */
   hook_id: number;
   delivery_id: number;
 }
 
-export function reposRedeliverWebhookDelivery(http: HttpClient, rootUrl: string, params: ReposRedeliverWebhookDelivery$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-}>> {
+export function reposRedeliverWebhookDelivery(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposRedeliverWebhookDelivery$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<{}>> {
   const rb = new RequestBuilder(rootUrl, reposRedeliverWebhookDelivery.PATH, 'post');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -36,14 +38,11 @@ export function reposRedeliverWebhookDelivery(http: HttpClient, rootUrl: string,
     rb.path('delivery_id', params.delivery_id, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<{
-      }>;
-    })
+      return r as StrictHttpResponse<{}>;
+    }),
   );
 }
 

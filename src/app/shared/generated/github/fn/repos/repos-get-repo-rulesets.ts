@@ -9,34 +9,38 @@ import { RequestBuilder } from '../../request-builder';
 import { RepositoryRuleset } from '../../models/repository-ruleset';
 
 export interface ReposGetRepoRulesets$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The number of results per page (max 100).
- */
+  /**
+   * The number of results per page (max 100).
+   */
   per_page?: number;
 
-/**
- * Page number of the results to fetch.
- */
+  /**
+   * Page number of the results to fetch.
+   */
   page?: number;
 
-/**
- * Include rulesets configured at higher levels that apply to this repository
- */
+  /**
+   * Include rulesets configured at higher levels that apply to this repository
+   */
   includes_parents?: boolean;
 }
 
-export function reposGetRepoRulesets(http: HttpClient, rootUrl: string, params: ReposGetRepoRulesets$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<RepositoryRuleset>>> {
+export function reposGetRepoRulesets(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposGetRepoRulesets$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Array<RepositoryRuleset>>> {
   const rb = new RequestBuilder(rootUrl, reposGetRepoRulesets.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -46,13 +50,11 @@ export function reposGetRepoRulesets(http: HttpClient, rootUrl: string, params: 
     rb.query('includes_parents', params.includes_parents, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Array<RepositoryRuleset>>;
-    })
+    }),
   );
 }
 

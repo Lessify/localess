@@ -9,24 +9,28 @@ import { RequestBuilder } from '../../request-builder';
 import { RepositoryRuleset } from '../../models/repository-ruleset';
 
 export interface ReposGetOrgRulesets$Params {
-
-/**
- * The organization name. The name is not case sensitive.
- */
+  /**
+   * The organization name. The name is not case sensitive.
+   */
   org: string;
 
-/**
- * The number of results per page (max 100).
- */
+  /**
+   * The number of results per page (max 100).
+   */
   per_page?: number;
 
-/**
- * Page number of the results to fetch.
- */
+  /**
+   * Page number of the results to fetch.
+   */
   page?: number;
 }
 
-export function reposGetOrgRulesets(http: HttpClient, rootUrl: string, params: ReposGetOrgRulesets$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<RepositoryRuleset>>> {
+export function reposGetOrgRulesets(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposGetOrgRulesets$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Array<RepositoryRuleset>>> {
   const rb = new RequestBuilder(rootUrl, reposGetOrgRulesets.PATH, 'get');
   if (params) {
     rb.path('org', params.org, {});
@@ -34,13 +38,11 @@ export function reposGetOrgRulesets(http: HttpClient, rootUrl: string, params: R
     rb.query('page', params.page, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Array<RepositoryRuleset>>;
-    })
+    }),
   );
 }
 

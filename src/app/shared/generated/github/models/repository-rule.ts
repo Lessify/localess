@@ -18,4 +18,18 @@ import { RepositoryRuleUpdate } from '../models/repository-rule-update';
 /**
  * A repository rule.
  */
-export type RepositoryRule = (RepositoryRuleCreation | RepositoryRuleUpdate | RepositoryRuleDeletion | RepositoryRuleRequiredLinearHistory | RepositoryRuleRequiredDeployments | RepositoryRuleRequiredSignatures | RepositoryRulePullRequest | RepositoryRuleRequiredStatusChecks | RepositoryRuleNonFastForward | RepositoryRuleCommitMessagePattern | RepositoryRuleCommitAuthorEmailPattern | RepositoryRuleCommitterEmailPattern | RepositoryRuleBranchNamePattern | RepositoryRuleTagNamePattern);
+export type RepositoryRule =
+  | RepositoryRuleCreation
+  | RepositoryRuleUpdate
+  | RepositoryRuleDeletion
+  | RepositoryRuleRequiredLinearHistory
+  | RepositoryRuleRequiredDeployments
+  | RepositoryRuleRequiredSignatures
+  | RepositoryRulePullRequest
+  | RepositoryRuleRequiredStatusChecks
+  | RepositoryRuleNonFastForward
+  | RepositoryRuleCommitMessagePattern
+  | RepositoryRuleCommitAuthorEmailPattern
+  | RepositoryRuleCommitterEmailPattern
+  | RepositoryRuleBranchNamePattern
+  | RepositoryRuleTagNamePattern;

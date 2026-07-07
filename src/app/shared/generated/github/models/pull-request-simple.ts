@@ -13,28 +13,28 @@ import { Team } from '../models/team';
  * Pull Request Simple
  */
 export interface PullRequestSimple {
-  '_links': {
-'comments': Link;
-'commits': Link;
-'statuses': Link;
-'html': Link;
-'issue': Link;
-'review_comments': Link;
-'review_comment': Link;
-'self': Link;
-};
+  _links: {
+    comments: Link;
+    commits: Link;
+    statuses: Link;
+    html: Link;
+    issue: Link;
+    review_comments: Link;
+    review_comment: Link;
+    self: Link;
+  };
   active_lock_reason?: string | null;
   assignee: NullableSimpleUser | null;
   assignees?: Array<SimpleUser> | null;
   author_association: AuthorAssociation;
   auto_merge: AutoMerge | null;
   base: {
-'label': string;
-'ref': string;
-'repo': Repository;
-'sha': string;
-'user': NullableSimpleUser | null;
-};
+    label: string;
+    ref: string;
+    repo: Repository;
+    sha: string;
+    user: NullableSimpleUser | null;
+  };
   body: string | null;
   closed_at: string | null;
   comments_url: string;
@@ -47,24 +47,24 @@ export interface PullRequestSimple {
    */
   draft?: boolean;
   head: {
-'label': string;
-'ref': string;
-'repo': Repository;
-'sha': string;
-'user': NullableSimpleUser | null;
-};
+    label: string;
+    ref: string;
+    repo: Repository;
+    sha: string;
+    user: NullableSimpleUser | null;
+  };
   html_url: string;
   id: number;
   issue_url: string;
   labels: Array<{
-'id': number;
-'node_id': string;
-'url': string;
-'name': string;
-'description': string;
-'color': string;
-'default': boolean;
-}>;
+    id: number;
+    node_id: string;
+    url: string;
+    name: string;
+    description: string;
+    color: string;
+    default: boolean;
+  }>;
   locked: boolean;
   merge_commit_sha: string | null;
   merged_at: string | null;

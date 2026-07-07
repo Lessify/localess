@@ -7,5 +7,5 @@
 export enum RepositoryRuleEnforcement {
   Disabled = 'disabled',
   Active = 'active',
-  Evaluate = 'evaluate'
+  Evaluate = 'evaluate',
 }

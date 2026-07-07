@@ -6,7 +6,6 @@ import { NullableSimpleUser } from '../models/nullable-simple-user';
  * Activity
  */
 export interface Activity {
-
   /**
    * The type of the activity that was performed.
    */

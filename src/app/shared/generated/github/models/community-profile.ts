@@ -12,14 +12,14 @@ export interface CommunityProfile {
   description: string | null;
   documentation: string | null;
   files: {
-'code_of_conduct': NullableCodeOfConductSimple | null;
-'code_of_conduct_file': NullableCommunityHealthFile | null;
-'license': NullableLicenseSimple | null;
-'contributing': NullableCommunityHealthFile | null;
-'readme': NullableCommunityHealthFile | null;
-'issue_template': NullableCommunityHealthFile | null;
-'pull_request_template': NullableCommunityHealthFile | null;
-};
+    code_of_conduct: NullableCodeOfConductSimple | null;
+    code_of_conduct_file: NullableCommunityHealthFile | null;
+    license: NullableLicenseSimple | null;
+    contributing: NullableCommunityHealthFile | null;
+    readme: NullableCommunityHealthFile | null;
+    issue_template: NullableCommunityHealthFile | null;
+    pull_request_template: NullableCommunityHealthFile | null;
+  };
   health_percentage: number;
   updated_at: string | null;
 }

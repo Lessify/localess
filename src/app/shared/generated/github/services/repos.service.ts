@@ -458,7 +458,6 @@ import { Topic } from '../models/topic';
 import { ViewTraffic } from '../models/view-traffic';
 import { WebhookConfig } from '../models/webhook-config';
 
-
 /**
  * Interact with GitHub Repos.
  */
@@ -483,7 +482,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListForOrg$Response(params: ReposListForOrg$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<MinimalRepository>>> {
+  reposListForOrg$Response(
+    params: ReposListForOrg$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<MinimalRepository>>> {
     return reposListForOrg(this.http, this.rootUrl, params, context);
   }
 
@@ -501,7 +503,7 @@ export class ReposService extends BaseService {
    */
   reposListForOrg(params: ReposListForOrg$Params, context?: HttpContext): Observable<Array<MinimalRepository>> {
     return this.reposListForOrg$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<MinimalRepository>>): Array<MinimalRepository> => r.body)
+      map((r: StrictHttpResponse<Array<MinimalRepository>>): Array<MinimalRepository> => r.body),
     );
   }
 
@@ -547,9 +549,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateInOrg(params: ReposCreateInOrg$Params, context?: HttpContext): Observable<Repository> {
-    return this.reposCreateInOrg$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Repository>): Repository => r.body)
-    );
+    return this.reposCreateInOrg$Response(params, context).pipe(map((r: StrictHttpResponse<Repository>): Repository => r.body));
   }
 
   /** Path part for operation `reposGetOrgRulesets()` */
@@ -565,7 +565,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetOrgRulesets$Response(params: ReposGetOrgRulesets$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<RepositoryRuleset>>> {
+  reposGetOrgRulesets$Response(
+    params: ReposGetOrgRulesets$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<RepositoryRuleset>>> {
     return reposGetOrgRulesets(this.http, this.rootUrl, params, context);
   }
 
@@ -581,7 +584,7 @@ export class ReposService extends BaseService {
    */
   reposGetOrgRulesets(params: ReposGetOrgRulesets$Params, context?: HttpContext): Observable<Array<RepositoryRuleset>> {
     return this.reposGetOrgRulesets$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<RepositoryRuleset>>): Array<RepositoryRuleset> => r.body)
+      map((r: StrictHttpResponse<Array<RepositoryRuleset>>): Array<RepositoryRuleset> => r.body),
     );
   }
 
@@ -598,7 +601,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateOrgRuleset$Response(params: ReposCreateOrgRuleset$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryRuleset>> {
+  reposCreateOrgRuleset$Response(
+    params: ReposCreateOrgRuleset$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<RepositoryRuleset>> {
     return reposCreateOrgRuleset(this.http, this.rootUrl, params, context);
   }
 
@@ -614,7 +620,7 @@ export class ReposService extends BaseService {
    */
   reposCreateOrgRuleset(params: ReposCreateOrgRuleset$Params, context?: HttpContext): Observable<RepositoryRuleset> {
     return this.reposCreateOrgRuleset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body)
+      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body),
     );
   }
 
@@ -647,7 +653,7 @@ export class ReposService extends BaseService {
    */
   reposGetOrgRuleset(params: ReposGetOrgRuleset$Params, context?: HttpContext): Observable<RepositoryRuleset> {
     return this.reposGetOrgRuleset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body)
+      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body),
     );
   }
 
@@ -664,7 +670,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateOrgRuleset$Response(params: ReposUpdateOrgRuleset$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryRuleset>> {
+  reposUpdateOrgRuleset$Response(
+    params: ReposUpdateOrgRuleset$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<RepositoryRuleset>> {
     return reposUpdateOrgRuleset(this.http, this.rootUrl, params, context);
   }
 
@@ -680,7 +689,7 @@ export class ReposService extends BaseService {
    */
   reposUpdateOrgRuleset(params: ReposUpdateOrgRuleset$Params, context?: HttpContext): Observable<RepositoryRuleset> {
     return this.reposUpdateOrgRuleset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body)
+      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body),
     );
   }
 
@@ -712,9 +721,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteOrgRuleset(params: ReposDeleteOrgRuleset$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteOrgRuleset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteOrgRuleset$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGet()` */
@@ -749,9 +756,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGet(params: ReposGet$Params, context?: HttpContext): Observable<FullRepository> {
-    return this.reposGet$Response(params, context).pipe(
-      map((r: StrictHttpResponse<FullRepository>): FullRepository => r.body)
-    );
+    return this.reposGet$Response(params, context).pipe(map((r: StrictHttpResponse<FullRepository>): FullRepository => r.body));
   }
 
   /** Path part for operation `reposDelete()` */
@@ -788,9 +793,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDelete(params: ReposDelete$Params, context?: HttpContext): Observable<void> {
-    return this.reposDelete$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDelete$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposUpdate()` */
@@ -821,9 +824,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposUpdate(params: ReposUpdate$Params, context?: HttpContext): Observable<FullRepository> {
-    return this.reposUpdate$Response(params, context).pipe(
-      map((r: StrictHttpResponse<FullRepository>): FullRepository => r.body)
-    );
+    return this.reposUpdate$Response(params, context).pipe(map((r: StrictHttpResponse<FullRepository>): FullRepository => r.body));
   }
 
   /** Path part for operation `reposListActivities()` */
@@ -861,7 +862,7 @@ export class ReposService extends BaseService {
    */
   reposListActivities(params: ReposListActivities$Params, context?: HttpContext): Observable<Array<Activity>> {
     return this.reposListActivities$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Activity>>): Array<Activity> => r.body)
+      map((r: StrictHttpResponse<Array<Activity>>): Array<Activity> => r.body),
     );
   }
 
@@ -897,9 +898,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposListAutolinks(params: ReposListAutolinks$Params, context?: HttpContext): Observable<Array<Autolink>> {
-    return this.reposListAutolinks$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Autolink>>): Array<Autolink> => r.body)
-    );
+    return this.reposListAutolinks$Response(params, context).pipe(map((r: StrictHttpResponse<Array<Autolink>>): Array<Autolink> => r.body));
   }
 
   /** Path part for operation `reposCreateAutolink()` */
@@ -930,9 +929,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateAutolink(params: ReposCreateAutolink$Params, context?: HttpContext): Observable<Autolink> {
-    return this.reposCreateAutolink$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Autolink>): Autolink => r.body)
-    );
+    return this.reposCreateAutolink$Response(params, context).pipe(map((r: StrictHttpResponse<Autolink>): Autolink => r.body));
   }
 
   /** Path part for operation `reposGetAutolink()` */
@@ -967,9 +964,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetAutolink(params: ReposGetAutolink$Params, context?: HttpContext): Observable<Autolink> {
-    return this.reposGetAutolink$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Autolink>): Autolink => r.body)
-    );
+    return this.reposGetAutolink$Response(params, context).pipe(map((r: StrictHttpResponse<Autolink>): Autolink => r.body));
   }
 
   /** Path part for operation `reposDeleteAutolink()` */
@@ -1004,9 +999,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteAutolink(params: ReposDeleteAutolink$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteAutolink$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteAutolink$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposCheckAutomatedSecurityFixes()` */
@@ -1022,7 +1015,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposCheckAutomatedSecurityFixes$Response(params: ReposCheckAutomatedSecurityFixes$Params, context?: HttpContext): Observable<StrictHttpResponse<CheckAutomatedSecurityFixes>> {
+  reposCheckAutomatedSecurityFixes$Response(
+    params: ReposCheckAutomatedSecurityFixes$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<CheckAutomatedSecurityFixes>> {
     return reposCheckAutomatedSecurityFixes(this.http, this.rootUrl, params, context);
   }
 
@@ -1036,9 +1032,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposCheckAutomatedSecurityFixes(params: ReposCheckAutomatedSecurityFixes$Params, context?: HttpContext): Observable<CheckAutomatedSecurityFixes> {
+  reposCheckAutomatedSecurityFixes(
+    params: ReposCheckAutomatedSecurityFixes$Params,
+    context?: HttpContext,
+  ): Observable<CheckAutomatedSecurityFixes> {
     return this.reposCheckAutomatedSecurityFixes$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CheckAutomatedSecurityFixes>): CheckAutomatedSecurityFixes => r.body)
+      map((r: StrictHttpResponse<CheckAutomatedSecurityFixes>): CheckAutomatedSecurityFixes => r.body),
     );
   }
 
@@ -1055,7 +1054,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposEnableAutomatedSecurityFixes$Response(params: ReposEnableAutomatedSecurityFixes$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposEnableAutomatedSecurityFixes$Response(
+    params: ReposEnableAutomatedSecurityFixes$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposEnableAutomatedSecurityFixes(this.http, this.rootUrl, params, context);
   }
 
@@ -1070,9 +1072,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposEnableAutomatedSecurityFixes(params: ReposEnableAutomatedSecurityFixes$Params, context?: HttpContext): Observable<void> {
-    return this.reposEnableAutomatedSecurityFixes$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposEnableAutomatedSecurityFixes$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposDisableAutomatedSecurityFixes()` */
@@ -1088,7 +1088,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDisableAutomatedSecurityFixes$Response(params: ReposDisableAutomatedSecurityFixes$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDisableAutomatedSecurityFixes$Response(
+    params: ReposDisableAutomatedSecurityFixes$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDisableAutomatedSecurityFixes(this.http, this.rootUrl, params, context);
   }
 
@@ -1103,9 +1106,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDisableAutomatedSecurityFixes(params: ReposDisableAutomatedSecurityFixes$Params, context?: HttpContext): Observable<void> {
-    return this.reposDisableAutomatedSecurityFixes$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDisableAutomatedSecurityFixes$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposListBranches()` */
@@ -1137,7 +1138,7 @@ export class ReposService extends BaseService {
    */
   reposListBranches(params: ReposListBranches$Params, context?: HttpContext): Observable<Array<ShortBranch>> {
     return this.reposListBranches$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ShortBranch>>): Array<ShortBranch> => r.body)
+      map((r: StrictHttpResponse<Array<ShortBranch>>): Array<ShortBranch> => r.body),
     );
   }
 
@@ -1170,7 +1171,7 @@ export class ReposService extends BaseService {
    */
   reposGetBranch(params: ReposGetBranch$Params, context?: HttpContext): Observable<BranchWithProtection> {
     return this.reposGetBranch$Response(params, context).pipe(
-      map((r: StrictHttpResponse<BranchWithProtection>): BranchWithProtection => r.body)
+      map((r: StrictHttpResponse<BranchWithProtection>): BranchWithProtection => r.body),
     );
   }
 
@@ -1187,7 +1188,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetBranchProtection$Response(params: ReposGetBranchProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<BranchProtection>> {
+  reposGetBranchProtection$Response(
+    params: ReposGetBranchProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<BranchProtection>> {
     return reposGetBranchProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1203,7 +1207,7 @@ export class ReposService extends BaseService {
    */
   reposGetBranchProtection(params: ReposGetBranchProtection$Params, context?: HttpContext): Observable<BranchProtection> {
     return this.reposGetBranchProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<BranchProtection>): BranchProtection => r.body)
+      map((r: StrictHttpResponse<BranchProtection>): BranchProtection => r.body),
     );
   }
 
@@ -1226,7 +1230,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateBranchProtection$Response(params: ReposUpdateBranchProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<ProtectedBranch>> {
+  reposUpdateBranchProtection$Response(
+    params: ReposUpdateBranchProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ProtectedBranch>> {
     return reposUpdateBranchProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1248,7 +1255,7 @@ export class ReposService extends BaseService {
    */
   reposUpdateBranchProtection(params: ReposUpdateBranchProtection$Params, context?: HttpContext): Observable<ProtectedBranch> {
     return this.reposUpdateBranchProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ProtectedBranch>): ProtectedBranch => r.body)
+      map((r: StrictHttpResponse<ProtectedBranch>): ProtectedBranch => r.body),
     );
   }
 
@@ -1265,7 +1272,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDeleteBranchProtection$Response(params: ReposDeleteBranchProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDeleteBranchProtection$Response(
+    params: ReposDeleteBranchProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDeleteBranchProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1280,9 +1290,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteBranchProtection(params: ReposDeleteBranchProtection$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteBranchProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteBranchProtection$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGetAdminBranchProtection()` */
@@ -1298,7 +1306,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAdminBranchProtection$Response(params: ReposGetAdminBranchProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<ProtectedBranchAdminEnforced>> {
+  reposGetAdminBranchProtection$Response(
+    params: ReposGetAdminBranchProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ProtectedBranchAdminEnforced>> {
     return reposGetAdminBranchProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1312,9 +1323,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAdminBranchProtection(params: ReposGetAdminBranchProtection$Params, context?: HttpContext): Observable<ProtectedBranchAdminEnforced> {
+  reposGetAdminBranchProtection(
+    params: ReposGetAdminBranchProtection$Params,
+    context?: HttpContext,
+  ): Observable<ProtectedBranchAdminEnforced> {
     return this.reposGetAdminBranchProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ProtectedBranchAdminEnforced>): ProtectedBranchAdminEnforced => r.body)
+      map((r: StrictHttpResponse<ProtectedBranchAdminEnforced>): ProtectedBranchAdminEnforced => r.body),
     );
   }
 
@@ -1333,7 +1347,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposSetAdminBranchProtection$Response(params: ReposSetAdminBranchProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<ProtectedBranchAdminEnforced>> {
+  reposSetAdminBranchProtection$Response(
+    params: ReposSetAdminBranchProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ProtectedBranchAdminEnforced>> {
     return reposSetAdminBranchProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1349,9 +1366,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposSetAdminBranchProtection(params: ReposSetAdminBranchProtection$Params, context?: HttpContext): Observable<ProtectedBranchAdminEnforced> {
+  reposSetAdminBranchProtection(
+    params: ReposSetAdminBranchProtection$Params,
+    context?: HttpContext,
+  ): Observable<ProtectedBranchAdminEnforced> {
     return this.reposSetAdminBranchProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ProtectedBranchAdminEnforced>): ProtectedBranchAdminEnforced => r.body)
+      map((r: StrictHttpResponse<ProtectedBranchAdminEnforced>): ProtectedBranchAdminEnforced => r.body),
     );
   }
 
@@ -1370,7 +1390,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDeleteAdminBranchProtection$Response(params: ReposDeleteAdminBranchProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDeleteAdminBranchProtection$Response(
+    params: ReposDeleteAdminBranchProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDeleteAdminBranchProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1387,13 +1410,12 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteAdminBranchProtection(params: ReposDeleteAdminBranchProtection$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteAdminBranchProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteAdminBranchProtection$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGetPullRequestReviewProtection()` */
-  static readonly ReposGetPullRequestReviewProtectionPath = '/repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews';
+  static readonly ReposGetPullRequestReviewProtectionPath =
+    '/repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews';
 
   /**
    * Get pull request review protection.
@@ -1405,7 +1427,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetPullRequestReviewProtection$Response(params: ReposGetPullRequestReviewProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<ProtectedBranchPullRequestReview>> {
+  reposGetPullRequestReviewProtection$Response(
+    params: ReposGetPullRequestReviewProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ProtectedBranchPullRequestReview>> {
     return reposGetPullRequestReviewProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1419,14 +1444,18 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetPullRequestReviewProtection(params: ReposGetPullRequestReviewProtection$Params, context?: HttpContext): Observable<ProtectedBranchPullRequestReview> {
+  reposGetPullRequestReviewProtection(
+    params: ReposGetPullRequestReviewProtection$Params,
+    context?: HttpContext,
+  ): Observable<ProtectedBranchPullRequestReview> {
     return this.reposGetPullRequestReviewProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ProtectedBranchPullRequestReview>): ProtectedBranchPullRequestReview => r.body)
+      map((r: StrictHttpResponse<ProtectedBranchPullRequestReview>): ProtectedBranchPullRequestReview => r.body),
     );
   }
 
   /** Path part for operation `reposDeletePullRequestReviewProtection()` */
-  static readonly ReposDeletePullRequestReviewProtectionPath = '/repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews';
+  static readonly ReposDeletePullRequestReviewProtectionPath =
+    '/repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews';
 
   /**
    * Delete pull request review protection.
@@ -1438,7 +1467,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDeletePullRequestReviewProtection$Response(params: ReposDeletePullRequestReviewProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDeletePullRequestReviewProtection$Response(
+    params: ReposDeletePullRequestReviewProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDeletePullRequestReviewProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1453,13 +1485,12 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeletePullRequestReviewProtection(params: ReposDeletePullRequestReviewProtection$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeletePullRequestReviewProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeletePullRequestReviewProtection$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposUpdatePullRequestReviewProtection()` */
-  static readonly ReposUpdatePullRequestReviewProtectionPath = '/repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews';
+  static readonly ReposUpdatePullRequestReviewProtectionPath =
+    '/repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews';
 
   /**
    * Update pull request review protection.
@@ -1475,7 +1506,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdatePullRequestReviewProtection$Response(params: ReposUpdatePullRequestReviewProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<ProtectedBranchPullRequestReview>> {
+  reposUpdatePullRequestReviewProtection$Response(
+    params: ReposUpdatePullRequestReviewProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ProtectedBranchPullRequestReview>> {
     return reposUpdatePullRequestReviewProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1493,9 +1527,12 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdatePullRequestReviewProtection(params: ReposUpdatePullRequestReviewProtection$Params, context?: HttpContext): Observable<ProtectedBranchPullRequestReview> {
+  reposUpdatePullRequestReviewProtection(
+    params: ReposUpdatePullRequestReviewProtection$Params,
+    context?: HttpContext,
+  ): Observable<ProtectedBranchPullRequestReview> {
     return this.reposUpdatePullRequestReviewProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ProtectedBranchPullRequestReview>): ProtectedBranchPullRequestReview => r.body)
+      map((r: StrictHttpResponse<ProtectedBranchPullRequestReview>): ProtectedBranchPullRequestReview => r.body),
     );
   }
 
@@ -1516,7 +1553,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCommitSignatureProtection$Response(params: ReposGetCommitSignatureProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<ProtectedBranchAdminEnforced>> {
+  reposGetCommitSignatureProtection$Response(
+    params: ReposGetCommitSignatureProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ProtectedBranchAdminEnforced>> {
     return reposGetCommitSignatureProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1534,9 +1574,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCommitSignatureProtection(params: ReposGetCommitSignatureProtection$Params, context?: HttpContext): Observable<ProtectedBranchAdminEnforced> {
+  reposGetCommitSignatureProtection(
+    params: ReposGetCommitSignatureProtection$Params,
+    context?: HttpContext,
+  ): Observable<ProtectedBranchAdminEnforced> {
     return this.reposGetCommitSignatureProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ProtectedBranchAdminEnforced>): ProtectedBranchAdminEnforced => r.body)
+      map((r: StrictHttpResponse<ProtectedBranchAdminEnforced>): ProtectedBranchAdminEnforced => r.body),
     );
   }
 
@@ -1555,7 +1598,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposCreateCommitSignatureProtection$Response(params: ReposCreateCommitSignatureProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<ProtectedBranchAdminEnforced>> {
+  reposCreateCommitSignatureProtection$Response(
+    params: ReposCreateCommitSignatureProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ProtectedBranchAdminEnforced>> {
     return reposCreateCommitSignatureProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1571,9 +1617,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposCreateCommitSignatureProtection(params: ReposCreateCommitSignatureProtection$Params, context?: HttpContext): Observable<ProtectedBranchAdminEnforced> {
+  reposCreateCommitSignatureProtection(
+    params: ReposCreateCommitSignatureProtection$Params,
+    context?: HttpContext,
+  ): Observable<ProtectedBranchAdminEnforced> {
     return this.reposCreateCommitSignatureProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ProtectedBranchAdminEnforced>): ProtectedBranchAdminEnforced => r.body)
+      map((r: StrictHttpResponse<ProtectedBranchAdminEnforced>): ProtectedBranchAdminEnforced => r.body),
     );
   }
 
@@ -1592,7 +1641,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDeleteCommitSignatureProtection$Response(params: ReposDeleteCommitSignatureProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDeleteCommitSignatureProtection$Response(
+    params: ReposDeleteCommitSignatureProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDeleteCommitSignatureProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1609,9 +1661,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteCommitSignatureProtection(params: ReposDeleteCommitSignatureProtection$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteCommitSignatureProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteCommitSignatureProtection$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGetStatusChecksProtection()` */
@@ -1627,7 +1677,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetStatusChecksProtection$Response(params: ReposGetStatusChecksProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<StatusCheckPolicy>> {
+  reposGetStatusChecksProtection$Response(
+    params: ReposGetStatusChecksProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<StatusCheckPolicy>> {
     return reposGetStatusChecksProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1643,7 +1696,7 @@ export class ReposService extends BaseService {
    */
   reposGetStatusChecksProtection(params: ReposGetStatusChecksProtection$Params, context?: HttpContext): Observable<StatusCheckPolicy> {
     return this.reposGetStatusChecksProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<StatusCheckPolicy>): StatusCheckPolicy => r.body)
+      map((r: StrictHttpResponse<StatusCheckPolicy>): StatusCheckPolicy => r.body),
     );
   }
 
@@ -1660,7 +1713,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposRemoveStatusCheckProtection$Response(params: ReposRemoveStatusCheckProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposRemoveStatusCheckProtection$Response(
+    params: ReposRemoveStatusCheckProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposRemoveStatusCheckProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1675,9 +1731,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposRemoveStatusCheckProtection(params: ReposRemoveStatusCheckProtection$Params, context?: HttpContext): Observable<void> {
-    return this.reposRemoveStatusCheckProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposRemoveStatusCheckProtection$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposUpdateStatusCheckProtection()` */
@@ -1695,7 +1749,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateStatusCheckProtection$Response(params: ReposUpdateStatusCheckProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<StatusCheckPolicy>> {
+  reposUpdateStatusCheckProtection$Response(
+    params: ReposUpdateStatusCheckProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<StatusCheckPolicy>> {
     return reposUpdateStatusCheckProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -1713,7 +1770,7 @@ export class ReposService extends BaseService {
    */
   reposUpdateStatusCheckProtection(params: ReposUpdateStatusCheckProtection$Params, context?: HttpContext): Observable<StatusCheckPolicy> {
     return this.reposUpdateStatusCheckProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<StatusCheckPolicy>): StatusCheckPolicy => r.body)
+      map((r: StrictHttpResponse<StatusCheckPolicy>): StatusCheckPolicy => r.body),
     );
   }
 
@@ -1730,7 +1787,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAllStatusCheckContexts$Response(params: ReposGetAllStatusCheckContexts$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<string>>> {
+  reposGetAllStatusCheckContexts$Response(
+    params: ReposGetAllStatusCheckContexts$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<string>>> {
     return reposGetAllStatusCheckContexts(this.http, this.rootUrl, params, context);
   }
 
@@ -1746,7 +1806,7 @@ export class ReposService extends BaseService {
    */
   reposGetAllStatusCheckContexts(params: ReposGetAllStatusCheckContexts$Params, context?: HttpContext): Observable<Array<string>> {
     return this.reposGetAllStatusCheckContexts$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<string>>): Array<string> => r.body)
+      map((r: StrictHttpResponse<Array<string>>): Array<string> => r.body),
     );
   }
 
@@ -1763,7 +1823,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposSetStatusCheckContexts$Response(params: ReposSetStatusCheckContexts$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<string>>> {
+  reposSetStatusCheckContexts$Response(
+    params: ReposSetStatusCheckContexts$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<string>>> {
     return reposSetStatusCheckContexts(this.http, this.rootUrl, params, context);
   }
 
@@ -1779,7 +1842,7 @@ export class ReposService extends BaseService {
    */
   reposSetStatusCheckContexts(params: ReposSetStatusCheckContexts$Params, context?: HttpContext): Observable<Array<string>> {
     return this.reposSetStatusCheckContexts$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<string>>): Array<string> => r.body)
+      map((r: StrictHttpResponse<Array<string>>): Array<string> => r.body),
     );
   }
 
@@ -1796,7 +1859,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposAddStatusCheckContexts$Response(params: ReposAddStatusCheckContexts$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<string>>> {
+  reposAddStatusCheckContexts$Response(
+    params: ReposAddStatusCheckContexts$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<string>>> {
     return reposAddStatusCheckContexts(this.http, this.rootUrl, params, context);
   }
 
@@ -1812,7 +1878,7 @@ export class ReposService extends BaseService {
    */
   reposAddStatusCheckContexts(params: ReposAddStatusCheckContexts$Params, context?: HttpContext): Observable<Array<string>> {
     return this.reposAddStatusCheckContexts$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<string>>): Array<string> => r.body)
+      map((r: StrictHttpResponse<Array<string>>): Array<string> => r.body),
     );
   }
 
@@ -1829,7 +1895,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposRemoveStatusCheckContexts$Response(params: ReposRemoveStatusCheckContexts$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<string>>> {
+  reposRemoveStatusCheckContexts$Response(
+    params: ReposRemoveStatusCheckContexts$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<string>>> {
     return reposRemoveStatusCheckContexts(this.http, this.rootUrl, params, context);
   }
 
@@ -1845,7 +1914,7 @@ export class ReposService extends BaseService {
    */
   reposRemoveStatusCheckContexts(params: ReposRemoveStatusCheckContexts$Params, context?: HttpContext): Observable<Array<string>> {
     return this.reposRemoveStatusCheckContexts$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<string>>): Array<string> => r.body)
+      map((r: StrictHttpResponse<Array<string>>): Array<string> => r.body),
     );
   }
 
@@ -1866,7 +1935,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAccessRestrictions$Response(params: ReposGetAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<BranchRestrictionPolicy>> {
+  reposGetAccessRestrictions$Response(
+    params: ReposGetAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<BranchRestrictionPolicy>> {
     return reposGetAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -1886,7 +1958,7 @@ export class ReposService extends BaseService {
    */
   reposGetAccessRestrictions(params: ReposGetAccessRestrictions$Params, context?: HttpContext): Observable<BranchRestrictionPolicy> {
     return this.reposGetAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<BranchRestrictionPolicy>): BranchRestrictionPolicy => r.body)
+      map((r: StrictHttpResponse<BranchRestrictionPolicy>): BranchRestrictionPolicy => r.body),
     );
   }
 
@@ -1905,7 +1977,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDeleteAccessRestrictions$Response(params: ReposDeleteAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDeleteAccessRestrictions$Response(
+    params: ReposDeleteAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDeleteAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -1922,9 +1997,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteAccessRestrictions(params: ReposDeleteAccessRestrictions$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteAccessRestrictions$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGetAppsWithAccessToProtectedBranch()` */
@@ -1942,7 +2015,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAppsWithAccessToProtectedBranch$Response(params: ReposGetAppsWithAccessToProtectedBranch$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Integration>>> {
+  reposGetAppsWithAccessToProtectedBranch$Response(
+    params: ReposGetAppsWithAccessToProtectedBranch$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Integration>>> {
     return reposGetAppsWithAccessToProtectedBranch(this.http, this.rootUrl, params, context);
   }
 
@@ -1958,9 +2034,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAppsWithAccessToProtectedBranch(params: ReposGetAppsWithAccessToProtectedBranch$Params, context?: HttpContext): Observable<Array<Integration>> {
+  reposGetAppsWithAccessToProtectedBranch(
+    params: ReposGetAppsWithAccessToProtectedBranch$Params,
+    context?: HttpContext,
+  ): Observable<Array<Integration>> {
     return this.reposGetAppsWithAccessToProtectedBranch$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Integration>>): Array<Integration> => r.body)
+      map((r: StrictHttpResponse<Array<Integration>>): Array<Integration> => r.body),
     );
   }
 
@@ -1979,7 +2058,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposSetAppAccessRestrictions$Response(params: ReposSetAppAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Integration>>> {
+  reposSetAppAccessRestrictions$Response(
+    params: ReposSetAppAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Integration>>> {
     return reposSetAppAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -1997,7 +2079,7 @@ export class ReposService extends BaseService {
    */
   reposSetAppAccessRestrictions(params: ReposSetAppAccessRestrictions$Params, context?: HttpContext): Observable<Array<Integration>> {
     return this.reposSetAppAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Integration>>): Array<Integration> => r.body)
+      map((r: StrictHttpResponse<Array<Integration>>): Array<Integration> => r.body),
     );
   }
 
@@ -2016,7 +2098,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposAddAppAccessRestrictions$Response(params: ReposAddAppAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Integration>>> {
+  reposAddAppAccessRestrictions$Response(
+    params: ReposAddAppAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Integration>>> {
     return reposAddAppAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -2034,7 +2119,7 @@ export class ReposService extends BaseService {
    */
   reposAddAppAccessRestrictions(params: ReposAddAppAccessRestrictions$Params, context?: HttpContext): Observable<Array<Integration>> {
     return this.reposAddAppAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Integration>>): Array<Integration> => r.body)
+      map((r: StrictHttpResponse<Array<Integration>>): Array<Integration> => r.body),
     );
   }
 
@@ -2053,7 +2138,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposRemoveAppAccessRestrictions$Response(params: ReposRemoveAppAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Integration>>> {
+  reposRemoveAppAccessRestrictions$Response(
+    params: ReposRemoveAppAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Integration>>> {
     return reposRemoveAppAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -2071,7 +2159,7 @@ export class ReposService extends BaseService {
    */
   reposRemoveAppAccessRestrictions(params: ReposRemoveAppAccessRestrictions$Params, context?: HttpContext): Observable<Array<Integration>> {
     return this.reposRemoveAppAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Integration>>): Array<Integration> => r.body)
+      map((r: StrictHttpResponse<Array<Integration>>): Array<Integration> => r.body),
     );
   }
 
@@ -2090,7 +2178,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetTeamsWithAccessToProtectedBranch$Response(params: ReposGetTeamsWithAccessToProtectedBranch$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Team>>> {
+  reposGetTeamsWithAccessToProtectedBranch$Response(
+    params: ReposGetTeamsWithAccessToProtectedBranch$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Team>>> {
     return reposGetTeamsWithAccessToProtectedBranch(this.http, this.rootUrl, params, context);
   }
 
@@ -2106,9 +2197,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetTeamsWithAccessToProtectedBranch(params: ReposGetTeamsWithAccessToProtectedBranch$Params, context?: HttpContext): Observable<Array<Team>> {
+  reposGetTeamsWithAccessToProtectedBranch(
+    params: ReposGetTeamsWithAccessToProtectedBranch$Params,
+    context?: HttpContext,
+  ): Observable<Array<Team>> {
     return this.reposGetTeamsWithAccessToProtectedBranch$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body)
+      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body),
     );
   }
 
@@ -2127,7 +2221,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposSetTeamAccessRestrictions$Response(params: ReposSetTeamAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Team>>> {
+  reposSetTeamAccessRestrictions$Response(
+    params: ReposSetTeamAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Team>>> {
     return reposSetTeamAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -2145,7 +2242,7 @@ export class ReposService extends BaseService {
    */
   reposSetTeamAccessRestrictions(params: ReposSetTeamAccessRestrictions$Params, context?: HttpContext): Observable<Array<Team>> {
     return this.reposSetTeamAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body)
+      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body),
     );
   }
 
@@ -2164,7 +2261,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposAddTeamAccessRestrictions$Response(params: ReposAddTeamAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Team>>> {
+  reposAddTeamAccessRestrictions$Response(
+    params: ReposAddTeamAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Team>>> {
     return reposAddTeamAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -2182,7 +2282,7 @@ export class ReposService extends BaseService {
    */
   reposAddTeamAccessRestrictions(params: ReposAddTeamAccessRestrictions$Params, context?: HttpContext): Observable<Array<Team>> {
     return this.reposAddTeamAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body)
+      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body),
     );
   }
 
@@ -2201,7 +2301,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposRemoveTeamAccessRestrictions$Response(params: ReposRemoveTeamAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Team>>> {
+  reposRemoveTeamAccessRestrictions$Response(
+    params: ReposRemoveTeamAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Team>>> {
     return reposRemoveTeamAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -2219,7 +2322,7 @@ export class ReposService extends BaseService {
    */
   reposRemoveTeamAccessRestrictions(params: ReposRemoveTeamAccessRestrictions$Params, context?: HttpContext): Observable<Array<Team>> {
     return this.reposRemoveTeamAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body)
+      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body),
     );
   }
 
@@ -2238,7 +2341,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetUsersWithAccessToProtectedBranch$Response(params: ReposGetUsersWithAccessToProtectedBranch$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<SimpleUser>>> {
+  reposGetUsersWithAccessToProtectedBranch$Response(
+    params: ReposGetUsersWithAccessToProtectedBranch$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<SimpleUser>>> {
     return reposGetUsersWithAccessToProtectedBranch(this.http, this.rootUrl, params, context);
   }
 
@@ -2254,9 +2360,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetUsersWithAccessToProtectedBranch(params: ReposGetUsersWithAccessToProtectedBranch$Params, context?: HttpContext): Observable<Array<SimpleUser>> {
+  reposGetUsersWithAccessToProtectedBranch(
+    params: ReposGetUsersWithAccessToProtectedBranch$Params,
+    context?: HttpContext,
+  ): Observable<Array<SimpleUser>> {
     return this.reposGetUsersWithAccessToProtectedBranch$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<SimpleUser>>): Array<SimpleUser> => r.body)
+      map((r: StrictHttpResponse<Array<SimpleUser>>): Array<SimpleUser> => r.body),
     );
   }
 
@@ -2279,7 +2388,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposSetUserAccessRestrictions$Response(params: ReposSetUserAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<SimpleUser>>> {
+  reposSetUserAccessRestrictions$Response(
+    params: ReposSetUserAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<SimpleUser>>> {
     return reposSetUserAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -2301,7 +2413,7 @@ export class ReposService extends BaseService {
    */
   reposSetUserAccessRestrictions(params: ReposSetUserAccessRestrictions$Params, context?: HttpContext): Observable<Array<SimpleUser>> {
     return this.reposSetUserAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<SimpleUser>>): Array<SimpleUser> => r.body)
+      map((r: StrictHttpResponse<Array<SimpleUser>>): Array<SimpleUser> => r.body),
     );
   }
 
@@ -2324,7 +2436,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposAddUserAccessRestrictions$Response(params: ReposAddUserAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<SimpleUser>>> {
+  reposAddUserAccessRestrictions$Response(
+    params: ReposAddUserAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<SimpleUser>>> {
     return reposAddUserAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -2346,7 +2461,7 @@ export class ReposService extends BaseService {
    */
   reposAddUserAccessRestrictions(params: ReposAddUserAccessRestrictions$Params, context?: HttpContext): Observable<Array<SimpleUser>> {
     return this.reposAddUserAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<SimpleUser>>): Array<SimpleUser> => r.body)
+      map((r: StrictHttpResponse<Array<SimpleUser>>): Array<SimpleUser> => r.body),
     );
   }
 
@@ -2369,7 +2484,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposRemoveUserAccessRestrictions$Response(params: ReposRemoveUserAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<SimpleUser>>> {
+  reposRemoveUserAccessRestrictions$Response(
+    params: ReposRemoveUserAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<SimpleUser>>> {
     return reposRemoveUserAccessRestrictions(this.http, this.rootUrl, params, context);
   }
 
@@ -2389,9 +2507,12 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposRemoveUserAccessRestrictions(params: ReposRemoveUserAccessRestrictions$Params, context?: HttpContext): Observable<Array<SimpleUser>> {
+  reposRemoveUserAccessRestrictions(
+    params: ReposRemoveUserAccessRestrictions$Params,
+    context?: HttpContext,
+  ): Observable<Array<SimpleUser>> {
     return this.reposRemoveUserAccessRestrictions$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<SimpleUser>>): Array<SimpleUser> => r.body)
+      map((r: StrictHttpResponse<Array<SimpleUser>>): Array<SimpleUser> => r.body),
     );
   }
 
@@ -2422,7 +2543,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposRenameBranch$Response(params: ReposRenameBranch$Params, context?: HttpContext): Observable<StrictHttpResponse<BranchWithProtection>> {
+  reposRenameBranch$Response(
+    params: ReposRenameBranch$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<BranchWithProtection>> {
     return reposRenameBranch(this.http, this.rootUrl, params, context);
   }
 
@@ -2452,7 +2576,7 @@ export class ReposService extends BaseService {
    */
   reposRenameBranch(params: ReposRenameBranch$Params, context?: HttpContext): Observable<BranchWithProtection> {
     return this.reposRenameBranch$Response(params, context).pipe(
-      map((r: StrictHttpResponse<BranchWithProtection>): BranchWithProtection => r.body)
+      map((r: StrictHttpResponse<BranchWithProtection>): BranchWithProtection => r.body),
     );
   }
 
@@ -2473,7 +2597,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposCodeownersErrors$Response(params: ReposCodeownersErrors$Params, context?: HttpContext): Observable<StrictHttpResponse<CodeownersErrors>> {
+  reposCodeownersErrors$Response(
+    params: ReposCodeownersErrors$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<CodeownersErrors>> {
     return reposCodeownersErrors(this.http, this.rootUrl, params, context);
   }
 
@@ -2493,7 +2620,7 @@ export class ReposService extends BaseService {
    */
   reposCodeownersErrors(params: ReposCodeownersErrors$Params, context?: HttpContext): Observable<CodeownersErrors> {
     return this.reposCodeownersErrors$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CodeownersErrors>): CodeownersErrors => r.body)
+      map((r: StrictHttpResponse<CodeownersErrors>): CodeownersErrors => r.body),
     );
   }
 
@@ -2517,7 +2644,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListCollaborators$Response(params: ReposListCollaborators$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Collaborator>>> {
+  reposListCollaborators$Response(
+    params: ReposListCollaborators$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Collaborator>>> {
     return reposListCollaborators(this.http, this.rootUrl, params, context);
   }
 
@@ -2540,7 +2670,7 @@ export class ReposService extends BaseService {
    */
   reposListCollaborators(params: ReposListCollaborators$Params, context?: HttpContext): Observable<Array<Collaborator>> {
     return this.reposListCollaborators$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Collaborator>>): Array<Collaborator> => r.body)
+      map((r: StrictHttpResponse<Array<Collaborator>>): Array<Collaborator> => r.body),
     );
   }
 
@@ -2584,9 +2714,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposCheckCollaborator(params: ReposCheckCollaborator$Params, context?: HttpContext): Observable<void> {
-    return this.reposCheckCollaborator$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposCheckCollaborator$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposAddCollaborator()` */
@@ -2622,7 +2750,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposAddCollaborator$Response(params: ReposAddCollaborator$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryInvitation>> {
+  reposAddCollaborator$Response(
+    params: ReposAddCollaborator$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<RepositoryInvitation>> {
     return reposAddCollaborator(this.http, this.rootUrl, params, context);
   }
 
@@ -2658,7 +2789,7 @@ export class ReposService extends BaseService {
    */
   reposAddCollaborator(params: ReposAddCollaborator$Params, context?: HttpContext): Observable<RepositoryInvitation> {
     return this.reposAddCollaborator$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryInvitation>): RepositoryInvitation => r.body)
+      map((r: StrictHttpResponse<RepositoryInvitation>): RepositoryInvitation => r.body),
     );
   }
 
@@ -2730,9 +2861,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposRemoveCollaborator(params: ReposRemoveCollaborator$Params, context?: HttpContext): Observable<void> {
-    return this.reposRemoveCollaborator$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposRemoveCollaborator$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGetCollaboratorPermissionLevel()` */
@@ -2754,7 +2883,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCollaboratorPermissionLevel$Response(params: ReposGetCollaboratorPermissionLevel$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryCollaboratorPermission>> {
+  reposGetCollaboratorPermissionLevel$Response(
+    params: ReposGetCollaboratorPermissionLevel$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<RepositoryCollaboratorPermission>> {
     return reposGetCollaboratorPermissionLevel(this.http, this.rootUrl, params, context);
   }
 
@@ -2774,9 +2906,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCollaboratorPermissionLevel(params: ReposGetCollaboratorPermissionLevel$Params, context?: HttpContext): Observable<RepositoryCollaboratorPermission> {
+  reposGetCollaboratorPermissionLevel(
+    params: ReposGetCollaboratorPermissionLevel$Params,
+    context?: HttpContext,
+  ): Observable<RepositoryCollaboratorPermission> {
     return this.reposGetCollaboratorPermissionLevel$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryCollaboratorPermission>): RepositoryCollaboratorPermission => r.body)
+      map((r: StrictHttpResponse<RepositoryCollaboratorPermission>): RepositoryCollaboratorPermission => r.body),
     );
   }
 
@@ -2795,7 +2930,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListCommitCommentsForRepo$Response(params: ReposListCommitCommentsForRepo$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CommitComment>>> {
+  reposListCommitCommentsForRepo$Response(
+    params: ReposListCommitCommentsForRepo$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<CommitComment>>> {
     return reposListCommitCommentsForRepo(this.http, this.rootUrl, params, context);
   }
 
@@ -2813,7 +2951,7 @@ export class ReposService extends BaseService {
    */
   reposListCommitCommentsForRepo(params: ReposListCommitCommentsForRepo$Params, context?: HttpContext): Observable<Array<CommitComment>> {
     return this.reposListCommitCommentsForRepo$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<CommitComment>>): Array<CommitComment> => r.body)
+      map((r: StrictHttpResponse<Array<CommitComment>>): Array<CommitComment> => r.body),
     );
   }
 
@@ -2830,7 +2968,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCommitComment$Response(params: ReposGetCommitComment$Params, context?: HttpContext): Observable<StrictHttpResponse<CommitComment>> {
+  reposGetCommitComment$Response(
+    params: ReposGetCommitComment$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<CommitComment>> {
     return reposGetCommitComment(this.http, this.rootUrl, params, context);
   }
 
@@ -2845,9 +2986,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetCommitComment(params: ReposGetCommitComment$Params, context?: HttpContext): Observable<CommitComment> {
-    return this.reposGetCommitComment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CommitComment>): CommitComment => r.body)
-    );
+    return this.reposGetCommitComment$Response(params, context).pipe(map((r: StrictHttpResponse<CommitComment>): CommitComment => r.body));
   }
 
   /** Path part for operation `reposDeleteCommitComment()` */
@@ -2878,9 +3017,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteCommitComment(params: ReposDeleteCommitComment$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteCommitComment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteCommitComment$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposUpdateCommitComment()` */
@@ -2896,7 +3033,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateCommitComment$Response(params: ReposUpdateCommitComment$Params, context?: HttpContext): Observable<StrictHttpResponse<CommitComment>> {
+  reposUpdateCommitComment$Response(
+    params: ReposUpdateCommitComment$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<CommitComment>> {
     return reposUpdateCommitComment(this.http, this.rootUrl, params, context);
   }
 
@@ -2912,7 +3052,7 @@ export class ReposService extends BaseService {
    */
   reposUpdateCommitComment(params: ReposUpdateCommitComment$Params, context?: HttpContext): Observable<CommitComment> {
     return this.reposUpdateCommitComment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CommitComment>): CommitComment => r.body)
+      map((r: StrictHttpResponse<CommitComment>): CommitComment => r.body),
     );
   }
 
@@ -2998,9 +3138,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposListCommits(params: ReposListCommits$Params, context?: HttpContext): Observable<Array<Commit>> {
-    return this.reposListCommits$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Commit>>): Array<Commit> => r.body)
-    );
+    return this.reposListCommits$Response(params, context).pipe(map((r: StrictHttpResponse<Array<Commit>>): Array<Commit> => r.body));
   }
 
   /** Path part for operation `reposListBranchesForHeadCommit()` */
@@ -3018,7 +3156,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListBranchesForHeadCommit$Response(params: ReposListBranchesForHeadCommit$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<BranchShort>>> {
+  reposListBranchesForHeadCommit$Response(
+    params: ReposListBranchesForHeadCommit$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<BranchShort>>> {
     return reposListBranchesForHeadCommit(this.http, this.rootUrl, params, context);
   }
 
@@ -3036,7 +3177,7 @@ export class ReposService extends BaseService {
    */
   reposListBranchesForHeadCommit(params: ReposListBranchesForHeadCommit$Params, context?: HttpContext): Observable<Array<BranchShort>> {
     return this.reposListBranchesForHeadCommit$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<BranchShort>>): Array<BranchShort> => r.body)
+      map((r: StrictHttpResponse<Array<BranchShort>>): Array<BranchShort> => r.body),
     );
   }
 
@@ -3053,7 +3194,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListCommentsForCommit$Response(params: ReposListCommentsForCommit$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CommitComment>>> {
+  reposListCommentsForCommit$Response(
+    params: ReposListCommentsForCommit$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<CommitComment>>> {
     return reposListCommentsForCommit(this.http, this.rootUrl, params, context);
   }
 
@@ -3069,7 +3213,7 @@ export class ReposService extends BaseService {
    */
   reposListCommentsForCommit(params: ReposListCommentsForCommit$Params, context?: HttpContext): Observable<Array<CommitComment>> {
     return this.reposListCommentsForCommit$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<CommitComment>>): Array<CommitComment> => r.body)
+      map((r: StrictHttpResponse<Array<CommitComment>>): Array<CommitComment> => r.body),
     );
   }
 
@@ -3088,7 +3232,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateCommitComment$Response(params: ReposCreateCommitComment$Params, context?: HttpContext): Observable<StrictHttpResponse<CommitComment>> {
+  reposCreateCommitComment$Response(
+    params: ReposCreateCommitComment$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<CommitComment>> {
     return reposCreateCommitComment(this.http, this.rootUrl, params, context);
   }
 
@@ -3106,7 +3253,7 @@ export class ReposService extends BaseService {
    */
   reposCreateCommitComment(params: ReposCreateCommitComment$Params, context?: HttpContext): Observable<CommitComment> {
     return this.reposCreateCommitComment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CommitComment>): CommitComment => r.body)
+      map((r: StrictHttpResponse<CommitComment>): CommitComment => r.body),
     );
   }
 
@@ -3125,7 +3272,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListPullRequestsAssociatedWithCommit$Response(params: ReposListPullRequestsAssociatedWithCommit$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<PullRequestSimple>>> {
+  reposListPullRequestsAssociatedWithCommit$Response(
+    params: ReposListPullRequestsAssociatedWithCommit$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<PullRequestSimple>>> {
     return reposListPullRequestsAssociatedWithCommit(this.http, this.rootUrl, params, context);
   }
 
@@ -3141,9 +3291,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListPullRequestsAssociatedWithCommit(params: ReposListPullRequestsAssociatedWithCommit$Params, context?: HttpContext): Observable<Array<PullRequestSimple>> {
+  reposListPullRequestsAssociatedWithCommit(
+    params: ReposListPullRequestsAssociatedWithCommit$Params,
+    context?: HttpContext,
+  ): Observable<Array<PullRequestSimple>> {
     return this.reposListPullRequestsAssociatedWithCommit$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<PullRequestSimple>>): Array<PullRequestSimple> => r.body)
+      map((r: StrictHttpResponse<Array<PullRequestSimple>>): Array<PullRequestSimple> => r.body),
     );
   }
 
@@ -3245,9 +3398,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetCommit(params: ReposGetCommit$Params, context?: HttpContext): Observable<Commit> {
-    return this.reposGetCommit$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Commit>): Commit => r.body)
-    );
+    return this.reposGetCommit$Response(params, context).pipe(map((r: StrictHttpResponse<Commit>): Commit => r.body));
   }
 
   /** Path part for operation `reposGetCombinedStatusForRef()` */
@@ -3270,7 +3421,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCombinedStatusForRef$Response(params: ReposGetCombinedStatusForRef$Params, context?: HttpContext): Observable<StrictHttpResponse<CombinedCommitStatus>> {
+  reposGetCombinedStatusForRef$Response(
+    params: ReposGetCombinedStatusForRef$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<CombinedCommitStatus>> {
     return reposGetCombinedStatusForRef(this.http, this.rootUrl, params, context);
   }
 
@@ -3293,7 +3447,7 @@ export class ReposService extends BaseService {
    */
   reposGetCombinedStatusForRef(params: ReposGetCombinedStatusForRef$Params, context?: HttpContext): Observable<CombinedCommitStatus> {
     return this.reposGetCombinedStatusForRef$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CombinedCommitStatus>): CombinedCommitStatus => r.body)
+      map((r: StrictHttpResponse<CombinedCommitStatus>): CombinedCommitStatus => r.body),
     );
   }
 
@@ -3312,7 +3466,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListCommitStatusesForRef$Response(params: ReposListCommitStatusesForRef$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Status>>> {
+  reposListCommitStatusesForRef$Response(
+    params: ReposListCommitStatusesForRef$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Status>>> {
     return reposListCommitStatusesForRef(this.http, this.rootUrl, params, context);
   }
 
@@ -3330,7 +3487,7 @@ export class ReposService extends BaseService {
    */
   reposListCommitStatusesForRef(params: ReposListCommitStatusesForRef$Params, context?: HttpContext): Observable<Array<Status>> {
     return this.reposListCommitStatusesForRef$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Status>>): Array<Status> => r.body)
+      map((r: StrictHttpResponse<Array<Status>>): Array<Status> => r.body),
     );
   }
 
@@ -3359,7 +3516,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCommunityProfileMetrics$Response(params: ReposGetCommunityProfileMetrics$Params, context?: HttpContext): Observable<StrictHttpResponse<CommunityProfile>> {
+  reposGetCommunityProfileMetrics$Response(
+    params: ReposGetCommunityProfileMetrics$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<CommunityProfile>> {
     return reposGetCommunityProfileMetrics(this.http, this.rootUrl, params, context);
   }
 
@@ -3387,7 +3547,7 @@ export class ReposService extends BaseService {
    */
   reposGetCommunityProfileMetrics(params: ReposGetCommunityProfileMetrics$Params, context?: HttpContext): Observable<CommunityProfile> {
     return this.reposGetCommunityProfileMetrics$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CommunityProfile>): CommunityProfile => r.body)
+      map((r: StrictHttpResponse<CommunityProfile>): CommunityProfile => r.body),
     );
   }
 
@@ -3448,7 +3608,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposCompareCommits$Response(params: ReposCompareCommits$Params, context?: HttpContext): Observable<StrictHttpResponse<CommitComparison>> {
+  reposCompareCommits$Response(
+    params: ReposCompareCommits$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<CommitComparison>> {
     return reposCompareCommits(this.http, this.rootUrl, params, context);
   }
 
@@ -3508,7 +3671,7 @@ export class ReposService extends BaseService {
    */
   reposCompareCommits(params: ReposCompareCommits$Params, context?: HttpContext): Observable<CommitComparison> {
     return this.reposCompareCommits$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CommitComparison>): CommitComparison => r.body)
+      map((r: StrictHttpResponse<CommitComparison>): CommitComparison => r.body),
     );
   }
 
@@ -3519,7 +3682,7 @@ export class ReposService extends BaseService {
    * Get repository content.
    *
    * Gets the contents of a file or directory in a repository. Specify the file path or directory in `:path`. If you omit
-   * `:path`, you will receive the contents of the repository's root directory. See the description below regarding what the API response includes for directories. 
+   * `:path`, you will receive the contents of the repository's root directory. See the description below regarding what the API response includes for directories.
    *
    * Files and symlinks support [a custom media type](https://docs.github.com/rest/overview/media-types) for
    * retrieving the raw content or rendered HTML (when supported). All content types support [a custom media
@@ -3543,9 +3706,9 @@ export class ReposService extends BaseService {
    * _should_ be "submodule". This behavior exists in API v3 [for backwards compatibility purposes](https://git.io/v1YCW).
    * In the next major version of the API, the type will be returned as "submodule".
    *
-   *  If the content is a symlink: 
+   *  If the content is a symlink:
    * If the requested `:path` points to a symlink, and the symlink's target is a normal file in the repository, then the
-   * API responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object 
+   * API responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object
    * describing the symlink itself.
    *
    *  If the content is a submodule:
@@ -3561,7 +3724,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetContent$VndGithubObject$Response(params: ReposGetContent$VndGithubObject$Params, context?: HttpContext): Observable<StrictHttpResponse<ContentTree>> {
+  reposGetContent$VndGithubObject$Response(
+    params: ReposGetContent$VndGithubObject$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ContentTree>> {
     return reposGetContent$VndGithubObject(this.http, this.rootUrl, params, context);
   }
 
@@ -3569,7 +3735,7 @@ export class ReposService extends BaseService {
    * Get repository content.
    *
    * Gets the contents of a file or directory in a repository. Specify the file path or directory in `:path`. If you omit
-   * `:path`, you will receive the contents of the repository's root directory. See the description below regarding what the API response includes for directories. 
+   * `:path`, you will receive the contents of the repository's root directory. See the description below regarding what the API response includes for directories.
    *
    * Files and symlinks support [a custom media type](https://docs.github.com/rest/overview/media-types) for
    * retrieving the raw content or rendered HTML (when supported). All content types support [a custom media
@@ -3593,9 +3759,9 @@ export class ReposService extends BaseService {
    * _should_ be "submodule". This behavior exists in API v3 [for backwards compatibility purposes](https://git.io/v1YCW).
    * In the next major version of the API, the type will be returned as "submodule".
    *
-   *  If the content is a symlink: 
+   *  If the content is a symlink:
    * If the requested `:path` points to a symlink, and the symlink's target is a normal file in the repository, then the
-   * API responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object 
+   * API responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object
    * describing the symlink itself.
    *
    *  If the content is a submodule:
@@ -3613,7 +3779,7 @@ export class ReposService extends BaseService {
    */
   reposGetContent$VndGithubObject(params: ReposGetContent$VndGithubObject$Params, context?: HttpContext): Observable<ContentTree> {
     return this.reposGetContent$VndGithubObject$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ContentTree>): ContentTree => r.body)
+      map((r: StrictHttpResponse<ContentTree>): ContentTree => r.body),
     );
   }
 
@@ -3621,7 +3787,7 @@ export class ReposService extends BaseService {
    * Get repository content.
    *
    * Gets the contents of a file or directory in a repository. Specify the file path or directory in `:path`. If you omit
-   * `:path`, you will receive the contents of the repository's root directory. See the description below regarding what the API response includes for directories. 
+   * `:path`, you will receive the contents of the repository's root directory. See the description below regarding what the API response includes for directories.
    *
    * Files and symlinks support [a custom media type](https://docs.github.com/rest/overview/media-types) for
    * retrieving the raw content or rendered HTML (when supported). All content types support [a custom media
@@ -3645,9 +3811,9 @@ export class ReposService extends BaseService {
    * _should_ be "submodule". This behavior exists in API v3 [for backwards compatibility purposes](https://git.io/v1YCW).
    * In the next major version of the API, the type will be returned as "submodule".
    *
-   *  If the content is a symlink: 
+   *  If the content is a symlink:
    * If the requested `:path` points to a symlink, and the symlink's target is a normal file in the repository, then the
-   * API responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object 
+   * API responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object
    * describing the symlink itself.
    *
    *  If the content is a submodule:
@@ -3663,7 +3829,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetContent$Json$Response(params: ReposGetContent$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<(ContentDirectory | ContentFile | ContentSymlink | ContentSubmodule)>> {
+  reposGetContent$Json$Response(
+    params: ReposGetContent$Json$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ContentDirectory | ContentFile | ContentSymlink | ContentSubmodule>> {
     return reposGetContent$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -3671,7 +3840,7 @@ export class ReposService extends BaseService {
    * Get repository content.
    *
    * Gets the contents of a file or directory in a repository. Specify the file path or directory in `:path`. If you omit
-   * `:path`, you will receive the contents of the repository's root directory. See the description below regarding what the API response includes for directories. 
+   * `:path`, you will receive the contents of the repository's root directory. See the description below regarding what the API response includes for directories.
    *
    * Files and symlinks support [a custom media type](https://docs.github.com/rest/overview/media-types) for
    * retrieving the raw content or rendered HTML (when supported). All content types support [a custom media
@@ -3695,9 +3864,9 @@ export class ReposService extends BaseService {
    * _should_ be "submodule". This behavior exists in API v3 [for backwards compatibility purposes](https://git.io/v1YCW).
    * In the next major version of the API, the type will be returned as "submodule".
    *
-   *  If the content is a symlink: 
+   *  If the content is a symlink:
    * If the requested `:path` points to a symlink, and the symlink's target is a normal file in the repository, then the
-   * API responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object 
+   * API responds with the content of the file (in the format shown in the example. Otherwise, the API responds with an object
    * describing the symlink itself.
    *
    *  If the content is a submodule:
@@ -3713,9 +3882,16 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetContent$Json(params: ReposGetContent$Json$Params, context?: HttpContext): Observable<(ContentDirectory | ContentFile | ContentSymlink | ContentSubmodule)> {
+  reposGetContent$Json(
+    params: ReposGetContent$Json$Params,
+    context?: HttpContext,
+  ): Observable<ContentDirectory | ContentFile | ContentSymlink | ContentSubmodule> {
     return this.reposGetContent$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<(ContentDirectory | ContentFile | ContentSymlink | ContentSubmodule)>): (ContentDirectory | ContentFile | ContentSymlink | ContentSubmodule) => r.body)
+      map(
+        (
+          r: StrictHttpResponse<ContentDirectory | ContentFile | ContentSymlink | ContentSubmodule>,
+        ): ContentDirectory | ContentFile | ContentSymlink | ContentSubmodule => r.body,
+      ),
     );
   }
 
@@ -3734,7 +3910,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateOrUpdateFileContents$Response(params: ReposCreateOrUpdateFileContents$Params, context?: HttpContext): Observable<StrictHttpResponse<FileCommit>> {
+  reposCreateOrUpdateFileContents$Response(
+    params: ReposCreateOrUpdateFileContents$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<FileCommit>> {
     return reposCreateOrUpdateFileContents(this.http, this.rootUrl, params, context);
   }
 
@@ -3752,7 +3931,7 @@ export class ReposService extends BaseService {
    */
   reposCreateOrUpdateFileContents(params: ReposCreateOrUpdateFileContents$Params, context?: HttpContext): Observable<FileCommit> {
     return this.reposCreateOrUpdateFileContents$Response(params, context).pipe(
-      map((r: StrictHttpResponse<FileCommit>): FileCommit => r.body)
+      map((r: StrictHttpResponse<FileCommit>): FileCommit => r.body),
     );
   }
 
@@ -3800,9 +3979,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposDeleteFile(params: ReposDeleteFile$Params, context?: HttpContext): Observable<FileCommit> {
-    return this.reposDeleteFile$Response(params, context).pipe(
-      map((r: StrictHttpResponse<FileCommit>): FileCommit => r.body)
-    );
+    return this.reposDeleteFile$Response(params, context).pipe(map((r: StrictHttpResponse<FileCommit>): FileCommit => r.body));
   }
 
   /** Path part for operation `reposListContributors()` */
@@ -3820,7 +3997,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListContributors$Response(params: ReposListContributors$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Contributor>>> {
+  reposListContributors$Response(
+    params: ReposListContributors$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Contributor>>> {
     return reposListContributors(this.http, this.rootUrl, params, context);
   }
 
@@ -3838,7 +4018,7 @@ export class ReposService extends BaseService {
    */
   reposListContributors(params: ReposListContributors$Params, context?: HttpContext): Observable<Array<Contributor>> {
     return this.reposListContributors$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Contributor>>): Array<Contributor> => r.body)
+      map((r: StrictHttpResponse<Array<Contributor>>): Array<Contributor> => r.body),
     );
   }
 
@@ -3855,7 +4035,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListDeployments$Response(params: ReposListDeployments$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Deployment>>> {
+  reposListDeployments$Response(
+    params: ReposListDeployments$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Deployment>>> {
     return reposListDeployments(this.http, this.rootUrl, params, context);
   }
 
@@ -3871,7 +4054,7 @@ export class ReposService extends BaseService {
    */
   reposListDeployments(params: ReposListDeployments$Params, context?: HttpContext): Observable<Array<Deployment>> {
     return this.reposListDeployments$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Deployment>>): Array<Deployment> => r.body)
+      map((r: StrictHttpResponse<Array<Deployment>>): Array<Deployment> => r.body),
     );
   }
 
@@ -3997,9 +4180,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateDeployment(params: ReposCreateDeployment$Params, context?: HttpContext): Observable<Deployment> {
-    return this.reposCreateDeployment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Deployment>): Deployment => r.body)
-    );
+    return this.reposCreateDeployment$Response(params, context).pipe(map((r: StrictHttpResponse<Deployment>): Deployment => r.body));
   }
 
   /** Path part for operation `reposGetDeployment()` */
@@ -4030,9 +4211,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetDeployment(params: ReposGetDeployment$Params, context?: HttpContext): Observable<Deployment> {
-    return this.reposGetDeployment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Deployment>): Deployment => r.body)
-    );
+    return this.reposGetDeployment$Response(params, context).pipe(map((r: StrictHttpResponse<Deployment>): Deployment => r.body));
   }
 
   /** Path part for operation `reposDeleteDeployment()` */
@@ -4077,9 +4256,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteDeployment(params: ReposDeleteDeployment$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteDeployment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteDeployment$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposListDeploymentStatuses()` */
@@ -4095,7 +4272,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListDeploymentStatuses$Response(params: ReposListDeploymentStatuses$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DeploymentStatus>>> {
+  reposListDeploymentStatuses$Response(
+    params: ReposListDeploymentStatuses$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<DeploymentStatus>>> {
     return reposListDeploymentStatuses(this.http, this.rootUrl, params, context);
   }
 
@@ -4111,7 +4291,7 @@ export class ReposService extends BaseService {
    */
   reposListDeploymentStatuses(params: ReposListDeploymentStatuses$Params, context?: HttpContext): Observable<Array<DeploymentStatus>> {
     return this.reposListDeploymentStatuses$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DeploymentStatus>>): Array<DeploymentStatus> => r.body)
+      map((r: StrictHttpResponse<Array<DeploymentStatus>>): Array<DeploymentStatus> => r.body),
     );
   }
 
@@ -4130,7 +4310,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateDeploymentStatus$Response(params: ReposCreateDeploymentStatus$Params, context?: HttpContext): Observable<StrictHttpResponse<DeploymentStatus>> {
+  reposCreateDeploymentStatus$Response(
+    params: ReposCreateDeploymentStatus$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<DeploymentStatus>> {
     return reposCreateDeploymentStatus(this.http, this.rootUrl, params, context);
   }
 
@@ -4148,7 +4331,7 @@ export class ReposService extends BaseService {
    */
   reposCreateDeploymentStatus(params: ReposCreateDeploymentStatus$Params, context?: HttpContext): Observable<DeploymentStatus> {
     return this.reposCreateDeploymentStatus$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeploymentStatus>): DeploymentStatus => r.body)
+      map((r: StrictHttpResponse<DeploymentStatus>): DeploymentStatus => r.body),
     );
   }
 
@@ -4165,7 +4348,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetDeploymentStatus$Response(params: ReposGetDeploymentStatus$Params, context?: HttpContext): Observable<StrictHttpResponse<DeploymentStatus>> {
+  reposGetDeploymentStatus$Response(
+    params: ReposGetDeploymentStatus$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<DeploymentStatus>> {
     return reposGetDeploymentStatus(this.http, this.rootUrl, params, context);
   }
 
@@ -4181,7 +4367,7 @@ export class ReposService extends BaseService {
    */
   reposGetDeploymentStatus(params: ReposGetDeploymentStatus$Params, context?: HttpContext): Observable<DeploymentStatus> {
     return this.reposGetDeploymentStatus$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeploymentStatus>): DeploymentStatus => r.body)
+      map((r: StrictHttpResponse<DeploymentStatus>): DeploymentStatus => r.body),
     );
   }
 
@@ -4231,9 +4417,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateDispatchEvent(params: ReposCreateDispatchEvent$Params, context?: HttpContext): Observable<void> {
-    return this.reposCreateDispatchEvent$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposCreateDispatchEvent$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGetAllEnvironments()` */
@@ -4251,14 +4435,18 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAllEnvironments$Response(params: ReposGetAllEnvironments$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-
-/**
- * The number of environments in this repository
- */
-'total_count'?: number;
-'environments'?: Array<Environment>;
-}>> {
+  reposGetAllEnvironments$Response(
+    params: ReposGetAllEnvironments$Params,
+    context?: HttpContext,
+  ): Observable<
+    StrictHttpResponse<{
+      /**
+       * The number of environments in this repository
+       */
+      total_count?: number;
+      environments?: Array<Environment>;
+    }>
+  > {
     return reposGetAllEnvironments(this.http, this.rootUrl, params, context);
   }
 
@@ -4274,30 +4462,34 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAllEnvironments(params: ReposGetAllEnvironments$Params, context?: HttpContext): Observable<{
-
-/**
- * The number of environments in this repository
- */
-'total_count'?: number;
-'environments'?: Array<Environment>;
-}> {
+  reposGetAllEnvironments(
+    params: ReposGetAllEnvironments$Params,
+    context?: HttpContext,
+  ): Observable<{
+    /**
+     * The number of environments in this repository
+     */
+    total_count?: number;
+    environments?: Array<Environment>;
+  }> {
     return this.reposGetAllEnvironments$Response(params, context).pipe(
-      map((r: StrictHttpResponse<{
-
-/**
- * The number of environments in this repository
- */
-'total_count'?: number;
-'environments'?: Array<Environment>;
-}>): {
-
-/**
- * The number of environments in this repository
- */
-'total_count'?: number;
-'environments'?: Array<Environment>;
-} => r.body)
+      map(
+        (
+          r: StrictHttpResponse<{
+            /**
+             * The number of environments in this repository
+             */
+            total_count?: number;
+            environments?: Array<Environment>;
+          }>,
+        ): {
+          /**
+           * The number of environments in this repository
+           */
+          total_count?: number;
+          environments?: Array<Environment>;
+        } => r.body,
+      ),
     );
   }
 
@@ -4337,9 +4529,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetEnvironment(params: ReposGetEnvironment$Params, context?: HttpContext): Observable<Environment> {
-    return this.reposGetEnvironment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Environment>): Environment => r.body)
-    );
+    return this.reposGetEnvironment$Response(params, context).pipe(map((r: StrictHttpResponse<Environment>): Environment => r.body));
   }
 
   /** Path part for operation `reposCreateOrUpdateEnvironment()` */
@@ -4361,7 +4551,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateOrUpdateEnvironment$Response(params: ReposCreateOrUpdateEnvironment$Params, context?: HttpContext): Observable<StrictHttpResponse<Environment>> {
+  reposCreateOrUpdateEnvironment$Response(
+    params: ReposCreateOrUpdateEnvironment$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Environment>> {
     return reposCreateOrUpdateEnvironment(this.http, this.rootUrl, params, context);
   }
 
@@ -4383,7 +4576,7 @@ export class ReposService extends BaseService {
    */
   reposCreateOrUpdateEnvironment(params: ReposCreateOrUpdateEnvironment$Params, context?: HttpContext): Observable<Environment> {
     return this.reposCreateOrUpdateEnvironment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Environment>): Environment => r.body)
+      map((r: StrictHttpResponse<Environment>): Environment => r.body),
     );
   }
 
@@ -4415,13 +4608,12 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteAnEnvironment(params: ReposDeleteAnEnvironment$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteAnEnvironment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteAnEnvironment$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposListDeploymentBranchPolicies()` */
-  static readonly ReposListDeploymentBranchPoliciesPath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies';
+  static readonly ReposListDeploymentBranchPoliciesPath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies';
 
   /**
    * List deployment branch policies.
@@ -4435,14 +4627,18 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListDeploymentBranchPolicies$Response(params: ReposListDeploymentBranchPolicies$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-
-/**
- * The number of deployment branch policies for the environment.
- */
-'total_count': number;
-'branch_policies': Array<DeploymentBranchPolicy>;
-}>> {
+  reposListDeploymentBranchPolicies$Response(
+    params: ReposListDeploymentBranchPolicies$Params,
+    context?: HttpContext,
+  ): Observable<
+    StrictHttpResponse<{
+      /**
+       * The number of deployment branch policies for the environment.
+       */
+      total_count: number;
+      branch_policies: Array<DeploymentBranchPolicy>;
+    }>
+  > {
     return reposListDeploymentBranchPolicies(this.http, this.rootUrl, params, context);
   }
 
@@ -4458,35 +4654,40 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListDeploymentBranchPolicies(params: ReposListDeploymentBranchPolicies$Params, context?: HttpContext): Observable<{
-
-/**
- * The number of deployment branch policies for the environment.
- */
-'total_count': number;
-'branch_policies': Array<DeploymentBranchPolicy>;
-}> {
+  reposListDeploymentBranchPolicies(
+    params: ReposListDeploymentBranchPolicies$Params,
+    context?: HttpContext,
+  ): Observable<{
+    /**
+     * The number of deployment branch policies for the environment.
+     */
+    total_count: number;
+    branch_policies: Array<DeploymentBranchPolicy>;
+  }> {
     return this.reposListDeploymentBranchPolicies$Response(params, context).pipe(
-      map((r: StrictHttpResponse<{
-
-/**
- * The number of deployment branch policies for the environment.
- */
-'total_count': number;
-'branch_policies': Array<DeploymentBranchPolicy>;
-}>): {
-
-/**
- * The number of deployment branch policies for the environment.
- */
-'total_count': number;
-'branch_policies': Array<DeploymentBranchPolicy>;
-} => r.body)
+      map(
+        (
+          r: StrictHttpResponse<{
+            /**
+             * The number of deployment branch policies for the environment.
+             */
+            total_count: number;
+            branch_policies: Array<DeploymentBranchPolicy>;
+          }>,
+        ): {
+          /**
+           * The number of deployment branch policies for the environment.
+           */
+          total_count: number;
+          branch_policies: Array<DeploymentBranchPolicy>;
+        } => r.body,
+      ),
     );
   }
 
   /** Path part for operation `reposCreateDeploymentBranchPolicy()` */
-  static readonly ReposCreateDeploymentBranchPolicyPath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies';
+  static readonly ReposCreateDeploymentBranchPolicyPath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies';
 
   /**
    * Create a deployment branch policy.
@@ -4500,7 +4701,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateDeploymentBranchPolicy$Response(params: ReposCreateDeploymentBranchPolicy$Params, context?: HttpContext): Observable<StrictHttpResponse<DeploymentBranchPolicy>> {
+  reposCreateDeploymentBranchPolicy$Response(
+    params: ReposCreateDeploymentBranchPolicy$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<DeploymentBranchPolicy>> {
     return reposCreateDeploymentBranchPolicy(this.http, this.rootUrl, params, context);
   }
 
@@ -4516,14 +4720,18 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateDeploymentBranchPolicy(params: ReposCreateDeploymentBranchPolicy$Params, context?: HttpContext): Observable<DeploymentBranchPolicy> {
+  reposCreateDeploymentBranchPolicy(
+    params: ReposCreateDeploymentBranchPolicy$Params,
+    context?: HttpContext,
+  ): Observable<DeploymentBranchPolicy> {
     return this.reposCreateDeploymentBranchPolicy$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeploymentBranchPolicy>): DeploymentBranchPolicy => r.body)
+      map((r: StrictHttpResponse<DeploymentBranchPolicy>): DeploymentBranchPolicy => r.body),
     );
   }
 
   /** Path part for operation `reposGetDeploymentBranchPolicy()` */
-  static readonly ReposGetDeploymentBranchPolicyPath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}';
+  static readonly ReposGetDeploymentBranchPolicyPath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}';
 
   /**
    * Get a deployment branch policy.
@@ -4537,7 +4745,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetDeploymentBranchPolicy$Response(params: ReposGetDeploymentBranchPolicy$Params, context?: HttpContext): Observable<StrictHttpResponse<DeploymentBranchPolicy>> {
+  reposGetDeploymentBranchPolicy$Response(
+    params: ReposGetDeploymentBranchPolicy$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<DeploymentBranchPolicy>> {
     return reposGetDeploymentBranchPolicy(this.http, this.rootUrl, params, context);
   }
 
@@ -4555,12 +4766,13 @@ export class ReposService extends BaseService {
    */
   reposGetDeploymentBranchPolicy(params: ReposGetDeploymentBranchPolicy$Params, context?: HttpContext): Observable<DeploymentBranchPolicy> {
     return this.reposGetDeploymentBranchPolicy$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeploymentBranchPolicy>): DeploymentBranchPolicy => r.body)
+      map((r: StrictHttpResponse<DeploymentBranchPolicy>): DeploymentBranchPolicy => r.body),
     );
   }
 
   /** Path part for operation `reposUpdateDeploymentBranchPolicy()` */
-  static readonly ReposUpdateDeploymentBranchPolicyPath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}';
+  static readonly ReposUpdateDeploymentBranchPolicyPath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}';
 
   /**
    * Update a deployment branch policy.
@@ -4574,7 +4786,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateDeploymentBranchPolicy$Response(params: ReposUpdateDeploymentBranchPolicy$Params, context?: HttpContext): Observable<StrictHttpResponse<DeploymentBranchPolicy>> {
+  reposUpdateDeploymentBranchPolicy$Response(
+    params: ReposUpdateDeploymentBranchPolicy$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<DeploymentBranchPolicy>> {
     return reposUpdateDeploymentBranchPolicy(this.http, this.rootUrl, params, context);
   }
 
@@ -4590,14 +4805,18 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateDeploymentBranchPolicy(params: ReposUpdateDeploymentBranchPolicy$Params, context?: HttpContext): Observable<DeploymentBranchPolicy> {
+  reposUpdateDeploymentBranchPolicy(
+    params: ReposUpdateDeploymentBranchPolicy$Params,
+    context?: HttpContext,
+  ): Observable<DeploymentBranchPolicy> {
     return this.reposUpdateDeploymentBranchPolicy$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeploymentBranchPolicy>): DeploymentBranchPolicy => r.body)
+      map((r: StrictHttpResponse<DeploymentBranchPolicy>): DeploymentBranchPolicy => r.body),
     );
   }
 
   /** Path part for operation `reposDeleteDeploymentBranchPolicy()` */
-  static readonly ReposDeleteDeploymentBranchPolicyPath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}';
+  static readonly ReposDeleteDeploymentBranchPolicyPath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}';
 
   /**
    * Delete a deployment branch policy.
@@ -4611,7 +4830,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDeleteDeploymentBranchPolicy$Response(params: ReposDeleteDeploymentBranchPolicy$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDeleteDeploymentBranchPolicy$Response(
+    params: ReposDeleteDeploymentBranchPolicy$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDeleteDeploymentBranchPolicy(this.http, this.rootUrl, params, context);
   }
 
@@ -4628,13 +4850,12 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteDeploymentBranchPolicy(params: ReposDeleteDeploymentBranchPolicy$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteDeploymentBranchPolicy$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteDeploymentBranchPolicy$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGetAllDeploymentProtectionRules()` */
-  static readonly ReposGetAllDeploymentProtectionRulesPath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules';
+  static readonly ReposGetAllDeploymentProtectionRulesPath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules';
 
   /**
    * Get all deployment protection rules for an environment.
@@ -4648,14 +4869,18 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAllDeploymentProtectionRules$Response(params: ReposGetAllDeploymentProtectionRules$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-
-/**
- * The number of enabled custom deployment protection rules for this environment
- */
-'total_count'?: number;
-'custom_deployment_protection_rules'?: Array<DeploymentProtectionRule>;
-}>> {
+  reposGetAllDeploymentProtectionRules$Response(
+    params: ReposGetAllDeploymentProtectionRules$Params,
+    context?: HttpContext,
+  ): Observable<
+    StrictHttpResponse<{
+      /**
+       * The number of enabled custom deployment protection rules for this environment
+       */
+      total_count?: number;
+      custom_deployment_protection_rules?: Array<DeploymentProtectionRule>;
+    }>
+  > {
     return reposGetAllDeploymentProtectionRules(this.http, this.rootUrl, params, context);
   }
 
@@ -4671,35 +4896,40 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetAllDeploymentProtectionRules(params: ReposGetAllDeploymentProtectionRules$Params, context?: HttpContext): Observable<{
-
-/**
- * The number of enabled custom deployment protection rules for this environment
- */
-'total_count'?: number;
-'custom_deployment_protection_rules'?: Array<DeploymentProtectionRule>;
-}> {
+  reposGetAllDeploymentProtectionRules(
+    params: ReposGetAllDeploymentProtectionRules$Params,
+    context?: HttpContext,
+  ): Observable<{
+    /**
+     * The number of enabled custom deployment protection rules for this environment
+     */
+    total_count?: number;
+    custom_deployment_protection_rules?: Array<DeploymentProtectionRule>;
+  }> {
     return this.reposGetAllDeploymentProtectionRules$Response(params, context).pipe(
-      map((r: StrictHttpResponse<{
-
-/**
- * The number of enabled custom deployment protection rules for this environment
- */
-'total_count'?: number;
-'custom_deployment_protection_rules'?: Array<DeploymentProtectionRule>;
-}>): {
-
-/**
- * The number of enabled custom deployment protection rules for this environment
- */
-'total_count'?: number;
-'custom_deployment_protection_rules'?: Array<DeploymentProtectionRule>;
-} => r.body)
+      map(
+        (
+          r: StrictHttpResponse<{
+            /**
+             * The number of enabled custom deployment protection rules for this environment
+             */
+            total_count?: number;
+            custom_deployment_protection_rules?: Array<DeploymentProtectionRule>;
+          }>,
+        ): {
+          /**
+           * The number of enabled custom deployment protection rules for this environment
+           */
+          total_count?: number;
+          custom_deployment_protection_rules?: Array<DeploymentProtectionRule>;
+        } => r.body,
+      ),
     );
   }
 
   /** Path part for operation `reposCreateDeploymentProtectionRule()` */
-  static readonly ReposCreateDeploymentProtectionRulePath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules';
+  static readonly ReposCreateDeploymentProtectionRulePath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules';
 
   /**
    * Create a custom deployment protection rule on an environment.
@@ -4715,7 +4945,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateDeploymentProtectionRule$Response(params: ReposCreateDeploymentProtectionRule$Params, context?: HttpContext): Observable<StrictHttpResponse<DeploymentProtectionRule>> {
+  reposCreateDeploymentProtectionRule$Response(
+    params: ReposCreateDeploymentProtectionRule$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<DeploymentProtectionRule>> {
     return reposCreateDeploymentProtectionRule(this.http, this.rootUrl, params, context);
   }
 
@@ -4733,14 +4966,18 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateDeploymentProtectionRule(params: ReposCreateDeploymentProtectionRule$Params, context?: HttpContext): Observable<DeploymentProtectionRule> {
+  reposCreateDeploymentProtectionRule(
+    params: ReposCreateDeploymentProtectionRule$Params,
+    context?: HttpContext,
+  ): Observable<DeploymentProtectionRule> {
     return this.reposCreateDeploymentProtectionRule$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeploymentProtectionRule>): DeploymentProtectionRule => r.body)
+      map((r: StrictHttpResponse<DeploymentProtectionRule>): DeploymentProtectionRule => r.body),
     );
   }
 
   /** Path part for operation `reposListCustomDeploymentRuleIntegrations()` */
-  static readonly ReposListCustomDeploymentRuleIntegrationsPath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/apps';
+  static readonly ReposListCustomDeploymentRuleIntegrationsPath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/apps';
 
   /**
    * List custom deployment rule integrations available for an environment.
@@ -4756,14 +4993,18 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListCustomDeploymentRuleIntegrations$Response(params: ReposListCustomDeploymentRuleIntegrations$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-
-/**
- * The total number of custom deployment protection rule integrations available for this environment.
- */
-'total_count'?: number;
-'available_custom_deployment_protection_rule_integrations'?: Array<CustomDeploymentRuleApp>;
-}>> {
+  reposListCustomDeploymentRuleIntegrations$Response(
+    params: ReposListCustomDeploymentRuleIntegrations$Params,
+    context?: HttpContext,
+  ): Observable<
+    StrictHttpResponse<{
+      /**
+       * The total number of custom deployment protection rule integrations available for this environment.
+       */
+      total_count?: number;
+      available_custom_deployment_protection_rule_integrations?: Array<CustomDeploymentRuleApp>;
+    }>
+  > {
     return reposListCustomDeploymentRuleIntegrations(this.http, this.rootUrl, params, context);
   }
 
@@ -4781,35 +5022,40 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListCustomDeploymentRuleIntegrations(params: ReposListCustomDeploymentRuleIntegrations$Params, context?: HttpContext): Observable<{
-
-/**
- * The total number of custom deployment protection rule integrations available for this environment.
- */
-'total_count'?: number;
-'available_custom_deployment_protection_rule_integrations'?: Array<CustomDeploymentRuleApp>;
-}> {
+  reposListCustomDeploymentRuleIntegrations(
+    params: ReposListCustomDeploymentRuleIntegrations$Params,
+    context?: HttpContext,
+  ): Observable<{
+    /**
+     * The total number of custom deployment protection rule integrations available for this environment.
+     */
+    total_count?: number;
+    available_custom_deployment_protection_rule_integrations?: Array<CustomDeploymentRuleApp>;
+  }> {
     return this.reposListCustomDeploymentRuleIntegrations$Response(params, context).pipe(
-      map((r: StrictHttpResponse<{
-
-/**
- * The total number of custom deployment protection rule integrations available for this environment.
- */
-'total_count'?: number;
-'available_custom_deployment_protection_rule_integrations'?: Array<CustomDeploymentRuleApp>;
-}>): {
-
-/**
- * The total number of custom deployment protection rule integrations available for this environment.
- */
-'total_count'?: number;
-'available_custom_deployment_protection_rule_integrations'?: Array<CustomDeploymentRuleApp>;
-} => r.body)
+      map(
+        (
+          r: StrictHttpResponse<{
+            /**
+             * The total number of custom deployment protection rule integrations available for this environment.
+             */
+            total_count?: number;
+            available_custom_deployment_protection_rule_integrations?: Array<CustomDeploymentRuleApp>;
+          }>,
+        ): {
+          /**
+           * The total number of custom deployment protection rule integrations available for this environment.
+           */
+          total_count?: number;
+          available_custom_deployment_protection_rule_integrations?: Array<CustomDeploymentRuleApp>;
+        } => r.body,
+      ),
     );
   }
 
   /** Path part for operation `reposGetCustomDeploymentProtectionRule()` */
-  static readonly ReposGetCustomDeploymentProtectionRulePath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}';
+  static readonly ReposGetCustomDeploymentProtectionRulePath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}';
 
   /**
    * Get a custom deployment protection rule.
@@ -4823,7 +5069,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCustomDeploymentProtectionRule$Response(params: ReposGetCustomDeploymentProtectionRule$Params, context?: HttpContext): Observable<StrictHttpResponse<DeploymentProtectionRule>> {
+  reposGetCustomDeploymentProtectionRule$Response(
+    params: ReposGetCustomDeploymentProtectionRule$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<DeploymentProtectionRule>> {
     return reposGetCustomDeploymentProtectionRule(this.http, this.rootUrl, params, context);
   }
 
@@ -4839,14 +5088,18 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCustomDeploymentProtectionRule(params: ReposGetCustomDeploymentProtectionRule$Params, context?: HttpContext): Observable<DeploymentProtectionRule> {
+  reposGetCustomDeploymentProtectionRule(
+    params: ReposGetCustomDeploymentProtectionRule$Params,
+    context?: HttpContext,
+  ): Observable<DeploymentProtectionRule> {
     return this.reposGetCustomDeploymentProtectionRule$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeploymentProtectionRule>): DeploymentProtectionRule => r.body)
+      map((r: StrictHttpResponse<DeploymentProtectionRule>): DeploymentProtectionRule => r.body),
     );
   }
 
   /** Path part for operation `reposDisableDeploymentProtectionRule()` */
-  static readonly ReposDisableDeploymentProtectionRulePath = '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}';
+  static readonly ReposDisableDeploymentProtectionRulePath =
+    '/repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}';
 
   /**
    * Disable a custom protection rule for an environment.
@@ -4860,7 +5113,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDisableDeploymentProtectionRule$Response(params: ReposDisableDeploymentProtectionRule$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDisableDeploymentProtectionRule$Response(
+    params: ReposDisableDeploymentProtectionRule$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDisableDeploymentProtectionRule(this.http, this.rootUrl, params, context);
   }
 
@@ -4877,9 +5133,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDisableDeploymentProtectionRule(params: ReposDisableDeploymentProtectionRule$Params, context?: HttpContext): Observable<void> {
-    return this.reposDisableDeploymentProtectionRule$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDisableDeploymentProtectionRule$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposListForks()` */
@@ -4911,7 +5165,7 @@ export class ReposService extends BaseService {
    */
   reposListForks(params: ReposListForks$Params, context?: HttpContext): Observable<Array<MinimalRepository>> {
     return this.reposListForks$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<MinimalRepository>>): Array<MinimalRepository> => r.body)
+      map((r: StrictHttpResponse<Array<MinimalRepository>>): Array<MinimalRepository> => r.body),
     );
   }
 
@@ -4951,9 +5205,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateFork(params: ReposCreateFork$Params, context?: HttpContext): Observable<FullRepository> {
-    return this.reposCreateFork$Response(params, context).pipe(
-      map((r: StrictHttpResponse<FullRepository>): FullRepository => r.body)
-    );
+    return this.reposCreateFork$Response(params, context).pipe(map((r: StrictHttpResponse<FullRepository>): FullRepository => r.body));
   }
 
   /** Path part for operation `reposListWebhooks()` */
@@ -4984,9 +5236,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposListWebhooks(params: ReposListWebhooks$Params, context?: HttpContext): Observable<Array<Hook>> {
-    return this.reposListWebhooks$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Hook>>): Array<Hook> => r.body)
-    );
+    return this.reposListWebhooks$Response(params, context).pipe(map((r: StrictHttpResponse<Array<Hook>>): Array<Hook> => r.body));
   }
 
   /** Path part for operation `reposCreateWebhook()` */
@@ -5019,9 +5269,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateWebhook(params: ReposCreateWebhook$Params, context?: HttpContext): Observable<Hook> {
-    return this.reposCreateWebhook$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Hook>): Hook => r.body)
-    );
+    return this.reposCreateWebhook$Response(params, context).pipe(map((r: StrictHttpResponse<Hook>): Hook => r.body));
   }
 
   /** Path part for operation `reposGetWebhook()` */
@@ -5052,9 +5300,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetWebhook(params: ReposGetWebhook$Params, context?: HttpContext): Observable<Hook> {
-    return this.reposGetWebhook$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Hook>): Hook => r.body)
-    );
+    return this.reposGetWebhook$Response(params, context).pipe(map((r: StrictHttpResponse<Hook>): Hook => r.body));
   }
 
   /** Path part for operation `reposDeleteWebhook()` */
@@ -5085,9 +5331,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteWebhook(params: ReposDeleteWebhook$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteWebhook$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteWebhook$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposUpdateWebhook()` */
@@ -5118,9 +5362,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposUpdateWebhook(params: ReposUpdateWebhook$Params, context?: HttpContext): Observable<Hook> {
-    return this.reposUpdateWebhook$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Hook>): Hook => r.body)
-    );
+    return this.reposUpdateWebhook$Response(params, context).pipe(map((r: StrictHttpResponse<Hook>): Hook => r.body));
   }
 
   /** Path part for operation `reposGetWebhookConfigForRepo()` */
@@ -5138,7 +5380,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetWebhookConfigForRepo$Response(params: ReposGetWebhookConfigForRepo$Params, context?: HttpContext): Observable<StrictHttpResponse<WebhookConfig>> {
+  reposGetWebhookConfigForRepo$Response(
+    params: ReposGetWebhookConfigForRepo$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<WebhookConfig>> {
     return reposGetWebhookConfigForRepo(this.http, this.rootUrl, params, context);
   }
 
@@ -5156,7 +5401,7 @@ export class ReposService extends BaseService {
    */
   reposGetWebhookConfigForRepo(params: ReposGetWebhookConfigForRepo$Params, context?: HttpContext): Observable<WebhookConfig> {
     return this.reposGetWebhookConfigForRepo$Response(params, context).pipe(
-      map((r: StrictHttpResponse<WebhookConfig>): WebhookConfig => r.body)
+      map((r: StrictHttpResponse<WebhookConfig>): WebhookConfig => r.body),
     );
   }
 
@@ -5175,7 +5420,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateWebhookConfigForRepo$Response(params: ReposUpdateWebhookConfigForRepo$Params, context?: HttpContext): Observable<StrictHttpResponse<WebhookConfig>> {
+  reposUpdateWebhookConfigForRepo$Response(
+    params: ReposUpdateWebhookConfigForRepo$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<WebhookConfig>> {
     return reposUpdateWebhookConfigForRepo(this.http, this.rootUrl, params, context);
   }
 
@@ -5193,7 +5441,7 @@ export class ReposService extends BaseService {
    */
   reposUpdateWebhookConfigForRepo(params: ReposUpdateWebhookConfigForRepo$Params, context?: HttpContext): Observable<WebhookConfig> {
     return this.reposUpdateWebhookConfigForRepo$Response(params, context).pipe(
-      map((r: StrictHttpResponse<WebhookConfig>): WebhookConfig => r.body)
+      map((r: StrictHttpResponse<WebhookConfig>): WebhookConfig => r.body),
     );
   }
 
@@ -5210,7 +5458,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListWebhookDeliveries$Response(params: ReposListWebhookDeliveries$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<HookDeliveryItem>>> {
+  reposListWebhookDeliveries$Response(
+    params: ReposListWebhookDeliveries$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<HookDeliveryItem>>> {
     return reposListWebhookDeliveries(this.http, this.rootUrl, params, context);
   }
 
@@ -5226,7 +5477,7 @@ export class ReposService extends BaseService {
    */
   reposListWebhookDeliveries(params: ReposListWebhookDeliveries$Params, context?: HttpContext): Observable<Array<HookDeliveryItem>> {
     return this.reposListWebhookDeliveries$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<HookDeliveryItem>>): Array<HookDeliveryItem> => r.body)
+      map((r: StrictHttpResponse<Array<HookDeliveryItem>>): Array<HookDeliveryItem> => r.body),
     );
   }
 
@@ -5243,7 +5494,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetWebhookDelivery$Response(params: ReposGetWebhookDelivery$Params, context?: HttpContext): Observable<StrictHttpResponse<HookDelivery>> {
+  reposGetWebhookDelivery$Response(
+    params: ReposGetWebhookDelivery$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<HookDelivery>> {
     return reposGetWebhookDelivery(this.http, this.rootUrl, params, context);
   }
 
@@ -5258,9 +5512,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetWebhookDelivery(params: ReposGetWebhookDelivery$Params, context?: HttpContext): Observable<HookDelivery> {
-    return this.reposGetWebhookDelivery$Response(params, context).pipe(
-      map((r: StrictHttpResponse<HookDelivery>): HookDelivery => r.body)
-    );
+    return this.reposGetWebhookDelivery$Response(params, context).pipe(map((r: StrictHttpResponse<HookDelivery>): HookDelivery => r.body));
   }
 
   /** Path part for operation `reposRedeliverWebhookDelivery()` */
@@ -5276,8 +5528,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposRedeliverWebhookDelivery$Response(params: ReposRedeliverWebhookDelivery$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-}>> {
+  reposRedeliverWebhookDelivery$Response(
+    params: ReposRedeliverWebhookDelivery$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<{}>> {
     return reposRedeliverWebhookDelivery(this.http, this.rootUrl, params, context);
   }
 
@@ -5291,13 +5545,8 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposRedeliverWebhookDelivery(params: ReposRedeliverWebhookDelivery$Params, context?: HttpContext): Observable<{
-}> {
-    return this.reposRedeliverWebhookDelivery$Response(params, context).pipe(
-      map((r: StrictHttpResponse<{
-}>): {
-} => r.body)
-    );
+  reposRedeliverWebhookDelivery(params: ReposRedeliverWebhookDelivery$Params, context?: HttpContext): Observable<{}> {
+    return this.reposRedeliverWebhookDelivery$Response(params, context).pipe(map((r: StrictHttpResponse<{}>): {} => r.body));
   }
 
   /** Path part for operation `reposPingWebhook()` */
@@ -5328,9 +5577,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposPingWebhook(params: ReposPingWebhook$Params, context?: HttpContext): Observable<void> {
-    return this.reposPingWebhook$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposPingWebhook$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposTestPushWebhook()` */
@@ -5365,9 +5612,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposTestPushWebhook(params: ReposTestPushWebhook$Params, context?: HttpContext): Observable<void> {
-    return this.reposTestPushWebhook$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposTestPushWebhook$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposListInvitations()` */
@@ -5383,7 +5628,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListInvitations$Response(params: ReposListInvitations$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<RepositoryInvitation>>> {
+  reposListInvitations$Response(
+    params: ReposListInvitations$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<RepositoryInvitation>>> {
     return reposListInvitations(this.http, this.rootUrl, params, context);
   }
 
@@ -5399,7 +5647,7 @@ export class ReposService extends BaseService {
    */
   reposListInvitations(params: ReposListInvitations$Params, context?: HttpContext): Observable<Array<RepositoryInvitation>> {
     return this.reposListInvitations$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<RepositoryInvitation>>): Array<RepositoryInvitation> => r.body)
+      map((r: StrictHttpResponse<Array<RepositoryInvitation>>): Array<RepositoryInvitation> => r.body),
     );
   }
 
@@ -5431,9 +5679,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteInvitation(params: ReposDeleteInvitation$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteInvitation$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteInvitation$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposUpdateInvitation()` */
@@ -5449,7 +5695,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateInvitation$Response(params: ReposUpdateInvitation$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryInvitation>> {
+  reposUpdateInvitation$Response(
+    params: ReposUpdateInvitation$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<RepositoryInvitation>> {
     return reposUpdateInvitation(this.http, this.rootUrl, params, context);
   }
 
@@ -5465,7 +5714,7 @@ export class ReposService extends BaseService {
    */
   reposUpdateInvitation(params: ReposUpdateInvitation$Params, context?: HttpContext): Observable<RepositoryInvitation> {
     return this.reposUpdateInvitation$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryInvitation>): RepositoryInvitation => r.body)
+      map((r: StrictHttpResponse<RepositoryInvitation>): RepositoryInvitation => r.body),
     );
   }
 
@@ -5482,7 +5731,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListDeployKeys$Response(params: ReposListDeployKeys$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DeployKey>>> {
+  reposListDeployKeys$Response(
+    params: ReposListDeployKeys$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<DeployKey>>> {
     return reposListDeployKeys(this.http, this.rootUrl, params, context);
   }
 
@@ -5498,7 +5750,7 @@ export class ReposService extends BaseService {
    */
   reposListDeployKeys(params: ReposListDeployKeys$Params, context?: HttpContext): Observable<Array<DeployKey>> {
     return this.reposListDeployKeys$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DeployKey>>): Array<DeployKey> => r.body)
+      map((r: StrictHttpResponse<Array<DeployKey>>): Array<DeployKey> => r.body),
     );
   }
 
@@ -5530,9 +5782,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateDeployKey(params: ReposCreateDeployKey$Params, context?: HttpContext): Observable<DeployKey> {
-    return this.reposCreateDeployKey$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeployKey>): DeployKey => r.body)
-    );
+    return this.reposCreateDeployKey$Response(params, context).pipe(map((r: StrictHttpResponse<DeployKey>): DeployKey => r.body));
   }
 
   /** Path part for operation `reposGetDeployKey()` */
@@ -5563,9 +5813,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetDeployKey(params: ReposGetDeployKey$Params, context?: HttpContext): Observable<DeployKey> {
-    return this.reposGetDeployKey$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DeployKey>): DeployKey => r.body)
-    );
+    return this.reposGetDeployKey$Response(params, context).pipe(map((r: StrictHttpResponse<DeployKey>): DeployKey => r.body));
   }
 
   /** Path part for operation `reposDeleteDeployKey()` */
@@ -5596,9 +5844,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteDeployKey(params: ReposDeleteDeployKey$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteDeployKey$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteDeployKey$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposListLanguages()` */
@@ -5629,9 +5875,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposListLanguages(params: ReposListLanguages$Params, context?: HttpContext): Observable<Language> {
-    return this.reposListLanguages$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Language>): Language => r.body)
-    );
+    return this.reposListLanguages$Response(params, context).pipe(map((r: StrictHttpResponse<Language>): Language => r.body));
   }
 
   /** Path part for operation `reposMergeUpstream()` */
@@ -5662,9 +5906,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposMergeUpstream(params: ReposMergeUpstream$Params, context?: HttpContext): Observable<MergedUpstream> {
-    return this.reposMergeUpstream$Response(params, context).pipe(
-      map((r: StrictHttpResponse<MergedUpstream>): MergedUpstream => r.body)
-    );
+    return this.reposMergeUpstream$Response(params, context).pipe(map((r: StrictHttpResponse<MergedUpstream>): MergedUpstream => r.body));
   }
 
   /** Path part for operation `reposMerge()` */
@@ -5695,9 +5937,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposMerge(params: ReposMerge$Params, context?: HttpContext): Observable<Commit> {
-    return this.reposMerge$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Commit>): Commit => r.body)
-    );
+    return this.reposMerge$Response(params, context).pipe(map((r: StrictHttpResponse<Commit>): Commit => r.body));
   }
 
   /** Path part for operation `reposGetPages()` */
@@ -5732,9 +5972,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetPages(params: ReposGetPages$Params, context?: HttpContext): Observable<Page> {
-    return this.reposGetPages$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Page>): Page => r.body)
-    );
+    return this.reposGetPages$Response(params, context).pipe(map((r: StrictHttpResponse<Page>): Page => r.body));
   }
 
   /** Path part for operation `reposUpdateInformationAboutPagesSite()` */
@@ -5752,7 +5990,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateInformationAboutPagesSite$Response(params: ReposUpdateInformationAboutPagesSite$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposUpdateInformationAboutPagesSite$Response(
+    params: ReposUpdateInformationAboutPagesSite$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposUpdateInformationAboutPagesSite(this.http, this.rootUrl, params, context);
   }
 
@@ -5769,9 +6010,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposUpdateInformationAboutPagesSite(params: ReposUpdateInformationAboutPagesSite$Params, context?: HttpContext): Observable<void> {
-    return this.reposUpdateInformationAboutPagesSite$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposUpdateInformationAboutPagesSite$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposCreatePagesSite()` */
@@ -5806,9 +6045,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreatePagesSite(params: ReposCreatePagesSite$Params, context?: HttpContext): Observable<Page> {
-    return this.reposCreatePagesSite$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Page>): Page => r.body)
-    );
+    return this.reposCreatePagesSite$Response(params, context).pipe(map((r: StrictHttpResponse<Page>): Page => r.body));
   }
 
   /** Path part for operation `reposDeletePagesSite()` */
@@ -5843,9 +6080,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeletePagesSite(params: ReposDeletePagesSite$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeletePagesSite$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeletePagesSite$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposListPagesBuilds()` */
@@ -5863,7 +6098,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListPagesBuilds$Response(params: ReposListPagesBuilds$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<PageBuild>>> {
+  reposListPagesBuilds$Response(
+    params: ReposListPagesBuilds$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<PageBuild>>> {
     return reposListPagesBuilds(this.http, this.rootUrl, params, context);
   }
 
@@ -5881,7 +6119,7 @@ export class ReposService extends BaseService {
    */
   reposListPagesBuilds(params: ReposListPagesBuilds$Params, context?: HttpContext): Observable<Array<PageBuild>> {
     return this.reposListPagesBuilds$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<PageBuild>>): Array<PageBuild> => r.body)
+      map((r: StrictHttpResponse<Array<PageBuild>>): Array<PageBuild> => r.body),
     );
   }
 
@@ -5900,7 +6138,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposRequestPagesBuild$Response(params: ReposRequestPagesBuild$Params, context?: HttpContext): Observable<StrictHttpResponse<PageBuildStatus>> {
+  reposRequestPagesBuild$Response(
+    params: ReposRequestPagesBuild$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<PageBuildStatus>> {
     return reposRequestPagesBuild(this.http, this.rootUrl, params, context);
   }
 
@@ -5918,7 +6159,7 @@ export class ReposService extends BaseService {
    */
   reposRequestPagesBuild(params: ReposRequestPagesBuild$Params, context?: HttpContext): Observable<PageBuildStatus> {
     return this.reposRequestPagesBuild$Response(params, context).pipe(
-      map((r: StrictHttpResponse<PageBuildStatus>): PageBuildStatus => r.body)
+      map((r: StrictHttpResponse<PageBuildStatus>): PageBuildStatus => r.body),
     );
   }
 
@@ -5937,7 +6178,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetLatestPagesBuild$Response(params: ReposGetLatestPagesBuild$Params, context?: HttpContext): Observable<StrictHttpResponse<PageBuild>> {
+  reposGetLatestPagesBuild$Response(
+    params: ReposGetLatestPagesBuild$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<PageBuild>> {
     return reposGetLatestPagesBuild(this.http, this.rootUrl, params, context);
   }
 
@@ -5954,9 +6198,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetLatestPagesBuild(params: ReposGetLatestPagesBuild$Params, context?: HttpContext): Observable<PageBuild> {
-    return this.reposGetLatestPagesBuild$Response(params, context).pipe(
-      map((r: StrictHttpResponse<PageBuild>): PageBuild => r.body)
-    );
+    return this.reposGetLatestPagesBuild$Response(params, context).pipe(map((r: StrictHttpResponse<PageBuild>): PageBuild => r.body));
   }
 
   /** Path part for operation `reposGetPagesBuild()` */
@@ -5991,9 +6233,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetPagesBuild(params: ReposGetPagesBuild$Params, context?: HttpContext): Observable<PageBuild> {
-    return this.reposGetPagesBuild$Response(params, context).pipe(
-      map((r: StrictHttpResponse<PageBuild>): PageBuild => r.body)
-    );
+    return this.reposGetPagesBuild$Response(params, context).pipe(map((r: StrictHttpResponse<PageBuild>): PageBuild => r.body));
   }
 
   /** Path part for operation `reposCreatePagesDeployment()` */
@@ -6011,7 +6251,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreatePagesDeployment$Response(params: ReposCreatePagesDeployment$Params, context?: HttpContext): Observable<StrictHttpResponse<PageDeployment>> {
+  reposCreatePagesDeployment$Response(
+    params: ReposCreatePagesDeployment$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<PageDeployment>> {
     return reposCreatePagesDeployment(this.http, this.rootUrl, params, context);
   }
 
@@ -6029,7 +6272,7 @@ export class ReposService extends BaseService {
    */
   reposCreatePagesDeployment(params: ReposCreatePagesDeployment$Params, context?: HttpContext): Observable<PageDeployment> {
     return this.reposCreatePagesDeployment$Response(params, context).pipe(
-      map((r: StrictHttpResponse<PageDeployment>): PageDeployment => r.body)
+      map((r: StrictHttpResponse<PageDeployment>): PageDeployment => r.body),
     );
   }
 
@@ -6050,7 +6293,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetPagesHealthCheck$Response(params: ReposGetPagesHealthCheck$Params, context?: HttpContext): Observable<StrictHttpResponse<PagesHealthCheck>> {
+  reposGetPagesHealthCheck$Response(
+    params: ReposGetPagesHealthCheck$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<PagesHealthCheck>> {
     return reposGetPagesHealthCheck(this.http, this.rootUrl, params, context);
   }
 
@@ -6070,7 +6316,7 @@ export class ReposService extends BaseService {
    */
   reposGetPagesHealthCheck(params: ReposGetPagesHealthCheck$Params, context?: HttpContext): Observable<PagesHealthCheck> {
     return this.reposGetPagesHealthCheck$Response(params, context).pipe(
-      map((r: StrictHttpResponse<PagesHealthCheck>): PagesHealthCheck => r.body)
+      map((r: StrictHttpResponse<PagesHealthCheck>): PagesHealthCheck => r.body),
     );
   }
 
@@ -6087,7 +6333,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposEnablePrivateVulnerabilityReporting$Response(params: ReposEnablePrivateVulnerabilityReporting$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposEnablePrivateVulnerabilityReporting$Response(
+    params: ReposEnablePrivateVulnerabilityReporting$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposEnablePrivateVulnerabilityReporting(this.http, this.rootUrl, params, context);
   }
 
@@ -6101,10 +6350,11 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposEnablePrivateVulnerabilityReporting(params: ReposEnablePrivateVulnerabilityReporting$Params, context?: HttpContext): Observable<void> {
-    return this.reposEnablePrivateVulnerabilityReporting$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+  reposEnablePrivateVulnerabilityReporting(
+    params: ReposEnablePrivateVulnerabilityReporting$Params,
+    context?: HttpContext,
+  ): Observable<void> {
+    return this.reposEnablePrivateVulnerabilityReporting$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposDisablePrivateVulnerabilityReporting()` */
@@ -6120,7 +6370,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDisablePrivateVulnerabilityReporting$Response(params: ReposDisablePrivateVulnerabilityReporting$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDisablePrivateVulnerabilityReporting$Response(
+    params: ReposDisablePrivateVulnerabilityReporting$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDisablePrivateVulnerabilityReporting(this.http, this.rootUrl, params, context);
   }
 
@@ -6134,9 +6387,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDisablePrivateVulnerabilityReporting(params: ReposDisablePrivateVulnerabilityReporting$Params, context?: HttpContext): Observable<void> {
+  reposDisablePrivateVulnerabilityReporting(
+    params: ReposDisablePrivateVulnerabilityReporting$Params,
+    context?: HttpContext,
+  ): Observable<void> {
     return this.reposDisablePrivateVulnerabilityReporting$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<void>): void => r.body),
     );
   }
 
@@ -6172,9 +6428,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetReadme(params: ReposGetReadme$Params, context?: HttpContext): Observable<ContentFile> {
-    return this.reposGetReadme$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ContentFile>): ContentFile => r.body)
-    );
+    return this.reposGetReadme$Response(params, context).pipe(map((r: StrictHttpResponse<ContentFile>): ContentFile => r.body));
   }
 
   /** Path part for operation `reposGetReadmeInDirectory()` */
@@ -6192,7 +6446,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetReadmeInDirectory$Response(params: ReposGetReadmeInDirectory$Params, context?: HttpContext): Observable<StrictHttpResponse<ContentFile>> {
+  reposGetReadmeInDirectory$Response(
+    params: ReposGetReadmeInDirectory$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ContentFile>> {
     return reposGetReadmeInDirectory(this.http, this.rootUrl, params, context);
   }
 
@@ -6209,9 +6466,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetReadmeInDirectory(params: ReposGetReadmeInDirectory$Params, context?: HttpContext): Observable<ContentFile> {
-    return this.reposGetReadmeInDirectory$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ContentFile>): ContentFile => r.body)
-    );
+    return this.reposGetReadmeInDirectory$Response(params, context).pipe(map((r: StrictHttpResponse<ContentFile>): ContentFile => r.body));
   }
 
   /** Path part for operation `reposListReleases()` */
@@ -6246,9 +6501,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposListReleases(params: ReposListReleases$Params, context?: HttpContext): Observable<Array<Release>> {
-    return this.reposListReleases$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Release>>): Array<Release> => r.body)
-    );
+    return this.reposListReleases$Response(params, context).pipe(map((r: StrictHttpResponse<Array<Release>>): Array<Release> => r.body));
   }
 
   /** Path part for operation `reposCreateRelease()` */
@@ -6283,9 +6536,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateRelease(params: ReposCreateRelease$Params, context?: HttpContext): Observable<Release> {
-    return this.reposCreateRelease$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Release>): Release => r.body)
-    );
+    return this.reposCreateRelease$Response(params, context).pipe(map((r: StrictHttpResponse<Release>): Release => r.body));
   }
 
   /** Path part for operation `reposGetReleaseAsset()` */
@@ -6316,9 +6567,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetReleaseAsset(params: ReposGetReleaseAsset$Params, context?: HttpContext): Observable<ReleaseAsset> {
-    return this.reposGetReleaseAsset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ReleaseAsset>): ReleaseAsset => r.body)
-    );
+    return this.reposGetReleaseAsset$Response(params, context).pipe(map((r: StrictHttpResponse<ReleaseAsset>): ReleaseAsset => r.body));
   }
 
   /** Path part for operation `reposDeleteReleaseAsset()` */
@@ -6349,9 +6598,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteReleaseAsset(params: ReposDeleteReleaseAsset$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteReleaseAsset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteReleaseAsset$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposUpdateReleaseAsset()` */
@@ -6367,7 +6614,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateReleaseAsset$Response(params: ReposUpdateReleaseAsset$Params, context?: HttpContext): Observable<StrictHttpResponse<ReleaseAsset>> {
+  reposUpdateReleaseAsset$Response(
+    params: ReposUpdateReleaseAsset$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ReleaseAsset>> {
     return reposUpdateReleaseAsset(this.http, this.rootUrl, params, context);
   }
 
@@ -6382,9 +6632,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposUpdateReleaseAsset(params: ReposUpdateReleaseAsset$Params, context?: HttpContext): Observable<ReleaseAsset> {
-    return this.reposUpdateReleaseAsset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ReleaseAsset>): ReleaseAsset => r.body)
-    );
+    return this.reposUpdateReleaseAsset$Response(params, context).pipe(map((r: StrictHttpResponse<ReleaseAsset>): ReleaseAsset => r.body));
   }
 
   /** Path part for operation `reposGenerateReleaseNotes()` */
@@ -6400,7 +6648,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposGenerateReleaseNotes$Response(params: ReposGenerateReleaseNotes$Params, context?: HttpContext): Observable<StrictHttpResponse<ReleaseNotesContent>> {
+  reposGenerateReleaseNotes$Response(
+    params: ReposGenerateReleaseNotes$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ReleaseNotesContent>> {
     return reposGenerateReleaseNotes(this.http, this.rootUrl, params, context);
   }
 
@@ -6416,7 +6667,7 @@ export class ReposService extends BaseService {
    */
   reposGenerateReleaseNotes(params: ReposGenerateReleaseNotes$Params, context?: HttpContext): Observable<ReleaseNotesContent> {
     return this.reposGenerateReleaseNotes$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ReleaseNotesContent>): ReleaseNotesContent => r.body)
+      map((r: StrictHttpResponse<ReleaseNotesContent>): ReleaseNotesContent => r.body),
     );
   }
 
@@ -6452,9 +6703,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetLatestRelease(params: ReposGetLatestRelease$Params, context?: HttpContext): Observable<Release> {
-    return this.reposGetLatestRelease$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Release>): Release => r.body)
-    );
+    return this.reposGetLatestRelease$Response(params, context).pipe(map((r: StrictHttpResponse<Release>): Release => r.body));
   }
 
   /** Path part for operation `reposGetReleaseByTag()` */
@@ -6485,9 +6734,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetReleaseByTag(params: ReposGetReleaseByTag$Params, context?: HttpContext): Observable<Release> {
-    return this.reposGetReleaseByTag$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Release>): Release => r.body)
-    );
+    return this.reposGetReleaseByTag$Response(params, context).pipe(map((r: StrictHttpResponse<Release>): Release => r.body));
   }
 
   /** Path part for operation `reposGetRelease()` */
@@ -6518,9 +6765,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetRelease(params: ReposGetRelease$Params, context?: HttpContext): Observable<Release> {
-    return this.reposGetRelease$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Release>): Release => r.body)
-    );
+    return this.reposGetRelease$Response(params, context).pipe(map((r: StrictHttpResponse<Release>): Release => r.body));
   }
 
   /** Path part for operation `reposDeleteRelease()` */
@@ -6551,9 +6796,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteRelease(params: ReposDeleteRelease$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteRelease$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteRelease$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposUpdateRelease()` */
@@ -6584,9 +6827,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposUpdateRelease(params: ReposUpdateRelease$Params, context?: HttpContext): Observable<Release> {
-    return this.reposUpdateRelease$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Release>): Release => r.body)
-    );
+    return this.reposUpdateRelease$Response(params, context).pipe(map((r: StrictHttpResponse<Release>): Release => r.body));
   }
 
   /** Path part for operation `reposListReleaseAssets()` */
@@ -6602,7 +6843,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListReleaseAssets$Response(params: ReposListReleaseAssets$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ReleaseAsset>>> {
+  reposListReleaseAssets$Response(
+    params: ReposListReleaseAssets$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<ReleaseAsset>>> {
     return reposListReleaseAssets(this.http, this.rootUrl, params, context);
   }
 
@@ -6618,7 +6862,7 @@ export class ReposService extends BaseService {
    */
   reposListReleaseAssets(params: ReposListReleaseAssets$Params, context?: HttpContext): Observable<Array<ReleaseAsset>> {
     return this.reposListReleaseAssets$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ReleaseAsset>>): Array<ReleaseAsset> => r.body)
+      map((r: StrictHttpResponse<Array<ReleaseAsset>>): Array<ReleaseAsset> => r.body),
     );
   }
 
@@ -6633,7 +6877,7 @@ export class ReposService extends BaseService {
    *
    * You need to use an HTTP client which supports [SNI](http://en.wikipedia.org/wiki/Server_Name_Indication) to make calls to this endpoint.
    *
-   * Most libraries will set the required `Content-Length` header automatically. Use the required `Content-Type` header to provide the media type of the asset. For a list of media types, see [Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml). For example: 
+   * Most libraries will set the required `Content-Length` header automatically. Use the required `Content-Type` header to provide the media type of the asset. For a list of media types, see [Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml). For example:
    *
    * `application/zip`
    *
@@ -6645,7 +6889,7 @@ export class ReposService extends BaseService {
    * **Notes:**
    * *   GitHub renames asset filenames that have special characters, non-alphanumeric characters, and leading or trailing periods. The "[List release assets](https://docs.github.com/rest/releases/assets#list-release-assets)"
    * endpoint lists the renamed filenames. For more information and help, contact [GitHub Support](https://support.github.com/contact?tags=dotcom-rest-api).
-   * *   To find the `release_id` query the [`GET /repos/{owner}/{repo}/releases/latest` endpoint](https://docs.github.com/rest/releases/releases#get-the-latest-release). 
+   * *   To find the `release_id` query the [`GET /repos/{owner}/{repo}/releases/latest` endpoint](https://docs.github.com/rest/releases/releases#get-the-latest-release).
    * *   If you upload an asset with the same filename as another uploaded asset, you'll receive an error and must delete the old file before you can re-upload the new asset.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
@@ -6653,7 +6897,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/octet-stream` and handles request body of type `application/octet-stream`.
    */
-  reposUploadReleaseAsset$Response(params: ReposUploadReleaseAsset$Params, context?: HttpContext): Observable<StrictHttpResponse<ReleaseAsset>> {
+  reposUploadReleaseAsset$Response(
+    params: ReposUploadReleaseAsset$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ReleaseAsset>> {
     return reposUploadReleaseAsset(this.http, this.rootUrl, params, context);
   }
 
@@ -6665,7 +6912,7 @@ export class ReposService extends BaseService {
    *
    * You need to use an HTTP client which supports [SNI](http://en.wikipedia.org/wiki/Server_Name_Indication) to make calls to this endpoint.
    *
-   * Most libraries will set the required `Content-Length` header automatically. Use the required `Content-Type` header to provide the media type of the asset. For a list of media types, see [Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml). For example: 
+   * Most libraries will set the required `Content-Length` header automatically. Use the required `Content-Type` header to provide the media type of the asset. For a list of media types, see [Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml). For example:
    *
    * `application/zip`
    *
@@ -6677,7 +6924,7 @@ export class ReposService extends BaseService {
    * **Notes:**
    * *   GitHub renames asset filenames that have special characters, non-alphanumeric characters, and leading or trailing periods. The "[List release assets](https://docs.github.com/rest/releases/assets#list-release-assets)"
    * endpoint lists the renamed filenames. For more information and help, contact [GitHub Support](https://support.github.com/contact?tags=dotcom-rest-api).
-   * *   To find the `release_id` query the [`GET /repos/{owner}/{repo}/releases/latest` endpoint](https://docs.github.com/rest/releases/releases#get-the-latest-release). 
+   * *   To find the `release_id` query the [`GET /repos/{owner}/{repo}/releases/latest` endpoint](https://docs.github.com/rest/releases/releases#get-the-latest-release).
    * *   If you upload an asset with the same filename as another uploaded asset, you'll receive an error and must delete the old file before you can re-upload the new asset.
    *
    * This method provides access only to the response body.
@@ -6686,9 +6933,7 @@ export class ReposService extends BaseService {
    * This method sends `application/octet-stream` and handles request body of type `application/octet-stream`.
    */
   reposUploadReleaseAsset(params: ReposUploadReleaseAsset$Params, context?: HttpContext): Observable<ReleaseAsset> {
-    return this.reposUploadReleaseAsset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ReleaseAsset>): ReleaseAsset => r.body)
-    );
+    return this.reposUploadReleaseAsset$Response(params, context).pipe(map((r: StrictHttpResponse<ReleaseAsset>): ReleaseAsset => r.body));
   }
 
   /** Path part for operation `reposGetBranchRules()` */
@@ -6707,7 +6952,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetBranchRules$Response(params: ReposGetBranchRules$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<RepositoryRuleDetailed>>> {
+  reposGetBranchRules$Response(
+    params: ReposGetBranchRules$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<RepositoryRuleDetailed>>> {
     return reposGetBranchRules(this.http, this.rootUrl, params, context);
   }
 
@@ -6726,7 +6974,7 @@ export class ReposService extends BaseService {
    */
   reposGetBranchRules(params: ReposGetBranchRules$Params, context?: HttpContext): Observable<Array<RepositoryRuleDetailed>> {
     return this.reposGetBranchRules$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<RepositoryRuleDetailed>>): Array<RepositoryRuleDetailed> => r.body)
+      map((r: StrictHttpResponse<Array<RepositoryRuleDetailed>>): Array<RepositoryRuleDetailed> => r.body),
     );
   }
 
@@ -6743,7 +6991,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetRepoRulesets$Response(params: ReposGetRepoRulesets$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<RepositoryRuleset>>> {
+  reposGetRepoRulesets$Response(
+    params: ReposGetRepoRulesets$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<RepositoryRuleset>>> {
     return reposGetRepoRulesets(this.http, this.rootUrl, params, context);
   }
 
@@ -6759,7 +7010,7 @@ export class ReposService extends BaseService {
    */
   reposGetRepoRulesets(params: ReposGetRepoRulesets$Params, context?: HttpContext): Observable<Array<RepositoryRuleset>> {
     return this.reposGetRepoRulesets$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<RepositoryRuleset>>): Array<RepositoryRuleset> => r.body)
+      map((r: StrictHttpResponse<Array<RepositoryRuleset>>): Array<RepositoryRuleset> => r.body),
     );
   }
 
@@ -6776,7 +7027,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateRepoRuleset$Response(params: ReposCreateRepoRuleset$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryRuleset>> {
+  reposCreateRepoRuleset$Response(
+    params: ReposCreateRepoRuleset$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<RepositoryRuleset>> {
     return reposCreateRepoRuleset(this.http, this.rootUrl, params, context);
   }
 
@@ -6792,7 +7046,7 @@ export class ReposService extends BaseService {
    */
   reposCreateRepoRuleset(params: ReposCreateRepoRuleset$Params, context?: HttpContext): Observable<RepositoryRuleset> {
     return this.reposCreateRepoRuleset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body)
+      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body),
     );
   }
 
@@ -6809,7 +7063,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetRepoRuleset$Response(params: ReposGetRepoRuleset$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryRuleset>> {
+  reposGetRepoRuleset$Response(
+    params: ReposGetRepoRuleset$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<RepositoryRuleset>> {
     return reposGetRepoRuleset(this.http, this.rootUrl, params, context);
   }
 
@@ -6825,7 +7082,7 @@ export class ReposService extends BaseService {
    */
   reposGetRepoRuleset(params: ReposGetRepoRuleset$Params, context?: HttpContext): Observable<RepositoryRuleset> {
     return this.reposGetRepoRuleset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body)
+      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body),
     );
   }
 
@@ -6842,7 +7099,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposUpdateRepoRuleset$Response(params: ReposUpdateRepoRuleset$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryRuleset>> {
+  reposUpdateRepoRuleset$Response(
+    params: ReposUpdateRepoRuleset$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<RepositoryRuleset>> {
     return reposUpdateRepoRuleset(this.http, this.rootUrl, params, context);
   }
 
@@ -6858,7 +7118,7 @@ export class ReposService extends BaseService {
    */
   reposUpdateRepoRuleset(params: ReposUpdateRepoRuleset$Params, context?: HttpContext): Observable<RepositoryRuleset> {
     return this.reposUpdateRepoRuleset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body)
+      map((r: StrictHttpResponse<RepositoryRuleset>): RepositoryRuleset => r.body),
     );
   }
 
@@ -6890,9 +7150,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteRepoRuleset(params: ReposDeleteRepoRuleset$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteRepoRuleset$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteRepoRuleset$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposGetCodeFrequencyStats()` */
@@ -6908,7 +7166,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCodeFrequencyStats$Response(params: ReposGetCodeFrequencyStats$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CodeFrequencyStat>>> {
+  reposGetCodeFrequencyStats$Response(
+    params: ReposGetCodeFrequencyStats$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<CodeFrequencyStat>>> {
     return reposGetCodeFrequencyStats(this.http, this.rootUrl, params, context);
   }
 
@@ -6924,7 +7185,7 @@ export class ReposService extends BaseService {
    */
   reposGetCodeFrequencyStats(params: ReposGetCodeFrequencyStats$Params, context?: HttpContext): Observable<Array<CodeFrequencyStat>> {
     return this.reposGetCodeFrequencyStats$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<CodeFrequencyStat>>): Array<CodeFrequencyStat> => r.body)
+      map((r: StrictHttpResponse<Array<CodeFrequencyStat>>): Array<CodeFrequencyStat> => r.body),
     );
   }
 
@@ -6941,7 +7202,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetCommitActivityStats$Response(params: ReposGetCommitActivityStats$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CommitActivity>>> {
+  reposGetCommitActivityStats$Response(
+    params: ReposGetCommitActivityStats$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<CommitActivity>>> {
     return reposGetCommitActivityStats(this.http, this.rootUrl, params, context);
   }
 
@@ -6957,7 +7221,7 @@ export class ReposService extends BaseService {
    */
   reposGetCommitActivityStats(params: ReposGetCommitActivityStats$Params, context?: HttpContext): Observable<Array<CommitActivity>> {
     return this.reposGetCommitActivityStats$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<CommitActivity>>): Array<CommitActivity> => r.body)
+      map((r: StrictHttpResponse<Array<CommitActivity>>): Array<CommitActivity> => r.body),
     );
   }
 
@@ -6979,7 +7243,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetContributorsStats$Response(params: ReposGetContributorsStats$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ContributorActivity>>> {
+  reposGetContributorsStats$Response(
+    params: ReposGetContributorsStats$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<ContributorActivity>>> {
     return reposGetContributorsStats(this.http, this.rootUrl, params, context);
   }
 
@@ -7000,7 +7267,7 @@ export class ReposService extends BaseService {
    */
   reposGetContributorsStats(params: ReposGetContributorsStats$Params, context?: HttpContext): Observable<Array<ContributorActivity>> {
     return this.reposGetContributorsStats$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ContributorActivity>>): Array<ContributorActivity> => r.body)
+      map((r: StrictHttpResponse<Array<ContributorActivity>>): Array<ContributorActivity> => r.body),
     );
   }
 
@@ -7021,7 +7288,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetParticipationStats$Response(params: ReposGetParticipationStats$Params, context?: HttpContext): Observable<StrictHttpResponse<ParticipationStats>> {
+  reposGetParticipationStats$Response(
+    params: ReposGetParticipationStats$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<ParticipationStats>> {
     return reposGetParticipationStats(this.http, this.rootUrl, params, context);
   }
 
@@ -7041,7 +7311,7 @@ export class ReposService extends BaseService {
    */
   reposGetParticipationStats(params: ReposGetParticipationStats$Params, context?: HttpContext): Observable<ParticipationStats> {
     return this.reposGetParticipationStats$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ParticipationStats>): ParticipationStats => r.body)
+      map((r: StrictHttpResponse<ParticipationStats>): ParticipationStats => r.body),
     );
   }
 
@@ -7064,7 +7334,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetPunchCardStats$Response(params: ReposGetPunchCardStats$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CodeFrequencyStat>>> {
+  reposGetPunchCardStats$Response(
+    params: ReposGetPunchCardStats$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<CodeFrequencyStat>>> {
     return reposGetPunchCardStats(this.http, this.rootUrl, params, context);
   }
 
@@ -7086,7 +7359,7 @@ export class ReposService extends BaseService {
    */
   reposGetPunchCardStats(params: ReposGetPunchCardStats$Params, context?: HttpContext): Observable<Array<CodeFrequencyStat>> {
     return this.reposGetPunchCardStats$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<CodeFrequencyStat>>): Array<CodeFrequencyStat> => r.body)
+      map((r: StrictHttpResponse<Array<CodeFrequencyStat>>): Array<CodeFrequencyStat> => r.body),
     );
   }
 
@@ -7122,9 +7395,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateCommitStatus(params: ReposCreateCommitStatus$Params, context?: HttpContext): Observable<Status> {
-    return this.reposCreateCommitStatus$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Status>): Status => r.body)
-    );
+    return this.reposCreateCommitStatus$Response(params, context).pipe(map((r: StrictHttpResponse<Status>): Status => r.body));
   }
 
   /** Path part for operation `reposListTags()` */
@@ -7155,9 +7426,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposListTags(params: ReposListTags$Params, context?: HttpContext): Observable<Array<Tag>> {
-    return this.reposListTags$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Tag>>): Array<Tag> => r.body)
-    );
+    return this.reposListTags$Response(params, context).pipe(map((r: StrictHttpResponse<Array<Tag>>): Array<Tag> => r.body));
   }
 
   /** Path part for operation `reposListTagProtection()` */
@@ -7175,7 +7444,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListTagProtection$Response(params: ReposListTagProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<TagProtection>>> {
+  reposListTagProtection$Response(
+    params: ReposListTagProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<TagProtection>>> {
     return reposListTagProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -7193,7 +7465,7 @@ export class ReposService extends BaseService {
    */
   reposListTagProtection(params: ReposListTagProtection$Params, context?: HttpContext): Observable<Array<TagProtection>> {
     return this.reposListTagProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<TagProtection>>): Array<TagProtection> => r.body)
+      map((r: StrictHttpResponse<Array<TagProtection>>): Array<TagProtection> => r.body),
     );
   }
 
@@ -7211,7 +7483,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateTagProtection$Response(params: ReposCreateTagProtection$Params, context?: HttpContext): Observable<StrictHttpResponse<TagProtection>> {
+  reposCreateTagProtection$Response(
+    params: ReposCreateTagProtection$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<TagProtection>> {
     return reposCreateTagProtection(this.http, this.rootUrl, params, context);
   }
 
@@ -7228,7 +7503,7 @@ export class ReposService extends BaseService {
    */
   reposCreateTagProtection(params: ReposCreateTagProtection$Params, context?: HttpContext): Observable<TagProtection> {
     return this.reposCreateTagProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<TagProtection>): TagProtection => r.body)
+      map((r: StrictHttpResponse<TagProtection>): TagProtection => r.body),
     );
   }
 
@@ -7262,9 +7537,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDeleteTagProtection(params: ReposDeleteTagProtection$Params, context?: HttpContext): Observable<void> {
-    return this.reposDeleteTagProtection$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDeleteTagProtection$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposDownloadTarballArchive()` */
@@ -7283,7 +7556,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDownloadTarballArchive$Response(params: ReposDownloadTarballArchive$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDownloadTarballArchive$Response(
+    params: ReposDownloadTarballArchive$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDownloadTarballArchive(this.http, this.rootUrl, params, context);
   }
 
@@ -7301,9 +7577,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDownloadTarballArchive(params: ReposDownloadTarballArchive$Params, context?: HttpContext): Observable<void> {
-    return this.reposDownloadTarballArchive$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDownloadTarballArchive$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposListTeams()` */
@@ -7350,9 +7624,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposListTeams(params: ReposListTeams$Params, context?: HttpContext): Observable<Array<Team>> {
-    return this.reposListTeams$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body)
-    );
+    return this.reposListTeams$Response(params, context).pipe(map((r: StrictHttpResponse<Array<Team>>): Array<Team> => r.body));
   }
 
   /** Path part for operation `reposGetAllTopics()` */
@@ -7383,9 +7655,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetAllTopics(params: ReposGetAllTopics$Params, context?: HttpContext): Observable<Topic> {
-    return this.reposGetAllTopics$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Topic>): Topic => r.body)
-    );
+    return this.reposGetAllTopics$Response(params, context).pipe(map((r: StrictHttpResponse<Topic>): Topic => r.body));
   }
 
   /** Path part for operation `reposReplaceAllTopics()` */
@@ -7416,9 +7686,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposReplaceAllTopics(params: ReposReplaceAllTopics$Params, context?: HttpContext): Observable<Topic> {
-    return this.reposReplaceAllTopics$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Topic>): Topic => r.body)
-    );
+    return this.reposReplaceAllTopics$Response(params, context).pipe(map((r: StrictHttpResponse<Topic>): Topic => r.body));
   }
 
   /** Path part for operation `reposGetClones()` */
@@ -7449,9 +7717,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetClones(params: ReposGetClones$Params, context?: HttpContext): Observable<CloneTraffic> {
-    return this.reposGetClones$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CloneTraffic>): CloneTraffic => r.body)
-    );
+    return this.reposGetClones$Response(params, context).pipe(map((r: StrictHttpResponse<CloneTraffic>): CloneTraffic => r.body));
   }
 
   /** Path part for operation `reposGetTopPaths()` */
@@ -7483,7 +7749,7 @@ export class ReposService extends BaseService {
    */
   reposGetTopPaths(params: ReposGetTopPaths$Params, context?: HttpContext): Observable<Array<ContentTraffic>> {
     return this.reposGetTopPaths$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ContentTraffic>>): Array<ContentTraffic> => r.body)
+      map((r: StrictHttpResponse<Array<ContentTraffic>>): Array<ContentTraffic> => r.body),
     );
   }
 
@@ -7500,7 +7766,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposGetTopReferrers$Response(params: ReposGetTopReferrers$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ReferrerTraffic>>> {
+  reposGetTopReferrers$Response(
+    params: ReposGetTopReferrers$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<ReferrerTraffic>>> {
     return reposGetTopReferrers(this.http, this.rootUrl, params, context);
   }
 
@@ -7516,7 +7785,7 @@ export class ReposService extends BaseService {
    */
   reposGetTopReferrers(params: ReposGetTopReferrers$Params, context?: HttpContext): Observable<Array<ReferrerTraffic>> {
     return this.reposGetTopReferrers$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ReferrerTraffic>>): Array<ReferrerTraffic> => r.body)
+      map((r: StrictHttpResponse<Array<ReferrerTraffic>>): Array<ReferrerTraffic> => r.body),
     );
   }
 
@@ -7548,9 +7817,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposGetViews(params: ReposGetViews$Params, context?: HttpContext): Observable<ViewTraffic> {
-    return this.reposGetViews$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ViewTraffic>): ViewTraffic => r.body)
-    );
+    return this.reposGetViews$Response(params, context).pipe(map((r: StrictHttpResponse<ViewTraffic>): ViewTraffic => r.body));
   }
 
   /** Path part for operation `reposTransfer()` */
@@ -7583,9 +7850,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposTransfer(params: ReposTransfer$Params, context?: HttpContext): Observable<MinimalRepository> {
-    return this.reposTransfer$Response(params, context).pipe(
-      map((r: StrictHttpResponse<MinimalRepository>): MinimalRepository => r.body)
-    );
+    return this.reposTransfer$Response(params, context).pipe(map((r: StrictHttpResponse<MinimalRepository>): MinimalRepository => r.body));
   }
 
   /** Path part for operation `reposCheckVulnerabilityAlerts()` */
@@ -7601,7 +7866,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposCheckVulnerabilityAlerts$Response(params: ReposCheckVulnerabilityAlerts$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposCheckVulnerabilityAlerts$Response(
+    params: ReposCheckVulnerabilityAlerts$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposCheckVulnerabilityAlerts(this.http, this.rootUrl, params, context);
   }
 
@@ -7616,9 +7884,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposCheckVulnerabilityAlerts(params: ReposCheckVulnerabilityAlerts$Params, context?: HttpContext): Observable<void> {
-    return this.reposCheckVulnerabilityAlerts$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposCheckVulnerabilityAlerts$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposEnableVulnerabilityAlerts()` */
@@ -7634,7 +7900,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposEnableVulnerabilityAlerts$Response(params: ReposEnableVulnerabilityAlerts$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposEnableVulnerabilityAlerts$Response(
+    params: ReposEnableVulnerabilityAlerts$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposEnableVulnerabilityAlerts(this.http, this.rootUrl, params, context);
   }
 
@@ -7649,9 +7918,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposEnableVulnerabilityAlerts(params: ReposEnableVulnerabilityAlerts$Params, context?: HttpContext): Observable<void> {
-    return this.reposEnableVulnerabilityAlerts$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposEnableVulnerabilityAlerts$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposDisableVulnerabilityAlerts()` */
@@ -7669,7 +7936,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDisableVulnerabilityAlerts$Response(params: ReposDisableVulnerabilityAlerts$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDisableVulnerabilityAlerts$Response(
+    params: ReposDisableVulnerabilityAlerts$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDisableVulnerabilityAlerts(this.http, this.rootUrl, params, context);
   }
 
@@ -7686,9 +7956,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDisableVulnerabilityAlerts(params: ReposDisableVulnerabilityAlerts$Params, context?: HttpContext): Observable<void> {
-    return this.reposDisableVulnerabilityAlerts$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDisableVulnerabilityAlerts$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposDownloadZipballArchive()` */
@@ -7708,7 +7976,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDownloadZipballArchive$Response(params: ReposDownloadZipballArchive$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDownloadZipballArchive$Response(
+    params: ReposDownloadZipballArchive$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDownloadZipballArchive(this.http, this.rootUrl, params, context);
   }
 
@@ -7727,9 +7998,7 @@ export class ReposService extends BaseService {
    * This method doesn't expect any request body.
    */
   reposDownloadZipballArchive(params: ReposDownloadZipballArchive$Params, context?: HttpContext): Observable<void> {
-    return this.reposDownloadZipballArchive$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
+    return this.reposDownloadZipballArchive$Response(params, context).pipe(map((r: StrictHttpResponse<void>): void => r.body));
   }
 
   /** Path part for operation `reposCreateUsingTemplate()` */
@@ -7752,7 +8021,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateUsingTemplate$Response(params: ReposCreateUsingTemplate$Params, context?: HttpContext): Observable<StrictHttpResponse<Repository>> {
+  reposCreateUsingTemplate$Response(
+    params: ReposCreateUsingTemplate$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Repository>> {
     return reposCreateUsingTemplate(this.http, this.rootUrl, params, context);
   }
 
@@ -7774,9 +8046,7 @@ export class ReposService extends BaseService {
    * This method sends `application/json` and handles request body of type `application/json`.
    */
   reposCreateUsingTemplate(params: ReposCreateUsingTemplate$Params, context?: HttpContext): Observable<Repository> {
-    return this.reposCreateUsingTemplate$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Repository>): Repository => r.body)
-    );
+    return this.reposCreateUsingTemplate$Response(params, context).pipe(map((r: StrictHttpResponse<Repository>): Repository => r.body));
   }
 
   /** Path part for operation `reposListPublic()` */
@@ -7796,7 +8066,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListPublic$Response(params?: ReposListPublic$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<MinimalRepository>>> {
+  reposListPublic$Response(
+    params?: ReposListPublic$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<MinimalRepository>>> {
     return reposListPublic(this.http, this.rootUrl, params, context);
   }
 
@@ -7816,7 +8089,7 @@ export class ReposService extends BaseService {
    */
   reposListPublic(params?: ReposListPublic$Params, context?: HttpContext): Observable<Array<MinimalRepository>> {
     return this.reposListPublic$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<MinimalRepository>>): Array<MinimalRepository> => r.body)
+      map((r: StrictHttpResponse<Array<MinimalRepository>>): Array<MinimalRepository> => r.body),
     );
   }
 
@@ -7835,7 +8108,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListForAuthenticatedUser$Response(params?: ReposListForAuthenticatedUser$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Repository>>> {
+  reposListForAuthenticatedUser$Response(
+    params?: ReposListForAuthenticatedUser$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<Repository>>> {
     return reposListForAuthenticatedUser(this.http, this.rootUrl, params, context);
   }
 
@@ -7853,7 +8129,7 @@ export class ReposService extends BaseService {
    */
   reposListForAuthenticatedUser(params?: ReposListForAuthenticatedUser$Params, context?: HttpContext): Observable<Array<Repository>> {
     return this.reposListForAuthenticatedUser$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<Repository>>): Array<Repository> => r.body)
+      map((r: StrictHttpResponse<Array<Repository>>): Array<Repository> => r.body),
     );
   }
 
@@ -7877,7 +8153,10 @@ export class ReposService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  reposCreateForAuthenticatedUser$Response(params: ReposCreateForAuthenticatedUser$Params, context?: HttpContext): Observable<StrictHttpResponse<Repository>> {
+  reposCreateForAuthenticatedUser$Response(
+    params: ReposCreateForAuthenticatedUser$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Repository>> {
     return reposCreateForAuthenticatedUser(this.http, this.rootUrl, params, context);
   }
 
@@ -7900,7 +8179,7 @@ export class ReposService extends BaseService {
    */
   reposCreateForAuthenticatedUser(params: ReposCreateForAuthenticatedUser$Params, context?: HttpContext): Observable<Repository> {
     return this.reposCreateForAuthenticatedUser$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Repository>): Repository => r.body)
+      map((r: StrictHttpResponse<Repository>): Repository => r.body),
     );
   }
 
@@ -7917,7 +8196,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListInvitationsForAuthenticatedUser$Response(params?: ReposListInvitationsForAuthenticatedUser$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<RepositoryInvitation>>> {
+  reposListInvitationsForAuthenticatedUser$Response(
+    params?: ReposListInvitationsForAuthenticatedUser$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<RepositoryInvitation>>> {
     return reposListInvitationsForAuthenticatedUser(this.http, this.rootUrl, params, context);
   }
 
@@ -7931,9 +8213,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListInvitationsForAuthenticatedUser(params?: ReposListInvitationsForAuthenticatedUser$Params, context?: HttpContext): Observable<Array<RepositoryInvitation>> {
+  reposListInvitationsForAuthenticatedUser(
+    params?: ReposListInvitationsForAuthenticatedUser$Params,
+    context?: HttpContext,
+  ): Observable<Array<RepositoryInvitation>> {
     return this.reposListInvitationsForAuthenticatedUser$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<RepositoryInvitation>>): Array<RepositoryInvitation> => r.body)
+      map((r: StrictHttpResponse<Array<RepositoryInvitation>>): Array<RepositoryInvitation> => r.body),
     );
   }
 
@@ -7950,7 +8235,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDeclineInvitationForAuthenticatedUser$Response(params: ReposDeclineInvitationForAuthenticatedUser$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposDeclineInvitationForAuthenticatedUser$Response(
+    params: ReposDeclineInvitationForAuthenticatedUser$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposDeclineInvitationForAuthenticatedUser(this.http, this.rootUrl, params, context);
   }
 
@@ -7964,9 +8252,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposDeclineInvitationForAuthenticatedUser(params: ReposDeclineInvitationForAuthenticatedUser$Params, context?: HttpContext): Observable<void> {
+  reposDeclineInvitationForAuthenticatedUser(
+    params: ReposDeclineInvitationForAuthenticatedUser$Params,
+    context?: HttpContext,
+  ): Observable<void> {
     return this.reposDeclineInvitationForAuthenticatedUser$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<void>): void => r.body),
     );
   }
 
@@ -7983,7 +8274,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposAcceptInvitationForAuthenticatedUser$Response(params: ReposAcceptInvitationForAuthenticatedUser$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  reposAcceptInvitationForAuthenticatedUser$Response(
+    params: ReposAcceptInvitationForAuthenticatedUser$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<void>> {
     return reposAcceptInvitationForAuthenticatedUser(this.http, this.rootUrl, params, context);
   }
 
@@ -7997,9 +8291,12 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposAcceptInvitationForAuthenticatedUser(params: ReposAcceptInvitationForAuthenticatedUser$Params, context?: HttpContext): Observable<void> {
+  reposAcceptInvitationForAuthenticatedUser(
+    params: ReposAcceptInvitationForAuthenticatedUser$Params,
+    context?: HttpContext,
+  ): Observable<void> {
     return this.reposAcceptInvitationForAuthenticatedUser$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<void>): void => r.body),
     );
   }
 
@@ -8016,7 +8313,10 @@ export class ReposService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  reposListForUser$Response(params: ReposListForUser$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<MinimalRepository>>> {
+  reposListForUser$Response(
+    params: ReposListForUser$Params,
+    context?: HttpContext,
+  ): Observable<StrictHttpResponse<Array<MinimalRepository>>> {
     return reposListForUser(this.http, this.rootUrl, params, context);
   }
 
@@ -8032,8 +8332,7 @@ export class ReposService extends BaseService {
    */
   reposListForUser(params: ReposListForUser$Params, context?: HttpContext): Observable<Array<MinimalRepository>> {
     return this.reposListForUser$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<MinimalRepository>>): Array<MinimalRepository> => r.body)
+      map((r: StrictHttpResponse<Array<MinimalRepository>>): Array<MinimalRepository> => r.body),
     );
   }
-
 }

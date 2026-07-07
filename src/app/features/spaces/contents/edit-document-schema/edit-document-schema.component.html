@@ -246,7 +246,7 @@
         <!--BOOLEAN-->
         @case ('BOOLEAN') {
           <div hlmField orientation="horizontal" class="gap-2">
-            <hlm-switch [id]="'schema-field-' + field.name" [formControlName]="field.name" />
+            <hlm-switch [inputId]="'schema-field-' + field.name" [formControlName]="field.name" />
             <div hlmFieldContent>
               <label hlmFieldLabel [for]="'schema-field-' + field.name">
                 {{ field.displayName || field.name }}

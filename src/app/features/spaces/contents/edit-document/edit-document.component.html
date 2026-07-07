@@ -199,7 +199,8 @@
                     <hlm-dropdown-menu class="text-nowrap">
                       @for (env of availableEnvironments(); track env.name) {
                         <button
-                          hlmDropdownMenuRadio
+                          hlmDropdownMenuCheckbox
+                          [id]="'env-option-' + env.name"
                           (click)="onEnvironmentSelection(env)"
                           [checked]="env.name === selectedEnvironment()?.name"
                           [hlmTooltip]="env.url">

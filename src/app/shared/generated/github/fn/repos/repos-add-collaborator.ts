@@ -9,31 +9,34 @@ import { RequestBuilder } from '../../request-builder';
 import { RepositoryInvitation } from '../../models/repository-invitation';
 
 export interface ReposAddCollaborator$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The handle for the GitHub user account.
- */
+  /**
+   * The handle for the GitHub user account.
+   */
   username: string;
-      body?: {
-
-/**
- * The permission to grant the collaborator. **Only valid on organization-owned repositories.** We accept the following permissions to be set: `pull`, `triage`, `push`, `maintain`, `admin` and you can also specify a custom repository role name, if the owning organization has defined any.
- */
-'permission'?: string;
+  body?: {
+    /**
+     * The permission to grant the collaborator. **Only valid on organization-owned repositories.** We accept the following permissions to be set: `pull`, `triage`, `push`, `maintain`, `admin` and you can also specify a custom repository role name, if the owning organization has defined any.
+     */
+    permission?: string;
+  };
 }
-}
 
-export function reposAddCollaborator(http: HttpClient, rootUrl: string, params: ReposAddCollaborator$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryInvitation>> {
+export function reposAddCollaborator(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposAddCollaborator$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<RepositoryInvitation>> {
   const rb = new RequestBuilder(rootUrl, reposAddCollaborator.PATH, 'put');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -42,13 +45,11 @@ export function reposAddCollaborator(http: HttpClient, rootUrl: string, params: 
     rb.body(params.body, 'application/json');
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<RepositoryInvitation>;
-    })
+    }),
   );
 }
 

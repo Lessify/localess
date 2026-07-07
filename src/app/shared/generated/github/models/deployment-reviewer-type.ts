@@ -6,5 +6,5 @@
  */
 export enum DeploymentReviewerType {
   User = 'User',
-  Team = 'Team'
+  Team = 'Team',
 }

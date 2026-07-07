@@ -9,29 +9,33 @@ import { RequestBuilder } from '../../request-builder';
 import { ContentTree } from '../../models/content-tree';
 
 export interface ReposGetContent$VndGithubObject$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * path parameter
- */
+  /**
+   * path parameter
+   */
   path: string;
 
-/**
- * The name of the commit/branch/tag. Default: the repository’s default branch.
- */
+  /**
+   * The name of the commit/branch/tag. Default: the repository’s default branch.
+   */
   ref?: string;
 }
 
-export function reposGetContent$VndGithubObject(http: HttpClient, rootUrl: string, params: ReposGetContent$VndGithubObject$Params, context?: HttpContext): Observable<StrictHttpResponse<ContentTree>> {
+export function reposGetContent$VndGithubObject(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposGetContent$VndGithubObject$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<ContentTree>> {
   const rb = new RequestBuilder(rootUrl, reposGetContent$VndGithubObject.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -40,13 +44,11 @@ export function reposGetContent$VndGithubObject(http: HttpClient, rootUrl: strin
     rb.query('ref', params.ref, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'blob', accept: 'application/vnd.github.object', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'blob', accept: 'application/vnd.github.object', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<ContentTree>;
-    })
+    }),
   );
 }
 

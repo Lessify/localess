@@ -9,29 +9,33 @@ import { RequestBuilder } from '../../request-builder';
 import { RepositoryRuleset } from '../../models/repository-ruleset';
 
 export interface ReposGetRepoRuleset$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The ID of the ruleset.
- */
+  /**
+   * The ID of the ruleset.
+   */
   ruleset_id: number;
 
-/**
- * Include rulesets configured at higher levels that apply to this repository
- */
+  /**
+   * Include rulesets configured at higher levels that apply to this repository
+   */
   includes_parents?: boolean;
 }
 
-export function reposGetRepoRuleset(http: HttpClient, rootUrl: string, params: ReposGetRepoRuleset$Params, context?: HttpContext): Observable<StrictHttpResponse<RepositoryRuleset>> {
+export function reposGetRepoRuleset(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposGetRepoRuleset$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<RepositoryRuleset>> {
   const rb = new RequestBuilder(rootUrl, reposGetRepoRuleset.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -40,13 +44,11 @@ export function reposGetRepoRuleset(http: HttpClient, rootUrl: string, params: R
     rb.query('includes_parents', params.includes_parents, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<RepositoryRuleset>;
-    })
+    }),
   );
 }
 

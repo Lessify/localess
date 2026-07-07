@@ -10,25 +10,29 @@ import { DeploymentBranchPolicy } from '../../models/deployment-branch-policy';
 import { DeploymentBranchPolicyNamePattern } from '../../models/deployment-branch-policy-name-pattern';
 
 export interface ReposCreateDeploymentBranchPolicy$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The name of the environment.
- */
+  /**
+   * The name of the environment.
+   */
   environment_name: string;
-      body: DeploymentBranchPolicyNamePattern
+  body: DeploymentBranchPolicyNamePattern;
 }
 
-export function reposCreateDeploymentBranchPolicy(http: HttpClient, rootUrl: string, params: ReposCreateDeploymentBranchPolicy$Params, context?: HttpContext): Observable<StrictHttpResponse<DeploymentBranchPolicy>> {
+export function reposCreateDeploymentBranchPolicy(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposCreateDeploymentBranchPolicy$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<DeploymentBranchPolicy>> {
   const rb = new RequestBuilder(rootUrl, reposCreateDeploymentBranchPolicy.PATH, 'post');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -37,13 +41,11 @@ export function reposCreateDeploymentBranchPolicy(http: HttpClient, rootUrl: str
     rb.body(params.body, 'application/json');
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<DeploymentBranchPolicy>;
-    })
+    }),
   );
 }
 

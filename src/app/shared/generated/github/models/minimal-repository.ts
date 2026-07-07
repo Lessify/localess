@@ -57,13 +57,13 @@ export interface MinimalRepository {
   labels_url: string;
   language?: string | null;
   languages_url: string;
-  license?: ({
-'key'?: string;
-'name'?: string;
-'spdx_id'?: string;
-'url'?: string;
-'node_id'?: string;
-}) | null;
+  license?: {
+    key?: string;
+    name?: string;
+    spdx_id?: string;
+    url?: string;
+    node_id?: string;
+  } | null;
   merges_url: string;
   milestones_url: string;
   mirror_url?: string | null;
@@ -75,12 +75,12 @@ export interface MinimalRepository {
   open_issues_count?: number;
   owner: SimpleUser;
   permissions?: {
-'admin'?: boolean;
-'maintain'?: boolean;
-'push'?: boolean;
-'triage'?: boolean;
-'pull'?: boolean;
-};
+    admin?: boolean;
+    maintain?: boolean;
+    push?: boolean;
+    triage?: boolean;
+    pull?: boolean;
+  };
   private: boolean;
   pulls_url: string;
   pushed_at?: string | null;

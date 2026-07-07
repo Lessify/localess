@@ -13,48 +13,51 @@ import { WebhookConfigSecret } from '../../models/webhook-config-secret';
 import { WebhookConfigUrl } from '../../models/webhook-config-url';
 
 export interface ReposCreateWebhook$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
-      body?: ({
+  body?: {
+    /**
+     * Use `web` to create a webhook. Default: `web`. This parameter only accepts the value `web`.
+     */
+    name?: string;
 
-/**
- * Use `web` to create a webhook. Default: `web`. This parameter only accepts the value `web`.
- */
-'name'?: string;
+    /**
+     * Key/value pairs to provide settings for this webhook.
+     */
+    config?: {
+      url?: WebhookConfigUrl;
+      content_type?: WebhookConfigContentType;
+      secret?: WebhookConfigSecret;
+      insecure_ssl?: WebhookConfigInsecureSsl;
+      token?: string;
+      digest?: string;
+    };
 
-/**
- * Key/value pairs to provide settings for this webhook.
- */
-'config'?: {
-'url'?: WebhookConfigUrl;
-'content_type'?: WebhookConfigContentType;
-'secret'?: WebhookConfigSecret;
-'insecure_ssl'?: WebhookConfigInsecureSsl;
-'token'?: string;
-'digest'?: string;
-};
+    /**
+     * Determines what [events](https://docs.github.com/webhooks/event-payloads) the hook is triggered for.
+     */
+    events?: Array<string>;
 
-/**
- * Determines what [events](https://docs.github.com/webhooks/event-payloads) the hook is triggered for.
- */
-'events'?: Array<string>;
-
-/**
- * Determines if notifications are sent when the webhook is triggered. Set to `true` to send notifications.
- */
-'active'?: boolean;
-}) | null
+    /**
+     * Determines if notifications are sent when the webhook is triggered. Set to `true` to send notifications.
+     */
+    active?: boolean;
+  } | null;
 }
 
-export function reposCreateWebhook(http: HttpClient, rootUrl: string, params: ReposCreateWebhook$Params, context?: HttpContext): Observable<StrictHttpResponse<Hook>> {
+export function reposCreateWebhook(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposCreateWebhook$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Hook>> {
   const rb = new RequestBuilder(rootUrl, reposCreateWebhook.PATH, 'post');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -62,13 +65,11 @@ export function reposCreateWebhook(http: HttpClient, rootUrl: string, params: Re
     rb.body(params.body, 'application/json');
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Hook>;
-    })
+    }),
   );
 }
 

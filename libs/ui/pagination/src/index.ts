@@ -19,13 +19,13 @@ export * from './lib/hlm-pagination-next';
 export * from './lib/hlm-pagination-previous';
 
 export const HlmPaginationImports = [
-	HlmPagination,
-	HlmPaginationContent,
-	HlmPaginationItem,
-	HlmPaginationLink,
-	HlmPaginationPrevious,
-	HlmPaginationNext,
-	HlmPaginationEllipsis,
-	HlmNumberedPagination,
-	HlmNumberedPaginationQueryParams,
+  HlmPagination,
+  HlmPaginationContent,
+  HlmPaginationItem,
+  HlmPaginationLink,
+  HlmPaginationPrevious,
+  HlmPaginationNext,
+  HlmPaginationEllipsis,
+  HlmNumberedPagination,
+  HlmNumberedPaginationQueryParams,
 ] as const;

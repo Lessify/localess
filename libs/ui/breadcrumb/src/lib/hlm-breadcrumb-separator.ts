@@ -22,6 +22,6 @@ import { classes } from '@spartan-ng/helm/utils';
 })
 export class HlmBreadcrumbSeparator {
   constructor() {
-    classes(() => '[&>ng-icon]:text-[calc(var(--spacing)*3.5)] [&>ng-icon]:flex');
+    classes(() => '[&>ng-icon]:text-[length:--spacing(3.5)] [&>ng-icon]:flex');
   }
 }

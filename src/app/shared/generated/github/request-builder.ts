@@ -37,7 +37,13 @@ interface ParameterOptions {
  * Base class for a parameter
  */
 abstract class Parameter {
-  constructor(public name: string, public value: any, public options: ParameterOptions, defaultStyle: string, defaultExplode: boolean) {
+  constructor(
+    public name: string,
+    public value: any,
+    public options: ParameterOptions,
+    defaultStyle: string,
+    defaultExplode: boolean,
+  ) {
     this.options = options || {};
     if (this.options.style === null || this.options.style === undefined) {
       this.options.style = defaultStyle;
@@ -87,7 +93,7 @@ class PathParameter extends Parameter {
       value = '';
     }
     let prefix = this.options.style === 'label' ? '.' : '';
-    let separator = this.options.explode ? prefix === '' ? ',' : prefix : ',';
+    let separator = this.options.explode ? (prefix === '' ? ',' : prefix) : ',';
     let alreadySerialized = false;
     if (this.options.style === 'matrix') {
       // The parameter name is just used as prefix, except in some cases...
@@ -102,7 +108,7 @@ class PathParameter extends Parameter {
         } else {
           // For objects we have to put each the key / value pairs
           value = this.serializeValue(value, ';');
-          alreadySerialized = true
+          alreadySerialized = true;
         }
       }
     }
@@ -139,9 +145,7 @@ class QueryParameter extends Parameter {
           params = params.append(this.name, this.serializeValue(v));
         }
       } else {
-        const separator = this.options.style === 'spaceDelimited'
-          ? ' ' : this.options.style === 'pipeDelimited'
-            ? '|' : ',';
+        const separator = this.options.style === 'spaceDelimited' ? ' ' : this.options.style === 'pipeDelimited' ? '|' : ',';
         return params.append(this.name, this.serializeValue(this.value, separator));
       }
     } else if (this.value !== null && typeof this.value === 'object') {
@@ -208,7 +212,6 @@ class HeaderParameter extends Parameter {
  * Helper to build http requests from parameters
  */
 export class RequestBuilder {
-
   private _path = new Map<string, PathParameter>();
   private _query = new Map<string, QueryParameter>();
   private _header = new Map<string, HeaderParameter>();
@@ -218,8 +221,8 @@ export class RequestBuilder {
   constructor(
     public rootUrl: string,
     public operationPath: string,
-    public method: string) {
-  }
+    public method: string,
+  ) {}
 
   /**
    * Sets a path parameter
@@ -303,7 +306,7 @@ export class RequestBuilder {
       return value;
     }
     if (typeof value === 'object') {
-      return new Blob([JSON.stringify(value)], {type: 'application/json'})
+      return new Blob([JSON.stringify(value)], { type: 'application/json' });
     }
     return String(value);
   }
@@ -324,7 +327,6 @@ export class RequestBuilder {
     /** Allow passing HttpContext for HttpClient */
     context?: HttpContext;
   }): HttpRequest<T> {
-
     options = options || {};
 
     // Path parameters
@@ -336,7 +338,7 @@ export class RequestBuilder {
 
     // Query parameters
     let httpParams = new HttpParams({
-      encoder: ParameterCodecInstance
+      encoder: ParameterCodecInstance,
     });
     for (const queryParam of this._query.values()) {
       httpParams = queryParam.append(httpParams);
@@ -362,7 +364,7 @@ export class RequestBuilder {
       headers: httpHeaders,
       responseType: options.responseType,
       reportProgress: options.reportProgress,
-      context: options.context
+      context: options.context,
     });
   }
 }

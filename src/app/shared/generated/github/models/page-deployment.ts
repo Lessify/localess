@@ -5,7 +5,6 @@
  * The GitHub Pages deployment status.
  */
 export interface PageDeployment {
-
   /**
    * The URI to the deployed GitHub Pages.
    */

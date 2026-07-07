@@ -9,31 +9,34 @@ import { RequestBuilder } from '../../request-builder';
 import { CommitComment } from '../../models/commit-comment';
 
 export interface ReposUpdateCommitComment$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The unique identifier of the comment.
- */
+  /**
+   * The unique identifier of the comment.
+   */
   comment_id: number;
-      body: {
-
-/**
- * The contents of the comment
- */
-'body': string;
+  body: {
+    /**
+     * The contents of the comment
+     */
+    body: string;
+  };
 }
-}
 
-export function reposUpdateCommitComment(http: HttpClient, rootUrl: string, params: ReposUpdateCommitComment$Params, context?: HttpContext): Observable<StrictHttpResponse<CommitComment>> {
+export function reposUpdateCommitComment(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposUpdateCommitComment$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<CommitComment>> {
   const rb = new RequestBuilder(rootUrl, reposUpdateCommitComment.PATH, 'patch');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -42,13 +45,11 @@ export function reposUpdateCommitComment(http: HttpClient, rootUrl: string, para
     rb.body(params.body, 'application/json');
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<CommitComment>;
-    })
+    }),
   );
 }
 

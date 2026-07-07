@@ -9,34 +9,38 @@ import { RequestBuilder } from '../../request-builder';
 import { Status } from '../../models/status';
 
 export interface ReposListCommitStatusesForRef$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The commit reference. Can be a commit SHA, branch name (`heads/BRANCH_NAME`), or tag name (`tags/TAG_NAME`). For more information, see "[Git References](https://git-scm.com/book/en/v2/Git-Internals-Git-References)" in the Git documentation.
- */
+  /**
+   * The commit reference. Can be a commit SHA, branch name (`heads/BRANCH_NAME`), or tag name (`tags/TAG_NAME`). For more information, see "[Git References](https://git-scm.com/book/en/v2/Git-Internals-Git-References)" in the Git documentation.
+   */
   ref: string;
 
-/**
- * The number of results per page (max 100).
- */
+  /**
+   * The number of results per page (max 100).
+   */
   per_page?: number;
 
-/**
- * Page number of the results to fetch.
- */
+  /**
+   * Page number of the results to fetch.
+   */
   page?: number;
 }
 
-export function reposListCommitStatusesForRef(http: HttpClient, rootUrl: string, params: ReposListCommitStatusesForRef$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Status>>> {
+export function reposListCommitStatusesForRef(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposListCommitStatusesForRef$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Array<Status>>> {
   const rb = new RequestBuilder(rootUrl, reposListCommitStatusesForRef.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -46,13 +50,11 @@ export function reposListCommitStatusesForRef(http: HttpClient, rootUrl: string,
     rb.query('page', params.page, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Array<Status>>;
-    })
+    }),
   );
 }
 

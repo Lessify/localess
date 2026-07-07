@@ -19,4 +19,18 @@ import { RepositoryRuleUpdate } from '../models/repository-rule-update';
 /**
  * A repository rule with ruleset details.
  */
-export type RepositoryRuleDetailed = (RepositoryRuleCreation & RepositoryRuleRulesetInfo | RepositoryRuleUpdate & RepositoryRuleRulesetInfo | RepositoryRuleDeletion & RepositoryRuleRulesetInfo | RepositoryRuleRequiredLinearHistory & RepositoryRuleRulesetInfo | RepositoryRuleRequiredDeployments & RepositoryRuleRulesetInfo | RepositoryRuleRequiredSignatures & RepositoryRuleRulesetInfo | RepositoryRulePullRequest & RepositoryRuleRulesetInfo | RepositoryRuleRequiredStatusChecks & RepositoryRuleRulesetInfo | RepositoryRuleNonFastForward & RepositoryRuleRulesetInfo | RepositoryRuleCommitMessagePattern & RepositoryRuleRulesetInfo | RepositoryRuleCommitAuthorEmailPattern & RepositoryRuleRulesetInfo | RepositoryRuleCommitterEmailPattern & RepositoryRuleRulesetInfo | RepositoryRuleBranchNamePattern & RepositoryRuleRulesetInfo | RepositoryRuleTagNamePattern & RepositoryRuleRulesetInfo);
+export type RepositoryRuleDetailed =
+  | (RepositoryRuleCreation & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleUpdate & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleDeletion & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleRequiredLinearHistory & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleRequiredDeployments & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleRequiredSignatures & RepositoryRuleRulesetInfo)
+  | (RepositoryRulePullRequest & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleRequiredStatusChecks & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleNonFastForward & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleCommitMessagePattern & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleCommitAuthorEmailPattern & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleCommitterEmailPattern & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleBranchNamePattern & RepositoryRuleRulesetInfo)
+  | (RepositoryRuleTagNamePattern & RepositoryRuleRulesetInfo);

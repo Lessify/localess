@@ -12,5 +12,5 @@ export enum AuthorAssociation {
   Mannequin = 'MANNEQUIN',
   Member = 'MEMBER',
   None = 'NONE',
-  Owner = 'OWNER'
+  Owner = 'OWNER',
 }

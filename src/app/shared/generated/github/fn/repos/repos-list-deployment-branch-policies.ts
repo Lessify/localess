@@ -9,41 +9,46 @@ import { RequestBuilder } from '../../request-builder';
 import { DeploymentBranchPolicy } from '../../models/deployment-branch-policy';
 
 export interface ReposListDeploymentBranchPolicies$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The name of the environment.
- */
+  /**
+   * The name of the environment.
+   */
   environment_name: string;
 
-/**
- * The number of results per page (max 100).
- */
+  /**
+   * The number of results per page (max 100).
+   */
   per_page?: number;
 
-/**
- * Page number of the results to fetch.
- */
+  /**
+   * Page number of the results to fetch.
+   */
   page?: number;
 }
 
-export function reposListDeploymentBranchPolicies(http: HttpClient, rootUrl: string, params: ReposListDeploymentBranchPolicies$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-
-/**
- * The number of deployment branch policies for the environment.
- */
-'total_count': number;
-'branch_policies': Array<DeploymentBranchPolicy>;
-}>> {
+export function reposListDeploymentBranchPolicies(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposListDeploymentBranchPolicies$Params,
+  context?: HttpContext,
+): Observable<
+  StrictHttpResponse<{
+    /**
+     * The number of deployment branch policies for the environment.
+     */
+    total_count: number;
+    branch_policies: Array<DeploymentBranchPolicy>;
+  }>
+> {
   const rb = new RequestBuilder(rootUrl, reposListDeploymentBranchPolicies.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -53,20 +58,17 @@ export function reposListDeploymentBranchPolicies(http: HttpClient, rootUrl: str
     rb.query('page', params.page, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<{
-      
-      /**
-       * The number of deployment branch policies for the environment.
-       */
-      'total_count': number;
-      'branch_policies': Array<DeploymentBranchPolicy>;
+        /**
+         * The number of deployment branch policies for the environment.
+         */
+        total_count: number;
+        branch_policies: Array<DeploymentBranchPolicy>;
       }>;
-    })
+    }),
   );
 }
 

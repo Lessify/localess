@@ -6,9 +6,9 @@
  */
 export interface StatusCheckPolicy {
   checks: Array<{
-'context': string;
-'app_id': number | null;
-}>;
+    context: string;
+    app_id: number | null;
+  }>;
   contexts: Array<string>;
   contexts_url: string;
   strict: boolean;

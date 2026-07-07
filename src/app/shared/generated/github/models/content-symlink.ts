@@ -5,11 +5,11 @@
  * An object describing a symlink
  */
 export interface ContentSymlink {
-  '_links': {
-'git': string | null;
-'html': string | null;
-'self': string;
-};
+  _links: {
+    git: string | null;
+    html: string | null;
+    self: string;
+  };
   download_url: string | null;
   git_url: string | null;
   html_url: string | null;

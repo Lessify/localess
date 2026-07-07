@@ -5,7 +5,6 @@
  * Details of a deployment branch policy.
  */
 export interface DeploymentBranchPolicy {
-
   /**
    * The unique identifier of the branch policy.
    */

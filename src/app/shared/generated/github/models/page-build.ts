@@ -10,8 +10,8 @@ export interface PageBuild {
   created_at: string;
   duration: number;
   error: {
-'message': string | null;
-};
+    message: string | null;
+  };
   pusher: NullableSimpleUser | null;
   status: string;
   updated_at: string;

@@ -10,7 +10,7 @@ import { classes } from '@spartan-ng/helm/utils';
     'data-slot': 'accordion-content',
   },
   template: `
-    <div class="[&_a]:hover:text-foreground pt-0 pb-4 [&_a]:underline [&_a]:underline-offset-3 [&_p:not(:last-child)]:mb-4">
+    <div class="[&_a]:hover:text-foreground pt-0 pb-2.5 [&_a]:underline [&_a]:underline-offset-3 [&_p:not(:last-child)]:mb-4">
       <ng-content />
     </div>
   `,

@@ -22,9 +22,11 @@ export interface Deployment {
   id: number;
   node_id: string;
   original_environment?: string;
-  payload: ({
-[key: string]: any;
-} | string);
+  payload:
+    | {
+        [key: string]: any;
+      }
+    | string;
   performed_via_github_app?: NullableIntegration | null;
 
   /**

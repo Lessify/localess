@@ -9,34 +9,38 @@ import { RequestBuilder } from '../../request-builder';
 import { CommitComparison } from '../../models/commit-comparison';
 
 export interface ReposCompareCommits$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * Page number of the results to fetch.
- */
+  /**
+   * Page number of the results to fetch.
+   */
   page?: number;
 
-/**
- * The number of results per page (max 100).
- */
+  /**
+   * The number of results per page (max 100).
+   */
   per_page?: number;
 
-/**
- * The base branch and head branch to compare. This parameter expects the format `BASE...HEAD`. Both must be branch names in `repo`. To compare with a branch that exists in a different repository in the same network as `repo`, the `basehead` parameter expects the format `USERNAME:BASE...USERNAME:HEAD`.
- */
+  /**
+   * The base branch and head branch to compare. This parameter expects the format `BASE...HEAD`. Both must be branch names in `repo`. To compare with a branch that exists in a different repository in the same network as `repo`, the `basehead` parameter expects the format `USERNAME:BASE...USERNAME:HEAD`.
+   */
   basehead: string;
 }
 
-export function reposCompareCommits(http: HttpClient, rootUrl: string, params: ReposCompareCommits$Params, context?: HttpContext): Observable<StrictHttpResponse<CommitComparison>> {
+export function reposCompareCommits(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposCompareCommits$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<CommitComparison>> {
   const rb = new RequestBuilder(rootUrl, reposCompareCommits.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -46,13 +50,11 @@ export function reposCompareCommits(http: HttpClient, rootUrl: string, params: R
     rb.path('basehead', params.basehead, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<CommitComparison>;
-    })
+    }),
   );
 }
 

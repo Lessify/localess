@@ -9,20 +9,24 @@ import { RequestBuilder } from '../../request-builder';
 import { PageBuild } from '../../models/page-build';
 
 export interface ReposGetPagesBuild$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
   build_id: number;
 }
 
-export function reposGetPagesBuild(http: HttpClient, rootUrl: string, params: ReposGetPagesBuild$Params, context?: HttpContext): Observable<StrictHttpResponse<PageBuild>> {
+export function reposGetPagesBuild(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposGetPagesBuild$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<PageBuild>> {
   const rb = new RequestBuilder(rootUrl, reposGetPagesBuild.PATH, 'get');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -30,13 +34,11 @@ export function reposGetPagesBuild(http: HttpClient, rootUrl: string, params: Re
     rb.path('build_id', params.build_id, {});
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<PageBuild>;
-    })
+    }),
   );
 }
 

@@ -8,5 +8,17 @@ export interface PagesHttpsCertificate {
    */
   domains: Array<string>;
   expires_at?: string;
-  state: 'new' | 'authorization_created' | 'authorization_pending' | 'authorized' | 'authorization_revoked' | 'issued' | 'uploaded' | 'approved' | 'errored' | 'bad_authz' | 'destroy_pending' | 'dns_changed';
+  state:
+    | 'new'
+    | 'authorization_created'
+    | 'authorization_pending'
+    | 'authorized'
+    | 'authorization_revoked'
+    | 'issued'
+    | 'uploaded'
+    | 'approved'
+    | 'errored'
+    | 'bad_authz'
+    | 'destroy_pending'
+    | 'dns_changed';
 }

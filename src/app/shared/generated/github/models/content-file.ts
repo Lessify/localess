@@ -5,11 +5,11 @@
  * Content File
  */
 export interface ContentFile {
-  '_links': {
-'git': string | null;
-'html': string | null;
-'self': string;
-};
+  _links: {
+    git: string | null;
+    html: string | null;
+    self: string;
+  };
   content: string;
   download_url: string | null;
   encoding: string;

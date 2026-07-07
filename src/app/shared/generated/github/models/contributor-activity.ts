@@ -9,9 +9,9 @@ export interface ContributorActivity {
   author: NullableSimpleUser | null;
   total: number;
   weeks: Array<{
-'w'?: number;
-'a'?: number;
-'d'?: number;
-'c'?: number;
-}>;
+    w?: number;
+    a?: number;
+    d?: number;
+    c?: number;
+  }>;
 }

@@ -9,31 +9,36 @@ import { RequestBuilder } from '../../request-builder';
 import { Team } from '../../models/team';
 
 export interface ReposSetTeamAccessRestrictions$Params {
-
-/**
- * The account owner of the repository. The name is not case sensitive.
- */
+  /**
+   * The account owner of the repository. The name is not case sensitive.
+   */
   owner: string;
 
-/**
- * The name of the repository without the `.git` extension. The name is not case sensitive.
- */
+  /**
+   * The name of the repository without the `.git` extension. The name is not case sensitive.
+   */
   repo: string;
 
-/**
- * The name of the branch. Cannot contain wildcard characters. To use wildcard characters in branch names, use [the GraphQL API](https://docs.github.com/graphql).
- */
+  /**
+   * The name of the branch. Cannot contain wildcard characters. To use wildcard characters in branch names, use [the GraphQL API](https://docs.github.com/graphql).
+   */
   branch: string;
-      body?: ({
-
-/**
- * The slug values for teams
- */
-'teams': Array<string>;
-} | Array<string>)
+  body?:
+    | {
+        /**
+         * The slug values for teams
+         */
+        teams: Array<string>;
+      }
+    | Array<string>;
 }
 
-export function reposSetTeamAccessRestrictions(http: HttpClient, rootUrl: string, params: ReposSetTeamAccessRestrictions$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<Team>>> {
+export function reposSetTeamAccessRestrictions(
+  http: HttpClient,
+  rootUrl: string,
+  params: ReposSetTeamAccessRestrictions$Params,
+  context?: HttpContext,
+): Observable<StrictHttpResponse<Array<Team>>> {
   const rb = new RequestBuilder(rootUrl, reposSetTeamAccessRestrictions.PATH, 'put');
   if (params) {
     rb.path('owner', params.owner, {});
@@ -42,13 +47,11 @@ export function reposSetTeamAccessRestrictions(http: HttpClient, rootUrl: string
     rb.body(params.body, 'application/json');
   }
 
-  return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
-  ).pipe(
+  return http.request(rb.build({ responseType: 'json', accept: 'application/json', context })).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
       return r as StrictHttpResponse<Array<Team>>;
-    })
+    }),
   );
 }
 

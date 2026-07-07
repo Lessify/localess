@@ -5,7 +5,6 @@
  * Delivery made by a webhook, without request and response information.
  */
 export interface HookDeliveryItem {
-
   /**
    * The type of activity for the event that triggered the delivery.
    */
