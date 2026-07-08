@@ -12,9 +12,23 @@
   type EventToAppType = 'save' | 'publish' | 'unpublish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema' | 'leaveSchema';
   type EventCallback = (event: EventToApp) => void;
   type EventToApp =
-    | { type: 'save' | 'publish' | 'unpublish' | 'pong' | 'leaveSchema' }
-    | { type: 'input' | 'change'; data: any }
-    | { type: 'enterSchema' | 'hoverSchema'; id: string; schema: string; field?: string };
+    | { type: 'save' }
+    | { type: 'publish' }
+    | { type: 'unpublish' }
+    | { type: 'pong' }
+    | { type: 'leaveSchema' }
+    | { type: 'input'; data: any }
+    | { type: 'change'; data: any }
+    | { type: 'enterSchema'; id: string; schema: string; field?: string }
+    | { type: 'hoverSchema'; id: string; schema: string; field?: string };
+  /**
+   * Narrows {@link EventToApp} down to the variant(s) matching event type `T`.
+   * Used to type {@link LocalessSync.on}'s callback based on the subscribed event(s),
+   * e.g. subscribing to `'input' | 'change'` narrows the callback's `event` to the variant with `data`.
+   */
+  type EventToAppOf<T extends EventToAppType> = Extract<EventToApp, { type: T }>;
+  type EventsMap = { [K in EventToAppType]: Array<(event: EventToAppOf<K>) => void> };
+
 
   function isInIframe() {
     return window.top !== window.self;
@@ -130,7 +144,7 @@
     class Sync {
       version = 'v1';
       inEditor = false;
-      events: Record<EventToAppType, EventCallback[]> = {
+      events: EventsMap = {
         save: [],
         publish: [],
         unpublish: [],
@@ -202,17 +216,17 @@
       }
 
       emit(event: EventToApp) {
-        const cbList = this.events[event.type];
+        const cbList = this.events[event.type] as EventCallback[];
         for (const cb of cbList) {
           cb.apply(this, [event]);
         }
       }
 
-      onChange(callback: EventCallback) {
+      onChange(callback: (event: EventToAppOf<'change' | 'input'>) => void) {
         this.on(['input', 'change'], callback);
       }
 
-      on(type: EventToAppType | EventToAppType[], callback: EventCallback) {
+      on<T extends EventToAppType>(type: T | T[], callback: (event: EventToAppOf<T>) => void) {
         if (Array.isArray(type)) {
           for (const e of type) {
             this.addEvent(e, callback);
@@ -224,9 +238,10 @@
         }
       }
 
-      private addEvent(type: EventToAppType, callback: EventCallback) {
-        if (this.events[type].indexOf(callback) === -1) {
-          this.events[type].push(callback);
+      private addEvent<T extends EventToAppType>(type: T, callback: (event: EventToAppOf<T>) => void) {
+        const list = this.events[type];
+        if (list.indexOf(callback) === -1) {
+          list.push(callback);
         }
       }
 
