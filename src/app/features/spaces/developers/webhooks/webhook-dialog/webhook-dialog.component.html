@@ -24,7 +24,7 @@
 
     <div hlmField>
       <label hlmFieldLabel for="events">Events</label>
-      <hlm-combobox-multiple id="events" formControlName="events" [itemToString]="eventItemToString">
+      <hlm-combobox-multiple id="events" formControlName="events" [itemToString]="eventItemToString" autoHighlight>
         <hlm-combobox-chips>
           <ng-container *hlmComboboxValues="let values">
             @for (value of values; track value) {

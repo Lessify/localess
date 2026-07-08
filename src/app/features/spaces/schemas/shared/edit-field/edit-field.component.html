@@ -179,22 +179,26 @@
         @if (['SCHEMA', 'SCHEMAS'].includes(form.value.kind)) {
           <div hlmField>
             <label hlmFieldLabel for="schemas"> Schema </label>
-            <hlm-select-multiple formControlName="schemas" id="schemas" [itemToString]="schemaIdToString">
-              <hlm-select-trigger class="w-full">
-                <hlm-select-placeholder>Select schemas</hlm-select-placeholder>
-                <hlm-select-value />
-              </hlm-select-trigger>
-              <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
-                @for (schema of nodeSchemas(); track schema.id) {
-                  <hlm-select-item [value]="schema.id" [hlmTooltip]="schema.description || ''">
-                    {{ schema.id }}
-                    @if (schema.displayName; as displayName) {
-                      ({{ displayName }})
-                    }
-                  </hlm-select-item>
-                }
-              </hlm-select-content>
-            </hlm-select-multiple>
+            <hlm-combobox-multiple formControlName="schemas" id="schemas" [itemToString]="schemaIdToString" autoHighlight>
+              <hlm-combobox-chips>
+                <ng-container *hlmComboboxValues="let values">
+                  @for (value of values; track value) {
+                    <hlm-combobox-chip [value]="value">{{ schemaIdToString(value) }}</hlm-combobox-chip>
+                  }
+                </ng-container>
+                <input hlmComboboxChipInput placeholder="Select schemas..." autocomplete="off" />
+              </hlm-combobox-chips>
+              <hlm-combobox-content *hlmComboboxPortal>
+                <hlm-combobox-empty>No schemas found.</hlm-combobox-empty>
+                <div hlmComboboxList>
+                  @for (schema of nodeSchemas(); track schema.id) {
+                    <hlm-combobox-item [value]="schema.id" [hlmTooltip]="schema.description || ''">
+                      {{ schema.displayName || schema.id }}
+                    </hlm-combobox-item>
+                  }
+                </div>
+              </hlm-combobox-content>
+            </hlm-combobox-multiple>
             @if (form.controls['schemas']?.errors; as errors) {
               <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             }
