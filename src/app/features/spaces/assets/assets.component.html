@@ -314,7 +314,7 @@
                 <p [hlmTooltip]="item.updatedAt?.toDate() | date: 'medium'"> {{ item.updatedAt?.toDate() | date: 'mediumDate' }} </p>
               </div>
             </hlm-card-header>
-            <hlm-card-footer class="mt-auto justify-end gap-2">
+            <hlm-card-footer class="mt-auto justify-end gap-2 bg-background">
               @if (item.kind === 'FILE') {
                 <button
                   hlmBtn
