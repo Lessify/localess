@@ -59,6 +59,23 @@ Full schema-driven editor for a single `ContentDocument`. Loaded via `documentRe
 - Uses `EditDocumentSchemaComponent` for rendering schema fields
 - Supports locale switching to edit per-locale field values
 
+### Visual Editor Bridge
+
+When the visual editor preview is enabled, `EditDocumentComponent` embeds the target environment in an `<iframe>` and exchanges `postMessage` events with the embedded app (see `edit-document.model.ts` for `EventToEditorType`/`EventToAppType`).
+
+**Connection lifecycle** — tracked in `iframeStatus` (`linkedSignal<'loading' | 'loaded' | 'connected' | 'error'>`):
+1. `loading` → `onIframeLoad()` sets `loaded` (only if still `loading`, so it won't downgrade `connected`/`error`)
+2. The embedded app sends `{ type: 'ping' }` → the editor sets `connected`, replies `{ type: 'pong' }`, then calls `sendCurrentContentToApp()` to push the full current content as a `change` event
+3. `onIframeError()` sets `error` on load failure
+
+`sendEventToApp()` only dispatches when `iframeStatus() === 'connected'` — events sent before the handshake completes are dropped.
+
+**Events editor → app** (`EventToAppType`): `save`, `publish`, `unpublish`, `pong`, `input`, `change`, `enterSchema`, `hoverSchema`, `leaveSchema`
+
+**Events app → editor** (`EventToEditorType`): `ping`, `selectSchema`, `hoverSchema`, `leaveSchema`
+
+**Hover highlighting:** hovering a schema field in `EditDocumentSchemaComponent` fires `(schemaHover)`/`(schemaLeave)` → `onFormSchemaHover()`/`onFormSchemaLeave()` → forwarded to the app as `hoverSchema`/`leaveSchema`. Conversely, a `hoverSchema`/`leaveSchema` event *from* the app sets `hoverSchemaPath`/`hoverSchemaField` signals, which are passed into `EditDocumentSchemaComponent` to highlight the corresponding field in the form.
+
 ## Dialogs
 
 | Dialog | Purpose |

@@ -4,7 +4,9 @@
 
 ## Purpose
 
-Configure a specific space — manage locales, API tokens, webhooks, visual editor integration, general metadata, and destructive danger-zone operations.
+Configure a specific space — manage locales, API tokens, visual editor integration, general metadata, and destructive danger-zone operations.
+
+> Webhooks moved out of Settings into the **Developers** section — see [Webhooks](../../webhooks.md).
 
 ## Routes
 
@@ -15,7 +17,6 @@ Configure a specific space — manage locales, API tokens, webhooks, visual edit
   /locales          ← LocalesComponent
   /visual-editor    ← VisualEditorComponent
   /tokens           ← TokensComponent
-  /webhooks         ← WebhooksComponent
   /danger-zone      ← DangerZoneComponent
 ```
 
@@ -30,8 +31,6 @@ src/app/features/spaces/settings/
   visual-editor/
   tokens/
     token-dialog/
-  webhooks/
-    webhook-dialog/
   danger-zone/
 ```
 
@@ -81,17 +80,6 @@ Configure the **visual editor** integration — allows in-context editing when L
 
 ---
 
-## WebhooksComponent
-
-Create and manage webhooks that fire on space events (e.g. content published, translation published).
-
-**Services:** `WebHookService`, `NotificationService`
-
-### WebhookDialogComponent
-Form: `name`, `url`, event triggers, optional secret header.
-
----
-
 ## DangerZoneComponent
 
 Destructive, irreversible operations:
@@ -110,6 +98,5 @@ Always requires explicit confirmation via `ConfirmationDialogComponent`.
 | `SpaceService` | Update space name, delete space |
 | `LocaleService` | CRUD for space locales |
 | `TokenService` | CRUD for API tokens |
-| `WebHookService` | CRUD for webhooks |
 | `NotificationService` | Snackbar feedback |
 | `SpaceStore` | Read selected space data |

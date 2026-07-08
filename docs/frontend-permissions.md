@@ -72,7 +72,8 @@ enum UserPermission {
   ASSET_IMPORT           // Import assets
 
   // Dev
-  DEV_OPEN_API           // Access the Open API / dev tools section
+  DEV_OPEN_API           // Access the Developers → Open API section
+  DEV_WEBHOOK            // Access the Developers → Webhooks section
 }
 ```
 

@@ -1,6 +1,6 @@
 # Webhooks
 
-> Related: [Concepts](concepts.md) · [Publish Flow](publish-flow.md) · [Space Settings](features/spaces/settings.md)
+> Related: [Concepts](concepts.md) · [Publish Flow](publish-flow.md) · [Open API](features/spaces/open-api.md)
 
 Webhooks deliver HTTP POST notifications to external URLs when content or translation events occur in a space. Each webhook is scoped to a space, can subscribe to multiple events, and optionally signs payloads with HMAC-SHA256.
 
@@ -97,20 +97,52 @@ The signature appears in both the header and the payload body.
 
 ## Execution Logging
 
-Every dispatch — success or failure — writes a log entry to the `logs` subcollection:
+Every dispatch — success or failure — writes a log entry to the `logs` subcollection. `WebHookLog` is a discriminated union on `status`:
 
 ```typescript
-interface WebHookLog {
+enum WebHookStatus {
+  SUCCESS = 'success',
+  FAILURE = 'failure',
+}
+
+enum WebHookErrorType {
+  TIMEOUT = 'timeout',
+  NETWORK = 'network',
+  HTTP = 'http',
+}
+
+interface WebHookLogBase {
   event: WebHookEvent;
-  status: 'success' | 'failure';
-  statusCode?: number;
+  url: string;
+  requestSize: number;
+  data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
+  deliveryId: string;
   duration: number;       // milliseconds
-  errorMessage?: string;
   createdAt: Timestamp;
 }
+
+interface WebHookLogSuccess extends WebHookLogBase {
+  status: WebHookStatus.SUCCESS;
+  statusCode: number;
+  statusText: string;
+  responseBody?: string;
+  responseBodyTruncated?: boolean;
+}
+
+interface WebHookLogFailure extends WebHookLogBase {
+  status: WebHookStatus.FAILURE;
+  errorType: WebHookErrorType;       // timeout | network | http
+  statusCode?: number;
+  statusText?: string;
+  responseBody?: string;
+  responseBodyTruncated?: boolean;
+  errorMessage?: string;
+}
+
+type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 ```
 
-Logs are ordered by `createdAt` descending, capped at **100 entries** per webhook. The UI shows the last 20.
+Logs are ordered by `createdAt` descending, capped at **100 entries** per webhook. The [WebhookDetailComponent](#frontend) shows the full log history with pagination and filtering.
 
 ---
 
@@ -136,15 +168,22 @@ A Firestore `onDocumentDeleted` trigger in `functions/src/webhooks.ts` recursive
 
 ## Frontend
 
-**Route:** `/features/spaces/:spaceId/settings/webhooks`
+**Routes:** part of the **Developers** module (see [Open API](features/spaces/open-api.md) for the sibling module and route shell)
 
-**Form validation:**
+```
+/features/spaces/:spaceId/developers/webhooks             [DEV_WEBHOOK]  ← WebhooksComponent (list)
+/features/spaces/:spaceId/developers/webhooks/:webhookId  [DEV_WEBHOOK]  ← WebhookDetailComponent
+```
+
+**Form validation** (`WebhookDialogComponent`):
 - `name`: required, 3–50 chars, no leading/trailing spaces
 - `url`: required, must match `^https?:\/\/.+`
 - `events`: required, at least one selected
 - `secret`: optional, displayed as a password field
 
-Webhooks are created with `enabled: true` by default. The list view supports enable/disable toggle, edit, delete, and a side sheet showing the last 20 log entries per webhook.
+Webhooks are created with `enabled: true` by default. `WebhooksComponent` (list view) supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
+
+`WebhookDetailComponent` shows the full log history for a single webhook: search by log id, filter by event/status, paginated (`HlmPaginationImports`), plus enable/disable, edit, and delete actions.
 
 ---
 
@@ -159,4 +198,4 @@ Webhooks are created with `enabled: true` by default. The list view supports ena
 | `src/app/shared/models/webhook.model.ts`         | Frontend types                                                            |
 | `src/app/shared/services/webhook.service.ts`     | Frontend Firestore CRUD + log queries                                     |
 | `src/app/shared/validators/webhook.validator.ts` | Form validators                                                           |
-| `src/app/features/spaces/settings/webhooks/`     | UI — list, create/edit dialog, log sheet                                  |
+| `src/app/features/spaces/developers/webhooks/`   | UI — list (`webhooks.component`), create/edit (`webhook-dialog/`), detail + log history (`webhook-detail/`) |

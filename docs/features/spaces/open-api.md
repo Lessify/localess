@@ -1,22 +1,27 @@
 # Spaces — Open API Module
 
-> Parent: [Spaces Overview](overview.md) · Related: [CDN & Caching](../../cdn-caching.md) · [Auth Tokens](../../auth-tokens.md)
+> Parent: [Spaces Overview](overview.md) · Sibling: [Webhooks](../../webhooks.md) · Related: [CDN & Caching](../../cdn-caching.md) · [Auth Tokens](../../auth-tokens.md)
 
 ## Purpose
 
 Renders an interactive OpenAPI / Swagger UI for the space's public REST API. Allows developers to explore and test the CDN endpoints directly from the CMS.
 
+This module lives under the **Developers** section alongside [Webhooks](../../webhooks.md), rendered via `DevelopersComponent`'s `<router-outlet>`.
+
 ## Route
 
 ```
-/features/spaces/:spaceId/open-api    [DEV_OPEN_API permission]
+/features/spaces/:spaceId/developers/open-api    [DEV_OPEN_API permission]
 ```
 
 ## Key Files
 
 ```
-src/app/features/spaces/open-api/
-  open-api.component.ts/html/scss
+src/app/features/spaces/developers/
+  developers.component.ts/html/scss        ← shell, router-outlet only
+  developers-routing.module.ts             ← redirects '' to 'webhooks'; children: webhooks, webhooks/:webhookId, open-api
+  open-api/
+    open-api.component.ts/html/scss
 ```
 
 ## OpenApiComponent
