@@ -5,10 +5,10 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { WebHook, WebHookEvent } from '@shared/models/webhook.model';
 import { WebhookValidator } from '@shared/validators/webhook.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
 
 @Component({
   selector: 'll-webhook-dialog',
@@ -22,7 +22,7 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
     HlmFieldImports,
     HlmInputGroupImports,
     HlmInputImports,
-    HlmSelectImports,
+    HlmComboboxImports,
   ],
 })
 export class WebhookDialogComponent {
