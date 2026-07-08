@@ -358,7 +358,9 @@
               [space]="selectedSpace()"
               (schemaChange)="onSchemaChange($event)"
               (formChange)="onFormChange($event)"
-              (structureChange)="onStructureChange($event)" />
+              (structureChange)="onStructureChange($event)"
+              (schemaHover)="onFormSchemaHover($event)"
+              (schemaLeave)="onFormSchemaLeave()" />
           </div>
         }
       </div>

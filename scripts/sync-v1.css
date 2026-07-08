@@ -4,7 +4,7 @@
   display: block;
 }
 
-[data-ll-id]:hover, [data-ll-field]:hover {
+[data-ll-id]:hover, [data-ll-field]:hover, .ll-hover-highlight {
   box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);
   outline: 2px solid rgba(0,92,187,1);
   cursor: pointer;

@@ -144,6 +144,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   schemaChange = output<SchemaSelectChange>();
   formChange = output<string>();
   structureChange = output<string>();
+  // Form -> iFrame hover highlight
+  schemaHover = output<{ id: string; schema: string; field?: string }>();
+  schemaLeave = output<void>();
 
   rootSchema?: SchemaComponent;
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
@@ -478,6 +481,18 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   navigationTo(contentId: string, fieldName: string, schemaName: string): void {
     this.schemaChange.emit({ contentId, fieldName, schemaName: schemaName });
+  }
+
+  onFieldHover(fieldName: string): void {
+    this.schemaHover.emit({ id: this.data._id, schema: this.data.schema, field: fieldName });
+  }
+
+  onItemHover(item: ContentData): void {
+    this.schemaHover.emit({ id: item._id, schema: item.schema });
+  }
+
+  onSchemaLeave(): void {
+    this.schemaLeave.emit();
   }
 
   onAssetsChange() {

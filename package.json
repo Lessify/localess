@@ -11,7 +11,7 @@
     "build:prod": "ng build --configuration production",
     "build:docker": "ng build --configuration docker",
     "prebuild:prod": "ng g @lessify/angular-tools:set-env --prefix LOCALESS",
-    "build:script:tsup": "tsup scripts/sync-v1.ts --format cjs --minify --outDir src/scripts",
+    "build:script:tsup": "tsup scripts/sync-v1.ts --format cjs --minify --outDir src/scripts --legacy-output",
     "build:script:watch": "tsc --watch --project tsconfig.script.json",
     "watch": "ng build --watch --configuration development",
     "emulator": "firebase emulators:start --import=./firebase-export --export-on-exit=./firebase-export",

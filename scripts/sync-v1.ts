@@ -9,10 +9,10 @@
     | { type: 'selectSchema' | 'hoverSchema' | 'leaveSchema'; id: string; schema: string; field?: string };
 
   // Event emitted from Visual Editor to Application
-  type EventToAppType = 'save' | 'publish' | 'unpublish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema';
+  type EventToAppType = 'save' | 'publish' | 'unpublish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema' | 'leaveSchema';
   type EventCallback = (event: EventToApp) => void;
   type EventToApp =
-    | { type: 'save' | 'publish' | 'unpublish' | 'pong' }
+    | { type: 'save' | 'publish' | 'unpublish' | 'pong' | 'leaveSchema' }
     | { type: 'input' | 'change'; data: any }
     | { type: 'enterSchema' | 'hoverSchema'; id: string; schema: string; field?: string };
 
@@ -31,13 +31,30 @@
     // Highlight Visual Editor Elements
     style.textContent = `
     [data-ll-id],[data-ll-field]{outline: 2px dashed rgba(0,92,187,0.5);transition: box-shadow ease-out 150ms;}
-    [data-ll-id]:hover,[data-ll-field]:hover{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
+    [data-ll-id]:hover,[data-ll-field]:hover,.ll-hover-highlight{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
     // Snackbar KeyFames
     style.textContent += `
       @keyframes ll-fadein {from {bottom: 0; opacity: 0;}to {bottom: 30px; opacity: 1;}}
       @keyframes ll-fadeout {from {bottom: 30px; opacity: 1;}to {bottom: 0; opacity: 0;}}
     `;
     document.head.appendChild(style);
+  }
+
+  let currentHoverHighlightElement: HTMLElement | null = null;
+
+  function clearHoverHighlight() {
+    currentHoverHighlightElement?.classList.remove('ll-hover-highlight');
+    currentHoverHighlightElement = null;
+  }
+
+  function applyHoverHighlight(id: string, field?: string) {
+    clearHoverHighlight();
+    const idElement = document.querySelector<HTMLElement>(`[data-ll-id="${id}"]`);
+    if (!idElement) return;
+    const target = field ? (idElement.querySelector<HTMLElement>(`[data-ll-field="${field}"]`) ?? idElement) : idElement;
+    target.classList.add('ll-hover-highlight');
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    currentHoverHighlightElement = target;
   }
 
   function markVisualEditorElements(source: string) {
@@ -121,6 +138,7 @@
         change: [],
         enterSchema: [],
         hoverSchema: [],
+        leaveSchema: [],
         pong: [],
       };
 
@@ -165,6 +183,12 @@
               }
               case 'hoverSchema': {
                 this.emit(data);
+                applyHoverHighlight(data.id, data.field);
+                break;
+              }
+              case 'leaveSchema': {
+                this.emit(data);
+                clearHoverHighlight();
                 break;
               }
               case 'pong': {

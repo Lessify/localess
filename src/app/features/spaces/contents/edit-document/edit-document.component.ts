@@ -582,8 +582,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       //console.log('MessageEvent', event);
       if (event.data.type === 'ping') {
-        this.sendEventToApp({ type: 'pong' });
         this.iframeStatus.set('connected');
+        this.sendEventToApp({ type: 'pong' });
+        this.sendCurrentContentToApp();
         return;
       }
       const { id, type, schema, field } = event.data;
@@ -674,13 +675,26 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.sendEventToApp({ type: 'change', data: data });
   }
 
+  onFormSchemaHover(event: { id: string; schema: string; field?: string }): void {
+    this.sendEventToApp({ type: 'hoverSchema', ...event });
+  }
+
+  onFormSchemaLeave(): void {
+    this.sendEventToApp({ type: 'leaveSchema' });
+  }
+
   sendEventToApp(event: EventToApp) {
     const contentWindow = this.preview()?.nativeElement.contentWindow;
     const selectedEnvironment = this.selectedEnvironment();
-    if (contentWindow && selectedEnvironment) {
+    if (contentWindow && selectedEnvironment && this.iframeStatus() === 'connected') {
       const url = new URL(selectedEnvironment.url);
       contentWindow.postMessage(event, url.origin);
     }
+  }
+
+  private sendCurrentContentToApp(): void {
+    const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    this.sendEventToApp({ type: 'change', data });
   }
 
   onIframeLoad(): void {
