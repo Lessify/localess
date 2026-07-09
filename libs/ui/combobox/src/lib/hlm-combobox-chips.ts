@@ -4,24 +4,23 @@ import { BrnComboboxAnchor, BrnComboboxPopoverTrigger, injectBrnComboboxBase } f
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-  selector: '[hlmComboboxChips],hlm-combobox-chips',
-  hostDirectives: [BrnComboboxAnchor, BrnComboboxPopoverTrigger],
-  host: {
-    'data-slot': 'combobox-chips',
-    '[attr.data-matches-spartan-invalid]': '_spartanInvalid() ? "true" : null',
-  },
+	selector: '[hlmComboboxChips],hlm-combobox-chips',
+	hostDirectives: [BrnComboboxAnchor, BrnComboboxPopoverTrigger],
+	host: {
+		'data-slot': 'combobox-chips',
+		'[attr.data-matches-spartan-invalid]': '_spartanInvalid() ? "true" : null',
+	},
 })
 export class HlmComboboxChips {
-  private readonly _combobox = injectBrnComboboxBase();
+	private readonly _combobox = injectBrnComboboxBase();
 
-  public readonly forceInvalid = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+	public readonly forceInvalid = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
 
-  protected readonly _spartanInvalid = computed(() => this.forceInvalid() || this._combobox.controlState?.()?.spartanInvalid);
+	protected readonly _spartanInvalid = computed(
+		() => this.forceInvalid() || this._combobox.controlState?.()?.spartanInvalid,
+	);
 
-  constructor() {
-    classes(
-      () =>
-        'dark:bg-input/30 border-input focus-within:border-ring focus-within:ring-ring/50 data-[matches-spartan-invalid=true]:ring-destructive/20 dark:data-[matches-spartan-invalid=true]:ring-destructive/40 data-[matches-spartan-invalid=true]:border-destructive dark:data-[matches-spartan-invalid=true]:border-destructive/50 flex min-h-8 flex-wrap items-center gap-1 rounded-lg border bg-transparent bg-clip-padding px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-within:ring-3 has-data-[slot=combobox-chip]:px-1 data-[matches-spartan-invalid=true]:ring-3',
-    );
-  }
+	constructor() {
+		classes(() => 'spartan-combobox-chips');
+	}
 }

@@ -25,10 +25,10 @@ import { type EnvironmentProviders, makeEnvironmentProviders } from '@angular/co
  * ```
  */
 export function provideSpartanHlm(): EnvironmentProviders {
-  return makeEnvironmentProviders([
-    {
-      provide: OVERLAY_DEFAULT_CONFIG,
-      useValue: { usePopover: false },
-    },
-  ]);
+	return makeEnvironmentProviders([
+		{
+			provide: OVERLAY_DEFAULT_CONFIG,
+			useValue: { usePopover: false },
+		},
+	]);
 }

@@ -2,11 +2,11 @@ import { Directive } from '@angular/core';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-  selector: '[hlmItemHeader],hlm-item-header',
-  host: { 'data-slot': 'item-header' },
+	selector: '[hlmItemHeader],hlm-item-header',
+	host: { 'data-slot': 'item-header' },
 })
 export class HlmItemHeader {
-  constructor() {
-    classes(() => 'gap-2 flex basis-full items-center justify-between');
-  }
+	constructor() {
+		classes(() => 'spartan-item-header flex basis-full items-center justify-between');
+	}
 }

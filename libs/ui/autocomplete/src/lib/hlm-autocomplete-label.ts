@@ -3,12 +3,12 @@ import { BrnAutocompleteLabel } from '@spartan-ng/brain/autocomplete';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-  selector: '[hlmAutocompleteLabel]',
-  hostDirectives: [{ directive: BrnAutocompleteLabel, inputs: ['id'] }],
-  host: { 'data-slot': 'autocomplete-label' },
+	selector: '[hlmAutocompleteLabel]',
+	hostDirectives: [{ directive: BrnAutocompleteLabel, inputs: ['id'] }],
+	host: { 'data-slot': 'autocomplete-label' },
 })
 export class HlmAutocompleteLabel {
-  constructor() {
-    classes(() => 'text-muted-foreground px-2 py-1.5 text-xs');
-  }
+	constructor() {
+		classes(() => 'spartan-autocomplete-label');
+	}
 }

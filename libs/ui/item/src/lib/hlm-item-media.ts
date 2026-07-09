@@ -4,35 +4,34 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { injectHlmItemMediaConfig } from './hlm-item-token';
 
 const itemMediaVariants = cva(
-  'gap-2 group-has-data-[slot=item-description]/item:translate-y-0.5 group-has-data-[slot=item-description]/item:self-start flex shrink-0 items-center justify-center [&_ng-icon]:pointer-events-none',
-  {
-    variants: {
-      variant: {
-        default: 'bg-transparent',
-        icon: "[&_ng-icon:not([class*='text-'])]:text-[length:--spacing(4)]",
-        image:
-          'size-10 overflow-hidden rounded-sm group-data-[size=sm]/item:size-8 group-data-[size=xs]/item:size-6 [&_img]:size-full [&_img]:object-cover',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-    },
-  },
+	'spartan-item-media flex shrink-0 items-center justify-center [&_ng-icon]:pointer-events-none',
+	{
+		variants: {
+			variant: {
+				default: 'spartan-item-media-variant-default',
+				icon: 'spartan-item-media-variant-icon',
+				image: 'spartan-item-media-variant-image',
+			},
+		},
+		defaultVariants: {
+			variant: 'default',
+		},
+	},
 );
 export type ItemMediaVariants = VariantProps<typeof itemMediaVariants>;
 
 @Directive({
-  selector: '[hlmItemMedia],hlm-item-media',
-  host: {
-    'data-slot': 'item-media',
-    '[attr.data-variant]': 'variant()',
-  },
+	selector: '[hlmItemMedia],hlm-item-media',
+	host: {
+		'data-slot': 'item-media',
+		'[attr.data-variant]': 'variant()',
+	},
 })
 export class HlmItemMedia {
-  private readonly _config = injectHlmItemMediaConfig();
-  public readonly variant = input<ItemMediaVariants['variant']>(this._config.variant);
+	private readonly _config = injectHlmItemMediaConfig();
+	public readonly variant = input<ItemMediaVariants['variant']>(this._config.variant);
 
-  constructor() {
-    classes(() => itemMediaVariants({ variant: this.variant() }));
-  }
+	constructor() {
+		classes(() => itemMediaVariants({ variant: this.variant() }));
+	}
 }

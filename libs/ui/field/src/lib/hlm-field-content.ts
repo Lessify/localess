@@ -2,11 +2,11 @@ import { Directive } from '@angular/core';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-  selector: '[hlmFieldContent],hlm-field-content',
-  host: { 'data-slot': 'field-content' },
+	selector: '[hlmFieldContent],hlm-field-content',
+	host: { 'data-slot': 'field-content' },
 })
 export class HlmFieldContent {
-  constructor() {
-    classes(() => 'gap-0.5 group/field-content flex flex-1 flex-col leading-snug');
-  }
+	constructor() {
+		classes(() => 'spartan-field-content group/field-content flex flex-1 flex-col leading-snug');
+	}
 }

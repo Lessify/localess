@@ -3,33 +3,33 @@ import { Directive, input } from '@angular/core';
 import { classes } from '@spartan-ng/helm/utils';
 
 const parseDividedString = (value: NumberInput): NumberInput => {
-  if (typeof value !== 'string' || !value.includes('/')) return value;
-  return value
-    .split('/')
-    .map(v => Number.parseInt(v, 10))
-    .reduce((a, b) => a / b);
+	if (typeof value !== 'string' || !value.includes('/')) return value;
+	return value
+		.split('/')
+		.map((v) => Number.parseInt(v, 10))
+		.reduce((a, b) => a / b);
 };
 
 @Directive({
-  selector: '[hlmAspectRatio]',
-  host: {
-    'data-slot': 'aspect-ratio',
-    '[style.--ratio]': 'ratio()',
-  },
+	selector: '[hlmAspectRatio]',
+	host: {
+		'data-slot': 'aspect-ratio',
+		'[style.--ratio]': 'ratio()',
+	},
 })
 export class HlmAspectRatio {
-  /**
-   * Aspect ratio of the element, defined as width / height.
-   */
-  public readonly ratio = input<number, NumberInput>(1, {
-    alias: 'hlmAspectRatio',
-    transform: (value: NumberInput) => {
-      const coerced = coerceNumberProperty(parseDividedString(value));
-      return coerced <= 0 ? 1 : coerced;
-    },
-  });
+	/**
+	 * Aspect ratio of the element, defined as width / height.
+	 */
+	public readonly ratio = input<number, NumberInput>(1, {
+		alias: 'hlmAspectRatio',
+		transform: (value: NumberInput) => {
+			const coerced = coerceNumberProperty(parseDividedString(value));
+			return coerced <= 0 ? 1 : coerced;
+		},
+	});
 
-  constructor() {
-    classes(() => 'relative aspect-(--ratio)');
-  }
+	constructor() {
+		classes(() => 'relative aspect-(--ratio)');
+	}
 }

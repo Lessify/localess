@@ -4,24 +4,24 @@ import { lucideChevronRight } from '@ng-icons/lucide';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Component({
-  // eslint-disable-next-line @angular-eslint/component-selector
-  selector: '[hlmBreadcrumbSeparator]',
-  imports: [NgIcon],
-  providers: [provideIcons({ lucideChevronRight })],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    'data-slot': 'breadcrumb-separator',
-    role: 'presentation',
-    'aria-hidden': 'true',
-  },
-  template: `
-    <ng-content>
-      <ng-icon name="lucideChevronRight" />
-    </ng-content>
-  `,
+	// eslint-disable-next-line @angular-eslint/component-selector
+	selector: '[hlmBreadcrumbSeparator]',
+	imports: [NgIcon],
+	providers: [provideIcons({ lucideChevronRight })],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'data-slot': 'breadcrumb-separator',
+		role: 'presentation',
+		'aria-hidden': 'true',
+	},
+	template: `
+		<ng-content>
+			<ng-icon name="lucideChevronRight" />
+		</ng-content>
+	`,
 })
 export class HlmBreadcrumbSeparator {
-  constructor() {
-    classes(() => '[&>ng-icon]:text-[length:--spacing(3.5)] [&>ng-icon]:flex');
-  }
+	constructor() {
+		classes(() => 'spartan-breadcrumb-separator [&>ng-icon]:flex');
+	}
 }

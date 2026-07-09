@@ -4,21 +4,21 @@ import { lucideEllipsis } from '@ng-icons/lucide';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Component({
-  selector: 'hlm-pagination-ellipsis',
-  imports: [NgIcon],
-  providers: [provideIcons({ lucideEllipsis })],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { 'data-slot': 'pagination-ellipsis' },
-  template: `
-    <ng-icon name="lucideEllipsis" />
-    <span class="sr-only">{{ srOnlyText() }}</span>
-  `,
+	selector: 'hlm-pagination-ellipsis',
+	imports: [NgIcon],
+	providers: [provideIcons({ lucideEllipsis })],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: { 'data-slot': 'pagination-ellipsis' },
+	template: `
+		<ng-icon name="lucideEllipsis" />
+		<span class="sr-only">{{ srOnlyText() }}</span>
+	`,
 })
 export class HlmPaginationEllipsis {
-  /** Screen reader only text for the ellipsis */
-  public readonly srOnlyText = input<string>('More pages');
+	/** Screen reader only text for the ellipsis */
+	public readonly srOnlyText = input<string>('More pages');
 
-  constructor() {
-    classes(() => "size-8 [&_ng-icon:not([class*='text-'])]:text-[length:--spacing(4)] flex items-center justify-center");
-  }
+	constructor() {
+		classes(() => 'spartan-pagination-ellipsis flex items-center justify-center');
+	}
 }

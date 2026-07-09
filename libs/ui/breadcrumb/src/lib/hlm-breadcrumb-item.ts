@@ -2,13 +2,13 @@ import { Directive } from '@angular/core';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-  selector: '[hlmBreadcrumbItem]',
-  host: {
-    'data-slot': 'breadcrumb-item',
-  },
+	selector: '[hlmBreadcrumbItem]',
+	host: {
+		'data-slot': 'breadcrumb-item',
+	},
 })
 export class HlmBreadcrumbItem {
-  constructor() {
-    classes(() => 'gap-1 inline-flex items-center');
-  }
+	constructor() {
+		classes(() => 'spartan-breadcrumb-item inline-flex items-center');
+	}
 }

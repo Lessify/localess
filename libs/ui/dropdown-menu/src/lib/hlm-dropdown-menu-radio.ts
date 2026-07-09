@@ -6,44 +6,44 @@ import { HlmDropdownMenuFocusOnHover } from './hlm-dropdown-menu-focus-on-hover'
 
 /** @internal. Use HlmDropdownMenuRadio instead. */
 @Directive({
-  selector: '[hlmDropdownMenuRadioCdk]',
-  providers: [
-    { provide: CdkMenuItemRadio, useExisting: HlmDropdownMenuRadioCdk },
-    { provide: CdkMenuItemSelectable, useExisting: HlmDropdownMenuRadioCdk },
-    { provide: CdkMenuItem, useExisting: CdkMenuItemSelectable },
-  ],
+	selector: '[hlmDropdownMenuRadioCdk]',
+	providers: [
+		{ provide: CdkMenuItemRadio, useExisting: HlmDropdownMenuRadioCdk },
+		{ provide: CdkMenuItemSelectable, useExisting: HlmDropdownMenuRadioCdk },
+		{ provide: CdkMenuItem, useExisting: CdkMenuItemSelectable },
+	],
 })
 export class HlmDropdownMenuRadioCdk extends CdkMenuItemRadio {
-  public readonly keepOpen = input<boolean, BooleanInput>(true, { transform: booleanAttribute });
+	public readonly keepOpen = input<boolean, BooleanInput>(true, { transform: booleanAttribute });
 
-  public override trigger(options?: { keepOpen: boolean }) {
-    super.trigger({ ...options, keepOpen: this.keepOpen() });
-  }
+	public override trigger(options?: { keepOpen: boolean }) {
+		super.trigger({ ...options, keepOpen: this.keepOpen() });
+	}
 }
 
 @Directive({
-  selector: '[hlmDropdownMenuRadio]',
-  hostDirectives: [
-    {
-      directive: HlmDropdownMenuRadioCdk,
-      inputs: ['cdkMenuItemDisabled: disabled', 'cdkMenuItemChecked: checked', 'keepOpen'],
-      outputs: ['cdkMenuItemTriggered: triggered'],
-    },
-    HlmDropdownMenuFocusOnHover,
-  ],
-  host: {
-    'data-slot': 'dropdown-menu-radio-item',
-    '[attr.data-disabled]': '_cdkMenuItem.disabled ? "" : null',
-    '[attr.data-checked]': '_cdkMenuItem.checked ? "" : null',
-  },
+	selector: '[hlmDropdownMenuRadio]',
+	hostDirectives: [
+		{
+			directive: HlmDropdownMenuRadioCdk,
+			inputs: ['cdkMenuItemDisabled: disabled', 'cdkMenuItemChecked: checked', 'keepOpen'],
+			outputs: ['cdkMenuItemTriggered: triggered'],
+		},
+		HlmDropdownMenuFocusOnHover,
+	],
+	host: {
+		'data-slot': 'dropdown-menu-radio-item',
+		'[attr.data-disabled]': '_cdkMenuItem.disabled ? "" : null',
+		'[attr.data-checked]': '_cdkMenuItem.checked ? "" : null',
+	},
 })
 export class HlmDropdownMenuRadio {
-  protected readonly _cdkMenuItem = inject(HlmDropdownMenuRadioCdk);
+	protected readonly _cdkMenuItem = inject(HlmDropdownMenuRadioCdk);
 
-  constructor() {
-    classes(
-      () =>
-        "hover:bg-accent focus:bg-accent hover:text-accent-foreground focus:text-accent-foreground hover:**:text-accent-foreground focus:**:text-accent-foreground gap-1.5 rounded-md py-1 ps-1.5 pe-8 text-sm data-inset:ps-7 [&_ng-icon:not([class*='text-'])]:text-[length:--spacing(4)] group/dropdown-menu-radio relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_ng-icon]:pointer-events-none [&_ng-icon]:shrink-0",
-    );
-  }
+	constructor() {
+		classes(
+			() =>
+				'spartan-dropdown-menu-radio-item group/dropdown-menu-radio relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_ng-icon]:pointer-events-none [&_ng-icon]:shrink-0',
+		);
+	}
 }

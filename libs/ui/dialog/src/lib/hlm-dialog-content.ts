@@ -11,52 +11,49 @@ import { classes } from '@spartan-ng/helm/utils';
 import { HlmDialogClose } from './hlm-dialog-close';
 
 type HlmDialogContentContext = {
-  $component?: ComponentType<unknown>;
-  $dynamicComponentClass?: string;
-  $showCloseButton?: boolean;
+	$component?: ComponentType<unknown>;
+	$dynamicComponentClass?: string;
+	$showCloseButton?: boolean;
 };
 
 @Component({
-  selector: 'hlm-dialog-content',
-  imports: [NgComponentOutlet, HlmButton, HlmDialogClose, NgIcon],
-  providers: [provideIcons({ lucideX })],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    'data-slot': 'dialog-content',
-    '[attr.data-state]': 'state()',
-  },
-  template: `
-    @if (component) {
-      <ng-container [ngComponentOutlet]="component" />
-    } @else {
-      <ng-content />
-    }
+	selector: 'hlm-dialog-content',
+	imports: [NgComponentOutlet, HlmButton, HlmDialogClose, NgIcon],
+	providers: [provideIcons({ lucideX })],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'data-slot': 'dialog-content',
+		'[attr.data-state]': 'state()',
+	},
+	template: `
+		@if (component) {
+			<ng-container [ngComponentOutlet]="component" />
+		} @else {
+			<ng-content />
+		}
 
-    @if (showCloseButton()) {
-      <button hlmBtn variant="ghost" size="icon-sm" class="absolute end-2 top-2" hlmDialogClose>
-        <span class="sr-only">close</span>
-        <ng-icon name="lucideX" />
-      </button>
-    }
-  `,
+		@if (showCloseButton()) {
+			<button hlmBtn variant="ghost" size="icon-sm" class="spartan-dialog-close" hlmDialogClose>
+				<span class="sr-only">close</span>
+				<ng-icon name="lucideX" />
+			</button>
+		}
+	`,
 })
 export class HlmDialogContent {
-  private readonly _dialogRef = inject(BrnDialogRef);
-  private readonly _dialogContext = injectBrnDialogContext<HlmDialogContentContext | null>({ optional: true });
+	private readonly _dialogRef = inject(BrnDialogRef);
+	private readonly _dialogContext = injectBrnDialogContext<HlmDialogContentContext | null>({ optional: true });
 
-  public readonly showCloseButton = input<boolean, BooleanInput>(this._dialogContext?.$showCloseButton ?? true, {
-    transform: booleanAttribute,
-  });
+	public readonly showCloseButton = input<boolean, BooleanInput>(this._dialogContext?.$showCloseButton ?? true, {
+		transform: booleanAttribute,
+	});
 
-  public readonly state = computed(() => this._dialogRef?.state() ?? 'closed');
+	public readonly state = computed(() => this._dialogRef?.state() ?? 'closed');
 
-  public readonly component = this._dialogContext?.$component;
-  private readonly _dynamicComponentClass = this._dialogContext?.$dynamicComponentClass;
+	public readonly component = this._dialogContext?.$component;
+	private readonly _dynamicComponentClass = this._dialogContext?.$dynamicComponentClass;
 
-  constructor() {
-    classes(() => [
-      'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 grid max-w-[calc(100%-2rem)] gap-4 rounded-xl p-4 text-sm ring-1 duration-100 sm:max-w-sm relative mx-auto w-full outline-none sm:mx-0',
-      this._dynamicComponentClass,
-    ]);
-  }
+	constructor() {
+		classes(() => ['spartan-dialog-content relative mx-auto w-full outline-none sm:mx-0', this._dynamicComponentClass]);
+	}
 }

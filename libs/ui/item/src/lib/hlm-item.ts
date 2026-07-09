@@ -4,43 +4,43 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { injectHlmItemConfig } from './hlm-item-token';
 
 const itemVariants = cva(
-  '[a]:hover:bg-muted rounded-lg border text-sm group/item focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-wrap items-center transition-colors duration-100 outline-none focus-visible:ring-[3px] [a]:transition-colors',
-  {
-    variants: {
-      variant: {
-        default: 'border-transparent',
-        outline: 'border-border',
-        muted: 'bg-muted/50 border-transparent',
-      },
-      size: {
-        default: 'gap-2.5 px-3 py-2.5',
-        sm: 'gap-2.5 px-3 py-2.5',
-        xs: 'gap-2 px-2.5 py-2 in-data-[slot=dropdown-menu-content]:p-0',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
-  },
+	'spartan-item group/item focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-wrap items-center transition-colors duration-100 outline-none focus-visible:ring-[3px] [a]:transition-colors',
+	{
+		variants: {
+			variant: {
+				default: 'spartan-item-variant-default',
+				outline: 'spartan-item-variant-outline',
+				muted: 'spartan-item-variant-muted',
+			},
+			size: {
+				default: 'spartan-item-size-default',
+				sm: 'spartan-item-size-sm',
+				xs: 'spartan-item-size-xs',
+			},
+		},
+		defaultVariants: {
+			variant: 'default',
+			size: 'default',
+		},
+	},
 );
 
 export type ItemVariants = VariantProps<typeof itemVariants>;
 
 @Directive({
-  selector: '[hlmItem],hlm-item',
-  host: {
-    'data-slot': 'item',
-    '[attr.data-variant]': 'variant()',
-    '[attr.data-size]': 'size()',
-  },
+	selector: '[hlmItem],hlm-item',
+	host: {
+		'data-slot': 'item',
+		'[attr.data-variant]': 'variant()',
+		'[attr.data-size]': 'size()',
+	},
 })
 export class HlmItem {
-  private readonly _config = injectHlmItemConfig();
-  public readonly variant = input<ItemVariants['variant']>(this._config.variant);
-  public readonly size = input<ItemVariants['size']>(this._config.size);
+	private readonly _config = injectHlmItemConfig();
+	public readonly variant = input<ItemVariants['variant']>(this._config.variant);
+	public readonly size = input<ItemVariants['size']>(this._config.size);
 
-  constructor() {
-    classes(() => itemVariants({ variant: this.variant(), size: this.size() }));
-  }
+	constructor() {
+		classes(() => itemVariants({ variant: this.variant(), size: this.size() }));
+	}
 }

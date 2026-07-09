@@ -3,15 +3,15 @@ import { BrnSelectPlaceholder } from '@spartan-ng/brain/select';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-  selector: '[hlmSelectPlaceholder],hlm-select-placeholder',
-  hostDirectives: [BrnSelectPlaceholder],
-  host: { 'data-slot': 'select-placeholder' },
+	selector: '[hlmSelectPlaceholder],hlm-select-placeholder',
+	hostDirectives: [BrnSelectPlaceholder],
+	host: { 'data-slot': 'select-placeholder' },
 })
 export class HlmSelectPlaceholder {
-  constructor() {
-    classes(
-      () =>
-        "gap-2 [&_ng-icon:not([class*='text-'])]:text-[length:--spacing(4)] flex items-center data-hidden:hidden [&_ng-icon]:pointer-events-none [&_ng-icon]:shrink-0",
-    );
-  }
+	constructor() {
+		classes(
+			() =>
+				'spartan-select-placeholder flex items-center data-hidden:hidden [&_ng-icon]:pointer-events-none [&_ng-icon]:shrink-0',
+		);
+	}
 }

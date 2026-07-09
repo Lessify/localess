@@ -3,12 +3,12 @@ import { BrnDialogTitle } from '@spartan-ng/brain/dialog';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Directive({
-  selector: '[hlmDialogTitle]',
-  hostDirectives: [BrnDialogTitle],
-  host: { 'data-slot': 'dialog-title' },
+	selector: '[hlmDialogTitle]',
+	hostDirectives: [BrnDialogTitle],
+	host: { 'data-slot': 'dialog-title' },
 })
 export class HlmDialogTitle {
-  constructor() {
-    classes(() => 'text-base leading-none font-medium');
-  }
+	constructor() {
+		classes(() => 'spartan-dialog-title');
+	}
 }
