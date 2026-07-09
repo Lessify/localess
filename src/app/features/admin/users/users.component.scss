@@ -2,36 +2,32 @@ table {
   width: 100%;
 }
 
-mat-form-field {
-  width: 100%;
-  input {
-    width: 100%;
-  }
-}
-
-mat-header-cell,
-mat-cell {
-  &.mat-column-active {
+th,
+td {
+  &.ll-column-active {
     max-width: 75px;
   }
 
-  &.mat-column-providers {
+  &.ll-column-providers {
     max-width: 95px;
   }
 
-  &.mat-column-role {
+  &.ll-column-role {
     max-width: 160px;
   }
 
-  &.mat-column-createdAt {
+  &.ll-column-createdAt {
+    width: 120px;
     max-width: 120px;
   }
 
-  &.mat-column-updatedAt {
+  &.ll-column-updatedAt {
+    width: 120px;
     max-width: 120px;
   }
 
-  &.mat-column-actions {
+  &.ll-column-actions {
+    width: 100px;
     max-width: 100px;
   }
 }

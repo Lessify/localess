@@ -123,7 +123,7 @@ shared/
   services/      ← 20+ AngularFire-backed CRUD services, one per domain entity
   stores/        ← 4 NgRx Signal stores (see frontend-state.md)
   guards/        ← dirty-form.guard (unsaved changes warning)
-  components/    ← shared dialogs, snackbars, logo, breadcrumb
+  components/    ← shared dialogs, snackbars, logo, breadcrumb, table (`ll-table`) + paginator (`ll-paginator`) — a Material-free MatTable/MatPaginator/MatSort replacement, see spartan-ui-migration.md
   directives/    ← custom Angular directives
   pipes/         ← custom Angular pipes
   validators/    ← custom reactive form validators

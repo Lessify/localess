@@ -1,5 +1,6 @@
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 
 import { DevelopersComponent } from './developers.component';
 import { OpenApiComponent } from './open-api/open-api.component';
@@ -14,15 +15,35 @@ const routes: Routes = [
     children: [
       {
         path: 'webhooks',
-        component: WebhooksComponent,
-      },
-      {
-        path: 'webhooks/:webhookId',
-        component: WebhookDetailComponent,
+        data: {
+          breadcrumb: {
+            label: 'Webhooks',
+          } satisfies BreadcrumbItem,
+        },
+        children: [
+          {
+            path: '',
+            component: WebhooksComponent,
+          },
+          {
+            path: ':webhookId',
+            component: WebhookDetailComponent,
+            data: {
+              breadcrumb: {
+                label: 'Details',
+              } satisfies BreadcrumbItem,
+            },
+          },
+        ],
       },
       {
         path: 'open-api',
         component: OpenApiComponent,
+        data: {
+          breadcrumb: {
+            label: 'Open API',
+          } satisfies BreadcrumbItem,
+        },
       },
     ],
   },

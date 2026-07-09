@@ -45,7 +45,11 @@
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Events</p>
         <p class="mt-1 text-sm font-medium">{{ wh.events.length }}</p>
-        <p class="text-muted-foreground text-xs">{{ eventsToText(wh.events) }}</p>
+        <p class="flex flex-wrap gap-1">
+          @for (event of wh.events; track event) {
+            <hlm-badge variant="outline">{{ event }}</hlm-badge>
+          }
+        </p>
       </div>
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Created At</p>
@@ -78,7 +82,7 @@
               Event Type
             </button>
             @if (eventFilter().length > 0) {
-              <div class="flex items-center gap-1 rounded-md border border-dashed px-2 shadow-xs">
+              <div hlmButtonGroupText class="border-dashed">
                 <span hlmBadge variant="secondary">{{ eventFilter().length }}</span>
               </div>
             }
@@ -107,7 +111,7 @@
               Status
             </button>
             @if (statusFilter().length > 0) {
-              <div class="flex items-center gap-1 rounded-md border border-dashed px-2 shadow-xs">
+              <div hlmButtonGroupText class="border-dashed">
                 <span hlmBadge variant="secondary">{{ statusFilter().length }}</span>
               </div>
             }

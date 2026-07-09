@@ -1,5 +1,7 @@
 # Spartan UI Migration Guide
 
+> Related: [`MatTable` → `ll-table` Migration Guide](table-migration.md)
+
 > This document captures hard-won knowledge from migrating Angular Material components to the Spartan/Helm UI library (`libs/ui/`). Read this before touching any dialog, form, or notification code.
 
 ---
@@ -911,6 +913,13 @@ The `mat-paginator-sticky` global class is defined in `src/styles/_mat-paginator
   z-index: 10;
 }
 ```
+
+For tables already migrated to `<ll-paginator>` (`src/app/shared/components/paginator/`), the same behavior is available via the `sticky` input (default `false`) — the component applies the `ll-paginator-sticky` class (defined in `src/styles/_ll-paginator.scss`) to itself:
+```html
+<ll-paginator [sticky]="true" [length]="..." />
+```
+
+For migrating a whole `mat-table` (not just its paginator) off Material, see the dedicated [`MatTable` → `ll-table` Migration Guide](table-migration.md).
 
 ---
 

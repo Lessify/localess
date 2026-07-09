@@ -21,13 +21,13 @@ src/app/features/spaces/tasks/
 
 ## TasksComponent
 
-A paginated `MatTable` of all Tasks for the current space. Each row shows the task type, status, progress, file info, and creation date.
+A paginated `ll-table` (see the [`MatTable` → `ll-table` Migration Guide](../../table-migration.md)) of all Tasks for the current space — the first component migrated off `MatTable`/`MatPaginator`. Each row shows the task type, status, file info, description, and creation date; the `id` column hides below the `@5xl` container-query breakpoint.
 
-**Injected services:** `TaskService`, `MatDialog`, `NotificationService`
+**Injected services:** `TaskService`, `MatDialog` (still used for the delete confirmation dialog frame), `NotificationService`
 
 **Key behaviour:**
-- `loadData()` — fetches all tasks for the space, sorted by creation date (newest first)
-- Polls / refreshes status for tasks in `IN_PROGRESS` state
+- `loadData()` — fetches all tasks for the space, sorted client-side via `TableDataSource`/`TableSort` (newest first by default)
+- `dataSource` (`TableDataSource<Task>`) is wired to the `TableSort` and `Paginator` view children in `ngAfterViewInit()`
 - `onDownload(task)` — downloads the output file of a completed export task from Firebase Storage
 - `openDeleteDialog(task)` — confirms then deletes the task record
 

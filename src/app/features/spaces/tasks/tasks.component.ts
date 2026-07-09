@@ -1,10 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  Injector,
+  input,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
@@ -15,6 +23,8 @@ import {
   lucideTrash,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Task, TaskExport, TaskImport } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
@@ -35,12 +45,11 @@ import { filter, switchMap } from 'rxjs/operators';
   styleUrls: ['./tasks.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatTableModule,
-    MatSortModule,
+    LlTableImports,
+    LlPaginatorImports,
     FormatFileSizePipe,
     CommonModule,
     TimeDurationPipe,
-    MatPaginatorModule,
     HlmProgressImports,
     HlmButtonImports,
     HlmTooltipImports,
@@ -59,27 +68,33 @@ import { filter, switchMap } from 'rxjs/operators';
     }),
   ],
 })
-export class TasksComponent implements OnInit {
+export class TasksComponent implements OnInit, AfterViewInit {
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  readonly sort = viewChild.required(TableSort);
+  readonly paginator = viewChild.required(Paginator);
 
   // Input
   spaceId = input.required<string>();
 
   now = Date.now();
-  isLoading = true;
-  dataSource: MatTableDataSource<Task> = new MatTableDataSource<Task>([]);
-  displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'updatedAt', 'actions'];
+  isLoading = signal(true);
+  displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdAt', 'actions'];
 
-  private destroyRef = inject(DestroyRef);
+  private readonly tasks = signal<Task[]>([]);
+  readonly dataSource = new TableDataSource<Task>(this.tasks, this.injector);
 
   ngOnInit(): void {
     this.loadData(this.spaceId());
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
   }
 
   loadData(spaceId: string): void {
@@ -88,11 +103,8 @@ export class TasksComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: tasks => {
-          this.dataSource = new MatTableDataSource<Task>(tasks);
-          this.dataSource.sort = this.sort();
-          this.dataSource.paginator = this.paginator();
-          this.isLoading = false;
-          this.cd.markForCheck();
+          this.tasks.set(tasks);
+          this.isLoading.set(false);
         },
       });
   }

@@ -2,32 +2,24 @@ table {
   width: 100%;
 }
 
-mat-form-field {
-  width: 100%;
-  input {
-    width: 100%;
-  }
-}
-
-mat-row {
+tr[ll-row] {
   cursor: pointer;
 }
 
-mat-header-cell,
-mat-cell {
-  &.mat-column-type {
+th,
+td {
+  &.ll-column-type {
+    width: 100px;
+    max-width: 100px;
+  }
+
+  &.ll-column-updatedAt {
+    width: 120px;
     max-width: 120px;
   }
 
-  &.mat-column-createdAt {
-    max-width: 120px;
-  }
-
-  &.mat-column-updatedAt {
-    max-width: 120px;
-  }
-
-  &.mat-column-actions {
-    max-width: 90px;
+  &.ll-column-actions {
+    width: 80px;
+    max-width: 80px;
   }
 }
