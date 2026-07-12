@@ -1,14 +1,39 @@
 import { Router } from 'express';
-import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
+import { DocumentReference, FieldValue, UpdateData, WithFieldValue, WriteBatch } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/https';
 import { logger } from 'firebase-functions/v2';
-import { firestoreService } from '../config';
+import { BATCH_MAX, firestoreService } from '../config';
 import { Space, TokenPermission, Translation, TranslationType, zTranslationUpdateSchema } from '../models';
 import { findSpaceById, findTranslationById, findTranslations, generateTranslationsDraft } from '../services';
 import { RequestWithToken, requireTokenPermissions } from './middleware/api-key-auth.middleware';
 
 // eslint-disable-next-line new-cap
 export const MANAGE = Router();
+
+/**
+ * Apply an operation to a list of document refs in batches of BATCH_MAX, committing as it goes.
+ * @param {DocumentReference[]} refs Document references to apply the operation to
+ * @param {Function} applyToBatch Callback invoked with the current batch and each ref
+ */
+async function commitInBatches(
+  refs: DocumentReference[],
+  applyToBatch: (batch: WriteBatch, ref: DocumentReference) => void
+): Promise<void> {
+  let batch = firestoreService.batch();
+  let count = 0;
+  for (const ref of refs) {
+    applyToBatch(batch, ref);
+    count++;
+    if (count === BATCH_MAX) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+  }
+  if (count > 0) {
+    await batch.commit();
+  }
+}
 
 MANAGE.post(
   '/api/v1/spaces/:spaceId/translations/:locale',
@@ -51,20 +76,20 @@ MANAGE.post(
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
-        const bulk = firestoreService.bulkWriter();
-        translationIds.forEach(id => {
-          const ref = findTranslationById(spaceId, id);
-          const data: WithFieldValue<Translation> = {
-            type: TranslationType.STRING,
-            locales: {
-              [locale]: values[id],
-            },
-            createdAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-          };
-          bulk.create(ref, data);
-        });
-        await bulk.close();
+        await commitInBatches(
+          translationIds.map(id => findTranslationById(spaceId, id)),
+          (batch, ref) => {
+            const data: WithFieldValue<Translation> = {
+              type: TranslationType.STRING,
+              locales: {
+                [locale]: values[ref.id],
+              },
+              createdAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            };
+            batch.create(ref, data);
+          }
+        );
         await generateTranslationsDraft(spaceId, space);
         logger.info(`[V1:Translations:update] Added ${translationIds.length} missing translations`, translationIds);
         res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });
@@ -89,16 +114,16 @@ MANAGE.post(
           return;
         }
         // Now `missing` contains the IDs of translations that are missing and can be added
-        const bulk = firestoreService.bulkWriter();
-        translationIds.forEach(id => {
-          const ref = findTranslationById(spaceId, id);
-          const data: UpdateData<Translation> = {
-            updatedAt: FieldValue.serverTimestamp(),
-          };
-          data[`locales.${locale}`] = values[id];
-          bulk.update(ref, data);
-        });
-        await bulk.close();
+        await commitInBatches(
+          translationIds.map(id => findTranslationById(spaceId, id)),
+          (batch, ref) => {
+            const data: UpdateData<Translation> = {
+              updatedAt: FieldValue.serverTimestamp(),
+            };
+            data[`locales.${locale}`] = values[ref.id];
+            batch.update(ref, data);
+          }
+        );
         await generateTranslationsDraft(spaceId, space);
         logger.info(`[V1:Translations:update] Updated ${translationIds.length} translations`, translationIds);
         res.status(200).send({ message: `Updated ${translationIds.length} translations`, ids: translationIds });
@@ -121,12 +146,10 @@ MANAGE.post(
           });
           return;
         }
-        const bulk = firestoreService.bulkWriter();
-        translationIds.forEach(id => {
-          const ref = findTranslationById(spaceId, id);
-          bulk.delete(ref);
-        });
-        await bulk.close();
+        await commitInBatches(
+          translationIds.map(id => findTranslationById(spaceId, id)),
+          (batch, ref) => batch.delete(ref)
+        );
         await generateTranslationsDraft(spaceId, space);
         logger.info(`[V1:Translations:update] Delete ${translationIds.length} missing translations`, translationIds);
         res.status(200).send({ message: `Added ${translationIds.length} missing translations`, ids: translationIds });

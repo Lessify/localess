@@ -1,11 +1,11 @@
 import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { authService } from './config';
+import { authService, firestoreService, BATCH_MAX } from './config';
 import { canPerform } from './utils/user-auth-utils';
 import { User, UserInvite, UserPermission } from './models';
 import { beforeUserCreated, beforeUserSignedIn } from 'firebase-functions/v2/identity';
-import { findUserById } from './services';
+import { findUserById, findUsers } from './services';
 import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 
 const beforecreated = beforeUserCreated(async request => {
@@ -68,14 +68,20 @@ const sync = onCall<never>(async request => {
   if (!canPerform(UserPermission.USER_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const listUsers = await authService.listUsers();
+
+  // Load all existing users into a map to avoid per-user reads
+  const origUserMap = new Map<string, User>();
+  const usersSnapshot = await findUsers().get();
+  usersSnapshot.docs.forEach(it => origUserMap.set(it.id, it.data() as User));
+
+  let count = 0;
+  let batch = firestoreService.batch();
   for (const userRecord of listUsers.users) {
     logger.debug('[User::sync] userRecord: ' + JSON.stringify(userRecord));
     const userRef = findUserById(userRecord.uid);
-    const userSnapshot = await userRef.get();
+    const user = origUserMap.get(userRecord.uid);
 
-    logger.debug(`[User::sync] userDS: id='${userSnapshot.id}' exist=${userSnapshot.exists}`);
-    if (userSnapshot.exists) {
-      const user = userSnapshot.data() as User;
+    if (user) {
       logger.debug('[User::sync] user: ' + JSON.stringify(user));
       if (
         userRecord.email !== user.email ||
@@ -89,8 +95,9 @@ const sync = onCall<never>(async request => {
         userRecord.customClaims?.['lock'] !== user.lock ||
         userRecord.providerData.map(provider => provider.providerId).join(',') !== user.providers.join(',')
       ) {
-        logger.debug(`[User::sync] user: id='${userSnapshot.id}' to be updated`);
-        await userRef.set(
+        logger.debug(`[User::sync] user: id='${userRecord.uid}' to be updated`);
+        batch.set(
+          userRef,
           {
             email: userRecord.email,
             emailVerified: userRecord.emailVerified,
@@ -106,12 +113,14 @@ const sync = onCall<never>(async request => {
           },
           { merge: true }
         );
+        count++;
       } else {
-        logger.debug(`[User::sync] user: id='${userSnapshot.id}' no updates required`);
+        logger.debug(`[User::sync] user: id='${userRecord.uid}' no updates required`);
       }
     } else {
-      logger.debug(`[User::sync] user: id='${userSnapshot.id}' to be added`);
-      await userRef.set(
+      logger.debug(`[User::sync] user: id='${userRecord.uid}' to be added`);
+      batch.set(
+        userRef,
         {
           email: userRecord.email,
           emailVerified: userRecord.emailVerified,
@@ -128,7 +137,16 @@ const sync = onCall<never>(async request => {
         },
         { merge: true }
       );
+      count++;
     }
+    if (count === BATCH_MAX) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+  }
+  if (count > 0) {
+    await batch.commit();
   }
   return true;
 });

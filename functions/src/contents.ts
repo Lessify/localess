@@ -1,9 +1,9 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten, DocumentSnapshot } from 'firebase-functions/v2/firestore';
-import { FieldValue, UpdateData } from 'firebase-admin/firestore';
+import { FieldValue, UpdateData, WriteBatch } from 'firebase-admin/firestore';
 import { canPerform } from './utils/user-auth-utils';
-import { bucket, firestoreService } from './config';
+import { BATCH_MAX, bucket, firestoreService } from './config';
 import {
   Content,
   ContentData,
@@ -52,13 +52,24 @@ const publish = onCall<PublishContentData>(async request => {
       await publishDocument(spaceId, space, contentId, content, contentSnapshot, schemas);
     } else if (content.kind === ContentKind.FOLDER) {
       const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
+      let count = 0;
+      let batch = firestoreService.batch();
       for (const documentSnapshot of documentsSnapshot.docs) {
         const document = documentSnapshot.data() as ContentDocument;
         const isAlreadyPublished = document.publishedAt ? document.publishedAt.seconds > document.updatedAt.seconds : false;
         logger.info('[Content::contentPublish] check', document.fullSlug, 'isAlreadyPublished', isAlreadyPublished);
         // SKIP if the page was already published, by comparing publishedAt and updatedAt
         if (isAlreadyPublished) continue;
-        await publishDocument(spaceId, space, documentSnapshot.id, document, documentSnapshot, schemas);
+        await publishDocument(spaceId, space, documentSnapshot.id, document, documentSnapshot, schemas, batch);
+        count++;
+        if (count === BATCH_MAX) {
+          await batch.commit();
+          batch = firestoreService.batch();
+          count = 0;
+        }
+      }
+      if (count > 0) {
+        await batch.commit();
       }
     }
 
@@ -147,6 +158,7 @@ async function buildDocumentStorageForLocales(
  * @param {ContentDocument} document Source Firestore content document
  * @param {DocumentSnapshot} documentSnapshot Firestore snapshot used to update publishedAt
  * @param {Map<string, Schema>} schemas Schema map used for locale extraction
+ * @param {WriteBatch} batch Optional shared batch to queue the publishedAt update on, instead of committing it directly
  */
 async function publishDocument(
   spaceId: string,
@@ -154,7 +166,8 @@ async function publishDocument(
   documentId: string,
   document: ContentDocument,
   documentSnapshot: DocumentSnapshot,
-  schemas: Map<string, Schema>
+  schemas: Map<string, Schema>,
+  batch?: WriteBatch
 ) {
   await buildDocumentStorageForLocales(
     space,
@@ -165,7 +178,11 @@ async function publishDocument(
     new Date().toISOString()
   );
   // Update publishedAt
-  await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
+  if (batch) {
+    batch.update(documentSnapshot.ref, { publishedAt: FieldValue.serverTimestamp() });
+  } else {
+    await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
+  }
 }
 
 // Unpublish
@@ -184,11 +201,22 @@ const unpublish = onCall<PublishContentData>(async request => {
       await unpublishDocument(spaceId, space, contentId, contentSnapshot);
     } else if (content.kind === ContentKind.FOLDER) {
       const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
+      let count = 0;
+      let batch = firestoreService.batch();
       for (const documentSnapshot of documentsSnapshot.docs) {
         const document = documentSnapshot.data() as ContentDocument;
         // SKIP if the document is not published
         if (!document.publishedAt) continue;
-        await unpublishDocument(spaceId, space, documentSnapshot.id, documentSnapshot);
+        await unpublishDocument(spaceId, space, documentSnapshot.id, documentSnapshot, batch);
+        count++;
+        if (count === BATCH_MAX) {
+          await batch.commit();
+          batch = firestoreService.batch();
+          count = 0;
+        }
+      }
+      if (count > 0) {
+        await batch.commit();
       }
     }
 
@@ -217,8 +245,15 @@ const unpublish = onCall<PublishContentData>(async request => {
  * @param {Space} space
  * @param {string} documentId
  * @param {DocumentSnapshot} documentSnapshot
+ * @param {WriteBatch} batch Optional shared batch to queue the publishedAt clear on, instead of committing it directly
  */
-async function unpublishDocument(spaceId: string, space: Space, documentId: string, documentSnapshot: DocumentSnapshot) {
+async function unpublishDocument(
+  spaceId: string,
+  space: Space,
+  documentId: string,
+  documentSnapshot: DocumentSnapshot,
+  batch?: WriteBatch
+) {
   for (const locale of space.locales) {
     // Delete published JSON files
     logger.info(`[Content::contentUnpublish] Delete file spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
@@ -229,7 +264,11 @@ async function unpublishDocument(spaceId: string, space: Space, documentId: stri
     }
   }
   // Clear publishedAt timestamp
-  await documentSnapshot.ref.update({ publishedAt: FieldValue.delete() });
+  if (batch) {
+    batch.update(documentSnapshot.ref, { publishedAt: FieldValue.delete() });
+  } else {
+    await documentSnapshot.ref.update({ publishedAt: FieldValue.delete() });
+  }
 }
 
 // Firestore events
@@ -284,8 +323,9 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
     if (contentAfter.kind === ContentKind.DOCUMENT) return;
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
-    const bulk = firestoreService.bulkWriter();
     const contentsSnapshot = await findAllContentsByParentSlug(spaceId, contentBefore.fullSlug).get();
+    let count = 0;
+    let batch = firestoreService.batch();
     for (const item of contentsSnapshot.docs) {
       const content = item.data() as Content;
       const update: UpdateData<Content> = {
@@ -293,9 +333,17 @@ const onContentUpdate = onDocumentUpdated('spaces/{spaceId}/contents/{contentId}
         fullSlug: `${contentAfter.fullSlug}/${content.slug}`,
         updatedAt: FieldValue.serverTimestamp(),
       };
-      bulk.update(item.ref, update);
+      batch.update(item.ref, update);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
     }
-    await bulk.close();
+    if (count > 0) {
+      await batch.commit();
+    }
     return;
   }
   return;
@@ -334,10 +382,21 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
     });
   } else if (content.kind === ContentKind.FOLDER) {
     // cascade delete to all content documents that use this folder as parent (sibling documents, not subcollections)
-    const folderBulk = firestoreService.bulkWriter();
     const contentsSnapshot = await findAllContentsByParentSlug(spaceId, content.fullSlug).get();
-    contentsSnapshot.docs.forEach(item => folderBulk.delete(item.ref));
-    await folderBulk.close();
+    let count = 0;
+    let batch = firestoreService.batch();
+    for (const item of contentsSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+    }
   }
   return;
 });

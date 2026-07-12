@@ -1,7 +1,7 @@
 import { FieldValue, UpdateData } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { firestoreService } from './config';
+import { BATCH_MAX, firestoreService } from './config';
 import { PublishTranslationsData, Space, TranslateLocaleData, Translation, UserPermission, WebHookEvent, WebHookPayload } from './models';
 import { deleteTranslations, findSpaceById, findTranslations, generateTranslationsDraft, saveTranslationFiles } from './services';
 import { translateWithGoogle } from './services/translate.service';
@@ -71,7 +71,6 @@ const translateLocale = onCall<TranslateLocaleData>(async request => {
     return;
   }
 
-  const bulk = firestoreService.bulkWriter();
   const candidates = translationsSnapshot.docs.filter(doc => {
     const translation = doc.data() as Translation;
     const sourceValue = translation.locales[sourceLocaleId];
@@ -93,18 +92,28 @@ const translateLocale = onCall<TranslateLocaleData>(async request => {
   );
 
   let counter = 0;
+  let count = 0;
+  let batch = firestoreService.batch();
   for (const { doc, translatedValue } of results) {
     if (translatedValue) {
       const update = {
         [`locales.${targetLocaleId}`]: translatedValue,
       } as UpdateData<Translation>;
       update.updatedAt = FieldValue.serverTimestamp();
-      bulk.update(doc.ref, update);
+      batch.update(doc.ref, update);
       counter++;
+      count++;
+    }
+    if (count === BATCH_MAX) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
     }
   }
-  await bulk.close();
-  logger.info(`[translationsTranslateLocale] Bulk successfully updated ${counter}.`);
+  if (count > 0) {
+    await batch.commit();
+  }
+  logger.info(`[translationsTranslateLocale] Successfully updated ${counter}.`);
 });
 
 export const translation = {

@@ -1,6 +1,6 @@
 import { logger } from 'firebase-functions/v2';
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
-import { bucket, firestoreService } from './config';
+import { BATCH_MAX, bucket, firestoreService } from './config';
 import { Asset, AssetKind } from './models';
 import { findAllAssetsByParentPath } from './services';
 
@@ -20,11 +20,22 @@ const onAssetDeleted = onDocumentDeleted('spaces/{spaceId}/assets/{assetId}', as
   } else if (asset.kind === AssetKind.FOLDER) {
     // cascade changes to all child's in case it is a FOLDER
     // It will create recursion
-    const bulk = firestoreService.bulkWriter();
     const parentPath = asset.parentPath === '' ? event.data.id : `${asset.parentPath}/${event.data.id}`;
     const assetsSnapshot = await findAllAssetsByParentPath(spaceId, parentPath).get();
-    assetsSnapshot.docs.forEach(item => bulk.delete(item.ref));
-    await bulk.close();
+    let count = 0;
+    let batch = firestoreService.batch();
+    for (const item of assetsSnapshot.docs) {
+      batch.delete(item.ref);
+      count++;
+      if (count === BATCH_MAX) {
+        await batch.commit();
+        batch = firestoreService.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+    }
     return;
   }
   return;
