@@ -1,7 +1,3 @@
-table {
-  width: 100%;
-}
-
 th,
 td {
   &.ll-column-active {
@@ -27,7 +23,7 @@ td {
   }
 
   &.ll-column-actions {
-    width: 100px;
-    max-width: 100px;
+    width: 80px;
+    max-width: 80px;
   }
 }

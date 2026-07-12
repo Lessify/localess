@@ -1,11 +1,9 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
+import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideEllipsisVertical,
@@ -17,6 +15,9 @@ import {
   lucideWebhookOff,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { WebHook, WebHookEvent } from '@shared/models/webhook.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { WebHookService } from '@shared/services/webhook.service';
@@ -38,10 +39,10 @@ import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
   styleUrls: ['./webhooks.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatTableModule,
-    MatSortModule,
-    CommonModule,
-    MatPaginatorModule,
+    LlTableImports,
+    LlPaginatorImports,
+    LlFilterToolbarImports,
+    DatePipe,
     HlmProgressImports,
     HlmBadgeImports,
     HlmTooltipImports,
@@ -61,25 +62,51 @@ import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
     }),
   ],
 })
-export class WebhooksComponent {
+export class WebhooksComponent implements AfterViewInit {
   private readonly webhookService = inject(WebHookService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild.required(TableSort);
+  paginator = viewChild.required(Paginator);
 
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
-  dataSource: MatTableDataSource<WebHook> = new MatTableDataSource<WebHook>([]);
+  private readonly webhooks = signal<WebHook[]>([]);
+  readonly dataSource = new TableDataSource<WebHook>(this.webhooks, this.injector);
   displayedColumns: string[] = ['name', 'enabled', 'events', 'updatedAt', 'actions'];
+
+  readonly filters: FilterDef[] = [
+    {
+      key: 'enabled',
+      label: 'Status',
+      mode: 'single',
+      options: [
+        { value: 'true', label: 'Enabled' },
+        { value: 'false', label: 'Disabled' },
+      ],
+    },
+    {
+      key: 'events',
+      label: 'Events',
+      mode: 'multiple',
+      options: Object.values(WebHookEvent).map(event => ({ value: event, label: event })),
+    },
+  ];
 
   private destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.dataSource.filterPredicate = FilterPredicateUtils.create<WebHook>({
+      searchFields: webhook => [webhook.name, webhook.url],
+      filterFields: [
+        { key: 'enabled', accessor: webhook => String(webhook.enabled) },
+        { key: 'events', accessor: webhook => webhook.events },
+      ],
+    });
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined),
@@ -88,13 +115,19 @@ export class WebhooksComponent {
       )
       .subscribe({
         next: webhooks => {
-          this.dataSource = new MatTableDataSource<WebHook>(webhooks);
-          this.dataSource.sort = this.sort();
-          this.dataSource.paginator = this.paginator();
+          this.webhooks.set(webhooks);
           this.isLoading.set(false);
-          this.cd.markForCheck();
         },
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
+  }
+
+  onFilterChange(value: FilterToolbarValue): void {
+    this.dataSource.filter = JSON.stringify(value);
   }
 
   navigateToDetail(webhook: WebHook): void {

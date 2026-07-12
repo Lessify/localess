@@ -1,11 +1,8 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -30,6 +27,8 @@ import {
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import {
   Content,
   ContentDocument,
@@ -74,9 +73,8 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
     CanUserPerformPipe,
     CommonModule,
     ClipboardModule,
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
+    LlTableImports,
+    LlPaginatorImports,
     HlmButtonImports,
     HlmIconImports,
     HlmDropdownMenuImports,
@@ -107,18 +105,18 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
     }),
   ],
 })
-export class ContentsComponent {
+export class ContentsComponent implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly schemasService = inject(SchemaService);
   private readonly contentService = inject(ContentService);
   private readonly tokenService = inject(TokenService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly injector = inject(Injector);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild.required(TableSort);
+  paginator = viewChild.required(Paginator);
 
   // Input
   spaceId = input.required<string>();
@@ -126,12 +124,12 @@ export class ContentsComponent {
   spaceStore = inject(SpaceStore);
 
   isLoading = signal(true);
-  dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
+  private readonly contents = signal<Content[]>([]);
+  readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
   displayedColumns: string[] = ['status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
 
   schemas: Schema[] = [];
   schemasMapById: Map<string, Schema> = new Map<string, Schema>();
-  contents: Content[] = [];
 
   get parentPath(): string {
     const contentPath = this.spaceStore.contentPath();
@@ -161,14 +159,15 @@ export class ContentsComponent {
         next: ([schemas, contents]) => {
           this.schemas = schemas.sort(sortSchema);
           this.schemasMapById = new Map(this.schemas.map(it => [it.id, it]));
-          this.contents = contents.sort(sortContent);
-          this.dataSource = new MatTableDataSource<Content>(this.contents);
-          this.dataSource.sort = this.sort();
-          this.dataSource.paginator = this.paginator();
+          this.contents.set(contents.sort(sortContent));
           this.isLoading.set(false);
-          this.cd.markForCheck();
         },
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
   }
 
   openAddDocumentDialog(): void {
@@ -177,8 +176,8 @@ export class ContentsComponent {
         panelClass: 'sm',
         data: {
           schemas: this.schemas,
-          reservedNames: this.contents.map(it => it.name),
-          reservedSlugs: this.contents.map(it => it.slug),
+          reservedNames: this.contents().map(it => it.name),
+          reservedSlugs: this.contents().map(it => it.slug),
         },
       })
       .afterClosed()
@@ -201,8 +200,8 @@ export class ContentsComponent {
       .open<AddFolderDialogComponent, AddFolderDialogModel, ContentFolderCreate>(AddFolderDialogComponent, {
         panelClass: 'sm',
         data: {
-          reservedNames: this.contents.map(it => it.name),
-          reservedSlugs: this.contents.map(it => it.slug),
+          reservedNames: this.contents().map(it => it.name),
+          reservedSlugs: this.contents().map(it => it.slug),
         },
       })
       .afterClosed()
@@ -226,8 +225,8 @@ export class ContentsComponent {
         panelClass: 'sm',
         data: {
           content: ObjectUtils.clone(element),
-          reservedNames: this.contents.map(it => it.name),
-          reservedSlugs: this.contents.map(it => it.slug),
+          reservedNames: this.contents().map(it => it.name),
+          reservedSlugs: this.contents().map(it => it.slug),
         },
       })
       .afterClosed()
@@ -237,7 +236,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success('Content has been updated.');
         },
         error: () => {
@@ -276,7 +274,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success(messageSuccess);
         },
         error: (err: unknown) => {
@@ -301,7 +298,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success('Document has been moved.');
         },
         error: () => {
@@ -325,7 +321,6 @@ export class ContentsComponent {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success(`Document '${element.name}' has been cloned.`);
         },
         error: (err: unknown) => {

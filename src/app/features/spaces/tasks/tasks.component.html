@@ -5,6 +5,7 @@
 }
 
 <div class="mx-auto px-2">
+  <ll-filter-toolbar class="my-3" [filters]="filters" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
     <table ll-table [dataSource]="dataSource" llTableSort>
       <ng-container llColumnDef="id" llColumnDefClass="hidden @5xl/table:table-cell">

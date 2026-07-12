@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
+import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
@@ -23,9 +24,10 @@ import {
   lucideTrash,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { Task, TaskExport, TaskImport } from '@shared/models/task.model';
+import { Task, TaskExport, TaskImport, TaskKind, TaskStatus } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
@@ -39,6 +41,25 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { saveAs } from 'file-saver-es';
 import { filter, switchMap } from 'rxjs/operators';
 
+const TASK_KIND_LABELS: Record<TaskKind, string> = {
+  [TaskKind.ASSET_EXPORT]: 'Asset Export',
+  [TaskKind.ASSET_IMPORT]: 'Asset Import',
+  [TaskKind.ASSET_REGEN_METADATA]: 'Asset Regeneration Metadata',
+  [TaskKind.CONTENT_EXPORT]: 'Content Export',
+  [TaskKind.CONTENT_IMPORT]: 'Content Import',
+  [TaskKind.SCHEMA_EXPORT]: 'Schema Export',
+  [TaskKind.SCHEMA_IMPORT]: 'Schema Import',
+  [TaskKind.TRANSLATION_EXPORT]: 'Translation Export',
+  [TaskKind.TRANSLATION_IMPORT]: 'Translation Import',
+};
+
+const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  [TaskStatus.INITIATED]: 'Initiated',
+  [TaskStatus.IN_PROGRESS]: 'In Progress',
+  [TaskStatus.ERROR]: 'Error',
+  [TaskStatus.FINISHED]: 'Finished',
+};
+
 @Component({
   selector: 'll-tasks',
   templateUrl: './tasks.component.html',
@@ -47,6 +68,7 @@ import { filter, switchMap } from 'rxjs/operators';
   imports: [
     LlTableImports,
     LlPaginatorImports,
+    LlFilterToolbarImports,
     FormatFileSizePipe,
     CommonModule,
     TimeDurationPipe,
@@ -88,6 +110,31 @@ export class TasksComponent implements OnInit, AfterViewInit {
   private readonly tasks = signal<Task[]>([]);
   readonly dataSource = new TableDataSource<Task>(this.tasks, this.injector);
 
+  readonly filters: FilterDef[] = [
+    {
+      key: 'kind',
+      label: 'Kind',
+      mode: 'multiple',
+      options: Object.values(TaskKind).map(kind => ({ value: kind, label: TASK_KIND_LABELS[kind] })),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      mode: 'multiple',
+      options: Object.values(TaskStatus).map(status => ({ value: status, label: TASK_STATUS_LABELS[status] })),
+    },
+  ];
+
+  constructor() {
+    this.dataSource.filterPredicate = FilterPredicateUtils.create<Task>({
+      searchFields: task => [task.id, 'file' in task ? task.file?.name : undefined, task.message],
+      filterFields: [
+        { key: 'kind', accessor: task => task.kind },
+        { key: 'status', accessor: task => task.status },
+      ],
+    });
+  }
+
   ngOnInit(): void {
     this.loadData(this.spaceId());
   }
@@ -95,6 +142,10 @@ export class TasksComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     this.dataSource.sort = this.sort();
     this.dataSource.paginator = this.paginator();
+  }
+
+  onFilterChange(value: FilterToolbarValue): void {
+    this.dataSource.filter = JSON.stringify(value);
   }
 
   loadData(spaceId: string): void {

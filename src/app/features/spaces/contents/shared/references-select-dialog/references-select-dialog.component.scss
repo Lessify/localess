@@ -1,25 +1,24 @@
-table {
-  width: 100%;
-}
-
 mat-dialog-content {
   padding-top: 0 !important;
   padding-bottom: 0.25rem !important; /* 4px */
 }
 
-mat-row {
-  cursor: pointer;
-}
-
-mat-header-cell,
-mat-cell {
-  &.mat-column-select {
-    max-width: 80px;
+th,
+td {
+  &.ll-column-select {
+    width: 50px;
+    max-width: 50px;
   }
-  &.mat-column-status {
-    max-width: 80px;
+  &.ll-column-status {
+    width: 60px;
+    max-width: 60px;
   }
-  &.mat-column-updatedAt {
-    max-width: 130px;
+  &.ll-column-schema {
+    width: 220px;
+    max-width: 220px;
+  }
+  &.ll-column-updatedAt {
+    width: 120px;
+    max-width: 120px;
   }
 }

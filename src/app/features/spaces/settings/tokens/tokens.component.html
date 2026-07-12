@@ -10,69 +10,76 @@
   </hlm-progress>
 }
 <div class="my-3">
-  <mat-table [dataSource]="dataSource" matSort>
-    <ng-container matColumnDef="id">
-      <mat-header-cell *matHeaderCellDef> Token </mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <code>{{ element.id.substring(0, 10) }}...</code>
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.name }} </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="version">
-      <mat-header-cell *matHeaderCellDef> Version </mat-header-cell>
-      <mat-cell *matCellDef="let element"> v{{ element.version ? element.version : '1' }} </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="permissions">
-      <mat-header-cell *matHeaderCellDef> Permissions </mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @if (element.permissions && element.permissions.length > 0) {
-          <span hlmBadge variant="outline" [hlmTooltip]="permissionsToText(element.permissions)">{{ element.permissions.length }}</span>
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="cacheTtl">
-      <mat-header-cell *matHeaderCellDef> Cache TTL </mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @if (element.cacheTtl === 0) {
-          <span class="text-muted-foreground">No Cache</span>
-        } @else if (element.cacheTtl) {
-          <span>{{ element.cacheTtl }}s</span>
-        } @else {
-          <span class="text-muted-foreground">Default (60s)</span>
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At </mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="actions">
-      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <button
-          hlmBtn
-          size="icon"
-          variant="ghost"
-          [cdkCopyToClipboard]="element.id"
-          (cdkCopyToClipboardCopied)="copied()"
-          hlmTooltip="Copy Token">
-          <ng-icon hlm size="sm" name="lucideCopy" />
-        </button>
-        <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit">
-          <ng-icon hlm size="sm" name="lucidePencil" />
-        </button>
-        <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete">
-          <ng-icon hlm size="sm" name="lucideTrash" />
-        </button>
-      </mat-cell>
-    </ng-container>
-    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
-  </mat-table>
-  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
+  <ll-filter-toolbar class="mb-3" (filterChange)="onFilterChange($event)" />
+  <div llTableContainer>
+    <table ll-table [dataSource]="dataSource" llTableSort>
+      <ng-container llColumnDef="id">
+        <th llHeaderCell *llHeaderCellDef>Token</th>
+        <td llCell *llCellDef="let element">
+          <code>{{ element.id.substring(0, 10) }}...</code>
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="name">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
+        <td llCell *llCellDef="let element">{{ element.name }}</td>
+      </ng-container>
+      <ng-container llColumnDef="version">
+        <th llHeaderCell *llHeaderCellDef>Version</th>
+        <td llCell *llCellDef="let element">v{{ element.version ? element.version : '1' }}</td>
+      </ng-container>
+      <ng-container llColumnDef="permissions">
+        <th llHeaderCell *llHeaderCellDef>Permissions</th>
+        <td llCell *llCellDef="let element">
+          @if (element.permissions && element.permissions.length > 0) {
+            <span hlmBadge variant="outline" [hlmTooltip]="permissionsToText(element.permissions)">{{ element.permissions.length }}</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="cacheTtl">
+        <th llHeaderCell *llHeaderCellDef>Cache TTL</th>
+        <td llCell *llCellDef="let element">
+          @if (element.cacheTtl === 0) {
+            <span class="text-muted-foreground">No Cache</span>
+          } @else if (element.cacheTtl) {
+            <span>{{ element.cacheTtl }}s</span>
+          } @else {
+            <span class="text-muted-foreground">Default (60s)</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="updatedAt">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="actions">
+        <th llHeaderCell *llHeaderCellDef>Actions</th>
+        <td llCell *llCellDef="let element">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            [cdkCopyToClipboard]="element.id"
+            (cdkCopyToClipboardCopied)="copied()"
+            hlmTooltip="Copy Token">
+            <ng-icon hlm size="sm" name="lucideCopy" />
+          </button>
+          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit">
+            <ng-icon hlm size="sm" name="lucidePencil" />
+          </button>
+          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete">
+            <ng-icon hlm size="sm" name="lucideTrash" />
+          </button>
+        </td>
+      </ng-container>
+      <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr ll-row *llRowDef="let row; columns: displayedColumns"></tr>
+      <tr *llNoDataRow>
+        <td [attr.colspan]="displayedColumns.length">No tokens yet.</td>
+      </tr>
+    </table>
+  </div>
+
+  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
 </div>
