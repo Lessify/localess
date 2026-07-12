@@ -1,15 +1,12 @@
 import { FieldValue, UpdateData } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { firestoreService } from './config';
-import { PublishTranslationsData, Space, TranslateLocaleData, Translation, UserPermission } from './models';
-import { deleteTranslations, findSpaceById, findTranslations } from './services';
-import { generateTranslationsDraft, saveTranslationFiles } from './services/translation.service';
-import { translateCloud, translateWithGoogle } from './services/translate.service';
+import { PublishTranslationsData, Space, TranslateLocaleData, Translation, UserPermission, WebHookEvent, WebHookPayload } from './models';
+import { deleteTranslations, findSpaceById, findTranslations, generateTranslationsDraft, saveTranslationFiles } from './services';
+import { translateWithGoogle } from './services/translate.service';
 import { canPerform } from './utils/user-auth-utils';
 import { triggerWebHooksForEvent } from './utils/webhook-utils';
-import { WebHookEvent, WebHookPayload } from './models/webhook.model';
 
 // Publish
 const publish = onCall<PublishTranslationsData>(async request => {
@@ -45,47 +42,6 @@ const deleteAll = onCall<{ spaceId: string }>(async request => {
   if (!canPerform(UserPermission.SPACE_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId } = data;
   await deleteTranslations(spaceId);
-});
-
-const onCreate = onDocumentCreated('spaces/{spaceId}/translations/{translationId}', async event => {
-  logger.info(`[Translation:onCreate] eventId='${event.id}'`);
-  logger.info(`[Translation:onCreate] params='${JSON.stringify(event.params)}'`);
-  const { spaceId } = event.params;
-
-  // No Data
-  if (!event.data) return;
-  const translation = event.data.data() as Translation;
-  logger.info(`[Translation:onCreate] data='${JSON.stringify(translation)}'`);
-  // No Auto Translate field define
-  if (translation.autoTranslate === undefined) return;
-  const update: UpdateData<Translation> = {
-    autoTranslate: FieldValue.delete(),
-    updatedAt: FieldValue.serverTimestamp(),
-  };
-  // autoTranslate only when it is required
-  if (translation.autoTranslate) {
-    const spaceSnapshot = await findSpaceById(spaceId).get();
-
-    const space = spaceSnapshot.data() as Space;
-    const localeValue = translation.locales[space.localeFallback.id];
-
-    for (const locale of space.locales) {
-      // skip already filled data
-      if (locale.id === space.localeFallback.id) continue;
-      try {
-        const tValue = await translateCloud(localeValue, space.localeFallback.id, locale.id);
-        if (tValue) {
-          update[`locales.${locale.id}`] = tValue;
-        }
-      } catch (e) {
-        logger.error(e);
-      }
-    }
-  }
-
-  logger.info(`[Translation:onCreate] eventId='${event.id}' Update : ${JSON.stringify(update)}`);
-  await event.data.ref.update(update);
-  return;
 });
 
 const publishDraft = onCall<{ spaceId: string }>(async request => {
@@ -154,7 +110,6 @@ const translateLocale = onCall<TranslateLocaleData>(async request => {
 export const translation = {
   publish: publish,
   publishdraft: publishDraft,
-  oncreate: onCreate,
   deleteall: deleteAll,
   translatelocale: translateLocale,
 };

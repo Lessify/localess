@@ -12,7 +12,6 @@ export interface Translation {
   type: TranslationType;
   locales: Record<string, string>;
   labels?: string[];
-  autoTranslate?: boolean;
   description?: string;
   updatedBy?: {
     name: string;
@@ -27,7 +26,7 @@ export interface PublishTranslationsData {
 }
 
 // Import and Export
-export interface TranslationExport extends Omit<Translation, 'autoTranslate' | 'createdAt' | 'updatedAt'> {
+export interface TranslationExport extends Omit<Translation, 'createdAt' | 'updatedAt'> {
   id: string;
 }
 

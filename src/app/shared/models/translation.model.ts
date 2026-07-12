@@ -31,7 +31,6 @@ export interface Translation {
   locales: Record<string, string>;
   labels?: string[];
   description?: string;
-  autoTranslate?: boolean;
   updatedBy?: {
     name: string;
     email: string;
@@ -47,7 +46,6 @@ export interface TranslationCreate {
   description?: string;
   locale: string;
   value: string;
-  autoTranslate?: boolean;
 }
 
 export interface TranslationCreateFS {
@@ -55,7 +53,6 @@ export interface TranslationCreateFS {
   locales: Record<string, string>;
   labels?: string[];
   description?: string;
-  autoTranslate?: boolean;
   updatedBy?: {
     name: string;
     email: string;

@@ -366,7 +366,6 @@ export class TranslationsComponent implements OnInit {
             value: it!.value,
             labels: it?.labels,
             description: it?.description,
-            autoTranslate: it?.autoTranslate,
           };
           return this.translationService.create(this.spaceId(), tc);
         }),

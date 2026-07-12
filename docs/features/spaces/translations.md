@@ -58,7 +58,7 @@ The main component is one of the most complex in the app. It renders a hierarchi
 | Dialog | Purpose |
 |--------|---------|
 | `AddDialogComponent` | Create a new translation key (type, ID, labels, description) |
-| `EditDialogComponent` | Edit key metadata (labels, description, autoTranslate flag) |
+| `EditDialogComponent` | Edit key metadata (labels, description) |
 | `EditIdDialogComponent` | Rename a translation key ID |
 | `ExportDialogComponent` | Choose format and locales to export |
 | `ImportDialogComponent` | Upload a translation file → creates a Task |

@@ -61,10 +61,6 @@ export class TranslationService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    if (entity.autoTranslate) {
-      addEntity.autoTranslate = entity.autoTranslate;
-    }
-
     if (entity.labels && entity.labels.length > 0) {
       addEntity.labels = entity.labels;
     }

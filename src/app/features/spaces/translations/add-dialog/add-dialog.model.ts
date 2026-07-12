@@ -10,5 +10,4 @@ export interface AddDialogReturnModel {
   value: string;
   labels: string[];
   description: string;
-  autoTranslate?: boolean;
 }
