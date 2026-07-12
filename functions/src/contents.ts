@@ -1,16 +1,14 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onDocumentDeleted, onDocumentUpdated, onDocumentWritten, DocumentSnapshot } from 'firebase-functions/v2/firestore';
-import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
-import { AuthData, canPerform } from './utils/user-auth-utils';
+import { FieldValue, UpdateData } from 'firebase-admin/firestore';
+import { canPerform } from './utils/user-auth-utils';
 import { bucket, firestoreService } from './config';
 import {
   Content,
   ContentData,
   ContentDocument,
   ContentDocumentStorage,
-  ContentHistory,
-  ContentHistoryType,
   ContentKind,
   PublishContentData,
   Schema,
@@ -27,7 +25,6 @@ import {
   extractContent,
   findAllContentsByParentSlug,
   findContentById,
-  findContentsHistory,
   findDocumentsToPublishByParentSlug,
   findSchemas,
   findSpaceById,
@@ -52,7 +49,7 @@ const publish = onCall<PublishContentData>(async request => {
     const content: Content = contentSnapshot.data() as Content;
     const schemas = new Map(schemasSnapshot.docs.map(it => [it.id, it.data() as Schema]));
     if (content.kind === ContentKind.DOCUMENT) {
-      await publishDocument(spaceId, space, contentId, content, contentSnapshot, schemas, auth);
+      await publishDocument(spaceId, space, contentId, content, contentSnapshot, schemas);
     } else if (content.kind === ContentKind.FOLDER) {
       const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
       for (const documentSnapshot of documentsSnapshot.docs) {
@@ -61,7 +58,7 @@ const publish = onCall<PublishContentData>(async request => {
         logger.info('[Content::contentPublish] check', document.fullSlug, 'isAlreadyPublished', isAlreadyPublished);
         // SKIP if the page was already published, by comparing publishedAt and updatedAt
         if (isAlreadyPublished) continue;
-        await publishDocument(spaceId, space, documentSnapshot.id, document, documentSnapshot, schemas, auth);
+        await publishDocument(spaceId, space, documentSnapshot.id, document, documentSnapshot, schemas);
       }
     }
 
@@ -84,16 +81,6 @@ const publish = onCall<PublishContentData>(async request => {
   }
 });
 
-/**
- * Publish Document
- * @param {string} spaceId space id
- * @param {Space} space
- * @param {string} documentId
- * @param {ContentDocument} document
- * @param {DocumentSnapshot} documentSnapshot
- * @param {Map<string, Schema>} schemas
- * @param {AuthData} auth
- */
 /**
  * Build and save a ContentDocumentStorage JSON file for every locale in the space.
  * Extracts locale-specific content and copies assets, links, and references onto
@@ -152,15 +139,14 @@ async function buildDocumentStorageForLocales(
 }
 
 /**
- * Publish a content document: writes locale JSON files to Cloud Storage,
- * stamps publishedAt on the Firestore document, and records a PUBLISHED history entry.
+ * Publish a content document: writes locale JSON files to Cloud Storage
+ * and stamps publishedAt on the Firestore document.
  * @param {string} spaceId Space identifier
  * @param {Space} space Space containing locale list
  * @param {string} documentId Content document identifier
  * @param {ContentDocument} document Source Firestore content document
  * @param {DocumentSnapshot} documentSnapshot Firestore snapshot used to update publishedAt
  * @param {Map<string, Schema>} schemas Schema map used for locale extraction
- * @param {AuthData} auth Caller auth context for history attribution
  */
 async function publishDocument(
   spaceId: string,
@@ -168,8 +154,7 @@ async function publishDocument(
   documentId: string,
   document: ContentDocument,
   documentSnapshot: DocumentSnapshot,
-  schemas: Map<string, Schema>,
-  auth?: AuthData
+  schemas: Map<string, Schema>
 ) {
   await buildDocumentStorageForLocales(
     space,
@@ -181,13 +166,6 @@ async function publishDocument(
   );
   // Update publishedAt
   await documentSnapshot.ref.update({ publishedAt: FieldValue.serverTimestamp() });
-  const addHistory: WithFieldValue<ContentHistory> = {
-    type: ContentHistoryType.PUBLISHED,
-    name: auth?.token['name'] || FieldValue.delete(),
-    email: auth?.token.email || FieldValue.delete(),
-    createdAt: FieldValue.serverTimestamp(),
-  };
-  await findContentsHistory(spaceId, documentId).add(addHistory);
 }
 
 // Unpublish
@@ -203,14 +181,14 @@ const unpublish = onCall<PublishContentData>(async request => {
     const space: Space = spaceSnapshot.data() as Space;
     const content: Content = contentSnapshot.data() as Content;
     if (content.kind === ContentKind.DOCUMENT) {
-      await unpublishDocument(spaceId, space, contentId, contentSnapshot, auth);
+      await unpublishDocument(spaceId, space, contentId, contentSnapshot);
     } else if (content.kind === ContentKind.FOLDER) {
       const documentsSnapshot = await findDocumentsToPublishByParentSlug(spaceId, content.fullSlug).get();
       for (const documentSnapshot of documentsSnapshot.docs) {
         const document = documentSnapshot.data() as ContentDocument;
         // SKIP if the document is not published
         if (!document.publishedAt) continue;
-        await unpublishDocument(spaceId, space, documentSnapshot.id, documentSnapshot, auth);
+        await unpublishDocument(spaceId, space, documentSnapshot.id, documentSnapshot);
       }
     }
 
@@ -239,9 +217,8 @@ const unpublish = onCall<PublishContentData>(async request => {
  * @param {Space} space
  * @param {string} documentId
  * @param {DocumentSnapshot} documentSnapshot
- * @param {AuthData} auth
  */
-async function unpublishDocument(spaceId: string, space: Space, documentId: string, documentSnapshot: DocumentSnapshot, auth?: AuthData) {
+async function unpublishDocument(spaceId: string, space: Space, documentId: string, documentSnapshot: DocumentSnapshot) {
   for (const locale of space.locales) {
     // Delete published JSON files
     logger.info(`[Content::contentUnpublish] Delete file spaces/${spaceId}/contents/${documentId}/${locale.id}.json`);
@@ -253,13 +230,6 @@ async function unpublishDocument(spaceId: string, space: Space, documentId: stri
   }
   // Clear publishedAt timestamp
   await documentSnapshot.ref.update({ publishedAt: FieldValue.delete() });
-  const addHistory: WithFieldValue<ContentHistory> = {
-    type: ContentHistoryType.UNPUBLISHED,
-    name: auth?.token['name'] || FieldValue.delete(),
-    email: auth?.token.email || FieldValue.delete(),
-    createdAt: FieldValue.serverTimestamp(),
-  };
-  await findContentsHistory(spaceId, documentId).add(addHistory);
 }
 
 // Firestore events
@@ -338,7 +308,7 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
   // No Data
   if (!event.data) return;
 
-  // Delete the document and all nested subcollections (history, etc.)
+  // Delete the document and all nested subcollections
   logger.info(`[Content::onDelete] eventId='${event.id}' delete document and subcollections`);
   await firestoreService.recursiveDelete(event.data.ref);
 
@@ -375,77 +345,10 @@ const onContentDelete = onDocumentDeleted('spaces/{spaceId}/contents/{contentId}
 const onContentWrite = onDocumentWritten('spaces/{spaceId}/contents/{contentId}', async event => {
   logger.info(`[Content::onWrite] eventId='${event.id}'`);
   logger.info(`[Content::onWrite] params='${JSON.stringify(event.params)}'`);
-  const { spaceId, contentId } = event.params;
+  const { spaceId } = event.params;
   // Save Cache, to make sure LINKS are cached correctly with cache version
   logger.info(`[Content::onWrite] Save file to ${spaceContentCachePath(spaceId)}`);
   await bucket.file(spaceContentCachePath(spaceId)).save('');
-  // History
-  // No Data
-  if (!event.data) return;
-  const { before, after } = event.data;
-  const beforeData = before.data() as Content | undefined;
-  const afterData = after.data() as Content | undefined;
-  let addHistory: WithFieldValue<ContentHistory> = {
-    type: ContentHistoryType.PUBLISHED,
-    createdAt: FieldValue.serverTimestamp(),
-  };
-  if (beforeData && afterData) {
-    // change
-    if (beforeData.kind === ContentKind.DOCUMENT && afterData.kind === ContentKind.DOCUMENT) {
-      if (beforeData.publishedAt?.nanoseconds !== afterData.publishedAt?.nanoseconds) {
-        // SKIP Publish event
-        return;
-      }
-    }
-    addHistory = {
-      type: ContentHistoryType.UPDATE,
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    if (beforeData.name !== afterData.name) {
-      addHistory.cName = afterData.name;
-    }
-    if (beforeData.slug !== afterData.slug) {
-      addHistory.cSlug = afterData.slug;
-    }
-    if (beforeData.parentSlug !== afterData.parentSlug) {
-      addHistory.cParentSlug = afterData.parentSlug;
-    }
-    if (beforeData.kind === ContentKind.DOCUMENT && afterData.kind === ContentKind.DOCUMENT) {
-      if (JSON.stringify(beforeData.data) !== JSON.stringify(afterData.data)) {
-        addHistory.cData = true;
-      }
-    }
-  } else if (afterData) {
-    // create
-    addHistory = {
-      type: ContentHistoryType.CREATE,
-      cName: afterData.name,
-      cSlug: afterData.slug,
-      createdAt: FieldValue.serverTimestamp(),
-    };
-  } else if (beforeData) {
-    // delete : skip history
-    return;
-  }
-  if (afterData?.updatedBy) {
-    addHistory.email = afterData.updatedBy.email;
-    addHistory.name = afterData.updatedBy.name;
-  }
-
-  await findContentsHistory(spaceId, contentId).add(addHistory);
-  const countSnapshot = await findContentsHistory(spaceId, contentId).count().get();
-  const { count } = countSnapshot.data();
-  if (count > 30) {
-    const historySnapshot = await findContentsHistory(spaceId, contentId)
-      .orderBy('createdAt', 'asc')
-      .limit(count - 30)
-      .get();
-    if (historySnapshot.size > 0) {
-      const bulk = firestoreService.bulkWriter();
-      historySnapshot.docs.forEach(doc => bulk.delete(doc.ref));
-      await bulk.close();
-    }
-  }
   return;
 });
 

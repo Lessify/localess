@@ -5,7 +5,6 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
-  DestroyRef,
   ElementRef,
   inject,
   input,
@@ -14,7 +13,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -35,7 +33,6 @@ import {
   lucideFolderRoot,
   lucideFormInput,
   lucideFullscreen,
-  lucideHistory,
   lucideLanguages,
   lucidePencil,
   lucidePlus,
@@ -54,7 +51,6 @@ import {
 } from '@shared/components/translate-locale-dialog';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
-import { ContentHistory } from '@shared/models/content-history.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { SpaceEnvironment } from '@shared/models/space.model';
@@ -62,7 +58,6 @@ import { TokenPermission } from '@shared/models/token.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentService } from '@shared/services/content.service';
 import { ContentHelperService } from '@shared/services/content-helper.service';
-import { ContentHistoryService } from '@shared/services/content-history.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { PlatformService } from '@shared/services/platform.service';
 import { TokenService } from '@shared/services/token.service';
@@ -75,17 +70,14 @@ import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
-import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmResizableImports } from '@spartan-ng/helm/resizable';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
-import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { Observable } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 import { v4 } from 'uuid';
 
@@ -117,12 +109,10 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     HlmDropdownMenuImports,
     HlmSpinnerImports,
     HlmProgressImports,
-    HlmSheetImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
     HlmButtonGroupImports,
     HlmAccordionImports,
-    HlmItemImports,
     HlmKbdImports,
     HlmInputGroupImports,
     DocumentStatusComponent,
@@ -137,7 +127,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
       lucideTriangleAlert,
       lucideSave,
       lucideUpload,
-      lucideHistory,
       lucideEllipsisVertical,
       lucidePencil,
       lucideEarth,
@@ -164,7 +153,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   readonly platformService = inject(PlatformService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly contentService = inject(ContentService);
-  private readonly contentHistoryService = inject(ContentHistoryService);
   private readonly tokenService = inject(TokenService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
@@ -187,8 +175,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   settingsStore = inject(LocalSettingsStore);
 
   preview = viewChild<ElementRef<HTMLIFrameElement>>('preview');
-
-  showHistory = signal(false);
 
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
   // Environments
@@ -273,11 +259,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   isPublishLoading = signal(false);
   isSaveLoading = signal(false);
 
-  // Subscriptions
-  history$?: Observable<ContentHistory[]>;
-
-  private destroyRef = inject(DestroyRef);
-
   isResizing = signal(false);
   iframeStatus = linkedSignal<'loading' | 'loaded' | 'connected' | 'error'>(() => {
     this.iframeUrl();
@@ -287,7 +268,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   constructor() {}
 
   ngOnInit(): void {
-    this.history$ = this.contentHistoryService.findAll(this.spaceId(), this.contentId(), 30).pipe(takeUntilDestroyed(this.destroyRef));
     const document = this.document();
     // Initialize document data
     if (document.kind === ContentKind.DOCUMENT) {

@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Manage all localisation keys for a space. Supports creating, editing, and publishing translations across multiple locales. Includes AI-powered translation, history tracking, import/export, and tree or list view.
+Manage all localisation keys for a space. Supports creating, editing, and publishing translations across multiple locales. Includes AI-powered translation, import/export, and tree or list view.
 
 ## Route
 
@@ -27,14 +27,13 @@ src/app/features/spaces/translations/
     plural-view/ plural-edit/            ← PLURAL type components
     array-view/  array-edit/             ← ARRAY type components
     translation-status/                  ← visual status badge
-    translation-history/                 ← history sidebar
 ```
 
 ## TranslationsComponent
 
 The main component is one of the most complex in the app. It renders a hierarchical tree (or flat list) of translation keys across all locales of the selected space.
 
-**Injected services:** `TranslationService`, `TranslationHistoryService`, `LocaleService`, `TaskService`, `TokenService`, `TranslateService`, `NotificationService`, `PlatformService`
+**Injected services:** `TranslationService`, `LocaleService`, `TaskService`, `TokenService`, `TranslateService`, `NotificationService`, `PlatformService`
 
 **Key behaviour:**
 - `loadTranslations()` — fetches all translation documents for the space
@@ -71,7 +70,6 @@ The main component is one of the most complex in the app. It renders a hierarchi
 | Service | Purpose |
 |---------|---------|
 | `TranslationService` | CRUD + publish + publishDraft (called automatically after every write) |
-| `TranslationHistoryService` | Load and display edit history per key |
 | `LocaleService` | Load space locales |
 | `TaskService` | Create import/export tasks |
 | `TokenService` | Retrieve API token for CDN preview links |

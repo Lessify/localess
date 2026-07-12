@@ -33,7 +33,6 @@ import {
   lucideEarth,
   lucideEllipsisVertical,
   lucideExternalLink,
-  lucideHistory,
   lucideLanguages,
   lucideLayoutList,
   lucideListTree,
@@ -65,7 +64,6 @@ import {
   TranslationStatus,
   TranslationUpdate,
 } from '@shared/models/translation.model';
-import { TranslationHistory } from '@shared/models/translation-history.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
@@ -74,7 +72,6 @@ import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { TranslationService } from '@shared/services/translation.service';
-import { TranslationHistoryService } from '@shared/services/translation-history.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -92,12 +89,11 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmScrollAreaImports } from '@spartan-ng/helm/scroll-area';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
-import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { debounceTime, EMPTY, Observable } from 'rxjs';
+import { debounceTime, EMPTY } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
@@ -136,7 +132,6 @@ import { TranslationNode } from './shared/models/translation.model';
     HlmDropdownMenuImports,
     HlmToggleGroupImports,
     HlmProgressImports,
-    HlmSheetImports,
     HlmScrollAreaImports,
     NgScrollbarModule,
     HlmSpinnerImports,
@@ -160,7 +155,6 @@ import { TranslationNode } from './shared/models/translation.model';
       lucideCloudDownload,
       lucideUploadCloud,
       lucideUpload,
-      lucideHistory,
       lucideEarth,
       lucideExternalLink,
       lucideLayoutList,
@@ -184,7 +178,6 @@ import { TranslationNode } from './shared/models/translation.model';
 export class TranslationsComponent implements OnInit {
   readonly platformService = inject(PlatformService);
   private readonly translationService = inject(TranslationService);
-  private readonly translateHistoryService = inject(TranslationHistoryService);
   private readonly localeService = inject(LocaleService);
   private readonly taskService = inject(TaskService);
   private readonly notificationService = inject(NotificationService);
@@ -224,7 +217,6 @@ export class TranslationsComponent implements OnInit {
     }
     return [];
   });
-  showHistory = signal(false);
 
   // Translations
   translations = signal<Translation[]>([]);
@@ -280,9 +272,6 @@ export class TranslationsComponent implements OnInit {
 
   availableToken?: string = undefined;
 
-  // Subscriptions
-  history$?: Observable<TranslationHistory[]>;
-
   //Loadings
   isLoading = signal(true);
   isPublishLoading = signal(false);
@@ -336,7 +325,6 @@ export class TranslationsComponent implements OnInit {
           this.isLoading.set(false);
         },
       });
-    this.history$ = this.translateHistoryService.findAll(this.spaceId(), 30).pipe(takeUntilDestroyed(this.destroyRef));
   }
 
   publish(): void {

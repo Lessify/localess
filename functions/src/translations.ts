@@ -1,18 +1,10 @@
-import { FieldValue, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
+import { FieldValue, UpdateData } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
-import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { firestoreService } from './config';
-import {
-  PublishTranslationsData,
-  Space,
-  TranslateLocaleData,
-  Translation,
-  TranslationHistory,
-  TranslationHistoryType,
-  UserPermission,
-} from './models';
-import { deleteTranslations, findSpaceById, findTranslations, findTranslationsHistory } from './services';
+import { PublishTranslationsData, Space, TranslateLocaleData, Translation, UserPermission } from './models';
+import { deleteTranslations, findSpaceById, findTranslations } from './services';
 import { generateTranslationsDraft, saveTranslationFiles } from './services/translation.service';
 import { translateCloud, translateWithGoogle } from './services/translate.service';
 import { canPerform } from './utils/user-auth-utils';
@@ -32,13 +24,6 @@ const publish = onCall<PublishTranslationsData>(async request => {
     const space: Space = spaceSnapshot.data() as Space;
     const progress = await saveTranslationFiles(spaceId, space, translationsSnapshot.docs);
     await spaceSnapshot.ref.update('progress.translations', progress);
-    const addHistory: WithFieldValue<TranslationHistory> = {
-      type: TranslationHistoryType.PUBLISHED,
-      name: auth?.token['name'] || FieldValue.delete(),
-      email: auth?.token.email || FieldValue.delete(),
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    await findTranslationsHistory(spaceId).add(addHistory);
     const webhookPayload: WebHookPayload = {
       event: WebHookEvent.TRANSLATION_PUBLISHED,
       spaceId,
@@ -117,69 +102,6 @@ const publishDraft = onCall<{ spaceId: string }>(async request => {
   await generateTranslationsDraft(spaceId, space);
 });
 
-const onWriteToHistory = onDocumentWritten('spaces/{spaceId}/translations/{translationId}', async event => {
-  logger.info(`[Translation:onWrite] eventId='${event.id}'`);
-  logger.info(`[Translation:onWrite] params='${JSON.stringify(event.params)}'`);
-  const { spaceId, translationId } = event.params;
-
-  // No Data
-  if (!event.data) return;
-  const { before, after } = event.data;
-  const beforeData = before.data() as Translation | undefined;
-  const afterData = after.data() as Translation | undefined;
-  let addHistory: WithFieldValue<TranslationHistory> = {
-    type: TranslationHistoryType.PUBLISHED,
-    createdAt: FieldValue.serverTimestamp(),
-  };
-  if (beforeData && afterData) {
-    // change
-    addHistory = {
-      type: TranslationHistoryType.UPDATE,
-      key: translationId,
-      createdAt: FieldValue.serverTimestamp(),
-    };
-  } else if (beforeData) {
-    // delete
-    addHistory = {
-      type: TranslationHistoryType.DELETE,
-      key: translationId,
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    const spaceSnapshot = await findSpaceById(spaceId).get();
-    // Skip History in case Space is deleted
-    if (!spaceSnapshot.exists) {
-      return;
-    }
-  } else if (afterData) {
-    // create
-    addHistory = {
-      type: TranslationHistoryType.CREATE,
-      key: translationId,
-      createdAt: FieldValue.serverTimestamp(),
-    };
-  }
-  if (afterData?.updatedBy) {
-    addHistory.email = afterData.updatedBy.email;
-    addHistory.name = afterData.updatedBy.name;
-  }
-  await findTranslationsHistory(spaceId).add(addHistory);
-
-  const countSnapshot = await findTranslationsHistory(spaceId).count().get();
-  const { count } = countSnapshot.data();
-  if (count > 30) {
-    const historySnapshot = await findTranslationsHistory(spaceId)
-      .orderBy('createdAt', 'asc')
-      .limit(count - 30)
-      .get();
-    if (historySnapshot.size > 0) {
-      const bulk = firestoreService.bulkWriter();
-      historySnapshot.docs.forEach(doc => bulk.delete(doc.ref));
-      await bulk.close();
-    }
-  }
-  return;
-});
-
 const translateLocale = onCall<TranslateLocaleData>(async request => {
   logger.info('[translationsTranslateLocale] data: ' + JSON.stringify(request.data));
   logger.info('[translationsTranslateLocale] context.auth: ' + JSON.stringify(request.auth));
@@ -233,7 +155,6 @@ export const translation = {
   publish: publish,
   publishdraft: publishDraft,
   oncreate: onCreate,
-  onwritetohistory: onWriteToHistory,
   deleteall: deleteAll,
   translatelocale: translateLocale,
 };

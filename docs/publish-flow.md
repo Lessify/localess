@@ -131,7 +131,7 @@ Resolution is done at request time by reading additional Storage files. This add
 ## Implementation Files
 
 - `functions/src/contents.ts` — publish content Firebase Function
-- `functions/src/translations.ts` — `publish` onCall, `publishDraft` onCall, `onWriteToHistory` trigger
+- `functions/src/translations.ts` — `publish` onCall, `publishDraft` onCall
 - `functions/src/services/content.service.ts` — `contentLocaleCachePath`, `spaceContentCachePath`
 - `functions/src/services/translation.service.ts` — `saveTranslationFiles`, `generateTranslationsDraft`, `translationLocaleCachePath`, `spaceTranslationCachePath`
 - `functions/src/tasks.ts` — `translationsImport`, `translationsImportJsonFlat` (call `generateTranslationsDraft` at end)
