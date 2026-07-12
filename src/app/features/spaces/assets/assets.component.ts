@@ -1,10 +1,19 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  Injector,
+  input,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -37,6 +46,8 @@ import { ConfirmationDialogComponent } from '@shared/components/confirmation-dia
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
@@ -97,11 +108,10 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     CanUserPerformPipe,
     CommonModule,
     FileDragAndDropDirective,
-    MatTableModule,
-    MatSortModule,
+    LlTableImports,
+    LlPaginatorImports,
     TimeDurationPipe,
     FormatFileSizePipe,
-    MatPaginatorModule,
     NgOptimizedImage,
     HlmButtonImports,
     HlmIconImports,
@@ -143,16 +153,16 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     }),
   ],
 })
-export class AssetsComponent implements OnInit {
+export class AssetsComponent implements OnInit, AfterViewInit {
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly injector = inject(Injector);
   readonly unsplashPluginService = inject(UnsplashPluginService);
 
-  sort = viewChild(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild(TableSort);
+  paginator = viewChild.required(Paginator);
 
   // Input
   spaceId = input.required<string>();
@@ -160,9 +170,9 @@ export class AssetsComponent implements OnInit {
   spaceStore = inject(SpaceStore);
 
   private destroyRef = inject(DestroyRef);
-  dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
+  private readonly assets = signal<Asset[]>([]);
+  readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
   displayedColumns: string[] = ['icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
-  assets: Asset[] = [];
   fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
   now = Date.now();
 
@@ -183,6 +193,12 @@ export class AssetsComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
 
   constructor() {
+    // `sort` is only present in list layout — re-bind whenever the table (and its
+    // llTableSort directive) is created/destroyed by the list/grid toggle.
+    effect(() => {
+      this.dataSource.sort = this.sort() ?? null;
+    });
+
     toObservable(this.spaceStore.assetPath)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
@@ -191,12 +207,8 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: assets => {
-          this.assets = assets;
-          this.dataSource = new MatTableDataSource<Asset>(assets);
-          this.dataSource.sort = this.sort() || null;
-          this.dataSource.paginator = this.paginator();
+          this.assets.set(assets);
           this.isLoading.set(false);
-          this.cd.markForCheck();
         },
       });
   }
@@ -225,6 +237,10 @@ export class AssetsComponent implements OnInit {
           this.notificationService.error(`Asset can not be uploaded.`);
         },
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.paginator = this.paginator();
   }
 
   onFileUpload(event: Event): void {
@@ -318,7 +334,7 @@ export class AssetsComponent implements OnInit {
       .open<AddFolderDialogComponent, AddFolderDialogModel, AssetFolderCreate>(AddFolderDialogComponent, {
         panelClass: 'sm',
         data: {
-          reservedNames: this.assets.map(it => it.name),
+          reservedNames: this.assets().map(it => it.name),
         },
       })
       .afterClosed()
@@ -349,7 +365,7 @@ export class AssetsComponent implements OnInit {
       .open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdateForm>(EditFolderDialogComponent, {
         panelClass: 'sm',
         data: {
-          reservedNames: this.assets.map(it => it.name),
+          reservedNames: this.assets().map(it => it.name),
           asset: ObjectUtils.clone(element) as AssetFolder,
         },
       })
@@ -360,7 +376,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success('Folder has been updated.');
         },
         error: () => {
@@ -374,7 +389,7 @@ export class AssetsComponent implements OnInit {
       .open<EditFileDialogComponent, EditFileDialogModel, AssetFileUpdateForm>(EditFileDialogComponent, {
         panelClass: 'sm',
         data: {
-          reservedNames: this.assets.map(it => it.name),
+          reservedNames: this.assets().map(it => it.name),
           asset: ObjectUtils.clone(element) as AssetFile,
         },
       })
@@ -385,7 +400,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success('File has been updated.');
         },
         error: () => {
@@ -418,7 +432,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success(`Asset '${element.name}' has been deleted.`);
         },
         error: (err: unknown) => {
@@ -443,7 +456,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success('Asset has been moved.');
         },
         error: () => {
@@ -572,7 +584,6 @@ export class AssetsComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.cd.markForCheck();
           this.notificationService.success('Assets Regenerate Metadata Task has been created.', {
             action: {
               type: 'route',

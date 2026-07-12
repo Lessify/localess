@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
@@ -27,9 +28,9 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
   styleUrls: ['./locales.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
+    LlTableImports,
+    LlPaginatorImports,
+    LlFilterToolbarImports,
     HlmProgressImports,
     HlmButtonImports,
     HlmIconImports,
@@ -46,24 +47,28 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
     }),
   ],
 })
-export class LocalesComponent {
+export class LocalesComponent implements AfterViewInit {
   readonly localeService = inject(LocaleService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly injector = inject(Injector);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild.required(TableSort);
+  paginator = viewChild.required(Paginator);
 
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
-  dataSource: MatTableDataSource<Locale> = new MatTableDataSource<Locale>([]);
+  private readonly locales = signal<Locale[]>([]);
+  readonly dataSource = new TableDataSource<Locale>(this.locales, this.injector);
   displayedColumns: string[] = ['id', 'name', 'isTranslatable', 'isFallback', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.dataSource.filterPredicate = FilterPredicateUtils.create<Locale>({
+      searchFields: locale => [locale.id, locale.name],
+    });
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
@@ -71,13 +76,19 @@ export class LocalesComponent {
       )
       .subscribe({
         next: space => {
-          this.dataSource = new MatTableDataSource<Locale>(space!.locales);
-          this.dataSource.sort = this.sort();
-          this.dataSource.paginator = this.paginator();
+          this.locales.set(space!.locales);
           this.isLoading.set(false);
-          this.cd.markForCheck();
         },
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
+  }
+
+  onFilterChange(value: FilterToolbarValue): void {
+    this.dataSource.filter = JSON.stringify(value);
   }
 
   openAddDialog(): void {
@@ -119,11 +130,7 @@ export class LocalesComponent {
       )
       .subscribe({
         next: () => {
-          const idx: number = this.dataSource.data.findIndex(x => x.id === element.id);
-          if (idx !== -1) {
-            this.dataSource.data.splice(idx, 1);
-            this.dataSource._updateChangeSubscription();
-          }
+          this.locales.update(locales => locales.filter(x => x.id !== element.id));
           this.notificationService.success(`Locale '${element.name}' has been deleted.`);
         },
         error: () => {

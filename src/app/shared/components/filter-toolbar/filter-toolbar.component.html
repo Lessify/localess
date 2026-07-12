@@ -1,0 +1,53 @@
+<div class="flex flex-wrap items-center gap-2" [formGroup]="form">
+  @if (searchEnabled()) {
+    <div hlmInputGroup class="w-full sm:w-64">
+      <input hlmInputGroupInput [placeholder]="searchPlaceholder()" formControlName="search" type="search" />
+      <div hlmInputGroupAddon>
+        <ng-icon name="lucideSearch" />
+      </div>
+    </div>
+  }
+  @for (def of filters(); track def.key) {
+    <hlm-popover #pop="brnPopover" sideOffset="5">
+      <div hlmButtonGroup>
+        <button hlmPopoverTrigger hlmBtn variant="outline" class="border-dashed">
+          <ng-icon name="lucideCirclePlus" />
+          {{ def.label }}
+        </button>
+        @if (def.mode === 'multiple') {
+          @if (selectedCount(def) > 0) {
+            <div hlmButtonGroupText>
+              <span hlmBadge variant="secondary">{{ selectedCount(def) }}</span>
+            </div>
+          }
+        } @else {
+          @if (selectedOptionLabel(def); as label) {
+            <div hlmButtonGroupText>
+              <span hlmBadge variant="secondary">{{ label }}</span>
+            </div>
+          }
+        }
+      </div>
+      <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
+        <hlm-command-input [placeholder]="'Search ' + def.label.toLowerCase() + '...'" />
+        <div *hlmCommandEmptyState hlmCommandEmpty>No results found.</div>
+        <hlm-command-list>
+          <hlm-command-group>
+            @for (option of def.options; track option.value) {
+              <button hlm-command-item [value]="option.value" (selected)="select(def, option.value); def.mode === 'single' && pop.close()">
+                <hlm-checkbox class="mr-2" [checked]="isSelected(def, option.value)" />
+                <span>{{ option.label }}</span>
+              </button>
+            }
+          </hlm-command-group>
+        </hlm-command-list>
+      </hlm-command>
+    </hlm-popover>
+  }
+  @if (hasActiveValues()) {
+    <button hlmBtn variant="outline" (click)="reset()">
+      Reset
+      <ng-icon name="lucideX" class="ml-2" />
+    </button>
+  }
+</div>

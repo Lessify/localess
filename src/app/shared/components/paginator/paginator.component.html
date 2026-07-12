@@ -1,0 +1,67 @@
+<div class="bg-background flex items-center justify-between gap-4 py-2">
+  <span class="text-muted-foreground text-sm">{{ length() }} total items</span>
+  <div class="flex items-center gap-8">
+    @if (!hidePageSize()) {
+      <div class="flex items-center gap-2">
+        <span class="text-muted-foreground text-sm">Rows per page</span>
+        <hlm-select [value]="pageSize()" [disabled]="disabled()" (valueChange)="onPageSizeChange($event)">
+          <hlm-select-trigger class="w-20">
+            <hlm-select-value />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (option of pageSizeOptions(); track option) {
+              <hlm-select-item [value]="option">{{ option }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
+    }
+    <span class="text-muted-foreground text-sm" role="status" aria-live="polite">Page {{ pageIndex() + 1 }} of {{ pageCount() }}</span>
+    <div class="flex items-center gap-1">
+      @if (showFirstLastButtons()) {
+        <button
+          hlmBtn
+          variant="outline"
+          size="icon"
+          aria-label="First page"
+          [hlmTooltip]="'First page'"
+          [disabled]="disabled() || isFirstPage()"
+          (click)="firstPage()">
+          <ng-icon hlm size="sm" name="lucideChevronsLeft" />
+        </button>
+      }
+      <button
+        hlmBtn
+        variant="outline"
+        size="icon"
+        aria-label="Previous page"
+        [hlmTooltip]="'Previous page'"
+        [disabled]="disabled() || isFirstPage()"
+        (click)="previousPage()">
+        <ng-icon hlm size="sm" name="lucideChevronLeft" />
+      </button>
+      <button
+        hlmBtn
+        variant="outline"
+        size="icon"
+        aria-label="Next page"
+        [hlmTooltip]="'Next page'"
+        [disabled]="disabled() || isLastPage()"
+        (click)="nextPage()">
+        <ng-icon hlm size="sm" name="lucideChevronRight" />
+      </button>
+      @if (showFirstLastButtons()) {
+        <button
+          hlmBtn
+          variant="outline"
+          size="icon"
+          aria-label="Last page"
+          [hlmTooltip]="'Last page'"
+          [disabled]="disabled() || isLastPage()"
+          (click)="lastPage()">
+          <ng-icon hlm size="sm" name="lucideChevronsRight" />
+        </button>
+      }
+    </div>
+  </div>
+</div>

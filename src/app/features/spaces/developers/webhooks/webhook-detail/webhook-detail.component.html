@@ -64,326 +64,238 @@
     <!-- Logs table -->
     <div>
       <h3 class="mb-2 font-semibold">Logs</h3>
-      <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <!-- SEARCH BY ID -->
-        <input
-          hlmInput
-          class="h-8 w-full md:w-80"
-          placeholder="Search by ID..."
-          type="search"
-          [value]="searchId()"
-          (input)="onSearchChange($any($event.target).value)" />
-
-        <!-- EVENT TYPE FILTER -->
-        <hlm-popover sideOffset="5" align="start">
-          <div hlmButtonGroup>
-            <button hlmBtn hlmPopoverTrigger variant="outline" size="sm" class="border-dashed">
-              <ng-icon hlm name="lucideCirclePlus" size="sm" class="mr-2" />
-              Event Type
-            </button>
-            @if (eventFilter().length > 0) {
-              <div class="flex items-center gap-1 rounded-md border border-dashed px-2 shadow-xs">
-                <span hlmBadge variant="secondary">{{ eventFilter().length }}</span>
-              </div>
-            }
-          </div>
-          <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[250px] p-0">
-            <hlm-command-input placeholder="Filter event..." />
-            <div *hlmCommandEmptyState hlmCommandEmpty>No results found.</div>
-            <hlm-command-list>
-              <hlm-command-group>
-                @for (event of webhookEvents; track event) {
-                  <button hlm-command-item [value]="event" (selected)="toggleEventFilter(event)">
-                    <span>{{ event }}</span>
-                    <ng-icon hlm size="sm" class="ml-auto" [class.opacity-0]="!isEventSelected(event)" name="lucideCheck" hlmCommandIcon />
-                  </button>
-                }
-              </hlm-command-group>
-            </hlm-command-list>
-          </hlm-command>
-        </hlm-popover>
-
-        <!-- STATUS FILTER -->
-        <hlm-popover sideOffset="5" align="start">
-          <div hlmButtonGroup>
-            <button hlmBtn hlmPopoverTrigger variant="outline" size="sm" class="border-dashed">
-              <ng-icon hlm name="lucideCirclePlus" size="sm" class="mr-2" />
-              Status
-            </button>
-            @if (statusFilter().length > 0) {
-              <div class="flex items-center gap-1 rounded-md border border-dashed px-2 shadow-xs">
-                <span hlmBadge variant="secondary">{{ statusFilter().length }}</span>
-              </div>
-            }
-          </div>
-          <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
-            <hlm-command-list>
-              <hlm-command-group>
-                @for (status of webhookStatuses; track status) {
-                  <button hlm-command-item [value]="status" (selected)="toggleStatusFilter(status)">
-                    <span class="capitalize">{{ status }}</span>
-                    <ng-icon
-                      hlm
-                      size="sm"
-                      class="ml-auto"
-                      [class.opacity-0]="!isStatusSelected(status)"
-                      name="lucideCheck"
-                      hlmCommandIcon />
-                  </button>
-                }
-              </hlm-command-group>
-            </hlm-command-list>
-          </hlm-command>
-        </hlm-popover>
-
-        @if (hasActiveFilters()) {
-          <button hlmBtn variant="outline" size="sm" (click)="resetFilters()">
-            Reset
-            <ng-icon hlm name="lucideX" size="sm" class="ml-2" />
-          </button>
-        }
-      </div>
+      <ll-filter-toolbar class="mb-3" searchPlaceholder="Search by ID..." [filters]="filters" (filterChange)="onFilterChange($event)" />
       @if (isLogsLoading()) {
         <hlm-progress class="h-0.5">
           <hlm-progress-indicator />
         </hlm-progress>
       }
-      <div hlmTableContainer class="rounded-md border">
-        <table hlmTable class="w-full">
-          <thead hlmTHead>
-            <tr hlmTr>
-              <th hlmTh class="w-10"></th>
-              <th hlmTh>ID</th>
-              <th hlmTh>Event Type</th>
-              <th hlmTh>Status</th>
-              <th hlmTh>Duration</th>
-              <th hlmTh>Created At</th>
-            </tr>
-          </thead>
-          <tbody hlmTBody>
-            @for (log of pagedLogs(); track log.id) {
-              <tr hlmTr class="cursor-pointer" (click)="toggleLogExpanded(log.id)">
-                <td hlmTd class="w-10">
-                  <ng-icon
-                    hlm
-                    size="sm"
-                    name="lucideChevronRight"
-                    class="text-muted-foreground transition-transform"
-                    [class.rotate-90]="isLogExpanded(log.id)" />
-                </td>
-                <td hlmTd class="font-mono text-xs">{{ log.id }}</td>
-                <td hlmTd>
-                  <span hlmBadge variant="outline">{{ log.event }}</span>
-                </td>
-                <td hlmTd>
-                  @if (log.status === WebHookStatus.SUCCESS) {
-                    <span hlmBadge>Success</span>
-                  } @else {
-                    <span hlmBadge variant="destructive">Failure</span>
-                  }
-                </td>
-                <td hlmTd>{{ log.duration | timeDuration: 'ms' }}</td>
-                <td hlmTd [hlmTooltip]="log.createdAt?.toDate() | date: 'medium'">
-                  {{ log.createdAt?.toDate() | date: 'MMM dd, HH:mm:ss' }}
-                </td>
-              </tr>
-              @if (isLogExpanded(log.id)) {
-                <tr hlmTr class="bg-muted/30 hover:bg-muted/30">
-                  <td hlmTd colspan="6" class="p-4">
-                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          ID
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="The unique identifier of this log entry stored in Firestore." />
-                        </dt>
-                        <dd class="font-mono text-xs break-all">{{ log.id }}</dd>
-                      </div>
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Delivery ID
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="A unique ID assigned to each delivery attempt, useful for tracing a specific request end-to-end." />
-                        </dt>
-                        <dd class="font-mono text-xs break-all">{{ log.deliveryId ?? '—' }}</dd>
-                      </div>
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Event Type
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="The event that triggered this webhook delivery (e.g. content.published, translation.changed)." />
-                        </dt>
-                        <dd>{{ log.event }}</dd>
-                      </div>
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Status
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="Whether the delivery succeeded (the target server responded with a 2xx code) or failed." />
-                        </dt>
-                        <dd>
-                          @if (log.status === WebHookStatus.SUCCESS) {
-                            <span hlmBadge>Success</span>
-                          } @else {
-                            <span hlmBadge variant="destructive">Failure</span>
-                          }
-                        </dd>
-                      </div>
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Error Type
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="The category of failure: 'http' means the server replied with an error code, 'timeout' means no response was received in time, 'network' means the request could not be sent (e.g. DNS failure, connection refused)." />
-                        </dt>
-                        <dd>
-                          @if (log.errorType) {
-                            <span hlmBadge variant="outline" class="capitalize">{{ log.errorType }}</span>
-                          } @else {
-                            —
-                          }
-                        </dd>
-                      </div>
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Status Code
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="The HTTP status code and reason phrase returned by the target server. Only present for 'http' error type or successful deliveries." />
-                        </dt>
-                        <dd>{{ log.statusCode ?? '—' }}{{ log.statusText ? ' ' + log.statusText : '' }}</dd>
-                      </div>
-                      <div class="sm:col-span-2 lg:col-span-3">
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Target URL
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            size="xs"
-                            hlmTooltip="The endpoint URL that this webhook delivery was sent to." />
-                        </dt>
-                        <dd class="font-mono text-xs break-all">{{ log.url ?? '—' }}</dd>
-                      </div>
-                      <div class="sm:col-span-2 lg:col-span-3">
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Payload Data
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="The event-specific data included in the request body (e.g. content ID and slug for content events)." />
-                        </dt>
-                        <dd>
-                          <pre class="bg-muted mt-1 overflow-x-auto rounded-md p-3 font-mono text-xs">{{ log.data | json }}</pre>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Request Size
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="The size of the JSON request body sent to the target server, in bytes." />
-                        </dt>
-                        <dd>{{
-                          log.requestSize !== undefined && log.requestSize !== null ? (log.requestSize | number) + ' bytes' : '—'
-                        }}</dd>
-                      </div>
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Duration
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="How long the delivery attempt took from sending the request to receiving the full response (or hitting a timeout)." />
-                        </dt>
-                        <dd>{{ log.duration | timeDuration: 'ms' }}</dd>
-                      </div>
-                      <div>
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Created At
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="The timestamp when this delivery attempt was made and the log entry was recorded." />
-                        </dt>
-                        <dd>{{ log.createdAt?.toDate() | date: 'medium' }}</dd>
-                      </div>
-                      @if (log.responseBody) {
-                        <div class="sm:col-span-2 lg:col-span-3">
-                          <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                            Response Body
-                            <ng-icon
-                              hlm
-                              size="xs"
-                              name="lucideInfo"
-                              hlmTooltip="The raw body returned by the target server. Large responses are automatically truncated to save storage." />
-                            @if (log.responseBodyTruncated) {
-                              <span hlmBadge variant="outline" class="ml-1">truncated</span>
-                            }
-                          </dt>
-                          <dd class="bg-muted mt-1 max-h-60 overflow-auto rounded-md p-2 font-mono text-xs break-all whitespace-pre-wrap">
-                            {{ log.responseBody }}
-                          </dd>
-                        </div>
-                      }
-                      <div class="sm:col-span-2 lg:col-span-3">
-                        <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                          Error Details
-                          <ng-icon
-                            hlm
-                            size="xs"
-                            name="lucideInfo"
-                            hlmTooltip="A human-readable error message describing why the delivery failed. Present for 'timeout' and 'network' failures; absent when the server returned an HTTP error code." />
-                        </dt>
-                        @if (log.errorMessage) {
-                          <dd
-                            class="text-destructive bg-destructive/10 mt-1 rounded-md p-2 font-mono text-xs break-all whitespace-pre-wrap">
-                            {{ log.errorMessage }}
-                          </dd>
-                        } @else {
-                          <dd class="text-muted-foreground">No errors.</dd>
-                        }
-                      </div>
-                    </dl>
-                  </td>
-                </tr>
+      <div llTableContainer>
+        <table ll-table [dataSource]="dataSource" [multiTemplateDataRows]="true">
+          <ng-container llColumnDef="expand" llColumnDefClass="w-10">
+            <th llHeaderCell *llHeaderCellDef></th>
+            <td llCell *llCellDef="let element">
+              <ng-icon
+                hlm
+                size="sm"
+                name="lucideChevronRight"
+                class="text-muted-foreground transition-transform"
+                [class.rotate-90]="isLogExpanded(element.id)" />
+            </td>
+          </ng-container>
+          <ng-container llColumnDef="id">
+            <th llHeaderCell *llHeaderCellDef>ID</th>
+            <td llCell *llCellDef="let element" class="font-mono text-xs">{{ element.id }}</td>
+          </ng-container>
+          <ng-container llColumnDef="event">
+            <th llHeaderCell *llHeaderCellDef>Event Type</th>
+            <td llCell *llCellDef="let element">
+              <span hlmBadge variant="outline">{{ element.event }}</span>
+            </td>
+          </ng-container>
+          <ng-container llColumnDef="status">
+            <th llHeaderCell *llHeaderCellDef>Status</th>
+            <td llCell *llCellDef="let element">
+              @if (element.status === WebHookStatus.SUCCESS) {
+                <span hlmBadge>Success</span>
+              } @else {
+                <span hlmBadge variant="destructive">Failure</span>
               }
-            } @empty {
-              <tr hlmTr>
-                <td hlmTd colspan="6" class="text-muted-foreground py-6 text-center">No logs available.</td>
-              </tr>
-            }
-          </tbody>
+            </td>
+          </ng-container>
+          <ng-container llColumnDef="duration">
+            <th llHeaderCell *llHeaderCellDef>Duration</th>
+            <td llCell *llCellDef="let element">{{ element.duration | timeDuration: 'ms' }}</td>
+          </ng-container>
+          <ng-container llColumnDef="createdAt">
+            <th llHeaderCell *llHeaderCellDef>Created At</th>
+            <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
+              {{ element.createdAt?.toDate() | date: 'MMM dd, HH:mm:ss' }}
+            </td>
+          </ng-container>
+          <ng-container llColumnDef="expandedDetail">
+            <td llCell *llCellDef="let element" class="overflow-visible! p-4 whitespace-normal!" [attr.colspan]="displayedColumns.length">
+              <dl class="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    ID
+                    <ng-icon hlm size="xs" name="lucideInfo" hlmTooltip="The unique identifier of this log entry stored in Firestore." />
+                  </dt>
+                  <dd class="font-mono text-xs break-all">{{ element.id }}</dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Delivery ID
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="A unique ID assigned to each delivery attempt, useful for tracing a specific request end-to-end." />
+                  </dt>
+                  <dd class="font-mono text-xs break-all">{{ element.deliveryId ?? '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Event Type
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="The event that triggered this webhook delivery (e.g. content.published, translation.changed)." />
+                  </dt>
+                  <dd>{{ element.event }}</dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Status
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="Whether the delivery succeeded (the target server responded with a 2xx code) or failed." />
+                  </dt>
+                  <dd>
+                    @if (element.status === WebHookStatus.SUCCESS) {
+                      <span hlmBadge>Success</span>
+                    } @else {
+                      <span hlmBadge variant="destructive">Failure</span>
+                    }
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Error Type
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="The category of failure: 'http' means the server replied with an error code, 'timeout' means no response was received in time, 'network' means the request could not be sent (e.g. DNS failure, connection refused)." />
+                  </dt>
+                  <dd>
+                    @if (element.errorType) {
+                      <span hlmBadge variant="outline" class="capitalize">{{ element.errorType }}</span>
+                    } @else {
+                      —
+                    }
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Status Code
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="The HTTP status code and reason phrase returned by the target server. Only present for 'http' error type or successful deliveries." />
+                  </dt>
+                  <dd>{{ element.statusCode ?? '—' }}{{ element.statusText ? ' ' + element.statusText : '' }}</dd>
+                </div>
+                <div class="sm:col-span-2 lg:col-span-3">
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Target URL
+                    <ng-icon hlm size="xs" name="lucideInfo" hlmTooltip="The endpoint URL that this webhook delivery was sent to." />
+                  </dt>
+                  <dd class="font-mono text-xs break-all">{{ element.url ?? '—' }}</dd>
+                </div>
+                <div class="sm:col-span-2 lg:col-span-3">
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Payload Data
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="The event-specific data included in the request body (e.g. content ID and slug for content events)." />
+                  </dt>
+                  <dd>
+                    <pre class="bg-muted mt-1 overflow-x-auto rounded-md p-3 font-mono text-xs">{{ element.data | json }}</pre>
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Request Size
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="The size of the JSON request body sent to the target server, in bytes." />
+                  </dt>
+                  <dd>{{
+                    element.requestSize !== undefined && element.requestSize !== null ? (element.requestSize | number) + ' bytes' : '—'
+                  }}</dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Duration
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="How long the delivery attempt took from sending the request to receiving the full response (or hitting a timeout)." />
+                  </dt>
+                  <dd>{{ element.duration | timeDuration: 'ms' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Created At
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="The timestamp when this delivery attempt was made and the log entry was recorded." />
+                  </dt>
+                  <dd>{{ element.createdAt?.toDate() | date: 'medium' }}</dd>
+                </div>
+                @if (element.responseBody) {
+                  <div class="sm:col-span-2 lg:col-span-3">
+                    <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                      Response Body
+                      <ng-icon
+                        hlm
+                        size="xs"
+                        name="lucideInfo"
+                        hlmTooltip="The raw body returned by the target server. Large responses are automatically truncated to save storage." />
+                      @if (element.responseBodyTruncated) {
+                        <span hlmBadge variant="outline" class="ml-1">truncated</span>
+                      }
+                    </dt>
+                    <dd class="bg-muted mt-1 max-h-60 overflow-auto rounded-md p-2 font-mono text-xs break-all whitespace-pre-wrap">
+                      {{ element.responseBody }}
+                    </dd>
+                  </div>
+                }
+                <div class="sm:col-span-2 lg:col-span-3">
+                  <dt class="text-muted-foreground flex items-center gap-1 text-xs font-medium">
+                    Error Details
+                    <ng-icon
+                      hlm
+                      size="xs"
+                      name="lucideInfo"
+                      hlmTooltip="A human-readable error message describing why the delivery failed. Present for 'timeout' and 'network' failures; absent when the server returned an HTTP error code." />
+                  </dt>
+                  @if (element.errorMessage) {
+                    <dd class="text-destructive bg-destructive/10 mt-1 rounded-md p-2 font-mono text-xs break-all whitespace-pre-wrap">
+                      {{ element.errorMessage }}
+                    </dd>
+                  } @else {
+                    <dd class="text-muted-foreground">No errors.</dd>
+                  }
+                </div>
+              </dl>
+            </td>
+          </ng-container>
+          <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr ll-row *llRowDef="let row; columns: displayedColumns" class="cursor-pointer" (click)="toggleLogExpanded(row.id)"></tr>
+          <tr
+            ll-row
+            *llRowDef="let row; columns: ['expandedDetail']"
+            class="bg-muted/30 hover:bg-muted/30"
+            [class.hidden]="!isLogExpanded(row.id)"></tr>
+          <tr *llNoDataRow>
+            <td [attr.colspan]="displayedColumns.length">No logs available.</td>
+          </tr>
         </table>
       </div>
-      <hlm-numbered-pagination
-        [showEdges]="true"
-        [currentPage]="currentPage()"
-        (currentPageChange)="currentPage.set($event)"
-        [itemsPerPage]="itemsPerPage()"
-        (itemsPerPageChange)="itemsPerPage.set($event)"
-        [totalItems]="totalItems()" />
+      <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
     </div>
   </div>
 }

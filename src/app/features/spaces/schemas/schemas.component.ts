@@ -1,58 +1,55 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   computed,
   DestroyRef,
   inject,
+  Injector,
   input,
   OnInit,
+  Signal,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
+import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
-  lucideCheck,
-  lucideCirclePlus,
   lucideCloudDownload,
   lucideEllipsisVertical,
   lucideFileBox,
   lucideList,
   lucidePlus,
   lucideReplace,
-  lucideSearch,
   lucideTrash,
   lucideUploadCloud,
   lucideWorkflow,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  FilterDef,
+  FilterOption,
+  FilterToolbarValue,
+  LlFilterToolbarImports,
+} from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
-import { BrnPopoverImports } from '@spartan-ng/brain/popover';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
-import { HlmCommandImports } from '@spartan-ng/helm/command';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
-import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
-import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { debounceTime } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
@@ -71,22 +68,15 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
   imports: [
     CanUserPerformPipe,
     CommonModule,
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
-    ReactiveFormsModule,
+    LlTableImports,
+    LlPaginatorImports,
+    LlFilterToolbarImports,
     HlmButtonImports,
     HlmIconImports,
     HlmDropdownMenuImports,
     HlmProgressImports,
     HlmTooltipImports,
     HlmBadgeImports,
-    HlmButtonGroupImports,
-    HlmCommandImports,
-    HlmFieldImports,
-    BrnPopoverImports,
-    HlmPopoverImports,
-    HlmInputGroupImports,
   ],
   providers: [
     provideIcons({
@@ -96,66 +86,71 @@ import { ImportDialogReturn } from './import-dialog/import-dialog.model';
       lucideUploadCloud,
       lucideTrash,
       lucideReplace,
-      lucideSearch,
-      lucideCirclePlus,
-      lucideCheck,
       lucideList,
       lucideFileBox,
       lucideWorkflow,
     }),
   ],
 })
-export class SchemasComponent implements OnInit {
+export class SchemasComponent implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
-  private readonly fb = inject(FormBuilder);
+  private readonly injector = inject(Injector);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild.required(TableSort);
+  paginator = viewChild.required(Paginator);
 
   // Inputs
   spaceId = input.required<string>();
 
   schemaTypeDescriptions = schemaTypeDescriptions;
 
-  dataSource: MatTableDataSource<Schema> = new MatTableDataSource<Schema>([]);
   displayedColumns: string[] = ['type', 'name', 'description', 'labels', /*'createdAt',*/ 'updatedAt', 'actions'];
   schemas = signal<Schema[]>([]);
+  readonly dataSource = new TableDataSource<Schema>(this.schemas, this.injector);
   schemaIds = computed(() => this.schemas().map(it => it.id));
   schemasInUse = computed(() => this.inUseSchema(this.schemas()));
 
   private destroyRef = inject(DestroyRef);
 
   // Loading
-  isLoading = true;
-
-  // Form
-  filterForm = this.fb.group({
-    search: this.fb.control<string>('', []),
-    labels: this.fb.control<string[]>([], []),
-  });
+  isLoading = signal(true);
 
   //Labels
-  allLabels = computed(() => {
+  readonly labelOptions: Signal<FilterOption[]> = computed(() => {
     const tmp = this.schemas()
       .map(it => it.labels)
       .flat()
       .filter(it => it != undefined)
       .map(it => it!);
-    return [...new Set<string>(tmp)];
+    return [...new Set<string>(tmp)].map(label => ({ value: label, label }));
   });
 
+  readonly filters: Signal<FilterDef[]> = computed(() => [
+    { key: 'labels', label: 'Labels', options: this.labelOptions(), mode: 'multiple' },
+  ]);
+
+  selectedLabels = signal<string[]>([]);
+
   ngOnInit(): void {
-    this.loadData(this.spaceId());
-    this.filterForm.valueChanges.pipe(debounceTime(500)).subscribe({
-      next: value => {
-        this.dataSource.filter = JSON.stringify(value);
-      },
+    this.dataSource.filterPredicate = FilterPredicateUtils.create<Schema>({
+      searchFields: schema => [schema.id, schema.displayName, schema.description],
+      filterFields: [{ key: 'labels', accessor: schema => schema.labels }],
     });
+    this.loadData(this.spaceId());
+  }
+
+  onFilterChange(value: FilterToolbarValue): void {
+    this.selectedLabels.set((value['labels'] as string[]) ?? []);
+    this.dataSource.filter = JSON.stringify(value);
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
   }
 
   loadData(spaceId: string): void {
@@ -165,43 +160,9 @@ export class SchemasComponent implements OnInit {
       .subscribe({
         next: schemas => {
           this.schemas.set(schemas.sort(sortSchema));
-          this.dataSource.data = this.schemas();
-          this.dataSource.filterPredicate = this.schemaFilterPredicate;
-          this.dataSource.sort = this.sort();
-          this.dataSource.paginator = this.paginator();
-          this.isLoading = false;
-          this.cd.markForCheck();
+          this.isLoading.set(false);
         },
       });
-  }
-
-  schemaFilterPredicate(data: Schema, filter: string): boolean {
-    console.log('schemaFilterPredicate', filter);
-    const { search, labels } = JSON.parse(filter);
-    // if search is empty and no labels are selected, return true
-    if ((!search || search.trim() === '') && (!labels || labels.length === 0)) {
-      return true;
-    }
-    // if labels are selected, check if at least one label matches
-    const matchSomeLabel = Array.isArray(labels) ? labels.some((label: string) => data.labels?.includes(label)) : undefined;
-    if (labels && labels.length > 0 && !matchSomeLabel) {
-      return false;
-    }
-    // if search is empty, return true (labels already matched)
-    if (!search || search.trim() === '') {
-      return true;
-    }
-    const searchLower = search.toLowerCase();
-    if (data.id.toLowerCase().includes(searchLower)) {
-      return true;
-    }
-    if (data.displayName?.toLowerCase().includes(searchLower)) {
-      return true;
-    }
-    if (data.description?.toLowerCase().includes(searchLower)) {
-      return true;
-    }
-    return false;
   }
 
   openAddDialog(): void {
@@ -371,14 +332,5 @@ export class SchemasComponent implements OnInit {
       }
     }
     return result;
-  }
-
-  selectLabel(label: string): void {
-    const current = this.filterForm.controls.labels.value || [];
-    if (current.includes(label)) {
-      this.filterForm.controls.labels.setValue(current.filter(l => l !== label));
-    } else {
-      this.filterForm.controls.labels.setValue([...current, label]);
-    }
   }
 }

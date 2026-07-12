@@ -1,11 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  inject,
+  Injector,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
@@ -15,25 +23,25 @@ import {
   lucideMail,
   lucidePencil,
   lucideRefreshCcw,
-  lucideSearch,
+  lucideShieldCheck,
   lucideTrash,
   lucideUserPlus,
   lucideX,
 } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
-import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { debounceTime } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
@@ -48,18 +56,15 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
-    ReactiveFormsModule,
+    LlTableImports,
+    LlPaginatorImports,
+    LlFilterToolbarImports,
     HlmButtonImports,
     HlmIconImports,
     HlmTooltipImports,
     HlmProgressImports,
     HlmSpinnerImports,
     HlmDropdownMenuImports,
-    HlmFieldImports,
-    HlmInputGroupImports,
   ],
   providers: [
     provideIcons({
@@ -73,38 +78,55 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
       lucideEllipsisVertical,
       lucideInfo,
       lucideLock,
-      lucideSearch,
+      lucideShieldCheck,
     }),
   ],
 })
-export class UsersComponent implements OnInit {
+export class UsersComponent implements OnInit, AfterViewInit {
   private readonly dialog = inject(MatDialog);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
   private readonly userService = inject(UserService);
-  private readonly fb = inject(FormBuilder);
+  private readonly injector = inject(Injector);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild.required(TableSort);
+  paginator = viewChild.required(Paginator);
 
   isLoading = signal(true);
   isSyncLoading = signal(false);
-  dataSource: MatTableDataSource<User> = new MatTableDataSource<User>([]);
+  private readonly users = signal<User[]>([]);
+  readonly dataSource = new TableDataSource<User>(this.users, this.injector);
   displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'createdAt', 'updatedAt', 'actions'];
 
-  filterForm = this.fb.group({
-    search: this.fb.control<string>('', []),
-  });
+  readonly filters: FilterDef[] = [
+    {
+      key: 'active',
+      label: 'Active',
+      mode: 'single',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+      ],
+    },
+  ];
 
   private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    this.loadData();
-    this.filterForm.valueChanges.pipe(debounceTime(300)).subscribe({
-      next: value => {
-        this.dataSource.filter = (value.search ?? '').toLowerCase();
-      },
+    this.dataSource.filterPredicate = FilterPredicateUtils.create<User>({
+      searchFields: user => [user.email, user.displayName],
+      filterFields: [{ key: 'active', accessor: user => (user.disabled ? 'inactive' : 'active') }],
     });
+    this.loadData();
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
+  }
+
+  onFilterChange(value: FilterToolbarValue): void {
+    this.dataSource.filter = JSON.stringify(value);
   }
 
   loadData(): void {
@@ -113,10 +135,7 @@ export class UsersComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: users => {
-          this.dataSource.data = users;
-          this.dataSource.filterPredicate = this.userFilterPredicate;
-          this.dataSource.sort = this.sort();
-          this.dataSource.paginator = this.paginator();
+          this.users.set(users);
           this.isLoading.set(false);
           this.cd.markForCheck();
         },
@@ -126,10 +145,6 @@ export class UsersComponent implements OnInit {
           this.cd.markForCheck();
         },
       });
-  }
-
-  userFilterPredicate(data: User, filter: string): boolean {
-    return data.email?.toLowerCase().includes(filter) || data.displayName?.toLowerCase().includes(filter) || false;
   }
 
   inviteDialog(): void {

@@ -1,22 +1,26 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  Injector,
+  input,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
+import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
-import {
-  lucideArrowLeft,
-  lucideCheck,
-  lucideChevronRight,
-  lucideCirclePlus,
-  lucideInfo,
-  lucidePencil,
-  lucideSearch,
-  lucideWebhook,
-  lucideWebhookOff,
-  lucideX,
-} from '@ng-icons/lucide';
+import { lucideArrowLeft, lucideChevronRight, lucideInfo, lucidePencil, lucideWebhook, lucideWebhookOff } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@shared/models/webhook.model';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
@@ -24,14 +28,8 @@ import { WebHookService } from '@shared/services/webhook.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
-import { HlmCommandImports } from '@spartan-ng/helm/command';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmInputImports } from '@spartan-ng/helm/input';
-import { HlmPaginationImports } from '@spartan-ng/helm/pagination';
-import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { HlmTableImports } from '@spartan-ng/helm/table';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap } from 'rxjs/operators';
 
@@ -45,80 +43,76 @@ import { WebhookDialogModel } from '../webhook-dialog/webhook-dialog.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
+    LlTableImports,
+    LlPaginatorImports,
+    LlFilterToolbarImports,
     HlmProgressImports,
     HlmBadgeImports,
     HlmButtonImports,
-    HlmButtonGroupImports,
     HlmIconImports,
     HlmTooltipImports,
-    HlmTableImports,
-    HlmPaginationImports,
-    HlmInputImports,
-    HlmPopoverImports,
-    HlmCommandImports,
     TimeDurationPipe,
   ],
   providers: [
     provideIcons({
       lucideArrowLeft,
       lucidePencil,
-      lucideSearch,
-      lucideCirclePlus,
-      lucideCheck,
       lucideChevronRight,
       lucideInfo,
-      lucideX,
       lucideWebhook,
       lucideWebhookOff,
     }),
   ],
 })
-export class WebhookDetailComponent implements OnInit {
+export class WebhookDetailComponent implements OnInit, AfterViewInit {
   private readonly webhookService = inject(WebHookService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly spaceStore = inject(SpaceStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   webhookId = input.required<string>();
+
+  paginator = viewChild.required(Paginator);
 
   isLoading = signal(true);
   isLogsLoading = signal(true);
   webhook = signal<WebHook | undefined>(undefined);
 
-  logs = signal<WebHookLog[]>([]);
-  currentPage = signal(1);
-  itemsPerPage = signal(10);
+  private readonly logs = signal<WebHookLog[]>([]);
+  readonly dataSource = new TableDataSource<WebHookLog>(this.logs, this.injector);
+  displayedColumns: string[] = ['expand', 'id', 'event', 'status', 'duration', 'createdAt'];
 
-  searchId = signal('');
-  eventFilter = signal<WebHookEvent[]>([]);
-  statusFilter = signal<WebHookStatus[]>([]);
   expandedLogs = signal<Set<string>>(new Set());
 
-  readonly webhookEvents = Object.values(WebHookEvent);
-  readonly webhookStatuses = Object.values(WebHookStatus);
   protected readonly WebHookStatus = WebHookStatus;
 
-  hasActiveFilters = computed(() => this.searchId().length > 0 || this.eventFilter().length > 0 || this.statusFilter().length > 0);
+  readonly filters: FilterDef[] = [
+    {
+      key: 'event',
+      label: 'Event Type',
+      mode: 'multiple',
+      options: Object.values(WebHookEvent).map(event => ({ value: event, label: event })),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      mode: 'multiple',
+      options: Object.values(WebHookStatus).map(status => ({ value: status, label: status.charAt(0).toUpperCase() + status.slice(1) })),
+    },
+  ];
 
-  filteredLogs = computed(() => {
-    const id = this.searchId().trim().toLowerCase();
-    const events = this.eventFilter();
-    const statuses = this.statusFilter();
-    return this.logs().filter(log => {
-      if (id && !log.id.toLowerCase().includes(id)) return false;
-      if (events.length > 0 && !events.includes(log.event)) return false;
-      if (statuses.length > 0 && !statuses.includes(log.status)) return false;
-      return true;
+  constructor() {
+    this.dataSource.filterPredicate = FilterPredicateUtils.create<WebHookLog>({
+      searchFields: log => [log.id],
+      filterFields: [
+        { key: 'event', accessor: log => log.event },
+        { key: 'status', accessor: log => log.status },
+      ],
     });
-  });
-
-  totalItems = computed(() => this.filteredLogs().length);
-  pagedLogs = computed(() => {
-    const start = (this.currentPage() - 1) * this.itemsPerPage();
-    return this.filteredLogs().slice(start, start + this.itemsPerPage());
-  });
+  }
 
   ngOnInit(): void {
     const spaceId = this.spaceStore.selectedSpaceId()!;
@@ -137,8 +131,15 @@ export class WebhookDetailComponent implements OnInit {
       .subscribe(logs => {
         this.logs.set(logs);
         this.isLogsLoading.set(false);
-        console.log(logs);
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.paginator = this.paginator();
+  }
+
+  onFilterChange(value: FilterToolbarValue): void {
+    this.dataSource.filter = JSON.stringify(value);
   }
 
   openEditDialog(): void {
@@ -205,38 +206,6 @@ export class WebhookDetailComponent implements OnInit {
   goBack(): void {
     const spaceId = this.spaceStore.selectedSpaceId()!;
     this.router.navigate(['features', 'spaces', spaceId, 'developers', 'webhooks']);
-  }
-
-  onSearchChange(value: string): void {
-    this.searchId.set(value);
-    this.currentPage.set(1);
-  }
-
-  isEventSelected(event: WebHookEvent): boolean {
-    return this.eventFilter().includes(event);
-  }
-
-  toggleEventFilter(event: WebHookEvent): void {
-    const current = this.eventFilter();
-    this.eventFilter.set(current.includes(event) ? current.filter(e => e !== event) : [...current, event]);
-    this.currentPage.set(1);
-  }
-
-  isStatusSelected(status: WebHookStatus): boolean {
-    return this.statusFilter().includes(status);
-  }
-
-  toggleStatusFilter(status: WebHookStatus): void {
-    const current = this.statusFilter();
-    this.statusFilter.set(current.includes(status) ? current.filter(s => s !== status) : [...current, status]);
-    this.currentPage.set(1);
-  }
-
-  resetFilters(): void {
-    this.searchId.set('');
-    this.eventFilter.set([]);
-    this.statusFilter.set([]);
-    this.currentPage.set(1);
   }
 
   isLogExpanded(id: string): boolean {

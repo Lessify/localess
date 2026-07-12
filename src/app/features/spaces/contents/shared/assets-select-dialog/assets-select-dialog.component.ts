@@ -1,11 +1,19 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  Injector,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -22,6 +30,8 @@ import {
   lucideLayoutList,
   lucideUpload,
 } from '@ng-icons/lucide';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Asset, AssetKind } from '@shared/models/asset.model';
 import { AssetFileType, assetFileTypeDescriptions } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -54,12 +64,11 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
   imports: [
     CommonModule,
     MatDialogModule,
-    MatPaginatorModule,
+    LlPaginatorImports,
     CanUserPerformPipe,
-    MatTableModule,
+    LlTableImports,
     TimeDurationPipe,
     FormatFileSizePipe,
-    MatSortModule,
     NgOptimizedImage,
     HlmBreadcrumbImports,
     HlmIconImports,
@@ -88,18 +97,18 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     }),
   ],
 })
-export class AssetsSelectDialogComponent implements OnInit {
+export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   private readonly assetService = inject(AssetService);
   private readonly notificationService = inject(NotificationService);
   readonly fe = inject(FormErrorHandlerService);
-  private readonly cd = inject(ChangeDetectorRef);
+  private readonly injector = inject(Injector);
   data = inject<AssetsSelectDialogModel>(MAT_DIALOG_DATA);
 
-  sort = viewChild(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild(TableSort);
+  paginator = viewChild.required(Paginator);
 
-  assets: Asset[] = [];
-  dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>([]);
+  private readonly assets = signal<Asset[]>([]);
+  readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'updatedAt'];
   selection = new SelectionModel<Asset>(this.data.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   assetPath: PathItem[] = [];
@@ -130,6 +139,12 @@ export class AssetsSelectDialogComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
 
   constructor() {
+    // `sort` is only present in list layout — re-bind whenever the table (and its
+    // llTableSort directive) is created/destroyed by the list/grid toggle.
+    effect(() => {
+      this.dataSource.sort = this.sort() ?? null;
+    });
+
     this.path$
       .asObservable()
       .pipe(
@@ -141,14 +156,14 @@ export class AssetsSelectDialogComponent implements OnInit {
       )
       .subscribe({
         next: assets => {
-          this.assets = assets;
-          this.dataSource = new MatTableDataSource<Asset>(assets);
-          this.dataSource.sort = this.sort() || null;
-          this.dataSource.paginator = this.paginator();
+          this.assets.set(assets);
           this.isLoading.set(false);
-          this.cd.markForCheck();
         },
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.paginator = this.paginator();
   }
 
   ngOnInit(): void {

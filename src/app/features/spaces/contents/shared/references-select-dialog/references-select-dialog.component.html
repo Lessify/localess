@@ -25,65 +25,69 @@
   </ol>
 </nav>
 <mat-dialog-content>
-  <mat-table [dataSource]="dataSource" matSort>
-    <!-- Checkbox Column -->
-    <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef> #</mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        @if (row.kind === 'DOCUMENT') {
-          <hlm-checkbox (click)="$event.stopPropagation()" [checked]="selection.isSelected(row)" (checkedChange)="selection.toggle(row)" />
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="status">
-      <mat-header-cell *matHeaderCellDef> Status</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @switch (element.kind) {
-          @case ('DOCUMENT') {
-            <ll-document-status [updatedAt]="element.updatedAt.seconds" [publishedAt]="element.publishedAt?.seconds" />
+  <div llTableContainer>
+    <table ll-table [dataSource]="dataSource" llTableSort>
+      <!-- Checkbox Column -->
+      <ng-container llColumnDef="select">
+        <th llHeaderCell *llHeaderCellDef>#</th>
+        <td llCell *llCellDef="let row">
+          @if (row.kind === 'DOCUMENT') {
+            <hlm-checkbox
+              (click)="$event.stopPropagation()"
+              [checked]="selection.isSelected(row)"
+              (checkedChange)="selection.toggle(row)" />
           }
-          @case ('FOLDER') {
-            <ng-icon hlm name="lucideFolder" />
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="status">
+        <th llHeaderCell *llHeaderCellDef>Status</th>
+        <td llCell *llCellDef="let element">
+          @switch (element.kind) {
+            @case ('DOCUMENT') {
+              <ll-document-status [updatedAt]="element.updatedAt.seconds" [publishedAt]="element.publishedAt?.seconds" />
+            }
+            @case ('FOLDER') {
+              <ng-icon hlm name="lucideFolder" />
+            }
           }
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <div>
-          <div class="line-clamp-1">{{ element.name }}</div>
-          <div class="text-muted-foreground line-clamp-1">#{{ element.slug }}</div>
-        </div>
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="slug">
-      <mat-header-cell *matHeaderCellDef> Slug</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.slug }}</mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="schema">
-      <mat-header-cell *matHeaderCellDef> Schema</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @if (element.kind === 'DOCUMENT') {
-          @if (schemasMapById().get(element.schema); as schema) {
-            {{ schema.displayName || schema.id }}
-          } @else {
-            unknown...
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="name">
+        <th llHeaderCell *llHeaderCellDef>Name</th>
+        <td llCell *llCellDef="let element">
+          <div>
+            <div class="line-clamp-1">{{ element.name }}</div>
+            <div class="text-muted-foreground line-clamp-1">#{{ element.slug }}</div>
+          </div>
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="schema">
+        <th llHeaderCell *llHeaderCellDef>Schema</th>
+        <td llCell *llCellDef="let element">
+          @if (element.kind === 'DOCUMENT') {
+            @if (schemasMapById().get(element.schema); as schema) {
+              {{ schema.displayName || schema.id }}
+            } @else {
+              unknown...
+            }
           }
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
-      </mat-cell>
-    </ng-container>
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="updatedAt">
+        <th llHeaderCell *llHeaderCellDef>Updated At</th>
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        </td>
+      </ng-container>
 
-    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
-  </mat-table>
-  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
+      <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr ll-row *llRowDef="let row; columns: displayedColumns" class="cursor-pointer" (click)="onRowSelect(row)"></tr>
+      <tr *llNoDataRow>
+        <td [attr.colspan]="displayedColumns.length">No content yet.</td>
+      </tr>
+    </table>
+  </div>
+  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="flex gap-2">
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()"

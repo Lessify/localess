@@ -1,6 +1,6 @@
 # Spaces — Schemas Module
 
-> Parent: [Spaces Overview](overview.md) · Related: [Contents](contents.md) · [Concepts — Schema](../../concepts.md)
+> Parent: [Spaces Overview](overview.md) · Related: [Contents](contents.md) · [Concepts — Schema](../../concepts.md) · [Filter Toolbar](../../filter-toolbar.md) · [Table Migration](../../table-migration.md)
 
 ## Purpose
 
@@ -32,14 +32,16 @@ src/app/features/spaces/schemas/
 
 ## SchemasComponent
 
-Displays all schemas in a table, filterable by **type** (`ROOT`, `NODE`, `ENUM`), **labels**, and free-text search.
+Displays all schemas in an `ll-table` (see [Table Migration](../../table-migration.md)), filterable by **labels** (multi-select) and free-text search via an `<ll-filter-toolbar>` (see [Filter Toolbar](../../filter-toolbar.md)) — no page-owned `FormGroup` or hand-written predicate anymore.
 
 **Injected services:** `SchemaService`, `TaskService`, `MatDialog`, `NotificationService`
 
 **Key behaviour:**
 - `loadData()` — fetches all schemas for the space
-- `schemaFilterPredicate()` — multi-criteria filter (search text + label chips)
-- `onRowClick(schema)` — navigates to `edit-comp` or `edit-enum` based on schema type
+- `labelOptions` / `filters` — computed `FilterOption[]`/`FilterDef[]` fed to `<ll-filter-toolbar [filters]="filters()">`
+- `onFilterChange(value)` — receives the toolbar's debounced `FilterToolbarValue`, updates `selectedLabels` (used to highlight matched label badges in the table) and `dataSource.filter`
+- `dataSource.filterPredicate` — set once in `ngOnInit` via `FilterPredicateUtils.create()` (search across id/displayName/description + array-overlap on `labels`)
+- `onRowSelect(schema)` — navigates to `edit-comp` or `edit-enum` based on schema type
 - `openAddDialog()` — create a new schema (pick type: ROOT / NODE / ENUM)
 - `openEditIdDialog(schema)` — rename schema ID (propagates to content that uses it)
 - `openDeleteDialog(schema)` — delete schema (with content impact warning)

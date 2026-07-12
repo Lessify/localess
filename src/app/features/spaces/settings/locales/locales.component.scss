@@ -1,19 +1,19 @@
-table {
-  width: 100%;
-}
-
-mat-header-cell,
-mat-cell {
-  &.mat-column-id {
-    max-width: 100px;
+th,
+td {
+  &.ll-column-id {
+    width: 50px;
+    max-width: 50px;
   }
-  &.mat-column-isTranslatable {
+  &.ll-column-isTranslatable {
+    width: 115px;
     max-width: 115px;
   }
-  &.mat-column-isFallback {
+  &.ll-column-isFallback {
+    width: 90px;
     max-width: 90px;
   }
-  &.mat-column-actions {
-    max-width: 100px;
+  &.ll-column-actions {
+    width: 80px;
+    max-width: 80px;
   }
 }

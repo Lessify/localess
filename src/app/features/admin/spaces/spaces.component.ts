@@ -1,15 +1,16 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
@@ -30,9 +31,9 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
   imports: [
     ClipboardModule,
     CommonModule,
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
+    LlTableImports,
+    LlPaginatorImports,
+    LlFilterToolbarImports,
     HlmButtonImports,
     HlmIconImports,
     HlmProgressImports,
@@ -47,23 +48,36 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
     }),
   ],
 })
-export class SpacesComponent implements OnInit {
+export class SpacesComponent implements OnInit, AfterViewInit {
   private readonly spaceService = inject(SpaceService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly injector = inject(Injector);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild.required(TableSort);
+  paginator = viewChild.required(Paginator);
 
-  isLoading = true;
-  dataSource: MatTableDataSource<Space> = new MatTableDataSource<Space>([]);
+  isLoading = signal(true);
+  private readonly spaces = signal<Space[]>([]);
+  readonly dataSource = new TableDataSource<Space>(this.spaces, this.injector);
   displayedColumns: string[] = ['id', 'name', /*'createdAt',*/ 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
+    this.dataSource.filterPredicate = FilterPredicateUtils.create<Space>({
+      searchFields: space => [space.id, space.name],
+    });
     this.loadData();
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
+  }
+
+  onFilterChange(value: FilterToolbarValue): void {
+    this.dataSource.filter = JSON.stringify(value);
   }
 
   loadData(): void {
@@ -71,11 +85,8 @@ export class SpacesComponent implements OnInit {
       .findAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(response => {
-        this.dataSource = new MatTableDataSource<Space>(response);
-        this.dataSource.sort = this.sort();
-        this.dataSource.paginator = this.paginator();
-        this.isLoading = false;
-        this.cd.markForCheck();
+        this.spaces.set(response);
+        this.isLoading.set(false);
       });
   }
 

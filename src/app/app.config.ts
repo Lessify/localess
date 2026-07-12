@@ -20,6 +20,7 @@ import { provideNativeDateAdapter } from '@angular/material/core';
 import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
 import { CoreModule } from '@core/core.module';
+import { PAGINATOR_DEFAULT_OPTIONS } from '@shared/components/paginator/paginator.component';
 import { provideMarkdown } from 'ngx-markdown';
 
 import { environment } from '../environments/environment';
@@ -98,6 +99,14 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: MAT_PAGINATOR_DEFAULT_OPTIONS,
+      useValue: {
+        pageSize: 20,
+        pageSizeOptions: [10, 20, 50, 100],
+        showFirstLastButtons: true,
+      },
+    },
+    {
+      provide: PAGINATOR_DEFAULT_OPTIONS,
       useValue: {
         pageSize: 20,
         pageSizeOptions: [10, 20, 50, 100],

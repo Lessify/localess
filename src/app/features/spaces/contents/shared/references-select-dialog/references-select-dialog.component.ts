@@ -1,12 +1,13 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   computed,
   DestroyRef,
   inject,
+  Injector,
   OnDestroy,
   OnInit,
   signal,
@@ -14,13 +15,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolder, lucideFolderRoot } from '@ng-icons/lucide';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Content, ContentDocument, ContentKind } from '@shared/models/content.model';
 import { Schema, SchemaType } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
@@ -45,9 +45,8 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatDialogModule,
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
+    LlTableImports,
+    LlPaginatorImports,
     CommonModule,
     HlmBreadcrumbImports,
     HlmButtonImports,
@@ -64,21 +63,21 @@ import { ReferencesSelectDialogModel } from './references-select-dialog.model';
     }),
   ],
 })
-export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
+export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly schemasService = inject(SchemaService);
   private readonly contentService = inject(ContentService);
   readonly fe = inject(FormErrorHandlerService);
-  private readonly cd = inject(ChangeDetectorRef);
+  private readonly injector = inject(Injector);
   data = inject<ReferencesSelectDialogModel>(MAT_DIALOG_DATA);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild.required(TableSort);
+  paginator = viewChild.required(Paginator);
 
   schemas = signal<Schema[]>([]);
   schemasMapById = computed(() => new Map(this.schemas().map(it => [it.id, it])));
   contents = signal<Content[]>([]);
-  dataSource: MatTableDataSource<Content> = new MatTableDataSource<Content>([]);
-  displayedColumns: string[] = ['select', 'status', 'name', 'slug', 'schema', 'updatedAt'];
+  readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
+  displayedColumns: string[] = ['select', 'status', 'name', 'schema', 'updatedAt'];
   selection = new SelectionModel<ContentDocument>(this.data.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   contentPath: PathItem[] = [];
 
@@ -122,13 +121,14 @@ export class ReferencesSelectDialogComponent implements OnInit, OnDestroy {
         next: ([schemas, contents]) => {
           this.schemas.set(schemas);
           this.contents.set(contents);
-          this.dataSource = new MatTableDataSource<Content>(contents);
-          this.dataSource.sort = this.sort();
-          this.dataSource.paginator = this.paginator();
           this.isLoading.set(false);
-          this.cd.markForCheck();
         },
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
   }
 
   navigateToSlug(pathItem: PathItem) {

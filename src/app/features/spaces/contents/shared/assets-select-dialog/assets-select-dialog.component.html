@@ -51,107 +51,109 @@
 </nav>
 <mat-dialog-content>
   @if (settingsStore.assetDialogLayout() === 'list') {
-    <mat-table [dataSource]="dataSource" matSort>
-      <!-- Checkbox Column -->
-      <ng-container matColumnDef="select">
-        <mat-header-cell *matHeaderCellDef> #</mat-header-cell>
-        <mat-cell *matCellDef="let row">
-          @if (row.kind === 'FILE') {
-            <hlm-checkbox
-              (click)="$event.stopPropagation()"
-              [checked]="selection.isSelected(row)"
-              (checkedChange)="selection.toggle(row)" />
-          }
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="icon">
-        <mat-header-cell *matHeaderCellDef> Icon</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          @switch (element.kind) {
-            @case ('FILE') {
-              <ng-icon hlm [name]="fileIcon(element.type)" />
+    <div llTableContainer>
+      <table ll-table [dataSource]="dataSource" llTableSort>
+        <!-- Checkbox Column -->
+        <ng-container llColumnDef="select">
+          <th llHeaderCell *llHeaderCellDef>#</th>
+          <td llCell *llCellDef="let row">
+            @if (row.kind === 'FILE') {
+              <hlm-checkbox
+                (click)="$event.stopPropagation()"
+                [checked]="selection.isSelected(row)"
+                (checkedChange)="selection.toggle(row)" />
             }
-            @case ('FOLDER') {
-              <ng-icon hlm name="lucideFolder" />
-            }
-          }
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="preview">
-        <mat-header-cell *matHeaderCellDef> Preview</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          @if (element.kind === 'FILE' && filePreview(element.type)) {
-            @if (element.inProgress) {
-              <div class="flex aspect-square w-full flex-col place-items-center justify-center">
-                <hlm-spinner />
-                <span>Processing ...</span>
-              </div>
-            } @else {
-              <img
-                class="image-bg rounded-sm border object-contain"
-                width="200"
-                height="200"
-                alt="thumbnail"
-                loading="lazy"
-                [loaderParams]="{ thumbnail: true }"
-                ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
-            }
-          }
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="name">
-        <mat-header-cell *matHeaderCellDef> Name</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          <div>
-            <div class="break-all">{{ element.name }}{{ element.extension }}</div>
-            @if (element.metadata; as metadata) {
-              @if (metadata.width && metadata.height) {
-                <div> W{{ metadata.width }} x H{{ metadata.height }} </div>
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="icon">
+          <th llHeaderCell *llHeaderCellDef>Icon</th>
+          <td llCell *llCellDef="let element">
+            @switch (element.kind) {
+              @case ('FILE') {
+                <ng-icon hlm [name]="fileIcon(element.type)" />
               }
-              @if (metadata.duration; as duration) {
-                <div> Duration: {{ duration | timeDuration }} </div>
+              @case ('FOLDER') {
+                <ng-icon hlm name="lucideFolder" />
               }
             }
-          </div>
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="size">
-        <mat-header-cell *matHeaderCellDef> File Size</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          @if (element.size) {
-            {{ element.size | formatFileSize }}
-          } @else {
-            -
-          }
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="type">
-        <mat-header-cell *matHeaderCellDef> Type</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          @if (element.kind === 'FILE') {
-            @if (element.type) {
-              {{ element.type }}
-            } @else {
-              unknown
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="preview">
+          <th llHeaderCell *llHeaderCellDef>Preview</th>
+          <td llCell *llCellDef="let element">
+            @if (element.kind === 'FILE' && filePreview(element.type)) {
+              @if (element.inProgress) {
+                <div class="flex aspect-square w-full flex-col place-items-center justify-center">
+                  <hlm-spinner />
+                  <span>Processing ...</span>
+                </div>
+              } @else {
+                <img
+                  class="image-bg rounded-sm border object-contain"
+                  width="200"
+                  height="200"
+                  alt="thumbnail"
+                  loading="lazy"
+                  [loaderParams]="{ thumbnail: true }"
+                  ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
+              }
             }
-          } @else {
-            Folder
-          }
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="updatedAt">
-        <mat-header-cell *matHeaderCellDef> Updated At</mat-header-cell>
-        <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
-        </mat-cell>
-      </ng-container>
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="name">
+          <th llHeaderCell *llHeaderCellDef>Name</th>
+          <td llCell *llCellDef="let element">
+            <div>
+              <div class="break-all">{{ element.name }}{{ element.extension }}</div>
+              @if (element.metadata; as metadata) {
+                @if (metadata.width && metadata.height) {
+                  <div> W{{ metadata.width }} x H{{ metadata.height }} </div>
+                }
+                @if (metadata.duration; as duration) {
+                  <div> Duration: {{ duration | timeDuration }} </div>
+                }
+              }
+            </div>
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="size">
+          <th llHeaderCell *llHeaderCellDef>File Size</th>
+          <td llCell *llCellDef="let element">
+            @if (element.size) {
+              {{ element.size | formatFileSize }}
+            } @else {
+              -
+            }
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="type">
+          <th llHeaderCell *llHeaderCellDef>Type</th>
+          <td llCell *llCellDef="let element">
+            @if (element.kind === 'FILE') {
+              @if (element.type) {
+                {{ element.type }}
+              } @else {
+                unknown
+              }
+            } @else {
+              Folder
+            }
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="updatedAt">
+          <th llHeaderCell *llHeaderCellDef>Updated At</th>
+          <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+            {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+          </td>
+        </ng-container>
 
-      <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-      <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></mat-row>
-    </mat-table>
+        <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr ll-row *llRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></tr>
+      </table>
+    </div>
   } @else {
     <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 pb-2">
-      @for (item of dataSource.connect() | async; track item.id) {
+      @for (item of dataSource.renderedData(); track item.id) {
         <hlm-card class="overflow-hidden pt-0">
           <div class="cursor-pointer border-b" aria-hidden="true" (click)="onAssetSelect(item)" (keydown)="onAssetSelect(item)">
             @if (item.kind === 'FILE' && item.inProgress) {
@@ -211,7 +213,7 @@
               <p [hlmTooltip]="item.updatedAt?.toDate() | date: 'medium'"> {{ item.updatedAt?.toDate() | date: 'mediumDate' }} </p>
             </div>
           </hlm-card-header>
-          <hlm-card-footer class="mt-auto justify-end gap-2">
+          <hlm-card-footer class="bg-background! mt-auto justify-end gap-2 p-2!">
             @if (item.kind === 'FILE') {
               <hlm-checkbox [checked]="selection.isSelected(item)" (checkedChange)="selection.toggle(item)" />
             }
@@ -220,7 +222,7 @@
       }
     </div>
   }
-  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
+  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="flex gap-2">
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">

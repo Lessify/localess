@@ -1,14 +1,15 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { isTokenV2, PERMISSION_TEXT, Token, TokenForm, TokenPermission } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
@@ -28,11 +29,11 @@ import { TokenDialogComponent } from './token-dialog/token-dialog.component';
   styleUrls: ['./tokens.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatTableModule,
-    MatSortModule,
+    LlTableImports,
+    LlPaginatorImports,
+    LlFilterToolbarImports,
     ClipboardModule,
-    CommonModule,
-    MatPaginatorModule,
+    DatePipe,
     HlmProgressImports,
     HlmButtonImports,
     HlmIconImports,
@@ -48,24 +49,28 @@ import { TokenDialogComponent } from './token-dialog/token-dialog.component';
     }),
   ],
 })
-export class TokensComponent {
+export class TokensComponent implements AfterViewInit {
   private readonly tokenService = inject(TokenService);
   private readonly dialog = inject(MatDialog);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly injector = inject(Injector);
 
-  sort = viewChild.required(MatSort);
-  paginator = viewChild.required(MatPaginator);
+  sort = viewChild.required(TableSort);
+  paginator = viewChild.required(Paginator);
 
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
-  dataSource: MatTableDataSource<Token> = new MatTableDataSource<Token>([]);
+  private readonly tokens = signal<Token[]>([]);
+  readonly dataSource = new TableDataSource<Token>(this.tokens, this.injector);
   displayedColumns: string[] = ['id', 'name', 'version', 'permissions', 'cacheTtl', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.dataSource.filterPredicate = FilterPredicateUtils.create<Token>({
+      searchFields: token => [token.id, token.name],
+    });
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
@@ -74,13 +79,19 @@ export class TokensComponent {
       )
       .subscribe({
         next: tokens => {
-          this.dataSource = new MatTableDataSource<Token>(tokens);
-          this.dataSource.sort = this.sort();
-          this.dataSource.paginator = this.paginator();
+          this.tokens.set(tokens);
           this.isLoading.set(false);
-          this.cd.markForCheck();
         },
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort();
+    this.dataSource.paginator = this.paginator();
+  }
+
+  onFilterChange(value: FilterToolbarValue): void {
+    this.dataSource.filter = JSON.stringify(value);
   }
 
   openAddDialog(): void {

@@ -1,22 +1,27 @@
-table {
-  width: 100%;
-}
-
-mat-header-cell,
-mat-cell {
-  &.mat-column-id {
+th,
+td {
+  &.ll-column-id {
+    width: 150px;
     max-width: 150px;
   }
-  &.mat-column-permissions {
-    max-width: 115px;
-  }
-  &.mat-column-version {
+  &.ll-column-version {
+    width: 80px;
     max-width: 80px;
   }
-  &.mat-column-updatedAt {
+  &.ll-column-permissions {
+    width: 110px;
+    max-width: 110px;
+  }
+  &.ll-column-cacheTtl {
+    width: 110px;
+    max-width: 110px;
+  }
+  &.ll-column-updatedAt {
+    width: 120px;
     max-width: 120px;
   }
-  &.mat-column-actions {
-    max-width: 150px;
+  &.ll-column-actions {
+    width: 120px;
+    max-width: 120px;
   }
 }

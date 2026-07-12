@@ -9,77 +9,84 @@
     <hlm-progress-indicator />
   </hlm-progress>
 }
-<div>
-  <mat-table [dataSource]="dataSource" matSort>
-    <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="name"> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <div>
-          {{ element.name }} <br />
-          <span class="text-muted-foreground">{{ element.url }}</span>
-        </div>
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="enabled">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="enabled"> Status</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @if (element.enabled) {
-          <span hlmBadge>Enabled</span>
-        } @else {
-          <span hlmBadge variant="secondary">Disabled</span>
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="events">
-      <mat-header-cell *matHeaderCellDef> Events</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @if (element.events && element.events.length > 0) {
-          <span hlmBadge variant="outline" [hlmTooltip]="eventsToText(element.events)">{{ element.events.length }}</span>
-        }
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="actions">
-      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
-          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
-        </button>
-        <ng-template #actionsMenu>
-          <hlm-dropdown-menu>
-            <hlm-dropdown-menu-group>
-              <button hlmDropdownMenuItem (click)="openEditDialog(element)">
-                <ng-icon hlm size="sm" name="lucidePencil" />
-                Edit
-              </button>
-              <button hlmDropdownMenuItem (click)="changeStatus(element)">
-                @if (element.enabled) {
-                  <ng-icon hlm size="sm" name="lucideWebhookOff" />
-                  Disable
-                } @else {
-                  <ng-icon hlm size="sm" name="lucideWebhook" />
-                  Enable
-                }
-              </button>
-            </hlm-dropdown-menu-group>
-            <hlm-dropdown-menu-separator />
-            <hlm-dropdown-menu-group>
-              <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
-                <ng-icon hlm size="sm" name="lucideTrash" />
-                Delete
-              </button>
-            </hlm-dropdown-menu-group>
-          </hlm-dropdown-menu>
-        </ng-template>
-      </mat-cell>
-    </ng-container>
-    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns" class="cursor-pointer" (click)="navigateToDetail(row)"></mat-row>
-  </mat-table>
-  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
+<div class="mx-auto px-2">
+  <ll-filter-toolbar class="mb-3" [filters]="filters" (filterChange)="onFilterChange($event)" />
+  <div llTableContainer>
+    <table ll-table [dataSource]="dataSource" llTableSort>
+      <ng-container llColumnDef="name">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
+        <td llCell *llCellDef="let element">
+          <div>
+            {{ element.name }} <br />
+            <span class="text-muted-foreground">{{ element.url }}</span>
+          </div>
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="enabled">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="enabled">Status</th>
+        <td llCell *llCellDef="let element">
+          @if (element.enabled) {
+            <span hlmBadge>Enabled</span>
+          } @else {
+            <span hlmBadge variant="secondary">Disabled</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="events">
+        <th llHeaderCell *llHeaderCellDef>Events</th>
+        <td llCell *llCellDef="let element">
+          @if (element.events && element.events.length > 0) {
+            <span hlmBadge variant="outline" [hlmTooltip]="eventsToText(element.events)">{{ element.events.length }}</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="updatedAt">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="actions">
+        <th llHeaderCell *llHeaderCellDef>Actions</th>
+        <td llCell *llCellDef="let element">
+          <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+            <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+          </button>
+          <ng-template #actionsMenu>
+            <hlm-dropdown-menu>
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem (click)="openEditDialog(element)">
+                  <ng-icon hlm size="sm" name="lucidePencil" />
+                  Edit
+                </button>
+                <button hlmDropdownMenuItem (click)="changeStatus(element)">
+                  @if (element.enabled) {
+                    <ng-icon hlm size="sm" name="lucideWebhookOff" />
+                    Disable
+                  } @else {
+                    <ng-icon hlm size="sm" name="lucideWebhook" />
+                    Enable
+                  }
+                </button>
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                  Delete
+                </button>
+              </hlm-dropdown-menu-group>
+            </hlm-dropdown-menu>
+          </ng-template>
+        </td>
+      </ng-container>
+      <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr ll-row *llRowDef="let row; columns: displayedColumns" class="cursor-pointer" (click)="navigateToDetail(row)"></tr>
+      <tr *llNoDataRow>
+        <td [attr.colspan]="displayedColumns.length">No webhooks yet.</td>
+      </tr>
+    </table>
+  </div>
+
+  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
 </div>

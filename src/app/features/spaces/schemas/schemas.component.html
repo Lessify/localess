@@ -28,140 +28,93 @@
   }
 </div>
 
-@if (isLoading) {
+@if (isLoading()) {
   <hlm-progress class="h-0.5">
     <hlm-progress-indicator />
   </hlm-progress>
 }
 <div class="mx-auto mt-3 px-2">
-  <form [formGroup]="filterForm">
-    <fieldset hlmFieldSet>
-      <div hlmFieldGroup class="mb-3 grid grid-cols-4 gap-2">
-        <div hlmInputGroup>
-          <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" />
-          <div hlmInputGroupAddon>
-            <ng-icon hlm size="sm" name="lucideSearch" />
+  <ll-filter-toolbar class="mb-3" [filters]="filters()" (filterChange)="onFilterChange($event)" />
+  <div llTableContainer>
+    <table ll-table [dataSource]="dataSource" llTableSort>
+      <ng-container llColumnDef="type">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="type">Type</th>
+        <td llCell *llCellDef="let element">
+          @let descriptor = schemaTypeDescriptions[element.type];
+          <ng-icon hlm size="sm" [name]="descriptor.icon" [hlmTooltip]="descriptor.description" class="mr-2" />
+          {{ descriptor.name }}
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="name">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="displayName">Name</th>
+        <td llCell *llCellDef="let element">
+          <div [title]="element.displayName">
+            <div class="line-clamp-1">{{ element.displayName }}</div>
+            <div class="text-muted-foreground line-clamp-1">#{{ element.id }}</div>
           </div>
-        </div>
-        <div hlmField class="col-span-2">
-          <hlm-popover sideOffset="5">
-            <div hlmButtonGroup>
-              <button class="justify-between" hlmPopoverTrigger hlmBtn variant="outline">
-                <ng-icon hlm size="sm" name="lucideCirclePlus" class="opacity-50" />
-                Labels
-              </button>
-              @let labels = filterForm.controls.labels.value;
-              @if (labels && labels.length > 0) {
-                <div class="flex items-center gap-1 rounded-md border px-2 shadow-xs">
-                  <span hlmBadge variant="secondary">{{ labels.length }}</span>
-                </div>
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="description">
+        <th llHeaderCell *llHeaderCellDef>Description</th>
+        <td llCell *llCellDef="let element">{{ element.description }}</td>
+      </ng-container>
+      <ng-container llColumnDef="labels">
+        <th llHeaderCell *llHeaderCellDef>Labels</th>
+        <td llCell *llCellDef="let element">
+          <div class="flex items-center gap-1 px-2">
+            @for (label of element.labels; track label) {
+              <span hlmBadge [variant]="selectedLabels().includes(label) ? 'secondary' : 'outline'"> {{ label }} </span>
+            }
+          </div>
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="updatedAt">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
+          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="actions">
+        <th llHeaderCell *llHeaderCellDef>Actions</th>
+        <td llCell *llCellDef="let element">
+          <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+            <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+          </button>
+          <ng-template #actionsMenu>
+            @let inUse = schemasInUse()[element.id];
+            <hlm-dropdown-menu [hlmTooltip]="inUse ? 'Used by : \n' + inUse.join('\n ') : ''">
+              @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+                <hlm-dropdown-menu-group>
+                  <button hlmDropdownMenuItem (click)="openEditIdDialog($event, element)" [disabled]="inUse !== undefined">
+                    <ng-icon hlm size="sm" name="lucideReplace" />
+                    Edit ID
+                  </button>
+                </hlm-dropdown-menu-group>
               }
-            </div>
-            <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
-              <hlm-command-input placeholder="Search label..." />
-              <div *hlmCommandEmptyState hlmCommandEmpty>No results found.</div>
-              <hlm-command-list>
-                <hlm-command-group>
-                  @for (label of allLabels(); track label) {
-                    <button hlm-command-item [value]="label" (selected)="selectLabel(label)">
-                      <span>{{ label }}</span>
-                      <ng-icon
-                        hlm
-                        size="sm"
-                        class="ml-auto"
-                        [class.opacity-0]="!filterForm.value.labels?.includes(label)"
-                        name="lucideCheck"
-                        hlmCommandIcon />
-                    </button>
-                  }
-                </hlm-command-group>
-              </hlm-command-list>
-            </hlm-command>
-          </hlm-popover>
-        </div>
-      </div>
-    </fieldset>
-  </form>
-  <mat-table [dataSource]="dataSource" matSort>
-    <ng-container matColumnDef="type">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="type"> Type</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        @let descriptor = schemaTypeDescriptions[element.type];
-        <ng-icon hlm size="sm" [name]="descriptor.icon" [hlmTooltip]="descriptor.description" class="mr-2" />
-        {{ descriptor.name }}
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="displayName"> Name</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <div [title]="element.displayName">
-          <div class="line-clamp-1">{{ element.displayName }}</div>
-          <div class="text-muted-foreground line-clamp-1">#{{ element.id }}</div>
-        </div>
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="description">
-      <mat-header-cell *matHeaderCellDef> Description</mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{ element.description }}</mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="labels">
-      <mat-header-cell *matHeaderCellDef> Labels</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <div class="flex items-center gap-1 px-2">
-          @for (label of element.labels; track label) {
-            <span hlmBadge [variant]="filterForm.controls.labels.value?.includes(label) ? 'secondary' : 'outline'"> {{ label }} </span>
-          }
-        </div>
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="createdAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="createdAt"> Created At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-        {{ element.createdAt?.toDate() | date: 'mediumDate' }}
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt"> Updated At</mat-header-cell>
-      <mat-cell *matCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-        {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
-      </mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="actions">
-      <mat-header-cell mat-header-cell *matHeaderCellDef> Actions</mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
-          <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
-        </button>
-        <ng-template #actionsMenu>
-          @let inUse = schemasInUse()[element.id];
-          <hlm-dropdown-menu [hlmTooltip]="inUse ? 'Used by : \n' + inUse.join('\n ') : ''">
-            @if ('SCHEMA_UPDATE' | canUserPerform | async) {
-              <hlm-dropdown-menu-group>
-                <button hlmDropdownMenuItem (click)="openEditIdDialog($event, element)" [disabled]="inUse !== undefined">
-                  <ng-icon hlm size="sm" name="lucideReplace" />
-                  Edit ID
-                </button>
-              </hlm-dropdown-menu-group>
-            }
-            @if ('SCHEMA_DELETE' | canUserPerform | async) {
-              <hlm-dropdown-menu-separator />
-              <hlm-dropdown-menu-group>
-                <button
-                  hlmDropdownMenuItem
-                  variant="destructive"
-                  (click)="openDeleteDialog($event, element)"
-                  [disabled]="inUse !== undefined">
-                  <ng-icon hlm size="sm" name="lucideTrash" />
-                  Delete
-                </button>
-              </hlm-dropdown-menu-group>
-            }
-          </hlm-dropdown-menu>
-        </ng-template>
-      </mat-cell>
-    </ng-container>
-    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></mat-row>
-  </mat-table>
-  <mat-paginator class="mat-paginator-sticky"></mat-paginator>
+              @if ('SCHEMA_DELETE' | canUserPerform | async) {
+                <hlm-dropdown-menu-separator />
+                <hlm-dropdown-menu-group>
+                  <button
+                    hlmDropdownMenuItem
+                    variant="destructive"
+                    (click)="openDeleteDialog($event, element)"
+                    [disabled]="inUse !== undefined">
+                    <ng-icon hlm size="sm" name="lucideTrash" />
+                    Delete
+                  </button>
+                </hlm-dropdown-menu-group>
+              }
+            </hlm-dropdown-menu>
+          </ng-template>
+        </td>
+      </ng-container>
+      <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr ll-row *llRowDef="let row; columns: displayedColumns" (click)="onRowSelect(row)"></tr>
+      <tr *llNoDataRow>
+        <td [attr.colspan]="displayedColumns.length">No schemas yet.</td>
+      </tr>
+    </table>
+  </div>
+
+  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
 </div>

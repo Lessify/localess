@@ -132,7 +132,7 @@
                   </button>
                   @let states = filterForm.controls.states.value;
                   @if (states && states.length > 0) {
-                    <div class="flex items-center gap-1 rounded-md border px-2 shadow-xs">
+                    <div hlmButtonGroupText>
                       <span hlmBadge variant="secondary">{{ states.length }}</span>
                     </div>
                   }
@@ -180,7 +180,7 @@
                   </button>
                   @let labels = filterForm.controls.labels.value;
                   @if (labels && labels.length > 0) {
-                    <div class="flex items-center gap-1 rounded-md border px-2 shadow-xs">
+                    <div hlmButtonGroupText>
                       <span hlmBadge variant="secondary">{{ labels.length }}</span>
                     </div>
                   }

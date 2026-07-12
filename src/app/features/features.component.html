@@ -1,5 +1,5 @@
 <div hlmSidebarWrapper>
-  <hlm-sidebar collapsible="icon" variant="sidebar">
+  <hlm-sidebar collapsible="icon" variant="sidebar" class="z-101">
     <div hlmSidebarHeader>
       <a routerLink="/"> <ll-logo [open]="sidebarService.open() || sidebarService.openMobile()" /> </a>
       @if (sidebarService.open() || sidebarService.openMobile()) {
@@ -192,8 +192,8 @@
       </ul>
     </div>
   </hlm-sidebar>
-  <main hlmSidebarInset>
-    <header class="flex h-12 items-center justify-between border-b">
+  <main hlmSidebarInset class="@container/main h-svh overflow-y-auto">
+    <header class="flex h-12 shrink-0 items-center justify-between border-b">
       <div id="header-breadcrumbs" class="flex h-5 w-full items-center gap-2 px-4">
         <button hlmSidebarTrigger><span class="sr-only"></span></button>
         <hlm-separator orientation="vertical" />
