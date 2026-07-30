@@ -57,7 +57,7 @@ The main component is one of the most complex in the app. It renders a hierarchi
 
 | Dialog | Purpose |
 |--------|---------|
-| `AddDialogComponent` | Create a new translation key (type, ID, labels, description) |
+| `AddDialogComponent` | Create a new translation key (type, ID, labels, description, optional client-side auto-translate to other locales) |
 | `EditDialogComponent` | Edit key metadata (labels, description) |
 | `EditIdDialogComponent` | Rename a translation key ID |
 | `ExportDialogComponent` | Choose format and locales to export |
@@ -80,3 +80,12 @@ The main component is one of the most complex in the app. It renders a hierarchi
 ## Draft Generation
 
 Every write operation in `TranslationService` (create, update, updateId, updateLocale, delete) automatically chains a call to `translation-publishdraft` onCall after the Firestore write succeeds. This keeps the draft Storage files (`draft/{locale}.json`) in sync without a Firestore trigger.
+
+## Auto-Translate on Create
+
+`AddDialogComponent` has an "auto-translate" switch for `STRING` keys. Rather than a dedicated `onDocumentCreated` Firestore trigger (removed to reduce deployed function count), `TranslationsComponent.openAddDialog()` resolves every locale value client-side **before** writing anything:
+1. If auto-translate is checked, it calls the existing generic `translate` callable (`TranslateService.translate()`, also used for single-cell AI translation) in parallel (`forkJoin`) for each of `space.locales` other than the fallback.
+2. All resulting values (fallback + translated locales) are merged into a single `locales` map.
+3. `TranslationService.create()` performs **one** Firestore `setDoc` with the full `locales` map already populated — no follow-up per-locale writes.
+
+Per-locale translation failures are caught and logged so one bad translation doesn't block the others or the create itself; that locale is simply left untranslated.

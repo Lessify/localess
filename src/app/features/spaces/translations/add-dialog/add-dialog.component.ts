@@ -11,6 +11,8 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
+import { HlmLabelImports } from '@spartan-ng/helm/label';
+import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 
 import { AddDialogModel } from './add-dialog.model';
 
@@ -19,7 +21,17 @@ import { AddDialogModel } from './add-dialog.model';
   templateUrl: './add-dialog.component.html',
   styleUrls: ['./add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmInputGroupImports, HlmInputImports],
+  imports: [
+    MatDialogModule,
+    ReactiveFormsModule,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmIconImports,
+    HlmInputGroupImports,
+    HlmInputImports,
+    HlmLabelImports,
+    HlmSwitchImports,
+  ],
   providers: [provideIcons({ lucideCircleX })],
 })
 export class AddDialogComponent {
@@ -33,6 +45,7 @@ export class AddDialogComponent {
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
     labels: this.fb.control([], TranslationValidator.LABEL),
+    autoTranslate: this.fb.control(false),
   });
 
   addLabel(value: string): void {

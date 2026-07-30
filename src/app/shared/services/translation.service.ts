@@ -68,19 +68,8 @@ export class TranslationService {
       addEntity.description = entity.description;
     }
 
-    switch (entity.type) {
-      case TranslationType.STRING: {
-        addEntity.locales[entity.locale] = entity.value;
-        break;
-      }
-      case TranslationType.ARRAY: {
-        addEntity.locales[entity.locale] = `["${entity.value}"]`;
-        break;
-      }
-      case TranslationType.PLURAL: {
-        addEntity.locales[entity.locale] = `{"0":"${entity.value}"}`;
-        break;
-      }
+    for (const [locale, value] of Object.entries(entity.locales)) {
+      addEntity.locales[locale] = this.wrapLocaleValue(entity.type, value);
     }
     if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
       addEntity.updatedBy = {
@@ -93,6 +82,18 @@ export class TranslationService {
       traceUntilFirst('Firestore:Translations:create'),
       switchMap(() => this.publishDraft(spaceId)),
     );
+  }
+
+  private wrapLocaleValue(type: TranslationType, value: string): string {
+    switch (type) {
+      case TranslationType.ARRAY:
+        return `["${value}"]`;
+      case TranslationType.PLURAL:
+        return `{"0":"${value}"}`;
+      case TranslationType.STRING:
+      default:
+        return value;
+    }
   }
 
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {

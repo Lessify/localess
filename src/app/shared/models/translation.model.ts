@@ -44,8 +44,7 @@ export interface TranslationCreate {
   type: TranslationType;
   labels?: string[];
   description?: string;
-  locale: string;
-  value: string;
+  locales: Record<string, string>;
 }
 
 export interface TranslationCreateFS {

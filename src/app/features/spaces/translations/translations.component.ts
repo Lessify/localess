@@ -62,6 +62,7 @@ import {
   Translation,
   TranslationCreate,
   TranslationStatus,
+  TranslationType,
   TranslationUpdate,
 } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -93,8 +94,8 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { debounceTime, EMPTY } from 'rxjs';
-import { filter, switchMap } from 'rxjs/operators';
+import { debounceTime, EMPTY, forkJoin, of } from 'rxjs';
+import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
 import { EditDialogComponent, EditDialogModel } from './edit-dialog';
@@ -358,14 +359,47 @@ export class TranslationsComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
+        // Resolve every locale value client-side (fallback + optional auto-translated locales)
+        // BEFORE writing anything, so `create()` performs a single Firestore write with all
+        // required locale fields already populated — no follow-up per-locale saves.
         switchMap(it => {
+          const locales: Record<string, string> = { [space.localeFallback.id]: it!.value };
+          const otherLocales = space.locales.filter(locale => locale.id !== space.localeFallback.id);
+          if (!it!.autoTranslate || it!.type !== TranslationType.STRING || otherLocales.length === 0) {
+            return of({ it: it!, locales });
+          }
+          return forkJoin(
+            otherLocales.map(locale =>
+              this.translateService
+                .translate({
+                  content: it!.value,
+                  sourceLocale: space.localeFallback.id,
+                  targetLocale: locale.id,
+                })
+                .pipe(
+                  map(value => ({ localeId: locale.id, value })),
+                  catchError(err => {
+                    console.error(err);
+                    return of(null);
+                  }),
+                ),
+            ),
+          ).pipe(
+            map(results => {
+              for (const result of results) {
+                if (result) locales[result.localeId] = result.value;
+              }
+              return { it: it!, locales };
+            }),
+          );
+        }),
+        switchMap(({ it, locales }) => {
           const tc: TranslationCreate = {
-            id: it!.id,
-            type: it!.type,
-            locale: space.localeFallback.id,
-            value: it!.value,
-            labels: it?.labels,
-            description: it?.description,
+            id: it.id,
+            type: it.type,
+            locales,
+            labels: it.labels,
+            description: it.description,
           };
           return this.translationService.create(this.spaceId(), tc);
         }),
