@@ -281,12 +281,12 @@
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
                 <hlm-select-trigger class="w-full">
-                  <hlm-select-value [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
+                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
                       role="button"
                       tabindex="0"
-                      class="hover:bg-muted ml-auto rounded p-0.5"
+                      class="hover:bg-muted mr-1 rounded p-0.5"
                       (click)="$event.stopPropagation(); form.controls[field.name].setValue(null)"
                       (keydown.enter)="$event.stopPropagation(); form.controls[field.name].setValue(null)"
                       (keydown.space)="$event.stopPropagation(); form.controls[field.name].setValue(null)">
@@ -324,12 +324,12 @@
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
                 <hlm-select-trigger class="w-full">
-                  <hlm-select-value [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
+                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
                       role="button"
                       tabindex="0"
-                      class="hover:bg-muted ml-auto rounded p-0.5"
+                      class="hover:bg-muted mr-1 rounded p-0.5"
                       (click)="$event.stopPropagation(); form.controls[field.name].setValue(null)"
                       (keydown.enter)="$event.stopPropagation(); form.controls[field.name].setValue(null)"
                       (keydown.space)="$event.stopPropagation(); form.controls[field.name].setValue(null)">
