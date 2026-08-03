@@ -79,7 +79,7 @@ import { ZodError } from 'zod';
 const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
 const MAX_VALIDATION_ISSUES = 5;
 const DOWNLOAD_PROGRESS_INTERVAL = 50;
-const ZIP_OPERATION_TIMEOUT_MS = 60_000;
+const ZIP_OPERATION_TIMEOUT_MS = 5 * 60_000;
 
 /**
  * Stream a local file to GCS without loading it entirely into memory.
