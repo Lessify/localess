@@ -65,6 +65,11 @@ service cloud.firestore {
         allow create: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
         allow update: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
         allow delete: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
+
+        // Task Logs
+        match /logs/{logId} {
+          allow read: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
+        }
       }
 
       // Tokens

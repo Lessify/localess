@@ -33,6 +33,8 @@ import {
   TaskExportMetadata,
   TaskImport,
   TaskKind,
+  TaskLog,
+  TaskLogLevel,
   TaskSchemaExport,
   TaskStatus,
   TaskTranslationExport,
@@ -75,6 +77,8 @@ import { tmpdir } from 'os';
 import { ZodError } from 'zod';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
+const MAX_VALIDATION_ISSUES = 5;
+const DOWNLOAD_PROGRESS_INTERVAL = 50;
 
 /**
  * Stream a local file to GCS without loading it entirely into memory.
@@ -89,6 +93,74 @@ function streamFileToStorage(localPath: string, gcsDestination: string): Promise
       .on('finish', resolve)
       .on('error', reject);
   });
+}
+
+/**
+ * Summarize a ZodError into a short, human-readable string instead of dumping the full error
+ * object, which can be enormous (and unreadable in a table cell) for large arrays with many
+ * invalid entries.
+ * @param {ZodError} error zod validation error
+ * @return {string}
+ */
+function formatZodError(error: ZodError): string {
+  const total = error.issues.length;
+  const shown = error.issues.slice(0, MAX_VALIDATION_ISSUES).map(issue => `${issue.path.join('.') || '(root)'}: ${issue.message}`);
+  const suffix = total > MAX_VALIDATION_ISSUES ? ` (+${total - MAX_VALIDATION_ISSUES} more)` : '';
+  return `${total} validation issue${total === 1 ? '' : 's'} - ${shown.join('; ')}${suffix}`;
+}
+
+/**
+ * Extract a message and trace from a thrown value, falling back to a JSON dump when it isn't an
+ * Error instance (e.g. a thrown string or plain object) so no diagnostic detail is silently lost.
+ * @param {unknown} error thrown value
+ * @return {object} message and optional trace
+ */
+function describeError(error: unknown): { message: string; trace?: string } {
+  if (error instanceof Error) {
+    return { message: error.message, trace: error.stack };
+  }
+  try {
+    return { message: JSON.stringify(error) };
+  } catch {
+    return { message: String(error) };
+  }
+}
+
+/**
+ * Log a single task execution step: writes to Cloud Logging (console) and persists it to the
+ * task's `logs` subcollection so it is visible in the Tasks UI. This is the single entry point
+ * every job function should use instead of calling `logger.info`/`logger.warn`/`logger.error` directly.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {TaskLogLevel} level severity of this step
+ * @param {string} scope short name of the calling function, used only for the console message prefix
+ * @param {string} message human-readable description of the step, persisted as-is (no prefix)
+ * @param {string} trace optional stack trace / error detail, ERROR level only
+ * @return {Promise<void>}
+ */
+async function logTaskStep(
+  spaceId: string,
+  taskId: string,
+  level: TaskLogLevel,
+  scope: string,
+  message: string,
+  trace?: string
+): Promise<void> {
+  const consoleMessage = `[Task:onCreate:${scope}] ${message}`;
+  if (level === TaskLogLevel.ERROR) {
+    logger.error(consoleMessage);
+  } else if (level === TaskLogLevel.WARN) {
+    logger.warn(consoleMessage);
+  } else {
+    logger.info(consoleMessage);
+  }
+  try {
+    const log: WithFieldValue<TaskLog> = { level, message, createdAt: FieldValue.serverTimestamp() };
+    if (trace) log.trace = trace;
+    await firestoreService.collection(`spaces/${spaceId}/tasks/${taskId}/logs`).add(log);
+  } catch (error: any) {
+    logger.error(`[logTaskStep] Failed to log task step: ${error.message}`);
+  }
 }
 
 // Firestore events
@@ -121,8 +193,20 @@ const onTaskCreate = onDocumentCreated(
       task.kind === TaskKind.TRANSLATION_IMPORT
     ) {
       const newPath = `spaces/${spaceId}/tasks/${taskId}/original`;
-      await bucket.file(task.tmpPath).move(newPath);
-      (updateToInProgress as UpdateData<TaskImport>).tmpPath = FieldValue.delete();
+      try {
+        await bucket.file(task.tmpPath).move(newPath);
+        (updateToInProgress as UpdateData<TaskImport>).tmpPath = FieldValue.delete();
+      } catch (error: unknown) {
+        const { message, trace } = describeError(error);
+        await logTaskStep(spaceId, taskId, TaskLogLevel.ERROR, 'onCreate', message, trace);
+        await event.data.ref.update({
+          status: TaskStatus.ERROR,
+          message,
+          trace,
+          updatedAt: FieldValue.serverTimestamp(),
+        } as UpdateData<Task>);
+        return;
+      }
     }
     // Update to IN_PROGRESS
     logger.info(`[Task:onCreate] update='${JSON.stringify(updateToInProgress)}'`);
@@ -133,91 +217,101 @@ const onTaskCreate = onDocumentCreated(
       updatedAt: FieldValue.serverTimestamp(),
     };
 
-    if (isTaskAssetExport(task)) {
-      const metadata = await assetsExport(spaceId, taskId, task);
-      logger.info(`[Task:onCreate] metadata='${JSON.stringify(metadata)}'`);
+    try {
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'onCreate', `Starting ${task.kind} processing`);
+      if (isTaskAssetExport(task)) {
+        const metadata = await assetsExport(spaceId, taskId, task);
+        logger.info(`[Task:onCreate] metadata='${JSON.stringify(metadata)}'`);
 
-      (updateToFinished as UpdateData<TaskAssetExport>).file = {
-        name: `asset-export-${taskId}.lla.zip`,
-        size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
-      };
-    } else if (isTaskAssetImport(task)) {
-      const errors = await assetsImport(spaceId, taskId);
-      if (errors) {
-        updateToFinished.status = TaskStatus.ERROR;
-        if (errors === 'WRONG_METADATA') {
-          updateToFinished.message = 'It is not a Asset Export file.';
-        } else {
-          updateToFinished.message = 'Asset data is invalid.';
-          updateToFinished.trace = JSON.stringify(errors.format());
-        }
-      }
-    } else if (isTaskAssetRegenMetadata(task)) {
-      await assetRegenerateMetadata(spaceId);
-    } else if (isTaskContentExport(task)) {
-      const metadata = await contentsExport(spaceId, taskId, task);
-      (updateToFinished as UpdateData<TaskContentExport>).file = {
-        name: `content-export-${taskId}.llc.zip`,
-        size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
-      };
-    } else if (isTaskContentImport(task)) {
-      const errors = await contentsImport(spaceId, taskId);
-      if (errors) {
-        updateToFinished.status = TaskStatus.ERROR;
-        if (errors === 'WRONG_METADATA') {
-          updateToFinished.message = 'It is not a Content Export file.';
-        } else {
-          updateToFinished.message = 'Content data is invalid.';
-          updateToFinished.trace = JSON.stringify(errors.format());
-        }
-      }
-    } else if (isTaskSchemaExport(task)) {
-      const metadata = await schemasExport(spaceId, taskId);
-      (updateToFinished as UpdateData<TaskSchemaExport>).file = {
-        name: `schema-export-${taskId}.lls.zip`,
-        size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
-      };
-    } else if (isTaskSchemaImport(task)) {
-      const errors = await schemasImport(spaceId, taskId);
-      if (errors) {
-        updateToFinished.status = TaskStatus.ERROR;
-        if (errors === 'WRONG_METADATA') {
-          updateToFinished.message = 'It is not a Schema Export file.';
-        } else {
-          updateToFinished.message = 'Schema data is invalid.';
-          updateToFinished.trace = JSON.stringify(errors.format());
-        }
-      }
-    } else if (isTaskTranslationExport(task)) {
-      if (task.locale) {
-        const metadata = await translationsExportJsonFlat(spaceId, taskId, task);
-        (updateToFinished as UpdateData<TaskTranslationExport>).file = {
-          name: `translation-${task.locale}-export-${taskId}.json`,
+        (updateToFinished as UpdateData<TaskAssetExport>).file = {
+          name: `asset-export-${taskId}.lla.zip`,
           size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
         };
-      } else {
-        const metadata = await translationsExport(spaceId, taskId, task);
-        (updateToFinished as UpdateData<TaskTranslationExport>).file = {
-          name: `translation-export-${taskId}.llt.zip`,
+      } else if (isTaskAssetImport(task)) {
+        const errors = await assetsImport(spaceId, taskId);
+        if (errors) {
+          updateToFinished.status = TaskStatus.ERROR;
+          if (errors === 'WRONG_METADATA') {
+            updateToFinished.message = 'It is not a Asset Export file.';
+          } else {
+            updateToFinished.message = 'Asset data is invalid.';
+            updateToFinished.trace = JSON.stringify(errors.format());
+          }
+        }
+      } else if (isTaskAssetRegenMetadata(task)) {
+        await assetRegenerateMetadata(spaceId, taskId);
+      } else if (isTaskContentExport(task)) {
+        const metadata = await contentsExport(spaceId, taskId, task);
+        (updateToFinished as UpdateData<TaskContentExport>).file = {
+          name: `content-export-${taskId}.llc.zip`,
           size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
         };
-      }
-    } else if (isTaskTranslationImport(task)) {
-      let errors: ZodError | 'WRONG_METADATA' | undefined;
-      if (task.locale) {
-        errors = await translationsImportJsonFlat(spaceId, taskId, task);
-      } else {
-        errors = await translationsImport(spaceId, taskId);
-      }
-      if (errors) {
-        updateToFinished.status = TaskStatus.ERROR;
-        if (errors === 'WRONG_METADATA') {
-          updateToFinished.message = 'It is not a Translation Export file.';
+      } else if (isTaskContentImport(task)) {
+        const errors = await contentsImport(spaceId, taskId);
+        if (errors) {
+          updateToFinished.status = TaskStatus.ERROR;
+          if (errors === 'WRONG_METADATA') {
+            updateToFinished.message = 'It is not a Content Export file.';
+          } else {
+            updateToFinished.message = 'Content data is invalid.';
+            updateToFinished.trace = JSON.stringify(errors.format());
+          }
+        }
+      } else if (isTaskSchemaExport(task)) {
+        const metadata = await schemasExport(spaceId, taskId);
+        (updateToFinished as UpdateData<TaskSchemaExport>).file = {
+          name: `schema-export-${taskId}.lls.zip`,
+          size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+        };
+      } else if (isTaskSchemaImport(task)) {
+        const errors = await schemasImport(spaceId, taskId);
+        if (errors) {
+          updateToFinished.status = TaskStatus.ERROR;
+          if (errors === 'WRONG_METADATA') {
+            updateToFinished.message = 'It is not a Schema Export file.';
+          } else {
+            updateToFinished.message = 'Schema data is invalid.';
+            updateToFinished.trace = JSON.stringify(errors.format());
+          }
+        }
+      } else if (isTaskTranslationExport(task)) {
+        if (task.locale) {
+          const metadata = await translationsExportJsonFlat(spaceId, taskId, task);
+          (updateToFinished as UpdateData<TaskTranslationExport>).file = {
+            name: `translation-${task.locale}-export-${taskId}.json`,
+            size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+          };
         } else {
-          updateToFinished.message = 'Translation data is invalid.';
-          updateToFinished.trace = JSON.stringify(errors.format());
+          const metadata = await translationsExport(spaceId, taskId, task);
+          (updateToFinished as UpdateData<TaskTranslationExport>).file = {
+            name: `translation-export-${taskId}.llt.zip`,
+            size: Number.isInteger(metadata.size) ? 0 : Number.parseInt(metadata.size),
+          };
+        }
+      } else if (isTaskTranslationImport(task)) {
+        let errors: ZodError | 'WRONG_METADATA' | undefined;
+        if (task.locale) {
+          errors = await translationsImportJsonFlat(spaceId, taskId, task);
+        } else {
+          errors = await translationsImport(spaceId, taskId);
+        }
+        if (errors) {
+          updateToFinished.status = TaskStatus.ERROR;
+          if (errors === 'WRONG_METADATA') {
+            updateToFinished.message = 'It is not a Translation Export file.';
+          } else {
+            updateToFinished.message = 'Translation data is invalid.';
+            updateToFinished.trace = JSON.stringify(errors.format());
+          }
         }
       }
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'onCreate', 'Task finished successfully');
+    } catch (error: unknown) {
+      const { message, trace } = describeError(error);
+      updateToFinished.status = TaskStatus.ERROR;
+      updateToFinished.message = message;
+      updateToFinished.trace = trace;
+      await logTaskStep(spaceId, taskId, TaskLogLevel.ERROR, 'onCreate', message, trace);
     }
     // Export Finished
     logger.info(`[Task:onCreate] update='${JSON.stringify(updateToFinished)}'`);
@@ -239,16 +333,16 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
     if (rootAssetSnapshot.exists) {
       const rootAsset = rootAssetSnapshot.data() as Asset;
       exportAssets.push(docAssetToExport(rootAssetSnapshot.id, rootAsset));
-      logger.info(`[Task:onCreate:assetsExport] root id=${rootAssetSnapshot.id} name=${rootAsset.name}`);
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `root id=${rootAssetSnapshot.id} name=${rootAsset.name}`);
       // folder, all sub documents
       if (rootAsset.kind === AssetKind.FOLDER) {
         const startParentPath = rootAsset.parentPath === '' ? rootAssetSnapshot.id : `${rootAsset.parentPath}/${rootAssetSnapshot.id}`;
         const assetsSnapshot = await findAssetsByStartFullSlug(spaceId, startParentPath).get();
-        assetsSnapshot.docs.forEach(doc => {
+        for (const doc of assetsSnapshot.docs) {
           const asset = doc.data() as Asset;
           exportAssets.push(docAssetToExport(doc.id, asset));
-          logger.info(`[Task:onCreate:assetsExport] sub-folder id=${doc.id} name=${asset.name}`);
-        });
+          await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `sub-folder id=${doc.id} name=${asset.name}`);
+        }
       }
       // it is not located in root folder, requires to extract all folder till
       if (rootAsset.parentPath !== '') {
@@ -256,7 +350,7 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
         for (const assetId of assetIds) {
           const assetSnapshot = await findAssetById(spaceId, assetId).get();
           const asset = assetSnapshot.data() as Asset;
-          logger.info(`[Task:onCreate:assetsExport] path id=${assetSnapshot.id} name=${asset.name}`);
+          await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `path id=${assetSnapshot.id} name=${asset.name}`);
           exportAssets.push(docAssetToExport(assetSnapshot.id, asset));
         }
       }
@@ -266,12 +360,12 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
   } else {
     // Export Everything
     const assetsSnapshot = await findAssets(spaceId).get();
-    assetsSnapshot.docs
-      .filter(it => it.exists)
-      .forEach(doc => {
-        const asset = doc.data() as Asset;
-        exportAssets.push(docAssetToExport(doc.id, asset));
-      });
+    const existingDocs = assetsSnapshot.docs.filter(it => it.exists);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `exporting all ${existingDocs.length} assets`);
+    existingDocs.forEach(doc => {
+      const asset = doc.data() as Asset;
+      exportAssets.push(docAssetToExport(doc.id, asset));
+    });
   }
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
@@ -291,25 +385,31 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
   const assetsExportZipFile = `${tmpdir()}/assets-${taskId}.zip`;
   mkdirSync(assetsTmpFolder);
 
-  logger.info('[Task:onCreate:assetsExport] downloading files');
+  const fileAssetsCount = exportAssets.filter(asset => asset && asset.kind === AssetKind.FILE).length;
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `downloading ${fileAssetsCount} files`);
+  let downloadedCount = 0;
   for (const asset of exportAssets) {
     if (asset && asset.kind === AssetKind.FILE) {
       await bucket.file(`spaces/${spaceId}/assets/${asset.id}/original`).download({ destination: `${assetsTmpFolder}/${asset.id}` });
+      downloadedCount++;
+      if (downloadedCount % DOWNLOAD_PROGRESS_INTERVAL === 0) {
+        await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `downloaded ${downloadedCount}/${fileAssetsCount} files`);
+      }
     }
   }
-  logger.info('[Task:onCreate:assetsExport] all files downloaded');
-  logger.info('[Task:onCreate:assetsExport] zip started');
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `all ${fileAssetsCount} files downloaded`);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip started');
   await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
-  logger.info('[Task:onCreate:assetsExport] zip completed');
-  logger.info('[Task:onCreate:assetsExport] zip uploading');
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip completed');
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip uploading');
   await bucket.upload(assetsExportZipFile, {
     destination: `spaces/${spaceId}/tasks/${taskId}/original`,
     resumable: false,
     chunkSize: 5 * 1024 * 1024,
   });
-  logger.info('[Task:onCreate:assetsExport] zip uploaded');
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip uploaded');
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
-  logger.info('[Task:onCreate:assetsExport] save metadata');
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'save metadata');
   return metadata;
 }
 
@@ -322,17 +422,19 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'uncompressing archive');
   await zip.uncompress(zipPath, tmpTaskFolder);
   const assets = JSON.parse(readFileSync(`${tmpTaskFolder}/assets.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'ASSET') return 'WRONG_METADATA';
   const parse = zAssetExportArraySchema.safeParse(assets);
   if (!parse.success) {
-    logger.warn(`[Task:onCreate:assetsImport] invalid=${JSON.stringify(parse.error)}`);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.WARN, 'assetsImport', formatZodError(parse.error));
     return parse.error;
   }
-  logger.info(`[Task:onCreate:assetsImport] valid=${assets.length}`);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', `valid=${assets.length}`);
 
   // Load all existing assets into a map to avoid per-document reads
   const origAssetMap = new Map<string, Asset>();
@@ -408,34 +510,39 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
       count++;
     }
     if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate:assetsImport] batch.commit() : ' + totalChanges);
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
     }
   }
   if (count > 0) {
-    logger.info('[Task:onCreate:assetsImport] batch.commit() : ' + totalChanges);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'batch.commit() : ' + totalChanges);
     await batch.commit();
   }
   for (const [key, value] of ids) {
-    logger.info(`[Task:onCreate:assetsImport] Save File ${key}`);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', `Save File ${key}`);
     await streamFileToStorage(value, `spaces/${spaceId}/assets/${key}/original`);
   }
-  logger.info('[Task:onCreate:assetsImport] total changes : ' + totalChanges);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'total changes : ' + totalChanges);
   return undefined;
 }
 
 /**
  * Asset Regenerate Metadata Job
  * @param {string} spaceId original task
+ * @param {string} taskId original task
  */
-async function assetRegenerateMetadata(spaceId: string): Promise<void> {
+async function assetRegenerateMetadata(spaceId: string, taskId: string): Promise<void> {
   const assetsSnapshot = await findAssets(spaceId, AssetKind.FILE).get();
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsRegenMetadata', `found ${assetsSnapshot.docs.length} assets to regenerate`);
+  let count = 0;
   for (const assetSnapshot of assetsSnapshot.docs) {
-    logger.info('[Task:onCreate:assetsRegenMetadata] asset : ' + assetSnapshot.ref.path);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsRegenMetadata', 'asset : ' + assetSnapshot.ref.path);
     await updateMetadataByRef(assetSnapshot.ref);
+    count++;
   }
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsRegenMetadata', 'total regenerated : ' + count);
   return undefined;
 }
 
@@ -453,15 +560,15 @@ async function contentsExport(spaceId: string, taskId: string, task: TaskContent
     if (rootContentSnapshot.exists) {
       const rootContent = rootContentSnapshot.data() as Content;
       exportContents.push(docContentToExport(rootContentSnapshot.id, rootContent));
-      logger.info(`[Task:onCreate:contentsExport] root fullSlug=${rootContent.fullSlug}`);
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', `root fullSlug=${rootContent.fullSlug}`);
       // folder, all sub documents
       if (rootContent.kind === ContentKind.FOLDER) {
         const contentsSnapshot = await findContentsByStartFullSlug(spaceId, `${rootContent.fullSlug}/`).get();
-        contentsSnapshot.docs.forEach(doc => {
+        for (const doc of contentsSnapshot.docs) {
           const content = doc.data() as Content;
           exportContents.push(docContentToExport(doc.id, content));
-          logger.info(`[Task:onCreate:contentsExport] sub-folder fullSlug=${content.fullSlug}`);
-        });
+          await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', `sub-folder fullSlug=${content.fullSlug}`);
+        }
       }
       // it is not located in root folder, requires to extract all folder till
       if (rootContent.parentSlug !== '') {
@@ -479,11 +586,11 @@ async function contentsExport(spaceId: string, taskId: string, task: TaskContent
             navigationSlug = `${navigationSlug}/${slug}`;
           }
           const contentsSnapshot = await findContentByFullSlug(spaceId, navigationSlug).get();
-          contentsSnapshot.docs.forEach(doc => {
+          for (const doc of contentsSnapshot.docs) {
             const content = doc.data() as Content;
-            logger.info(`[Task:onCreate:contentsExport] path fullSlug=${content.fullSlug}`);
+            await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', `path fullSlug=${content.fullSlug}`);
             exportContents.push(docContentToExport(doc.id, content));
-          });
+          }
         }
       }
     } else {
@@ -492,12 +599,12 @@ async function contentsExport(spaceId: string, taskId: string, task: TaskContent
   } else {
     // Export Everything
     const contentsSnapshot = await findContents(spaceId).get();
-    contentsSnapshot.docs
-      .filter(it => it.exists)
-      .forEach(doc => {
-        const content = doc.data() as Content;
-        exportContents.push(docContentToExport(doc.id, content));
-      });
+    const existingDocs = contentsSnapshot.docs.filter(it => it.exists);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', `exporting all ${existingDocs.length} contents`);
+    existingDocs.forEach(doc => {
+      const content = doc.data() as Content;
+      exportContents.push(docContentToExport(doc.id, content));
+    });
   }
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
@@ -515,10 +622,15 @@ async function contentsExport(spaceId: string, taskId: string, task: TaskContent
   // Create assets folder
   const contentsExportZipFile = `${tmpdir()}/contents-${taskId}.zip`;
 
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip started');
   await zip.compressDir(tmpTaskFolder, contentsExportZipFile, { ignoreBase: true });
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip completed');
 
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip uploading');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(contentsExportZipFile));
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip uploaded');
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'save metadata');
   return metadata;
 }
 
@@ -531,17 +643,19 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'uncompressing archive');
   await zip.uncompress(zipPath, tmpTaskFolder);
   const contents = JSON.parse(readFileSync(`${tmpTaskFolder}/contents.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'CONTENT') return 'WRONG_METADATA';
   const parse = zContentExportArraySchema.safeParse(contents);
   if (!parse.success) {
-    logger.warn(`[Task:onCreate:contentsImport] invalid=${JSON.stringify(parse.error)}`);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.WARN, 'contentsImport', formatZodError(parse.error));
     return parse.error;
   }
-  logger.info(`[Task:onCreate:contentsImport] valid=${contents.length}`);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', `valid=${contents.length}`);
 
   // Load all existing contents into a map to avoid per-document reads
   const origContentMap = new Map<string, Content>();
@@ -612,17 +726,17 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
       count++;
     }
     if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate:contentsImport] batch.commit() : ' + totalChanges);
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
     }
   }
   if (count > 0) {
-    logger.info('[Task:onCreate:contentsImport] batch.commit() : ' + totalChanges);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'batch.commit() : ' + totalChanges);
     await batch.commit();
   }
-  logger.info('[Task:onCreate:contentsImport] total changes : ' + totalChanges);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'total changes : ' + totalChanges);
   // The Draft Generation will be executed on the onDocumentUpdated
   return undefined;
 }
@@ -631,36 +745,35 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
  * contentExport Job
  * @param {string} spaceId original task
  * @param {string} taskId original task
- * @param {Task} task original task
  */
 async function schemasExport(spaceId: string, taskId: string): Promise<any> {
   const exportSchemas: SchemaExport[] = [];
   const schemasSnapshot = await findSchemas(spaceId).get();
-  schemasSnapshot.docs
-    .filter(it => it.exists)
-    .forEach(doc => {
-      const schema = doc.data() as Schema;
-      if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
-        exportSchemas.push({
-          id: doc.id,
-          type: schema.type,
-          displayName: schema.displayName,
-          description: schema.description,
-          previewField: schema.previewField,
-          labels: schema.labels,
-          fields: schema.fields,
-        });
-      } else if (schema.type === SchemaType.ENUM) {
-        exportSchemas.push({
-          id: doc.id,
-          type: schema.type,
-          displayName: schema.displayName,
-          description: schema.description,
-          labels: schema.labels,
-          values: schema.values,
-        });
-      }
-    });
+  const existingDocs = schemasSnapshot.docs.filter(it => it.exists);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', `exporting all ${existingDocs.length} schemas`);
+  existingDocs.forEach(doc => {
+    const schema = doc.data() as Schema;
+    if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
+      exportSchemas.push({
+        id: doc.id,
+        type: schema.type,
+        displayName: schema.displayName,
+        description: schema.description,
+        previewField: schema.previewField,
+        labels: schema.labels,
+        fields: schema.fields,
+      });
+    } else if (schema.type === SchemaType.ENUM) {
+      exportSchemas.push({
+        id: doc.id,
+        type: schema.type,
+        displayName: schema.displayName,
+        description: schema.description,
+        labels: schema.labels,
+        values: schema.values,
+      });
+    }
+  });
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'SCHEMA',
@@ -674,10 +787,15 @@ async function schemasExport(spaceId: string, taskId: string): Promise<any> {
   // Create assets folder
   const schemasExportZipFile = `${tmpdir()}/schemas-${taskId}.zip`;
 
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip started');
   await zip.compressDir(tmpTaskFolder, schemasExportZipFile, { ignoreBase: true });
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip completed');
 
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip uploading');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(schemasExportZipFile));
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip uploaded');
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'save metadata');
   return metadata;
 }
 
@@ -687,21 +805,23 @@ async function schemasExport(spaceId: string, taskId: string): Promise<any> {
  * @param {string} taskId original task
  */
 async function schemasImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
-  logger.info('[Task:onCreate:schemasImport] Started');
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'Started');
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'uncompressing archive');
   await zip.uncompress(zipPath, tmpTaskFolder);
   const schemas = JSON.parse(readFileSync(`${tmpTaskFolder}/schemas.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'SCHEMA') return 'WRONG_METADATA';
   const parse = zSchemaExportArraySchema.safeParse(schemas);
   if (!parse.success) {
-    logger.warn(`[Task:onCreate:schemasImport] invalid=${JSON.stringify(parse.error)}`);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.WARN, 'schemasImport', formatZodError(parse.error));
     return parse.error;
   }
-  logger.info(`[Task:onCreate:schemasImport] valid=${schemas.length}`);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', `valid=${schemas.length}`);
 
   // Load all existing schemas into a map to avoid per-document reads
   const origSchemaMap = new Map<string, Schema>();
@@ -770,17 +890,17 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
       count++;
     }
     if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate:schemasImport] batch.commit() : ' + totalChanges);
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
     }
   }
   if (count > 0) {
-    logger.info('[Task:onCreate:schemasImport] batch.commit() : ' + totalChanges);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'batch.commit() : ' + totalChanges);
     await batch.commit();
   }
-  logger.info('[Task:onCreate:schemasImport] total changes : ' + totalChanges);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'total changes : ' + totalChanges);
   return undefined;
 }
 
@@ -793,23 +913,23 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
 async function translationsExport(spaceId: string, taskId: string, task: TaskTranslationExport): Promise<any> {
   const exportTranslations: TranslationExport[] = [];
   const translationsSnapshot = await findTranslations(spaceId).get();
-  translationsSnapshot.docs
-    .filter(it => it.exists)
-    .forEach(doc => {
-      const translation = doc.data() as Translation;
-      const exportedTr: TranslationExport = {
-        id: doc.id,
-        type: translation.type,
-        locales: translation.locales,
-      };
-      if (translation.labels && translation.labels.length > 0) {
-        exportedTr.labels = translation.labels;
-      }
-      if (translation.description && translation.description.length > 0) {
-        exportedTr.description = translation.description;
-      }
-      exportTranslations.push(exportedTr);
-    });
+  const existingDocs = translationsSnapshot.docs.filter(it => it.exists);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', `exporting all ${existingDocs.length} translations`);
+  existingDocs.forEach(doc => {
+    const translation = doc.data() as Translation;
+    const exportedTr: TranslationExport = {
+      id: doc.id,
+      type: translation.type,
+      locales: translation.locales,
+    };
+    if (translation.labels && translation.labels.length > 0) {
+      exportedTr.labels = translation.labels;
+    }
+    if (translation.description && translation.description.length > 0) {
+      exportedTr.description = translation.description;
+    }
+    exportTranslations.push(exportedTr);
+  });
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'TRANSLATION',
@@ -822,10 +942,15 @@ async function translationsExport(spaceId: string, taskId: string, task: TaskTra
   // Create assets folder
   const translationsExportZipFile = `${tmpdir()}/translations-${taskId}.zip`;
 
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip started');
   await zip.compressDir(tmpTaskFolder, translationsExportZipFile, { ignoreBase: true });
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip completed');
 
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip uploading');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(readFileSync(translationsExportZipFile));
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip uploaded');
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'save metadata');
   return metadata;
 }
 
@@ -838,18 +963,26 @@ async function translationsExport(spaceId: string, taskId: string, task: TaskTra
 async function translationsExportJsonFlat(spaceId: string, taskId: string, task: TaskTranslationExport): Promise<any> {
   const exportTranslations: Record<string, string> = {};
   const translationsSnapshot = await findTranslations(spaceId).get();
-  translationsSnapshot.docs
-    .filter(it => it.exists)
-    .forEach(doc => {
-      const translation = doc.data() as Translation;
-      if (task.locale) {
-        const locale = translation.locales[task.locale];
-        if (locale) {
-          exportTranslations[doc.id] = locale;
-        }
+  const existingDocs = translationsSnapshot.docs.filter(it => it.exists);
+  await logTaskStep(
+    spaceId,
+    taskId,
+    TaskLogLevel.INFO,
+    'translationsExportJsonFlat',
+    `exporting ${existingDocs.length} translations for locale ${task.locale}`
+  );
+  existingDocs.forEach(doc => {
+    const translation = doc.data() as Translation;
+    if (task.locale) {
+      const locale = translation.locales[task.locale];
+      if (locale) {
+        exportTranslations[doc.id] = locale;
       }
-    });
+    }
+  });
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExportJsonFlat', 'uploading json');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).save(JSON.stringify(exportTranslations));
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExportJsonFlat', 'uploaded json');
   const [metadata] = await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).getMetadata();
   return metadata;
 }
@@ -863,17 +996,19 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'uncompressing archive');
   await zip.uncompress(zipPath, tmpTaskFolder);
   const translations = JSON.parse(readFileSync(`${tmpTaskFolder}/translations.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'TRANSLATION') return 'WRONG_METADATA';
   const parse = zTranslationExportArraySchema.safeParse(translations);
   if (!parse.success) {
-    logger.warn(`[Task:onCreate:translationsImport] invalid=${JSON.stringify(parse.error)}`);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.WARN, 'translationsImport', formatZodError(parse.error));
     return parse.error;
   }
-  logger.info(`[Task:onCreate:translationsImport] valid=${translations.length}`);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', `valid=${translations.length}`);
 
   // Load all existing translations into a map to avoid per-document reads
   const origTransMap = new Map<string, Translation>();
@@ -913,22 +1048,22 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
       count++;
     }
     if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
     }
   }
   if (count > 0) {
-    logger.info('[Task:onCreate:translationsImport] batch.commit() : ' + totalChanges);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'batch.commit() : ' + totalChanges);
     await batch.commit();
   }
-  logger.info('[Task:onCreate:translationsImport] total changes : ' + totalChanges);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'total changes : ' + totalChanges);
   if (totalChanges > 0) {
     // Generate draft files once after all translations are imported
     const spaceSnapshot = await findSpaceById(spaceId).get();
     if (spaceSnapshot.exists) {
-      logger.info('[Task:onCreate:translationsImport] Generating draft files');
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'Generating draft files');
       await generateTranslationsDraft(spaceId, spaceSnapshot.data() as Space);
     }
   }
@@ -949,15 +1084,22 @@ async function translationsImportJsonFlat(
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   mkdirSync(tmpTaskFolder);
   const jsonPath = `${tmpTaskFolder}/task.json`;
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImportJsonFlat', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: jsonPath });
   const translations: Record<string, string> = JSON.parse(readFileSync(jsonPath).toString());
   if (task.locale === undefined) return 'WRONG_METADATA';
   const parse = zTranslationFlatExportSchema.safeParse(translations);
   if (!parse.success) {
-    logger.warn(`[Task:onCreate:translationsImportJsonFlat] invalid=${JSON.stringify(parse.error)}`);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.WARN, 'translationsImportJsonFlat', formatZodError(parse.error));
     return parse.error;
   }
-  logger.info(`[Task:onCreate:translationsImportJsonFlat] valid=${Object.getOwnPropertyNames(translations).length}`);
+  await logTaskStep(
+    spaceId,
+    taskId,
+    TaskLogLevel.INFO,
+    'translationsImportJsonFlat',
+    `valid=${Object.getOwnPropertyNames(translations).length}`
+  );
   const origTransMap = new Map<string, Translation>();
   const translationsSnapshot = await findTranslations(spaceId).get();
   translationsSnapshot.docs
@@ -995,22 +1137,22 @@ async function translationsImportJsonFlat(
       count++;
     }
     if (count === BATCH_MAX) {
-      logger.info('[Task:onCreate:translationsImportJsonFlat] batch.commit() : ' + totalChanges);
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImportJsonFlat', 'batch.commit() : ' + totalChanges);
       await batch.commit();
       batch = firestoreService.batch();
       count = 0;
     }
   }
   if (count > 0) {
-    logger.info('[Task:onCreate:translationsImportJsonFlat] batch.commit() : ' + totalChanges);
+    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImportJsonFlat', 'batch.commit() : ' + totalChanges);
     await batch.commit();
   }
-  logger.info('[Task:onCreate:translationsImportJsonFlat] total changes : ' + totalChanges);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImportJsonFlat', 'total changes : ' + totalChanges);
   if (totalChanges > 0) {
     // Generate draft files once after all translations are imported
     const spaceSnapshot = await findSpaceById(spaceId).get();
     if (spaceSnapshot.exists) {
-      logger.info('[Task:onCreate:translationsImportJsonFlat] Generating draft files');
+      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImportJsonFlat', 'Generating draft files');
       await generateTranslationsDraft(spaceId, spaceSnapshot.data() as Space);
     }
   }
@@ -1021,9 +1163,14 @@ const onTaskDeleted = onDocumentDeleted('spaces/{spaceId}/tasks/{taskId}', async
   logger.info(`[Task:onDeleted] eventId='${event.id}'`);
   logger.info(`[Task:onDeleted] params='${JSON.stringify(event.params)}'`);
   const { spaceId, taskId } = event.params;
-  return bucket.deleteFiles({
-    prefix: `spaces/${spaceId}/tasks/${taskId}`,
-  });
+  // No Data
+  if (!event.data) return;
+  await Promise.all([
+    bucket.deleteFiles({
+      prefix: `spaces/${spaceId}/tasks/${taskId}`,
+    }),
+    firestoreService.recursiveDelete(event.data.ref),
+  ]);
 });
 
 export const task = {

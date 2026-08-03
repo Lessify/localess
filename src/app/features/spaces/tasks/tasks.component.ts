@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -96,6 +97,7 @@ export class TasksComponent implements OnInit, AfterViewInit {
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   readonly sort = viewChild.required(TableSort);
   readonly paginator = viewChild.required(Paginator);
@@ -146,6 +148,10 @@ export class TasksComponent implements OnInit, AfterViewInit {
 
   onFilterChange(value: FilterToolbarValue): void {
     this.dataSource.filter = JSON.stringify(value);
+  }
+
+  navigateToDetail(task: Task): void {
+    this.router.navigate(['features', 'spaces', this.spaceId(), 'tasks', task.id]);
   }
 
   loadData(spaceId: string): void {

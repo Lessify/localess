@@ -1,0 +1,134 @@
+@if (isLoading()) {
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
+}
+
+@if (task(); as t) {
+  <div class="flex flex-col gap-4 p-4">
+    <!-- Header -->
+    <div class="flex items-center gap-2">
+      <a hlmBtn variant="ghost" size="icon-sm" [routerLink]="['..']">
+        <ng-icon hlm name="lucideArrowLeft" />
+      </a>
+      <div class="flex-1">
+        <h2 class="text-lg font-semibold">{{ taskKindLabels[t.kind] }}</h2>
+        <p class="text-muted-foreground font-mono text-sm">{{ t.id }}</p>
+      </div>
+      @if ('file' in t && t.file) {
+        <button hlmBtn variant="outline" size="sm" (click)="onDownload()">
+          <ng-icon hlm name="lucideDownload" />
+          Download
+        </button>
+      }
+    </div>
+
+    <!-- Info cards -->
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div class="rounded-lg border p-3">
+        <p class="text-muted-foreground text-xs font-medium">Status</p>
+        <span hlmBadge [variant]="t.status === 'ERROR' ? 'destructive' : t.status === 'FINISHED' ? 'default' : 'secondary'" class="mt-1">
+          {{ taskStatusLabels[t.status] }}
+        </span>
+      </div>
+      @if ('file' in t && t.file; as file) {
+        <div class="rounded-lg border p-3">
+          <p class="text-muted-foreground text-xs font-medium">File</p>
+          <p class="mt-1 text-sm font-medium">{{ file.name }}</p>
+          <p class="text-muted-foreground text-xs">{{ file.size | formatFileSize }}</p>
+        </div>
+      }
+      <div class="rounded-lg border p-3">
+        <p class="text-muted-foreground text-xs font-medium">Created At</p>
+        <p class="mt-1 text-sm font-medium">{{ t.createdAt?.toDate() | date: 'medium' }}</p>
+      </div>
+      <div class="rounded-lg border p-3">
+        <p class="text-muted-foreground text-xs font-medium">Updated At</p>
+        <p class="mt-1 text-sm font-medium">{{ t.updatedAt?.toDate() | date: 'medium' }}</p>
+      </div>
+      @if (t.message) {
+        <div class="rounded-lg border p-3 sm:col-span-2 md:col-span-4">
+          <p class="text-muted-foreground text-xs font-medium">Message</p>
+          <p class="mt-1 text-sm font-medium">{{ t.message }}</p>
+          @if (t.trace) {
+            <pre class="bg-muted mt-2 overflow-x-auto rounded-md p-3 font-mono text-xs">{{ t.trace }}</pre>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Logs table -->
+    <div>
+      <h3 class="mb-2 font-semibold">Logs</h3>
+      <ll-filter-toolbar
+        class="mb-3"
+        searchPlaceholder="Search by message..."
+        [filters]="filters"
+        (filterChange)="onFilterChange($event)" />
+      @if (isLogsLoading()) {
+        <hlm-progress class="h-0.5">
+          <hlm-progress-indicator />
+        </hlm-progress>
+      }
+      <div llTableContainer>
+        <table ll-table [dataSource]="dataSource" [multiTemplateDataRows]="true">
+          <ng-container llColumnDef="expand" llColumnDefClass="w-10">
+            <th llHeaderCell *llHeaderCellDef></th>
+            <td llCell *llCellDef="let element">
+              @if (element.trace) {
+                <ng-icon
+                  hlm
+                  size="sm"
+                  name="lucideChevronRight"
+                  class="text-muted-foreground transition-transform"
+                  [class.rotate-90]="isLogExpanded(element.id)" />
+              }
+            </td>
+          </ng-container>
+          <ng-container llColumnDef="level">
+            <th llHeaderCell *llHeaderCellDef>Level</th>
+            <td llCell *llCellDef="let element">
+              <span
+                hlmBadge
+                [variant]="
+                  element.level === TaskLogLevel.ERROR ? 'destructive' : element.level === TaskLogLevel.WARN ? 'outline' : 'secondary'
+                ">
+                {{ element.level }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container llColumnDef="message">
+            <th llHeaderCell *llHeaderCellDef>Message</th>
+            <td llCell *llCellDef="let element">{{ element.message }}</td>
+          </ng-container>
+          <ng-container llColumnDef="createdAt">
+            <th llHeaderCell *llHeaderCellDef>Created At</th>
+            <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
+              {{ element.createdAt?.toDate() | date: 'MMM dd, HH:mm:ss' }}
+            </td>
+          </ng-container>
+          <ng-container llColumnDef="expandedDetail">
+            <td llCell *llCellDef="let element" class="overflow-visible! p-4 whitespace-normal!" [attr.colspan]="displayedColumns.length">
+              <pre class="bg-muted overflow-x-auto rounded-md p-3 font-mono text-xs">{{ element.trace }}</pre>
+            </td>
+          </ng-container>
+          <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr
+            ll-row
+            *llRowDef="let row; columns: displayedColumns"
+            [class.cursor-pointer]="row.trace"
+            (click)="row.trace && toggleLogExpanded(row.id)"></tr>
+          <tr
+            ll-row
+            *llRowDef="let row; columns: ['expandedDetail']"
+            class="bg-muted/30 hover:bg-muted/30"
+            [class.hidden]="!isLogExpanded(row.id)"></tr>
+          <tr *llNoDataRow>
+            <td [attr.colspan]="displayedColumns.length">No logs available.</td>
+          </tr>
+        </table>
+      </div>
+      <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+    </div>
+  </div>
+}

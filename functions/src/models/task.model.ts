@@ -19,6 +19,19 @@ export enum TaskStatus {
   FINISHED = 'FINISHED',
 }
 
+export enum TaskLogLevel {
+  INFO = 'INFO',
+  WARN = 'WARN',
+  ERROR = 'ERROR',
+}
+
+export interface TaskLog {
+  level: TaskLogLevel;
+  message: string;
+  trace?: string;
+  createdAt: Timestamp;
+}
+
 export interface TaskFile {
   name: string;
   size: number;

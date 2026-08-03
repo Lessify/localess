@@ -139,7 +139,7 @@
         </td>
       </ng-container>
       <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
-      <tr ll-row *llRowDef="let row; columns: displayedColumns"></tr>
+      <tr ll-row *llRowDef="let row; columns: displayedColumns" class="cursor-pointer" (click)="navigateToDetail(row)"></tr>
       <tr *llNoDataRow>
         <td [attr.colspan]="displayedColumns.length">No tasks yet.</td>
       </tr>

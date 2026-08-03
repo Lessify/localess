@@ -1,0 +1,17 @@
+th,
+td {
+  &.ll-column-expand {
+    width: 40px;
+    max-width: 40px;
+  }
+
+  &.ll-column-level {
+    width: 100px;
+    max-width: 100px;
+  }
+
+  &.ll-column-createdAt {
+    width: 160px;
+    max-width: 160px;
+  }
+}

@@ -24,6 +24,7 @@ import {
   TaskContentExportFS,
   TaskContentImportFS,
   TaskKind,
+  TaskLog,
   TaskSchemaExportFS,
   TaskSchemaImportFS,
   TaskStatus,
@@ -204,5 +205,14 @@ export class TaskService {
 
   delete(spaceId: string, id: string): Observable<void> {
     return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/tasks/${id}`))).pipe(traceUntilFirst('Firestore:Tasks:delete'));
+  }
+
+  findLogs(spaceId: string, taskId: string): Observable<TaskLog[]> {
+    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tasks/${taskId}/logs`), orderBy('createdAt', 'asc')), {
+      idField: 'id',
+    }).pipe(
+      traceUntilFirst('Firestore:Tasks:findLogs'),
+      map(it => it as TaskLog[]),
+    );
   }
 }
