@@ -49,7 +49,7 @@ import {
   zTranslationFlatExportSchema,
 } from './models';
 import { BATCH_MAX, bucket, firestoreService } from './config';
-import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { zip } from 'compressing';
 import {
   docAssetToExport,
@@ -94,6 +94,24 @@ function streamFileToStorage(localPath: string, gcsDestination: string): Promise
       .on('finish', resolve)
       .on('error', reject);
   });
+}
+
+/**
+ * Best-effort removal of local temp files/directories created while processing a task. Cloud
+ * Functions instances are reused across many invocations, so anything left in /tmp accumulates
+ * indefinitely on a warm instance unless explicitly cleaned up here. Never throws - a cleanup
+ * failure must not mask the task's actual result.
+ * @param {string[]} paths absolute paths to remove (files or directories)
+ * @return {void}
+ */
+function cleanupTmpPaths(paths: string[]): void {
+  for (const path of paths) {
+    try {
+      rmSync(path, { recursive: true, force: true });
+    } catch (error: any) {
+      logger.warn(`[cleanupTmpPaths] Failed to remove '${path}': ${error.message}`);
+    }
+  }
 }
 
 /**
@@ -351,6 +369,31 @@ const onTaskCreate = onDocumentCreated(
  * @param {Task} task original task
  */
 async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExport): Promise<any> {
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  const assetsExportZipFile = `${tmpdir()}/assets-${taskId}.zip`;
+  try {
+    return await assetsExportRun(spaceId, taskId, task, tmpTaskFolder, assetsExportZipFile);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder, assetsExportZipFile]);
+  }
+}
+
+/**
+ * assetsExport body, run inside a try/finally by assetsExport() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @param {string} assetsExportZipFile pre-computed local zip file path for this task
+ * @return {Promise<any>}
+ */
+async function assetsExportRun(
+  spaceId: string,
+  taskId: string,
+  task: TaskAssetExport,
+  tmpTaskFolder: string,
+  assetsExportZipFile: string
+): Promise<any> {
   const exportAssets: (AssetExport | undefined)[] = [];
   if (task.path) {
     // Only specific folder or asset
@@ -392,7 +435,6 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
       exportAssets.push(docAssetToExport(doc.id, asset));
     });
   }
-  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'ASSET',
   };
@@ -407,7 +449,6 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
 
   // Create assets folder
   const assetsTmpFolder = `${tmpTaskFolder}/assets`;
-  const assetsExportZipFile = `${tmpdir()}/assets-${taskId}.zip`;
   mkdirSync(assetsTmpFolder);
 
   const fileAssetsCount = exportAssets.filter(asset => asset && asset.kind === AssetKind.FILE).length;
@@ -445,6 +486,21 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
  */
 async function assetsImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  try {
+    return await assetsImportRun(spaceId, taskId, tmpTaskFolder);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder]);
+  }
+}
+
+/**
+ * assetsImport body, run inside a try/finally by assetsImport() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @return {Promise<ZodError | undefined | string>}
+ */
+async function assetsImportRun(spaceId: string, taskId: string, tmpTaskFolder: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'downloading original file');
@@ -578,6 +634,31 @@ async function assetRegenerateMetadata(spaceId: string, taskId: string): Promise
  * @param {Task} task original task
  */
 async function contentsExport(spaceId: string, taskId: string, task: TaskContentExport): Promise<any> {
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  const contentsExportZipFile = `${tmpdir()}/contents-${taskId}.zip`;
+  try {
+    return await contentsExportRun(spaceId, taskId, task, tmpTaskFolder, contentsExportZipFile);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder, contentsExportZipFile]);
+  }
+}
+
+/**
+ * contentsExport body, run inside a try/finally by contentsExport() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @param {string} contentsExportZipFile pre-computed local zip file path for this task
+ * @return {Promise<any>}
+ */
+async function contentsExportRun(
+  spaceId: string,
+  taskId: string,
+  task: TaskContentExport,
+  tmpTaskFolder: string,
+  contentsExportZipFile: string
+): Promise<any> {
   const exportContents: (ContentExport | undefined)[] = [];
   if (task.path) {
     // Only specific folder or document
@@ -631,7 +712,6 @@ async function contentsExport(spaceId: string, taskId: string, task: TaskContent
       exportContents.push(docContentToExport(doc.id, content));
     });
   }
-  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'CONTENT',
   };
@@ -643,9 +723,6 @@ async function contentsExport(spaceId: string, taskId: string, task: TaskContent
   // Create assets.json
   writeFileSync(`${tmpTaskFolder}/contents.json`, JSON.stringify(exportContents));
   writeFileSync(`${tmpTaskFolder}/metadata.json`, JSON.stringify(fileMetadata));
-
-  // Create assets folder
-  const contentsExportZipFile = `${tmpdir()}/contents-${taskId}.zip`;
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip started');
   await withTimeout(zip.compressDir(tmpTaskFolder, contentsExportZipFile, { ignoreBase: true }), 'zip compress');
@@ -666,6 +743,21 @@ async function contentsExport(spaceId: string, taskId: string, task: TaskContent
  */
 async function contentsImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  try {
+    return await contentsImportRun(spaceId, taskId, tmpTaskFolder);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder]);
+  }
+}
+
+/**
+ * contentsImport body, run inside a try/finally by contentsImport() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @return {Promise<ZodError | undefined | string>}
+ */
+async function contentsImportRun(spaceId: string, taskId: string, tmpTaskFolder: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'downloading original file');
@@ -772,6 +864,24 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
  * @param {string} taskId original task
  */
 async function schemasExport(spaceId: string, taskId: string): Promise<any> {
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  const schemasExportZipFile = `${tmpdir()}/schemas-${taskId}.zip`;
+  try {
+    return await schemasExportRun(spaceId, taskId, tmpTaskFolder, schemasExportZipFile);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder, schemasExportZipFile]);
+  }
+}
+
+/**
+ * schemasExport body, run inside a try/finally by schemasExport() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @param {string} schemasExportZipFile pre-computed local zip file path for this task
+ * @return {Promise<any>}
+ */
+async function schemasExportRun(spaceId: string, taskId: string, tmpTaskFolder: string, schemasExportZipFile: string): Promise<any> {
   const exportSchemas: SchemaExport[] = [];
   const schemasSnapshot = await findSchemas(spaceId).get();
   const existingDocs = schemasSnapshot.docs.filter(it => it.exists);
@@ -799,7 +909,6 @@ async function schemasExport(spaceId: string, taskId: string): Promise<any> {
       });
     }
   });
-  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'SCHEMA',
   };
@@ -808,9 +917,6 @@ async function schemasExport(spaceId: string, taskId: string): Promise<any> {
   // Create assets.json
   writeFileSync(`${tmpTaskFolder}/schemas.json`, JSON.stringify(exportSchemas));
   writeFileSync(`${tmpTaskFolder}/metadata.json`, JSON.stringify(fileMetadata));
-
-  // Create assets folder
-  const schemasExportZipFile = `${tmpdir()}/schemas-${taskId}.zip`;
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip started');
   await withTimeout(zip.compressDir(tmpTaskFolder, schemasExportZipFile, { ignoreBase: true }), 'zip compress');
@@ -830,8 +936,23 @@ async function schemasExport(spaceId: string, taskId: string): Promise<any> {
  * @param {string} taskId original task
  */
 async function schemasImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
-  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'Started');
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  try {
+    return await schemasImportRun(spaceId, taskId, tmpTaskFolder);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder]);
+  }
+}
+
+/**
+ * schemasImport body, run inside a try/finally by schemasImport() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @return {Promise<ZodError | undefined | string>}
+ */
+async function schemasImportRun(spaceId: string, taskId: string, tmpTaskFolder: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'Started');
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'downloading original file');
@@ -936,6 +1057,31 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
  * @param {Task} task original task
  */
 async function translationsExport(spaceId: string, taskId: string, task: TaskTranslationExport): Promise<any> {
+  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  const translationsExportZipFile = `${tmpdir()}/translations-${taskId}.zip`;
+  try {
+    return await translationsExportRun(spaceId, taskId, task, tmpTaskFolder, translationsExportZipFile);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder, translationsExportZipFile]);
+  }
+}
+
+/**
+ * translationsExport body, run inside a try/finally by translationsExport() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @param {string} translationsExportZipFile pre-computed local zip file path for this task
+ * @return {Promise<any>}
+ */
+async function translationsExportRun(
+  spaceId: string,
+  taskId: string,
+  task: TaskTranslationExport,
+  tmpTaskFolder: string,
+  translationsExportZipFile: string
+): Promise<any> {
   const exportTranslations: TranslationExport[] = [];
   const translationsSnapshot = await findTranslations(spaceId).get();
   const existingDocs = translationsSnapshot.docs.filter(it => it.exists);
@@ -955,7 +1101,6 @@ async function translationsExport(spaceId: string, taskId: string, task: TaskTra
     }
     exportTranslations.push(exportedTr);
   });
-  const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
   const fileMetadata: TaskExportMetadata = {
     kind: 'TRANSLATION',
   };
@@ -963,9 +1108,6 @@ async function translationsExport(spaceId: string, taskId: string, task: TaskTra
   // Create assets.json
   writeFileSync(`${tmpTaskFolder}/translations.json`, JSON.stringify(exportTranslations));
   writeFileSync(`${tmpTaskFolder}/metadata.json`, JSON.stringify(fileMetadata));
-
-  // Create assets folder
-  const translationsExportZipFile = `${tmpdir()}/translations-${taskId}.zip`;
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip started');
   await withTimeout(zip.compressDir(tmpTaskFolder, translationsExportZipFile, { ignoreBase: true }), 'zip compress');
@@ -1019,6 +1161,25 @@ async function translationsExportJsonFlat(spaceId: string, taskId: string, task:
  */
 async function translationsImport(spaceId: string, taskId: string): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  try {
+    return await translationsImportRun(spaceId, taskId, tmpTaskFolder);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder]);
+  }
+}
+
+/**
+ * translationsImport body, run inside a try/finally by translationsImport() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @return {Promise<ZodError | undefined | string>}
+ */
+async function translationsImportRun(
+  spaceId: string,
+  taskId: string,
+  tmpTaskFolder: string
+): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   mkdirSync(tmpTaskFolder);
   const zipPath = `${tmpTaskFolder}/task.zip`;
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'downloading original file');
@@ -1107,6 +1268,27 @@ async function translationsImportJsonFlat(
   task: TaskTranslationImport
 ): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   const tmpTaskFolder = TMP_TASK_FOLDER + taskId;
+  try {
+    return await translationsImportJsonFlatRun(spaceId, taskId, task, tmpTaskFolder);
+  } finally {
+    cleanupTmpPaths([tmpTaskFolder]);
+  }
+}
+
+/**
+ * translationsImportJsonFlat body, run inside a try/finally by translationsImportJsonFlat() so temp files always get cleaned up.
+ * @param {string} spaceId original task
+ * @param {string} taskId original task
+ * @param {Task} task original task
+ * @param {string} tmpTaskFolder pre-computed local temp folder for this task
+ * @return {Promise<ZodError | undefined | string>}
+ */
+async function translationsImportJsonFlatRun(
+  spaceId: string,
+  taskId: string,
+  task: TaskTranslationImport,
+  tmpTaskFolder: string
+): Promise<ZodError | undefined | 'WRONG_METADATA'> {
   mkdirSync(tmpTaskFolder);
   const jsonPath = `${tmpTaskFolder}/task.json`;
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImportJsonFlat', 'downloading original file');
