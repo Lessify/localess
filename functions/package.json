@@ -20,7 +20,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@google-cloud/translate": "^9.4.2",
-    "compressing": "^2.1.1",
+    "compressing": "2.1.0",
     "cors": "^2.8.6",
     "deepl-node": "^1.27.0",
     "exiftool-vendored": "^37.1.0",
