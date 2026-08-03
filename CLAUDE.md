@@ -24,7 +24,7 @@ npm run lint:fix       # Auto-fix lint issues
 npm run prettier:fix   # Format code
 
 # Testing
-npm test               # Karma + Jasmine test runner
+npm test               # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
 
 # Firebase Functions (from /functions directory)
 cd functions && npm run build   # Compile TypeScript functions
