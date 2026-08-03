@@ -4,8 +4,8 @@
   </hlm-progress>
 }
 
-@if (task(); as t) {
-  <div class="flex flex-col gap-4 p-4">
+<div class="flex flex-col gap-4 p-4">
+  @if (task(); as t) {
     <!-- Header -->
     <div class="flex items-center gap-2">
       <a hlmBtn variant="ghost" size="icon-sm" [routerLink]="['..']">
@@ -56,79 +56,77 @@
         </div>
       }
     </div>
+  }
 
-    <!-- Logs table -->
-    <div>
-      <h3 class="mb-2 font-semibold">Logs</h3>
-      <ll-filter-toolbar
-        class="mb-3"
-        searchPlaceholder="Search by message..."
-        [filters]="filters"
-        (filterChange)="onFilterChange($event)" />
-      @if (isLogsLoading()) {
-        <hlm-progress class="h-0.5">
-          <hlm-progress-indicator />
-        </hlm-progress>
-      }
-      <div llTableContainer>
-        <table ll-table [dataSource]="dataSource" [multiTemplateDataRows]="true">
-          <ng-container llColumnDef="expand" llColumnDefClass="w-10">
-            <th llHeaderCell *llHeaderCellDef></th>
-            <td llCell *llCellDef="let element">
-              @if (element.trace) {
-                <ng-icon
-                  hlm
-                  size="sm"
-                  name="lucideChevronRight"
-                  class="text-muted-foreground transition-transform"
-                  [class.rotate-90]="isLogExpanded(element.id)" />
-              }
-            </td>
-          </ng-container>
-          <ng-container llColumnDef="level">
-            <th llHeaderCell *llHeaderCellDef>Level</th>
-            <td llCell *llCellDef="let element">
-              <span
-                hlmBadge
-                [variant]="
-                  element.level === TaskLogLevel.ERROR ? 'destructive' : element.level === TaskLogLevel.WARN ? 'outline' : 'secondary'
-                ">
-                {{ element.level }}
-              </span>
-            </td>
-          </ng-container>
-          <ng-container llColumnDef="message">
-            <th llHeaderCell *llHeaderCellDef>Message</th>
-            <td llCell *llCellDef="let element">{{ element.message }}</td>
-          </ng-container>
-          <ng-container llColumnDef="createdAt">
-            <th llHeaderCell *llHeaderCellDef>Created At</th>
-            <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-              {{ element.createdAt?.toDate() | date: 'MMM dd, HH:mm:ss' }}
-            </td>
-          </ng-container>
-          <ng-container llColumnDef="expandedDetail">
-            <td llCell *llCellDef="let element" class="overflow-visible! p-4 whitespace-normal!" [attr.colspan]="displayedColumns.length">
-              <pre class="bg-muted overflow-x-auto rounded-md p-3 font-mono text-xs">{{ element.trace }}</pre>
-            </td>
-          </ng-container>
-          <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
-          <tr
-            ll-row
-            *llRowDef="let row; columns: displayedColumns"
-            [class.cursor-pointer]="row.trace"
-            (click)="row.trace && toggleLogExpanded(row.id)"></tr>
-          <tr
-            ll-row
-            *llRowDef="let row; columns: ['expandedDetail']"
-            class="bg-muted/30 hover:bg-muted/30"
-            [class.hidden]="!isLogExpanded(row.id)"></tr>
-          <tr *llNoDataRow>
-            <td [attr.colspan]="displayedColumns.length">No logs available.</td>
-          </tr>
-        </table>
-      </div>
-      <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <!-- Logs table: loads independently of the task header above, so it must not be nested inside
+       the `@if (task(); as t)` block - otherwise the paginator wouldn't exist in the DOM yet when
+       ngAfterViewInit runs (task() is still loading), and viewChild.required(Paginator) would throw. -->
+  <div>
+    <h3 class="mb-2 font-semibold">Logs</h3>
+    <ll-filter-toolbar class="mb-3" searchPlaceholder="Search by message..." [filters]="filters" (filterChange)="onFilterChange($event)" />
+    @if (isLogsLoading()) {
+      <hlm-progress class="h-0.5">
+        <hlm-progress-indicator />
+      </hlm-progress>
+    }
+    <div llTableContainer>
+      <table ll-table [dataSource]="dataSource" [multiTemplateDataRows]="true">
+        <ng-container llColumnDef="expand" llColumnDefClass="w-10">
+          <th llHeaderCell *llHeaderCellDef></th>
+          <td llCell *llCellDef="let element">
+            @if (element.trace) {
+              <ng-icon
+                hlm
+                size="sm"
+                name="lucideChevronRight"
+                class="text-muted-foreground transition-transform"
+                [class.rotate-90]="isLogExpanded(element.id)" />
+            }
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="level">
+          <th llHeaderCell *llHeaderCellDef>Level</th>
+          <td llCell *llCellDef="let element">
+            <span
+              hlmBadge
+              [variant]="
+                element.level === TaskLogLevel.ERROR ? 'destructive' : element.level === TaskLogLevel.WARN ? 'outline' : 'secondary'
+              ">
+              {{ element.level }}
+            </span>
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="message">
+          <th llHeaderCell *llHeaderCellDef>Message</th>
+          <td llCell *llCellDef="let element">{{ element.message }}</td>
+        </ng-container>
+        <ng-container llColumnDef="createdAt">
+          <th llHeaderCell *llHeaderCellDef>Created At</th>
+          <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
+            {{ element.createdAt?.toDate() | date: 'MMM dd, HH:mm:ss' }}
+          </td>
+        </ng-container>
+        <ng-container llColumnDef="expandedDetail">
+          <td llCell *llCellDef="let element" class="overflow-visible! p-4 whitespace-normal!" [attr.colspan]="displayedColumns.length">
+            <pre class="bg-muted overflow-x-auto rounded-md p-3 font-mono text-xs">{{ element.trace }}</pre>
+          </td>
+        </ng-container>
+        <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr
+          ll-row
+          *llRowDef="let row; columns: displayedColumns"
+          [class.cursor-pointer]="row.trace"
+          (click)="row.trace && toggleLogExpanded(row.id)"></tr>
+        <tr
+          ll-row
+          *llRowDef="let row; columns: ['expandedDetail']"
+          class="bg-muted/30 hover:bg-muted/30"
+          [class.hidden]="!isLogExpanded(row.id)"></tr>
+        <tr *llNoDataRow>
+          <td [attr.colspan]="displayedColumns.length">No logs available.</td>
+        </tr>
+      </table>
     </div>
+    <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
   </div>
-}
+</div>

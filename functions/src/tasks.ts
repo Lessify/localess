@@ -79,6 +79,7 @@ import { ZodError } from 'zod';
 const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
 const MAX_VALIDATION_ISSUES = 5;
 const DOWNLOAD_PROGRESS_INTERVAL = 50;
+const ZIP_OPERATION_TIMEOUT_MS = 60_000;
 
 /**
  * Stream a local file to GCS without loading it entirely into memory.
@@ -92,6 +93,30 @@ function streamFileToStorage(localPath: string, gcsDestination: string): Promise
       .pipe(bucket.file(gcsDestination).createWriteStream({ resumable: false }))
       .on('finish', resolve)
       .on('error', reject);
+  });
+}
+
+/**
+ * Reject with a clear timeout error if the given promise doesn't settle in time. Guards calls
+ * into the `compressing` library, which can hang indefinitely on certain zip files instead of
+ * resolving or rejecting - something a plain try/catch cannot detect on its own.
+ * @param {Promise} promise promise to guard
+ * @param {string} label operation name, used in the timeout error message
+ * @return {Promise} the original promise's result, or a timeout rejection
+ */
+function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ZIP_OPERATION_TIMEOUT_MS}ms`)), ZIP_OPERATION_TIMEOUT_MS);
+    promise.then(
+      value => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      error => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
   });
 }
 
@@ -399,7 +424,7 @@ async function assetsExport(spaceId: string, taskId: string, task: TaskAssetExpo
   }
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `all ${fileAssetsCount} files downloaded`);
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip started');
-  await zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true });
+  await withTimeout(zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true }), 'zip compress');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip completed');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip uploading');
   await bucket.upload(assetsExportZipFile, {
@@ -425,7 +450,7 @@ async function assetsImport(spaceId: string, taskId: string): Promise<ZodError |
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'uncompressing archive');
-  await zip.uncompress(zipPath, tmpTaskFolder);
+  await withTimeout(zip.uncompress(zipPath, tmpTaskFolder), 'zip uncompress');
   const assets = JSON.parse(readFileSync(`${tmpTaskFolder}/assets.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'ASSET') return 'WRONG_METADATA';
@@ -623,7 +648,7 @@ async function contentsExport(spaceId: string, taskId: string, task: TaskContent
   const contentsExportZipFile = `${tmpdir()}/contents-${taskId}.zip`;
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip started');
-  await zip.compressDir(tmpTaskFolder, contentsExportZipFile, { ignoreBase: true });
+  await withTimeout(zip.compressDir(tmpTaskFolder, contentsExportZipFile, { ignoreBase: true }), 'zip compress');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip completed');
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip uploading');
@@ -646,7 +671,7 @@ async function contentsImport(spaceId: string, taskId: string): Promise<ZodError
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'uncompressing archive');
-  await zip.uncompress(zipPath, tmpTaskFolder);
+  await withTimeout(zip.uncompress(zipPath, tmpTaskFolder), 'zip uncompress');
   const contents = JSON.parse(readFileSync(`${tmpTaskFolder}/contents.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'CONTENT') return 'WRONG_METADATA';
@@ -788,7 +813,7 @@ async function schemasExport(spaceId: string, taskId: string): Promise<any> {
   const schemasExportZipFile = `${tmpdir()}/schemas-${taskId}.zip`;
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip started');
-  await zip.compressDir(tmpTaskFolder, schemasExportZipFile, { ignoreBase: true });
+  await withTimeout(zip.compressDir(tmpTaskFolder, schemasExportZipFile, { ignoreBase: true }), 'zip compress');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip completed');
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip uploading');
@@ -812,7 +837,7 @@ async function schemasImport(spaceId: string, taskId: string): Promise<ZodError 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'uncompressing archive');
-  await zip.uncompress(zipPath, tmpTaskFolder);
+  await withTimeout(zip.uncompress(zipPath, tmpTaskFolder), 'zip uncompress');
   const schemas = JSON.parse(readFileSync(`${tmpTaskFolder}/schemas.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'SCHEMA') return 'WRONG_METADATA';
@@ -943,7 +968,7 @@ async function translationsExport(spaceId: string, taskId: string, task: TaskTra
   const translationsExportZipFile = `${tmpdir()}/translations-${taskId}.zip`;
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip started');
-  await zip.compressDir(tmpTaskFolder, translationsExportZipFile, { ignoreBase: true });
+  await withTimeout(zip.compressDir(tmpTaskFolder, translationsExportZipFile, { ignoreBase: true }), 'zip compress');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip completed');
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip uploading');
@@ -999,7 +1024,7 @@ async function translationsImport(spaceId: string, taskId: string): Promise<ZodE
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'uncompressing archive');
-  await zip.uncompress(zipPath, tmpTaskFolder);
+  await withTimeout(zip.uncompress(zipPath, tmpTaskFolder), 'zip uncompress');
   const translations = JSON.parse(readFileSync(`${tmpTaskFolder}/translations.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'TRANSLATION') return 'WRONG_METADATA';
