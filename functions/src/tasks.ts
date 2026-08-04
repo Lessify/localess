@@ -49,8 +49,9 @@ import {
   zTranslationFlatExportSchema,
 } from './models';
 import { BATCH_MAX, bucket, firestoreService } from './config';
-import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { zip } from 'compressing';
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import archiver from 'archiver';
+import unzipper from 'unzipper';
 import {
   docAssetToExport,
   docContentToExport,
@@ -94,6 +95,37 @@ function streamFileToStorage(localPath: string, gcsDestination: string): Promise
       .on('finish', resolve)
       .on('error', reject);
   });
+}
+
+/**
+ * Zip the contents of a directory (flattened, without an extra top-level folder) into a file.
+ * @param {string} sourceDir directory whose contents get zipped
+ * @param {string} destZipPath output zip file path
+ * @return {Promise<void>}
+ */
+function compressDir(sourceDir: string, destZipPath: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const output = createWriteStream(destZipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    output.on('close', resolve);
+    output.on('error', reject);
+    archive.on('error', reject);
+    archive.pipe(output);
+    archive.directory(sourceDir, false);
+    archive.finalize().catch(reject);
+  });
+}
+
+/**
+ * Extract a zip file into a directory.
+ * @param {string} zipPath zip file to extract
+ * @param {string} destDir destination directory
+ * @return {Promise<void>}
+ */
+function uncompressZip(zipPath: string, destDir: string): Promise<void> {
+  // eslint-disable-next-line new-cap
+  const extractStream = unzipper.Extract({ path: destDir });
+  return createReadStream(zipPath).pipe(extractStream).promise();
 }
 
 /**
@@ -465,7 +497,7 @@ async function assetsExportRun(
   }
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', `all ${fileAssetsCount} files downloaded`);
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip started');
-  await withTimeout(zip.compressDir(tmpTaskFolder, assetsExportZipFile, { ignoreBase: true }), 'zip compress');
+  await withTimeout(compressDir(tmpTaskFolder, assetsExportZipFile), 'zip compress');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip completed');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsExport', 'zip uploading');
   await bucket.upload(assetsExportZipFile, {
@@ -506,7 +538,7 @@ async function assetsImportRun(spaceId: string, taskId: string, tmpTaskFolder: s
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'assetsImport', 'uncompressing archive');
-  await withTimeout(zip.uncompress(zipPath, tmpTaskFolder), 'zip uncompress');
+  await withTimeout(uncompressZip(zipPath, tmpTaskFolder), 'zip uncompress');
   const assets = JSON.parse(readFileSync(`${tmpTaskFolder}/assets.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'ASSET') return 'WRONG_METADATA';
@@ -725,7 +757,7 @@ async function contentsExportRun(
   writeFileSync(`${tmpTaskFolder}/metadata.json`, JSON.stringify(fileMetadata));
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip started');
-  await withTimeout(zip.compressDir(tmpTaskFolder, contentsExportZipFile, { ignoreBase: true }), 'zip compress');
+  await withTimeout(compressDir(tmpTaskFolder, contentsExportZipFile), 'zip compress');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip completed');
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsExport', 'zip uploading');
@@ -763,7 +795,7 @@ async function contentsImportRun(spaceId: string, taskId: string, tmpTaskFolder:
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'contentsImport', 'uncompressing archive');
-  await withTimeout(zip.uncompress(zipPath, tmpTaskFolder), 'zip uncompress');
+  await withTimeout(uncompressZip(zipPath, tmpTaskFolder), 'zip uncompress');
   const contents = JSON.parse(readFileSync(`${tmpTaskFolder}/contents.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'CONTENT') return 'WRONG_METADATA';
@@ -919,7 +951,7 @@ async function schemasExportRun(spaceId: string, taskId: string, tmpTaskFolder: 
   writeFileSync(`${tmpTaskFolder}/metadata.json`, JSON.stringify(fileMetadata));
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip started');
-  await withTimeout(zip.compressDir(tmpTaskFolder, schemasExportZipFile, { ignoreBase: true }), 'zip compress');
+  await withTimeout(compressDir(tmpTaskFolder, schemasExportZipFile), 'zip compress');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip completed');
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', 'zip uploading');
@@ -958,7 +990,7 @@ async function schemasImportRun(spaceId: string, taskId: string, tmpTaskFolder: 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'uncompressing archive');
-  await withTimeout(zip.uncompress(zipPath, tmpTaskFolder), 'zip uncompress');
+  await withTimeout(uncompressZip(zipPath, tmpTaskFolder), 'zip uncompress');
   const schemas = JSON.parse(readFileSync(`${tmpTaskFolder}/schemas.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'SCHEMA') return 'WRONG_METADATA';
@@ -1110,7 +1142,7 @@ async function translationsExportRun(
   writeFileSync(`${tmpTaskFolder}/metadata.json`, JSON.stringify(fileMetadata));
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip started');
-  await withTimeout(zip.compressDir(tmpTaskFolder, translationsExportZipFile, { ignoreBase: true }), 'zip compress');
+  await withTimeout(compressDir(tmpTaskFolder, translationsExportZipFile), 'zip compress');
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip completed');
 
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsExport', 'zip uploading');
@@ -1185,7 +1217,7 @@ async function translationsImportRun(
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'downloading original file');
   await bucket.file(`spaces/${spaceId}/tasks/${taskId}/original`).download({ destination: zipPath });
   await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'translationsImport', 'uncompressing archive');
-  await withTimeout(zip.uncompress(zipPath, tmpTaskFolder), 'zip uncompress');
+  await withTimeout(uncompressZip(zipPath, tmpTaskFolder), 'zip uncompress');
   const translations = JSON.parse(readFileSync(`${tmpTaskFolder}/translations.json`).toString());
   const fileMetadata: TaskExportMetadata = JSON.parse(readFileSync(`${tmpTaskFolder}/metadata.json`).toString());
   if (fileMetadata.kind !== 'TRANSLATION') return 'WRONG_METADATA';
