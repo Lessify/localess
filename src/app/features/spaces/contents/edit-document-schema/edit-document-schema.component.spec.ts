@@ -1,18 +1,13 @@
-import { vi } from 'vitest';
-
-// EditDocumentSchemaComponent transitively imports TranslateService (and thus @angular/fire/functions).
-// Mirrors the vi.hoisted + full-replacement mock style used in setup.service.spec.ts (rather than
-// translate.service.spec.ts's spread-actual style), to avoid a module-hoisting collision between
-// the several spec files that touch this module when bundled into the same test run.
-vi.mock('@angular/fire/functions', () => ({ Functions: class MockFunctions {}, httpsCallableData: vi.fn() }));
-
+// EditDocumentSchemaComponent transitively imports TranslateService (and thus @angular/fire/functions),
+// which is mocked globally in src/test-setup.ts (registered via the test builder's setupFiles option)
+// — see that file for why this isn't a local vi.mock here.
 import { TestBed } from '@angular/core/testing';
 import { Functions } from '@angular/fire/functions';
 import { Router } from '@angular/router';
 import { ContentData } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { EditDocumentSchemaComponent } from './edit-document-schema.component';
 
 function schema(fields: SchemaComponent['fields'], id = 'root-1'): SchemaComponent {
