@@ -271,4 +271,64 @@ describe('EditDocumentSchemaComponent', () => {
       expect(emitted).toBe(true);
     });
   });
+
+  describe('change detection', () => {
+    // Renders a minimal stub template instead of the real one — the real template pulls in ~10
+    // heavy child editors/selectors we don't want to instantiate here. This lets us observe actual
+    // rendered DOM through real change-detection cycles without any manual detectChanges() calls
+    // of our own, isolating whether the component's own cd.detectChanges()/markForCheck() calls are
+    // what keep the view in sync.
+    function setupRendered(config: { schemas?: Schema[]; data?: ContentData } = {}) {
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: Functions, useValue: {} },
+          { provide: Router, useValue: {} },
+        ],
+      });
+      TestBed.overrideComponent(EditDocumentSchemaComponent, {
+        set: { template: `<div class="loading-marker">{{ isFormLoading() }}</div><div class="valid-marker">{{ form.valid }}</div>` },
+      });
+      const fixture = TestBed.createComponent(EditDocumentSchemaComponent);
+      fixture.componentRef.setInput('schemas', config.schemas ?? []);
+      fixture.componentRef.setInput('selectedLocale', CONTENT_DEFAULT_LOCALE);
+      fixture.componentRef.setInput('availableLocales', [CONTENT_DEFAULT_LOCALE]);
+      fixture.componentRef.setInput('data', config.data ?? { _id: '1', schema: 'root-1' });
+      fixture.detectChanges(); // initial render + flush constructor effects, incl. form generation
+      return { fixture, component: fixture.componentInstance };
+    }
+
+    it('reflects a locale change to the loading-marker without an explicit fixture.detectChanges() call', () => {
+      const { fixture } = setupRendered();
+      fixture.componentRef.setInput('selectedLocale', { id: 'fr', name: 'French' });
+      TestBed.tick();
+      expect(fixture.nativeElement.querySelector('.loading-marker').textContent.trim()).toBe('false');
+    });
+
+    it('reflects a form validity change via onAssetsChange without an explicit fixture.detectChanges() call', () => {
+      const rootSchema = schema([{ name: 'title', kind: SchemaFieldKind.TEXT, required: true } as never]);
+      const { fixture, component } = setupRendered({ schemas: [rootSchema] });
+      expect(fixture.nativeElement.querySelector('.valid-marker').textContent.trim()).toBe('false'); // required title empty -> invalid
+
+      component.form.controls['title'].setValue('Hello');
+      component.onAssetsChange();
+      TestBed.tick();
+
+      expect(fixture.nativeElement.querySelector('.valid-marker').textContent.trim()).toBe('true');
+    });
+
+    it('paints the intermediate loading=true frame mid-onChanged, before generateForm runs', () => {
+      const { fixture, component } = setupRendered();
+      let midCallSnapshot: string | undefined;
+      const originalGenerateForm = component.generateForm.bind(component);
+      vi.spyOn(component, 'generateForm').mockImplementation(() => {
+        midCallSnapshot = fixture.nativeElement.querySelector('.loading-marker').textContent.trim();
+        return originalGenerateForm();
+      });
+
+      fixture.componentRef.setInput('selectedLocale', { id: 'fr', name: 'French' });
+      TestBed.tick();
+
+      expect(midCallSnapshot).toBe('true');
+    });
+  });
 });

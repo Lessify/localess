@@ -301,7 +301,6 @@ export class EditDocumentSchemaComponent {
     //this.form.reset();
     //this.form.patchValue(this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale));
     this.isFormLoading.set(false);
-    this.cd.markForCheck();
     //console.groupEnd()
   }
 
