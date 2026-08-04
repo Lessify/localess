@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, Input, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
@@ -117,7 +117,7 @@ export class EditFieldComponent {
   ];
 
   // Input
-  @Input() form: FormGroup = this.fb.group({});
+  readonly form = input<FormGroup>(this.fb.group({}));
   schemas = input.required<Schema[]>();
 
   fieldKinds = Object.values(SchemaFieldKind);
@@ -151,7 +151,7 @@ export class EditFieldComponent {
   settingsStore = inject(LocalSettingsStore);
 
   get options(): FormArray<FormGroup> | undefined {
-    return this.form.controls['options'] as FormArray<FormGroup>;
+    return this.form().controls['options'] as FormArray<FormGroup>;
   }
 
   selectFieldKind(value: SchemaFieldKind): void {
@@ -161,316 +161,316 @@ export class EditFieldComponent {
       case SchemaFieldKind.RICH_TEXT:
       case SchemaFieldKind.MARKDOWN: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('minLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_LENGTH));
-        this.form.addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_LENGTH));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('minLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_LENGTH));
+        this.form().addControl('maxLength', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_LENGTH));
         // REMOVE
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('slug');
+        this.form().removeControl('slug');
         break;
       }
       case SchemaFieldKind.NUMBER: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('minValue', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUE));
-        this.form.addControl('maxValue', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUE));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('minValue', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUE));
+        this.form().addControl('maxValue', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUE));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('slug');
+        this.form().removeControl('slug');
         break;
       }
       case SchemaFieldKind.COLOR: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('slug');
+        this.form().removeControl('slug');
         break;
       }
 
       case SchemaFieldKind.DATE: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.DATETIME: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.BOOLEAN: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.OPTION: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('source', this.fb.control<string>('', SchemaValidator.FIELD_OPTION_SOURCE));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('source', this.fb.control<string>('', SchemaValidator.FIELD_OPTION_SOURCE));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Options
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.OPTIONS: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('source', this.fb.control<string>('', SchemaValidator.FIELD_OPTION_SOURCE));
-        this.form.addControl('minValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUES));
-        this.form.addControl('maxValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUES));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('source', this.fb.control<string>('', SchemaValidator.FIELD_OPTION_SOURCE));
+        this.form().addControl('minValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MIN_VALUES));
+        this.form().addControl('maxValues', this.fb.control<number | undefined>(undefined, SchemaValidator.FIELD_MAX_VALUES));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.LINK: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.REFERENCE:
       case SchemaFieldKind.REFERENCES: {
         // ADD
-        this.form.addControl('path', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_REFERENCE_PATH));
+        this.form().addControl('path', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_REFERENCE_PATH));
         // REMOVE
-        this.form.removeControl('translatable');
+        this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         break;
       }
       case SchemaFieldKind.ASSET: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('fileType', this.fb.control<AssetFileType | undefined>(AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('fileType', this.fb.control<AssetFileType | undefined>(AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.ASSETS: {
         // ADD
-        this.form.addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
-        this.form.addControl('fileType', this.fb.control<AssetFileType | undefined>(AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES));
+        this.form().addControl('translatable', this.fb.control<boolean | undefined>(undefined, SchemaValidator.FIELD_TRANSLATABLE));
+        this.form().addControl('fileType', this.fb.control<AssetFileType | undefined>(AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES));
         // REMOVE
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Schema
-        this.form.removeControl('schemas');
+        this.form().removeControl('schemas');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.SCHEMA: {
         // ADD
-        this.form.addControl('schemas', this.fb.control<string[] | undefined>(undefined));
+        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined));
         // REMOVE
-        this.form.removeControl('translatable');
+        this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
       case SchemaFieldKind.SCHEMAS: {
         // ADD
-        this.form.addControl('schemas', this.fb.control<string[] | undefined>(undefined));
+        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined));
         // REMOVE
-        this.form.removeControl('translatable');
+        this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown
-        this.form.removeControl('minLength');
-        this.form.removeControl('maxLength');
+        this.form().removeControl('minLength');
+        this.form().removeControl('maxLength');
         // Number
-        this.form.removeControl('minValue');
-        this.form.removeControl('maxValue');
+        this.form().removeControl('minValue');
+        this.form().removeControl('maxValue');
         // Option & Options
-        this.form.removeControl('source');
-        this.form.removeControl('options');
-        this.form.removeControl('minValues');
-        this.form.removeControl('maxValues');
+        this.form().removeControl('source');
+        this.form().removeControl('options');
+        this.form().removeControl('minValues');
+        this.form().removeControl('maxValues');
         // Asset & Assets
-        this.form.removeControl('fileType');
+        this.form().removeControl('fileType');
         // Reference
-        this.form.removeControl('path');
+        this.form().removeControl('path');
         break;
       }
     }

@@ -9,13 +9,10 @@ import {
   effect,
   ElementRef,
   inject,
-  Input,
   input,
-  OnChanges,
-  OnInit,
   output,
   signal,
-  SimpleChanges,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -107,7 +104,7 @@ import { SchemaSelectChange } from './edit-document-schema.model';
     }),
   ],
 })
-export class EditDocumentSchemaComponent implements OnInit, OnChanges {
+export class EditDocumentSchemaComponent {
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly contentHelperService = inject(ContentHelperService);
@@ -128,10 +125,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   private destroyRef = inject(DestroyRef);
 
   // Inputs
-  @Input() documents: ContentDocument[] = [];
-  @Input() space?: Space;
-  @Input() data: ContentData = { _id: '', _schema: '', schema: '' };
-  //data = input.required<ContentData>();
+  readonly documents = input<ContentDocument[]>([]);
+  readonly space = input<Space>();
+  readonly data = input<ContentData>({ _id: '', _schema: '', schema: '' });
   schemas = input.required<Schema[]>();
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();
@@ -148,7 +144,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   schemaHover = output<{ id: string; schema: string; field?: string }>();
   schemaLeave = output<void>();
 
-  rootSchema?: SchemaComponent;
+  rootSchema = computed(() =>
+    this.schemas()
+      .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
+      .map(it => it as SchemaComponent)
+      .find(it => it.id == this.data().schema),
+  );
+  documentId = computed(() => this.data()._id);
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
   schemaCompNodeList = computed(() =>
     this.schemas()
@@ -186,7 +188,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
     }
     return map;
   });
-  schemaFieldsMap: Map<string, SchemaField> = new Map<string, SchemaField>();
   //Loadings
   isFormLoading = signal(true);
 
@@ -215,63 +216,21 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         element.querySelector<HTMLElement>(`#schema-field-${field}`)?.focus();
       }
     });
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    console.group('EditDocumentSchemaComponent:ngOnChanges');
-    console.log(changes);
-
-    const dataChange = changes['data'];
-    if (dataChange) {
-      if (dataChange.isFirstChange()) {
-        this.rootSchema = this.schemas()
-          .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
-          .map(it => it as SchemaComponent)
-          .find(it => it.id == this.data.schema);
-        this.schemaFieldsMap = new Map<string, SchemaField>(this.rootSchema?.fields?.map(it => [it.name, it]));
-      } else {
-        // Update only when content is different
-        if (dataChange.currentValue._id != dataChange.previousValue._id) {
-          // Find new root schema and regenerate the form
-          this.rootSchema = this.schemas()
-            .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
-            .map(it => it as SchemaComponent)
-            .find(it => it.id == this.data.schema);
-          this.schemaFieldsMap = new Map<string, SchemaField>(this.rootSchema?.fields?.map(it => [it.name, it]));
-          this.clearForm();
-          this.onChanged();
-        }
-      }
-    }
-
-    const selectedLocaleChange = changes['selectedLocale'];
-    if (selectedLocaleChange) {
-      this.onChanged();
-    }
-    console.groupEnd();
-  }
-
-  ngOnInit(): void {
-    //console.group('ngOnInit')
-    //console.log(`data`, ObjectUtils.clone(this.data))
-    //console.log(`schemas : ${JSON.stringify(this.schemas)}`)
-    //console.log(`locale : ${this.locale}`)
-    //console.log(`localeFallback : ${this.localeFallback}`)
-    //console.groupEnd()
-    console.log('ngOnInit');
-
-    this.generateForm();
-    if (this.data) {
-      this.formPatch();
-      // this.form.reset()
-      // this.form.patchValue(this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale));
-    }
+    // Regenerates the form once on creation, and again whenever the document (_id) or the
+    // selected locale actually changes. rootSchema/schemas are read untracked so a schemas()
+    // reference change alone (e.g. a reload) doesn't trigger a regeneration on its own.
+    effect(() => {
+      this.documentId();
+      this.selectedLocaleId();
+      untracked(() => this.onChanged());
+    });
   }
 
   generateForm(): void {
-    if (this.rootSchema && (this.rootSchema.type === SchemaType.ROOT || this.rootSchema.type === SchemaType.NODE)) {
+    const rootSchema = this.rootSchema();
+    if (rootSchema && (rootSchema.type === SchemaType.ROOT || rootSchema.type === SchemaType.NODE)) {
       // true - check all fields, false - all fields become optional
-      this.form = this.contentHelperService.generateSchemaForm(this.rootSchema, this.isDefaultLocale());
+      this.form = this.contentHelperService.generateSchemaForm(rootSchema, this.isDefaultLocale());
 
       this.form.valueChanges
         .pipe(
@@ -286,7 +245,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
             //console.log('formValue', ObjectUtils.clone(formValue));
             //console.log('Before data', ObjectUtils.clone(this.data));
             //console.log('rootSchema', ObjectUtils.clone(this.rootSchema));
-            for (const field of this.rootSchema?.fields || []) {
+            for (const field of rootSchema?.fields || []) {
               //console.log('field', field.name, field.kind);
               if (field.kind === SchemaFieldKind.SCHEMAS) continue;
               if (field.kind === SchemaFieldKind.SCHEMA) continue;
@@ -295,19 +254,19 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
               if (this.isDefaultLocale()) {
                 // check everything
                 if (value === null) {
-                  delete this.data[field.name];
+                  delete this.data()[field.name];
                 } else {
-                  this.data[field.name] = value;
+                  this.data()[field.name] = value;
                 }
               } else {
                 // check only locale
                 if (field.translatable) {
                   if (value === undefined || value === null || value === '') {
-                    delete this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
+                    delete this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`];
                   } else if (Array.isArray(value) && value.length === 0) {
-                    delete this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
+                    delete this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`];
                   } else {
-                    this.data[`${field.name}_i18n_${this.selectedLocaleId()}`] = value;
+                    this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`] = value;
                   }
                 } else {
                   // Non-translatable fields are disabled on non-default locales and are
@@ -315,9 +274,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
                   // shared value in this.data is never overwritten with undefined.
                   if (value === undefined) continue;
                   if (value === null) {
-                    delete this.data[field.name];
+                    delete this.data()[field.name];
                   } else {
-                    this.data[field.name] = value;
+                    this.data()[field.name] = value;
                   }
                 }
               }
@@ -331,14 +290,6 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
           complete: () => console.log('completed'),
         });
     }
-  }
-
-  clearForm(): void {
-    //console.group('clearForm')
-    for (const ctrlName in this.form.controls) {
-      this.form.removeControl(ctrlName);
-    }
-    //console.groupEnd()
   }
 
   onChanged(): void {
@@ -357,13 +308,9 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   formPatch(): void {
     //console.group('formPatch')
     this.form.reset();
-    if (this.rootSchema) {
-      const extractSchemaContent = this.contentHelperService.extractSchemaContent(
-        this.data,
-        this.rootSchema,
-        this.selectedLocaleId(),
-        false,
-      );
+    const rootSchema = this.rootSchema();
+    if (rootSchema) {
+      const extractSchemaContent = this.contentHelperService.extractSchemaContent(this.data(), rootSchema, this.selectedLocaleId(), false);
       //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
       this.form.patchValue(extractSchemaContent);
       Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
@@ -407,15 +354,15 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   addSchemaOne(field: SchemaField, schema: Schema): void {
-    const sch: ContentData | undefined = this.data[field.name];
+    const sch: ContentData | undefined = this.data()[field.name];
     if (sch) {
-      this.data[field.name] = {
+      this.data()[field.name] = {
         _id: v4(),
         _schema: schema.id,
         schema: schema.id,
       };
     } else {
-      this.data[field.name] = {
+      this.data()[field.name] = {
         _id: v4(),
         _schema: schema.id,
         schema: schema.id,
@@ -425,12 +372,12 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   removeSchemaOne(field: SchemaField): void {
-    delete this.data[field.name];
+    delete this.data()[field.name];
     this.structureChange.emit(`removeSchemaOne ${field.name}`);
   }
 
   addSchemaMany(field: SchemaField, schema: Schema, index?: number): void {
-    const fieldData: ContentData[] | undefined = this.data[field.name];
+    const fieldData: ContentData[] | undefined = this.data()[field.name];
     if (fieldData) {
       if (index !== undefined) {
         // add at index
@@ -447,7 +394,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
         });
       }
     } else {
-      this.data[field.name] = [
+      this.data()[field.name] = [
         {
           _id: v4(),
           _schema: schema.id,
@@ -466,14 +413,14 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   removeSchemaMany(field: SchemaField, schemaId: string): void {
-    const sch: ContentData[] | undefined = this.data[field.name];
+    const sch: ContentData[] | undefined = this.data()[field.name];
     if (sch) {
       const idx = sch.findIndex(it => it._id == schemaId);
       if (idx >= 0) {
         sch.splice(idx, 1);
       }
       if (sch.length == 0) {
-        delete this.data[field.name];
+        delete this.data()[field.name];
       }
     }
     this.structureChange.emit(`removeSchemaMany ${field.name}`);
@@ -484,7 +431,7 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
   }
 
   onFieldHover(fieldName: string): void {
-    this.schemaHover.emit({ id: this.data._id, schema: this.data.schema, field: fieldName });
+    this.schemaHover.emit({ id: this.data()._id, schema: this.data().schema, field: fieldName });
   }
 
   onItemHover(item: ContentData): void {
@@ -522,13 +469,13 @@ export class EditDocumentSchemaComponent implements OnInit, OnChanges {
 
   translate(fieldName: string, sourceLocale: string, targetLocale: string): void {
     // get source locale content
-    // this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
+    // this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`];
     //debugger;
     let content = '';
     if (sourceLocale === CONTENT_DEFAULT_LOCALE.id) {
-      content = this.data[fieldName];
+      content = this.data()[fieldName];
     } else {
-      content = this.data[`${fieldName}_i18n_${sourceLocale}`];
+      content = this.data()[`${fieldName}_i18n_${sourceLocale}`];
     }
     if (content === undefined || content === null || content === '') {
       this.notificationService.error('No content to translate');

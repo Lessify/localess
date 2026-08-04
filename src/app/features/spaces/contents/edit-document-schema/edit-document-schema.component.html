@@ -1,6 +1,6 @@
-@if (rootSchema && !isFormLoading()) {
+@if (rootSchema() && !isFormLoading()) {
   <form [formGroup]="form" #schemaForm class="flex flex-col gap-4 pb-2">
-    @for (field of rootSchema.fields; track field.name) {
+    @for (field of rootSchema()!.fields; track field.name) {
       <div (mouseenter)="onFieldHover(field.name)" (mouseleave)="onSchemaLeave()">
         @switch (field.kind) {
           <!--TEXT-->
@@ -21,7 +21,7 @@
                   type="text"
                   [id]="'schema-field-' + field.name"
                   [formControlName]="field.name"
-                  [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                  [placeholder]="(!isDefaultLocale() && data()[field.name]) || ''"
                   [attr.minlength]="field.minLength"
                   [attr.maxlength]="field.maxLength"
                   autocomplete="off" />
@@ -79,7 +79,7 @@
                   type="text"
                   [id]="'schema-field-' + field.name"
                   [formControlName]="field.name"
-                  [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                  [placeholder]="(!isDefaultLocale() && data()[field.name]) || ''"
                   [attr.minlength]="field.minLength"
                   [attr.maxlength]="field.maxLength"
                   autocomplete="off">
@@ -130,10 +130,10 @@
           @case ('MARKDOWN') {
             @if (form.controls[field.name]; as control) {
               <ll-markdown-editor
-                [data]="data"
+                [data]="data()"
                 [form]="control"
                 [component]="field"
-                [default]="isDefaultLocale() ? undefined : data[field.name]"
+                [default]="isDefaultLocale() ? undefined : data()[field.name]"
                 [selectedLocale]="selectedLocale()"
                 [availableLocales]="availableLocales()" />
             }
@@ -156,7 +156,7 @@
                   type="number"
                   [id]="'schema-field-' + field.name"
                   [formControlName]="field.name"
-                  [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                  [placeholder]="(!isDefaultLocale() && data()[field.name]) || ''"
                   [attr.min]="field.minValue"
                   [attr.max]="field.maxValue"
                   autocomplete="off" />
@@ -184,7 +184,7 @@
                   type="color"
                   [id]="'schema-field-' + field.name"
                   [formControlName]="field.name"
-                  [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                  [placeholder]="(!isDefaultLocale() && data()[field.name]) || ''"
                   autocomplete="off" />
               </div>
               @if (form.controls[field.name]?.errors; as errors) {
@@ -210,7 +210,7 @@
                   type="date"
                   [id]="'schema-field-' + field.name"
                   [formControlName]="field.name"
-                  [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                  [placeholder]="(!isDefaultLocale() && data()[field.name]) || ''"
                   autocomplete="off" />
               </div>
               @if (form.controls[field.name]?.errors; as errors) {
@@ -236,7 +236,7 @@
                   type="datetime-local"
                   [id]="'schema-field-' + field.name"
                   [formControlName]="field.name"
-                  [placeholder]="(!isDefaultLocale() && data[field.name]) || ''"
+                  [placeholder]="(!isDefaultLocale() && data()[field.name]) || ''"
                   autocomplete="off" />
               </div>
               @if (form.controls[field.name]?.errors; as errors) {
@@ -281,7 +281,7 @@
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
                 <hlm-select-trigger class="w-full">
-                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
+                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data()[field.name]) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
                       role="button"
@@ -324,7 +324,7 @@
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
                 <hlm-select-trigger class="w-full">
-                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data[field.name]) || 'Select a value'" />
+                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data()[field.name]) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
                       role="button"
@@ -356,20 +356,20 @@
               <ll-link-select
                 [form]="control"
                 [component]="field"
-                [documents]="documents"
-                [default]="isDefaultLocale() ? undefined : data[field.name]" />
+                [documents]="documents()"
+                [default]="isDefaultLocale() ? undefined : data()[field.name]" />
             }
           }
           <!--REFERENCE-->
           @case ('REFERENCE') {
             @if (form.controls[field.name]; as control) {
-              <ll-reference-select [form]="control" [component]="field" [space]="space" />
+              <ll-reference-select [form]="control" [component]="field" [space]="space()" />
             }
           }
           <!--REFERENCE-->
           @case ('REFERENCES') {
             @if (form.controls[field.name]; as control) {
-              <ll-references-select [form]="control" [component]="field" [space]="space" />
+              <ll-references-select [form]="control" [component]="field" [space]="space()" />
             }
           }
           <!--ASSET-->
@@ -377,12 +377,12 @@
             <ll-asset-select
               [component]="field"
               [form]="form.controls[field.name]"
-              [space]="space"
+              [space]="space()"
               [hover]="hoverSchemaField() === field.name" />
           }
           <!--ASSETS-->
           @case ('ASSETS') {
-            <ll-assets-select [component]="field" [form]="form.controls[field.name]" [space]="space" (assetsChange)="onAssetsChange()" />
+            <ll-assets-select [component]="field" [form]="form.controls[field.name]" [space]="space()" (assetsChange)="onAssetsChange()" />
           }
           <!--SCHEMA-->
           @case ('SCHEMA') {
@@ -396,7 +396,7 @@
                     size="sm"
                     [hlmDropdownMenuTrigger]="menu"
                     hlmTooltip="Add Schema"
-                    [disabled]="data[field.name]">
+                    [disabled]="data()[field.name]">
                     <ng-icon hlm size="sm" name="lucideCirclePlus" />
                   </button>
                   <ng-template #menu>
@@ -414,7 +414,7 @@
                 }
                 <hlm-field-separator />
                 <div hlmItemGroup class="gap-2">
-                  @if (data[field.name]; as item) {
+                  @if (data()[field.name]; as item) {
                     <div
                       [id]="item._id"
                       hlmItem
@@ -474,8 +474,8 @@
                   <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
                 }
                 <hlm-field-separator />
-                <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data[field.name])">
-                  @for (item of data[field.name] || []; track item; let index = $index) {
+                <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data()[field.name])">
+                  @for (item of data()[field.name] || []; track item; let index = $index) {
                     <div
                       [id]="item._id"
                       hlmItem
@@ -545,7 +545,7 @@
                           hlmBtn
                           size="icon"
                           variant="outline"
-                          (click)="duplicateSchemaMany(data[field.name], item, index)"
+                          (click)="duplicateSchemaMany(data()[field.name], item, index)"
                           hlmTooltip="Clone the schema">
                           <ng-icon hlm size="sm" name="lucideBookCopy" />
                         </button>
