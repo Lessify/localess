@@ -60,3 +60,22 @@ vi.mock('@angular/fire/remote-config', async () => {
     getAllChanges: vi.fn(),
   };
 });
+
+// Same reasoning, for Auth's free functions (updateProfile/updateEmail/updatePassword). This one
+// was originally left local to me.service.spec.ts since it was the only consumer, but any other
+// spec that references the real MeService class (even just as a `useValue`-stubbed DI token, e.g.
+// a component spec) loads this module unmocked and reintroduces the same collision — so it's
+// centralized here too.
+vi.mock('@angular/fire/auth', async () => {
+  const actual = await vi.importActual<typeof import('@angular/fire/auth')>('@angular/fire/auth');
+  return {
+    ...actual,
+    updateProfile: vi.fn().mockResolvedValue(undefined),
+    updateEmail: vi.fn().mockResolvedValue(undefined),
+    updatePassword: vi.fn().mockResolvedValue(undefined),
+    sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
+    signInWithEmailAndPassword: vi.fn().mockResolvedValue(undefined),
+    signInWithPopup: vi.fn().mockResolvedValue(undefined),
+    signOut: vi.fn().mockResolvedValue(undefined),
+  };
+});

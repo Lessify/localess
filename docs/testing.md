@@ -13,6 +13,10 @@ npx ng test --watch=false --include="path/to/*.spec.ts"  # a subset
 
 The builder runs the whole suite with **`test.isolate: false`** (one shared module registry per worker, to mirror the old Karma/Jasmine model) — this has real consequences for how Firebase mocking must be structured, covered below.
 
+## Coverage scope
+
+**`libs/ui/**` is excluded from unit test coverage.** It's the Spartan/Helm component library (Brain headless primitives + Helm styling layer, 44+ components) — third-party-style, largely unmodified UI building blocks, not app logic. Unit-testing them has a poor cost/benefit ratio; if a `libs/ui` component needs verification, prefer exercising it indirectly through the feature component that uses it. Everything under `src/app/**` is in scope.
+
 ---
 
 ## Global Firebase mocks (`src/test-setup.ts`)

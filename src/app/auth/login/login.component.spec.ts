@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Auth } from '@angular/fire/auth';
+import { Auth, signInWithEmailAndPassword, signInWithPopup, signOut } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { UserStore } from '@shared/stores/user.store';
 import { vi } from 'vitest';
@@ -8,18 +8,7 @@ import { vi } from 'vitest';
 import { environment } from '../../../environments/environment';
 import { LoginComponent } from './login.component';
 
-// NOTE: this spec intentionally does not `vi.mock('@angular/fire/auth', ...)`. Doing so here
-// crashes ("Cannot access '__vi_import_N__' before initialization") whenever this file and
-// `shared/stores/user.store.spec.ts` run in the same Vitest process — both transitively share
-// `user.store.ts`, and the Angular Vitest builder's chunk-splitting cannot reconcile one spec
-// mocking '@angular/fire/auth' while the other imports the real `Auth` token for DI faking.
-// This was confirmed empirically (isolated runs of either file pass; running them together
-// fails consistently, independent of mock content or sync/async factory style). As a result,
-// `loginWithEmailAndPassword`'s success/error paths, `loginWithGoogle`, `loginWithMicrosoft`,
-// and `logout` — all of which need `signInWithEmailAndPassword`/`signInWithPopup`/`signOut`
-// intercepted — are not covered here. `signInWithPopup` specifically cannot be fully fake
-// via a plain DI object either: it fails with a real "auth/operation-not-supported-in-this-
-// environment" error before ever reaching the given Auth object.
+// @angular/fire/auth is mocked globally in src/test-setup.ts.
 describe('LoginComponent', () => {
   let originalReload: typeof window.location.reload;
 
@@ -31,6 +20,7 @@ describe('LoginComponent', () => {
 
   afterEach(() => {
     window.location.reload = originalReload;
+    vi.clearAllMocks();
   });
 
   function setup() {
@@ -68,14 +58,74 @@ describe('LoginComponent', () => {
   it('loginWithEmailAndPassword no-ops when the form has no email/password', async () => {
     const { component, setAuthenticated } = setup();
 
-    // Cannot assert non-invocation of the real signInWithEmailAndPassword directly (no vi.mock,
-    // see the file-level note) — instead confirm the method completes cleanly with no side
-    // effects, which would not hold if the early-return guard were removed and the (unmocked,
-    // bare `{}` Auth) call were attempted and its rejection mishandled.
     await expect(component.loginWithEmailAndPassword()).resolves.toBeUndefined();
+
+    expect(signInWithEmailAndPassword).not.toHaveBeenCalled();
+    expect(setAuthenticated).not.toHaveBeenCalled();
+    expect(component.hasAuthError()).toBe(false);
+  });
+
+  it('loginWithEmailAndPassword signs in and marks the user authenticated on success', async () => {
+    const { component, setAuthenticated } = setup();
+    component.form.setValue({ email: 'user@example.com', password: 'secret' });
+    vi.mocked(signInWithEmailAndPassword).mockResolvedValue({} as never);
+
+    await component.loginWithEmailAndPassword();
+
+    expect(signInWithEmailAndPassword).toHaveBeenCalledWith(component.auth, 'user@example.com', 'secret');
+    expect(setAuthenticated).toHaveBeenCalledWith(true);
+    expect(component.hasAuthError()).toBe(false);
+  });
+
+  it('loginWithEmailAndPassword sets hasAuthError on a Firebase auth error', async () => {
+    const { component, setAuthenticated } = setup();
+    component.form.setValue({ email: 'user@example.com', password: 'wrong' });
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({ code: 'auth/wrong-password' });
+
+    await component.loginWithEmailAndPassword();
+
+    expect(setAuthenticated).not.toHaveBeenCalled();
+    expect(component.hasAuthError()).toBe(true);
+  });
+
+  it('loginWithEmailAndPassword swallows non-Firebase errors without setting hasAuthError', async () => {
+    const { component, setAuthenticated } = setup();
+    component.form.setValue({ email: 'user@example.com', password: 'wrong' });
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue(new Error('network down'));
+
+    await component.loginWithEmailAndPassword();
 
     expect(setAuthenticated).not.toHaveBeenCalled();
     expect(component.hasAuthError()).toBe(false);
+  });
+
+  it('loginWithGoogle signs in via popup and marks the user authenticated', async () => {
+    const { component, setAuthenticated } = setup();
+    vi.mocked(signInWithPopup).mockResolvedValue({} as never);
+
+    await component.loginWithGoogle();
+
+    expect(signInWithPopup).toHaveBeenCalledWith(component.auth, expect.anything());
+    expect(setAuthenticated).toHaveBeenCalledWith(true);
+  });
+
+  it('loginWithMicrosoft signs in via popup and marks the user authenticated', async () => {
+    const { component, setAuthenticated } = setup();
+    vi.mocked(signInWithPopup).mockResolvedValue({} as never);
+
+    await component.loginWithMicrosoft();
+
+    expect(signInWithPopup).toHaveBeenCalledWith(component.auth, expect.anything());
+    expect(setAuthenticated).toHaveBeenCalledWith(true);
+  });
+
+  it('logout marks the user unauthenticated and signs out', async () => {
+    const { component, setAuthenticated } = setup();
+
+    await component.logout();
+
+    expect(setAuthenticated).toHaveBeenCalledWith(false);
+    expect(signOut).toHaveBeenCalledWith(component.auth);
   });
 
   it('redirects and reloads when the user becomes authenticated', async () => {

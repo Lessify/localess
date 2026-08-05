@@ -1,16 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
-vi.mock('@angular/fire/auth', async () => {
-  const actual = await vi.importActual<typeof import('@angular/fire/auth')>('@angular/fire/auth');
-  return {
-    ...actual,
-    updateProfile: vi.fn().mockResolvedValue(undefined),
-    updateEmail: vi.fn().mockResolvedValue(undefined),
-    updatePassword: vi.fn().mockResolvedValue(undefined),
-  };
-});
-
+// @angular/fire/auth is mocked globally in src/test-setup.ts.
 import { Auth, updateEmail, updatePassword, updateProfile } from '@angular/fire/auth';
 import { firstValueFrom } from 'rxjs';
 

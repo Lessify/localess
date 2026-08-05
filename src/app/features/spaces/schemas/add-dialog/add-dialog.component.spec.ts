@@ -1,0 +1,81 @@
+import { TestBed } from '@angular/core/testing';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { SchemaType } from '@shared/models/schema.model';
+
+import { AddDialogModel } from './add-dialog.model';
+import { AddDialogComponent } from './add-dialog.component';
+
+describe('AddDialogComponent', () => {
+  function setup(data: AddDialogModel) {
+    TestBed.overrideComponent(AddDialogComponent, { set: { template: '<div></div>' } });
+    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    const fixture = TestBed.createComponent(AddDialogComponent);
+    fixture.detectChanges();
+    return { component: fixture.componentInstance, fixture };
+  }
+
+  it('starts with a NODE type and an empty id', () => {
+    const { component } = setup({ reservedIds: [] });
+
+    expect(component.form.value.type).toBe(SchemaType.NODE);
+    expect(component.form.value.id).toBe('');
+    expect(component.type).toBe(SchemaType.NODE);
+  });
+
+  it('lists every schema type', () => {
+    const { component } = setup({ reservedIds: [] });
+
+    expect(component.types).toEqual(Object.keys(SchemaType));
+  });
+
+  it('auto-generates the id from the display name while untouched', () => {
+    const { component, fixture } = setup({ reservedIds: [] });
+
+    component.form.controls['displayName'].setValue('my schema name');
+    fixture.detectChanges();
+
+    expect(component.form.value.id).toBe('MySchemaName');
+  });
+
+  it('stops auto-generating the id once the id field is touched', () => {
+    const { component, fixture } = setup({ reservedIds: [] });
+
+    component.form.controls['id'].markAsTouched();
+    component.form.controls['displayName'].setValue('my schema name');
+    fixture.detectChanges();
+
+    expect(component.form.value.id).toBe('');
+  });
+
+  it('rejects an id that collides with a reserved id', () => {
+    const { component } = setup({ reservedIds: ['Existing'] });
+
+    component.form.controls['id'].setValue('Existing');
+
+    expect(component.form.controls['id'].errors).toEqual({ reservedName: true });
+  });
+
+  it('normalizeId() reformats the current id value', () => {
+    const { component } = setup({ reservedIds: [] });
+    component.form.controls['id'].setValue('my schema');
+
+    component.normalizeId();
+
+    expect(component.form.value.id).toBe('MySchema');
+  });
+
+  it('normalizeId() does nothing when the id is empty', () => {
+    const { component } = setup({ reservedIds: [] });
+
+    component.normalizeId();
+
+    expect(component.form.value.id).toBe('');
+  });
+
+  it('typeItemToString() shows the friendly type name, or falls back to the raw value', () => {
+    const { component } = setup({ reservedIds: [] });
+
+    expect(component['typeItemToString'](SchemaType.ROOT)).toBe('Root');
+    expect(component['typeItemToString']('unknown')).toBe('unknown');
+  });
+});
