@@ -1,0 +1,208 @@
+import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
+import { Locale } from '@shared/models/locale.model';
+import { Translation, TranslationStatus, TranslationType } from '@shared/models/translation.model';
+import { LocaleService } from '@shared/services/locale.service';
+import { NotificationService } from '@shared/services/notification.service';
+import { PlatformService } from '@shared/services/platform.service';
+import { TranslateService } from '@shared/services/translate.service';
+import { TranslationService } from '@shared/services/translation.service';
+import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
+
+import { TranslationDetailComponent } from './translation-detail.component';
+
+const en: Locale = { id: 'en', name: 'English' };
+const de: Locale = { id: 'de', name: 'German' };
+
+function translation(overrides: Partial<Translation> = {}): Translation {
+  return { id: 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
+}
+
+describe('TranslationDetailComponent', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function setup(t: Translation = translation(), isActionSave = false) {
+    const update = vi.fn().mockReturnValue(of(undefined));
+    const updateId = vi.fn().mockReturnValue(of(undefined));
+    const deleteTranslation = vi.fn().mockReturnValue(of(undefined));
+    const isLocaleTranslatable = vi.fn().mockReturnValue(true);
+    const translate = vi.fn().mockReturnValue(of('translated'));
+    const success = vi.fn();
+    const error = vi.fn();
+    const open = vi.fn();
+
+    TestBed.overrideComponent(TranslationDetailComponent, { set: { template: '<div></div>' } });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: TranslationService, useValue: { update, updateId, delete: deleteTranslation } },
+        { provide: LocaleService, useValue: { isLocaleTranslatable } },
+        { provide: NotificationService, useValue: { success, error } },
+        { provide: MatDialog, useValue: { open } },
+        { provide: TranslateService, useValue: { translate } },
+        { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(isActionSave) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(TranslationDetailComponent);
+    fixture.componentRef.setInput('translation', t);
+    fixture.componentRef.setInput('spaceId', 'space-1');
+    fixture.componentRef.setInput('availableLocales', [en, de]);
+    fixture.componentRef.setInput('localeFallback', en);
+    fixture.detectChanges();
+    return { component: fixture.componentInstance, update, updateId, deleteTranslation, translate, success, error, open };
+  }
+
+  it('identifyTranslationStatus() delegates to the shared util using availableLocales', () => {
+    const { component } = setup();
+
+    expect(component.identifyTranslationStatus(translation({ locales: {} }))).toBe(TranslationStatus.UNTRANSLATED);
+    expect(component.identifyTranslationStatus(translation({ locales: { en: 'Hi', de: 'Hallo' } }))).toBe(TranslationStatus.TRANSLATED);
+  });
+
+  it('localeToString()/compareLocale()', () => {
+    const { component } = setup();
+
+    expect(component.localeToString(de)).toBe('German');
+    expect(component.compareLocale(en, en)).toBe(true);
+    expect(component.compareLocale(en, de)).toBe(false);
+  });
+
+  it('isLocaleTranslatable() rejects identical locales, otherwise delegates to LocaleService', () => {
+    const { component } = setup();
+
+    expect(component.isLocaleTranslatable(en, en)).toBe(false);
+    expect(component.isLocaleTranslatable(en, de)).toBe(true);
+  });
+
+  describe('translate', () => {
+    it('translates the source locale content and notifies success', async () => {
+      vi.useFakeTimers();
+      const t = translation({ id: 't1', locales: { en: 'Hello' } });
+      const { component, translate, success } = setup(t);
+
+      component.translate();
+
+      expect(translate).toHaveBeenCalledWith({ content: 'Hello', sourceLocale: 'en', targetLocale: 'en' });
+      expect(component.selectedTranslationLocaleValue()).toBe('translated');
+      expect(success).toHaveBeenCalledWith('Translated');
+      expect(component.isTranslateLoading()).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isTranslateLoading()).toBe(false);
+    });
+
+    it('notifies an error with a documentation link on failure', () => {
+      const t = translation({ id: 't1', locales: { en: 'Hello' } });
+      const { component, translate, error } = setup(t);
+      translate.mockReturnValue(throwError(() => new Error('boom')));
+
+      component.translate();
+
+      expect(error).toHaveBeenCalledWith('Can not be translation.', expect.anything());
+    });
+  });
+
+  describe('openEditIdDialog', () => {
+    it('updates the id and notifies success when confirmed', () => {
+      const { component, open, updateId, success } = setup();
+      open.mockReturnValue({ afterClosed: () => of('new.id') });
+      const t = translation({ id: 't1' });
+
+      component.openEditIdDialog(t);
+
+      expect(updateId).toHaveBeenCalledWith('space-1', t, 'new.id');
+      expect(success).toHaveBeenCalledWith('Translation ID has been updated.');
+    });
+
+    it('notifies an error on failure', () => {
+      const { component, open, updateId, error } = setup();
+      updateId.mockReturnValue(throwError(() => new Error('boom')));
+      open.mockReturnValue({ afterClosed: () => of('new.id') });
+
+      component.openEditIdDialog(translation({ id: 't1' }));
+
+      expect(error).toHaveBeenCalledWith('Translation ID can not be updated.');
+    });
+  });
+
+  describe('openEditDialog', () => {
+    it('updates labels/description and notifies success when confirmed', () => {
+      const { component, open, update, success } = setup();
+      open.mockReturnValue({ afterClosed: () => of({ labels: ['ui'], description: 'desc' }) });
+      const t = translation({ id: 't1' });
+
+      component.openEditDialog(t);
+
+      expect(update).toHaveBeenCalledWith('space-1', 't1', { labels: ['ui'], description: 'desc' });
+      expect(success).toHaveBeenCalledWith('Translation has been updated.');
+    });
+
+    it('notifies an error on failure', () => {
+      const { component, open, update, error } = setup();
+      update.mockReturnValue(throwError(() => new Error('boom')));
+      open.mockReturnValue({ afterClosed: () => of({ labels: [], description: '' }) });
+
+      component.openEditDialog(translation({ id: 't1' }));
+
+      expect(error).toHaveBeenCalledWith('Translation can not be updated.');
+    });
+  });
+
+  describe('openDeleteDialog', () => {
+    it('deletes and notifies success when confirmed', () => {
+      const { component, open, deleteTranslation, success } = setup();
+      open.mockReturnValue({ afterClosed: () => of(true) });
+
+      component.openDeleteDialog(translation({ id: 't1' }));
+
+      expect(deleteTranslation).toHaveBeenCalledWith('space-1', 't1');
+      expect(success).toHaveBeenCalledWith('Translation has been deleted.');
+    });
+
+    it('does not delete when cancelled', () => {
+      const { component, open, deleteTranslation } = setup();
+      open.mockReturnValue({ afterClosed: () => of(false) });
+
+      component.openDeleteDialog(translation({ id: 't1' }));
+
+      expect(deleteTranslation).not.toHaveBeenCalled();
+    });
+  });
+
+  it('copied() notifies success', () => {
+    const { component, success } = setup();
+
+    component.copied();
+
+    expect(success).toHaveBeenCalledWith('Translation ID copied to clipboard.');
+  });
+
+  describe('captureKeyboard', () => {
+    it('emits save with the selected translation locale value on Ctrl/Cmd+S', () => {
+      const t = translation({ id: 't1', locales: { en: 'Hello' } });
+      const { component } = setup(t, true);
+      const spy = vi.fn();
+      component.save.subscribe(spy);
+      const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+
+      component.captureKeyboard(event);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(spy).toHaveBeenCalledWith({ translation: t, locale: en, value: 'Hello' });
+    });
+
+    it('does nothing for other key combinations', () => {
+      const { component } = setup(translation(), false);
+      const spy = vi.fn();
+      component.save.subscribe(spy);
+      const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+
+      component.captureKeyboard(event);
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(spy).not.toHaveBeenCalled();
+    });
+  });
+});

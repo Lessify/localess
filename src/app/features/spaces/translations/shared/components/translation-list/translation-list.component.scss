@@ -1,0 +1,9 @@
+.selected {
+  background-color: var(--mat-sys-secondary-container);
+}
+.overlay {
+  height: calc(100vh - 165px);
+}
+:host ::ng-deep .cdk-virtual-scroll-content-wrapper {
+  max-width: 100%;
+}

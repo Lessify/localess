@@ -3,10 +3,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { Locale } from '@shared/models/locale.model';
 import { Space } from '@shared/models/space.model';
 import { Token, TokenPermission } from '@shared/models/token.model';
-import { LocaleStatus, Translation, TranslationStatus, TranslationType } from '@shared/models/translation.model';
-import { LocaleService } from '@shared/services/locale.service';
+import { Translation, TranslationType } from '@shared/models/translation.model';
 import { NotificationService } from '@shared/services/notification.service';
-import { PlatformService } from '@shared/services/platform.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
@@ -37,17 +35,13 @@ describe('TranslationsComponent', () => {
 
   const NO_SPACE = null;
 
-  function setup(translations: Translation[] = [], selectedSpace: Space | null = space(), isActionSave = false) {
+  function setup(translations: Translation[] = [], selectedSpace: Space | null = space()) {
     const resolvedSpace = selectedSpace === NO_SPACE ? undefined : selectedSpace;
     const findAll = vi.fn().mockReturnValue(of(translations));
     const create = vi.fn().mockReturnValue(of(undefined));
-    const update = vi.fn().mockReturnValue(of(undefined));
-    const updateId = vi.fn().mockReturnValue(of(undefined));
-    const deleteTranslation = vi.fn().mockReturnValue(of(undefined));
     const publish = vi.fn().mockReturnValue(of(undefined));
     const updateLocale = vi.fn().mockReturnValue(of(undefined));
     const translateLocale = vi.fn().mockReturnValue(of(undefined));
-    const isLocaleTranslatable = vi.fn().mockReturnValue(true);
     const createTranslationImportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const createTranslationExportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const translate = vi.fn().mockReturnValue(of('translated'));
@@ -61,15 +55,13 @@ describe('TranslationsComponent', () => {
       providers: [
         {
           provide: TranslationService,
-          useValue: { findAll, create, update, updateId, delete: deleteTranslation, publish, updateLocale, translateLocale },
+          useValue: { findAll, create, publish, updateLocale, translateLocale },
         },
-        { provide: LocaleService, useValue: { isLocaleTranslatable } },
         { provide: TaskService, useValue: { createTranslationImportTask, createTranslationExportTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
         { provide: TranslateService, useValue: { translate } },
         { provide: TokenService, useValue: { findFirstByPermission } },
-        { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(isActionSave) } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(resolvedSpace) } },
       ],
     });
@@ -80,9 +72,6 @@ describe('TranslationsComponent', () => {
       component: fixture.componentInstance,
       findAll,
       create,
-      update,
-      updateId,
-      deleteTranslation,
       publish,
       updateLocale,
       translateLocale,
@@ -107,155 +96,16 @@ describe('TranslationsComponent', () => {
       expect(component.selectedTranslation()).toEqual(t1);
       expect(component.isLoading()).toBe(false);
     });
-
-    it('defaults the filter locale to the space fallback locale', () => {
-      const { component } = setup([], space({ localeFallback: de }));
-
-      expect(component.filterForm.value.locale).toBe('de');
-    });
   });
 
-  describe('filterTranslations', () => {
-    it('returns all items when no filter is active', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'a' }), translation({ id: 'b' })];
+  it('allLabels() dedupes labels across all loaded translations', () => {
+    const { component } = setup([
+      translation({ id: 't1', labels: ['ui', 'marketing'] }),
+      translation({ id: 't2', labels: ['ui'] }),
+      translation({ id: 't3', labels: undefined }),
+    ]);
 
-      expect(component.filterTranslations(items, 'en', '', [], [], [])).toEqual(items);
-    });
-
-    it('filters by id substring match', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title' }), translation({ id: 'footer.text' })];
-
-      const result = component.filterTranslations(items, 'en', 'home', [], [], []);
-
-      expect(result).toEqual([items[0]]);
-    });
-
-    it('falls back to matching the locale value when the id does not match', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title', locales: { en: 'Welcome home' } })];
-
-      const result = component.filterTranslations(items, 'en', 'welcome', [], [], []);
-
-      expect(result).toEqual(items);
-    });
-
-    it('filters by label', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'a', labels: ['ui'] }), translation({ id: 'b', labels: ['marketing'] })];
-
-      const result = component.filterTranslations(items, 'en', '', ['ui'], [], []);
-
-      expect(result).toEqual([items[0]]);
-    });
-
-    it('filters by translation status', () => {
-      const { component } = setup();
-      const translated = translation({ id: 'a', locales: { en: 'Hi', de: 'Hallo' } });
-      const untranslated = translation({ id: 'b', locales: {} });
-
-      const result = component.filterTranslations(
-        [translated, untranslated],
-        'en',
-        '',
-        [],
-        [TranslationStatus.UNTRANSLATED],
-        [],
-      );
-
-      expect(result).toEqual([untranslated]);
-    });
-
-    it('filters by locale status', () => {
-      const { component } = setup();
-      const translatedInEn = translation({ id: 'a', locales: { en: 'Hi' } });
-      const untranslatedInEn = translation({ id: 'b', locales: { en: '' } });
-
-      const result = component.filterTranslations([translatedInEn, untranslatedInEn], 'en', '', [], [], [LocaleStatus.TRANSLATED]);
-
-      expect(result).toEqual([translatedInEn]);
-    });
-  });
-
-  describe('buildTranslationTree', () => {
-    it('groups dotted ids into a nested tree', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title' }), translation({ id: 'home.subtitle' }), translation({ id: 'footer' })];
-
-      const tree = component.buildTranslationTree(items);
-
-      expect(tree).toEqual([
-        { name: 'home', key: 'home', children: [{ name: 'title', key: 'home.title' }, { name: 'subtitle', key: 'home.subtitle' }] },
-        { name: 'footer', key: 'footer' },
-      ]);
-    });
-  });
-
-  describe('identifyTranslationStatus / identifyLocaleStatus', () => {
-    it('is UNTRANSLATED when there are no locale values at all', () => {
-      const { component } = setup([], space());
-
-      expect(component.identifyTranslationStatus(translation({ locales: {} }))).toBe(TranslationStatus.UNTRANSLATED);
-    });
-
-    it('is TRANSLATED when every space locale has a value', () => {
-      const { component } = setup([], space());
-
-      expect(component.identifyTranslationStatus(translation({ locales: { en: 'Hi', de: 'Hallo' } }))).toBe(TranslationStatus.TRANSLATED);
-    });
-
-    it('is PARTIALLY_TRANSLATED when only some space locales have a value', () => {
-      const { component } = setup([], space());
-
-      expect(component.identifyTranslationStatus(translation({ locales: { en: 'Hi' } }))).toBe(TranslationStatus.PARTIALLY_TRANSLATED);
-    });
-
-    it('identifyLocaleStatus treats an empty/whitespace value as untranslated', () => {
-      const { component } = setup();
-
-      expect(component.identifyLocaleStatus(translation({ locales: { en: '  ' } }), 'en')).toBe(LocaleStatus.UNTRANSLATED);
-      expect(component.identifyLocaleStatus(translation({ locales: { en: 'Hi' } }), 'en')).toBe(LocaleStatus.TRANSLATED);
-    });
-  });
-
-  describe('filter form helpers', () => {
-    it('filterReset() clears search/labels/states', () => {
-      const { component } = setup();
-      component.filterForm.patchValue({ search: 'x', labels: ['a'], states: [TranslationStatus.TRANSLATED] });
-
-      component.filterReset();
-
-      expect(component.filterForm.value).toMatchObject({ search: '', labels: [], states: [] });
-    });
-
-    it('isFormChanged() is false at defaults and true once search/labels/states are set', () => {
-      const { component } = setup();
-      expect(component.isFormChanged()).toBe(false);
-
-      component.filterForm.patchValue({ search: 'x' });
-      expect(component.isFormChanged()).toBe(true);
-    });
-
-    it('selectLabel() toggles a label on and off', () => {
-      const { component } = setup();
-
-      component.selectLabel('ui');
-      expect(component.filterForm.value.labels).toEqual(['ui']);
-
-      component.selectLabel('ui');
-      expect(component.filterForm.value.labels).toEqual([]);
-    });
-
-    it('selectState() toggles a state on and off', () => {
-      const { component } = setup();
-
-      component.selectState(TranslationStatus.TRANSLATED);
-      expect(component.filterForm.value.states).toEqual([TranslationStatus.TRANSLATED]);
-
-      component.selectState(TranslationStatus.TRANSLATED);
-      expect(component.filterForm.value.states).toEqual([]);
-    });
+    expect(component.allLabels()).toEqual(['ui', 'marketing']);
   });
 
   it('selectTranslation() sets the selected translation', () => {
@@ -265,23 +115,6 @@ describe('TranslationsComponent', () => {
     component.selectTranslation(t);
 
     expect(component.selectedTranslation()).toEqual(t);
-  });
-
-  it('localeIdToString()/localeToString()/compareLocale()', () => {
-    const { component } = setup();
-
-    expect(component.localeIdToString('de')).toBe('German');
-    expect(component.localeIdToString('fr')).toBe('fr');
-    expect(component.localeToString(de)).toBe('German');
-    expect(component.compareLocale(en, en)).toBe(true);
-    expect(component.compareLocale(en, de)).toBe(false);
-  });
-
-  it('isLocaleTranslatable() rejects identical locales, otherwise delegates to LocaleService', () => {
-    const { component } = setup();
-
-    expect(component.isLocaleTranslatable(en, en)).toBe(false);
-    expect(component.isLocaleTranslatable(en, de)).toBe(true);
   });
 
   describe('publish', () => {
@@ -384,73 +217,6 @@ describe('TranslationsComponent', () => {
       component.openAddDialog();
 
       expect(error).toHaveBeenCalledWith('Translation can not be added.');
-    });
-  });
-
-  describe('openEditIdDialog', () => {
-    it('updates the id and notifies success when confirmed', () => {
-      const { component, open, updateId, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of('new.id') });
-      const t = translation({ id: 't1' });
-
-      component.openEditIdDialog(t);
-
-      expect(updateId).toHaveBeenCalledWith('space-1', t, 'new.id');
-      expect(success).toHaveBeenCalledWith('Translation ID has been updated.');
-    });
-
-    it('notifies an error on failure', () => {
-      const { component, open, updateId, error } = setup();
-      updateId.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of('new.id') });
-
-      component.openEditIdDialog(translation({ id: 't1' }));
-
-      expect(error).toHaveBeenCalledWith('Translation ID can not be updated.');
-    });
-  });
-
-  describe('openEditDialog', () => {
-    it('updates labels/description and notifies success when confirmed', () => {
-      const { component, open, update, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ labels: ['ui'], description: 'desc' }) });
-      const t = translation({ id: 't1' });
-
-      component.openEditDialog(t);
-
-      expect(update).toHaveBeenCalledWith('space-1', 't1', { labels: ['ui'], description: 'desc' });
-      expect(success).toHaveBeenCalledWith('Translation has been updated.');
-    });
-
-    it('notifies an error on failure', () => {
-      const { component, open, update, error } = setup();
-      update.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of({ labels: [], description: '' }) });
-
-      component.openEditDialog(translation({ id: 't1' }));
-
-      expect(error).toHaveBeenCalledWith('Translation can not be updated.');
-    });
-  });
-
-  describe('openDeleteDialog', () => {
-    it('deletes and notifies success when confirmed', () => {
-      const { component, open, deleteTranslation, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
-
-      component.openDeleteDialog(translation({ id: 't1' }));
-
-      expect(deleteTranslation).toHaveBeenCalledWith('space-1', 't1');
-      expect(success).toHaveBeenCalledWith('Translation has been deleted.');
-    });
-
-    it('does not delete when cancelled', () => {
-      const { component, open, deleteTranslation } = setup();
-      open.mockReturnValue({ afterClosed: () => of(false) });
-
-      component.openDeleteDialog(translation({ id: 't1' }));
-
-      expect(deleteTranslation).not.toHaveBeenCalled();
     });
   });
 
@@ -611,65 +377,6 @@ describe('TranslationsComponent', () => {
       component.openPublishedV1InNewTab('en');
 
       expect(error).toHaveBeenCalledWith('Please create Access Token with Translation Public Permission in your Space Settings');
-    });
-  });
-
-  describe('translate', () => {
-    it('translates the selected translation content and notifies success', async () => {
-      vi.useFakeTimers();
-      const t = translation({ id: 't1', locales: { en: 'Hello' } });
-      const { component, translate, success } = setup([t]);
-
-      component.translate();
-
-      expect(translate).toHaveBeenCalledWith({ content: 'Hello', sourceLocale: 'en', targetLocale: 'en' });
-      expect(component.selectedTranslationLocaleValue()).toBe('translated');
-      expect(success).toHaveBeenCalledWith('Translated');
-      expect(component.isTranslateLoading()).toBe(true);
-
-      await vi.advanceTimersByTimeAsync(1000);
-      expect(component.isTranslateLoading()).toBe(false);
-    });
-
-    it('notifies an error with a documentation link on failure', () => {
-      const t = translation({ id: 't1', locales: { en: 'Hello' } });
-      const { component, translate, error } = setup([t]);
-      translate.mockReturnValue(throwError(() => new Error('boom')));
-
-      component.translate();
-
-      expect(error).toHaveBeenCalledWith('Can not be translation.', expect.anything());
-    });
-  });
-
-  it('copied() notifies success', () => {
-    const { component, success } = setup();
-
-    component.copied();
-
-    expect(success).toHaveBeenCalledWith('Translation ID copied to clipboard.');
-  });
-
-  describe('captureKeyboard', () => {
-    it('saves the selected translation locale value on Ctrl/Cmd+S', () => {
-      const t = translation({ id: 't1', locales: { en: 'Hello' } });
-      const { component, updateLocale } = setup([t], space(), true);
-      const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
-
-      component.captureKeyboard(event);
-
-      expect(event.preventDefault).toHaveBeenCalled();
-      expect(updateLocale).toHaveBeenCalledWith('space-1', 't1', 'en', 'Hello');
-    });
-
-    it('does nothing for other key combinations', () => {
-      const { component, updateLocale } = setup([translation()], space(), false);
-      const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
-
-      component.captureKeyboard(event);
-
-      expect(event.preventDefault).not.toHaveBeenCalled();
-      expect(updateLocale).not.toHaveBeenCalled();
     });
   });
 });
