@@ -1,0 +1,67 @@
+@let asset = item();
+<hlm-card class="overflow-hidden pt-0!">
+  <div class="cursor-pointer border-b" aria-hidden="true" (click)="assetSelect.emit(asset)" (keydown)="assetSelect.emit(asset)">
+    @if (asset.kind === 'FILE' && asset.inProgress) {
+      <div class="flex aspect-square w-full flex-col place-items-center justify-center">
+        <hlm-spinner />
+        <span>Processing ...</span>
+      </div>
+    } @else if (asset.kind === 'FILE' && filePreview(asset.type)) {
+      <div class="relative aspect-square w-full">
+        @if (asset.extension; as extension) {
+          <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
+        }
+        <img
+          class="bg-primary-foreground aspect-square w-full object-contain"
+          [class.cursor-zoom-in]="zoomCursor()"
+          ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ asset.id }}"
+          alt="thumbnail"
+          width="600"
+          height="600"
+          loading="lazy"
+          [loaderParams]="{ thumbnail: true }" />
+      </div>
+    } @else if (asset.kind === 'FILE') {
+      <div class="bg-primary-foreground relative aspect-square w-full">
+        @if (asset.extension; as extension) {
+          <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
+        }
+        <div class="flex h-full w-full items-center justify-center">
+          <ng-icon hlm size="xl" [name]="fileIcon(asset.type)" />
+        </div>
+      </div>
+    } @else {
+      <div class="bg-primary-foreground relative aspect-square w-full">
+        <div class="flex h-full w-full items-center justify-center">
+          <ng-icon hlm size="xl" name="lucideFolder" />
+        </div>
+      </div>
+    }
+  </div>
+  <hlm-card-header>
+    <h3 hlmCardTitle class="line-clamp-2 break-all" hlmTooltip="{{ asset.name }}{{ asset.kind === 'FILE' ? asset.extension : '' }}">
+      {{ asset.name }}{{ asset.kind === 'FILE' ? asset.extension : '' }}
+    </h3>
+    <div hlmCardDescription>
+      @if (asset.kind === 'FILE') {
+        @if (asset.size; as size) {
+          <p>{{ size | formatFileSize }}</p>
+        }
+        @if (asset.metadata; as metadata) {
+          @if (metadata.width && metadata.height) {
+            W{{ metadata.width }} x H{{ metadata.height }}
+          }
+          @if (metadata.duration; as duration) {
+            <div> Duration: {{ duration | timeDuration }}</div>
+          }
+        }
+      }
+      <p [hlmTooltip]="asset.updatedAt?.toDate() | date: 'medium'"> {{ asset.updatedAt?.toDate() | date: 'mediumDate' }} </p>
+    </div>
+  </hlm-card-header>
+  @if (showFooter()) {
+    <hlm-card-footer class="bg-background! mt-auto justify-end gap-2 p-2!">
+      <ng-content />
+    </hlm-card-footer>
+  }
+</hlm-card>

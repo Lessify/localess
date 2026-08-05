@@ -154,71 +154,11 @@
   } @else {
     <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 py-2">
       @for (item of dataSource.renderedData(); track item.id) {
-        <hlm-card class="overflow-hidden pt-0!">
-          <div class="cursor-pointer border-b" aria-hidden="true" (click)="onAssetSelect(item)" (keydown)="onAssetSelect(item)">
-            @if (item.kind === 'FILE' && item.inProgress) {
-              <div class="flex aspect-square w-full flex-col place-items-center justify-center">
-                <hlm-spinner />
-                <span>Processing ...</span>
-              </div>
-            } @else if (item.kind === 'FILE' && filePreview(item.type)) {
-              <div class="relative aspect-square w-full">
-                @if (item.extension; as extension) {
-                  <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
-                }
-                <img
-                  class="bg-primary-foreground aspect-square w-full object-contain"
-                  ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ item.id }}"
-                  alt="thumbnail"
-                  width="600"
-                  height="600"
-                  loading="lazy"
-                  [loaderParams]="{ thumbnail: true }" />
-              </div>
-            } @else if (item.kind === 'FILE') {
-              <div class="bg-primary-foreground relative aspect-square w-full">
-                @if (item.extension; as extension) {
-                  <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
-                }
-                <div class="flex h-full w-full items-center justify-center">
-                  <ng-icon hlm size="xl" [name]="fileIcon(item.type)" />
-                </div>
-              </div>
-            } @else {
-              <div class="bg-primary-foreground relative aspect-square w-full">
-                <div class="flex h-full w-full items-center justify-center">
-                  <ng-icon hlm size="xl" name="lucideFolder" />
-                </div>
-              </div>
-            }
-          </div>
-          <hlm-card-header>
-            <h3 hlmCardTitle class="line-clamp-2 break-all" hlmTooltip="{{ item.name }}{{ item.extension }}">
-              {{ item.name }}{{ item.extension }}
-            </h3>
-            <div hlmCardDescription>
-              @if (item.kind === 'FILE') {
-                @if (item.size; as size) {
-                  <p>{{ size | formatFileSize }}</p>
-                }
-                @if (item.metadata; as metadata) {
-                  @if (metadata.width && metadata.height) {
-                    W{{ metadata.width }} x H{{ metadata.height }}
-                  }
-                  @if (metadata.duration; as duration) {
-                    <div> Duration: {{ duration | timeDuration }}</div>
-                  }
-                }
-              }
-              <p [hlmTooltip]="item.updatedAt?.toDate() | date: 'medium'"> {{ item.updatedAt?.toDate() | date: 'mediumDate' }} </p>
-            </div>
-          </hlm-card-header>
-          <hlm-card-footer class="bg-background! mt-auto justify-end gap-2 p-2!">
-            @if (item.kind === 'FILE') {
-              <hlm-checkbox [checked]="selection.isSelected(item)" (checkedChange)="selection.toggle(item)" />
-            }
-          </hlm-card-footer>
-        </hlm-card>
+        <ll-asset-card [item]="item" [spaceId]="data.spaceId" [showFooter]="item.kind === 'FILE'" (assetSelect)="onAssetSelect($event)">
+          @if (item.kind === 'FILE') {
+            <hlm-checkbox [checked]="selection.isSelected(item)" (checkedChange)="selection.toggle(item)" />
+          }
+        </ll-asset-card>
       }
     </div>
   }

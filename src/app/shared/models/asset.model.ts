@@ -1,5 +1,7 @@
 import { FieldValue, Timestamp } from '@angular/fire/firestore';
 
+import { AssetFileType, assetFileTypeDescriptions } from './schema.model';
+
 export type Asset = AssetFile | AssetFolder;
 
 export enum AssetKind {
@@ -139,4 +141,17 @@ export function isFolder(asset: Asset): asset is AssetFolder {
 
 export function isFile(asset: Asset): asset is AssetFile {
   return asset.kind === AssetKind.FILE;
+}
+
+export function fileIcon(type: string): string {
+  if (type.startsWith('audio/')) return assetFileTypeDescriptions[AssetFileType.AUDIO].icon;
+  if (type.startsWith('text/')) return assetFileTypeDescriptions[AssetFileType.TEXT].icon;
+  if (type.startsWith('image/')) return assetFileTypeDescriptions[AssetFileType.IMAGE].icon;
+  if (type.startsWith('video/')) return assetFileTypeDescriptions[AssetFileType.VIDEO].icon;
+  if (type.startsWith('application/')) return assetFileTypeDescriptions[AssetFileType.APPLICATION].icon;
+  return assetFileTypeDescriptions[AssetFileType.ANY].icon;
+}
+
+export function filePreview(type: string): boolean {
+  return type.startsWith('image/') || type.startsWith('video/');
 }

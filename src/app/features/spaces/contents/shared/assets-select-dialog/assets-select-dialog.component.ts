@@ -30,10 +30,10 @@ import {
   lucideLayoutList,
   lucideUpload,
 } from '@ng-icons/lucide';
+import { AssetCardComponent } from '@shared/components/asset-card/asset-card.component';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { Asset, AssetKind } from '@shared/models/asset.model';
-import { AssetFileType, assetFileTypeDescriptions } from '@shared/models/schema.model';
+import { Asset, AssetKind, fileIcon as resolveFileIcon, filePreview as isPreviewableFileType } from '@shared/models/asset.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
@@ -44,7 +44,6 @@ import { PathItem } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
@@ -62,6 +61,7 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
   styleUrls: ['./assets-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    AssetCardComponent,
     CommonModule,
     MatDialogModule,
     LlPaginatorImports,
@@ -78,7 +78,6 @@ import { AssetsSelectDialogModel } from './assets-select-dialog.model';
     HlmBadgeImports,
     HlmToggleGroupImports,
     HlmButtonImports,
-    HlmCardImports,
     HlmCheckboxImports,
   ],
   providers: [
@@ -210,16 +209,11 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   }
 
   fileIcon(type: string): string {
-    if (type.startsWith('audio/')) return assetFileTypeDescriptions[AssetFileType.AUDIO].icon;
-    if (type.startsWith('text/')) return assetFileTypeDescriptions[AssetFileType.TEXT].icon;
-    if (type.startsWith('image/')) return assetFileTypeDescriptions[AssetFileType.IMAGE].icon;
-    if (type.startsWith('video/')) return assetFileTypeDescriptions[AssetFileType.VIDEO].icon;
-    if (type.startsWith('application/')) return assetFileTypeDescriptions[AssetFileType.APPLICATION].icon;
-    return assetFileTypeDescriptions[AssetFileType.ANY].icon;
+    return resolveFileIcon(type);
   }
 
   filePreview(type: string): boolean {
-    return type.startsWith('image/') || type.startsWith('video/');
+    return isPreviewableFileType(type);
   }
 
   onFileUpload(event: Event): void {

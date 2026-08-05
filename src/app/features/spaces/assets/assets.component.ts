@@ -42,6 +42,7 @@ import {
   lucideUploadCloud,
 } from '@ng-icons/lucide';
 import { tablerBrandUnsplash } from '@ng-icons/tabler-icons';
+import { AssetCardComponent } from '@shared/components/asset-card/asset-card.component';
 import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
@@ -59,8 +60,9 @@ import {
   AssetFolderCreate,
   AssetFolderUpdateForm,
   AssetKind,
+  fileIcon as resolveFileIcon,
+  filePreview as isPreviewableFileType,
 } from '@shared/models/asset.model';
-import { AssetFileType, assetFileTypeDescriptions } from '@shared/models/schema.model';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
@@ -74,7 +76,6 @@ import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
@@ -105,6 +106,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     '(document:paste)': 'onPaste($event)',
   },
   imports: [
+    AssetCardComponent,
     CanUserPerformPipe,
     CommonModule,
     FileDragAndDropDirective,
@@ -122,7 +124,6 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
     HlmBreadcrumbImports,
     HlmProgressImports,
     HlmSpinnerImports,
-    HlmCardImports,
   ],
   providers: [
     provideIcons({
@@ -500,16 +501,11 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   }
 
   fileIcon(type: string): string {
-    if (type.startsWith('audio/')) return assetFileTypeDescriptions[AssetFileType.AUDIO].icon;
-    if (type.startsWith('text/')) return assetFileTypeDescriptions[AssetFileType.TEXT].icon;
-    if (type.startsWith('image/')) return assetFileTypeDescriptions[AssetFileType.IMAGE].icon;
-    if (type.startsWith('video/')) return assetFileTypeDescriptions[AssetFileType.VIDEO].icon;
-    if (type.startsWith('application/')) return assetFileTypeDescriptions[AssetFileType.APPLICATION].icon;
-    return assetFileTypeDescriptions[AssetFileType.ANY].icon;
+    return resolveFileIcon(type);
   }
 
   filePreview(type: string): boolean {
-    return type.startsWith('image/') || type.startsWith('video/');
+    return isPreviewableFileType(type);
   }
 
   openImportDialog() {
