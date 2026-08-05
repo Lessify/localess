@@ -1,15 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
-vi.mock('@angular/fire/firestore', async () => {
-  const actual = await vi.importActual<typeof import('@angular/fire/firestore')>('@angular/fire/firestore');
-  return {
-    ...actual,
-    doc: vi.fn().mockReturnValue({ path: 'mock-doc-ref' }),
-    updateDoc: vi.fn().mockResolvedValue(undefined),
-  };
-});
-
+// @angular/fire/firestore is mocked globally in src/test-setup.ts.
 import { arrayRemove, arrayUnion, doc, Firestore, updateDoc } from '@angular/fire/firestore';
 import { firstValueFrom } from 'rxjs';
 

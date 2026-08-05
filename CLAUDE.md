@@ -134,6 +134,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |
 | Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
 | `MatTable` → `ll-table` migration | [docs/table-migration.md](docs/table-migration.md) | `src/app/shared/components/table/`, `src/app/shared/components/paginator/`, any `mat-table` migration |
+| Frontend testing — Vitest setup, Firebase mocking patterns, `test.isolate: false` pitfalls | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
 | Reusable filter toolbar (search + single/multi-select popovers) | [docs/filter-toolbar.md](docs/filter-toolbar.md) | `src/app/shared/components/filter-toolbar/`, `src/app/core/utils/filter-predicate-utils.service.ts`, any table/list filtering UI |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
