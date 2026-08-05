@@ -179,130 +179,14 @@
   <hlm-resizable-group direction="horizontal" class="flex h-full w-full justify-center overflow-hidden">
     @if (settingsStore.editorEnabled()) {
       <hlm-resizable-panel [defaultSize]="60" class="overflow-hidden">
-        <div id="browser" class="browser flex h-full flex-col overflow-hidden rounded-t-xl border">
-          @if (selectedEnvironment(); as environment) {
-            <div id="browser-toolbar" class="flex flex-wrap items-center gap-2 border-b p-2">
-              <button hlmBtn size="icon" variant="outline" hlmTooltip="Reload" (click)="reloadEnvironment()">
-                <ng-icon hlm size="sm" name="lucideRefreshCcw" />
-              </button>
-              <div class="flex-grow">
-                <div class="w-full min-w-80" hlmButtonGroup>
-                  <button hlmBtn variant="outline" [hlmDropdownMenuTrigger]="envMenu">
-                    {{ environment.name }}
-                    <ng-icon hlm size="sm" name="lucideChevronDown" />
-                  </button>
-                  <ng-template #envMenu>
-                    <hlm-dropdown-menu class="text-nowrap">
-                      @for (env of availableEnvironments(); track env.name) {
-                        <button
-                          hlmDropdownMenuCheckbox
-                          [id]="'env-option-' + env.name"
-                          (click)="onEnvironmentSelection(env)"
-                          [checked]="env.name === selectedEnvironment()?.name"
-                          [hlmTooltip]="env.url">
-                          <hlm-dropdown-menu-checkbox-indicator />
-                          <span>{{ env.name }}</span>
-                        </button>
-                      }
-                    </hlm-dropdown-menu>
-                  </ng-template>
-                  <div hlmInputGroup class="flex-1">
-                    <input
-                      class="truncate"
-                      hlmInputGroupInput
-                      readonly
-                      id="url"
-                      placeholder="Select Environment"
-                      [value]="environment.url"
-                      [title]="environment.url" />
-                    <hlm-input-group-addon align="inline-end">
-                      @switch (iframeStatus()) {
-                        @case ('loading') {
-                          <hlm-spinner class="size-4" hlmTooltip="Loading page…" />
-                        }
-                        @case ('loaded') {
-                          <ng-icon
-                            hlm
-                            size="sm"
-                            name="lucideCircleCheck"
-                            class="text-muted-foreground"
-                            hlmTooltip="Page loaded — no Localess SDK detected" />
-                        }
-                        @case ('connected') {
-                          <ng-icon hlm size="sm" name="lucideCircleCheck" class="text-green-500" hlmTooltip="Connected to Localess SDK" />
-                        }
-                        @case ('error') {
-                          <ng-icon hlm size="sm" name="lucideCircleX" class="text-destructive" hlmTooltip="Failed to load page" />
-                        }
-                      }
-                    </hlm-input-group-addon>
-                  </div>
-                </div>
-              </div>
-              <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorSize()">
-                <button
-                  hlmToggleGroupItem
-                  value=""
-                  aria-label="Fullscreen"
-                  hlmTooltip="Fullscreen"
-                  (click)="settingsStore.setEditorSize('')">
-                  <ng-icon hlm size="sm" name="lucideFullscreen" />
-                </button>
-                <button
-                  hlmToggleGroupItem
-                  value="sm"
-                  aria-label="Smartphone: 640px"
-                  hlmTooltip="Smartphone: 640px"
-                  (click)="settingsStore.setEditorSize('sm')">
-                  <ng-icon hlm size="sm" name="tablerDeviceMobile" />
-                </button>
-                <button
-                  hlmToggleGroupItem
-                  value="md"
-                  aria-label="Tablet: 768px"
-                  hlmTooltip="Tablet: 768px"
-                  (click)="settingsStore.setEditorSize('md')">
-                  <ng-icon hlm size="sm" name="tablerDeviceTablet" />
-                </button>
-                <button
-                  hlmToggleGroupItem
-                  value="lg"
-                  aria-label="Laptop: 1024px"
-                  hlmTooltip="Laptop: 1024px"
-                  (click)="settingsStore.setEditorSize('lg')">
-                  <ng-icon hlm size="sm" name="tablerDeviceLaptop" />
-                </button>
-                <button
-                  hlmToggleGroupItem
-                  value="xl"
-                  aria-label="Desktop: 1280px"
-                  hlmTooltip="Desktop: 1280px"
-                  (click)="settingsStore.setEditorSize('xl')">
-                  <ng-icon hlm size="sm" name="tablerDeviceDesktop" />
-                </button>
-              </hlm-toggle-group>
-            </div>
-            <div id="browser-content" class="flex h-full justify-center-safe overflow-auto">
-              @if (iframeUrl(); as url) {
-                <iframe
-                  id="previewId"
-                  class="shadow"
-                  #preview
-                  [src]="url"
-                  [class]="settingsStore.editorSize()"
-                  [class.resizing]="isResizing()"
-                  (load)="onIframeLoad()"
-                  (error)="onIframeError()">
-                </iframe>
-              }
-            </div>
-          } @else {
-            <div class="text-center">
-              No Configured Environments.<br />
-              You can configure them in Settings.
-            </div>
-          }
-        </div>
+        <ll-content-preview
+          [document]="document()"
+          [selectedLocale]="selectedLocale()"
+          [resizing]="isResizing()"
+          (connected)="onPreviewConnected()"
+          (schemaSelect)="onPreviewSchemaSelect($event)"
+          (schemaHover)="onPreviewSchemaHover($event)"
+          (schemaLeave)="onPreviewSchemaLeave()" />
       </hlm-resizable-panel>
       <hlm-resizable-handle withHandle (mousedown)="isResizing.set(true)" (mouseup)="isResizing.set(false)" />
     }

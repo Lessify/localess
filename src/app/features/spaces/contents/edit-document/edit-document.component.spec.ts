@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { ContentDocument, ContentKind } from '@shared/models/content.model';
 import { Locale } from '@shared/models/locale.model';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { Space, SpaceEnvironment } from '@shared/models/space.model';
+import { Space } from '@shared/models/space.model';
 import { Token, TokenPermission } from '@shared/models/token.model';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
@@ -51,10 +51,7 @@ describe('EditDocumentComponent', () => {
     vi.unstubAllGlobals();
   });
 
-  function setup(
-    document: ContentDocument,
-    options: { schemas?: Schema[]; selectedSpace?: Space; environment?: SpaceEnvironment } = {},
-  ) {
+  function setup(document: ContentDocument, options: { schemas?: Schema[]; selectedSpace?: Space } = {}) {
     const schemas = options.schemas ?? [rootSchema, childSchema];
     const selectedSpace = options.selectedSpace ?? space();
 
@@ -68,7 +65,6 @@ describe('EditDocumentComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
-    const changeEnvironment = vi.fn();
 
     TestBed.overrideComponent(EditDocumentComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
@@ -85,8 +81,6 @@ describe('EditDocumentComponent', () => {
             documents: signal([]),
             schemas: signal(schemas),
             selectedSpace: signal(selectedSpace),
-            environment: signal(options.environment),
-            changeEnvironment,
           },
         },
       ],
@@ -108,7 +102,6 @@ describe('EditDocumentComponent', () => {
       success,
       error,
       open,
-      changeEnvironment,
     };
   }
 
@@ -144,16 +137,6 @@ describe('EditDocumentComponent', () => {
       expect(component.documentIdsTree.get('child-id')).toEqual(['root-id', 'child-id']);
     });
 
-    it('restores the previously stored environment when available', () => {
-      const prod: SpaceEnvironment = { name: 'prod', url: 'https://prod' };
-      const staging: SpaceEnvironment = { name: 'staging', url: 'https://staging' };
-      const { component } = setup(documentOf({ _id: 'd1', schema: 'root1' }), {
-        selectedSpace: space({ environments: [staging, prod] }),
-        environment: prod,
-      });
-
-      expect(component.selectedEnvironment()).toEqual(prod);
-    });
   });
 
   describe('isFormDirty', () => {
@@ -343,66 +326,24 @@ describe('EditDocumentComponent', () => {
     expect(updateDocumentData).not.toHaveBeenCalled();
   });
 
-  describe('iframe / environment', () => {
-    it('onIframeLoad() transitions from loading to loaded', () => {
-      const { component } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
-
-      component.onIframeLoad();
-
-      expect(component.iframeStatus()).toBe('loaded');
-    });
-
-    it('onIframeError() sets the error status', () => {
-      const { component } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
-
-      component.onIframeError();
-
-      expect(component.iframeStatus()).toBe('error');
-    });
-
-    it('onEnvironmentSelection() updates the selected environment and persists it', () => {
-      const { component, changeEnvironment } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
-      const env: SpaceEnvironment = { name: 'staging', url: 'https://staging' };
-
-      component['onEnvironmentSelection'](env);
-
-      expect(component.selectedEnvironment()).toEqual(env);
-      expect(changeEnvironment).toHaveBeenCalledWith(env);
-    });
-  });
-
-  describe('contentIdLink', () => {
-    function messageEvent(data: unknown, isTrusted = true): MessageEvent {
-      return { isTrusted, data } as MessageEvent;
-    }
-
-    it('ignores untrusted or foreign messages', () => {
-      const { component } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
-
-      component.contentIdLink(messageEvent({ owner: 'LOCALESS', type: 'ping' }, false));
-      expect(component.iframeStatus()).not.toBe('connected');
-
-      component.contentIdLink(messageEvent({ owner: 'OTHER', type: 'ping' }));
-      expect(component.iframeStatus()).not.toBe('connected');
-    });
-
-    it('marks the iframe connected on ping', () => {
-      const { component } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
-
-      component.contentIdLink(messageEvent({ owner: 'LOCALESS', type: 'ping' }));
-
-      expect(component.iframeStatus()).toBe('connected');
-    });
-
-    it('tracks hover and leave schema events', () => {
+  describe('preview schema hover/leave', () => {
+    it('onPreviewSchemaHover() tracks the hover path and field', () => {
       const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
       const { component } = setup(documentOf(data));
 
-      component.contentIdLink(messageEvent({ owner: 'LOCALESS', type: 'hoverSchema', id: 'child-id', field: 'title' }));
+      component.onPreviewSchemaHover({ id: 'child-id', field: 'title' });
+
       expect(component.hoverSchemaPath()).toEqual(['root-id', 'child-id']);
       expect(component.hoverSchemaField()).toBe('title');
+    });
 
-      component.contentIdLink(messageEvent({ owner: 'LOCALESS', type: 'leaveSchema', id: 'child-id' }));
+    it('onPreviewSchemaLeave() clears the hover path and field', () => {
+      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const { component } = setup(documentOf(data));
+      component.onPreviewSchemaHover({ id: 'child-id', field: 'title' });
+
+      component.onPreviewSchemaLeave();
+
       expect(component.hoverSchemaPath()).toBeUndefined();
       expect(component.hoverSchemaField()).toBeUndefined();
     });

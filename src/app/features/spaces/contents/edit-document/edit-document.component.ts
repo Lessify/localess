@@ -5,7 +5,6 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
-  ElementRef,
   inject,
   input,
   linkedSignal,
@@ -14,7 +13,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { DomSanitizer } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
@@ -23,27 +21,22 @@ import {
   lucideAlertCircle,
   lucideArrowLeft,
   lucideChevronDown,
-  lucideCircleCheck,
   lucideCircleQuestionMark,
-  lucideCircleX,
   lucideCopy,
   lucideEarth,
   lucideEllipsis,
   lucideEllipsisVertical,
   lucideFolderRoot,
   lucideFormInput,
-  lucideFullscreen,
   lucideLanguages,
   lucidePencil,
   lucidePlus,
-  lucideRefreshCcw,
   lucideSave,
   lucideTriangleAlert,
   lucideUpload,
   lucideVectorSquare,
   lucideWebhookOff,
 } from '@ng-icons/lucide';
-import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
 import {
   TranslateLocaleDialogComponent,
   TranslateLocaleDialogModel,
@@ -53,7 +46,6 @@ import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { SpaceEnvironment } from '@shared/models/space.model';
 import { TokenPermission } from '@shared/models/token.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentService } from '@shared/services/content.service';
@@ -69,7 +61,6 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmResizableImports } from '@spartan-ng/helm/resizable';
@@ -81,10 +72,11 @@ import { NgScrollbarModule } from 'ngx-scrollbar';
 import { filter, switchMap } from 'rxjs/operators';
 import { v4 } from 'uuid';
 
+import { ContentPreviewComponent } from '../content-preview/content-preview.component';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
 import { DocumentStatusComponent } from '../shared/document-status/document-status.component';
-import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model';
+import { SchemaPathItem } from './edit-document.model';
 
 @Component({
   selector: 'll-content-document-edit',
@@ -92,13 +84,13 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
   styleUrls: ['./edit-document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '(window:message)': 'contentIdLink($event)',
     '(window:keydown)': 'captureKeyboard($event)',
   },
   imports: [
     ClipboardModule,
     CanUserPerformPipe,
     CommonModule,
+    ContentPreviewComponent,
     EditDocumentSchemaComponent,
     HlmResizableImports,
     HlmBreadcrumbImports,
@@ -114,7 +106,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
     HlmButtonGroupImports,
     HlmAccordionImports,
     HlmKbdImports,
-    HlmInputGroupImports,
     DocumentStatusComponent,
   ],
   providers: [
@@ -130,12 +121,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
       lucideEllipsisVertical,
       lucidePencil,
       lucideEarth,
-      lucideFullscreen,
-      tablerDeviceMobile,
-      tablerDeviceTablet,
-      tablerDeviceLaptop,
-      tablerDeviceDesktop,
-      lucideRefreshCcw,
       lucideChevronDown,
       lucidePlus,
       lucideCircleQuestionMark,
@@ -143,8 +128,6 @@ import { EventToApp, EventToEditor, SchemaPathItem } from './edit-document.model
       lucideWebhookOff,
       lucideCopy,
       lucideLanguages,
-      lucideCircleCheck,
-      lucideCircleX,
     }),
   ],
 })
@@ -157,7 +140,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
   private readonly contentHelperService = inject(ContentHelperService);
-  private readonly sanitizer = inject(DomSanitizer);
   readonly fe = inject(FormErrorHandlerService);
 
   // Input
@@ -174,29 +156,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   spaceStore = inject(SpaceStore);
   settingsStore = inject(LocalSettingsStore);
 
-  preview = viewChild<ElementRef<HTMLIFrameElement>>('preview');
+  previewComponent = viewChild(ContentPreviewComponent);
 
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
-  // Environments
-  availableEnvironments = computed(() => this.selectedSpace()?.environments || []);
-  selectedEnvironment = linkedSignal<SpaceEnvironment | undefined>(() => {
-    const envs = this.availableEnvironments();
-    if (envs.length > 0) {
-      return envs[0];
-    } else {
-      return undefined;
-    }
-  });
-  iframeUrl = computed(() => {
-    const env = this.selectedEnvironment();
-    const locale = this.selectedLocale();
-    if (env) {
-      const localePart = locale.id !== CONTENT_DEFAULT_LOCALE.id ? locale.id + '/' : '';
-      return this.sanitizer.bypassSecurityTrustResourceUrl(`${env.url}${localePart}${this.document().fullSlug}`);
-    } else {
-      return undefined;
-    }
-  });
   // Locales
   availableLocales = computed<Locale[]>(() => {
     const space = this.selectedSpace();
@@ -260,10 +222,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   isSaveLoading = signal(false);
 
   isResizing = signal(false);
-  iframeStatus = linkedSignal<'loading' | 'loaded' | 'connected' | 'error'>(() => {
-    this.iframeUrl();
-    return 'loading';
-  });
 
   constructor() {}
 
@@ -286,12 +244,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.savedDocumentData.set(this.contentHelperService.clone(this.documentData));
     }
     this.generateDocumentIdsTree();
-    const availableEnvironments = this.availableEnvironments();
-    const storedEnvironment = this.spaceStore.environment();
-    if (storedEnvironment) {
-      const environment = availableEnvironments.find(it => it.name === storedEnvironment.name) ?? availableEnvironments[0];
-      this.selectedEnvironment.set(environment);
-    }
   }
 
   get isFormDirty(): boolean {
@@ -317,7 +269,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.contentService.publish(this.spaceId(), this.contentId()).subscribe({
       next: () => {
         this.notificationService.success('Content has been published.');
-        this.sendEventToApp({ type: 'publish' });
+        this.previewComponent()?.sendEvent({ type: 'publish' });
         this.documentPublishedAt.set(Date.now() / 100);
       },
       error: () => {
@@ -337,7 +289,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.contentService.unpublish(this.spaceId(), this.contentId()).subscribe({
       next: () => {
         this.notificationService.success('Content has been unpublished.');
-        this.sendEventToApp({ type: 'unpublish' });
+        this.previewComponent()?.sendEvent({ type: 'unpublish' });
         this.documentPublishedAt.set(undefined);
       },
       error: () => {
@@ -383,7 +335,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData, refs).subscribe({
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
-          this.sendEventToApp({ type: 'save' });
+          this.previewComponent()?.sendEvent({ type: 'save' });
           this.documentUpdatedAt.set(Date.now() / 100);
           this.savedDocumentData.set(this.contentHelperService.clone(this.documentData));
         },
@@ -477,7 +429,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.selectedDocumentData = field;
     }
     // Send Message to iFrame about Schema Selection
-    this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
+    this.previewComponent()?.sendEvent({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
     //console.groupEnd()
   }
 
@@ -510,7 +462,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.selectedDocumentData = localSelectedContent;
     }
     // Send Message to iFrame about Schema Selection
-    this.sendEventToApp({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
+    this.previewComponent()?.sendEvent({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
     //console.groupEnd();
   }
 
@@ -558,144 +510,112 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
   }
 
-  contentIdLink(event: MessageEvent<EventToEditor>): void {
-    if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
-      //console.log('MessageEvent', event);
-      if (event.data.type === 'ping') {
-        this.iframeStatus.set('connected');
-        this.sendEventToApp({ type: 'pong' });
-        this.sendCurrentContentToApp();
+  onPreviewConnected(): void {
+    this.sendCurrentContentToApp();
+  }
+
+  onPreviewSchemaSelect(event: { id: string; schema: string; field?: string }): void {
+    const { id, schema, field } = event;
+    console.log('llve', id, 'selectSchema', schema, field);
+    // find element path
+    const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(id)) || [];
+    // Iterative traversing content and validating fields.
+    let selectedContentId = contentIdIteration.shift();
+    // check Root Schema
+    if (this.documentData._id === selectedContentId) {
+      console.log('root', selectedContentId);
+      const rootSchema = this.schemaMapById().get(this.documentData.schema);
+      if (rootSchema) {
+        this.navigateToSchemaBackwards({
+          contentId: this.documentData._id,
+          schemaName: this.documentData.schema,
+          fieldName: '',
+        });
+        selectedContentId = contentIdIteration.shift();
+      } else {
+        console.log(`schema ${this.selectedDocumentData.schema} not-found`);
         return;
       }
-      const { id, type, schema, field } = event.data;
-      console.log('llve', id, type, schema, field);
-      // find element path
-      const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(id)) || [];
-      if (type === 'selectSchema') {
-        // Iterative traversing content and validating fields.
-        let selectedContentId = contentIdIteration.shift();
-        // check Root Schema
-        if (this.documentData._id === selectedContentId) {
-          console.log('root', selectedContentId);
-          const schema = this.schemaMapById().get(this.documentData.schema);
-          if (schema) {
-            this.navigateToSchemaBackwards({
-              contentId: this.documentData._id,
-              schemaName: this.documentData.schema,
-              fieldName: '',
-            });
-            selectedContentId = contentIdIteration.shift();
-          } else {
-            console.log(`schema ${this.selectedDocumentData.schema} not-found`);
-            return;
+    } else {
+      console.log(`root id ${selectedContentId} not-found`);
+      return;
+    }
+    // Navigate to child
+    while (selectedContentId) {
+      console.log('child', selectedContentId);
+      const schema = this.schemaMapById().get(this.selectedDocumentData.schema);
+      if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
+        schemaFieldsLoop: for (const schemaField of schema.fields || []) {
+          if (schemaField.kind === SchemaFieldKind.SCHEMA) {
+            const cData: ContentData | undefined = this.selectedDocumentData[schemaField.name];
+            if (cData && cData._id === selectedContentId) {
+              this.navigateToSchemaForwards({
+                contentId: selectedContentId!,
+                fieldName: schemaField.name,
+                schemaName: cData.schema,
+              });
+              break;
+            }
           }
-        } else {
-          console.log(`root id ${selectedContentId} not-found`);
-          return;
-        }
-        // Navigate to child
-        while (selectedContentId) {
-          console.log('child', selectedContentId);
-          const schema = this.schemaMapById().get(this.selectedDocumentData.schema);
-          if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
-            schemaFieldsLoop: for (const field of schema.fields || []) {
-              if (field.kind === SchemaFieldKind.SCHEMA) {
-                const cData: ContentData | undefined = this.selectedDocumentData[field.name];
-                if (cData && cData._id === selectedContentId) {
-                  this.navigateToSchemaForwards({
-                    contentId: selectedContentId!,
-                    fieldName: field.name,
-                    schemaName: cData.schema,
-                  });
-                  break;
-                }
-              }
-              if (field.kind === SchemaFieldKind.SCHEMAS) {
-                const cData: ContentData[] | undefined = this.selectedDocumentData[field.name];
-                for (const content of cData || []) {
-                  if (content._id === selectedContentId) {
-                    this.navigateToSchemaForwards({
-                      contentId: selectedContentId,
-                      fieldName: field.name,
-                      schemaName: content.schema,
-                    });
-                    break schemaFieldsLoop;
-                  }
-                }
+          if (schemaField.kind === SchemaFieldKind.SCHEMAS) {
+            const cData: ContentData[] | undefined = this.selectedDocumentData[schemaField.name];
+            for (const content of cData || []) {
+              if (content._id === selectedContentId) {
+                this.navigateToSchemaForwards({
+                  contentId: selectedContentId,
+                  fieldName: schemaField.name,
+                  schemaName: content.schema,
+                });
+                break schemaFieldsLoop;
               }
             }
-            selectedContentId = contentIdIteration.shift();
-            this.clickSchemaField.set(field);
-          } else {
-            console.log(`schema ${this.selectedDocumentData.schema} not-found`);
-            return;
           }
         }
-        console.log(`id ${selectedContentId} not-found`);
-      } else if (type === 'hoverSchema') {
-        this.hoverSchemaPath.set(contentIdIteration);
-        this.hoverSchemaField.set(field);
-      } else if (type === 'leaveSchema') {
-        this.hoverSchemaPath.set(undefined);
-        this.hoverSchemaField.set(undefined);
+        selectedContentId = contentIdIteration.shift();
+        this.clickSchemaField.set(field);
+      } else {
+        console.log(`schema ${this.selectedDocumentData.schema} not-found`);
+        return;
       }
     }
+    console.log(`id ${selectedContentId} not-found`);
+  }
+
+  onPreviewSchemaHover(event: { id: string; field?: string }): void {
+    const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(event.id)) || [];
+    this.hoverSchemaPath.set(contentIdIteration);
+    this.hoverSchemaField.set(event.field);
+  }
+
+  onPreviewSchemaLeave(): void {
+    this.hoverSchemaPath.set(undefined);
+    this.hoverSchemaField.set(undefined);
   }
 
   onFormChange(event: string) {
     const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
     console.debug('onFormChange', event, data);
-    this.sendEventToApp({ type: 'input', data: data });
+    this.previewComponent()?.sendEvent({ type: 'input', data: data });
   }
 
   onStructureChange(event: string) {
     const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
     console.debug('onStructureChange', event, data);
     this.generateDocumentIdsTree();
-    this.sendEventToApp({ type: 'change', data: data });
+    this.previewComponent()?.sendEvent({ type: 'change', data: data });
   }
 
   onFormSchemaHover(event: { id: string; schema: string; field?: string }): void {
-    this.sendEventToApp({ type: 'hoverSchema', ...event });
+    this.previewComponent()?.sendEvent({ type: 'hoverSchema', ...event });
   }
 
   onFormSchemaLeave(): void {
-    this.sendEventToApp({ type: 'leaveSchema' });
-  }
-
-  sendEventToApp(event: EventToApp) {
-    const contentWindow = this.preview()?.nativeElement.contentWindow;
-    const selectedEnvironment = this.selectedEnvironment();
-    if (contentWindow && selectedEnvironment && this.iframeStatus() === 'connected') {
-      const url = new URL(selectedEnvironment.url);
-      contentWindow.postMessage(event, url.origin);
-    }
+    this.previewComponent()?.sendEvent({ type: 'leaveSchema' });
   }
 
   private sendCurrentContentToApp(): void {
     const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
-    this.sendEventToApp({ type: 'change', data });
-  }
-
-  onIframeLoad(): void {
-    if (this.iframeStatus() === 'loading') {
-      this.iframeStatus.set('loaded');
-    }
-  }
-
-  onIframeError(): void {
-    this.iframeStatus.set('error');
-  }
-
-  protected reloadEnvironment() {
-    const environment = this.selectedEnvironment();
-    this.selectedEnvironment.set(undefined);
-    this.selectedEnvironment.set(environment);
-  }
-
-  protected onEnvironmentSelection(environment: SpaceEnvironment): void {
-    this.selectedEnvironment.set(environment);
-    this.spaceStore.changeEnvironment(environment);
+    this.previewComponent()?.sendEvent({ type: 'change', data });
   }
 
   copiedSlug() {

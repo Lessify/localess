@@ -1,32 +1,3 @@
 .container-fluid {
   height: calc(100dvh - 120px);
 }
-
-div.browser {
-  min-width: 0;
-  max-width: 100%;
-  iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    flex-shrink: 0;
-    &.resizing {
-      pointer-events: none;
-    }
-    &.sm {
-      width: 640px;
-    }
-    &.md {
-      width: 768px;
-    }
-    &.lg {
-      width: 1024px;
-    }
-    &.xl {
-      width: 1280px;
-    }
-    &.xxl {
-      width: 1536px;
-    }
-  }
-}
