@@ -419,51 +419,44 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   navigateToSchemaForwards(pathItem: SchemaPathItem): void {
-    //console.group('navigateToSchemaForwards')
-    //console.log(pathItem)
-    this.schemaPath.update(it => [...it, pathItem]);
     const field = this.selectedDocumentData[pathItem.fieldName];
-    if (Array.isArray(field)) {
-      this.selectedDocumentData = field.find((it: ContentData) => it._id == pathItem.contentId);
-    } else {
-      this.selectedDocumentData = field;
+    const next: ContentData | undefined = Array.isArray(field) ? field.find((it: ContentData) => it._id == pathItem.contentId) : field;
+    if (!next) {
+      console.warn('navigateToSchemaForwards: target not found, aborting navigation', pathItem);
+      return;
     }
+    this.schemaPath.update(it => [...it, pathItem]);
+    this.selectedDocumentData = next;
     // Send Message to iFrame about Schema Selection
     this.previewComponent()?.sendEvent({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
-    //console.groupEnd()
   }
 
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
-    //console.group('navigateToSchemaBackwards');
-    console.log('pathItem', pathItem);
     const idx = this.schemaPath().findIndex(it => it.contentId == pathItem.contentId);
-    this.schemaPath.update(it => {
-      it.splice(idx + 1);
-      return it;
-    });
+    const truncatedPath = this.schemaPath().slice(0, idx + 1);
     // Select Root
     if (idx == 0) {
-      //console.log(`Navigate to Root idx=${idx}`);
-      //console.log('documentData', ObjectUtils.clone(this.documentData))
+      this.schemaPath.set(truncatedPath);
       this.selectedDocumentData = this.documentData;
     } else {
-      //console.log(`Navigate to Child idx=${idx}`);
-      let localSelectedContent = this.documentData;
-      for (const path of this.schemaPath()) {
+      let localSelectedContent: ContentData | undefined = this.documentData;
+      for (const path of truncatedPath) {
         if (path.fieldName === '') continue;
-        const field = localSelectedContent[path.fieldName];
-        if (Array.isArray(field)) {
-          localSelectedContent = localSelectedContent[path.fieldName].find((it: ContentData) => it._id == path.contentId);
-        } else {
-          localSelectedContent = field;
-        }
+        const field: ContentData | ContentData[] | undefined = localSelectedContent[path.fieldName];
+        localSelectedContent = Array.isArray(field) ? field.find((it: ContentData) => it._id == path.contentId) : field;
+        if (!localSelectedContent) break;
       }
-      //console.log('localSelectedContent', localSelectedContent);
-      this.selectedDocumentData = localSelectedContent;
+      if (!localSelectedContent) {
+        console.warn('navigateToSchemaBackwards: intermediate node not found, falling back to root', pathItem);
+        this.schemaPath.set(this.schemaPath().slice(0, 1));
+        this.selectedDocumentData = this.documentData;
+      } else {
+        this.schemaPath.set(truncatedPath);
+        this.selectedDocumentData = localSelectedContent;
+      }
     }
     // Send Message to iFrame about Schema Selection
     this.previewComponent()?.sendEvent({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
-    //console.groupEnd();
   }
 
   generateDocumentIdsTree() {

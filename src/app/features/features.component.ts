@@ -293,22 +293,8 @@ export class FeaturesComponent implements OnInit {
     effect(() => {
       const selectedSpaceId = this.spaceStore.selectedSpaceId();
       if (selectedSpaceId) {
-        this.contentService
-          .findAllDocuments(selectedSpaceId)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next: documents => {
-              this.spaceStore.updateDocuments(documents);
-            },
-          });
-        this.schemaService
-          .findAll(selectedSpaceId)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next: schemas => {
-              this.spaceStore.updateSchemas(schemas);
-            },
-          });
+        this.subscribeToDocuments(selectedSpaceId);
+        this.subscribeToSchemas(selectedSpaceId);
       }
     });
 
@@ -329,6 +315,37 @@ export class FeaturesComponent implements OnInit {
         }
       });
   }
+
+  private subscribeToDocuments(spaceId: string, attempt = 0): void {
+    this.contentService
+      .findAllDocuments(spaceId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: documents => this.spaceStore.updateDocuments(documents),
+        error: err => {
+          console.error('findAllDocuments listener failed', err);
+          this.notificationService.error('Lost connection to content updates. Retrying…');
+          const delay = Math.min(30000, 1000 * 2 ** attempt);
+          setTimeout(() => this.subscribeToDocuments(spaceId, attempt + 1), delay);
+        },
+      });
+  }
+
+  private subscribeToSchemas(spaceId: string, attempt = 0): void {
+    this.schemaService
+      .findAll(spaceId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: schemas => this.spaceStore.updateSchemas(schemas),
+        error: err => {
+          console.error('schemaService.findAll listener failed', err);
+          this.notificationService.error('Lost connection to schema updates. Retrying…');
+          const delay = Math.min(30000, 1000 * 2 ** attempt);
+          setTimeout(() => this.subscribeToSchemas(spaceId, attempt + 1), delay);
+        },
+      });
+  }
+
   ngOnInit(): void {
     interval(300000)
       .pipe(

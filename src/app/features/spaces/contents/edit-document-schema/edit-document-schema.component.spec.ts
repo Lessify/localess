@@ -47,6 +47,16 @@ describe('EditDocumentSchemaComponent', () => {
 
       expect(component.form.controls['title'].value).toBe('Hello');
     });
+
+    it('rootSchema() returns undefined instead of throwing when data() is undefined', () => {
+      const rootSchema = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never]);
+      const { component, fixture } = setup({ schemas: [rootSchema], data: { _id: '1', schema: 'root-1' } });
+
+      fixture.componentRef.setInput('data', undefined);
+
+      expect(() => component.rootSchema()).not.toThrow();
+      expect(component.rootSchema()).toBeUndefined();
+    });
   });
 
   describe('data/locale reactivity — data reference swap (parent-drilldown scenario)', () => {

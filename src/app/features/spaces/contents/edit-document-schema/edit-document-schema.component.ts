@@ -148,7 +148,7 @@ export class EditDocumentSchemaComponent {
     this.schemas()
       .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
       .map(it => it as SchemaComponent)
-      .find(it => it.id == this.data().schema),
+      .find(it => it.id == this.data()?.schema),
   );
   documentId = computed(() => this.data()._id);
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));

@@ -303,6 +303,128 @@ describe('EditDocumentComponent', () => {
       expect(component.selectedDocumentData).toEqual(data);
       expect(component.schemaPath()).toHaveLength(1);
     });
+
+    it('navigateToSchemaForwards() aborts and leaves state unchanged when the array target is not found', () => {
+      const data = { _id: 'root-id', schema: 'root1', children: [{ _id: 'child-id', schema: 'child1' }] };
+      const { component } = setup(documentOf(data));
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      component.navigateToSchemaForwards({ contentId: 'missing-id', schemaName: 'child1', fieldName: 'children' });
+
+      expect(component.selectedDocumentData).toEqual(data);
+      expect(component.schemaPath()).toHaveLength(1);
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('navigateToSchemaBackwards() falls back to root and warns when an intermediate array node is not found', () => {
+      const data = { _id: 'root-id', schema: 'root1', children: [{ _id: 'child-id', schema: 'child1' }] };
+      const { component } = setup(documentOf(data));
+      component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'children' });
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      // Remove the item from documentData so the backwards traversal can no longer find 'child-id'
+      component.documentData['children'] = [];
+
+      component.navigateToSchemaBackwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'children' });
+
+      expect(component.selectedDocumentData).toEqual(component.documentData);
+      expect(component.schemaPath()).toHaveLength(1);
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('navigateToSchemaBackwards() to a middle breadcrumb selects that level, not the current deepest level', () => {
+      const data = {
+        _id: 'root-id',
+        schema: 'root1',
+        child: {
+          _id: 'child-id',
+          schema: 'child1',
+          grandchild: { _id: 'grandchild-id', schema: 'grandchild1' },
+        },
+      };
+      const { component } = setup(documentOf(data));
+      component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
+      component.navigateToSchemaForwards({ contentId: 'grandchild-id', schemaName: 'grandchild1', fieldName: 'grandchild' });
+      expect(component.selectedDocumentData).toEqual(data.child.grandchild);
+
+      component.navigateToSchemaBackwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
+
+      expect(component.selectedDocumentData).toEqual(data.child);
+      expect(component.schemaPath().map(it => it.contentId)).toEqual(['root-id', 'child-id']);
+    });
+
+    it('navigateToSchemaForwards() selects the matching item out of an array field', () => {
+      const data = {
+        _id: 'root-id',
+        schema: 'root1',
+        children: [
+          { _id: 'child-a', schema: 'child1' },
+          { _id: 'child-b', schema: 'child1' },
+        ],
+      };
+      const { component } = setup(documentOf(data));
+
+      component.navigateToSchemaForwards({ contentId: 'child-b', schemaName: 'child1', fieldName: 'children' });
+
+      expect(component.selectedDocumentData).toEqual(data.children[1]);
+      expect(component.schemaPath().map(it => it.contentId)).toEqual(['root-id', 'child-b']);
+    });
+
+    it('navigateToSchemaBackwards() to a middle breadcrumb through a mix of single and array fields selects that level', () => {
+      const data = {
+        _id: 'root-id',
+        schema: 'root1',
+        child: {
+          _id: 'child-id',
+          schema: 'child1',
+          grandchildren: [
+            { _id: 'grandchild-a', schema: 'grandchild1' },
+            { _id: 'grandchild-b', schema: 'grandchild1' },
+          ],
+        },
+      };
+      const { component } = setup(documentOf(data));
+      component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
+      component.navigateToSchemaForwards({ contentId: 'grandchild-b', schemaName: 'grandchild1', fieldName: 'grandchildren' });
+      expect(component.selectedDocumentData).toEqual(data.child.grandchildren[1]);
+
+      component.navigateToSchemaBackwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
+
+      expect(component.selectedDocumentData).toEqual(data.child);
+      expect(component.schemaPath().map(it => it.contentId)).toEqual(['root-id', 'child-id']);
+    });
+
+    it('navigateToSchemaBackwards() to the root from a 3-level-deep path truncates the whole path', () => {
+      const data = {
+        _id: 'root-id',
+        schema: 'root1',
+        child: {
+          _id: 'child-id',
+          schema: 'child1',
+          grandchild: { _id: 'grandchild-id', schema: 'grandchild1' },
+        },
+      };
+      const { component } = setup(documentOf(data));
+      component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
+      component.navigateToSchemaForwards({ contentId: 'grandchild-id', schemaName: 'grandchild1', fieldName: 'grandchild' });
+
+      component.navigateToSchemaBackwards({ contentId: 'root-id', schemaName: 'root1', fieldName: '' });
+
+      expect(component.selectedDocumentData).toEqual(data);
+      expect(component.schemaPath()).toHaveLength(1);
+    });
+
+    it('navigateToSchemaBackwards() clicking the current deepest breadcrumb is a no-op', () => {
+      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const { component } = setup(documentOf(data));
+      component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
+
+      component.navigateToSchemaBackwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
+
+      expect(component.selectedDocumentData).toEqual(data.child);
+      expect(component.schemaPath().map(it => it.contentId)).toEqual(['root-id', 'child-id']);
+    });
   });
 
   it('captureKeyboard() saves and prevents default on Ctrl/Cmd+S', () => {
