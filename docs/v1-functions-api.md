@@ -108,6 +108,34 @@ Token passed as `X-API-KEY` header. No caching — direct Firestore lookup on ev
 
 ---
 
+## Error Responses
+
+401 and 403 responses serialize via `HttpsError`'s `toJSON()` as `{ message, status, details? }`.
+
+**401 Unauthenticated** — same generic body for a missing/malformed token and for a well-formed token that doesn't exist in Firestore, so the response never reveals which case occurred:
+
+```json
+{ "message": "Missing or invalid API token", "status": "UNAUTHENTICATED" }
+```
+
+**403 Permission Denied** — `details` names the permission(s) that would have satisfied the check and, where relevant, why:
+
+```json
+{
+  "message": "Token is missing a required permission",
+  "status": "PERMISSION_DENIED",
+  "details": {
+    "requiredPermissions": ["CONTENT_DRAFT", "DEV_TOOLS"],
+    "reason": "This request includes a `version` query parameter, which requires access to draft content.",
+    "hint": "Add one of the required permissions to this token, or use a token that already has it."
+  }
+}
+```
+
+`details.reason` is omitted for fixed-permission checks (e.g. `DEV_TOOLS`-only endpoints, `/links`) — only `requireContentPermissions()`/`requireTranslationPermissions()` populate it, explaining the draft-vs-published distinction.
+
+---
+
 ## Token Permissions Reference
 
 | Permission           | Grants access to                                                     |
