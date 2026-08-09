@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { Token, TokenPermission } from '../../models';
 import { findTokenById, validateToken } from '../../services';
+import { sendPermissionDenied, sendUnauthenticated } from '../../utils/api-auth-errors';
 import { canPerformAny } from '../../utils/api-auth-utils';
 
 /**
@@ -58,7 +59,7 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
 
     // Validate token format
     if (!validateToken(tokenId)) {
-      res.status(401).send(new HttpsError('unauthenticated', 'Invalid or missing token'));
+      sendUnauthenticated(res);
       return;
     }
 
@@ -73,7 +74,7 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
       const token = await getCachedToken(spaceId, tokenId as string);
 
       if (!token) {
-        res.status(401).send(new HttpsError('unauthenticated', 'Token not found'));
+        sendUnauthenticated(res);
         return;
       }
 
@@ -81,9 +82,7 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
       const hasPermission = canPerformAny(requiredPermissions, token);
 
       if (!hasPermission) {
-        res
-          .status(403)
-          .send(new HttpsError('permission-denied', `Token does not have required permissions: ${requiredPermissions.join(', ')}`));
+        sendPermissionDenied(res, requiredPermissions);
         return;
       }
 
@@ -120,7 +119,7 @@ export function requireContentPermissions() {
 
     // Validate token format
     if (!validateToken(tokenId)) {
-      res.status(401).send(new HttpsError('unauthenticated', 'Invalid or missing token'));
+      sendUnauthenticated(res);
       return;
     }
 
@@ -135,25 +134,25 @@ export function requireContentPermissions() {
       const token = await getCachedToken(spaceId, tokenId as string);
 
       if (!token) {
-        res.status(401).send(new HttpsError('unauthenticated', 'Token not found'));
+        sendUnauthenticated(res);
         return;
       }
 
       // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
-      const hasRequiredPermission =
-        version !== undefined
-          ? canPerformAny([TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS], token)
-          : canPerformAny([TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS], token);
+      const isDraftRequest = version !== undefined;
+      const requiredPermissions = isDraftRequest
+        ? [TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS]
+        : [TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS];
+      const hasRequiredPermission = canPerformAny(requiredPermissions, token);
 
       if (!hasRequiredPermission) {
-        res
-          .status(403)
-          .send(
-            new HttpsError(
-              'permission-denied',
-              version !== undefined ? 'Draft content requires DRAFT permission' : 'Published content requires PUBLIC or DRAFT permission'
-            )
-          );
+        sendPermissionDenied(
+          res,
+          requiredPermissions,
+          isDraftRequest
+            ? 'This request includes a `version` query parameter, which requires access to draft content.'
+            : 'Published content requires the CONTENT_PUBLIC, CONTENT_DRAFT, or DEV_TOOLS permission.'
+        );
         return;
       }
 
@@ -181,7 +180,7 @@ export function requireTranslationPermissions() {
 
     // Validate token format
     if (!validateToken(tokenId)) {
-      res.status(401).send(new HttpsError('unauthenticated', 'Invalid or missing token'));
+      sendUnauthenticated(res);
       return;
     }
 
@@ -196,27 +195,25 @@ export function requireTranslationPermissions() {
       const token = await getCachedToken(spaceId, tokenId as string);
 
       if (!token) {
-        res.status(401).send(new HttpsError('unauthenticated', 'Token not found'));
+        sendUnauthenticated(res);
         return;
       }
 
       // Check permissions: version requires DRAFT, published (no version) requires PUBLIC or DRAFT
-      const hasRequiredPermission =
-        version !== undefined
-          ? canPerformAny([TokenPermission.TRANSLATION_DRAFT, TokenPermission.DEV_TOOLS], token)
-          : canPerformAny([TokenPermission.TRANSLATION_PUBLIC, TokenPermission.TRANSLATION_DRAFT, TokenPermission.DEV_TOOLS], token);
+      const isDraftRequest = version !== undefined;
+      const requiredPermissions = isDraftRequest
+        ? [TokenPermission.TRANSLATION_DRAFT, TokenPermission.DEV_TOOLS]
+        : [TokenPermission.TRANSLATION_PUBLIC, TokenPermission.TRANSLATION_DRAFT, TokenPermission.DEV_TOOLS];
+      const hasRequiredPermission = canPerformAny(requiredPermissions, token);
 
       if (!hasRequiredPermission) {
-        res
-          .status(403)
-          .send(
-            new HttpsError(
-              'permission-denied',
-              version !== undefined
-                ? 'Draft translation requires DRAFT permission'
-                : 'Published translation requires PUBLIC or DRAFT permission'
-            )
-          );
+        sendPermissionDenied(
+          res,
+          requiredPermissions,
+          isDraftRequest
+            ? 'This request includes a `version` query parameter, which requires access to draft translations.'
+            : 'Published translation requires the TRANSLATION_PUBLIC, TRANSLATION_DRAFT, or DEV_TOOLS permission.'
+        );
         return;
       }
 
