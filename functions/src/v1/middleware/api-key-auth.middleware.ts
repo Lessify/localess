@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { Token, TokenPermission } from '../../models';
 import { findTokenById, validateToken } from '../../services';
+import { sendPermissionDenied, sendUnauthenticated } from '../../utils/api-auth-errors';
 import { canPerformAny } from '../../utils/api-auth-utils';
 
 const AUTH_HEADER = 'X-API-KEY';
@@ -25,7 +26,7 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
 
     // Validate token format
     if (!validateToken(tokenId)) {
-      res.status(401).send(new HttpsError('unauthenticated', 'Invalid or missing token'));
+      sendUnauthenticated(res);
       return;
     }
 
@@ -40,7 +41,7 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
       const tokenSnapshot = await findTokenById(spaceId, tokenId as string).get();
 
       if (!tokenSnapshot.exists) {
-        res.status(401).send(new HttpsError('unauthenticated', 'Token not found'));
+        sendUnauthenticated(res);
         return;
       }
 
@@ -50,9 +51,7 @@ export function requireTokenPermissions(requiredPermissions: TokenPermission[]) 
       const hasPermission = canPerformAny(requiredPermissions, token);
 
       if (!hasPermission) {
-        res
-          .status(403)
-          .send(new HttpsError('permission-denied', `Token does not have required permissions: ${requiredPermissions.join(', ')}`));
+        sendPermissionDenied(res, requiredPermissions);
         return;
       }
 
