@@ -20,9 +20,9 @@ import {
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { UpdateData } from '@firebase/firestore';
-import { Token, TokenForm, TokenFS, TokenPermission } from '@shared/models/token.model';
+import { isTokenV2, Token, TokenForm, TokenFS, TokenPermission } from '@shared/models/token.model';
 import { from, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class TokenService {
@@ -82,6 +82,23 @@ export class TokenService {
       updatedAt: serverTimestamp(),
     };
     return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/tokens/${id}`), update)).pipe(traceUntilFirst('Firestore:Tokens:update'));
+  }
+
+  regenerate(spaceId: string, token: Token): Observable<DocumentReference> {
+    const addEntity: WithFieldValue<TokenFS> = {
+      version: 2,
+      name: token.name,
+      permissions: isTokenV2(token) ? token.permissions : [],
+      createdAt: token.createdAt,
+      updatedAt: serverTimestamp(),
+    };
+    if (isTokenV2(token) && token.cacheTtl != null) {
+      addEntity.cacheTtl = token.cacheTtl;
+    }
+    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tokens`), addEntity)).pipe(
+      traceUntilFirst('Firestore:Tokens:regenerate'),
+      switchMap(ref => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/tokens/${token.id}`))).pipe(map(() => ref))),
+    );
   }
 
   delete(spaceId: string, id: string): Observable<void> {

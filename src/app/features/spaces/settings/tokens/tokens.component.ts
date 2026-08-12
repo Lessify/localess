@@ -5,7 +5,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
+import { lucideCopy, lucidePencil, lucidePlus, lucideRefreshCw, lucideTrash } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
@@ -46,6 +46,7 @@ import { TokenDialogComponent } from './token-dialog/token-dialog.component';
       lucideTrash,
       lucideCopy,
       lucidePencil,
+      lucideRefreshCw,
     }),
   ],
 })
@@ -139,6 +140,30 @@ export class TokensComponent implements AfterViewInit {
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Token can not be created.');
+        },
+      });
+  }
+
+  openRegenerateDialog(element: Token): void {
+    const spaceId = this.spaceStore.selectedSpaceId();
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
+        data: {
+          title: 'Regenerate Token',
+          content: `Are you sure you want to regenerate the token '${element.name}'? All clients using the current token will immediately lose access and must be updated with the new token.`,
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(it => it || false),
+        switchMap(() => this.tokenService.regenerate(spaceId!, element)),
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`Token '${element.name}' has been regenerated.`);
+        },
+        error: () => {
+          this.notificationService.error(`Token '${element.name}' can not be regenerated.`);
         },
       });
   }

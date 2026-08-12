@@ -29,6 +29,7 @@ describe('TokensComponent', () => {
     const create = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteToken = vi.fn().mockReturnValue(of(undefined));
+    const regenerate = vi.fn().mockReturnValue(of(undefined));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
@@ -38,7 +39,7 @@ describe('TokensComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: TokenService, useValue: { findAll, create, update, delete: deleteToken } },
+        { provide: TokenService, useValue: { findAll, create, update, delete: deleteToken, regenerate } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
@@ -46,7 +47,7 @@ describe('TokensComponent', () => {
     });
     const fixture = TestBed.createComponent(TokensComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, create, update, deleteToken, success, error, open };
+    return { component: fixture.componentInstance, findAll, create, update, deleteToken, regenerate, success, error, open };
   }
 
   it('starts loading until a space is selected', () => {
@@ -154,6 +155,46 @@ describe('TokensComponent', () => {
     component.openDeleteDialog(token({ id: 't1', name: 'CI' }));
 
     expect(error).toHaveBeenCalledWith("Token 'CI' can not be deleted.");
+  });
+
+  it('openRegenerateDialog() regenerates and notifies success when confirmed', () => {
+    const { component, open, regenerate, success } = setup([], space());
+    open.mockReturnValue({ afterClosed: () => of(true) });
+    const element = token({ id: 't1', name: 'CI' });
+
+    component.openRegenerateDialog(element);
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: {
+          title: 'Regenerate Token',
+          content:
+            "Are you sure you want to regenerate the token 'CI'? All clients using the current token will immediately lose access and must be updated with the new token.",
+        },
+      }),
+    );
+    expect(regenerate).toHaveBeenCalledWith('space-1', element);
+    expect(success).toHaveBeenCalledWith("Token 'CI' has been regenerated.");
+  });
+
+  it('openRegenerateDialog() does not regenerate when cancelled', () => {
+    const { component, open, regenerate } = setup([], space());
+    open.mockReturnValue({ afterClosed: () => of(false) });
+
+    component.openRegenerateDialog(token({ id: 't1' }));
+
+    expect(regenerate).not.toHaveBeenCalled();
+  });
+
+  it('openRegenerateDialog() notifies an error on failure', () => {
+    const { component, open, regenerate, error } = setup([], space());
+    regenerate.mockReturnValue(throwError(() => new Error('boom')));
+    open.mockReturnValue({ afterClosed: () => of(true) });
+
+    component.openRegenerateDialog(token({ id: 't1', name: 'CI' }));
+
+    expect(error).toHaveBeenCalledWith("Token 'CI' can not be regenerated.");
   });
 
   it('permissionsToText() joins the permission labels with newlines', () => {

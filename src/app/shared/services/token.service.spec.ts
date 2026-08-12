@@ -123,4 +123,51 @@ describe('TokenService', () => {
 
     expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
   });
+
+  it('regenerate() adds a new doc copying name/permissions/cacheTtl/createdAt and deletes the old doc', async () => {
+    const service = setup();
+    vi.mocked(addDoc).mockResolvedValue({ id: 'new-token' } as never);
+    const createdAt = { seconds: 111, nanoseconds: 0 } as never;
+    const token: Token = {
+      id: 'old-token',
+      version: 2,
+      name: 'CI token',
+      permissions: [TokenPermission.CONTENT_DRAFT],
+      cacheTtl: 3600,
+      createdAt,
+      updatedAt: createdAt,
+    } as unknown as Token;
+
+    const result = await firstValueFrom(service.regenerate('space-1', token));
+
+    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
+    expect(addedEntity).toMatchObject({
+      version: 2,
+      name: 'CI token',
+      permissions: [TokenPermission.CONTENT_DRAFT],
+      cacheTtl: 3600,
+      createdAt,
+    });
+    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
+    expect(result).toEqual({ id: 'new-token' });
+  });
+
+  it('regenerate() defaults permissions to [] and omits cacheTtl for a v1 token', async () => {
+    const service = setup();
+    vi.mocked(addDoc).mockResolvedValue({ id: 'new-token' } as never);
+    const createdAt = { seconds: 222, nanoseconds: 0 } as never;
+    const token: Token = {
+      id: 'old-token',
+      version: undefined,
+      name: 'Legacy token',
+      createdAt,
+      updatedAt: createdAt,
+    } as unknown as Token;
+
+    await firstValueFrom(service.regenerate('space-1', token));
+
+    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
+    expect(addedEntity).toMatchObject({ version: 2, name: 'Legacy token', permissions: [] });
+    expect(addedEntity).not.toHaveProperty('cacheTtl');
+  });
 });
