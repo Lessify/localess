@@ -197,12 +197,12 @@ describe('TokensComponent', () => {
     expect(error).toHaveBeenCalledWith("Token 'CI' can not be regenerated.");
   });
 
-  it('permissionsToText() joins the permission labels with newlines', () => {
+  it('permissionsToText() joins the permission labels with commas', () => {
     const { component } = setup([], space());
 
     const text = component.permissionsToText([TokenPermission.CONTENT_DRAFT, TokenPermission.TRANSLATION_PUBLIC]);
 
-    expect(text).toBe('Content Draft\nTranslation Public');
+    expect(text).toBe('Content Draft, Translation Public');
   });
 
   it('permissionsToUsage() classifies a v2 token by its explicit permissions', () => {
