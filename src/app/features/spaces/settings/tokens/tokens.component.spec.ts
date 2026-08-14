@@ -205,6 +205,23 @@ describe('TokensComponent', () => {
     expect(text).toBe('Content Draft\nTranslation Public');
   });
 
+  it('permissionsToUsage() classifies a v2 token by its explicit permissions', () => {
+    const { component } = setup([], space());
+
+    const info = component.permissionsToUsage(token({ permissions: [TokenPermission.CONTENT_PUBLIC] }));
+
+    expect(info.category).toBe('PUBLIC_SAFE');
+  });
+
+  it('permissionsToUsage() classifies a v1 token as SERVER_SIDE via its implicit permissions', () => {
+    const { component } = setup([], space());
+    const v1Token = { id: 't1', name: 'Legacy', version: undefined } as unknown as Token;
+
+    const info = component.permissionsToUsage(v1Token);
+
+    expect(info.category).toBe('SERVER_SIDE');
+  });
+
   it('copied() notifies success', () => {
     const { component, success } = setup([], space());
 

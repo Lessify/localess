@@ -10,7 +10,16 @@ import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/co
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { isTokenV2, PERMISSION_TEXT, Token, TokenForm, TokenPermission } from '@shared/models/token.model';
+import {
+  getTokenUsageInfo,
+  isTokenV2,
+  PERMISSION_TEXT,
+  Token,
+  TOKEN_V1_IMPLICIT_PERMISSIONS,
+  TokenForm,
+  TokenPermission,
+  TokenUsageInfo,
+} from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -64,7 +73,7 @@ export class TokensComponent implements AfterViewInit {
 
   private readonly tokens = signal<Token[]>([]);
   readonly dataSource = new TableDataSource<Token>(this.tokens, this.injector);
-  displayedColumns: string[] = ['id', 'name', 'version', 'permissions', 'cacheTtl', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'version', 'permissions', 'usage', 'cacheTtl', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
@@ -194,6 +203,10 @@ export class TokensComponent implements AfterViewInit {
 
   permissionsToText(permissions: TokenPermission[]): string {
     return permissions.map(it => PERMISSION_TEXT[it]).join('\n');
+  }
+
+  permissionsToUsage(element: Token): TokenUsageInfo {
+    return getTokenUsageInfo(isTokenV2(element) ? element.permissions : TOKEN_V1_IMPLICIT_PERMISSIONS);
   }
 
   copied() {

@@ -48,6 +48,28 @@ describe('TokenDialogComponent', () => {
     expect(component.form.value.permissions).toEqual([TokenPermission.DEV_TOOLS]);
   });
 
+  it('usageInfo() starts at NO_ACCESS with no data', () => {
+    const { component } = setup(undefined);
+
+    expect(component.usageInfo().category).toBe('NO_ACCESS');
+  });
+
+  it('usageInfo() reflects PUBLIC_SAFE for public-only permissions', () => {
+    const { component } = setup({ name: 'CI', permissions: [TokenPermission.CONTENT_PUBLIC] });
+
+    expect(component.usageInfo().category).toBe('PUBLIC_SAFE');
+  });
+
+  it('usageInfo() updates live as permissions are toggled', () => {
+    const { component } = setup({ name: 'CI', permissions: [TokenPermission.CONTENT_PUBLIC] });
+
+    expect(component.usageInfo().category).toBe('PUBLIC_SAFE');
+
+    component.togglePermission(TokenPermission.DEV_TOOLS, true);
+
+    expect(component.usageInfo().category).toBe('DEV_TOOLS');
+  });
+
   it('resetCacheTtl() clears the cacheTtl control', () => {
     const { component } = setup({ name: 'CI', permissions: [], cacheTtl: 60 });
 

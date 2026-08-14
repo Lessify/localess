@@ -35,6 +35,17 @@
           }
         </td>
       </ng-container>
+      <ng-container llColumnDef="usage">
+        <th llHeaderCell *llHeaderCellDef>Usage</th>
+        <td llCell *llCellDef="let element">
+          <span
+            hlmBadge
+            [variant]="permissionsToUsage(element).variant === 'warning' ? 'destructive' : 'outline'"
+            [hlmTooltip]="permissionsToUsage(element).rationale">
+            {{ permissionsToUsage(element).label }}
+          </span>
+        </td>
+      </ng-container>
       <ng-container llColumnDef="cacheTtl">
         <th llHeaderCell *llHeaderCellDef>Cache TTL</th>
         <td llCell *llCellDef="let element">

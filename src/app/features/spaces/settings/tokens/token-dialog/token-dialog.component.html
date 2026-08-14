@@ -41,6 +41,10 @@
       @if (form.controls['permissions'].errors; as errors) {
         <p class="text-destructive text-sm">{{ fe.errors(errors) }}</p>
       }
+      <div class="flex items-center gap-2">
+        <span hlmBadge [variant]="usageInfo().variant === 'warning' ? 'destructive' : 'outline'">{{ usageInfo().label }}</span>
+        <p class="text-muted-foreground text-xs">{{ usageInfo().rationale }}</p>
+      </div>
     </div>
 
     <hlm-separator />

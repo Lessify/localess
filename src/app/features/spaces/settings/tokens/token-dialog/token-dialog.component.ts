@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideX } from '@ng-icons/lucide';
-import { TokenForm } from '@shared/models/token.model';
+import { getTokenUsageInfo, TokenForm, TokenPermission } from '@shared/models/token.model';
 import { TokenValidator } from '@shared/validators/token.validator';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -33,6 +35,7 @@ interface PermissionGroup {
   imports: [
     MatDialogModule,
     ReactiveFormsModule,
+    HlmBadgeImports,
     HlmButtonImports,
     HlmCheckboxImports,
     HlmFieldImports,
@@ -57,6 +60,12 @@ export class TokenDialogComponent implements OnInit {
     permissions: this.fb.control<string[]>([], TokenValidator.PERMISSIONS),
     cacheTtl: this.fb.control<number | undefined>(undefined, TokenValidator.CACHE_TTL),
   });
+
+  private readonly permissionsValue = toSignal(this.form.controls['permissions'].valueChanges, {
+    initialValue: this.form.controls['permissions'].value as string[],
+  });
+
+  readonly usageInfo = computed(() => getTokenUsageInfo(this.permissionsValue() as TokenPermission[]));
 
   protected readonly permissionGroups: PermissionGroup[] = [
     {
