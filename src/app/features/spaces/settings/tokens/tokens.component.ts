@@ -202,7 +202,7 @@ export class TokensComponent implements AfterViewInit {
   }
 
   permissionsToText(permissions: TokenPermission[]): string {
-    return permissions.map(it => PERMISSION_TEXT[it]).join('\n');
+    return permissions.map(it => PERMISSION_TEXT[it]).join(', ');
   }
 
   permissionsToUsage(element: Token): TokenUsageInfo {
