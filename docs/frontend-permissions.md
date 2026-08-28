@@ -77,6 +77,8 @@ enum UserPermission {
 }
 ```
 
+> **Note:** Unlike every other permission above, `DEV_OPEN_API` and `DEV_WEBHOOK` are **not** enforced by a route guard — the `spaces/:spaceId/developers` route (which hosts both Open API and Webhooks) has no `canActivate` in `features-routing.module.ts`. They only control sidebar link visibility, checked client-side in `src/app/features/features.component.ts` (~line 228-241). A user who guesses the URL can still reach `/features/spaces/:spaceId/developers/...` without holding either permission.
+
 ---
 
 ## How Guards Work

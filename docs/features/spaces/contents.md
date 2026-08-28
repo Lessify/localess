@@ -20,6 +20,7 @@ Manage structured content documents organised in a folder/document hierarchy. Su
 src/app/features/spaces/contents/
   contents.component.ts/html/scss        ← folder/document browser
   edit-document/                         ← full document editor (routed)
+  content-preview/                       ← visual editor iframe + postMessage bridge (used by edit-document)
   add-document-dialog/                   ← create document (pick schema)
   add-folder-dialog/                     ← create folder
   edit-dialog/                           ← edit document/folder metadata
@@ -61,20 +62,20 @@ Full schema-driven editor for a single `ContentDocument`. Loaded via `documentRe
 
 ### Visual Editor Bridge
 
-When the visual editor preview is enabled, `EditDocumentComponent` embeds the target environment in an `<iframe>` and exchanges `postMessage` events with the embedded app (see `edit-document.model.ts` for `EventToEditorType`/`EventToAppType`).
+When the visual editor preview is enabled, `EditDocumentComponent` renders a `ContentPreviewComponent` (`content-preview/`), which owns the `<iframe>` embedding the target environment and the `postMessage` exchange with the embedded app (see `edit-document.model.ts` for `EventToEditorType`/`EventToAppType`). `EditDocumentComponent` only reacts to `ContentPreviewComponent`'s outputs (`connected`, `schemaSelect`, `schemaHover`, `schemaLeave`) via `previewComponent = viewChild(ContentPreviewComponent)` — it does not manage the iframe or the message handling itself.
 
-**Connection lifecycle** — tracked in `iframeStatus` (`linkedSignal<'loading' | 'loaded' | 'connected' | 'error'>`):
+**Connection lifecycle** — owned by `ContentPreviewComponent`, tracked in its `iframeStatus` (`linkedSignal<'loading' | 'loaded' | 'connected' | 'error'>`):
 1. `loading` → `onIframeLoad()` sets `loaded` (only if still `loading`, so it won't downgrade `connected`/`error`)
-2. The embedded app sends `{ type: 'ping' }` → the editor sets `connected`, replies `{ type: 'pong' }`, then calls `sendCurrentContentToApp()` to push the full current content as a `change` event
+2. The embedded app sends `{ type: 'ping' }` → `onWindowMessage()` sets `connected`, replies `{ type: 'pong' }` via `sendEvent()`, and emits the `connected` output — `EditDocumentComponent.onPreviewConnected()` then calls `sendCurrentContentToApp()` to push the full current content as a `change` event
 3. `onIframeError()` sets `error` on load failure
 
-`sendEventToApp()` only dispatches when `iframeStatus() === 'connected'` — events sent before the handshake completes are dropped.
+`ContentPreviewComponent.sendEvent()` only dispatches when `iframeStatus() === 'connected'` — events sent before the handshake completes are dropped. `EditDocumentComponent` triggers it via `this.previewComponent()?.sendEvent(...)`.
 
 **Events editor → app** (`EventToAppType`): `save`, `publish`, `unpublish`, `pong`, `input`, `change`, `enterSchema`, `hoverSchema`, `leaveSchema`
 
 **Events app → editor** (`EventToEditorType`): `ping`, `selectSchema`, `hoverSchema`, `leaveSchema`
 
-**Hover highlighting:** hovering a schema field in `EditDocumentSchemaComponent` fires `(schemaHover)`/`(schemaLeave)` → `onFormSchemaHover()`/`onFormSchemaLeave()` → forwarded to the app as `hoverSchema`/`leaveSchema`. Conversely, a `hoverSchema`/`leaveSchema` event *from* the app sets `hoverSchemaPath`/`hoverSchemaField` signals, which are passed into `EditDocumentSchemaComponent` to highlight the corresponding field in the form.
+**Hover highlighting:** hovering a schema field in `EditDocumentSchemaComponent` fires `(schemaHover)`/`(schemaLeave)` → `EditDocumentComponent.onFormSchemaHover()`/`onFormSchemaLeave()` → forwarded to the app via `previewComponent()?.sendEvent({ type: 'hoverSchema' | 'leaveSchema', ... })`. Conversely, a `hoverSchema`/`leaveSchema` event *from* the app is emitted by `ContentPreviewComponent` and handled in `EditDocumentComponent`, which sets `hoverSchemaPath`/`hoverSchemaField` signals passed into `EditDocumentSchemaComponent` to highlight the corresponding field in the form.
 
 ## Dialogs
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-API tokens grant programmatic, scoped access to the public CDN API. They are passed as a `?token=<tokenId>` query parameter on every request. There is no cookie or header-based auth on the public API.
+API tokens grant programmatic, scoped access to the public CDN API. On the CDN read endpoints (`CDN`, `DEV_TOOLS` routers) they are passed as a `?token=<tokenId>` query parameter; there is no cookie-based auth. The `MANAGE` router (bulk translation writes) is the one exception — it authenticates via an `X-API-KEY` header instead of the query param (see [V1 Functions API](v1-functions-api.md#middleware) for that flow). This doc covers the query-param auth path used by the CDN/DEV_TOOLS routers.
 
 Tokens are stored in Firestore:
 ```
@@ -22,6 +22,8 @@ No `version` field. Implicitly grants all read permissions:
 
 ### TokenV2 (current)
 Has `version: 2` and an explicit `permissions: TokenPermission[]` array. Only grants what is listed.
+
+Also supports an optional `cacheTtl?: number` field, which overrides the default CDN redirect cache TTL (`CACHE_REDIRECT_MAX_AGE_DEFAULT`, 60s) for requests made with that token. `cacheTtl: 0` disables redirect caching entirely (`Cache-Control: no-cache`). See [CDN & Caching](cdn-caching.md).
 
 ---
 

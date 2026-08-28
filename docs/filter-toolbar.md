@@ -4,9 +4,9 @@
 
 A reusable search + popover-filter toolbar lives in `src/app/shared/components/filter-toolbar/`, alongside a `FilterPredicateUtils.create()` helper in `src/app/core/utils/`. Together they replace the hand-rolled `filterForm`/`schemaFilterPredicate`-style code that used to be duplicated per page (search input + `FormGroup` + `debounceTime` + a bespoke `JSON.parse(filter)` matcher).
 
-**First migrated consumer:** `src/app/features/spaces/schemas/schemas.component.*` — use it as the reference implementation.
+**First migrated consumer:** `src/app/features/spaces/schemas/schemas.component.*` — use it as the reference implementation. `webhook-detail.component` has since migrated too (`LlFilterToolbarImports` / `FilterDef` in `webhook-detail.component.ts`, `<ll-filter-toolbar>` in `webhook-detail.component.html`).
 
-**Not yet migrated:** `translations.component` (mixes filter state with an unrelated `locale` select in the same `FormGroup`) and `webhook-detail.component` (drives filters from raw signals, not a `FormGroup`). Both are good next candidates but need their own look before switching over.
+**Not yet migrated:** `translations.component` (mixes filter state with an unrelated `locale` select in the same `FormGroup`) — needs its own look before switching over.
 
 ---
 

@@ -28,12 +28,12 @@ Subscribes to `user(auth)` observable and then fetches the Firebase ID token to 
 ```typescript
 // Key state
 {
-  id, displayName, email, emailVerified, photoURL,
+  id, displayName, initials, email, emailVerified, photoURL,
   role: 'admin' | 'custom' | undefined,
   permissions: string[] | undefined,
   lock: boolean | undefined,
   isAuthenticated: boolean,
-  isPasswordProvider, isGoogleProvider, isMicrosoftProvider
+  isPasswordProvider, isGoogleProvider, isMicrosoftProvider, numberProviders
 }
 
 // Key computed

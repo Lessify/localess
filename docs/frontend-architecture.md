@@ -26,9 +26,7 @@ src/
     app.component.*        ← root shell
     core/                  ← singleton: error handler, HTTP interceptors, title service
     features/              ← all authenticated feature routes (lazy-loaded)
-    login/                 ← email / Google / Microsoft sign-in
-    reset/                 ← password reset
-    setup/                 ← initial setup wizard (first-run)
+    auth/                  ← AuthModule: login/, reset/, setup/ (email / Google / Microsoft sign-in, password reset, first-run wizard)
     shared/                ← cross-feature: models, services, stores, guards, pipes
   environments/            ← firebase-config per environment
   assets/                  ← static files (version.json, icons)
@@ -43,9 +41,9 @@ libs/
 All authenticated routes live under `/features` and are protected by `authGuard()`:
 
 ```
-/login                              → LoginComponent (lazy)
-/reset                              → ResetComponent (lazy)
-/setup                              → SetupComponent (lazy)
+/auth/login                         → LoginComponent (lazy, AuthModule)
+/auth/reset                         → ResetComponent (lazy, AuthModule)
+/auth/setup                         → SetupComponent (lazy, AuthModule)
 /features/
   welcome                           → WelcomeComponent
   me/                               → profile, account settings
@@ -56,7 +54,9 @@ All authenticated routes live under `/features` and are protected by `authGuard(
     assets                          → AssetsModule        [ASSET_READ]
     schemas                         → SchemasModule       [SCHEMA_READ]
     tasks                           → TasksModule         [TRANSLATION_READ]
-    open-api                        → OpenApiModule
+    developers/                     → DevelopersModule (no route guard — see note below)
+      webhooks, webhooks/:webhookId → WebhooksComponent / WebhookDetailComponent
+      open-api                      → OpenApiComponent (nested under developers, not a standalone route)
     settings                        → SettingsModule      [SPACE_MANAGEMENT]
   admin/
     users                           → UsersModule         [USER_MANAGEMENT]
@@ -64,7 +64,7 @@ All authenticated routes live under `/features` and are protected by `authGuard(
     settings                        → SettingsModule      [SETTINGS_MANAGEMENT]
 ```
 
-Guards in brackets are Firebase `customClaims`-based (`AuthGuard` + `authGuardPipe`).
+Guards in brackets are Firebase `customClaims`-based (`AuthGuard` + `authGuardPipe`). `spaces/:spaceId/developers` (and its `webhooks`/`open-api` children) has no `canActivate` guard at the route level — access to those sections is only gated client-side via sidebar visibility (see [User Roles & Permissions](frontend-permissions.md)).
 
 ---
 

@@ -15,7 +15,7 @@ Every CDN endpoint follows this flow:
 ```
 Client request (no cv or stale cv)
   → Function reads Storage cache.json metadata
-  → 302 redirect to same URL + ?cv=<generation>    ← cached 5 min (1 min for draft)
+  → 302 redirect to same URL + ?cv=<generation>    ← cached 60s by default (per-token override)
   → Client follows redirect
   → Function returns actual JSON                    ← cached 1 day (7 days shared CDN)
 ```
@@ -32,19 +32,24 @@ When content is published, a new `cache.json` is written, incrementing the gener
 
 | Scenario | `max-age` | `s-maxage` | Who respects it |
 |----------|-----------|------------|-----------------|
-| Redirect (published) | 5 min | 5 min | CDN edge + browser |
-| Redirect (draft, `version` present) | 1 min | 1 min | CDN edge + browser |
+| Redirect (cv missing or stale) | 60s (default) | 60s (default) | CDN edge + browser |
 | Content/Translation response | 1 day | 7 days | browser / CDN |
 | Asset response | 365 days | 365 days | browser / CDN |
-| 404 responses | 10 min | 10 min | browser / CDN |
+| 404 — space not found | 1 day | 7 days | browser / CDN |
+| 404 — cache marker missing / content not found on disk | 10 min | 10 min | browser / CDN |
+| 404 — translation cache-miss / slug not found | *(no `Cache-Control` header sent)* | | |
+| 404 — asset not found | `no-cache` | `no-cache` | browser / CDN |
+
+> Redirect TTL is a flat default (`CACHE_REDIRECT_MAX_AGE_DEFAULT`), not split by published/draft. It can be overridden per-token via the `cacheTtl` field on `TokenV2` — see [Auth Tokens](auth-tokens.md) — where `cacheTtl: 0` disables caching entirely (`Cache-Control: no-cache`).
+>
+> "404 responses" is not a single behavior — it depends on which lookup fails (see rows above); some 404s carry no `Cache-Control` header at all.
 
 Constants are defined in `functions/src/config.ts`:
 ```typescript
-CACHE_MAX_AGE          = DAY           // 86400s
-CACHE_SHARE_MAX_AGE    = DAY * 7       // 604800s
-CACHE_REDIRECT_MAX_AGE = 5 * MINUTE    // 300s  — published
-CACHE_REDIRECT_DRAFT_MAX_AGE = MINUTE  // 60s   — draft
-CACHE_ASSET_MAX_AGE    = DAY * 365     // 31536000s
+CACHE_MAX_AGE                   = DAY           // 86400s
+CACHE_SHARE_MAX_AGE             = DAY * 7       // 604800s
+CACHE_REDIRECT_MAX_AGE_DEFAULT  = MINUTE        // 60s — default redirect TTL, overridable per-token via `cacheTtl`
+CACHE_ASSET_MAX_AGE             = DAY * 365     // 31536000s
 ```
 
 ---
@@ -63,7 +68,7 @@ CACHE_ASSET_MAX_AGE    = DAY * 365     // 31536000s
 
 ## Thundering Herd Problem
 
-When content is published all consumers have a stale `cv`. Without a cached redirect, every consumer simultaneously invokes the Function → Storage → Firestore chain. The 5-minute redirect cache limits the stampede to one wave per CDN edge node.
+When content is published all consumers have a stale `cv`. Without a cached redirect, every consumer simultaneously invokes the Function → Storage → Firestore chain. The redirect cache (60s default, per-token tunable) limits the stampede to one wave per CDN edge node.
 
 > See [Billing & Cost](billing.md) for impact analysis and [Publish Flow](publish-flow.md) for when invalidation happens.
 
@@ -75,7 +80,7 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 |-|-----------|-------|
 | `version` query param | absent | `version=draft` |
 | Storage path | `{id}/{locale}.json` | `{id}/draft/{locale}.json` |
-| Redirect TTL | 5 min | 1 min |
+| Redirect TTL | 60s default (overridable via token `cacheTtl`) | 60s default (overridable via token `cacheTtl`) |
 | Required permission | `*_PUBLIC` or `*_DRAFT` | `*_DRAFT` or `DEV_TOOLS` |
 
 ---

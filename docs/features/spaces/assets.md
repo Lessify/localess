@@ -34,14 +34,17 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 **Key behaviour:**
 - `loadData()` — loads assets at the current `assetPath` level
 - `onPaste(event)` — intercepts clipboard paste to upload image from clipboard
-- `onDrop(event)` — intercepts drag-and-drop to upload one or more files
-- Upload flow: file → `AssetService.createFile()` → Firebase Storage upload
+- Drag-and-drop is handled by the `FileDragAndDropDirective` (`@shared/directives/file-drag-and-drop.directive`), which calls `filesUpload(event)` with the dropped files — there is no `onDrop()` method on `AssetsComponent` itself
+- Upload flow: file → `filesUpload()` queues it → `AssetService.createFile()` → Firebase Storage upload
+- `openUrlPrompt()` — prompts for a URL and uploads the remote file as an asset
 - `openAddFolderDialog()` — creates a new folder
 - `openEditFileDialog(asset)` — edit metadata: display name, alt text
 - `openEditFolderDialog(asset)` — rename folder
 - `openDeleteDialog(asset)` — delete file or folder (with cascade for folders)
 - `openMoveDialog(asset)` — move to a different folder path
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
+- `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
+- `onDownload(asset)` — opens the CDN asset URL with `?download` to force a browser download
 - Unsplash integration (if `unsplash_ui_enable` Remote Config flag is `true`) — opens `UnsplashAssetsSelectDialogComponent`
 
 ## CDN Asset Endpoint
@@ -97,9 +100,11 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 | `ExportDialogComponent` | Export assets to archive |
 | `ImportDialogComponent` | Upload asset archive → creates a Task |
 | `MoveDialogComponent` | Move asset to a new folder |
-| `UnsplashAssetsSelectDialogComponent` | Browse and import from Unsplash |
-| `ImagePreviewDialogComponent` | Full-size image preview |
-| `ConfirmationDialogComponent` | Delete confirmation |
+| `UnsplashAssetsSelectDialogComponent`* | Browse and import from Unsplash |
+| `ImagePreviewDialogComponent`* | Full-size image preview |
+| `ConfirmationDialogComponent` | Delete / regenerate-metadata confirmation |
+
+\* Shared/global components (`src/app/shared/components/unsplash-assets-select-dialog/`, `src/app/shared/components/image-preview-dialog/`) — not local to `assets/`.
 
 ## Services Used
 

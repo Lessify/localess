@@ -22,12 +22,13 @@ src/app/features/admin/spaces/
 
 ## SpacesComponent
 
-Displays a paginated `MatTable` of all spaces in the platform.
+Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform, with a `LlFilterToolbarImports` search toolbar.
 
 **Injected services:** `SpaceService`, `MatDialog`, `NotificationService`
 
 **Key behaviour:**
 - `loadData()` — fetches all spaces via `SpaceService`
+- `onFilterChange(value: FilterToolbarValue)` (`spaces.component.ts:79-81`) — updates the table filter from the toolbar; the predicate is built in `ngOnInit()` via `FilterPredicateUtils.create()` (`spaces.component.ts:11,68-70`), searching across space `id` and `name`
 - `openAddDialog()` — opens `SpaceDialogComponent` in create mode
 - `openEditDialog(space)` — opens `SpaceDialogComponent` in edit mode
 - `openDeleteDialog(space)` — confirmation dialog then deletes space and all its content

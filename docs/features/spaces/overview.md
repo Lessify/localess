@@ -20,9 +20,11 @@ All routes are scoped to a specific space via `:spaceId` in the URL. The active 
 | Assets | `/features/spaces/:spaceId/assets` | `ASSET_READ` | [assets.md](assets.md) |
 | Schemas | `/features/spaces/:spaceId/schemas` | `SCHEMA_READ` | [schemas.md](schemas.md) |
 | Tasks | `/features/spaces/:spaceId/tasks` | `TRANSLATION_READ` | [tasks.md](tasks.md) |
-| Developers → Webhooks | `/features/spaces/:spaceId/developers/webhooks` | `DEV_WEBHOOK` | [webhooks.md](../../webhooks.md) |
-| Developers → Open API | `/features/spaces/:spaceId/developers/open-api` | `DEV_OPEN_API` | [open-api.md](open-api.md) |
+| Developers → Webhooks | `/features/spaces/:spaceId/developers/webhooks` | `DEV_WEBHOOK`* | [webhooks.md](../../webhooks.md) |
+| Developers → Open API | `/features/spaces/:spaceId/developers/open-api` | `DEV_OPEN_API`* | [open-api.md](open-api.md) |
 | Settings | `/features/spaces/:spaceId/settings` | `SPACE_MANAGEMENT` | [settings.md](settings.md) |
+
+\* Unlike the other rows, `DEV_WEBHOOK`/`DEV_OPEN_API` are **not** enforced via a route `canActivate` guard — the `developers` route has none (`features-routing.module.ts`). They only control whether the Developers menu items are shown in the sidebar (`features.component.ts`).
 
 ---
 

@@ -63,16 +63,16 @@ Draft JSON files are kept in sync so consumers can preview unpublished changes v
 ### Import Task (TRANSLATION_IMPORT / TRANSLATION_IMPORT_FLAT)
 
 ```
-1. Task Function processes all rows via BulkWriter
-2. After bulk.close(), Function calls generateTranslationsDraft() once
+1. Task Function writes all rows via a Firestore WriteBatch (chunked in batches of BATCH_MAX = 500)
+2. After the batches commit, Function calls generateTranslationsDraft() once
 3. Draft files written for all locales in a single pass
 ```
 
 ### CLI Manage API (POST /api/v1/spaces/:spaceId/translations/:locale)
 
 ```
-1. Manage endpoint processes all rows via BulkWriter
-2. After bulk.close(), endpoint calls generateTranslationsDraft() once
+1. Manage endpoint writes all rows via a Firestore WriteBatch, committed in chunks of BATCH_MAX = 500 (commitInBatches())
+2. After the batches commit, endpoint calls generateTranslationsDraft() once
 3. Draft files written for all locales in a single pass
 ```
 
@@ -120,9 +120,10 @@ spaces/{spaceId}/
 
 ## Link & Reference Resolution
 
-Content documents can include `links` and `references` arrays (IDs of other content). The CDN API resolves these on request when the consumer passes:
+Content documents can include `links`, `references`, and `assets` arrays (IDs of other content/assets). The CDN API resolves these on request when the consumer passes:
 - `?resolveLink=true` — resolves links to `ContentLink` objects
 - `?resolveReference=true` — resolves references to full `ContentDocumentApi` objects
+- `?resolveAsset=true` — resolves asset IDs to full asset metadata via `resolveAssets()`
 
 Resolution is done at request time by reading additional Storage files. This adds latency but avoids denormalization in Storage.
 

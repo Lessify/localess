@@ -22,7 +22,7 @@ All admin routes are guarded by Firebase `customClaims`. Only users with `role: 
 
 ## Common Patterns
 
-- All modules use `MatTable` with sorting and pagination
+- All modules use `ll-table` (`LlTableImports` from `@shared/components/table/table.imports`) with sorting and pagination — the Material-free replacement for `MatTable` (see [MatTable → ll-table Migration](../../table-migration.md))
 - CRUD operations are performed via `MatDialog` overlays
 - Destructive actions always open a `ConfirmationDialogComponent`
 - `NotificationService` is used in every module for user feedback (snackbars)

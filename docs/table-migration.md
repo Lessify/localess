@@ -4,7 +4,7 @@
 
 A from-scratch, Material-free table stack lives in `src/app/shared/components/table/` and `src/app/shared/components/paginator/`. It mirrors the CDK Material APIs (`MatTable`, `MatTableDataSource`, `MatSort`, `MatPaginator`) closely enough that migrating a `mat-table` is mostly a find-and-replace, but is built on signals throughout (no `BehaviorSubject`/`Subject` plumbing).
 
-**First migrated consumer:** `src/app/features/spaces/tasks/tasks.component.*` — use it as the reference implementation.
+**Migration is effectively complete.** `src/app/features/spaces/tasks/tasks.component.*` was the first migrated consumer and remains a good reference implementation, but `LlTableImports`/`ll-table` is now used across 13 components — `locales`, `tokens`, `contents`, `references-select-dialog`, `assets-select-dialog`, `tasks`, `task-detail`, `schemas`, `assets`, `webhooks`, `webhook-detail`, `admin/spaces`, and `admin/users`. A full-codebase search finds zero remaining `mat-table` or `mat-paginator` usages under `src/app/`.
 
 ---
 

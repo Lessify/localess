@@ -16,8 +16,8 @@ Content delivery with cache-busting and asset transformation. All content/transl
 |--------|------------------------------------------------|---------------------------------------------------|-----------------------------------------------------------------------|
 | `GET`  | `/api/v1/spaces/:spaceId/translations/:locale` | `TRANSLATION_PUBLIC` or `TRANSLATION_DRAFT`       | `cv`, `version`, `token`                                              |
 | `GET`  | `/api/v1/spaces/:spaceId/links`                | `CONTENT_PUBLIC`, `CONTENT_DRAFT`, or `DEV_TOOLS` | `cv`, `kind`, `parentSlug`, `excludeChildren`, `token`                |
-| `GET`  | `/api/v1/spaces/:spaceId/contents/slugs/*slug` | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `token` |
-| `GET`  | `/api/v1/spaces/:spaceId/contents/:contentId`  | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `token` |
+| `GET`  | `/api/v1/spaces/:spaceId/contents/slugs/*slug` | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
+| `GET`  | `/api/v1/spaces/:spaceId/contents/:contentId`  | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
 | `GET`  | `/api/v1/spaces/:spaceId/assets/:assetId`      | None (public)                                     | `w`, `h`, `q`, `f`, `download`, `thumbnail`                           |
 
 **Notable behaviors:**
@@ -25,6 +25,7 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to `space.localeFallback`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
+- **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `resolveAssets()` (`functions/src/services/content.service.ts:305`).
 - **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f` params). `q` defaults to `85`, clamped to `1–100`; ignored for PNG. Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG and animated GIF/WebP are passed through unsized. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
 - **`thumbnail` param** — Only meaningful for animated WebP/GIF (extracts first frame) and video (requires `w`; extracts a frame via FFmpeg). Has no effect on other image types.
 - **`download` param** — Switches `Content-Disposition` from `inline` to `form-data` (forces browser download).
@@ -75,7 +76,7 @@ Admin bulk-write endpoint for translations. Uses `X-API-KEY` header auth (not qu
 | `update-existing` | Updates `locales.{locale}` field for IDs that already exist  |
 | `delete-missing`  | Deletes all translation docs whose ID is **not** in `values` |
 
-All three operations use Firestore `bulkWriter()` for atomic batch execution, then call `generateTranslationsDraft()` to update Storage cache. With `dryRun: true` the operation is skipped and only the affected IDs are returned.
+All three operations write via Firestore `WriteBatch` in chunks of `BATCH_MAX` (500), committed sequentially by the `commitInBatches()` helper (`functions/src/v1/manage.ts:18-36`), then call `generateTranslationsDraft()` to update Storage cache. With `dryRun: true` the operation is skipped and only the affected IDs are returned.
 
 ---
 

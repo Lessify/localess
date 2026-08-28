@@ -38,7 +38,7 @@ interface WebHook {
 |-------------------------|-------------------------|---------------------------------------------------|
 | `CONTENT_PUBLISHED`     | `content.published`     | `publish` callable                                |
 | `CONTENT_UNPUBLISHED`   | `content.unpublished`   | `unpublish` callable                              |
-| `CONTENT_CHANGED`       | `content.changed`       | Firestore `onDocumentUpdate` / `onDocumentDelete` |
+| `CONTENT_CHANGED`       | `content.changed`       | `onContentUpdate` / `onContentDelete` (Firestore `onDocumentUpdated`/`onDocumentDeleted` triggers) |
 | `TRANSLATION_PUBLISHED` | `translation.published` | `publish` callable                                |
 | `TRANSLATION_CHANGED`   | `translation.changed`   | `generateTranslationsDraft()`                     |
 
@@ -152,7 +152,7 @@ Logs are ordered by `createdAt` descending, capped at **100 entries** per webhoo
 |-------------------------------------------------------------------------------------------------------------------|-------------------------|
 | `functions/src/contents.ts` — `publish` callable                                                                  | `CONTENT_PUBLISHED`     |
 | `functions/src/contents.ts` — `unpublish` callable                                                                | `CONTENT_UNPUBLISHED`   |
-| `functions/src/contents.ts` — `onDocumentUpdate` / `onDocumentDelete`                                             | `CONTENT_CHANGED`       |
+| `functions/src/contents.ts` — `onContentUpdate` / `onContentDelete`                                               | `CONTENT_CHANGED`       |
 | `functions/src/translations.ts` — `publish` callable                                                              | `TRANSLATION_PUBLISHED` |
 | `functions/src/translations.ts` / `functions/src/services/translation.service.ts` — `generateTranslationsDraft()` | `TRANSLATION_CHANGED`   |
 

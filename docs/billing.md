@@ -38,7 +38,7 @@
 ### 1. Thundering herd on publish
 When content is published, all consumers receive a stale `cv` simultaneously. If the redirect response is not cached by CDN, every consumer hits the Function at the same time.
 
-**Fix applied:** Redirect responses now carry `Cache-Control: public, max-age=300, s-maxage=300` (5 min for published, 1 min for draft). CDN caches the redirect, limiting the stampede to one wave per edge node.
+**Fix applied:** Redirect responses now carry `Cache-Control: public, max-age=60, s-maxage=60` by default (flat TTL, same for published and draft; overridable per-token via the `cacheTtl` field, with `cacheTtl: 0` disabling caching entirely). CDN caches the redirect, limiting the stampede to one wave per edge node.
 
 ### 2. Bot / crawler traffic
 Once-a-month spikes of 2K → 5M requests suggest a periodic crawler (Googlebot, Bingbot, or a CI pipeline). These bypass CDN cache by using unique URLs or ignoring `cv`.
@@ -61,7 +61,7 @@ After optimization: tokens are cached in-memory for 5 minutes (`TOKEN_CACHE_TTL_
 | 2026-05 | Added `Cache-Control` header to all redirect responses | ~50% fewer Function invocations during publish stampede |
 | 2026-05 | Merged `exists()` + `getMetadata()` into single Storage call | ~25% fewer Storage API calls |
 | 2026-05 | In-memory token cache (5 min TTL) | ~50% fewer Firestore reads under load |
-| 2026-05 | Draft redirect TTL reduced to 1 min | Faster draft iteration with controlled CDN pressure |
+| 2026-05 | Redirect TTL unified to a flat 60s default (no separate draft TTL), overridable per-token via `cacheTtl` | Faster iteration with controlled CDN pressure, tunable per consumer |
 
 ---
 
@@ -79,10 +79,9 @@ After optimization: tokens are cached in-memory for 5 minutes (`TOKEN_CACHE_TTL_
 All cache TTL constants are in `functions/src/config.ts`:
 
 ```typescript
-CACHE_MAX_AGE               = DAY           // 86400s   — browser cache for content
-CACHE_SHARE_MAX_AGE         = DAY * 7       // 604800s  — CDN cache for content
-CACHE_REDIRECT_MAX_AGE      = 5 * MINUTE    // 300s     — published redirect
-CACHE_REDIRECT_DRAFT_MAX_AGE = MINUTE       // 60s      — draft redirect
-CACHE_ASSET_MAX_AGE         = DAY * 365     // immutable assets
-TOKEN_CACHE_TTL_MS          = 5 * 60 * 1000 // 5 min in-memory token cache
+CACHE_MAX_AGE                  = DAY           // 86400s   — browser cache for content
+CACHE_SHARE_MAX_AGE            = DAY * 7       // 604800s  — CDN cache for content
+CACHE_REDIRECT_MAX_AGE_DEFAULT = MINUTE        // 60s      — default redirect TTL (published & draft; overridable per-token via `cacheTtl`)
+CACHE_ASSET_MAX_AGE            = DAY * 365     // immutable assets
+TOKEN_CACHE_TTL_MS             = 5 * 60 * 1000 // 5 min in-memory token cache
 ```
