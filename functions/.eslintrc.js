@@ -20,6 +20,8 @@ module.exports = {
   },
   ignorePatterns: [
     '/lib/**/*', // Ignore built files.
+    'src/**/*.test.ts', // Tests are excluded from tsconfig, so typed linting cannot parse them.
+    'vitest.config.mts',
   ],
   plugins: ['@typescript-eslint', 'import'],
   rules: {

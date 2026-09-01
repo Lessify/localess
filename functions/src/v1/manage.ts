@@ -3,8 +3,25 @@ import { DocumentReference, FieldValue, UpdateData, WithFieldValue, WriteBatch }
 import { HttpsError } from 'firebase-functions/https';
 import { logger } from 'firebase-functions/v2';
 import { BATCH_MAX, firestoreService } from '../config';
-import { Space, TokenPermission, Translation, TranslationType, zTranslationUpdateSchema } from '../models';
-import { findSpaceById, findTranslationById, findTranslations, generateTranslationsDraft } from '../services';
+import {
+  Schema,
+  SchemaExport,
+  Space,
+  TokenPermission,
+  Translation,
+  TranslationType,
+  zSchemaPushSchema,
+  zTranslationUpdateSchema,
+} from '../models';
+import {
+  applySchemaPushPlan,
+  findSchemas,
+  findSpaceById,
+  findTranslationById,
+  findTranslations,
+  generateTranslationsDraft,
+  planSchemaPush,
+} from '../services';
 import { RequestWithToken, requireTokenPermissions } from './middleware/api-key-auth.middleware';
 
 // eslint-disable-next-line new-cap
@@ -160,3 +177,58 @@ MANAGE.post(
     res.status(400).send(new HttpsError('invalid-argument', 'Bad request body', body.error));
   }
 );
+
+MANAGE.post('/api/v1/spaces/:spaceId/schemas', requireTokenPermissions([TokenPermission.DEV_TOOLS]), async (req: RequestWithToken, res) => {
+  // Deliberately not logging the request body: schema payloads carry a whole space's schemas.
+  logger.info('[V1:Schemas:push] params : ' + JSON.stringify(req.params));
+  const { spaceId } = req.params;
+  const body = zSchemaPushSchema.safeParse(req.body);
+  if (!body.success) {
+    logger.error('[V1:Schemas:push] Bad request body', body.error);
+    res.status(400).send(new HttpsError('invalid-argument', 'Bad request body', body.error));
+    return;
+  }
+  const { dryRun, type, schemas } = body.data;
+  const spaceSnapshot = await findSpaceById(spaceId).get();
+  if (!spaceSnapshot.exists) {
+    res.status(404).send(new HttpsError('not-found', 'Not found'));
+    return;
+  }
+  const existing = new Map<string, Schema>();
+  const schemasSnapshot = await findSchemas(spaceId).get();
+  schemasSnapshot.docs.forEach(it => existing.set(it.id, it.data() as Schema));
+  const plan = planSchemaPush(existing, schemas as SchemaExport[], type);
+  if (plan.errors.length > 0) {
+    logger.error('[V1:Schemas:push] Referential integrity errors', plan.errors);
+    res.status(400).send(new HttpsError('failed-precondition', 'Referential integrity check failed', { errors: plan.errors }));
+    return;
+  }
+  const ids = {
+    created: plan.creates.map(it => it.id),
+    updated: plan.updates.map(it => it.id),
+    deleted: plan.deletes,
+  };
+  const counts = {
+    created: ids.created.length,
+    updated: ids.updated.length,
+    deleted: ids.deleted.length,
+    unchanged: plan.unchanged.length,
+  };
+  if (dryRun) {
+    logger.info('[V1:Schemas:push] [DryRun]', counts);
+    res.status(200).send({
+      message: `[DryRun] Would create ${counts.created}, update ${counts.updated}, delete ${counts.deleted} schemas (${counts.unchanged} unchanged)`,
+      counts,
+      ids,
+      dryRun: true,
+    });
+    return;
+  }
+  await applySchemaPushPlan(spaceId, plan);
+  logger.info('[V1:Schemas:push] Applied', counts);
+  res.status(200).send({
+    message: `Created ${counts.created}, updated ${counts.updated}, deleted ${counts.deleted} schemas (${counts.unchanged} unchanged)`,
+    counts,
+    ids,
+  });
+});

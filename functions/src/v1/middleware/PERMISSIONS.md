@@ -9,6 +9,8 @@
 | `/api/v1/spaces/:spaceId/contents/slugs/*slug` | GET | **Conditional** | Published: PUBLIC \| DRAFT \| DEV_TOOLS,<br>  Draft: DRAFT \| DEV_TOOLS|
 | `/api/v1/spaces/:spaceId/contents/:contentId` | GET | **Conditional** | Published: PUBLIC \| DRAFT \| DEV_TOOLS,<br>  Draft: DRAFT \| DEV_TOOLS            |
 | `/api/v1/spaces/:spaceId/open-api` | GET | DEV_TOOLS | OpenAPI schema                                             |
+| `/api/v1/spaces/:spaceId/schemas` | GET | DEV_TOOLS | Schema export array                                        |
+| `/api/v1/spaces/:spaceId/schemas` | POST | DEV_TOOLS | Schema push (CLI). Never grant DEV_TOOLS to public/client-side tokens. |
 | `/api/v1/spaces/:spaceId/assets/:assetId` | GET | None | Public asset access                                        |
 
 ## Conditional Permissions

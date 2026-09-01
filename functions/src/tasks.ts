@@ -22,10 +22,7 @@ import {
   isTaskTranslationExport,
   isTaskTranslationImport,
   Schema,
-  SchemaComponent,
-  SchemaEnum,
   SchemaExport,
-  SchemaType,
   Space,
   Task,
   TaskAssetExport,
@@ -57,20 +54,21 @@ import {
   docContentToExport,
   findAssetById,
   findAssets,
+  applySchemaPushPlan,
+  docSchemaToExport,
   findAssetsByStartFullSlug,
   findContentByFullSlug,
   findContentById,
   findContents,
   findContentsByStartFullSlug,
-  findSchemaById,
   findSchemas,
   findSpaceById,
   findTranslationById,
   findTranslations,
   generateTranslationsDraft,
+  planSchemaPush,
   isAssetChanged,
   isContentChanged,
-  isSchemaChanged,
   isTranslationChanged,
   updateMetadataByRef,
 } from './services';
@@ -914,33 +912,10 @@ async function schemasExport(spaceId: string, taskId: string): Promise<any> {
  * @return {Promise<any>}
  */
 async function schemasExportRun(spaceId: string, taskId: string, tmpTaskFolder: string, schemasExportZipFile: string): Promise<any> {
-  const exportSchemas: SchemaExport[] = [];
   const schemasSnapshot = await findSchemas(spaceId).get();
-  const existingDocs = schemasSnapshot.docs.filter(it => it.exists);
-  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', `exporting all ${existingDocs.length} schemas`);
-  existingDocs.forEach(doc => {
-    const schema = doc.data() as Schema;
-    if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
-      exportSchemas.push({
-        id: doc.id,
-        type: schema.type,
-        displayName: schema.displayName,
-        description: schema.description,
-        previewField: schema.previewField,
-        labels: schema.labels,
-        fields: schema.fields,
-      });
-    } else if (schema.type === SchemaType.ENUM) {
-      exportSchemas.push({
-        id: doc.id,
-        type: schema.type,
-        displayName: schema.displayName,
-        description: schema.description,
-        labels: schema.labels,
-        values: schema.values,
-      });
-    }
-  });
+  const exportSchemas = schemasSnapshot.docs.filter(it => it.exists).map(doc => docSchemaToExport(doc.id, doc.data() as Schema));
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasExport', `exporting all ${exportSchemas.length} schemas`);
+
   const fileMetadata: TaskExportMetadata = {
     kind: 'SCHEMA',
   };
@@ -1006,79 +981,10 @@ async function schemasImportRun(spaceId: string, taskId: string, tmpTaskFolder: 
   const schemasSnapshot = await findSchemas(spaceId).get();
   schemasSnapshot.docs.filter(it => it.exists).forEach(it => origSchemaMap.set(it.id, it.data() as Schema));
 
-  let totalChanges = 0;
-  let count = 0;
-  let batch = firestoreService.batch();
-  for (const schema of schemas as SchemaExport[]) {
-    const schemaRef = findSchemaById(spaceId, schema.id);
-    const existing = origSchemaMap.get(schema.id);
-    if (existing) {
-      if (isSchemaChanged(existing, schema)) {
-        if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
-          const update: UpdateData<SchemaComponent> = {
-            type: schema.type,
-            displayName: schema.displayName || FieldValue.delete(),
-            description: schema.description || FieldValue.delete(),
-            previewField: schema.previewField || FieldValue.delete(),
-            labels: schema.labels || FieldValue.delete(),
-            fields: schema.fields || FieldValue.delete(),
-            updatedAt: FieldValue.serverTimestamp(),
-          };
-          batch.update(schemaRef, update);
-        } else if (schema.type === SchemaType.ENUM) {
-          const update: UpdateData<SchemaEnum> = {
-            type: schema.type,
-            displayName: schema.displayName || FieldValue.delete(),
-            description: schema.description || FieldValue.delete(),
-            labels: schema.labels || FieldValue.delete(),
-            values: schema.values || FieldValue.delete(),
-            updatedAt: FieldValue.serverTimestamp(),
-          };
-          batch.update(schemaRef, update);
-        }
-        totalChanges++;
-        count++;
-      }
-    } else {
-      if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
-        const add: WithFieldValue<SchemaComponent> = {
-          type: schema.type,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        if (schema.displayName) add.displayName = schema.displayName;
-        if (schema.description) add.description = schema.description;
-        if (schema.previewField) add.previewField = schema.previewField;
-        if (schema.labels) add.labels = schema.labels;
-        if (schema.fields) add.fields = schema.fields;
-        batch.set(schemaRef, add);
-      } else if (schema.type === SchemaType.ENUM) {
-        const add: WithFieldValue<SchemaEnum> = {
-          type: schema.type,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        if (schema.displayName) add.displayName = schema.displayName;
-        if (schema.description) add.description = schema.description;
-        if (schema.labels) add.labels = schema.labels;
-        if (schema.values) add.values = schema.values;
-        batch.set(schemaRef, add);
-      }
-      totalChanges++;
-      count++;
-    }
-    if (count === BATCH_MAX) {
-      await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'batch.commit() : ' + totalChanges);
-      await batch.commit();
-      batch = firestoreService.batch();
-      count = 0;
-    }
-  }
-  if (count > 0) {
-    await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'batch.commit() : ' + totalChanges);
-    await batch.commit();
-  }
-  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'total changes : ' + totalChanges);
+  // Import semantics are upsert: never deletes schemas absent from the file.
+  const plan = planSchemaPush(origSchemaMap, parse.data as SchemaExport[], 'upsert');
+  await applySchemaPushPlan(spaceId, plan);
+  await logTaskStep(spaceId, taskId, TaskLogLevel.INFO, 'schemasImport', 'total changes : ' + (plan.creates.length + plan.updates.length));
   return undefined;
 }
 

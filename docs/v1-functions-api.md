@@ -52,11 +52,12 @@ Sharp is called as `resize(width ?? null, height ?? null)` with its default fit 
 
 ### MANAGE (`functions/src/v1/manage.ts`)
 
-Admin bulk-write endpoint for translations. Uses `X-API-KEY` header auth (not query param).
+Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header auth (not query param).
 
-| Method | Path                                           | Auth                 | Body                       |
-|--------|------------------------------------------------|----------------------|----------------------------|
-| `POST` | `/api/v1/spaces/:spaceId/translations/:locale` | `DEV_TOOLS` (header) | `zTranslationUpdateSchema` |
+| Method | Path                                           | Auth                                     | Body                       |
+|--------|------------------------------------------------|------------------------------------------|----------------------------|
+| `POST` | `/api/v1/spaces/:spaceId/translations/:locale` | `DEV_TOOLS` (header)                     | `zTranslationUpdateSchema` |
+| `POST` | `/api/v1/spaces/:spaceId/schemas`              | `DEV_TOOLS` (header)                      | `zSchemaPushSchema`        |
 
 **Request body (`zTranslationUpdateSchema`):**
 
@@ -76,6 +77,33 @@ Admin bulk-write endpoint for translations. Uses `X-API-KEY` header auth (not qu
 | `update-existing` | Updates `locales.{locale}` field for IDs that already exist  |
 | `delete-missing`  | Deletes all translation docs whose ID is **not** in `values` |
 
+#### Schema push (`POST /api/v1/spaces/:spaceId/schemas`)
+
+Synchronous schema write used by `@localess/cli`'s `schema push`. Requires `DEV_TOOLS`, same as translation updates.
+
+**Request body (`zSchemaPushSchema`):**
+
+```typescript
+{
+  type: 'upsert' | 'sync'; // sync = upsert + delete schemas absent from the payload
+  dryRun?: boolean;
+  schemas: SchemaExport[]; // same shape as the schema export/import zip format
+}
+```
+
+Upserts reuse the import Task's change detection (`isSchemaChanged`, key-order-insensitive), preserve `createdAt`, and clear absent optionals. `sync` mode refuses (400 `failed-precondition`, listing offenders) to delete a schema still referenced by a surviving schema's `SCHEMA`/`SCHEMAS` refs or `OPTION`/`OPTIONS` source.
+
+**Response:**
+
+```typescript
+{
+  message: string;
+  counts: { created: number; updated: number; deleted: number; unchanged: number };
+  ids: { created: string[]; updated: string[]; deleted: string[] };
+  dryRun?: true;
+}
+```
+
 All three operations write via Firestore `WriteBatch` in chunks of `BATCH_MAX` (500), committed sequentially by the `commitInBatches()` helper (`functions/src/v1/manage.ts:18-36`), then call `generateTranslationsDraft()` to update Storage cache. With `dryRun: true` the operation is skipped and only the affected IDs are returned.
 
 ---
@@ -88,7 +116,9 @@ Space introspection and OpenAPI generation. Uses `token` query param auth.
 |--------|------------------------------------|-------------|---------------------------------------------------------------|
 | `GET`  | `/api/v1/spaces/:spaceId`          | `DEV_TOOLS` | `{ id, name, locales, localeFallback, createdAt, updatedAt }` |
 | `GET`  | `/api/v1/spaces/:spaceId/open-api` | `DEV_TOOLS` | OpenAPI 3.0 JSON spec generated from schemas                  |
-| `GET`  | `/api/v1/spaces/:spaceId/schemas`  | `DEV_TOOLS` | `Record<schemaId, Schema>`                                    |
+| `GET`  | `/api/v1/spaces/:spaceId/schemas`  | `DEV_TOOLS` | `SchemaExport[]` (id + type-specific fields, no timestamps)   |
+
+> **Breaking change (v3.3):** `GET /schemas` previously returned `Record<schemaId, Schema>` with raw Firestore timestamps. It now returns a `SchemaExport[]` array — the same shape the push endpoint accepts and the export zip contains. Upgrade `@localess/cli` before upgrading Localess; the current CLI accepts both shapes.
 
 ---
 

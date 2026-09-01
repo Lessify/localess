@@ -1,7 +1,10 @@
-import { firestoreService } from '../config';
-import { DocumentReference, Query, Timestamp } from 'firebase-admin/firestore';
-import { Schema, SchemaComponent, SchemaComponentExport, SchemaEnum, SchemaEnumExport, SchemaExport, SchemaType } from '../models';
-import { isLabelsEqual } from '../utils/import-utils';
+import { BATCH_MAX, firestoreService } from '../config';
+import { DocumentReference, FieldValue, Query, Timestamp, UpdateData, WithFieldValue } from 'firebase-admin/firestore';
+import { SchemaComponent, SchemaEnum, SchemaType } from '../models';
+import { SchemaPushPlan } from '../utils/schema.utils';
+
+export { docSchemaToExport, isSchemaChanged, planSchemaPush } from '../utils/schema.utils';
+export type { SchemaPushPlan } from '../utils/schema.utils';
 
 /**
  * find Schema by ID
@@ -28,32 +31,82 @@ export function findSchemas(spaceId: string, fromDate?: number): Query {
 }
 
 /**
- * Returns true if any imported field differs from the existing Firestore schema document.
- * Compares type, displayName, description, and labels for all schema types.
- * For ROOT/NODE schemas, also compares previewField and fields array (deep via JSON.stringify).
- * For ENUM schemas, also compares the values array (deep via JSON.stringify).
- * @param {Schema} existing - the current Firestore schema document
- * @param {SchemaExport} imported - the schema data parsed from the import file
- * @return {boolean} true if at least one field has changed
+ * Apply a schema push plan to Firestore in batches of BATCH_MAX.
+ * Creates set fresh timestamps; updates preserve createdAt and clear absent optionals.
+ * @param {string} spaceId space identifier
+ * @param {SchemaPushPlan} plan plan produced by planSchemaPush
+ * @return {Promise<void>} resolves when all batches are committed
  */
-export function isSchemaChanged(existing: Schema, imported: SchemaExport): boolean {
-  if (existing.type !== imported.type) return true;
-  if ((existing.displayName ?? undefined) !== (imported.displayName ?? undefined)) return true;
-  if ((existing.description ?? undefined) !== (imported.description ?? undefined)) return true;
-  if (!isLabelsEqual(existing.labels, imported.labels)) return true;
-  if (
-    (existing.type === SchemaType.ROOT || existing.type === SchemaType.NODE) &&
-    (imported.type === SchemaType.ROOT || imported.type === SchemaType.NODE)
-  ) {
-    const e = existing as SchemaComponent;
-    const i = imported as SchemaComponentExport;
-    if ((e.previewField ?? undefined) !== (i.previewField ?? undefined)) return true;
-    if (JSON.stringify(e.fields ?? []) !== JSON.stringify(i.fields ?? [])) return true;
+export async function applySchemaPushPlan(spaceId: string, plan: SchemaPushPlan): Promise<void> {
+  let batch = firestoreService.batch();
+  let count = 0;
+  const commitIfFull = async () => {
+    count++;
+    if (count === BATCH_MAX) {
+      await batch.commit();
+      batch = firestoreService.batch();
+      count = 0;
+    }
+  };
+  for (const schema of plan.creates) {
+    const ref = findSchemaById(spaceId, schema.id);
+    if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
+      const add: WithFieldValue<SchemaComponent> = {
+        type: schema.type,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      if (schema.displayName) add.displayName = schema.displayName;
+      if (schema.description) add.description = schema.description;
+      if (schema.previewField) add.previewField = schema.previewField;
+      if (schema.labels) add.labels = schema.labels;
+      if (schema.fields) add.fields = schema.fields;
+      batch.set(ref, add);
+    } else if (schema.type === SchemaType.ENUM) {
+      const add: WithFieldValue<SchemaEnum> = {
+        type: schema.type,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      if (schema.displayName) add.displayName = schema.displayName;
+      if (schema.description) add.description = schema.description;
+      if (schema.labels) add.labels = schema.labels;
+      if (schema.values) add.values = schema.values;
+      batch.set(ref, add);
+    }
+    await commitIfFull();
   }
-  if (existing.type === SchemaType.ENUM && imported.type === SchemaType.ENUM) {
-    const e = existing as SchemaEnum;
-    const i = imported as SchemaEnumExport;
-    if (JSON.stringify(e.values ?? []) !== JSON.stringify(i.values ?? [])) return true;
+  for (const schema of plan.updates) {
+    const ref = findSchemaById(spaceId, schema.id);
+    if (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE) {
+      const update: UpdateData<SchemaComponent> = {
+        type: schema.type,
+        displayName: schema.displayName || FieldValue.delete(),
+        description: schema.description || FieldValue.delete(),
+        previewField: schema.previewField || FieldValue.delete(),
+        labels: schema.labels || FieldValue.delete(),
+        fields: schema.fields || FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      batch.update(ref, update);
+    } else if (schema.type === SchemaType.ENUM) {
+      const update: UpdateData<SchemaEnum> = {
+        type: schema.type,
+        displayName: schema.displayName || FieldValue.delete(),
+        description: schema.description || FieldValue.delete(),
+        labels: schema.labels || FieldValue.delete(),
+        values: schema.values || FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      batch.update(ref, update);
+    }
+    await commitIfFull();
   }
-  return false;
+  for (const id of plan.deletes) {
+    batch.delete(findSchemaById(spaceId, id));
+    await commitIfFull();
+  }
+  if (count > 0) {
+    await batch.commit();
+  }
 }

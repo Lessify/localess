@@ -3,7 +3,7 @@ import { logger } from 'firebase-functions';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE } from '../config';
 import { Schema, Space, TokenPermission } from '../models';
-import { findSchemas, findSpaceById, generateOpenApi } from '../services';
+import { docSchemaToExport, findSchemas, findSpaceById, generateOpenApi } from '../services';
 import { RequestWithToken, requireTokenPermissions } from './middleware/query-auth.middleware';
 
 // eslint-disable-next-line new-cap
@@ -68,7 +68,7 @@ DEV_TOOLS.get(
 
     const spaceSnapshot = await findSpaceById(spaceId).get();
     if (!spaceSnapshot.exists) {
-      logger.info('[V1:OpenApi] Space not exist: ' + spaceId);
+      logger.info('[V1:Schemas] Space not exist: ' + spaceId);
       res
         .status(404)
         .header('Cache-Control', `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_SHARE_MAX_AGE}`)
@@ -77,10 +77,6 @@ DEV_TOOLS.get(
     }
 
     const schemasSnapshot = await findSchemas(spaceId).get();
-    const schemas: Record<string, Schema> = {};
-    schemasSnapshot.docs.forEach(it => {
-      schemas[it.id] = it.data() as Schema;
-    });
-    res.json(schemas);
+    res.json(schemasSnapshot.docs.map(it => docSchemaToExport(it.id, it.data() as Schema)));
   }
 );
