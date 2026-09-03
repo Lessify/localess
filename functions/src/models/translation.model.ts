@@ -32,6 +32,26 @@ export interface TranslationExport extends Omit<Translation, 'createdAt' | 'upda
 
 export type TranslationUpdate = z.infer<typeof zTranslationUpdateSchema>;
 
+export interface TranslationUpdateCounts {
+  created: number;
+  updated: number;
+  deleted: number;
+  unchanged: number;
+}
+
+export interface TranslationUpdateIds {
+  created: string[];
+  updated: string[];
+  deleted: string[];
+}
+
+export interface TranslationUpdateResponse {
+  message: string;
+  counts: TranslationUpdateCounts;
+  ids: TranslationUpdateIds;
+  dryRun?: boolean;
+}
+
 export interface TranslateLocaleData {
   spaceId: string;
   sourceLocaleId: string;

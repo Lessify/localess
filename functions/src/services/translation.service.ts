@@ -5,6 +5,9 @@ import { triggerWebHooksForEvent } from '../utils/webhook-utils';
 import { WebHookEvent, WebHookPayload } from '../models/webhook.model';
 import { isLabelsEqual } from '../utils/import-utils';
 
+export { planTranslationUpdate } from '../utils/translation.utils';
+export type { TranslationUpdatePlan } from '../utils/translation.utils';
+
 /**
  * find Translation by ID
  * @param {string} spaceId Space identifier

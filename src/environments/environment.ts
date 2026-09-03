@@ -22,7 +22,7 @@ export const environment = {
   emulator: {
     enabled: true,
   },
-  version: '3.2.0',
+  version: '4.0.0',
 };
 
 /*
