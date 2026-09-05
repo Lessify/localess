@@ -76,6 +76,11 @@ export interface ContentDocumentApi {
   publishedAt?: string;
   assets?: Record<string, AssetMetadata>;
   links?: Record<string, ContentMetadata>;
+  /**
+   * Referenced documents, keyed by content id. Resolution is one level deep, and each entry has
+   * its `assets`/`links`/`references` id arrays stripped by `stripStorageIds()` — those are a
+   * storage concern, and the edges already exist in `data` as `{ kind: 'REFERENCE', uri }`.
+   */
   references?: Record<string, ContentDocumentApi>;
 }
 

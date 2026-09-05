@@ -8,18 +8,19 @@ import {
   AssetMetadata,
   ContentData,
   ContentDocument,
-  ContentDocumentApi,
   ContentDocumentExport,
   ContentDocumentStorage,
   ContentExport,
   ContentFolderExport,
   ContentKind,
+  ContentDocumentApi,
   ContentMetadata,
   Schema,
   SchemaFieldKind,
   SchemaType,
 } from '../models';
 import { mapWithConcurrency } from '../utils/map-with-concurrency';
+import { stripStorageIds } from '../utils/strip-storage-ids';
 import { findAssetById } from './asset.service';
 
 /**
@@ -266,7 +267,8 @@ export async function resolveReferences(
       // Storage round-trips per reference, and a missing file is already distinguishable by its
       // 404 status.
       const [fileContent] = await bucket.file(refCachePath).download();
-      resolvedReferences[refId] = JSON.parse(fileContent.toString());
+      const stored = JSON.parse(fileContent.toString()) as ContentDocumentStorage;
+      resolvedReferences[refId] = stripStorageIds(stored);
     } catch (error) {
       if (isNotFoundError(error)) {
         logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found at ${refCachePath}`);
