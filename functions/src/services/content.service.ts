@@ -13,8 +13,8 @@ import {
   ContentExport,
   ContentFolderExport,
   ContentKind,
-  ContentDocumentApi,
   ContentMetadata,
+  ResolvedReferenceApi,
   Schema,
   SchemaFieldKind,
   SchemaType,
@@ -251,11 +251,11 @@ export async function resolveReferences(
   content: ContentDocumentStorage,
   locale: string,
   version: string | 'draft' | undefined
-): Promise<Record<string, ContentDocumentApi> | undefined> {
+): Promise<Record<string, ResolvedReferenceApi> | undefined> {
   if (!content.references || content.references.length === 0) {
     return undefined;
   }
-  const resolvedReferences: Record<string, ContentDocumentApi> = {};
+  const resolvedReferences: Record<string, ResolvedReferenceApi> = {};
   await mapWithConcurrency(content.references, RESOLVE_CONCURRENCY, async refId => {
     if (!refId) {
       logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found.`);
