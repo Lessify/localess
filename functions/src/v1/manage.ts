@@ -24,6 +24,7 @@ import {
   planSchemaPush,
   planTranslationUpdate,
 } from '../services';
+import { getAllInChunks } from '../utils/get-all-in-chunks';
 import { RequestWithToken, requireTokenPermissions } from './middleware/api-key-auth.middleware';
 
 // eslint-disable-next-line new-cap
@@ -65,8 +66,9 @@ MANAGE.post(
   '/api/v1/spaces/:spaceId/translations/:locale',
   requireTokenPermissions([TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
+    // Deliberately not logging the request body: translation payloads carry a whole locale's
+    // content and are bounded only by the 5mb body limit. A summary is logged after validation.
     logger.info('[V1:Translations:update] params : ' + JSON.stringify(req.params));
-    logger.info('[V1:Translations:update] body : ' + JSON.stringify(req.body));
     // req.token contains the validated token object
     // req.tokenId contains the token string
     const { spaceId, locale } = req.params;
@@ -77,6 +79,7 @@ MANAGE.post(
       return;
     }
     const { dryRun, type, values } = body.data;
+    logger.info(`[V1:Translations:update] type='${type}' dryRun=${dryRun ?? false} values=${Object.getOwnPropertyNames(values).length}`);
     const spaceSnapshot = await findSpaceById(spaceId).get();
     const space = spaceSnapshot.data() as Space;
     if (!space.locales.some(it => it.id === locale)) {
@@ -95,7 +98,8 @@ MANAGE.post(
       const translationsSnapshot = await findTranslations(spaceId).get();
       translationsSnapshot.docs.forEach(it => existing.set(it.id, it.data() as Translation));
     } else {
-      const snapshots = await Promise.all(Object.getOwnPropertyNames(values).map(id => findTranslationById(spaceId, id).get()));
+      const refs = Object.getOwnPropertyNames(values).map(id => findTranslationById(spaceId, id));
+      const snapshots = await getAllInChunks(firestoreService, refs);
       snapshots.forEach(snapshot => {
         if (snapshot.exists) existing.set(snapshot.id, snapshot.data() as Translation);
       });
@@ -169,6 +173,7 @@ MANAGE.post(
 
 MANAGE.post('/api/v1/spaces/:spaceId/schemas', requireTokenPermissions([TokenPermission.DEV_TOOLS]), async (req: RequestWithToken, res) => {
   // Deliberately not logging the request body: schema payloads carry a whole space's schemas.
+  // A summary is logged after validation.
   logger.info('[V1:Schemas:push] params : ' + JSON.stringify(req.params));
   const { spaceId } = req.params;
   const body = zSchemaPushSchema.safeParse(req.body);
@@ -178,6 +183,7 @@ MANAGE.post('/api/v1/spaces/:spaceId/schemas', requireTokenPermissions([TokenPer
     return;
   }
   const { dryRun, type, schemas } = body.data;
+  logger.info(`[V1:Schemas:push] type='${type}' dryRun=${dryRun ?? false} schemas=${schemas.length}`);
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (!spaceSnapshot.exists) {
     res.status(404).send(new HttpsError('not-found', 'Not found'));

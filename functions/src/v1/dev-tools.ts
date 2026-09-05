@@ -4,6 +4,7 @@ import { HttpsError } from 'firebase-functions/v2/https';
 import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE } from '../config';
 import { Schema, Space, TokenPermission } from '../models';
 import { docSchemaToExport, findSchemas, findSpaceById, generateOpenApi } from '../services';
+import { redactQuery } from '../utils/log-redact';
 import { RequestWithToken, requireTokenPermissions } from './middleware/query-auth.middleware';
 
 // eslint-disable-next-line new-cap
@@ -11,7 +12,7 @@ export const DEV_TOOLS = Router();
 
 DEV_TOOLS.get('/api/v1/spaces/:spaceId', requireTokenPermissions([TokenPermission.DEV_TOOLS]), async (req: RequestWithToken, res) => {
   logger.info('[V1:SpaceById] params : ' + JSON.stringify(req.params));
-  logger.info('[V1:SpaceById] query : ' + JSON.stringify(req.query));
+  logger.info('[V1:SpaceById] query : ' + redactQuery(req.query));
   const { spaceId } = req.params;
 
   const spaceSnapshot = await findSpaceById(spaceId).get();
@@ -39,7 +40,7 @@ DEV_TOOLS.get(
   requireTokenPermissions([TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
     logger.info('[V1:OpenApi] params: ' + JSON.stringify(req.params));
-    logger.info('[V1:OpenApi] query: ' + JSON.stringify(req.query));
+    logger.info('[V1:OpenApi] query: ' + redactQuery(req.query));
     const { spaceId } = req.params;
 
     const spaceSnapshot = await findSpaceById(spaceId).get();
@@ -63,7 +64,7 @@ DEV_TOOLS.get(
   requireTokenPermissions([TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
     logger.info('[V1:Schemas] params: ' + JSON.stringify(req.params));
-    logger.info('[V1:Schemas] query: ' + JSON.stringify(req.query));
+    logger.info('[V1:Schemas] query: ' + redactQuery(req.query));
     const { spaceId } = req.params;
 
     const spaceSnapshot = await findSpaceById(spaceId).get();

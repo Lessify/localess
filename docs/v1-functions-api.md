@@ -2,7 +2,7 @@
 
 > Related: [CDN & Caching](cdn-caching.md) · [Auth Tokens](auth-tokens.md) · [Publish Flow](publish-flow.md)
 
-The public REST API is served by the `publicv1` Firebase Function (Express app, `europe-west6`, `maxInstances: 1`, `concurrency: 600`) via the Hosting rewrite `/api/v1/**`. Three Express routers handle all routes: `CDN`, `MANAGE`, and `DEV_TOOLS`.
+The public REST API is served by the `publicv1` Firebase Function (Express app, `europe-west6`, `maxInstances: 10`, `concurrency: 600`) via the Hosting rewrite `/api/v1/**`. `maxInstances` is set on the function itself in `functions/src/v1.ts`, overriding the codebase-wide `setGlobalOptions({ maxInstances: 1 })` — this is the only function serving public consumer traffic, so it must scale past a single instance. Three Express routers handle all routes: `CDN`, `MANAGE`, and `DEV_TOOLS`.
 
 ---
 

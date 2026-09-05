@@ -67,7 +67,9 @@ const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 - On token not found: entry removed from cache
 - Revocations take effect within the TTL window (max 5 min)
 
-> Since `maxInstances: 1` in `functions/src/index.ts`, the single instance handles all concurrent requests (`concurrency: 600`), making in-memory caching effective.
+> `publicv1` runs with `maxInstances: 10` (`functions/src/v1.ts`) and `concurrency: 600`, so the cache is per-instance: a token may be read from Firestore once per active instance. Revocation still takes effect within the TTL window on each instance.
+
+> **Never log a raw query object.** The token arrives as the `?token=` query param, so `JSON.stringify(req.query)` would persist a usable credential into Cloud Logging for its full retention period. Every V1 log statement goes through `redactQuery()` (`functions/src/utils/log-redact.ts`).
 
 ---
 

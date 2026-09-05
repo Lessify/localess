@@ -19,7 +19,24 @@ import {
   SchemaFieldKind,
   SchemaType,
 } from '../models';
+import { mapWithConcurrency } from '../utils/map-with-concurrency';
 import { findAssetById } from './asset.service';
+
+/**
+ * Maximum concurrent Storage/Firestore reads while resolving one document's assets, links or
+ * references. The arrays are caller-controlled and unbounded, so an unlimited fan-out let a single
+ * request saturate the Function instance it ran on.
+ */
+const RESOLVE_CONCURRENCY = 10;
+
+/**
+ * Returns true when a Storage error represents a missing object rather than a real failure.
+ * @param {unknown} error error thrown by a Storage operation
+ * @return {boolean} true when the object does not exist
+ */
+function isNotFoundError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 404;
+}
 
 /**
  * find Content by Full Slug
@@ -238,27 +255,26 @@ export async function resolveReferences(
     return undefined;
   }
   const resolvedReferences: Record<string, ContentDocumentApi> = {};
-  await Promise.all(
-    content.references.map(async refId => {
-      if (refId) {
-        try {
-          const refCachePath = contentLocaleCachePath(spaceId, refId, locale, version);
-          const [exists] = await bucket.file(refCachePath).exists();
-
-          if (exists) {
-            const [fileContent] = await bucket.file(refCachePath).download();
-            resolvedReferences[refId] = JSON.parse(fileContent.toString());
-          } else {
-            logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found at ${refCachePath}`);
-          }
-        } catch (error) {
-          logger.error(`[ReferenceResolver::resolveReferences] Failed to resolve reference ${refId}:`, error);
-        }
+  await mapWithConcurrency(content.references, RESOLVE_CONCURRENCY, async refId => {
+    if (!refId) {
+      logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found.`);
+      return;
+    }
+    const refCachePath = contentLocaleCachePath(spaceId, refId, locale, version);
+    try {
+      // Downloading straight away rather than calling exists() first: the pre-check doubled the
+      // Storage round-trips per reference, and a missing file is already distinguishable by its
+      // 404 status.
+      const [fileContent] = await bucket.file(refCachePath).download();
+      resolvedReferences[refId] = JSON.parse(fileContent.toString());
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found at ${refCachePath}`);
       } else {
-        logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found.`);
+        logger.error(`[ReferenceResolver::resolveReferences] Failed to resolve reference ${refId}:`, error);
       }
-    })
-  );
+    }
+  });
   return resolvedReferences;
 }
 
@@ -273,26 +289,30 @@ export async function resolveLinks(spaceId: string, content: ContentDocumentStor
     return undefined;
   }
   const resolvedLinks: Record<string, ContentMetadata> = {};
-  await Promise.all(
-    content.links.map(async linkId => {
-      const contentSnapshot = await findContentById(spaceId, linkId).get();
-      const content = contentSnapshot.data() as Content;
-      const link: ContentMetadata = {
-        id: contentSnapshot.id,
-        kind: content.kind,
-        name: content.name,
-        slug: content.slug,
-        fullSlug: content.fullSlug,
-        parentSlug: content.parentSlug,
-        createdAt: content.createdAt.toDate().toISOString(),
-        updatedAt: content.updatedAt.toDate().toISOString(),
-      };
-      if (content.kind === ContentKind.DOCUMENT) {
-        link.publishedAt = content.publishedAt?.toDate().toISOString();
-      }
-      resolvedLinks[linkId] = link;
-    })
-  );
+  await mapWithConcurrency(content.links, RESOLVE_CONCURRENCY, async linkId => {
+    const contentSnapshot = await findContentById(spaceId, linkId).get();
+    // A link whose target has been deleted used to throw here, and the caller's catch-all turned
+    // that into a misleading 404 for the whole document. Skip it the way assets and references do.
+    if (!contentSnapshot.exists) {
+      logger.warn(`[resolveLinks] Link ${linkId} not found in space ${spaceId}`);
+      return;
+    }
+    const content = contentSnapshot.data() as Content;
+    const link: ContentMetadata = {
+      id: contentSnapshot.id,
+      kind: content.kind,
+      name: content.name,
+      slug: content.slug,
+      fullSlug: content.fullSlug,
+      parentSlug: content.parentSlug,
+      createdAt: content.createdAt.toDate().toISOString(),
+      updatedAt: content.updatedAt.toDate().toISOString(),
+    };
+    if (content.kind === ContentKind.DOCUMENT) {
+      link.publishedAt = content.publishedAt?.toDate().toISOString();
+    }
+    resolvedLinks[linkId] = link;
+  });
   return resolvedLinks;
 }
 
@@ -307,28 +327,27 @@ export async function resolveAssets(spaceId: string, content: ContentDocumentSto
     return undefined;
   }
   const resolvedAssets: Record<string, AssetMetadata> = {};
-  await Promise.all(
-    content.assets.map(async assetId => {
-      const assetSnapshot = await findAssetById(spaceId, assetId).get();
-      if (assetSnapshot.exists) {
-        const asset = assetSnapshot.data() as AssetFile;
-        if (asset.kind === AssetKind.FILE) {
-          const contentAsset: AssetMetadata = {
-            id: assetSnapshot.id,
-            name: asset.name,
-            extension: asset.extension,
-            type: asset.type,
-          };
-          if (asset.alt) {
-            contentAsset.alt = asset.alt;
-          }
-          resolvedAssets[assetId] = contentAsset;
-        }
-      } else {
-        logger.warn(`[resolveAssets] Asset ${assetId} not found in space ${spaceId}`);
-      }
-    })
-  );
+  await mapWithConcurrency(content.assets, RESOLVE_CONCURRENCY, async assetId => {
+    const assetSnapshot = await findAssetById(spaceId, assetId).get();
+    if (!assetSnapshot.exists) {
+      logger.warn(`[resolveAssets] Asset ${assetId} not found in space ${spaceId}`);
+      return;
+    }
+    const asset = assetSnapshot.data() as AssetFile;
+    if (asset.kind !== AssetKind.FILE) {
+      return;
+    }
+    const contentAsset: AssetMetadata = {
+      id: assetSnapshot.id,
+      name: asset.name,
+      extension: asset.extension,
+      type: asset.type,
+    };
+    if (asset.alt) {
+      contentAsset.alt = asset.alt;
+    }
+    resolvedAssets[assetId] = contentAsset;
+  });
   return resolvedAssets;
 }
 

@@ -18,7 +18,8 @@ interface TokenCacheEntry {
   expiresAt: number;
 }
 
-// In-memory token cache scoped to the single Function instance (maxInstances: 1).
+// In-memory token cache scoped to one Function instance. `publicv1` runs with
+// maxInstances: 10, so a token may be read from Firestore once per active instance.
 // Tokens are short-lived (5 min TTL) to pick up revocations quickly while
 // drastically reducing Firestore reads during traffic spikes.
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;

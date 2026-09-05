@@ -38,6 +38,8 @@ import {
   translationLocaleCachePath,
 } from '../services';
 import { applySharpTransforms, ImageFormat, isImageFormat } from '../utils/image-transform';
+import { redactQuery } from '../utils/log-redact';
+import { isFlagSet } from '../utils/query-flag';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
 import {
   RequestWithToken,
@@ -51,7 +53,7 @@ export const CDN = Router();
 
 CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermissions(), async (req: RequestWithToken, res) => {
   logger.info('[V1:Translations] params : ' + JSON.stringify(req.params));
-  logger.info('[V1:Translations] query : ' + JSON.stringify(req.query));
+  logger.info('[V1:Translations] query : ' + redactQuery(req.query));
   const { spaceId, locale } = req.params;
   const { cv, version } = req.query;
   const token = req.tokenId;
@@ -122,7 +124,7 @@ CDN.get(
   requireTokenPermissions([TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS]),
   async (req: RequestWithToken, res) => {
     logger.info('[V1:Links] params: ' + JSON.stringify(req.params));
-    logger.info('[V1:Links] query: ' + JSON.stringify(req.query));
+    logger.info('[V1:Links] query: ' + redactQuery(req.query));
     const { spaceId } = req.params;
     const { kind, parentSlug, excludeChildren, cv } = req.query;
     const token = req.tokenId;
@@ -221,7 +223,7 @@ CDN.get(
 
 CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermissions(), async (req: RequestWithToken, res) => {
   logger.info('[V1:ContentBySlug] params: ' + JSON.stringify(req.params));
-  logger.info('[V1:ContentBySlug] query: ' + JSON.stringify(req.query));
+  logger.info('[V1:ContentBySlug] query: ' + redactQuery(req.query));
   const { spaceId } = req.params;
   const { cv, locale, version, resolveReference, resolveLink, resolveAsset } = req.query;
   const token = req.tokenId;
@@ -338,7 +340,7 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
 
 CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions(), async (req: RequestWithToken, res) => {
   logger.info('[V1:ContentById] params: ' + JSON.stringify(req.params));
-  logger.info('[V1:ContentById] query: ' + JSON.stringify(req.query));
+  logger.info('[V1:ContentById] query: ' + redactQuery(req.query));
   const { spaceId, contentId } = req.params;
   const { cv, locale, version, resolveReference, resolveLink, resolveAsset } = req.query;
   const token = req.tokenId;
@@ -444,9 +446,11 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
 
 CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info('[V1:AssetById] params: ' + JSON.stringify(req.params));
-  logger.info('[V1:AssetById] query: ' + JSON.stringify(req.query));
+  logger.info('[V1:AssetById] query: ' + redactQuery(req.query));
   const { spaceId, assetId } = req.params;
-  const { w: widthRaw, h: heightRaw, q: qualityRaw, f: formatRaw, download, thumbnail } = req.query;
+  const { w: widthRaw, h: heightRaw, q: qualityRaw, f: formatRaw, download: downloadRaw, thumbnail: thumbnailRaw } = req.query;
+  const download = isFlagSet(downloadRaw);
+  const thumbnail = isFlagSet(thumbnailRaw);
   const widthParsed = parseInt(widthRaw?.toString() ?? '', 10);
   const width = Number.isFinite(widthParsed) && widthParsed > 0 ? widthParsed : undefined;
   const heightParsed = parseInt(heightRaw?.toString() ?? '', 10);
@@ -533,7 +537,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       await assetFile.download({ destination: tempFilePath });
     }
     let disposition = `inline; filename="${encodeURI(filename)}"`;
-    if (download !== undefined) {
+    if (download) {
       disposition = `form-data; filename="${encodeURI(filename)}"`;
     }
     res
