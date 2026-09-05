@@ -176,7 +176,16 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
         {
           type: 'object',
           description: 'Content define shared object for all possible Content Types.',
+          required: ['locale'],
           properties: {
+            locale: {
+              type: 'string',
+              description:
+                'Locale this content was served at. This is the locale actually resolved, which may differ from the ' +
+                'one requested: when the requested locale does not exist in the space, the API falls back to the ' +
+                'localeFallback configured on the space.',
+              example: 'en',
+            },
             data: {
               $ref: '#/components/schemas/ContentData',
             },
@@ -354,7 +363,11 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
       },
     },
     References: {
-      description: 'Key-Value Object. Where Key is Unique identifier for the Content object and Value is Content.',
+      description:
+        'Key-Value Object. Where Key is Unique identifier for the Content object and Value is the referenced ' +
+        'document. Reference resolution is one level deep, and each value has its own assets/links/references id ' +
+        'arrays stripped before it is returned, so those three fields are always absent here. Follow a further ' +
+        'reference via the uri on a REFERENCE field value inside data.',
       type: 'object',
       additionalProperties: {
         $ref: '#/components/schemas/Content',

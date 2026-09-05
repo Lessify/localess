@@ -62,19 +62,6 @@ export interface ContentDocumentStorage {
   references?: string[];
 }
 
-/**
- * A referenced document as returned inside `ContentDocumentApi.references`.
- *
- * The published document minus its `assets`/`links`/`references` id arrays. Those are a
- * denormalized index of edges that already exist inside `data` — a `REFERENCE` field value is
- * `{ kind: 'REFERENCE', uri }` — so they are redundant on the wire and are stripped by
- * `stripStorageIds()`, exactly as they already are for the top-level document.
- *
- * Expressed as an `Omit` so it tracks the storage shape automatically, and so the map's value type
- * states precisely what comes back rather than merely permitting it.
- */
-export type ResolvedReferenceApi = Omit<ContentDocumentStorage, 'assets' | 'links' | 'references'>;
-
 export interface ContentDocumentApi {
   id: string;
   name: string;
@@ -90,9 +77,14 @@ export interface ContentDocumentApi {
   assets?: Record<string, AssetMetadata>;
   links?: Record<string, ContentMetadata>;
   /**
-   * Referenced documents, keyed by content id. Resolution is one level deep.
+   * Referenced documents, keyed by content id.
+   *
+   * Resolution is one level deep, and `stripStorageIds()` removes each entry's own
+   * `assets`/`links`/`references` id arrays before it goes out — so although the value type is
+   * `ContentDocumentApi`, those three fields are always absent here. The edges are in `data`
+   * instead: a `REFERENCE` field value carries its own `uri`.
    */
-  references?: Record<string, ResolvedReferenceApi>;
+  references?: Record<string, ContentDocumentApi>;
 }
 
 export interface ContentData extends Record<string, any | ContentData | ContentData[]> {

@@ -121,11 +121,22 @@ spaces/{spaceId}/
 ## Link & Reference Resolution
 
 Content documents can include `links`, `references`, and `assets` arrays (IDs of other content/assets). The CDN API resolves these on request when the consumer passes:
-- `?resolveLink=true` — resolves links to `ContentLink` objects
-- `?resolveReference=true` — resolves references to full `ContentDocumentApi` objects
+- `?resolveLink=true` — resolves links to `ContentMetadata` objects
+- `?resolveReference=true` — resolves references to content documents, with their own id arrays stripped
 - `?resolveAsset=true` — resolves asset IDs to full asset metadata via `resolveAssets()`
 
 Resolution is done at request time by reading additional Storage files. This adds latency but avoids denormalization in Storage.
+
+### The id arrays are storage-only
+
+`links`/`references`/`assets` exist on the **stored** document but are never returned to a consumer:
+
+- **Top level** — the CDN handlers destructure them out and replace them with resolved maps, or omit the keys entirely when the corresponding `resolve*` flag is absent.
+- **Inside a `references` map** — `stripStorageIds()` (`functions/src/utils/strip-storage-ids.ts`) removes them, so a resolved reference carries only its metadata, `locale` and `data`.
+
+They are redundant on the wire: each one is a denormalized index of edges that already exist in `data`, since a `REFERENCE` field value is `{ kind: 'REFERENCE', uri }`. A consumer follows a further reference by reading that `uri` and looking it up in the same map — which is also why reference resolution can stay one level deep without losing information.
+
+Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructure so a field added to `ContentDocumentStorage` later is carried through rather than silently dropped, and its tests pin both behaviours.
 
 ---
 
