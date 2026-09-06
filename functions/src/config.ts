@@ -21,6 +21,10 @@ export const CACHE_ASSET_MAX_AGE = DAY * 365;
 export const CACHE_SHARE_MAX_AGE = DAY * 7;
 // Short TTL for redirect responses so CDN caches them and avoids stampedes on publish
 export const CACHE_REDIRECT_MAX_AGE_DEFAULT = MINUTE;
+// Rejected requests are cached so a bad URL cannot repeatedly re-enter the function. Deliberately
+// far shorter than the success TTL: the rejection depends on the *accepted value set*, which grows
+// with a deploy, so a newly-valid parameter must not keep serving a stale 400 for a year.
+export const CACHE_BAD_REQUEST_MAX_AGE = HOUR;
 // AUTH ROLE
 export const ROLE_ADMIN = 'admin';
 export const ROLE_CUSTOM = 'custom';

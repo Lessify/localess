@@ -26,22 +26,41 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
 - **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `resolveAssets()` (`functions/src/services/content.service.ts:305`).
-- **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f` params). `q` defaults to `85`, clamped to `1–100`; ignored for PNG. Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG and animated GIF/WebP are passed through unsized. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
+- **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f`/`fit` params). `q` defaults to `85`, clamped to `1–100`; ignored for PNG. Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG and animated GIF/WebP are passed through unsized. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
+- **`fit` param** — `cover` (default) · `contain` · `inside` · `outside` · `fill`. **Ignored unless both `w` and `h` are present**, since Sharp preserves aspect ratio with a single dimension. `contain` pads: transparent for `png`/`webp`/`avif`, opaque white otherwise (a transparent pad would flatten to black on a JPEG).
+- **Invalid `f` or `fit`** — returns `400 invalid-argument` naming the accepted values. An empty value (`?f=`) counts as absent, not invalid. The `400` is sent with `Cache-Control: public, max-age=3600` so a bad URL is served from the CDN instead of re-entering the function; the TTL is deliberately short because the accepted value set can grow with a deploy.
 - **`thumbnail` param** — Only meaningful for animated WebP/GIF (extracts first frame) and video (requires `w`; extracts a frame via FFmpeg). Has no effect on other image types.
 - **`download` param** — Switches `Content-Disposition` from `inline` to `form-data` (forces browser download).
 
 #### Asset resize combinations (`w` / `h`)
 
-Sharp is called as `resize(width ?? null, height ?? null)` with its default fit mode (`cover`).
+Sharp is called as `resize(width ?? null, height ?? null, { fit })`, defaulting to `cover` when `fit` is not given.
 
 | `w` | `h` | Behavior                                                                                                                   |
 |-----|-----|----------------------------------------------------------------------------------------------------------------------------|
 | ✓   | —   | Scale to width, height auto — aspect ratio preserved, no crop                                                              |
 | —   | ✓   | Scale to height, width auto — aspect ratio preserved, no crop                                                              |
-| ✓   | ✓   | **`cover` crop** — resizes to fill the exact box, excess edges are cropped. Image is not distorted but content may be lost |
+| ✓   | ✓   | Controlled by `fit`, default **`cover` crop** — fills the exact box, excess edges cropped. See the `fit` table below |
 | —   | —   | No resize — only format/quality re-encoding if `f`/`q` provided                                                            |
 
-**Known limitation:** `w` + `h` together use Sharp's default `cover` fit, which crops. For a CMS use-case `inside` (shrink to fit, no crop) is usually more appropriate.
+#### Asset `fit` modes
+
+Only applied when **both** `w` and `h` are present. Examples are a 200×100 source into a 50×50 box.
+
+| `fit` | Behavior | 200×100 → 50×50 |
+|---|---|---|
+| `cover` *(default)* | Fill the box, crop the overflow | 50×50, sides cropped |
+| `contain` | Fit inside the box, pad to the exact box | 50×50, padded |
+| `inside` | Shrink to fit inside the box, no pad, no crop | 50×25 |
+| `outside` | Cover the box without cropping; may exceed it | 100×50 |
+| `fill` | Stretch to the exact box, aspect ratio not preserved | 50×50, distorted |
+
+`cover` remains the default deliberately: changing it would reshape every existing `?w=&h=` URL and
+invalidate the CDN. **`inside` is usually what a CMS thumbnail wants** — opt into it explicitly.
+
+**Breaking change — invalid `f` now returns 400.** Previously an unrecognised `f` was silently
+ignored and the untransformed image was returned; it now returns `400 invalid-argument`, matching
+`fit`. A typo in a format no longer fails quietly.
 
 **Special cases that bypass resize entirely:**
 - `image/svg+xml` — always passed through; `w`/`h`/`f` are ignored

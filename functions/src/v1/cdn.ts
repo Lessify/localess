@@ -7,6 +7,7 @@ import sharp from 'sharp';
 import {
   bucket,
   CACHE_ASSET_MAX_AGE,
+  CACHE_BAD_REQUEST_MAX_AGE,
   CACHE_MAX_AGE,
   CACHE_REDIRECT_MAX_AGE_DEFAULT,
   CACHE_SHARE_MAX_AGE,
@@ -37,9 +38,8 @@ import {
   spaceTranslationCachePath,
   translationLocaleCachePath,
 } from '../services';
-import { applySharpTransforms, ImageFormat, isImageFormat } from '../utils/image-transform';
+import { applySharpTransforms, parseAssetTransformQuery } from '../utils/image-transform';
 import { redactQuery } from '../utils/log-redact';
-import { isFlagSet } from '../utils/query-flag';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
 import {
   RequestWithToken,
@@ -448,17 +448,19 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info('[V1:AssetById] params: ' + JSON.stringify(req.params));
   logger.info('[V1:AssetById] query: ' + redactQuery(req.query));
   const { spaceId, assetId } = req.params;
-  const { w: widthRaw, h: heightRaw, q: qualityRaw, f: formatRaw, download: downloadRaw, thumbnail: thumbnailRaw } = req.query;
-  const download = isFlagSet(downloadRaw);
-  const thumbnail = isFlagSet(thumbnailRaw);
-  const widthParsed = parseInt(widthRaw?.toString() ?? '', 10);
-  const width = Number.isFinite(widthParsed) && widthParsed > 0 ? widthParsed : undefined;
-  const heightParsed = parseInt(heightRaw?.toString() ?? '', 10);
-  const height = Number.isFinite(heightParsed) && heightParsed > 0 ? heightParsed : undefined;
-  const qualityParsed = parseInt(qualityRaw?.toString() ?? '', 10);
-  const quality = Number.isFinite(qualityParsed) ? Math.min(100, Math.max(1, qualityParsed)) : 85;
-  const rawFormatStr = formatRaw?.toString();
-  const format: ImageFormat | undefined = isImageFormat(rawFormatStr) ? rawFormatStr : undefined;
+
+  const parsed = parseAssetTransformQuery(req.query);
+  if (!parsed.ok) {
+    // Cached so a bad URL cannot repeatedly re-enter the function — the rejection is
+    // a pure function of the query, so recomputing it gains nothing. Short TTL, since
+    // the accepted value set can grow with a deploy.
+    res
+      .status(400)
+      .header('Cache-Control', `public, max-age=${CACHE_BAD_REQUEST_MAX_AGE}, s-maxage=${CACHE_BAD_REQUEST_MAX_AGE}`)
+      .send(new HttpsError('invalid-argument', parsed.error.message));
+    return;
+  }
+  const { width, height, quality, format, fit, download, thumbnail } = parsed.query;
 
   const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
   const [exists] = await assetFile.exists();
@@ -474,7 +476,9 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const outputType: string | undefined = format ? formatMimeMap[format] : undefined;
     const outputExt: string = format ? formatExtMap[format] : asset.extension;
 
-    const suffix = [width ? `w${width}` : '', height ? `h${height}` : '', format ? `f${format}` : ''].filter(Boolean).join('-');
+    const suffix = [width ? `w${width}` : '', height ? `h${height}` : '', format ? `f${format}` : '', fit ? `fit${fit}` : '']
+      .filter(Boolean)
+      .join('-');
     // apply resize for valid 'w' parameter and images
     if (asset.type.startsWith('image/') && (width !== undefined || height !== undefined || format !== undefined)) {
       if (asset.type === 'image/webp' || asset.type === 'image/gif') {
@@ -489,7 +493,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           if (isAnimated) {
             sharpFile = sharp(file, { page: 0, pages: 1 });
           }
-          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format });
+          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format, fit });
           await sharpFile.toFile(tempFilePath);
           overwriteType = outputType;
         } else if (isAnimated) {
@@ -500,7 +504,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           if (suffix) {
             filename = `${asset.name}-${suffix}${outputExt}`;
           }
-          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format });
+          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format, fit });
           await sharpFile.toFile(tempFilePath);
           overwriteType = outputType;
         }
@@ -521,14 +525,14 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
             pipeline = pipeline.webp({ quality });
           }
         }
-        pipeline = applySharpTransforms(pipeline, { width, height, quality, format });
+        pipeline = applySharpTransforms(pipeline, { width, height, quality, format, fit });
         await pipeline.toFile(tempFilePath);
         overwriteType = outputType;
       }
     } else if (asset.type.startsWith('video/') && width !== undefined && thumbnail) {
       await assetFile.download({ destination: tempFilePath });
       await extractThumbnail(tempFilePath, `screenshot-${assetId}.webp`);
-      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format }).toFile(
+      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format, fit }).toFile(
         tempFilePath
       );
       overwriteType = format ? formatMimeMap[format] : 'image/webp';
