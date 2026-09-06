@@ -89,7 +89,17 @@
     let fields = 0;
 
     document.querySelectorAll<HTMLElement>('[data-ll-id]').forEach(element => {
-      if (hookedElements.has(element)) return;
+      if (hookedElements.has(element)) {
+        // Already wired. `data-ll-hook` is only a debug/tooling marker — the WeakSet above is
+        // the real guard — but a DOM-patching live preview copies attributes from freshly
+        // rendered server HTML onto this same node and strips it, which made the marker claim
+        // the element was unhooked while its listeners were very much still attached. Putting
+        // it back costs nothing and keeps what is inspectable in devtools honest.
+        if (!element.hasAttribute('data-ll-hook')) {
+          element.setAttribute('data-ll-hook', 'true');
+        }
+        return;
+      }
       hookedElements.add(element);
       schemas++;
       if (element.offsetHeight < 5) {
@@ -203,7 +213,12 @@
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['data-ll-id'],
+      // `data-ll-hook` is watched as well as `data-ll-id` so that a DOM patch stripping the
+      // marker schedules the scan that puts it back. Without it, a patch that only rewrote
+      // text nodes produced no observed mutation at all and the marker stayed missing.
+      // This does not feed back on itself: re-adding the attribute schedules one more scan,
+      // which finds it present, changes nothing, and ends the chain.
+      attributeFilter: ['data-ll-id', 'data-ll-hook'],
     });
   }
 
