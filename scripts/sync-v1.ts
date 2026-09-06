@@ -71,50 +71,139 @@
     currentHoverHighlightElement = target;
   }
 
+  /**
+   * Elements and fields that already carry their listeners.
+   *
+   * Tracked by node identity rather than by the `data-ll-hook` attribute: DOM-patching
+   * live-preview implementations (e.g. morphdom) copy attributes from freshly rendered
+   * server HTML onto the *same* node, which strips `data-ll-hook` while leaving the
+   * existing listeners attached. Keying off the attribute made every patch stack another
+   * set of listeners, so one click emitted N `selectSchema` events. A WeakSet is immune to
+   * that, and lets nodes be garbage collected once the framework drops them.
+   */
+  const hookedElements = new WeakSet<Element>();
+  const hookedFields = new WeakSet<Element>();
+
   function markVisualEditorElements(source: string) {
-    console.log(LOG_GROUP, 'markVisualEditorElements', source);
-    document.querySelectorAll<HTMLElement>('[data-ll-id]:not([data-ll-hook])').forEach(element => {
-      const id = element.getAttribute('data-ll-id')!;
-      const schema = element.getAttribute('data-ll-schema')!;
+    let schemas = 0;
+    let fields = 0;
+
+    document.querySelectorAll<HTMLElement>('[data-ll-id]').forEach(element => {
+      if (hookedElements.has(element)) return;
+      hookedElements.add(element);
+      schemas++;
       if (element.offsetHeight < 5) {
         element.style.minHeight = '5px';
       }
       element.setAttribute('data-ll-hook', 'true');
+      // `data-ll-id`/`data-ll-schema` are read at event time, not captured here: frameworks
+      // bind them as host attributes and rewrite them in place when the content changes, so
+      // a captured value would go stale after the first edit.
+      const schemaOf = (target: HTMLElement) => ({
+        id: target.getAttribute('data-ll-id'),
+        schema: target.getAttribute('data-ll-schema'),
+      });
       // Schema Events
       element.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
+        const { id, schema } = schemaOf(element);
+        if (!id) return;
         // Send Message with Selected Schema
-        sendEditorData({ type: 'selectSchema', id: id, schema: schema });
+        sendEditorData({ type: 'selectSchema', id: id, schema: schema! });
       });
-      element.addEventListener('mouseenter', event => {
+      element.addEventListener('mouseenter', () => {
+        const { id, schema } = schemaOf(element);
+        if (!id) return;
         // Send Message with Hover Schema
-        sendEditorData({ type: 'hoverSchema', id: id, schema: schema });
+        sendEditorData({ type: 'hoverSchema', id: id, schema: schema! });
       });
-      element.addEventListener('mouseleave', event => {
+      element.addEventListener('mouseleave', () => {
+        const { id, schema } = schemaOf(element);
+        if (!id) return;
         // Send Message with Leave Schema
-        sendEditorData({ type: 'leaveSchema', id: id, schema: schema });
+        sendEditorData({ type: 'leaveSchema', id: id, schema: schema! });
       });
-      // Field Events
-      element.querySelectorAll<HTMLElement>('[data-ll-field]').forEach(field => {
-        const fieldName = field.getAttribute('data-ll-field')!;
-        if (field.closest('[data-ll-id]') !== element) return;
-        //field.setAttribute('data-ll-hook', 'true');
-        field.addEventListener('click', event => {
-          event.preventDefault();
-          event.stopPropagation();
-          // Send Message with Selected Schema with field
-          sendEditorData({ type: 'selectSchema', id: id, schema: schema, field: fieldName });
-        });
-        field.addEventListener('mouseenter', event => {
-          // Send Message with Hover Schema with field
-          sendEditorData({ type: 'hoverSchema', id: id, schema: schema, field: fieldName });
-        });
-        field.addEventListener('mouseleave', event => {
-          // Send Message with Leave Schema with field
-          sendEditorData({ type: 'leaveSchema', id: id, schema: schema, field: fieldName });
-        });
+    });
+
+    // Fields are scanned independently of their owning schema rather than nested inside the
+    // loop above. A DOM patch can add new `[data-ll-field]` children inside an element that
+    // is already hooked; nesting the scan would skip those forever.
+    document.querySelectorAll<HTMLElement>('[data-ll-field]').forEach(field => {
+      if (hookedFields.has(field)) return;
+      // Not yet inside a schema element — leave it unhooked so a later scan retries.
+      if (!field.closest('[data-ll-id]')) return;
+      hookedFields.add(field);
+      fields++;
+      const fieldTarget = () => {
+        const owner = field.closest<HTMLElement>('[data-ll-id]');
+        return {
+          id: owner?.getAttribute('data-ll-id'),
+          schema: owner?.getAttribute('data-ll-schema'),
+          field: field.getAttribute('data-ll-field'),
+        };
+      };
+      field.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const { id, schema, field: fieldName } = fieldTarget();
+        if (!id) return;
+        // Send Message with Selected Schema with field
+        sendEditorData({ type: 'selectSchema', id: id, schema: schema!, field: fieldName! });
       });
+      field.addEventListener('mouseenter', () => {
+        const { id, schema, field: fieldName } = fieldTarget();
+        if (!id) return;
+        // Send Message with Hover Schema with field
+        sendEditorData({ type: 'hoverSchema', id: id, schema: schema!, field: fieldName! });
+      });
+      field.addEventListener('mouseleave', () => {
+        const { id, schema, field: fieldName } = fieldTarget();
+        if (!id) return;
+        // Send Message with Leave Schema with field
+        sendEditorData({ type: 'leaveSchema', id: id, schema: schema!, field: fieldName! });
+      });
+    });
+
+    if (schemas > 0 || fields > 0) {
+      console.log(LOG_GROUP, 'markVisualEditorElements', source, { schemas, fields });
+    }
+  }
+
+  let elementObserver: MutationObserver | undefined;
+  let scanScheduled = false;
+
+  /** Coalesces bursts of mutations into a single scan on the next macrotask. */
+  function scheduleMarkVisualEditorElements(source: string) {
+    if (scanScheduled) return;
+    scanScheduled = true;
+    setTimeout(() => {
+      scanScheduled = false;
+      markVisualEditorElements(source);
+    }, 0);
+  }
+
+  /**
+   * Keeps hooking schema elements as they appear, instead of only at `pong` and 1s after
+   * each edit.
+   *
+   * A one-shot scan silently missed anything created outside those two moments. The case
+   * that exposed it: a framework registering schema components lazily resolves the dynamic
+   * import while the sync script is still loading, then destroys and recreates the
+   * server-rendered nodes — if `pong` landed in that window, those elements stayed unhooked
+   * for the rest of the session and clicking them selected nothing.
+   *
+   * `data-ll-id` is watched as an attribute too, not just as added nodes: frameworks bind it
+   * as a host attribute, so it frequently appears on an element that is already in the DOM.
+   */
+  function observeVisualEditorElements() {
+    if (elementObserver) return;
+    elementObserver = new MutationObserver(() => scheduleMarkVisualEditorElements('observer'));
+    elementObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-ll-id'],
     });
   }
 
@@ -181,14 +270,15 @@
                 this.emit(data);
                 break;
               }
+              // `input`/`change` used to re-scan on a 1s timer to catch the re-render.
+              // `observeVisualEditorElements()` now hooks new elements as they land, which is
+              // both immediate and correct for renders that take longer than a second.
               case 'input': {
                 this.emit(data);
-                setTimeout(() => markVisualEditorElements('input'), 1000);
                 break;
               }
               case 'change': {
                 this.emit(data);
-                setTimeout(() => markVisualEditorElements('change'), 1000);
                 break;
               }
               case 'enterSchema': {
@@ -251,9 +341,14 @@
       }
 
       private pingBack() {
+        // The editor can pong more than once (e.g. it re-handshakes after reconnecting).
+        // Without this guard each pong appended another `<style id="localess-css-sync">`
+        // and another snackbar.
+        if (this.inEditor) return;
         this.inEditor = true;
         createCSS();
         markVisualEditorElements('pong');
+        observeVisualEditorElements();
         addMessage('Localess: Sync connected to Visual Editor.');
       }
     }
