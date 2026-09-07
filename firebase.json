@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/firebase/firebase-tools/blob/master/schema/firebase-config.json",
+  "$schema": "https://raw.githubusercontent.com/firebase/firebase-tools/refs/heads/main/schema/firebase-config.json",
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
