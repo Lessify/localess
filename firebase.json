@@ -1,5 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/firebase/firebase-tools/refs/heads/main/schema/firebase-config.json",
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    }
+  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"

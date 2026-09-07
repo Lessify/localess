@@ -136,6 +136,11 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | `MatTable` → `ll-table` migration | [docs/table-migration.md](docs/table-migration.md) | `src/app/shared/components/table/`, `src/app/shared/components/paginator/`, any `mat-table` migration |
 | Frontend testing — Vitest setup, Firebase mocking patterns, `test.isolate: false` pitfalls | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
 | Reusable filter toolbar (search + single/multi-select popovers) | [docs/filter-toolbar.md](docs/filter-toolbar.md) | `src/app/shared/components/filter-toolbar/`, `src/app/core/utils/filter-predicate-utils.service.ts`, any table/list filtering UI |
+| **Deployment & self-hosting** | | |
+| Deployment overview, prerequisites, automated vs manual | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
+| Phase 1 — Firebase provisioning (`npm run setup:firebase`) | [docs/deployment/firebase-setup.md](docs/deployment/firebase-setup.md) | `scripts/setup-firebase.mjs`, `scripts/setup/`, `firebase.json` `auth` block |
+| Phase 2 — First deploy, `LOCALESS_*` build-time config | [docs/deployment/first-deploy.md](docs/deployment/first-deploy.md) | Initial deploy, `src/environments/env.ts`, login provider flags |
+| Phase 3 — Pushing updates, targeted deploys, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Redeploys, `--only` targets, upgrade steps |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
 | Admin → Users | [docs/features/admin/admin-users.md](docs/features/admin/admin-users.md) | `features/admin/users/` |

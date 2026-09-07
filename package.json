@@ -26,7 +26,8 @@
     "version:generate": "node scripts/generate-version.js",
     "version:major": "node scripts/bump-version.mjs major",
     "version:minor": "node scripts/bump-version.mjs minor",
-    "version:patch": "node scripts/bump-version.mjs patch"
+    "version:patch": "node scripts/bump-version.mjs patch",
+    "setup:firebase": "node scripts/setup-firebase.mjs"
   },
   "license": "MIT",
   "private": true,
