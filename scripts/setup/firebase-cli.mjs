@@ -72,6 +72,16 @@ export const cli = {
     return (result ?? []).map(account => account.user?.email).filter(Boolean);
   },
 
+  /**
+   * Every project the logged-in account can see. Shape varies by CLI version - some
+   * return the array directly, some wrap it - so normalise to an array here.
+   */
+  async listProjects() {
+    const result = await runJson(['projects:list']);
+    if (Array.isArray(result)) return result;
+    return result?.results ?? result?.projects ?? [];
+  },
+
   createProject: (projectId, displayName) => run(['projects:create', projectId, '--display-name', displayName]),
 
   /**

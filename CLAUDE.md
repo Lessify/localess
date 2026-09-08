@@ -25,6 +25,11 @@ npm run prettier:fix   # Format code
 
 # Testing
 npm test               # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
+npm run test:scripts   # node:test suite for scripts/ (*.test.mjs)
+
+# Deployment
+npm run setup:firebase # Phase 1 - provision a Firebase project
+npm run deploy         # Build and deploy; reads .env.<project-id>
 
 # Firebase Functions (from /functions directory)
 cd functions && npm run build   # Compile TypeScript functions
@@ -139,7 +144,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | **Deployment & self-hosting** | | |
 | Deployment overview, prerequisites, automated vs manual | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Phase 1 — Firebase provisioning (`npm run setup:firebase`) | [docs/deployment/firebase-setup.md](docs/deployment/firebase-setup.md) | `scripts/setup-firebase.mjs`, `scripts/setup/`, `firebase.json` `auth` block |
-| Phase 2 — First deploy, `LOCALESS_*` build-time config | [docs/deployment/first-deploy.md](docs/deployment/first-deploy.md) | Initial deploy, `src/environments/env.ts`, login provider flags |
+| Phase 2 — `npm run deploy`, `.env.<project-id>`, `LOCALESS_*` build-time config | [docs/deployment/first-deploy.md](docs/deployment/first-deploy.md) | Deploys, `scripts/deploy.mjs`, `scripts/setup/config.mjs`, `scripts/setup/generate.mjs`, region wiring, login provider flags |
 | Phase 3 — Pushing updates, targeted deploys, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Redeploys, `--only` targets, upgrade steps |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |

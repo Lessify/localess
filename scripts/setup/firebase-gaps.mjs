@@ -8,6 +8,7 @@
  *   - API enablement    no `firebase services:enable` command exists
  *   - Billing linking   no `firebase billing:*` commands exist
  *   - Default bucket    `gcp/storage.js` only reads the bucket, never creates it
+ *   - Project labels    no `firebase projects:*` command reads or writes labels
  *
  * Only two internals are used: `apiv2.Client` (an authenticated HTTP client
  * carrying the `cloud-platform` scope) and `ensureApiEnabled`. Billing goes
@@ -53,6 +54,19 @@ async function init() {
     firebaseStorage: new Client({
       urlPrefix: 'https://firebasestorage.googleapis.com',
       apiVersion: 'v1beta',
+    }),
+    // v3 for reads and merging writes. Removing a label needs v1's full-resource PUT:
+    // v3's `updateMask=labels` merges rather than replaces, and a per-key mask
+    // (`labels.localess-managed`) is rejected because the key contains hyphens.
+    resourceManager: new Client({
+      urlPrefix: 'https://cloudresourcemanager.googleapis.com',
+      apiVersion: 'v3',
+    }),
+    // v1 for listing: it returns the full project resource including labels, so one call
+    // annotates the whole picker. v3's `projects.search` needs a parent or a query.
+    resourceManagerV1: new Client({
+      urlPrefix: 'https://cloudresourcemanager.googleapis.com',
+      apiVersion: 'v1',
     }),
   };
 }
@@ -178,4 +192,76 @@ export async function createDefaultBucket(projectId, location) {
   if (res.status === 409) return getDefaultBucket(projectId);
   if (res.status >= 400) throw fail('Could not create default bucket', res);
   return bucketName(res.body);
+}
+
+/**
+ * The GCP labels on a project, or `null` when they cannot be read.
+ *
+ * Never throws: this is used to decorate a project picker, where a project the user can
+ * list but not describe must degrade to "unverified" rather than abort setup.
+ */
+export async function readProjectLabels(projectId) {
+  try {
+    const { resourceManager } = await api();
+    const response = await resourceManager.get(`/projects/${projectId}`);
+    return response.body?.labels ?? {};
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Merges labels into a project, leaving every other label untouched.
+ *
+ * `updateMask=labels` sends the whole map, so the existing labels are read first and
+ * merged - otherwise Firebase's own `firebase: enabled` would be wiped.
+ */
+export async function mergeProjectLabels(projectId, labels) {
+  const { resourceManager } = await api();
+  const existing = (await readProjectLabels(projectId)) ?? {};
+  const merged = { ...existing, ...labels };
+
+  const unchanged = Object.entries(labels).every(([key, value]) => existing[key] === value);
+  if (unchanged) return merged;
+
+  await resourceManager.request({
+    method: 'PATCH',
+    path: `/projects/${projectId}`,
+    queryParams: { updateMask: 'labels' },
+    body: { labels: merged },
+  });
+  return merged;
+}
+
+/**
+ * Labels for every project the account can see, keyed by project id.
+ *
+ * One call rather than one per project: Cloud Resource Manager's `projects.list` returns
+ * the full resource, labels included, which `firebase projects:list` does not. That is
+ * what makes it affordable to annotate an entire picker.
+ *
+ * Returns `null` when the listing fails, which the caller must treat as "unknown" rather
+ * than "no projects are managed".
+ */
+export async function listAllProjectLabels() {
+  try {
+    const { resourceManagerV1 } = await api();
+    const byProject = new Map();
+
+    let pageToken;
+    do {
+      // apiv2 serialises an undefined query param as the string "undefined", which the
+      // API rejects with a 400, so the token is only added once there is one.
+      const queryParams = { pageSize: 200, ...(pageToken ? { pageToken } : {}) };
+      const response = await resourceManagerV1.get('/projects', { queryParams });
+      for (const project of response.body?.projects ?? []) {
+        if (project.lifecycleState === 'ACTIVE') byProject.set(project.projectId, project.labels ?? {});
+      }
+      pageToken = response.body?.nextPageToken;
+    } while (pageToken);
+
+    return byProject;
+  } catch {
+    return null;
+  }
 }

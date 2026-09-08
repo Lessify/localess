@@ -10,8 +10,8 @@ frequencies, different prerequisites, and different failure modes:
 | Phase | How often | Command |
 |-------|-----------|---------|
 | [1. Provision Firebase](firebase-setup.md) | Once per environment | `npm run setup:firebase` |
-| [2. First deploy](first-deploy.md) | Once per environment | `npm run build:prod` + `firebase deploy` |
-| [3. Push updates](updates.md) | Every change | `npm run build:prod` + `firebase deploy --only ...` |
+| [2. First deploy](first-deploy.md) | Once per environment | `npm run deploy` |
+| [3. Push updates](updates.md) | Every change | `npm run deploy -- --only ...` |
 
 Phase 1 creates cloud *resources*. Phases 2 and 3 push *code and configuration* into those
 resources. Phase 1 never has to be repeated, but it is safe to re-run — every step detects

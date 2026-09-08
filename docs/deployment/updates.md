@@ -9,14 +9,12 @@ Routine redeploys after the environment already exists. The full cycle:
 ```bash
 git pull
 npm install
-npm --prefix functions install     # only if functions dependencies changed
-npm run build:prod
-npx firebase deploy --project my-localess
+npm run deploy
 ```
 
-Remember that `LOCALESS_*` variables are baked in at build time — re-supply them on every build, or
-the login page and plugin flags silently revert to defaults. See
-[Build-time configuration](first-deploy.md#build-time-configuration).
+`LOCALESS_*` variables are baked in at build time, but you no longer have to re-supply them on
+every build — `npm run deploy` loads them from `.env.<project-id>`. Change a value there and
+redeploy. See [Build-time configuration](first-deploy.md#build-time-configuration).
 
 ---
 
@@ -26,15 +24,16 @@ A full deploy rebuilds every function image, which is the slow part. Narrow it t
 
 | Changed | Command |
 |---------|---------|
-| Angular app only | `npx firebase deploy --only hosting --project <id>` |
-| Cloud Functions only | `npx firebase deploy --only functions --project <id>` |
-| A single function | `npx firebase deploy --only functions:publicv1 --project <id>` |
-| Security rules only | `npx firebase deploy --only firestore:rules,storage --project <id>` |
-| Firestore indexes only | `npx firebase deploy --only firestore:indexes --project <id>` |
-| Remote Config only | `npx firebase deploy --only remoteconfig --project <id>` |
-| Everything except auth | `npx firebase deploy --only hosting,functions,firestore,storage --project <id>` |
+| Angular app only | `npm run deploy -- --only hosting` |
+| Cloud Functions only | `npm run deploy -- --only functions` |
+| A single function | `npm run deploy -- --only functions:publicv1` |
+| Security rules only | `npm run deploy -- --only firestore:rules,storage` |
+| Firestore indexes only | `npm run deploy -- --only firestore:indexes` |
+| Remote Config only | `npm run deploy -- --only remoteconfig` |
+| Everything except auth | `npm run deploy -- --only hosting,functions,firestore,storage` |
 
-`--only hosting` still needs a fresh `npm run build:prod` first; Firebase uploads whatever is in
+`npm run deploy` always rebuilds before uploading, so `--only hosting` is safe. Pass
+`--skip-build` only when you deliberately want to upload whatever is already in
 `dist/localess/browser`.
 
 ### About the `auth` target
@@ -55,7 +54,7 @@ Because `firebase.json` contains an `auth` block, a bare `firebase deploy` inclu
 | `remoteconfig.template.json` | `remoteconfig` |
 | `firebase.json` `auth` block | `auth` |
 | `LOCALESS_*` values | rebuild, then `hosting` |
-| `--region` in `functions/.env` | `functions` **and** the rewrite in `firebase.json` |
+| `LOCALESS_REGION` in `.env.<project-id>` | `functions` **and** the `/api/v1/**` rewrite |
 
 ---
 
@@ -101,9 +100,7 @@ Functions have no built-in rollback — redeploy from a previous commit:
 
 ```bash
 git checkout <previous-tag>
-npm install && npm --prefix functions install
-npm run build:prod
-npx firebase deploy --only functions,hosting --project <id>
+npm run deploy -- --only functions,hosting
 ```
 
 Firestore rules and indexes are versioned in the console and can be reverted there, but the source
