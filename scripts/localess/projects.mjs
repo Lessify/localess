@@ -89,6 +89,6 @@ export function assertManaged(projectId, identity) {
     : `${projectId} is not a Localess project - it carries no localess-managed label.`;
 
   throw new Error(
-    `${reason}\n\n  Adopt it first - setup is idempotent and will not change existing infrastructure:\n\n    npm run setup:firebase -- --project ${projectId}\n`,
+    `${reason}\n\n  Adopt it first - setup is idempotent and will not change existing infrastructure:\n\n    npm run localess:setup -- --project ${projectId}\n`,
   );
 }

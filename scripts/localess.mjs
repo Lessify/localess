@@ -3,12 +3,13 @@
  * The Localess CLI.
  *
  * Three commands share project identification, marker handling and local file generation,
- * so they live behind one entry point rather than as separate scripts. The npm aliases
- * (`npm run setup:firebase`, `npm run deploy`, `npm run sync`) forward to it.
+ * so they live behind one entry point rather than as separate scripts:
  *
- *   localess setup    provision Firebase infrastructure and record the markers
- *   localess deploy   build and deploy Localess to a marked project
- *   localess sync     regenerate the local project files from remote state
+ *   npm run localess:setup    provision Firebase infrastructure and record the markers
+ *   npm run localess:deploy   build and deploy Localess to a marked project
+ *   npm run localess:sync     regenerate the local project files from remote state
+ *
+ * `npm run localess -- <command>` reaches the same place, and with no command prints the list.
  */
 import { isPromptAbort } from './localess/prompts.mjs';
 import { UsageError } from './localess/usage.mjs';
@@ -20,11 +21,12 @@ const COMMANDS = {
 };
 
 function printCommands() {
-  console.log('\nUsage: localess <command> [options]\n');
+  console.log('\nUsage: npm run localess:<command> -- [options]');
+  console.log('   or: npm run localess -- <command> [options]\n');
   for (const [name, { summary }] of Object.entries(COMMANDS)) {
-    console.log(`  ${name.padEnd(8)} ${summary}`);
+    console.log(`  localess:${name.padEnd(8)} ${summary}`);
   }
-  console.log('\nRun `localess <command> --help` for the options of one command.\n');
+  console.log('\nRun `npm run localess:<command> -- --help` for the options of one command.\n');
 }
 
 const [name, ...argv] = process.argv.slice(2);

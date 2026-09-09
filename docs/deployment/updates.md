@@ -9,11 +9,11 @@ Routine redeploys after the environment already exists. The full cycle:
 ```bash
 git pull
 npm install
-npm run deploy
+npm run localess:deploy
 ```
 
 `LOCALESS_*` variables are baked in at build time, but you no longer have to re-supply them on
-every build — `npm run deploy` loads them from `.env.<project-id>`. Change a value there and
+every build — `npm run localess:deploy` loads them from `.env.<project-id>`. Change a value there and
 redeploy. See [Build-time configuration](first-deploy.md#build-time-configuration).
 
 ---
@@ -24,16 +24,16 @@ A full deploy rebuilds every function image, which is the slow part. Narrow it t
 
 | Changed | Command |
 |---------|---------|
-| Angular app only | `npm run deploy -- --only hosting` |
-| Cloud Functions only | `npm run deploy -- --only functions` |
-| A single function | `npm run deploy -- --only functions:publicv1` |
-| Security rules only | `npm run deploy -- --only firestore:rules,storage` |
-| Firestore indexes only | `npm run deploy -- --only firestore:indexes` |
-| Remote Config only | `npm run deploy -- --only remoteconfig` |
-| Everything except auth | `npm run deploy -- --only hosting,functions,firestore,storage` |
-| Everything (the default) | `npm run deploy` |
+| Angular app only | `npm run localess:deploy -- --only hosting` |
+| Cloud Functions only | `npm run localess:deploy -- --only functions` |
+| A single function | `npm run localess:deploy -- --only functions:publicv1` |
+| Security rules only | `npm run localess:deploy -- --only firestore:rules,storage` |
+| Firestore indexes only | `npm run localess:deploy -- --only firestore:indexes` |
+| Remote Config only | `npm run localess:deploy -- --only remoteconfig` |
+| Everything except auth | `npm run localess:deploy -- --only hosting,functions,firestore,storage` |
+| Everything (the default) | `npm run localess:deploy` |
 
-`npm run deploy` always rebuilds before uploading, so `--only hosting` is safe. Pass
+`npm run localess:deploy` always rebuilds before uploading, so `--only hosting` is safe. Pass
 `--skip-build` only when you deliberately want to upload whatever is already in
 `dist/localess/browser`.
 
@@ -42,7 +42,7 @@ A full deploy rebuilds every function image, which is the slow part. Narrow it t
 `auth` is part of every deploy by default. It sends the `auth` block from `firebase.json` to
 Google's provisioning API, which initializes Identity Platform and enables Email/Password.
 
-This is deliberate: `npm run setup:firebase` provisions infrastructure but never deploys, so
+This is deliberate: `npm run localess:setup` provisions infrastructure but never deploys, so
 the provider would otherwise never be applied. It is idempotent — you will see "Enabling auth
 providers" on every deploy, which is harmless. Skip it with `--only` if you want a faster push.
 
@@ -54,17 +54,19 @@ in `.env.<project-id>` lists them at build time.
 
 ## Keeping local files in sync
 
-The remote project is the source of truth; the four local project files are a cache of it.
+The remote project is the source of truth; the local project files are a cache of it.
 When they drift — someone changed something in the console, or you are on a fresh clone —
 regenerate them without re-running provisioning:
 
 ```bash
-npm run sync
+npm run localess:sync
 ```
 
 It picks a project from the same annotated list `deploy` uses, checks the `localess-managed`
 label, and rewrites `.env.<project-id>`, `functions/.env.<project-id>`,
-`firebase.<project-id>.json` and `src/environments/firebase-config.json` from the live project.
+`firebase.<project-id>.json` and `src/environments/firebase-config.<project-id>.json` from the
+live project, then copies the last of those to `firebase-config.build.json`, which is what the
+production build swaps in.
 It also corrects the `localess-region` label if the immutable Firestore location has drifted
 from it.
 
@@ -74,7 +76,7 @@ read back from the project, so an existing `.env.<project-id>` keeps whatever it
 Only when there is no local config at all do they start empty — and then sync says so, naming
 the keys it defaulted.
 
-`npm run deploy` runs the same step before it builds, so a deploy can never quietly reset a
+`npm run localess:deploy` runs the same step before it builds, so a deploy can never quietly reset a
 setting either.
 
 ---
@@ -99,7 +101,7 @@ setting either.
 When a new Localess version introduces a new Firebase product or API, re-run phase 1 first:
 
 ```bash
-npm run setup:firebase -- --project my-localess
+npm run localess:setup -- --project my-localess
 ```
 
 It is idempotent — it detects everything already provisioned and adds only what is missing. This is
@@ -136,7 +138,7 @@ Functions have no built-in rollback — redeploy from a previous commit:
 
 ```bash
 git checkout <previous-tag>
-npm run deploy -- --only functions,hosting
+npm run localess:deploy -- --only functions,hosting
 ```
 
 Firestore rules and indexes are versioned in the console and can be reverted there, but the source

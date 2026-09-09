@@ -3,6 +3,9 @@ import config from './firebase-config.json';
 export const environment = {
   appName: 'Localess',
   firebase: config,
+  functions: {
+    region: 'europe-west6',
+  },
   auth: {
     customDomain: '*',
     providers: 'GOOGLE,MICROSOFT',

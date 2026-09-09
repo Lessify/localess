@@ -15,7 +15,8 @@ npm run emulator:debug # Firebase emulator with debug output
 
 # Build
 npm run build          # Default build
-npm run build:prod     # Production build (optimized)
+npm run build:prod     # Production build against the tracked demo Firebase config
+npm run build:deploy   # Production build against firebase-config.build.json (used by deploy/CI)
 npm run build:docker   # Docker-specific build
 
 # Code quality
@@ -27,9 +28,10 @@ npm run prettier:fix   # Format code
 npm test               # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
 npm run test:scripts   # node:test suite for scripts/ (*.test.mjs)
 
-# Deployment
-npm run setup:firebase # Phase 1 - provision a Firebase project
-npm run deploy         # Build and deploy; reads .env.<project-id>
+# Deployment (one CLI: scripts/localess.mjs; these are aliases)
+npm run localess:setup # Provision Firebase infrastructure and record the project markers
+npm run localess:sync           # Regenerate local project files from remote state
+npm run localess:deploy         # Build and deploy to a Localess-managed project
 
 # Firebase Functions (from /functions directory)
 cd functions && npm run build   # Compile TypeScript functions
@@ -47,7 +49,7 @@ cd functions && npm run serve   # Run functions locally
 - **UI**: Angular Material + custom Spartan/Helm component library (`libs/ui/`)
 - **Styling**: Tailwind CSS 4 + SCSS
 - **Rich Text**: TipTap editor
-- **Functions**: Express.js on Firebase Functions (Europe-west6)
+- **Functions**: Express.js on Firebase Functions (region configurable, default `europe-west6`)
 
 ### Application Structure
 
@@ -87,7 +89,7 @@ Four NgRx Signal stores initialized at app startup:
 
 ### Firebase Services Pattern
 
-Domain services (in `shared/services/`) wrap Firestore CRUD operations. Functions are deployed to `europe-west6`. The public REST API is exposed via the `publicv1` Firebase Function rewrite at `/api/v1/**`.
+Domain services (in `shared/services/`) wrap Firestore CRUD operations. The Functions region is configurable (default `europe-west6`) and recorded on the GCP project as the `localess-region` label. The public REST API is exposed via the `publicv1` Firebase Function rewrite at `/api/v1/**`.
 
 ## Angular Code Conventions
 
@@ -143,8 +145,8 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Reusable filter toolbar (search + single/multi-select popovers) | [docs/filter-toolbar.md](docs/filter-toolbar.md) | `src/app/shared/components/filter-toolbar/`, `src/app/core/utils/filter-predicate-utils.service.ts`, any table/list filtering UI |
 | **Deployment & self-hosting** | | |
 | Deployment overview, prerequisites, automated vs manual | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
-| Phase 1 — Firebase provisioning (`npm run setup:firebase`) | [docs/deployment/firebase-setup.md](docs/deployment/firebase-setup.md) | `scripts/setup-firebase.mjs`, `scripts/setup/`, `firebase.json` `auth` block |
-| Phase 2 — `npm run deploy`, `.env.<project-id>`, `LOCALESS_*` build-time config | [docs/deployment/first-deploy.md](docs/deployment/first-deploy.md) | Deploys, `scripts/deploy.mjs`, `scripts/setup/config.mjs`, `scripts/setup/generate.mjs`, region wiring, login provider flags |
+| Phase 1 — Firebase provisioning (`npm run localess:setup`) | [docs/deployment/firebase-setup.md](docs/deployment/firebase-setup.md) | `scripts/localess.mjs`, `scripts/localess/`, `firebase.json` `auth` block |
+| Phase 2 — `npm run localess:deploy`, `.env.<project-id>`, `LOCALESS_*` build-time config | [docs/deployment/first-deploy.md](docs/deployment/first-deploy.md) | Deploys, `scripts/localess/commands/`, `scripts/localess/config.mjs`, `scripts/localess/generate.mjs`, `scripts/localess/defines.mjs`, region wiring, login provider flags |
 | Phase 3 — Pushing updates, targeted deploys, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Redeploys, `--only` targets, upgrade steps |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |

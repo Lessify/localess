@@ -2,8 +2,8 @@
  * One-command Firebase provisioning for a local Localess checkout.
  *
  * Usage:
- *   npm run setup:firebase -- --project <project-id> [options]
- *   npm run setup:firebase                              # creates a new project
+ *   npm run localess:setup -- --project <project-id> [options]
+ *   npm run localess:setup                              # creates a new project
  *
  * Options:
  *   --project <id>            Adopt an existing project instead of creating one
@@ -87,7 +87,7 @@ const REQUIRED_APIS = [
 export const FAILURE_HINT = 'Re-run when ready - completed steps are detected and skipped.';
 
 export const USAGE =
-  'Usage: localess setup [--project <id>] [--display-name <name>] [--region <region>] [--billing-account <id>] [--yes]';
+  'Usage: npm run localess:setup -- [--project <id>] [--display-name <name>] [--region <region>] [--billing-account <id>] [--yes]';
 
 /** Flags that used to exist, with the message to show instead of a bare parse error. */
 const REMOVED_FLAGS = {
@@ -352,7 +352,7 @@ async function ensureHostingSite(projectId) {
 /**
  * Stamps the project so any machine can tell it is a Localess installation.
  *
- * This is not best-effort any more: `npm run deploy` refuses a project without the label,
+ * This is not best-effort any more: `npm run localess:deploy` refuses a project without the label,
  * so a silent failure here would produce a fully provisioned, permanently undeployable
  * project. Failing loudly lets the operator grant the role and re-run - setup is idempotent.
  */
@@ -392,7 +392,7 @@ function summary(projectId) {
  */
 async function offerDeploy(projectId) {
   if (opts.yes || !(await confirmDeploy(projectId))) {
-    console.log(`\nDeploy when you are ready:\n\n  npm run deploy -- --project ${projectId}\n`);
+    console.log(`\nDeploy when you are ready:\n\n  npm run localess:deploy -- --project ${projectId}\n`);
     console.log(`Then create the first admin user at https://${projectId}.web.app/setup\n`);
     return;
   }
@@ -404,7 +404,7 @@ async function offerDeploy(projectId) {
       shell: process.platform === 'win32',
     });
     child.on('error', fail);
-    child.on('close', code => (code === 0 ? done() : fail(new Error(`npm run deploy exited with code ${code}`))));
+    child.on('close', code => (code === 0 ? done() : fail(new Error(`npm run localess:deploy exited with code ${code}`))));
   });
 
   console.log(`Create the first admin user at https://${projectId}.web.app/setup\n`);

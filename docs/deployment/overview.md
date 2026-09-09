@@ -9,9 +9,9 @@ frequencies, different prerequisites, and different failure modes:
 
 | Phase | How often | Command |
 |-------|-----------|---------|
-| [1. Provision Firebase](firebase-setup.md) | Once per environment | `npm run setup:firebase` |
-| [2. First deploy](first-deploy.md) | Once per environment | `npm run deploy` |
-| [3. Push updates](updates.md) | Every change | `npm run deploy -- --only ...` |
+| [1. Provision Firebase](firebase-setup.md) | Once per environment | `npm run localess:setup` |
+| [2. First deploy](first-deploy.md) | Once per environment | `npm run localess:deploy` |
+| [3. Push updates](updates.md) | Every change | `npm run localess:deploy -- --only ...` |
 
 Phase 1 creates cloud *resources*. Phases 2 and 3 push *code and configuration* into those
 resources. Phase 1 never has to be repeated, but it is safe to re-run — every step detects
@@ -23,9 +23,9 @@ All three are subcommands of one CLI (`scripts/localess.mjs`); the npm scripts a
 
 | Command | Owns |
 |---------|------|
-| `npm run setup:firebase` | Provisioning infrastructure and recording the project markers |
-| `npm run sync` | Regenerating the local project files from remote state |
-| `npm run deploy` | Building and shipping the application |
+| `npm run localess:setup` | Provisioning infrastructure and recording the project markers |
+| `npm run localess:sync` | Regenerating the local project files from remote state |
+| `npm run localess:deploy` | Building and shipping the application |
 
 **Setup never deploys.** It enables services and records what it did; applying configuration
 and pushing code is deploy's job. Setup offers to run a deploy when it finishes, but only if

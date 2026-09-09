@@ -25,7 +25,7 @@ import { UsageError } from '../usage.mjs';
 import { liveRegion, refreshRegionLabel, resolveProjectSelection, syncLocalFiles } from './sync.mjs';
 
 export const USAGE =
-  'Usage: localess deploy [--project <id>] [--only <targets>] [--skip-install] [--skip-build] [--dry-run] [--yes]';
+  'Usage: npm run localess:deploy -- [--project <id>] [--only <targets>] [--skip-install] [--skip-build] [--dry-run] [--yes]';
 
 /** Stamped onto the project after a successful deploy, so the label says what is live. */
 const VERSION = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).version;
@@ -107,7 +107,7 @@ export async function run(argv) {
 
   if (opts['dry-run']) {
     console.log(
-      `\n\x1b[1mDry run.\x1b[0m Would run:\n\n  npm run build:prod -- ${defineArgs.join(' ')}\n  npx firebase ${deployArgs.join(' ')}\n`,
+      `\n\x1b[1mDry run.\x1b[0m Would run:\n\n  npm run build:deploy -- ${defineArgs.join(' ')}\n  npx firebase ${deployArgs.join(' ')}\n`,
     );
     return;
   }
@@ -130,7 +130,7 @@ export async function run(argv) {
   if (opts['skip-build']) {
     log.skip('skipped (--skip-build)');
   } else {
-    await exec('npm', ['run', 'build:prod', '--', ...defineArgs], env);
+    await exec('npm', ['run', 'build:deploy', '--', ...defineArgs], env);
     log.done('dist/localess/browser');
   }
 

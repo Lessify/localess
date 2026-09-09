@@ -8,7 +8,7 @@ After [phase 1](firebase-setup.md) the cloud resources exist but are empty. This
 Angular app and pushes code, rules and configuration into them, then creates the first admin user.
 
 ```bash
-npm run deploy
+npm run localess:deploy
 ```
 
 That one command picks a project, checks it is one Localess manages, regenerates the local
@@ -19,7 +19,7 @@ Two things it will refuse to do:
 
 - **Deploy to a project without the `localess-managed` label.** A mistyped project id would
   otherwise install a CMS over something unrelated. If deploy refuses, adopt the project first
-  with `npm run setup:firebase -- --project <id>` — setup is idempotent and will not change
+  with `npm run localess:setup -- --project <id>` — setup is idempotent and will not change
   existing infrastructure.
 - **Deploy without asking.** It prints the project, region and targets and defaults to **no**.
   Pass `--yes` to skip the question, which requires `--project`.
@@ -64,9 +64,26 @@ so a stale one only means stale version metadata in the UI.
 
 ### 3. Build for production
 
+There are two production builds, and the difference matters:
+
+| Command | Firebase config it compiles against |
+|---------|-------------------------------------|
+| `npm run build:prod` | The tracked `demo-localess-dev` placeholder |
+| `npm run build:deploy` | `src/environments/firebase-config.build.json`, written by sync for the selected project |
+
 ```bash
-npm run build:prod
+npm run build:deploy
 ```
+
+`npm run localess:deploy` and `cloudbuild.yaml` both use `build:deploy`. Use `build:prod` only to check
+that a production build compiles — **its output points at the demo project and must not be
+deployed by hand.** `build:deploy` fails loudly if `firebase-config.build.json` is absent, so
+you cannot accidentally get a demo build out of it.
+
+The swap happens through the `deploy` configuration in `angular.json`, which is why that
+configuration also repeats the `environment.prod.ts` replacement: combining configurations is a
+shallow override, so `production,deploy` would otherwise drop it. A test in
+`scripts/localess/build-config.test.mjs` guards that.
 
 Output goes to `dist/localess/browser`, which is what `firebase.json` serves as `hosting.public`.
 
@@ -77,7 +94,7 @@ through Angular's `define` builder option. There is no generated source file: th
 are declared in `src/environments/build-constants.d.ts` and read directly by
 `environment.prod.ts`.
 
-Defaults live in the production configuration in `angular.json`, so a bare `npm run build:prod`
+Defaults live in the production configuration in `angular.json`, so a build with no overrides
 always works:
 
 | Constant | Default | Example |
@@ -88,15 +105,15 @@ always works:
 | `LOCALESS_LOGIN_MESSAGE` | empty — no message on the login page | `Welcome to Localess` |
 | `LOCALESS_UNSPLASH_ENABLE` | empty — Unsplash plugin disabled | `true` |
 
-`npm run deploy` overrides them per project, reading `.env.<project-id>` and passing each one
+`npm run localess:deploy` overrides them per project, reading `.env.<project-id>` and passing each one
 as a `--define` flag:
 
 ```bash
-npm run build:prod -- --define LOCALESS_REGION=\"us-central1\" --define LOCALESS_LOGIN_MESSAGE=\"Welcome\"
+npm run build:deploy -- --define LOCALESS_REGION=\"us-central1\" --define LOCALESS_LOGIN_MESSAGE=\"Welcome\"
 ```
 
 You do not normally do this by hand — put the values in `.env.<project-id>` and let
-`npm run deploy` assemble the flags. Because they are passed as arguments rather than read from
+`npm run localess:deploy` assemble the flags. Because they are passed as arguments rather than read from
 the environment, a stale exported shell variable cannot change what gets built.
 
 Note this is *not* `import.meta.env`. Angular uses Vite only for the dev server; production
@@ -120,7 +137,7 @@ config change in the console.
 ### 4. Deploy
 
 ```bash
-npm run deploy
+npm run localess:deploy
 ```
 
 Omit `--project` and you get the same annotated picker setup uses, minus the create option.
@@ -145,7 +162,7 @@ One target is excluded on purpose:
 |--------|--------------------|
 | `remoteconfig` | Would overwrite console-side edits on every deploy |
 
-Push it explicitly when you need to: `npm run deploy -- --only remoteconfig`.
+Push it explicitly when you need to: `npm run localess:deploy -- --only remoteconfig`.
 
 An unknown target is rejected before anything is touched, so a typo costs nothing.
 

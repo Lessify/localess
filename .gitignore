@@ -56,3 +56,14 @@ firebase-export-*
 
 #Superpowers
 /docs/superpowers
+
+# Localess per-project deployment config and generated artifacts
+.env
+.env.*
+firebase.*.json
+functions/.env
+functions/.env.*
+src/environments/env.ts
+# firebase-config.json is TRACKED - it holds the demo-localess-dev placeholder that dev,
+# Docker and unit tests build against. The per-project configs and the build input are not.
+src/environments/firebase-config.*.json

@@ -106,7 +106,7 @@ test('resolveProjectId lists the candidates when several configs exist', () => {
 });
 
 test('resolveProjectId points at setup when no config exists', () => {
-  assert.throws(() => resolveProjectId(scratch(), {}), /setup:firebase/);
+  assert.throws(() => resolveProjectId(scratch(), {}), /localess:setup/);
 });
 
 test('requireRegion falls back to europe-west6 when the key is absent', () => {

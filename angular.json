@@ -77,7 +77,26 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
+              "define": {
+                "LOCALESS_REGION": "'europe-west6'",
+                "LOCALESS_AUTH_CUSTOM_DOMAIN": "''",
+                "LOCALESS_AUTH_PROVIDERS": "''",
+                "LOCALESS_LOGIN_MESSAGE": "''",
+                "LOCALESS_UNSPLASH_ENABLE": "''"
+              },
               "outputHashing": "all"
+            },
+            "deploy": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                },
+                {
+                  "replace": "src/environments/firebase-config.json",
+                  "with": "src/environments/firebase-config.build.json"
+                }
+              ]
             },
             "development": {
               "optimization": false,

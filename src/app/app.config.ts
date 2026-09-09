@@ -63,13 +63,11 @@ export const appConfig: ApplicationConfig = {
       return storage;
     }),
     provideFunctions(() => {
-      const functions = getFunctions();
+      // getFunctions caches by region, so the region must be passed to the factory -
+      // mutating functions.region afterwards leaves the instance keyed as us-central1.
+      const functions = getFunctions(undefined, environment.functions.region);
       if (environment.emulator.enabled) {
         connectFunctionsEmulator(functions, 'localhost', 5001);
-        //functions.customDomain = 'http://localhost:4200/api'
-        functions.region = 'europe-west6';
-      } else {
-        functions.region = 'europe-west6';
       }
       return functions;
     }),

@@ -8,7 +8,7 @@ test('assertManaged accepts a marked project', () => {
 });
 
 test('assertManaged names the adopt command for an unmarked project', () => {
-  assert.throws(() => assertManaged('demo', { managed: false, hasLocalessWebApp: false }), /npm run setup:firebase -- --project demo/);
+  assert.throws(() => assertManaged('demo', { managed: false, hasLocalessWebApp: false }), /npm run localess:setup -- --project demo/);
 });
 
 test('assertManaged explains the weak signal when a Localess web app is present', () => {

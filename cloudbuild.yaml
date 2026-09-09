@@ -32,13 +32,12 @@ steps:
     args:
       - '-c'
       - |
-        echo "REGION=${_REGION}" > functions/.env
+        echo "REGION=${_REGION}" > functions/.env.$PROJECT_ID
+  # firebase-config.json is tracked and holds the demo placeholder; the build swaps in this
+  # file via the `deploy` configuration in angular.json, so nothing tracked is modified.
   - name: ghcr.io/lessify/firebase:edge
     id: 'Pull Firebase Apps SDK Config'
-    args: [ 'apps:sdkconfig', '--project=$PROJECT_ID', 'web', '--out=src/environments/firebase-config-tmp.json' ]
-  - name: 'node:24'
-    id: 'Copy Firebase Apps SDK Config'
-    args: [ 'mv', '-f', 'src/environments/firebase-config-tmp.json', 'src/environments/firebase-config.json' ]
+    args: [ 'apps:sdkconfig', '--project=$PROJECT_ID', 'web', '--out=src/environments/firebase-config.build.json' ]
   - name: 'node:24'
     id: 'version-generate'
     entrypoint: npm
@@ -52,16 +51,27 @@ steps:
     entrypoint: npm
     args:
       - 'run'
-      - 'build:prod'
-    env:
-      - 'LOCALESS_AUTH_CUSTOM_DOMAIN=${_LOCALESS_AUTH_CUSTOM_DOMAIN}'
-      - 'LOCALESS_AUTH_PROVIDERS=${_LOCALESS_AUTH_PROVIDERS}'
-      - 'LOCALESS_LOGIN_MESSAGE=${_LOCALESS_LOGIN_MESSAGE}'
-      - 'LOCALESS_UNSPLASH_ENABLE=${_LOCALESS_UNSPLASH_ENABLE}'
+      - 'build:deploy'
+      - '--'
+      - '--define'
+      - 'LOCALESS_REGION="${_REGION}"'
+      - '--define'
+      - 'LOCALESS_AUTH_CUSTOM_DOMAIN="${_LOCALESS_AUTH_CUSTOM_DOMAIN}"'
+      - '--define'
+      - 'LOCALESS_AUTH_PROVIDERS="${_LOCALESS_AUTH_PROVIDERS}"'
+      - '--define'
+      - 'LOCALESS_LOGIN_MESSAGE="${_LOCALESS_LOGIN_MESSAGE}"'
+      - '--define'
+      - 'LOCALESS_UNSPLASH_ENABLE="${_LOCALESS_UNSPLASH_ENABLE}"'
+  # apply the region to the /api/v1/** hosting rewrite without touching tracked firebase.json
+  - name: 'node:24'
+    id: 'generate-firebase-json'
+    entrypoint: node
+    args: [ 'scripts/generate-firebase-json.mjs', '$PROJECT_ID', '${_REGION}' ]
   # deploy to firebase
   - name: ghcr.io/lessify/firebase:edge
     id: 'firebase-deploy'
-    args: [ 'deploy', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore', '--force' ]
+    args: [ 'deploy', '--config=firebase.$PROJECT_ID.json', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore,auth', '--force' ]
 options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:

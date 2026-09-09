@@ -9,7 +9,7 @@
  * project files across the whole CLI.
  */
 import { parseArgs } from 'node:util';
-import { rename, rm } from 'node:fs/promises';
+import { copyFile, rename, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { cli } from '../firebase-cli.mjs';
@@ -22,7 +22,7 @@ import { UsageError } from '../usage.mjs';
 import { annotateProjects, assertManaged, identifyProject } from '../projects.mjs';
 import { chooseProject } from '../prompts.mjs';
 
-export const USAGE = 'Usage: localess sync [--project <id>]';
+export const USAGE = 'Usage: npm run localess:sync -- [--project <id>]';
 
 /**
  * The keys no remote lookup can answer. They are edited by hand after setup, so a sync
@@ -50,6 +50,19 @@ export function resolveConfigRecord({ projectId, region, existing }) {
   return { record, defaulted: existing ? [] : [...EDITABLE_KEYS] };
 }
 
+/** The gitignored per-project copy of the web SDK config. One per project, kept around. */
+export function sdkConfigPath(projectId) {
+  return resolve(ROOT, `src/environments/firebase-config.${projectId}.json`);
+}
+
+/**
+ * The fixed path `angular.json`'s `deploy` configuration swaps in for the tracked
+ * placeholder. Fixed because `fileReplacements` is static and has no CLI equivalent.
+ */
+export function buildSdkConfigPath() {
+  return resolve(ROOT, 'src/environments/firebase-config.build.json');
+}
+
 /** The live Firestore location. Immutable, so it outranks both the label and the config. */
 export async function liveRegion(projectId) {
   const databases = await cli.listFirestoreDatabases(projectId);
@@ -75,18 +88,24 @@ export async function syncLocalFiles(projectId, { region, log }) {
 
   const apps = await cli.listWebApps(projectId);
   if (!apps || apps.length === 0) {
-    throw new Error(`${projectId} has no web app. Run: npm run setup:firebase -- --project ${projectId}`);
+    throw new Error(`${projectId} has no web app. Run: npm run localess:setup -- --project ${projectId}`);
   }
 
   // `apps:sdkconfig --out` refuses to overwrite, so write beside the target and move it
   // into place. cloudbuild.yaml does the same for the same reason.
-  const target = resolve(ROOT, 'src/environments/firebase-config.json');
+  const target = sdkConfigPath(projectId);
   const temp = `${target}.tmp`;
   await rm(temp, { force: true });
   await cli.writeSdkConfig(projectId, apps[0].appId, temp);
   await rm(target, { force: true });
   await rename(temp, target);
-  log.done(`src/environments/firebase-config.json (app ${apps[0].appId})`);
+  log.done(`${rel(target)} (app ${apps[0].appId})`);
+
+  // The build reads one fixed path, because angular.json's fileReplacements is static and
+  // cannot be parameterised per project. Keeping the per-project file as well means
+  // switching projects never refetches.
+  await copyFile(target, buildSdkConfigPath());
+  log.done(rel(buildSdkConfigPath()));
 
   if (defaulted.length > 0) {
     log.warn(`reset to defaults: ${defaulted.join(', ')}`);
@@ -154,5 +173,5 @@ export async function run(argv) {
   await refreshRegionLabel(projectId, region, identity, log);
 
   console.log(`\n\x1b[1m\x1b[32m${projectId} is in sync.\x1b[0m\n`);
-  console.log(`  npm run deploy -- --project ${projectId}\n`);
+  console.log(`  npm run localess:deploy -- --project ${projectId}\n`);
 }

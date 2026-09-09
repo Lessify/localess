@@ -4,7 +4,7 @@
 
 ## Overview
 
-`npm run setup:firebase` provisions everything Localess needs in a Firebase/GCP project. It
+`npm run localess:setup` provisions everything Localess needs in a Firebase/GCP project. It
 replaces the manual console walkthrough (project creation, Identity Platform, Firestore, Storage,
 service accounts, API enablement) with one idempotent command.
 
@@ -12,8 +12,8 @@ service accounts, API enablement) with one idempotent command.
 npm install
 npx firebase login                                   # once per machine
 
-npm run setup:firebase -- --project my-localess      # adopt an existing project
-npm run setup:firebase                               # or pick from a list / create a new one
+npm run localess:setup -- --project my-localess      # adopt an existing project
+npm run localess:setup                               # or pick from a list / create a new one
 ```
 
 Every step is idempotent. If a run fails halfway, fix the cause and re-run — completed work is
@@ -55,13 +55,13 @@ explicitly with `--billing-account` rather than have one chosen for it.
 ### Re-running setup
 
 ```bash
-npm run setup:firebase -- --project <project-id>
+npm run localess:setup -- --project <project-id>
 ```
 
 Every step is idempotent, so this doubles as a health check: it reports what already exists
 and provisions anything missing.
 
-If all you want is to refresh the local files, use `npm run sync` instead — it regenerates
+If all you want is to refresh the local files, use `npm run localess:sync` instead — it regenerates
 them from the live project without re-checking any infrastructure. See
 [Keeping local files in sync](updates.md#keeping-local-files-in-sync).
 
@@ -93,9 +93,9 @@ In order:
 7.  Web app          register a "Localess" web app
 8.  Authentication   deploy the firebase.json `auth` block
 9.  Hosting          create the site (normally already present)
-10. Local config     write .env.<project-id>, firebase-config.json, functions/.env.<project-id>
+10. Local config     write .env.<project-id>, firebase-config.<project-id>.json, functions/.env.<project-id>
 11. Mark project     label it localess-managed with the version
-12. Offer deploy     ask whether to run `npm run deploy` (defaults to no)
+12. Offer deploy     ask whether to run `npm run localess:deploy` (defaults to no)
 ```
 
 ### Enabled APIs
@@ -131,7 +131,7 @@ This initializes **Identity Platform** (required by the blocking functions in
 Responsibility splits on a single line: **setup enables services, deploy applies
 configuration.** Setup enables `identitytoolkit.googleapis.com`; the provider itself is
 provisioned by `auth`, which is one of deploy's default targets. So Identity Platform is live
-after your first `npm run deploy`, not after setup.
+after your first `npm run localess:deploy`, not after setup.
 
 Localess provisions **email/password only**. Google and Microsoft sign-in are configured in the
 Firebase console — Google needs an OAuth support email, Microsoft an Azure app registration.
@@ -160,7 +160,7 @@ region recorded on the live project:
   Unrelated (unrelated-app)
 ```
 
-The same picker appears in `npm run sync` and `npm run deploy`, minus the `Create a new
+The same picker appears in `npm run localess:sync` and `npm run localess:deploy`, minus the `Create a new
 project...` entry — neither may create a project.
 
 Two independent signals combine:
@@ -220,7 +220,7 @@ Labels are visible in the Google Cloud console and survive a fresh clone, which 
 a web app named `Localess`, which is weaker — setup only names an app when it creates one, so a
 project that already had a web app never got it. Re-running setup adds the label.
 
-**Writing the labels is mandatory.** `npm run deploy` and `npm run sync` refuse a project that
+**Writing the labels is mandatory.** `npm run localess:deploy` and `npm run localess:sync` refuse a project that
 has no `localess-managed` label, so a silent failure here would leave a fully provisioned
 project that could never be deployed to. If setup cannot write them it stops and says so; the
 account needs `resourcemanager.projects.update`. Grant it and re-run — setup is idempotent.
@@ -237,19 +237,30 @@ from upstream never conflicts with your deployment.
 | File | Contents |
 |------|----------|
 | `.env.<project-id>` | Your deployment decisions. The only file you edit by hand. |
-| `src/environments/firebase-config.json` | Web SDK config, fetched with `apps:sdkconfig` |
+| `src/environments/firebase-config.<project-id>.json` | Web SDK config, fetched with `apps:sdkconfig` |
+| `src/environments/firebase-config.build.json` | A copy of the above for the project being built |
 | `functions/.env.<project-id>` | `REGION=<region>`, read by `functions/src/index.ts` |
 | `firebase.<project-id>.json` | `firebase.json` with the `/api/v1/**` rewrite region applied |
 
-All four are written by the same code path, shared by `setup`, `sync` and `deploy`, so they
+All of them are written by the same code path, shared by `setup`, `sync` and `deploy`, so they
 cannot drift apart depending on which command you ran.
+
+`src/environments/firebase-config.json` — without a project id — is **tracked**, and holds a
+`demo-localess-dev` placeholder. That is what `npm start`, `npm run build:docker`, `npm test`
+and a bare `npm run build:prod` compile against, and a `demo-` prefixed project id is what makes
+the Firebase emulators run fully offline. `npm run build:deploy` swaps in
+`firebase-config.build.json` through the `deploy` configuration in `angular.json`, so a real
+project's config is never written over a tracked file.
+
+> The tracked placeholder contains an `apiKey`. That is not a leak — Firebase web API keys are
+> public by design and ship in every browser bundle. It identifies a throwaway demo project.
 
 The filename of `.env.<project-id>` is authoritative for the project id. Keep as many as
 you have projects and select between them with `--project`.
 
-`npm install` writes a placeholder `firebase-config.json` if it is missing, so a fresh clone
-builds before you have ever deployed. There is no generated `env.ts` any more — the
-`LOCALESS_*` settings are compile-time constants; see
+A fresh clone builds with no generated files at all: the placeholder is tracked, and the
+`LOCALESS_*` settings are compile-time constants defaulted in `angular.json`. There is no
+`postinstall` step and no generated `env.ts`; see
 [Build-time configuration](first-deploy.md#build-time-configuration).
 
 The Functions region goes in `functions/.env.<project-id>`, not `functions/.env`.
@@ -275,7 +286,7 @@ The modules under `scripts/`:
 | `scripts/localess.mjs` | Entry point — subcommand dispatch, usage, error and abort handling |
 | `scripts/localess/commands/setup.mjs` | Provisioning: the infrastructure steps and the markers |
 | `scripts/localess/commands/deploy.mjs` | Build and push, behind the marker gate |
-| `scripts/localess/commands/sync.mjs` | The single writer of the four local project files |
+| `scripts/localess/commands/sync.mjs` | The single writer of the local project files |
 | `scripts/localess/projects.mjs` | Project identification, annotation and the deploy gate |
 | `scripts/localess/firebase-cli.mjs` | Documented `firebase <command>` calls, spawned as child processes |
 | `scripts/localess/firebase-gaps.mjs` | The steps that have **no** CLI command |
@@ -349,10 +360,10 @@ The Firebase CLI intermittently aborts while tearing down its event loop, *after
 already completed its work. Exit code `3221226505` (`0xC0000409`). Because every command used here
 is idempotent, `firebase-cli.mjs` retries this specific code up to three times.
 
-### `firebase-config.json already exists`
+### `firebase-config.<project-id>.json already exists`
 
 Handled: `apps:sdkconfig --out` refuses to overwrite, so the script writes a temp file and renames
-it over the target — the same approach `cloudbuild.yaml` uses.
+it over the target.
 
 ### A freshly created project is "not found"
 
