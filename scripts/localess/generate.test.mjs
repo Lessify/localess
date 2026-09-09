@@ -112,3 +112,10 @@ test('writeFunctionsEnv never touches functions/.env or another project file', (
   assert.equal(readFileSync(join(root, 'functions', '.env'), 'utf8'), '# secrets\nDEEPL_API_KEY=abc\n');
   assert.equal(readFileSync(join(root, 'functions', '.env.other'), 'utf8'), 'REGION=us-east1\n');
 });
+
+test('the tracked firebase.json is never written', () => {
+  // Setup used to add a googleSignIn provider here when --google-support-email was passed,
+  // which dirtied the working tree and stored a per-installation email in a committed file.
+  const real = JSON.parse(readFileSync(join(import.meta.dirname, '..', '..', 'firebase.json'), 'utf8'));
+  assert.deepEqual(real.auth, { providers: { emailPassword: true } });
+});

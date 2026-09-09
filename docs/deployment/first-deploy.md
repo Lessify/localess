@@ -11,9 +11,22 @@ Angular app and pushes code, rules and configuration into them, then creates the
 npm run deploy
 ```
 
-That one command reads `.env.<project-id>`, fetches the SDK config from the live project,
-generates `functions/.env.<project-id>` and `firebase.<project-id>.json`, installs, builds and deploys.
-The rest of this page explains what it does and how to configure it.
+That one command picks a project, checks it is one Localess manages, regenerates the local
+project files from the live project, installs, builds and deploys. The rest of this page
+explains what it does and how to configure it.
+
+Two things it will refuse to do:
+
+- **Deploy to a project without the `localess-managed` label.** A mistyped project id would
+  otherwise install a CMS over something unrelated. If deploy refuses, adopt the project first
+  with `npm run setup:firebase -- --project <id>` — setup is idempotent and will not change
+  existing infrastructure.
+- **Deploy without asking.** It prints the project, region and targets and defaults to **no**.
+  Pass `--yes` to skip the question, which requires `--project`.
+
+You do **not** need a local `.env.<project-id>` to deploy. If one is missing it is regenerated
+from the live project, and the four hand-edited settings start empty with a warning naming
+them.
 
 ---
 
@@ -59,40 +72,46 @@ Output goes to `dist/localess/browser`, which is what `firebase.json` serves as 
 
 ### Build-time configuration
 
-`build:prod` first runs `prebuild:prod`, which is
-`ng g @lessify/angular-tools:set-env --prefix LOCALESS`. That regenerates
-`src/environments/env.ts` from `LOCALESS_*` environment variables, and `environment.prod.ts` reads
-it.
+The `LOCALESS_*` settings are **compile-time constants**, inlined into the bundle by esbuild
+through Angular's `define` builder option. There is no generated source file: the identifiers
+are declared in `src/environments/build-constants.d.ts` and read directly by
+`environment.prod.ts`.
 
-**These values are baked into the bundle at build time.** Unset means empty:
+Defaults live in the production configuration in `angular.json`, so a bare `npm run build:prod`
+always works:
 
-| Variable | Effect when unset | Example |
-|----------|-------------------|---------|
-| `LOCALESS_REGION` | Cloud Functions region; falls back to `europe-west6` | `us-central1` |
-| `LOCALESS_AUTH_PROVIDERS` | Login page shows Email/Password only | `GOOGLE,MICROSOFT` |
-| `LOCALESS_AUTH_CUSTOM_DOMAIN` | No custom auth domain restriction | `auth.example.com` |
-| `LOCALESS_LOGIN_MESSAGE` | No message on the login page | `Welcome to Localess` |
-| `LOCALESS_UNSPLASH_ENABLE` | Unsplash plugin disabled | `true` |
+| Constant | Default | Example |
+|----------|---------|---------|
+| `LOCALESS_REGION` | `europe-west6` | `us-central1` |
+| `LOCALESS_AUTH_PROVIDERS` | empty — login page shows Email/Password only | `GOOGLE,MICROSOFT` |
+| `LOCALESS_AUTH_CUSTOM_DOMAIN` | empty — no custom auth domain restriction | `auth.example.com` |
+| `LOCALESS_LOGIN_MESSAGE` | empty — no message on the login page | `Welcome to Localess` |
+| `LOCALESS_UNSPLASH_ENABLE` | empty — Unsplash plugin disabled | `true` |
+
+`npm run deploy` overrides them per project, reading `.env.<project-id>` and passing each one
+as a `--define` flag:
 
 ```bash
-LOCALESS_AUTH_PROVIDERS=GOOGLE \
-LOCALESS_LOGIN_MESSAGE="Welcome" \
-LOCALESS_UNSPLASH_ENABLE=true \
-npm run build:prod
+npm run build:prod -- --define LOCALESS_REGION=\"us-central1\" --define LOCALESS_LOGIN_MESSAGE=\"Welcome\"
 ```
 
-You do not normally set these by hand — put them in `.env.<project-id>` and `npm run deploy`
-loads them for you. The config file wins over anything already exported in your shell, so a
-stale variable cannot silently change what gets built.
+You do not normally do this by hand — put the values in `.env.<project-id>` and let
+`npm run deploy` assemble the flags. Because they are passed as arguments rather than read from
+the environment, a stale exported shell variable cannot change what gets built.
+
+Note this is *not* `import.meta.env`. Angular uses Vite only for the dev server; production
+builds go through esbuild, which has no `.env` file support. `define` is the Angular-native
+equivalent, and it constant-folds — `LOCALESS_UNSPLASH_ENABLE === 'true'` is resolved to a
+literal at build time and the dead branch is dropped.
 
 > `LOCALESS_REGION` sets the Functions region in four places at once: `functions/.env.<project-id>`, the
 > `/api/v1/**` Hosting rewrite, the Angular client's callable region, and the Cloud Build
 > `_REGION` substitution. Firestore and Storage must be in the same region — Localess uses
 > gen-2 triggers, which have to be co-located with the resource they listen to.
 
-> This is the most common first-deploy surprise. Provisioning Google sign-in in phase 1 enables it
-> in the *backend*; the button only appears if `LOCALESS_AUTH_PROVIDERS` includes `GOOGLE` at build
-> time. `src/app/auth/login/login.component.ts` derives `isGoogleAuthEnabled` /
+> This is the most common first-deploy surprise. Enabling Google sign-in in the Firebase console
+> enables it in the *backend*; the button only appears if `LOCALESS_AUTH_PROVIDERS` includes
+> `GOOGLE` at build time. `src/app/auth/login/login.component.ts` derives `isGoogleAuthEnabled` /
 > `isMicrosoftAuthEnabled` from that string.
 
 Because these are build-time values, changing them requires a rebuild and redeploy — not just a
@@ -104,28 +123,31 @@ config change in the console.
 npm run deploy
 ```
 
-Reads `.env.<project-id>`, fetches the SDK config from the live project, generates
-`functions/.env.<project-id>` and `firebase.<project-id>.json`, builds, and deploys. With several
-projects configured, pass `--project <id>`.
+Omit `--project` and you get the same annotated picker setup uses, minus the create option.
 
 | Flag | Effect |
 |------|--------|
-| `--project <id>` | Choose between configured projects |
+| `--project <id>` | Skip the picker |
 | `--only <targets>` | Override the default targets (see below) |
 | `--skip-install` | Reuse the installed `node_modules` |
 | `--skip-build` | Reuse `dist/localess/browser` |
-| `--dry-run` | Generate the artifacts, print the deploy command, stop |
+| `--dry-run` | Regenerate the local files, print the build and deploy commands, stop |
+| `--yes` | Skip the confirmation. Requires `--project`. |
 
-By default it pushes `hosting,functions,storage,firestore` — the same set as
-`cloudbuild.yaml`, so a local deploy and a CI deploy do the same thing. Two targets are
-excluded on purpose:
+By default it pushes `hosting,functions,storage,firestore,auth` — the same set as
+`cloudbuild.yaml`, so a local deploy and a CI deploy do the same thing. `auth` is included
+because setup no longer provisions Identity Platform: setup enables the service, deploy applies
+the configuration.
+
+One target is excluded on purpose:
 
 | Target | Why it is excluded |
 |--------|--------------------|
-| `auth` | Provisioning, owned by `npm run setup:firebase` |
 | `remoteconfig` | Would overwrite console-side edits on every deploy |
 
-Push either explicitly when you need to: `npm run deploy -- --only remoteconfig`.
+Push it explicitly when you need to: `npm run deploy -- --only remoteconfig`.
+
+An unknown target is rejected before anything is touched, so a typo costs nothing.
 
 Deploy never modifies a tracked file: it runs against a generated
 `firebase.<project-id>.json` via the CLI's `--config` flag, so `git status` stays clean.

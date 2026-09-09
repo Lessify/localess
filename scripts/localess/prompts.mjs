@@ -46,7 +46,7 @@ export function validateProjectId(value) {
  * effect). It also stops a filtered search from selecting "create" when the user types a
  * project name and hits Enter.
  */
-export function toProjectChoices(projects, annotations = {}) {
+export function toProjectChoices(projects, annotations = {}, { allowCreate = true } = {}) {
   const existing = (Array.isArray(projects) ? projects : [])
     // `projects:list` also returns projects that are pending deletion; they cannot be used.
     .filter(project => project?.projectId && (project.state ?? 'ACTIVE') === 'ACTIVE')
@@ -60,7 +60,7 @@ export function toProjectChoices(projects, annotations = {}) {
     .sort((a, b) => (a.priority === b.priority ? a.value.localeCompare(b.value) : a.priority ? -1 : 1))
     .map(({ name, value }) => ({ name, value }));
 
-  return [...existing, { name: 'Create a new project...', value: CREATE_NEW }];
+  return allowCreate ? [...existing, { name: 'Create a new project...', value: CREATE_NEW }] : existing;
 }
 
 /** Substring match on the rendered label. "Create new" always stays reachable. */
@@ -82,11 +82,14 @@ export function toBillingChoices(accounts) {
  * Asks which project to set up. Returns a project id, or `CREATE_NEW`.
  * Skips straight to creation when the account has no projects yet.
  */
-export async function chooseProject(projects, annotations, context) {
-  const choices = toProjectChoices(projects, annotations);
-  const existingCount = choices.length - 1;
+export async function chooseProject(projects, annotations, context, { allowCreate = true } = {}) {
+  const choices = toProjectChoices(projects, annotations, { allowCreate });
+  const existingCount = allowCreate ? choices.length - 1 : choices.length;
 
-  if (existingCount === 0) return CREATE_NEW;
+  if (existingCount === 0) {
+    if (allowCreate) return CREATE_NEW;
+    throw new Error('No accessible Firebase projects were found.');
+  }
 
   const message = 'Select a Firebase project';
   if (!shouldFilter(existingCount)) {
@@ -151,6 +154,14 @@ export async function chooseRegion(context) {
  */
 export async function confirmProvision(projectId, context) {
   return confirm({ message: `Provision Localess into ${projectId} anyway?`, default: false }, context);
+}
+
+/**
+ * Confirms a deploy about to happen, spelling out what it will touch. Defaults to no: this
+ * pushes code to a live project, and the targets are easy to get wrong.
+ */
+export async function confirmDeployPlan({ projectId, region, targets }, context) {
+  return confirm({ message: `Deploy to ${projectId} (${region}) - ${targets.join(', ')}?`, default: false }, context);
 }
 
 /**

@@ -29,7 +29,6 @@ detected and skipped.
 | `--display-name <name>` | `Localess` | Display name when creating a project. |
 | `--region <region>` | existing Firestore location, else **asked** | Region for **Firestore, Storage and Cloud Functions**. Partly immutable — see below. |
 | `--billing-account <id>` | — | Billing account to link. Required with `--yes`. |
-| `--google-support-email <email>` | — | Also provision Google sign-in. |
 | `--yes` | `false` | Never prompt; fail instead. For automation - requires `--project` and `--billing-account`. |
 
 One region drives all three services. Localess uses gen-2 Cloud Functions triggers, which must be
@@ -43,7 +42,7 @@ produces functions that deploy but never fire.
 
 Omit `--region` and setup asks for it — zone first (Europe, United States, Asia…), then the
 exact region within that zone. Only the 40 regions where **all three** services exist are
-offered; the list lives in `scripts/setup/regions.mjs`. The Firestore multi-regions (`eur3`,
+offered; the list lives in `scripts/localess/regions.mjs`. The Firestore multi-regions (`eur3`,
 `nam5`) are deliberately excluded — Cloud Functions has no multi-region equivalent to pair
 them with.
 
@@ -59,9 +58,12 @@ explicitly with `--billing-account` rather than have one chosen for it.
 npm run setup:firebase -- --project <project-id>
 ```
 
-Every step is idempotent, so this doubles as a health check: it reports what already exists,
-provisions anything missing, and regenerates `.env.<project-id>`, `functions/.env.<project-id>`
-and `src/environments/firebase-config.json` from the live project.
+Every step is idempotent, so this doubles as a health check: it reports what already exists
+and provisions anything missing.
+
+If all you want is to refresh the local files, use `npm run sync` instead — it regenerates
+them from the live project without re-checking any infrastructure. See
+[Keeping local files in sync](updates.md#keeping-local-files-in-sync).
 
 Setup provisions infrastructure only — it never ships the application. It finishes by asking
 whether to deploy, defaulting to **no**; `--yes` skips the question and does not deploy.
@@ -72,8 +74,8 @@ authoritative answer. Passing a `--region` that disagrees with it is an error ra
 silent rewrite — otherwise re-running setup on a project provisioned outside Europe would
 quietly point Functions away from its own data.
 
-Re-running also redeploys the `auth` block from `firebase.json`, which is how sign-in providers
-stay in sync.
+Setup does not apply the `auth` block from `firebase.json` — that happens on every deploy.
+See [Authentication](#authentication).
 
 ---
 
@@ -112,7 +114,7 @@ pubsub                storage                translate
 
 ### Authentication
 
-`firebase.json` carries an `auth` block, which `firebase deploy --only auth` sends to Google's
+`firebase.json` carries an `auth` block, which the `auth` deploy target sends to Google's
 provisioning API:
 
 ```json
@@ -124,15 +126,20 @@ provisioning API:
 ```
 
 This initializes **Identity Platform** (required by the blocking functions in
-`functions/src/users.ts`) and enables Email/Password. Passing `--google-support-email` adds a
-`googleSignIn` entry to `firebase.json` before deploying; Google generates the OAuth client, so no
-console visit is needed.
+`functions/src/users.ts`) and enables Email/Password.
 
-> Enabling the provider is only half of Google sign-in. The login UI reads
+Responsibility splits on a single line: **setup enables services, deploy applies
+configuration.** Setup enables `identitytoolkit.googleapis.com`; the provider itself is
+provisioned by `auth`, which is one of deploy's default targets. So Identity Platform is live
+after your first `npm run deploy`, not after setup.
+
+Localess provisions **email/password only**. Google and Microsoft sign-in are configured in the
+Firebase console — Google needs an OAuth support email, Microsoft an Azure app registration.
+
+> Enabling a provider in the console is only half the job. The login UI reads
 > `environment.auth.providers` (`src/app/auth/login/login.component.ts`), which is baked in at
-> build time from `LOCALESS_AUTH_PROVIDERS`. See [First Deploy](first-deploy.md#build-time-configuration).
-
-Microsoft sign-in needs an Azure app registration and must be configured in the Firebase console.
+> build time from `LOCALESS_AUTH_PROVIDERS` in `.env.<project-id>`. See
+> [First Deploy](first-deploy.md#build-time-configuration).
 
 ### Interactive prompts
 
@@ -143,22 +150,25 @@ Run without `--project` and setup lists every project your Firebase account can 
 `Create a new project...` entry at the end of the list. Above twelve projects the list becomes
 filterable — start typing to narrow it.
 
-Projects Localess already knows about are sorted to the top and annotated with the version
-that provisioned them:
+Projects Localess already knows about are sorted to the top and annotated with the version and
+region recorded on the live project:
 
 ```
-❯ Localess Production (localess-prod)  — local config · Localess 4.0.0
-  Localess Staging (localess-staging)  — Localess 4.0.0
+❯ Localess Production (localess-prod)  — local config · Localess 4.0.0 · europe-west6
+  Localess Staging (localess-staging)  — Localess 4.0.0 · europe-west6
   Stale (stale-config)                 — local config · no Localess marker
   Unrelated (unrelated-app)
 ```
+
+The same picker appears in `npm run sync` and `npm run deploy`, minus the `Create a new
+project...` entry — neither may create a project.
 
 Two independent signals combine:
 
 | Annotation | Meaning |
 |------------|---------|
 | `local config` | A `.env.<project-id>` for it exists on **this machine** |
-| `Localess <version>` | The live project carries the `localess-version` label |
+| `Localess <version> · <region>` | The live project carries the `localess-version` and `localess-region` labels |
 | `Localess web app` | No label, but a web app named `Localess` exists (older projects) |
 | `no Localess marker` | Configured here, but the live project shows no sign of Localess |
 | `could not verify` | The remote lookup failed |
@@ -199,34 +209,48 @@ Setup labels the project it provisions, using the same mechanism Firebase uses f
 | Label | Value |
 |-------|-------|
 | `localess-managed` | `true` |
-| `localess-version` | the Localess version that provisioned it, e.g. `4-0-0` |
+| `localess-version` | the Localess version that is live, e.g. `4-0-0` |
+| `localess-region` | the region Firestore, Storage and Functions share, e.g. `europe-west6` |
+
+Setup writes all three. Deploy refreshes `localess-version` after a successful push, so the
+label answers "what is running", not "what provisioned this".
 
 Labels are visible in the Google Cloud console and survive a fresh clone, which local
 `.env.<project-id>` files do not. Older projects predate the label and are recognised instead by
 a web app named `Localess`, which is weaker — setup only names an app when it creates one, so a
 project that already had a web app never got it. Re-running setup adds the label.
 
-Setting labels is best-effort: if it fails, setup still succeeds and you get the confirmation
-prompt next time.
+**Writing the labels is mandatory.** `npm run deploy` and `npm run sync` refuse a project that
+has no `localess-managed` label, so a silent failure here would leave a fully provisioned
+project that could never be deployed to. If setup cannot write them it stops and says so; the
+account needs `resourcemanager.projects.update`. Grant it and re-run — setup is idempotent.
+
+The `localess-region` label is a display hint for the picker. The live Firestore location
+always outranks it, because that location is immutable and the label is not; when they
+disagree, sync and deploy correct the label.
 
 ### Generated files
 
 All of these are gitignored. Setup and deploy never modify a tracked file, so `git pull`
 from upstream never conflicts with your deployment.
 
-| File | Written by | Contents |
-|------|-----------|----------|
-| `.env.<project-id>` | setup | Your deployment decisions. The only file you edit by hand. |
-| `src/environments/firebase-config.json` | deploy | Web SDK config, fetched with `apps:sdkconfig` |
-| `src/environments/env.ts` | build | Generated from `LOCALESS_*` by `prebuild:prod` |
-| `functions/.env.<project-id>` | setup + deploy | `REGION=<region>`, read by `functions/src/index.ts` |
-| `firebase.<project-id>.json` | deploy | `firebase.json` with the `/api/v1/**` rewrite region applied |
+| File | Contents |
+|------|----------|
+| `.env.<project-id>` | Your deployment decisions. The only file you edit by hand. |
+| `src/environments/firebase-config.json` | Web SDK config, fetched with `apps:sdkconfig` |
+| `functions/.env.<project-id>` | `REGION=<region>`, read by `functions/src/index.ts` |
+| `firebase.<project-id>.json` | `firebase.json` with the `/api/v1/**` rewrite region applied |
+
+All four are written by the same code path, shared by `setup`, `sync` and `deploy`, so they
+cannot drift apart depending on which command you ran.
 
 The filename of `.env.<project-id>` is authoritative for the project id. Keep as many as
 you have projects and select between them with `--project`.
 
-`npm install` writes placeholder versions of `firebase-config.json` and `env.ts` if they
-are missing, so a fresh clone builds before you have ever deployed.
+`npm install` writes a placeholder `firebase-config.json` if it is missing, so a fresh clone
+builds before you have ever deployed. There is no generated `env.ts` any more — the
+`LOCALESS_*` settings are compile-time constants; see
+[Build-time configuration](first-deploy.md#build-time-configuration).
 
 The Functions region goes in `functions/.env.<project-id>`, not `functions/.env`.
 firebase-tools loads `.env` first and then `.env.<project-id>`, so the per-project file
@@ -248,16 +272,22 @@ The modules under `scripts/`:
 
 | File | Responsibility |
 |------|----------------|
-| `scripts/setup-firebase.mjs` | Orchestrator — argument parsing, the 10 steps, reporting |
-| `scripts/setup/firebase-cli.mjs` | Documented `firebase <command>` calls, spawned as child processes |
-| `scripts/setup/firebase-gaps.mjs` | The steps that have **no** CLI command |
-| `scripts/setup/firebase-tools.mjs` | Locates the global firebase-tools, enforces the minimum version |
-| `scripts/setup/config.mjs` | The `.env.<project-id>` format and project resolution |
-| `scripts/setup/generate.mjs` | Turns a config into `firebase.<id>.json` and `functions/.env.<id>` |
-| `scripts/setup/prompts.mjs` | Interactive pickers and input validation |
-| `scripts/setup/regions.mjs` | Regions where Firestore, Storage and Functions all exist |
-| `scripts/setup/markers.mjs` | How a project is recognised as Localess-managed |
-| `scripts/deploy.mjs` | The `npm run deploy` orchestrator |
+| `scripts/localess.mjs` | Entry point — subcommand dispatch, usage, error and abort handling |
+| `scripts/localess/commands/setup.mjs` | Provisioning: the infrastructure steps and the markers |
+| `scripts/localess/commands/deploy.mjs` | Build and push, behind the marker gate |
+| `scripts/localess/commands/sync.mjs` | The single writer of the four local project files |
+| `scripts/localess/projects.mjs` | Project identification, annotation and the deploy gate |
+| `scripts/localess/firebase-cli.mjs` | Documented `firebase <command>` calls, spawned as child processes |
+| `scripts/localess/firebase-gaps.mjs` | The steps that have **no** CLI command |
+| `scripts/localess/firebase-tools.mjs` | Locates the global firebase-tools, enforces the minimum version |
+| `scripts/localess/config.mjs` | The `.env.<project-id>` format and project resolution |
+| `scripts/localess/generate.mjs` | Turns a config into `firebase.<id>.json` and `functions/.env.<id>` |
+| `scripts/localess/defines.mjs` | Turns a config into `--define` flags for the Angular build |
+| `scripts/localess/deploy-plan.mjs` | Deploy targets and the `firebase deploy` argv |
+| `scripts/localess/prompts.mjs` | Interactive pickers and input validation |
+| `scripts/localess/regions.mjs` | Regions where Firestore, Storage and Functions all exist |
+| `scripts/localess/markers.mjs` | How a project is recognised as Localess-managed |
+| `scripts/localess/log.mjs` | The step logger shared by all three commands |
 
 ### Why `firebase-gaps.mjs` exists
 

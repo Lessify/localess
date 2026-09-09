@@ -17,6 +17,7 @@
 
 export const MANAGED_LABEL = 'localess-managed';
 export const VERSION_LABEL = 'localess-version';
+export const REGION_LABEL = 'localess-region';
 
 /** The display name setup gives a web app it creates. Also the weak fallback marker. */
 export const WEB_APP_NAME = 'Localess';
@@ -32,8 +33,17 @@ export function toLabelValue(value) {
     .slice(0, MAX_LABEL_LENGTH);
 }
 
-export function buildMarkerLabels(version) {
-  return { [MANAGED_LABEL]: 'true', [VERSION_LABEL]: toLabelValue(version) };
+/**
+ * The labels that mark a project as Localess.
+ *
+ * `region` is optional because markers written by earlier versions do not carry one. An
+ * absent label means "unknown", never "the default" - the live Firestore location is the
+ * authoritative answer, and guessing here would let a stale label masquerade as fact.
+ */
+export function buildMarkerLabels(version, region) {
+  const labels = { [MANAGED_LABEL]: 'true', [VERSION_LABEL]: toLabelValue(version) };
+  if (region) labels[REGION_LABEL] = toLabelValue(region);
+  return labels;
 }
 
 export function hasMarker(labels) {
@@ -44,6 +54,11 @@ export function hasMarker(labels) {
 export function markerVersion(labels) {
   const raw = labels?.[VERSION_LABEL];
   return raw ? raw.replace(/-/g, '.') : null;
+}
+
+/** The region the marker recorded, or null. Region ids are already label-safe. */
+export function markerRegion(labels) {
+  return labels?.[REGION_LABEL] ?? null;
 }
 
 /**
@@ -61,8 +76,10 @@ export function describeProject({ configuredLocally, remote }) {
     parts.push('could not verify');
   } else if (remote?.reachable) {
     const version = markerVersion(remote.labels);
+    const region = markerRegion(remote.labels);
     if (hasMarker(remote.labels)) {
       parts.push(version ? `Localess ${version}` : 'Localess');
+      if (region) parts.push(region);
     } else if (remote.hasLocalessWebApp) {
       parts.push('Localess web app');
     } else if (configuredLocally) {

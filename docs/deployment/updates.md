@@ -31,6 +31,7 @@ A full deploy rebuilds every function image, which is the slow part. Narrow it t
 | Firestore indexes only | `npm run deploy -- --only firestore:indexes` |
 | Remote Config only | `npm run deploy -- --only remoteconfig` |
 | Everything except auth | `npm run deploy -- --only hosting,functions,firestore,storage` |
+| Everything (the default) | `npm run deploy` |
 
 `npm run deploy` always rebuilds before uploading, so `--only hosting` is safe. Pass
 `--skip-build` only when you deliberately want to upload whatever is already in
@@ -38,8 +39,43 @@ A full deploy rebuilds every function image, which is the slow part. Narrow it t
 
 ### About the `auth` target
 
-Because `firebase.json` contains an `auth` block, a bare `firebase deploy` includes it and logs
-"Enabling auth providers" every time. This is idempotent and harmless. Use `--only` to skip it.
+`auth` is part of every deploy by default. It sends the `auth` block from `firebase.json` to
+Google's provisioning API, which initializes Identity Platform and enables Email/Password.
+
+This is deliberate: `npm run setup:firebase` provisions infrastructure but never deploys, so
+the provider would otherwise never be applied. It is idempotent — you will see "Enabling auth
+providers" on every deploy, which is harmless. Skip it with `--only` if you want a faster push.
+
+Localess provisions **email/password only**. Google and Microsoft sign-in are configured in the
+Firebase console, and the login page will only show their buttons if `LOCALESS_AUTH_PROVIDERS`
+in `.env.<project-id>` lists them at build time.
+
+---
+
+## Keeping local files in sync
+
+The remote project is the source of truth; the four local project files are a cache of it.
+When they drift — someone changed something in the console, or you are on a fresh clone —
+regenerate them without re-running provisioning:
+
+```bash
+npm run sync
+```
+
+It picks a project from the same annotated list `deploy` uses, checks the `localess-managed`
+label, and rewrites `.env.<project-id>`, `functions/.env.<project-id>`,
+`firebase.<project-id>.json` and `src/environments/firebase-config.json` from the live project.
+It also corrects the `localess-region` label if the immutable Firestore location has drifted
+from it.
+
+**It preserves your hand-edited settings.** `LOCALESS_AUTH_CUSTOM_DOMAIN`,
+`LOCALESS_AUTH_PROVIDERS`, `LOCALESS_LOGIN_MESSAGE` and `LOCALESS_UNSPLASH_ENABLE` cannot be
+read back from the project, so an existing `.env.<project-id>` keeps whatever it already has.
+Only when there is no local config at all do they start empty — and then sync says so, naming
+the keys it defaulted.
+
+`npm run deploy` runs the same step before it builds, so a deploy can never quietly reset a
+setting either.
 
 ---
 

@@ -125,3 +125,12 @@ test('toProjectChoices does not leak the priority flag into the choice', () => {
   const choice = toProjectChoices(projects, { 'alpha-app': { priority: true } })[0];
   assert.deepEqual(Object.keys(choice).sort(), ['name', 'value']);
 });
+
+test('toProjectChoices omits create-new when creation is not allowed', () => {
+  const choices = toProjectChoices(projects, {}, { allowCreate: false });
+  assert.equal(choices.length, 2);
+  assert.equal(
+    choices.some(choice => choice.value === CREATE_NEW),
+    false,
+  );
+});

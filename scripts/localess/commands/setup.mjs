@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * One-command Firebase provisioning for a local Localess checkout.
  *
@@ -17,7 +16,6 @@
  *                             Firestore database the existing location wins; passing a
  *                             different --region is an error.
  *   --billing-account <id>    Billing account to link when Blaze is not active
- *   --google-support-email    Enables Google sign-in with this support email
  *   --yes                     Never prompt; fail instead
  *
  * Every step is idempotent: re-run after a failure and completed work is
@@ -26,12 +24,10 @@
 import { parseArgs } from 'node:util';
 import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
-import { cli } from './setup/firebase-cli.mjs';
-import { DEFAULT_REGION, listProjectConfigs, writeProjectConfig } from './setup/config.mjs';
-import { writeFunctionsEnv } from './setup/generate.mjs';
+import { cli } from '../firebase-cli.mjs';
+import { DEFAULT_REGION } from '../config.mjs';
 import {
   CREATE_NEW,
   askNewProject,
@@ -40,10 +36,9 @@ import {
   chooseRegion,
   confirmDeploy,
   confirmProvision,
-  isPromptAbort,
-} from './setup/prompts.mjs';
-import { isSupportedRegion } from './setup/regions.mjs';
-import { firebaseTools } from './setup/firebase-tools.mjs';
+} from '../prompts.mjs';
+import { isSupportedRegion } from '../regions.mjs';
+import { firebaseTools } from '../firebase-tools.mjs';
 import {
   authenticate,
   createDefaultBucket,
@@ -52,19 +47,18 @@ import {
   isBillingEnabled,
   linkBillingAccount,
   listOpenBillingAccounts,
-  listAllProjectLabels,
   mergeProjectLabels,
   readProjectLabels,
-} from './setup/firebase-gaps.mjs';
-import { WEB_APP_NAME, buildMarkerLabels, describeProject, hasMarker } from './setup/markers.mjs';
+} from '../firebase-gaps.mjs';
+import { WEB_APP_NAME, buildMarkerLabels, hasMarker } from '../markers.mjs';
+import { annotateProjects } from '../projects.mjs';
+import { syncLocalFiles } from './sync.mjs';
+import { ROOT, createLogger } from '../log.mjs';
+import { UsageError } from '../usage.mjs';
 
-const ROOT = resolve(import.meta.dirname, '..');
 
 /** Recorded in the project label so the console shows which release provisioned it. */
 const VERSION = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).version;
-
-/** Paths are logged relative to the repo root - absolute ones are noise. */
-const rel = path => relative(ROOT, path);
 
 /**
  * APIs Localess needs. `firebase deploy` auto-enables most of the Functions
@@ -89,58 +83,58 @@ const REQUIRED_APIS = [
   'translate.googleapis.com',
 ];
 
-const USAGE = 'Usage: npm run setup:firebase -- [--project <id>] [--region <region>] [--billing-account <id>] [--google-support-email <email>] [--yes]';
+/** Printed after a failure or a cancellation, because every setup step is idempotent. */
+export const FAILURE_HINT = 'Re-run when ready - completed steps are detected and skipped.';
+
+export const USAGE =
+  'Usage: localess setup [--project <id>] [--display-name <name>] [--region <region>] [--billing-account <id>] [--yes]';
 
 /** Flags that used to exist, with the message to show instead of a bare parse error. */
 const REMOVED_FLAGS = {
   '--location': 'Firestore, Storage and Cloud Functions now share one region. Use --region instead.',
   '--storage-location': 'Firestore, Storage and Cloud Functions now share one region. Use --region instead.',
+  '--google-support-email':
+    'Google sign-in is no longer provisioned by setup. Localess sets up email/password; configure other providers in the Firebase console.',
 };
 
-for (const [flag, hint] of Object.entries(REMOVED_FLAGS)) {
-  if (process.argv.some(arg => arg === flag || arg.startsWith(`${flag}=`))) {
-    console.error(`\n\x1b[31m${flag} has been removed.\x1b[0m ${hint}\n\n  ${USAGE}\n`);
-    process.exit(1);
-  }
-}
-
-// parseArgs throws on an unknown flag; catch it so a typo prints usage, not a stack trace.
+// `log` and `opts` are module-scoped because every helper below closes over them; only the
+// assignment moves into `run`.
+const log = createLogger();
 let opts;
-try {
-  ({ values: opts } = parseArgs({
-    options: {
-      project: { type: 'string' },
-      'display-name': { type: 'string' },
-      region: { type: 'string' },
-      'billing-account': { type: 'string' },
-      'google-support-email': { type: 'string' },
-      yes: { type: 'boolean', default: false },
-    },
-    allowPositionals: false,
-  }));
-} catch (error) {
-  console.error(`\n\x1b[31m${error.message}\x1b[0m\n\n  ${USAGE}\n`);
-  process.exit(1);
-}
 
-// Rule: a missing parameter is asked for, never guessed. An unsupported --region is
-// treated as missing so the user gets the picker instead of a late failure from the API.
-if (opts.region && !isSupportedRegion(opts.region)) {
-  const message = `${opts.region} is not a region where Firestore, Storage and Cloud Functions are all available.`;
-  if (opts.yes) {
-    console.error(`\n\x1b[31m${message}\x1b[0m Pass a supported --region.\n`);
-    process.exit(1);
+/** Parses argv into `opts`, applying the removed-flag hints and the region rule. */
+function parseOptions(argv) {
+  for (const [flag, hint] of Object.entries(REMOVED_FLAGS)) {
+    if (argv.some(arg => arg === flag || arg.startsWith(`${flag}=`))) {
+      throw new UsageError(`${flag} has been removed. ${hint}`);
+    }
   }
-  console.warn(`\n\x1b[33m${message}\x1b[0m You will be asked to choose one.`);
-  opts.region = undefined;
-}
 
-let stepNumber = 0;
-const log = {
-  step: msg => console.log(`\n\x1b[1m[${++stepNumber}] ${msg}\x1b[0m`),
-  done: msg => console.log(`    \x1b[32m+\x1b[0m ${msg}`),
-  skip: msg => console.log(`    \x1b[90m-\x1b[0m ${msg}`),
-};
+  try {
+    ({ values: opts } = parseArgs({
+      args: argv,
+      options: {
+        project: { type: 'string' },
+        'display-name': { type: 'string' },
+        region: { type: 'string' },
+        'billing-account': { type: 'string' },
+        yes: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    }));
+  } catch (error) {
+    throw new UsageError(error.message);
+  }
+
+  // Rule: a missing parameter is asked for, never guessed. An unsupported --region is
+  // treated as missing so the user gets the picker instead of a late failure from the API.
+  if (opts.region && !isSupportedRegion(opts.region)) {
+    const message = `${opts.region} is not a region where Firestore, Storage and Cloud Functions are all available.`;
+    if (opts.yes) throw new UsageError(`${message} Pass a supported --region.`);
+    console.warn(`\n\x1b[33m${message}\x1b[0m You will be asked to choose one.`);
+    opts.region = undefined;
+  }
+}
 
 /** Verifies firebase-tools is present, new enough, and authenticated. */
 async function preflight() {
@@ -158,54 +152,6 @@ async function preflight() {
 }
 
 /** Adopts `--project`, or creates a new project when none was given. */
-/**
- * Builds the picker annotations from three signals.
- *
- * Labels for every project arrive in a single Cloud Resource Manager call, so the version
- * can be shown for any managed project - including ones this machine has never configured,
- * which is the case after a fresh clone. Local `.env.<project-id>` config adds "configured
- * here", and is deliberately never trusted on its own: it can be stale if the project was
- * deleted or rebuilt elsewhere.
- *
- * The web-app fallback costs one call per project, so it is only used where it can change
- * the answer: a locally-configured project that carries no label.
- */
-async function annotateProjects(projects) {
-  const configured = new Set(listProjectConfigs(ROOT));
-  const labelsByProject = await listAllProjectLabels();
-
-  const annotations = {};
-  await Promise.all(
-    projects.map(async project => {
-      const projectId = project.projectId;
-      const configuredLocally = configured.has(projectId);
-      const labels = labelsByProject?.get(projectId);
-
-      if (!configuredLocally && !hasMarker(labels)) return;
-
-      if (labelsByProject === null && !configuredLocally) return;
-      if (labelsByProject === null) {
-        annotations[projectId] = describeProject({ configuredLocally, remote: { reachable: false } });
-        return;
-      }
-
-      const needsFallback = configuredLocally && !hasMarker(labels);
-      const apps = needsFallback ? await cli.listWebApps(projectId).catch(() => null) : null;
-
-      annotations[projectId] = describeProject({
-        configuredLocally,
-        remote: {
-          reachable: true,
-          labels: labels ?? {},
-          hasLocalessWebApp: Boolean(apps?.some(app => app.displayName === WEB_APP_NAME)),
-        },
-      });
-    }),
-  );
-
-  return annotations;
-}
-
 /**
  * Confirms before provisioning into a project with no sign of Localess.
  *
@@ -227,8 +173,7 @@ async function confirmUnrecognisedProject(projectId) {
   console.log('      - enable 15 Google Cloud APIs (some are billable)');
   console.log('      - create a Firestore database in a location that can never be changed');
   console.log('      - create a default Cloud Storage bucket, also permanently located');
-  console.log('      - link a billing account if one is not already active');
-  console.log('      - deploy an authentication configuration over the current one\n');
+  console.log('      - link a billing account if one is not already active\n');
 
   if (!(await confirmProvision(projectId))) {
     throw new Error('Cancelled. Nothing was changed.');
@@ -256,7 +201,7 @@ async function resolveProject() {
   const projects = await cli.listProjects();
   log.done(`found ${projects.length} accessible project${projects.length === 1 ? '' : 's'}`);
 
-  const annotations = await annotateProjects(projects);
+  const annotations = await annotateProjects(ROOT, projects);
 
   const selected = await chooseProject(projects, annotations);
   if (selected !== CREATE_NEW) {
@@ -393,31 +338,6 @@ async function ensureWebApp(projectId) {
   return created.appId;
 }
 
-/**
- * Writes the Google sign-in provider into firebase.json when a support email
- * was supplied. The provisioning API generates the OAuth client itself, so no
- * console visit is needed — but the support email is per-installation and so
- * cannot be committed to the repo.
- */
-async function configureAuthProviders(projectId) {
-  log.step('Provisioning Authentication');
-
-  if (opts['google-support-email']) {
-    const path = resolve(ROOT, 'firebase.json');
-    const config = JSON.parse(await readFile(path, 'utf8'));
-    config.auth.providers.googleSignIn = {
-      oAuthBrandDisplayName: 'Localess',
-      supportEmail: opts['google-support-email'],
-      authorizedRedirectUris: [`https://${projectId}.firebaseapp.com/__/auth/handler`],
-    };
-    await writeFile(path, `${JSON.stringify(config, null, 2)}\n`);
-    log.done('added Google sign-in to firebase.json');
-  }
-
-  await cli.deployAuth(projectId);
-  log.done('Identity Platform and providers provisioned');
-}
-
 async function ensureHostingSite(projectId) {
   log.step('Setting up Hosting');
   const sites = await cli.listHostingSites(projectId);
@@ -429,49 +349,30 @@ async function ensureHostingSite(projectId) {
   log.done(`created hosting site ${projectId}`);
 }
 
-/** Writes the two files the local build and the functions deploy need. */
-async function writeLocalConfig(projectId, appId, region) {
-  log.step('Writing local configuration');
-
-  // `apps:sdkconfig --out` refuses to overwrite, so write beside the target
-  // and move it into place. cloudbuild.yaml does the same for the same reason.
-  const configPath = resolve(ROOT, 'src/environments/firebase-config.json');
-  const tempPath = `${configPath}.tmp`;
-  await rm(tempPath, { force: true });
-  await cli.writeSdkConfig(projectId, appId, tempPath);
-  await rm(configPath, { force: true });
-  await rename(tempPath, configPath);
-  log.done('src/environments/firebase-config.json');
-
-  log.done(`${rel(writeFunctionsEnv(ROOT, projectId, region))} (REGION=${region})`);
-
-  // The handoff to `npm run deploy`: everything that cannot be read back from the live
-  // project. Gitignored, so re-running setup never shows up as a diff.
-  writeProjectConfig(ROOT, projectId, {
-    LOCALESS_PROJECT_ID: projectId,
-    LOCALESS_REGION: region,
-    LOCALESS_AUTH_PROVIDERS: opts['google-support-email'] ? 'GOOGLE' : '',
-    LOCALESS_AUTH_CUSTOM_DOMAIN: '',
-    LOCALESS_LOGIN_MESSAGE: '',
-    LOCALESS_UNSPLASH_ENABLE: '',
-  });
-  log.done(`.env.${projectId}`);
-}
-
 /**
- * Stamps the project so a later run - or a fresh clone with no local config - can tell it
- * is managed by Localess. Best-effort: a missing label costs a confirmation prompt, which
- * is not worth failing an otherwise complete setup over.
+ * Stamps the project so any machine can tell it is a Localess installation.
+ *
+ * This is not best-effort any more: `npm run deploy` refuses a project without the label,
+ * so a silent failure here would produce a fully provisioned, permanently undeployable
+ * project. Failing loudly lets the operator grant the role and re-run - setup is idempotent.
  */
-async function markProject(projectId) {
+async function markProject(projectId, region) {
   log.step('Marking the project as Localess-managed');
-  const labels = buildMarkerLabels(VERSION);
+  const labels = buildMarkerLabels(VERSION, region);
   try {
     await mergeProjectLabels(projectId, labels);
-    log.done(Object.entries(labels).map(([key, value]) => `${key}=${value}`).join(', '));
   } catch (error) {
-    log.skip(`could not set project labels (${error.message})`);
+    throw new Error(
+      `Could not write the Localess project labels (${error.message}).\n\n` +
+        '  Deploy refuses a project without them, so setup stops here. The account needs\n' +
+        `  resourcemanager.projects.update on ${projectId} - grant it and re-run.\n`,
+    );
   }
+  log.done(
+    Object.entries(labels)
+      .map(([key, value]) => `${key}=${value}`)
+      .join(', '),
+  );
 }
 
 function summary(projectId) {
@@ -480,11 +381,8 @@ function summary(projectId) {
   console.log('providers, login message and Unsplash flag - they are baked into the bundle');
   console.log('at build time, so they need a deploy to take effect.\n');
 
-  if (!opts['google-support-email']) {
-    console.log('Email/password sign-in is enabled. To add Google sign-in, re-run with');
-    console.log('--google-support-email <email>. Microsoft sign-in needs an Azure app');
-    console.log('registration and must be configured in the Firebase console.\n');
-  }
+  console.log('Email/password sign-in is provisioned on the first deploy. Other providers');
+  console.log('are configured in the Firebase console.\n');
 }
 
 /**
@@ -500,7 +398,7 @@ async function offerDeploy(projectId) {
   }
 
   await new Promise((done, fail) => {
-    const child = spawn('npm', ['run', 'deploy', '--', '--project', projectId], {
+    const child = spawn('npm', ['run', 'deploy', '--', '--project', projectId, '--yes'], {
       cwd: ROOT,
       stdio: 'inherit',
       shell: process.platform === 'win32',
@@ -512,26 +410,20 @@ async function offerDeploy(projectId) {
   console.log(`Create the first admin user at https://${projectId}.web.app/setup\n`);
 }
 
-try {
+export async function run(argv) {
+  parseOptions(argv);
+
   await preflight();
   const projectId = await resolveProject();
   await ensureBilling(projectId);
   await enableApis(projectId);
   const region = await ensureFirestore(projectId);
   await ensureStorage(projectId, region);
-  const appId = await ensureWebApp(projectId);
-  await configureAuthProviders(projectId);
+  await ensureWebApp(projectId);
   await ensureHostingSite(projectId);
-  await writeLocalConfig(projectId, appId, region);
-  await markProject(projectId);
+  await markProject(projectId, region);
+  log.step('Writing local configuration');
+  await syncLocalFiles(projectId, { region, log });
   summary(projectId);
   await offerDeploy(projectId);
-} catch (error) {
-  if (isPromptAbort(error)) {
-    console.error('\n\x1b[90mCancelled. Re-run when ready - completed steps are skipped.\x1b[0m\n');
-    process.exit(130);
-  }
-  console.error(`\n\x1b[31mSetup failed:\x1b[0m ${error.message}\n`);
-  console.error('Fix the issue above and re-run - completed steps are skipped.\n');
-  process.exit(1);
 }

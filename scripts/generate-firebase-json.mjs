@@ -6,8 +6,8 @@
  */
 import { relative, resolve } from 'node:path';
 
-import { DEFAULT_REGION } from './setup/config.mjs';
-import { writeFirebaseJson } from './setup/generate.mjs';
+import { DEFAULT_REGION } from './localess/config.mjs';
+import { writeFirebaseJson } from './localess/generate.mjs';
 
 const [projectId, region = DEFAULT_REGION] = process.argv.slice(2);
 

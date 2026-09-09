@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 
 import {
   MANAGED_LABEL,
+  REGION_LABEL,
   VERSION_LABEL,
   toLabelValue,
   buildMarkerLabels,
   hasMarker,
+  markerRegion,
   markerVersion,
   describeProject,
 } from './markers.mjs';
@@ -77,4 +79,46 @@ test('describeProject leaves an unrelated project unannotated', () => {
   const d = describeProject({ configuredLocally: false, remote: null });
   assert.equal(d.priority, false);
   assert.equal(d.note, undefined);
+});
+
+test('buildMarkerLabels records the region alongside the version', () => {
+  const labels = buildMarkerLabels('4.0.0', 'europe-west6');
+  assert.equal(labels[MANAGED_LABEL], 'true');
+  assert.equal(labels[VERSION_LABEL], '4-0-0');
+  assert.equal(labels[REGION_LABEL], 'europe-west6');
+});
+
+test('buildMarkerLabels omits the region when none is known', () => {
+  const labels = buildMarkerLabels('4.0.0');
+  assert.equal(REGION_LABEL in labels, false);
+});
+
+test('markerRegion reads the region back', () => {
+  assert.equal(markerRegion({ [REGION_LABEL]: 'europe-west6' }), 'europe-west6');
+  assert.equal(markerRegion({}), null);
+});
+
+test('describeProject shows version and region for a managed project', () => {
+  const d = describeProject({
+    configuredLocally: false,
+    remote: { reachable: true, labels: buildMarkerLabels('4.0.0', 'europe-west6') },
+  });
+  assert.equal(d.priority, true);
+  assert.equal(d.note, 'Localess 4.0.0 \u00b7 europe-west6');
+});
+
+test('describeProject shows both labels when the project is also configured locally', () => {
+  const d = describeProject({
+    configuredLocally: true,
+    remote: { reachable: true, labels: buildMarkerLabels('4.0.0', 'europe-west6') },
+  });
+  assert.equal(d.note, 'local config \u00b7 Localess 4.0.0 \u00b7 europe-west6');
+});
+
+test('describeProject omits the region when the marker predates it', () => {
+  const d = describeProject({
+    configuredLocally: false,
+    remote: { reachable: true, labels: { [MANAGED_LABEL]: 'true', [VERSION_LABEL]: '4-0-0' } },
+  });
+  assert.equal(d.note, 'Localess 4.0.0');
 });

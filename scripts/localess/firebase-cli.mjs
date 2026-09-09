@@ -113,5 +113,4 @@ export const cli = {
   createHostingSite: (projectId, siteId) => run(['hosting:sites:create', siteId, '--project', projectId]),
 
   /** Provisions Identity Platform + the providers declared in `firebase.json`. */
-  deployAuth: projectId => run(['deploy', '--only', 'auth', '--project', projectId, '--non-interactive']),
 };
