@@ -15,19 +15,6 @@
     </div>
 
     <div hlmField>
-      <label hlmFieldLabel for="description">Description</label>
-      <hlm-input-group>
-        <textarea hlmInputGroupTextarea id="description" formControlName="description"></textarea>
-        <hlm-input-group-addon align="block-end">
-          <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['description'].value?.length || 0 }}/250</span>
-        </hlm-input-group-addon>
-      </hlm-input-group>
-      @if (form.controls['description'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
-    </div>
-
-    <div hlmField>
       <label hlmFieldLabel for="value">Value</label>
       <hlm-input-group>
         <textarea hlmInputGroupTextarea id="value" formControlName="value"></textarea>
@@ -36,6 +23,19 @@
         </hlm-input-group-addon>
       </hlm-input-group>
       @if (form.controls['value'].errors; as errors) {
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+      }
+    </div>
+
+    <div hlmField>
+      <label hlmFieldLabel for="description">Description</label>
+      <hlm-input-group>
+        <textarea hlmInputGroupTextarea id="description" formControlName="description"></textarea>
+        <hlm-input-group-addon align="block-end">
+          <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['description'].value?.length || 0 }}/250</span>
+        </hlm-input-group-addon>
+      </hlm-input-group>
+      @if (form.controls['description'].errors; as errors) {
         <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
     </div>
