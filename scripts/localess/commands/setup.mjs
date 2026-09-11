@@ -42,7 +42,6 @@ import { firebaseTools } from '../firebase-tools.mjs';
 import {
   authenticate,
   createDefaultBucket,
-  enableApi,
   getDefaultBucket,
   isBillingEnabled,
   linkBillingAccount,
@@ -50,6 +49,7 @@ import {
   mergeProjectLabels,
   readProjectLabels,
 } from '../firebase-gaps.mjs';
+import { ensureRequiredApis } from '../apis.mjs';
 import { WEB_APP_NAME, buildMarkerLabels, hasMarker } from '../markers.mjs';
 import { annotateProjects } from '../projects.mjs';
 import { syncLocalFiles } from './sync.mjs';
@@ -59,29 +59,6 @@ import { UsageError } from '../usage.mjs';
 
 /** Recorded in the project label so the console shows which release provisioned it. */
 const VERSION = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).version;
-
-/**
- * APIs Localess needs. `firebase deploy` auto-enables most of the Functions
- * ones, but not all — notably Translate, which is only used at runtime by
- * functions/src/services/translate.service.ts and so is never ensured.
- */
-const REQUIRED_APIS = [
-  'firebase.googleapis.com',
-  'firebasehosting.googleapis.com',
-  'firebaserules.googleapis.com',
-  'firestore.googleapis.com',
-  'identitytoolkit.googleapis.com',
-  'firebasestorage.googleapis.com',
-  'firebaseextensions.googleapis.com',
-  'cloudfunctions.googleapis.com',
-  'cloudbuild.googleapis.com',
-  'artifactregistry.googleapis.com',
-  'run.googleapis.com',
-  'eventarc.googleapis.com',
-  'pubsub.googleapis.com',
-  'storage.googleapis.com',
-  'translate.googleapis.com',
-];
 
 /** Printed after a failure or a cancellation, because every setup step is idempotent. */
 export const FAILURE_HINT = 'Re-run when ready - completed steps are detected and skipped.';
@@ -274,14 +251,6 @@ async function ensureBilling(projectId) {
   log.skip('billing not visible yet; continuing (API enablement will retry)');
 }
 
-async function enableApis(projectId) {
-  log.step(`Enabling ${REQUIRED_APIS.length} APIs`);
-  for (const api of REQUIRED_APIS) {
-    await enableApi(projectId, api);
-    log.done(api);
-  }
-}
-
 /**
  * Creates the database if missing, and returns the region the whole setup should use.
  *
@@ -416,7 +385,7 @@ export async function run(argv) {
   await preflight();
   const projectId = await resolveProject();
   await ensureBilling(projectId);
-  await enableApis(projectId);
+  await ensureRequiredApis(projectId, log);
   const region = await ensureFirestore(projectId);
   await ensureStorage(projectId, region);
   await ensureWebApp(projectId);

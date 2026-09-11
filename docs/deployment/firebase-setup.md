@@ -87,7 +87,7 @@ In order:
 1.  Preflight        firebase-tools present and >= 15.29.0, CLI authenticated
 2.  Project          adopt --project, or pick from a list / create one
 3.  Billing          link a billing account, then wait for it to become active
-4.  APIs             enable 15 APIs
+4.  APIs             check the 15 required APIs, enable whichever are off
 5.  Firestore        adopt the existing location, or ask and create in --region
 6.  Storage          create and link the default bucket in --region
 7.  Web app          register a "Localess" web app
@@ -291,6 +291,7 @@ The modules under `scripts/`:
 | `scripts/localess/firebase-cli.mjs` | Documented `firebase <command>` calls, spawned as child processes |
 | `scripts/localess/firebase-gaps.mjs` | The steps that have **no** CLI command |
 | `scripts/localess/firebase-tools.mjs` | Locates the global firebase-tools, enforces the minimum version |
+| `scripts/localess/apis.mjs` | The required Google Cloud APIs, and the check both setup and deploy run |
 | `scripts/localess/config.mjs` | The `.env.<project-id>` format and project resolution |
 | `scripts/localess/generate.mjs` | Turns a config into `firebase.<id>.json` and `functions/.env.<id>` |
 | `scripts/localess/defines.mjs` | Turns a config into `--define` flags for the Angular build |

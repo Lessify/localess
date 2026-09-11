@@ -68,6 +68,12 @@ async function init() {
       urlPrefix: 'https://cloudresourcemanager.googleapis.com',
       apiVersion: 'v1',
     }),
+    // Reads which APIs are on. `ensureApiEnabled.check` answers the same question one API
+    // at a time; this answers it for all of them in a single call.
+    serviceUsage: new Client({
+      urlPrefix: 'https://serviceusage.googleapis.com',
+      apiVersion: 'v1',
+    }),
   };
 }
 
@@ -122,8 +128,52 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
  * link. firebase-tools raises this as a plain FirebaseError with no
  * machine-readable cause, so the message is the only signal available.
  */
+/**
+ * The names of every API enabled on a project, or `null` when they cannot be read.
+ *
+ * One call answers for all of them, which is why this exists rather than a loop over
+ * `ensureApiEnabled.check`: the required set is 15 long and both setup and deploy consult
+ * it, so per-API round trips would be the slowest thing either command does.
+ *
+ * Never throws. A caller that cannot read the list has to fall back to enabling everything,
+ * which is idempotent anyway - failing a deploy because a *check* failed would be worse
+ * than the drift it is looking for.
+ */
+export async function listEnabledApis(projectId) {
+  try {
+    const { serviceUsage } = await api();
+    const names = new Set();
+
+    let pageToken;
+    do {
+      const res = await withPropagationRetry(() =>
+        serviceUsage.get(`/projects/${projectId}/services`, {
+          queryParams: { filter: 'state:ENABLED', pageSize: 200, ...(pageToken ? { pageToken } : {}) },
+          resolveOnHTTPError: true,
+        }),
+      );
+      if (res.status >= 400) return null;
+
+      for (const service of res.body?.services ?? []) {
+        if (service.config?.name) names.add(service.config.name);
+      }
+      pageToken = res.body?.nextPageToken;
+    } while (pageToken);
+
+    return names;
+  } catch {
+    return null;
+  }
+}
+
 export async function enableApi(projectId, apiName, { attempts = 8, delayMs = 10000 } = {}) {
   const { ensureApiEnabled } = await api();
+
+  // `ensure` short-circuits on a configstore cache that records "this API was enabled" per
+  // project and never expires. An API disabled after that point would therefore be reported
+  // as enabled and never actually turned back on - which is precisely the drift the callers
+  // of this function exist to correct. Dropping the entry first forces a real check.
+  ensureApiEnabled.uncacheEnabledAPI(projectId, apiName);
 
   for (let attempt = 1; ; attempt++) {
     try {

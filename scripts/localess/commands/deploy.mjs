@@ -19,6 +19,7 @@ import { toDefineArgs } from '../defines.mjs';
 import { buildDeployArgs, parseTargets } from '../deploy-plan.mjs';
 import { buildMarkerLabels } from '../markers.mjs';
 import { mergeProjectLabels } from '../firebase-gaps.mjs';
+import { ensureRequiredApis } from '../apis.mjs';
 import { assertManaged, identifyProject } from '../projects.mjs';
 import { confirmDeployPlan } from '../prompts.mjs';
 import { ROOT, createLogger, rel } from '../log.mjs';
@@ -253,6 +254,11 @@ export async function run(argv) {
     console.log('\nNothing was deployed.\n');
     return;
   }
+
+  // After the confirmation so a cancelled deploy changes nothing, but before the build so a
+  // project that drifted since setup costs seconds rather than a full production build
+  // followed by a failure worded in terms of the resource that could not be created.
+  await ensureRequiredApis(projectId, log);
 
   log.step('Installing dependencies');
   if (opts['skip-install']) {

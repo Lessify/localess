@@ -183,6 +183,22 @@ A bare `deploy` covers every target configured in `firebase.json`:
 The first functions deploy is the slowest part: Cloud Build has to build container images for every
 function.
 
+#### Required APIs
+
+Setup enables the 15 Google Cloud APIs Localess needs, but a project can drift after that — it may
+have been provisioned by an older release that required fewer, or had an API switched off by hand.
+So deploy re-checks them, and enables whatever is off, before it installs or builds.
+
+The check is a single Service Usage call listing every enabled API, so the normal case — a project
+that is already correct — costs one round trip rather than fifteen. It runs after the confirmation,
+so a cancelled or `--dry-run` deploy changes nothing, and before the build, so a drifted project
+costs seconds instead of a full production build followed by a failure worded in terms of the
+resource that could not be created.
+
+`translate.googleapis.com` is the one that most needs this: nothing in a deploy touches it — it is
+used at runtime by `functions/src/services/translate.service.ts` — so if it were off, the first sign
+would be the translate feature failing in production.
+
 #### First-deploy retries
 
 A first deploy races the provisioning that precedes it. The `gcf-v2-sources` bucket and the Eventarc
