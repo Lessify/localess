@@ -69,6 +69,12 @@ Creating a space offers a template, which seeds a set of schemas:
 | **Empty** | none — a blank space |
 | **Blog** | `author`, `category`, `blogtag` (ENUM), `blogpost` |
 | **E-Commerce** | `size` (ENUM), `variant` (NODE), `category`, `product` |
+| **Marketing Site** | `cta`, `hero`, `feature`, `featuregrid`, `testimonial` (all NODE), `page` |
+
+Blog and E-Commerce are both lists of records that reference each other. **Marketing Site is a
+composed page**: `page.sections` is a single `SCHEMAS` field accepting *several* node types, so an
+editor assembles a page from interchangeable blocks rather than filling a fixed form. `hero.action`
+shows the other half of the pair — `SCHEMA`, one nested node rather than many.
 
 **Empty is selected by default and writes nothing**, so creating a space is unchanged unless you
 choose otherwise.

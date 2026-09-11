@@ -1,6 +1,6 @@
 import { SchemaComponent, SchemaEnum } from './schema.model';
 
-export type SpaceTemplateId = 'EMPTY' | 'ECOMMERCE' | 'BLOG';
+export type SpaceTemplateId = 'EMPTY' | 'ECOMMERCE' | 'BLOG' | 'MARKETING';
 
 /**
  * A schema as a template declares it: everything but the timestamps, which the server sets.

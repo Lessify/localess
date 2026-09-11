@@ -8,8 +8,8 @@ import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from './index';
 const FIRESTORE_BATCH_LIMIT = 500;
 
 describe('SPACE_TEMPLATES', () => {
-  it('offers exactly the three templates, with EMPTY first', () => {
-    expect(SPACE_TEMPLATES.map(t => t.id)).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE']);
+  it('offers every template, with EMPTY first', () => {
+    expect(SPACE_TEMPLATES.map(t => t.id)).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING']);
     expect(SPACE_TEMPLATES[0].id).toBe(EMPTY_TEMPLATE_ID);
   });
 

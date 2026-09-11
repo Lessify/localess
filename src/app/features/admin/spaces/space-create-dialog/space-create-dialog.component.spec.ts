@@ -2,6 +2,8 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UserStore } from '@shared/stores/user.store';
 
+import { SPACE_TEMPLATES } from '../templates';
+
 import { SpaceCreateDialogComponent } from './space-create-dialog.component';
 
 function userStoreStub(role: string, permissions: string[] = []) {
@@ -24,7 +26,7 @@ function cards(fixture: ComponentFixture<SpaceCreateDialogComponent>): number {
 
 describe('SpaceCreateDialogComponent', () => {
   it('offers every template to an admin', async () => {
-    expect(cards(await setup(userStoreStub('admin')))).toBe(3);
+    expect(cards(await setup(userStoreStub('admin')))).toBe(SPACE_TEMPLATES.length);
   });
 
   it('defaults the selection to EMPTY', async () => {
@@ -38,7 +40,7 @@ describe('SpaceCreateDialogComponent', () => {
   });
 
   it('offers templates to a custom user holding SCHEMA_CREATE', async () => {
-    expect(cards(await setup(userStoreStub('custom', ['SPACE_MANAGEMENT', 'SCHEMA_CREATE'])))).toBe(3);
+    expect(cards(await setup(userStoreStub('custom', ['SPACE_MANAGEMENT', 'SCHEMA_CREATE'])))).toBe(SPACE_TEMPLATES.length);
   });
 
   it('shows no template control at all without SCHEMA_CREATE', async () => {

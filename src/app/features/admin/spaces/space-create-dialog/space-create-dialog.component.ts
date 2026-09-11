@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFile, lucideNewspaper, lucideShoppingCart } from '@ng-icons/lucide';
+import { lucideFile, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart } from '@ng-icons/lucide';
 import { UserPermission } from '@shared/models/user.model';
 import { UserStore } from '@shared/stores/user.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
@@ -29,7 +29,7 @@ import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from '../templates';
     HlmInputGroupImports,
     HlmRadioGroupImports,
   ],
-  providers: [provideIcons({ lucideFile, lucideNewspaper, lucideShoppingCart })],
+  providers: [provideIcons({ lucideFile, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart })],
 })
 export class SpaceCreateDialogComponent {
   private readonly fb = inject(FormBuilder);
