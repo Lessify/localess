@@ -398,7 +398,7 @@ async function offerDeploy(projectId) {
   }
 
   await new Promise((done, fail) => {
-    const child = spawn('npm', ['run', 'deploy', '--', '--project', projectId, '--yes'], {
+    const child = spawn('npm', ['run', 'localess:deploy', '--', '--project', projectId, '--yes'], {
       cwd: ROOT,
       stdio: 'inherit',
       shell: process.platform === 'win32',
