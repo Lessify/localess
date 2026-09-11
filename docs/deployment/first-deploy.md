@@ -247,22 +247,17 @@ have been deployed once — and takes effect from the second deploy onward.
 npm run localess:check -- --project <project-id> --fix
 ```
 
-It asks for an email, a password and a display name, then creates the account. The browser route
-still works and does the same thing:
+It asks for an email, a password and a display name, then creates the account, grants it the
+`role: admin` custom claim, and writes its `users/{uid}` document alongside a seeded
+`Hello World` space.
 
-```
-https://<project-id>.web.app/setup
-```
+There is no browser route for this. The `/setup` wizard and the `setup` Cloud Function behind
+it were removed — that endpoint could not require authentication, so on a freshly deployed
+project anyone who knew the project id could claim the administrator account. See
+[why the CLI creates the admin](check.md#why-the-cli-creates-the-admin).
 
-Either way this is a Localess feature, not a Firebase one — `functions/src/setup.ts` creates the
-account, grants it `role: admin` via `setCustomUserClaims` and seeds the first space. It only works
-while no admin exists.
-
-> **Do this immediately, and prefer the CLI.** The callable cannot require authentication — no
-> account exists yet — and its only guard is whether an admin has already been created. Until one
-> has, anyone who knows the project id can claim it. Running the command in the same session as the
-> deploy closes that window; leaving it for whenever somebody opens a browser does not. See the
-> [security note](check.md#security-note-the-setup-callable).
+For a scripted deploy, pass `--admin-email` and set `LOCALESS_ADMIN_PASSWORD`. There is
+deliberately no password flag.
 
 ---
 

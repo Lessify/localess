@@ -41,12 +41,16 @@ export const FIX_INVOKERS = 'invokers';
 export const FIX_ADMIN_USER = 'adminUser';
 
 /**
- * The order repairs are applied in, which is a dependency order rather than a preference.
+ * The order repairs are applied in.
  *
- * `FIX_INVOKERS` must precede `FIX_ADMIN_USER`: creating the first admin calls the `setup`
- * callable, and a callable with no `allUsers` invoker binding is unreachable. Relying on
- * the order the checks happen to be declared in would make that correctness property an
- * accident of layout, so it is written down.
+ * This once encoded a real dependency - creating the first admin called the `setup`
+ * callable, which was unreachable without its `allUsers` invoker binding. That callable is
+ * gone and the admin is now created through the Identity Platform API directly, so no
+ * repair depends on another.
+ *
+ * Kept because a fixed order makes `--fix` output reproducible, and because an unlisted
+ * repair sorts to index -1 and would silently run first - which the FIX_ORDER coverage test
+ * exists to prevent.
  */
 export const FIX_ORDER = Object.freeze([FIX_APIS, FIX_CORS, FIX_LABELS, FIX_LOCAL_FILES, FIX_INVOKERS, FIX_ADMIN_USER]);
 

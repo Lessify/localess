@@ -1,86 +1,140 @@
 /**
  * Creating the first admin user from the CLI.
  *
- * This calls the deployed `setup` callable rather than creating the account directly. That
- * callable does three things - creates the user, grants it the `role: admin` claim, and
- * seeds the first space - and reimplementing them here would produce a second definition of
- * "what a first admin needs" that drifts from `functions/src/setup.ts`. Driving the same
- * endpoint the web wizard drives keeps there being exactly one.
+ * This used to call the deployed `setup` callable. That callable no longer exists: it could
+ * not require authentication - no account exists yet to authenticate against - and its only
+ * guard was whether an admin had already been created, so on any freshly deployed project
+ * anyone who knew the project id could claim the administrator account. Deleting the
+ * endpoint is strictly safer than guarding it, and this is what replaced it.
  *
- * Doing it from the CLI matters beyond convenience. `setup` cannot require authentication,
- * because no account exists for it to authenticate against, and its only guard is whether an
- * admin has already been created. Until one has, anyone who knows the project id can claim
- * the account. Creating it in the same session as the deploy closes that window; leaving it
- * for whenever somebody remembers to open `/setup` does not.
+ * Three calls, in order: create the account, grant it the admin role, write its documents.
+ * The last is a single Firestore commit, so the user document and the seeded space arrive
+ * together or not at all.
+ *
+ * Deliberately independent of the deployed backend. A bootstrap tool that required the
+ * system it bootstraps to already be working would fail in exactly the situation
+ * `npm run localess:check` exists to diagnose.
  */
+import { commitFirestoreWrites, createIdentityAccount, setIdentityCustomClaims } from './firebase-gaps.mjs';
+import { autoId, toFirestoreFields } from './firestore-rest.mjs';
 import { DEFAULT_ADMIN_NAME, askAdminCredentials, missingAdminCredentials } from './prompts.mjs';
 
 /** The password is read from here, never from a flag - argv is world-readable. */
 export const PASSWORD_ENV = 'LOCALESS_ADMIN_PASSWORD';
 
-/** The deployed `setup` callable's URL, or `null` when it is not deployed. */
-export function setupFunctionUri(deployedFunctions) {
-  return (deployedFunctions ?? []).find(fn => fn.id === 'setup')?.uri ?? null;
+/** The custom claim the permission system reads. See docs/frontend-permissions.md. */
+export const ADMIN_ROLE = 'admin';
+
+/** Mirrors DEFAULT_LOCALE in functions/src/models/space.model.ts. Pinned by a test. */
+export const DEFAULT_LOCALE = Object.freeze({ id: 'en', name: 'English' });
+
+/** Written by the server, not by this process, so both documents use REQUEST_TIME. */
+const SERVER_TIMESTAMP_FIELDS = Object.freeze(['createdAt', 'updatedAt']);
+
+const serverTimestamps = () => SERVER_TIMESTAMP_FIELDS.map(fieldPath => ({ fieldPath, setToServerValue: 'REQUEST_TIME' }));
+
+/**
+ * The `users/{uid}` document.
+ *
+ * Mirrors what `beforeUserCreated` in functions/src/users.ts writes, because that blocking
+ * function does NOT fire for accounts created through the Identity Platform admin API - so
+ * nothing else will write this document. That is why a first admin has never appeared in
+ * Admin -> Users until somebody ran the `user.sync` callable.
+ *
+ * `role` is the one field the blocking function cannot write: custom claims do not exist yet
+ * at the point it runs, as its own comment says. Here they do.
+ *
+ * `photoURL` and `phoneNumber` are omitted rather than written. The blocking function stores
+ * `FieldValue.delete()` for them, which means absent, and absent is what omitting them gives.
+ */
+export function adminUserFields({ email, displayName }) {
+  return {
+    email,
+    emailVerified: true,
+    displayName,
+    disabled: false,
+    providers: ['password'],
+    role: ADMIN_ROLE,
+  };
+}
+
+/** The starter space, reproducing exactly what the `setup` callable used to seed. */
+export function helloWorldSpaceFields() {
+  return {
+    name: 'Hello World',
+    locales: [DEFAULT_LOCALE],
+    localeFallback: DEFAULT_LOCALE,
+  };
+}
+
+/** Both documents as one atomic Firestore commit payload. */
+export function buildBootstrapWrites({ projectId, localId, spaceId, email, displayName }) {
+  const documents = `projects/${projectId}/databases/(default)/documents`;
+  return [
+    {
+      update: { name: `${documents}/users/${localId}`, fields: toFirestoreFields(adminUserFields({ email, displayName })) },
+      updateTransforms: serverTimestamps(),
+    },
+    {
+      update: { name: `${documents}/spaces/${spaceId}`, fields: toFirestoreFields(helloWorldSpaceFields()) },
+      updateTransforms: serverTimestamps(),
+    },
+  ];
 }
 
 /**
- * Turns a callable's error response into something worth reading.
+ * Turns an Identity Platform error into something worth reading.
  *
- * The Firebase callable protocol puts a machine-readable status in the body, so the two
- * cases with a real explanation get one and everything else falls back to the raw message.
+ * The API puts a machine-readable token in `error.message`, so the three cases an operator
+ * can actually act on get an explanation and everything else keeps the raw text.
  */
-export function describeSetupFailure(status, body) {
-  const error = body?.error ?? {};
-  const code = error.status ?? '';
+export function describeAccountFailure(status, body) {
+  const message = body?.error?.message ?? '';
 
-  if (code === 'ALREADY_EXISTS' || /already.exists/i.test(error.message ?? '')) {
-    return 'the setup has already been completed on this project, so no further admin can be created this way';
-  }
-  if (status === 403 || code === 'PERMISSION_DENIED') {
-    return 'the setup function rejected the call - its allUsers invoker binding may still be propagating';
-  }
-  return error.message ? `${error.message} (HTTP ${status})` : `HTTP ${status}`;
+  if (/EMAIL_EXISTS/.test(message)) return 'an account with that email address already exists';
+  if (/INVALID_EMAIL/.test(message)) return 'the email address was rejected as invalid';
+  // The project may carry a stricter Identity Platform password policy than the six
+  // characters checked locally, so the server's own wording is the useful part.
+  if (/PASSWORD/.test(message)) return `the password was rejected: ${message}`;
+
+  return message ? `${message} (HTTP ${status})` : `HTTP ${status}`;
 }
-
-/** Whether a failed attempt is worth repeating. */
-export function isTransientSetupFailure(status, body) {
-  const code = body?.error?.status ?? '';
-  // A just-added Cloud Run IAM binding takes seconds to become effective, so the very
-  // repair that makes this call possible can also make the first attempt fail.
-  return status === 403 || code === 'PERMISSION_DENIED' || status >= 500;
-}
-
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Calls the `setup` callable, retrying while a freshly granted invoker binding propagates.
+ * Creates the account, grants it the admin role and writes its documents.
  *
- * Not idempotent, and deliberately not retried on anything else: the callable creates an
- * account, and repeating a call that may have succeeded is the one mistake here with a
- * consequence that cannot be undone from the CLI.
+ * Nothing here is retried. None of these failures are transient, and the account creation is
+ * the one call in this CLI whose repetition cannot be undone.
+ *
+ * The steps are not atomic with each other - they are three different Google APIs - so a
+ * failure after the account exists says so explicitly. That state is recoverable: the
+ * account can sign in, and `user.sync` backfills the document, minus `role`.
  */
-export async function createFirstAdmin(uri, credentials, { attempts = 6, delayMs = 5000, fetchImpl = fetch } = {}) {
-  for (let attempt = 1; ; attempt++) {
-    const response = await fetchImpl(uri, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: credentials }),
-    });
+export async function createFirstAdmin(projectId, credentials, deps = {}) {
+  const {
+    createAccount = createIdentityAccount,
+    setClaims = setIdentityCustomClaims,
+    commit = commitFirestoreWrites,
+    newId = autoId,
+  } = deps;
 
-    if (response.ok) return;
+  const { email, password, displayName } = credentials;
 
-    let body = null;
-    try {
-      body = await response.json();
-    } catch {
-      // A non-JSON body means the request never reached the function - Cloud Run's own 403
-      // page, for instance. `describeSetupFailure` handles the absent body.
-    }
+  let localId;
+  try {
+    localId = await createAccount(projectId, { email, password, displayName });
+  } catch (error) {
+    throw new Error(describeAccountFailure(error.status, error.body));
+  }
 
-    if (attempt === attempts || !isTransientSetupFailure(response.status, body)) {
-      throw new Error(describeSetupFailure(response.status, body));
-    }
-    await sleep(delayMs);
+  try {
+    await setClaims(projectId, localId, { role: ADMIN_ROLE });
+    await commit(projectId, buildBootstrapWrites({ projectId, localId, spaceId: newId(), email, displayName }));
+  } catch (error) {
+    throw new Error(
+      `${email} was created but the setup could not be finished (${describeAccountFailure(error.status, error.body)}). ` +
+        'The account exists; re-check the project to see what is still missing.',
+    );
   }
 }
 
@@ -91,14 +145,8 @@ export async function createFirstAdmin(uri, credentials, { attempts = 6, delayMs
  * prompt into - a scripted run must fail with the name of the variable it is missing rather
  * than hang forever on a masked input nobody can see.
  */
-export async function ensureFirstAdmin(deployedFunctions, supplied, log, { interactive = process.stdin.isTTY } = {}) {
+export async function ensureFirstAdmin(projectId, supplied, log, { interactive = process.stdin.isTTY } = {}) {
   log.step('Creating the first admin user');
-
-  const uri = setupFunctionUri(deployedFunctions);
-  if (!uri) {
-    log.warn('the setup function is not deployed yet; deploy first, then re-run with --fix');
-    return false;
-  }
 
   const absent = missingAdminCredentials(supplied);
   if (absent.length > 0 && !interactive) {
@@ -115,7 +163,7 @@ export async function ensureFirstAdmin(deployedFunctions, supplied, log, { inter
   );
 
   try {
-    await createFirstAdmin(uri, credentials);
+    await createFirstAdmin(projectId, credentials);
   } catch (error) {
     log.warn(`could not create the admin user: ${error.message}`);
     return false;

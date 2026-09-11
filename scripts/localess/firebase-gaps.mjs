@@ -97,6 +97,12 @@ async function init() {
       urlPrefix: 'https://identitytoolkit.googleapis.com',
       apiVersion: 'admin/v2',
     }),
+    // Document writes. The Admin SDK is not available here, so the bootstrap writes its
+    // documents through the same authenticated client everything else uses.
+    firestore: new Client({
+      urlPrefix: 'https://firestore.googleapis.com',
+      apiVersion: 'v1',
+    }),
   };
 }
 
@@ -450,4 +456,54 @@ export async function getIdentityConfig(projectId) {
   } catch {
     return null;
   }
+}
+
+/**
+ * An error carrying the HTTP status and body, so a caller can map it to a message.
+ *
+ * `fail()` above flattens both into a string, which is right for the provisioning steps but
+ * wrong here: the bootstrap has to tell EMAIL_EXISTS from a weak password from a permission
+ * problem, and re-parsing a formatted string to do it would be absurd.
+ */
+function apiError(action, res) {
+  const error = new Error(`${action}: ${res.status} ${JSON.stringify(res.body)}`);
+  error.status = res.status;
+  error.body = res.body;
+  return error;
+}
+
+/**
+ * Creates an Identity Platform account and returns its `localId`.
+ *
+ * This is the admin surface, not the client `accounts:signUp`. It therefore does NOT fire
+ * the `beforeUserCreated` blocking function, which is why the caller must write the
+ * `users/{uid}` document itself. Verified against a live project on 2026-09-11.
+ */
+export async function createIdentityAccount(projectId, { email, password, displayName }) {
+  const { identityToolkit } = await api();
+  const res = await identityToolkit.post(
+    `/projects/${projectId}/accounts`,
+    { email, password, displayName, emailVerified: true, disabled: false },
+    { resolveOnHTTPError: true },
+  );
+  if (res.status >= 400) throw apiError('Could not create the account', res);
+  return res.body?.localId;
+}
+
+/** Sets an account's custom claims. `claims` is a plain object; the API takes it as JSON. */
+export async function setIdentityCustomClaims(projectId, localId, claims) {
+  const { identityToolkit } = await api();
+  const res = await identityToolkit.post(
+    `/projects/${projectId}/accounts:update`,
+    { localId, customAttributes: JSON.stringify(claims) },
+    { resolveOnHTTPError: true },
+  );
+  if (res.status >= 400) throw apiError('Could not set the custom claims', res);
+}
+
+/** Applies a batch of Firestore writes atomically. */
+export async function commitFirestoreWrites(projectId, writes) {
+  const { firestore } = await api();
+  const res = await firestore.post(`/projects/${projectId}/databases/(default)/documents:commit`, { writes }, { resolveOnHTTPError: true });
+  if (res.status >= 400) throw apiError('Could not write the bootstrap documents', res);
 }

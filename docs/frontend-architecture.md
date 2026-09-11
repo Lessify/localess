@@ -43,7 +43,6 @@ All authenticated routes live under `/features` and are protected by `authGuard(
 ```
 /auth/login                         → LoginComponent (lazy, AuthModule)
 /auth/reset                         → ResetComponent (lazy, AuthModule)
-/auth/setup                         → SetupComponent (lazy, AuthModule)
 /features/
   welcome                           → WelcomeComponent
   me/                               → profile, account settings

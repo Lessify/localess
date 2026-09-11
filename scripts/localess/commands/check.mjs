@@ -297,9 +297,9 @@ async function applyFix(fix, facts, options) {
     }
 
     case FIX_ADMIN_USER:
-      // Runs after FIX_INVOKERS by FIX_ORDER: the callable this drives is unreachable
-      // without its invoker binding.
-      await ensureFirstAdmin(facts.deployedFunctions, options.admin, log);
+      // Talks to the Identity Platform API directly, so this works even on a project whose
+      // functions failed to deploy - which is exactly the project this command diagnoses.
+      await ensureFirstAdmin(projectId, options.admin, log);
       return;
 
     default:

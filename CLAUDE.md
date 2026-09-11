@@ -124,6 +124,8 @@ After every code change, always run the following in order:
 
 Three environment configurations: `development`, `production`, `docker`. Firebase emulators support Firestore, Auth, Storage, and Functions locally. The proxy config (`proxy.conf.cjs`) forwards API calls during development.
 
+There is no in-app setup wizard. To get an admin in the local emulator, create a user in the Auth emulator UI (http://localhost:4000) and set its custom claims to `{"role":"admin"}`. This is a one-time step per checkout — `npm run emulator` runs with `--import=./firebase-export --export-on-exit=./firebase-export`, so the account persists across restarts. Against a real project, use `npm run localess:check -- --project <id> --fix` instead.
+
 ## Project Knowledge Base
 
 Detailed documentation lives in `docs/`. Read the relevant file when working on the corresponding area:

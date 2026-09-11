@@ -151,7 +151,7 @@ Applies only the repairs that are **free and reversible**:
 | Project labels | Writes the three markers |
 | Local files / region | A full `syncLocalFiles`, propagating the live Firestore location everywhere |
 | Invoker bindings | Adds `allUsers` to `roles/run.invoker`, preserving every other binding |
-| Admin user | Prompts for credentials and calls the `setup` callable |
+| Admin user | Prompts for credentials, then creates the account, its admin claim and its documents |
 
 Everything else is reported with the command that does it, because it is not safe to do as a side
 effect of a check:
@@ -198,15 +198,18 @@ npm run localess:check -- --project <project-id> --fix
     + you@example.com created with the admin role
 ```
 
-It calls the deployed `setup` callable rather than creating the account itself. That callable also
-grants the `role: admin` claim and seeds the first space, and reimplementing those here would
-produce a second definition of "what a first admin needs" that drifts from
-`functions/src/setup.ts`. Driving the same endpoint the web wizard drives keeps there being exactly
-one.
+Three calls: create the Identity Platform account, set its `role: admin` custom claim, then a
+single Firestore commit writing both the `users/{uid}` document and the seeded `Hello World`
+space. The commit is atomic, so the two documents arrive together or not at all.
 
-The call is retried while a just-granted invoker binding propagates, but **only** on that class of
-failure. An `already-exists` response is never retried: it means an account is there, and this is
-the one call in the CLI whose repetition cannot be undone.
+Nothing is retried. None of these failures are transient, and account creation is the one
+call in the CLI whose repetition cannot be undone. Because the three steps span three
+different Google APIs they are not atomic with each other: a failure after the account exists
+says so explicitly, naming the account, and is recoverable — the account can sign in, and
+`user.sync` backfills its document.
+
+It does not depend on the deployed backend at all, so it works on a project whose functions
+failed to deploy — which is exactly the project this command exists to diagnose.
 
 ### Non-interactive
 
@@ -225,24 +228,23 @@ missing rather than hanging on a masked prompt nobody can answer. Every other re
 
 ---
 
-## Security note: the `setup` callable
+## Why the CLI creates the admin
 
-`functions/src/setup.ts` creates the first admin user. It cannot require authentication, because
-no account exists yet, and its only guard is whether the `configs/setup` document already exists.
+`npm run localess:check -- --fix` is the only way to create the first administrator.
 
-Once the `allUsers` invoker binding is in place — which the web setup wizard **requires** — that
-callable is reachable by anyone on the internet for as long as no admin exists. An unauthenticated
-`POST {"data":{}}` succeeds, creating an admin account with no email address and burning the
-`configs/setup` guard, which permanently locks the legitimate operator out of `/setup`.
+There used to be a `setup` Cloud Function behind a web wizard at `/setup`. It could not
+require authentication — no account exists yet to authenticate against — and its only guard
+was whether an admin had already been created. Once its `allUsers` invoker binding was in
+place, which the wizard required, anyone who knew the project id could claim the
+administrator account on a freshly deployed project. An unauthenticated `POST {"data":{}}`
+returned `200`.
 
-The exposure window runs from the first deploy until somebody completes the setup. This is why
-creating the admin is in `--fix` despite not being idempotent: it lets the window be closed in the
-same session as the deploy, instead of lasting until a human remembers to open a browser.
+It was removed rather than hardened. A public endpoint whose purpose is to grant
+administrative access cannot be made safe by rate-limiting it, and the CLI already did the
+job.
 
-```bash
-npm run localess:deploy -- --project <project-id>
-npm run localess:check  -- --project <project-id> --fix   # close the window now
-```
-
-`check` also tells you whether it is already too late — an admin you did not create shows up as a
-green `Admin user` row with an address you do not recognise.
+The CLI path also fixes a defect the callable had: `beforeUserCreated` writes the
+`users/{uid}` Firestore document, but it does not fire for accounts created through the
+Identity Platform admin API — which is how the callable created the admin. The first admin
+therefore never appeared in Admin → Users until somebody ran the `user.sync` callable. The
+CLI writes that document itself, including the `role` field the blocking function cannot see.

@@ -15,8 +15,6 @@ export { content } from './contents';
 
 export { openapi } from './open-api';
 
-export { setup } from './setup';
-
 export { space } from './spaces';
 
 export { storage } from './storage';

@@ -453,16 +453,6 @@ test('exitCodeFor does not fail on an unreadable check', () => {
   assert.equal(exitCodeFor(buildReport({ ...healthyFacts, accounts: null })), 0);
 });
 
-test('summarize orders repairs so the invoker bindings precede the admin user', () => {
-  // Creating the admin calls the `setup` callable, which is unreachable until it grants
-  // allUsers the invoker role. Running these the other way round cannot work.
-  const results = [
-    checkAdminUser({ recordsCount: 0, users: [] }, 500, PROJECT),
-    checkInvokers([{ id: 'setup', hasInvoker: false }], PROJECT),
-  ];
-  assert.deepEqual(summarize(results).fixable, [FIX_INVOKERS, FIX_ADMIN_USER]);
-});
-
 test('summarize orders every repair by FIX_ORDER regardless of check order', () => {
   const results = [
     checkAdminUser({ recordsCount: 0, users: [] }, 500, PROJECT),
