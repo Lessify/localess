@@ -50,6 +50,7 @@ import {
   readProjectLabels,
 } from '../firebase-gaps.mjs';
 import { ensureRequiredApis } from '../apis.mjs';
+import { ensureBucketCors } from '../bucket-cors.mjs';
 import { WEB_APP_NAME, buildMarkerLabels, hasMarker } from '../markers.mjs';
 import { annotateProjects } from '../projects.mjs';
 import { syncLocalFiles } from './sync.mjs';
@@ -388,6 +389,7 @@ export async function run(argv) {
   await ensureRequiredApis(projectId, log);
   const region = await ensureFirestore(projectId);
   await ensureStorage(projectId, region);
+  await ensureBucketCors(projectId, log);
   await ensureWebApp(projectId);
   await ensureHostingSite(projectId);
   await markProject(projectId, region);

@@ -20,6 +20,7 @@ import { buildDeployArgs, parseTargets } from '../deploy-plan.mjs';
 import { buildMarkerLabels } from '../markers.mjs';
 import { mergeProjectLabels } from '../firebase-gaps.mjs';
 import { ensureRequiredApis } from '../apis.mjs';
+import { ensureBucketCors } from '../bucket-cors.mjs';
 import { assertManaged, identifyProject } from '../projects.mjs';
 import { confirmDeployPlan } from '../prompts.mjs';
 import { ROOT, createLogger, rel } from '../log.mjs';
@@ -259,6 +260,7 @@ export async function run(argv) {
   // project that drifted since setup costs seconds rather than a full production build
   // followed by a failure worded in terms of the resource that could not be created.
   await ensureRequiredApis(projectId, log);
+  await ensureBucketCors(projectId, log);
 
   log.step('Installing dependencies');
   if (opts['skip-install']) {

@@ -74,6 +74,12 @@ async function init() {
       urlPrefix: 'https://serviceusage.googleapis.com',
       apiVersion: 'v1',
     }),
+    // The GCS JSON API, for bucket properties the Firebase Storage API does not expose.
+    // Distinct from `firebaseStorage` above, which only knows about the default bucket.
+    cloudStorage: new Client({
+      urlPrefix: 'https://storage.googleapis.com',
+      apiVersion: 'storage/v1',
+    }),
   };
 }
 
@@ -242,6 +248,32 @@ export async function createDefaultBucket(projectId, location) {
   if (res.status === 409) return getDefaultBucket(projectId);
   if (res.status >= 400) throw fail('Could not create default bucket', res);
   return bucketName(res.body);
+}
+
+/**
+ * The bucket's CORS configuration, or `null` when it cannot be read.
+ *
+ * An absent `cors` field comes back as `[]`, which is the case that matters: a bucket with
+ * no CORS rules rejects the browser's asset downloads. `null` means the read itself failed
+ * and is deliberately different, so a permissions problem is never mistaken for "unset".
+ */
+export async function getBucketCors(bucketName) {
+  try {
+    const { cloudStorage } = await api();
+    const res = await cloudStorage.get(`/b/${bucketName}`, { queryParams: { fields: 'cors' }, resolveOnHTTPError: true });
+    if (res.status >= 400) return null;
+    return res.body?.cors ?? [];
+  } catch {
+    return null;
+  }
+}
+
+/** Writes the bucket's CORS configuration. Throws when the caller may not update it. */
+export async function setBucketCors(bucketName, cors) {
+  const { cloudStorage } = await api();
+  const res = await cloudStorage.patch(`/b/${bucketName}`, { cors }, { resolveOnHTTPError: true });
+  if (res.status >= 400) throw fail('Could not set the bucket CORS configuration', res);
+  return res.body?.cors ?? [];
 }
 
 /**

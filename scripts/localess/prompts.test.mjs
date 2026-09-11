@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   CREATE_NEW,
+  validateAdminEmail,
+  validateAdminPassword,
   validateProjectId,
   toProjectChoices,
   filterProjectChoices,
@@ -133,4 +135,57 @@ test('toProjectChoices omits create-new when creation is not allowed', () => {
     choices.some(choice => choice.value === CREATE_NEW),
     false,
   );
+});
+
+test('validateAdminEmail accepts an ordinary address', () => {
+  assert.equal(validateAdminEmail('admin@example.com'), true);
+});
+
+test('validateAdminEmail accepts addresses Firebase allows but a strict regex would not', () => {
+  // The server is the authority here; this check only front-runs a failed round trip.
+  assert.equal(validateAdminEmail("o'brien+cms@sub.example.co.uk"), true);
+});
+
+test('validateAdminEmail trims before judging', () => {
+  assert.equal(validateAdminEmail('  admin@example.com  '), true);
+});
+
+test('validateAdminEmail rejects an empty address', () => {
+  assert.equal(typeof validateAdminEmail(''), 'string');
+  assert.equal(typeof validateAdminEmail('   '), 'string');
+  assert.equal(typeof validateAdminEmail(undefined), 'string');
+});
+
+test('validateAdminEmail rejects an address with no @', () => {
+  assert.equal(typeof validateAdminEmail('admin.example.com'), 'string');
+});
+
+test('validateAdminEmail rejects an address with nothing either side of the @', () => {
+  assert.equal(typeof validateAdminEmail('@example.com'), 'string');
+  assert.equal(typeof validateAdminEmail('admin@'), 'string');
+});
+
+test('validateAdminEmail rejects more than one @', () => {
+  assert.equal(typeof validateAdminEmail('admin@one@example.com'), 'string');
+});
+
+test('validateAdminEmail rejects an address containing a space', () => {
+  assert.equal(typeof validateAdminEmail('ad min@example.com'), 'string');
+});
+
+test('validateAdminPassword accepts the shortest password Firebase allows', () => {
+  assert.equal(validateAdminPassword('abcdef'), true);
+});
+
+test('validateAdminPassword rejects one character short', () => {
+  assert.equal(typeof validateAdminPassword('abcde'), 'string');
+});
+
+test('validateAdminPassword rejects an empty password', () => {
+  assert.equal(typeof validateAdminPassword(''), 'string');
+  assert.equal(typeof validateAdminPassword(undefined), 'string');
+});
+
+test('validateAdminPassword does not trim - leading and trailing spaces are part of a password', () => {
+  assert.equal(validateAdminPassword('  a b  '), true);
 });

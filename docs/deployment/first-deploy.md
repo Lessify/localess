@@ -199,6 +199,24 @@ resource that could not be created.
 used at runtime by `functions/src/services/translate.service.ts` — so if it were off, the first sign
 would be the translate feature failing in production.
 
+#### Storage CORS
+
+The browser fetches assets straight from Storage, so the default bucket needs CORS rules or those
+downloads fail. Deploy checks for them alongside the APIs and applies read-only rules — `GET` and
+`HEAD` from any origin — when the bucket has none.
+
+Only an empty configuration is filled in. Any existing rule is left untouched, because someone chose
+it: a tighter origin list for a locked-down install should not be silently widened to `*`.
+
+This used to be done by the `setup` callable in `functions/`, which set it while creating the first
+admin user. That placed it behind the `configs/setup` guard, so it ran exactly once in a project's
+lifetime and no later change to the rules could ever reach an existing install — and it left a window
+between deploy and whenever a human opened `/setup` in which assets simply did not load. It is
+ordinary infrastructure, so it lives with the rest of it now.
+
+Setting CORS needs `storage.buckets.update`. Without it setup warns and carries on rather than
+failing, and deploy re-checks every run, so the project heals itself once the role is granted.
+
 #### First-deploy retries
 
 A first deploy races the provisioning that precedes it. The `gcf-v2-sources` bucket and the Eventarc

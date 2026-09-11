@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { authService, bucket, firestoreService } from './config';
+import { authService, firestoreService } from './config';
 import { DEFAULT_LOCALE } from './models';
 import { createSpace } from './services';
 
@@ -32,23 +32,11 @@ export const setup = onCall<Setup>(async request => {
   });
   await authService.setCustomUserClaims(adminUser.uid, { role: 'admin' });
   logger.info(`[setup] ✅ First admin user created with UID: ${adminUser.uid}`);
-  // Setup
-  // Bucket CORS
-  logger.info('[setup] Check Bucket CORS:');
-  if (bucket.metadata.cors === undefined) {
-    logger.info('[setup] Check Bucket CORS: 🔧 Setting configuration');
-    await bucket.setCorsConfiguration([
-      {
-        origin: ['*'],
-        method: ['GET', 'HEAD'],
-        maxAgeSeconds: 3600,
-      },
-    ]);
-    logger.info('[setup] Check Bucket CORS: 💾 Configuration Saved');
-  } else {
-    logger.info('[setup] Check Bucket CORS: ✅ Configuration already exists');
-  }
-  logger.info('[setup] Check Bucket CORS: ✅ Done');
+
+  // Bucket CORS is no longer set here. It is infrastructure, and doing it from this callable
+  // meant it ran exactly once per project - behind the `configs/setup` guard below - so a
+  // change to the rules could never reach an existing install. `npm run localess:setup` and
+  // `npm run localess:deploy` now apply it, and re-check it on every run.
 
   await setupRef.set(
     {

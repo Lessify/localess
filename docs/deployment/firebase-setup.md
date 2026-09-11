@@ -90,11 +90,11 @@ In order:
 4.  APIs             check the 15 required APIs, enable whichever are off
 5.  Firestore        adopt the existing location, or ask and create in --region
 6.  Storage          create and link the default bucket in --region
-7.  Web app          register a "Localess" web app
-8.  Authentication   deploy the firebase.json `auth` block
+7.  Storage CORS     allow GET and HEAD from any origin, when the bucket has no rules
+8.  Web app          register a "Localess" web app
 9.  Hosting          create the site (normally already present)
-10. Local config     write .env.<project-id>, firebase-config.<project-id>.json, functions/.env.<project-id>
-11. Mark project     label it localess-managed with the version
+10. Mark project     label it localess-managed with the version
+11. Local config     write .env.<project-id>, firebase-config.<project-id>.json, functions/.env.<project-id>
 12. Offer deploy     ask whether to run `npm run localess:deploy` (defaults to no)
 ```
 
@@ -292,6 +292,7 @@ The modules under `scripts/`:
 | `scripts/localess/firebase-gaps.mjs` | The steps that have **no** CLI command |
 | `scripts/localess/firebase-tools.mjs` | Locates the global firebase-tools, enforces the minimum version |
 | `scripts/localess/apis.mjs` | The required Google Cloud APIs, and the check both setup and deploy run |
+| `scripts/localess/bucket-cors.mjs` | The default Storage CORS rules, applied when the bucket has none |
 | `scripts/localess/config.mjs` | The `.env.<project-id>` format and project resolution |
 | `scripts/localess/generate.mjs` | Turns a config into `firebase.<id>.json` and `functions/.env.<id>` |
 | `scripts/localess/defines.mjs` | Turns a config into `--define` flags for the Angular build |

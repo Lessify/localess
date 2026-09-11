@@ -10,7 +10,7 @@
  * transitively - `@angular/cli` pins its own 7.x - but relying on that would break the
  * wizard whenever the CLI moved, so this depends on it explicitly.
  */
-import { confirm, input, search, select } from '@inquirer/prompts';
+import { confirm, input, password, search, select } from '@inquirer/prompts';
 
 import { DEFAULT_REGION } from './config.mjs';
 import { toRegionChoices, toZoneChoices, zoneOf } from './regions.mjs';
@@ -36,6 +36,43 @@ export function validateProjectId(value) {
   if (!/^[a-z0-9-]+$/.test(id)) return 'Use lowercase letters, digits and hyphens only.';
   if (!/^[a-z]/.test(id)) return 'A project id must start with a letter.';
   if (id.endsWith('-')) return 'A project id cannot end with a hyphen.';
+  return true;
+}
+
+/**
+ * The first admin's email.
+ *
+ * Deliberately permissive. Firebase is the authoritative validator and will reject anything
+ * it dislikes, so this exists only to turn a failed round trip into instant feedback - the
+ * same job `validateProjectId` does. Trying to encode RFC 5322 here would reject valid
+ * addresses for no gain.
+ */
+export function validateAdminEmail(value) {
+  const email = (value ?? '').trim();
+  if (email === '') return 'An email address is required.';
+  if (/\s/.test(email)) return 'An email address cannot contain spaces.';
+
+  const parts = email.split('@');
+  if (parts.length !== 2 || parts[0] === '' || parts[1] === '') {
+    return 'Enter an email address in the form name@example.com.';
+  }
+  return true;
+}
+
+/** Firebase's own minimum. A project with a stricter policy is still rejected server-side. */
+const MIN_PASSWORD_LENGTH = 6;
+
+/**
+ * The first admin's password.
+ *
+ * Only the length rule Firebase always enforces is checked here. A project can configure a
+ * stricter Identity Platform password policy, and duplicating that would go stale - the
+ * server stays the authority, this just catches the obvious case before a round trip.
+ */
+export function validateAdminPassword(value) {
+  const secret = value ?? '';
+  if (secret === '') return 'A password is required.';
+  if (secret.length < MIN_PASSWORD_LENGTH) return `A password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
   return true;
 }
 
@@ -106,6 +143,35 @@ export async function askNewProject(defaultDisplayName, context) {
   const projectId = await input({ message: 'New project id:', validate: validateProjectId }, context);
   const displayName = await input({ message: 'Display name:', default: defaultDisplayName }, context);
   return { projectId: projectId.trim(), displayName: displayName.trim() || defaultDisplayName };
+}
+
+/** The display name the first admin gets when none is given. Matches the `setup` callable. */
+export const DEFAULT_ADMIN_NAME = 'Admin';
+
+/**
+ * Asks for the first admin's credentials.
+ *
+ * The password is asked for twice because it is masked: a typo is invisible otherwise, and
+ * the cost of getting it wrong is an account nobody can sign in to.
+ */
+export async function askAdminCredentials(context) {
+  const email = await input({ message: 'Admin email:', validate: validateAdminEmail }, context);
+
+  let secret;
+  for (;;) {
+    secret = await password({ message: 'Admin password:', mask: true, validate: validateAdminPassword }, context);
+    const again = await password({ message: 'Confirm password:', mask: true }, context);
+    if (secret === again) break;
+    console.log('\n\x1b[33mThe passwords do not match. Try again.\x1b[0m\n');
+  }
+
+  const displayName = await input({ message: 'Display name:', default: DEFAULT_ADMIN_NAME }, context);
+
+  return {
+    email: email.trim(),
+    password: secret,
+    displayName: displayName.trim() || DEFAULT_ADMIN_NAME,
+  };
 }
 
 /** Asks which billing account to link. Returns a `billingAccounts/<id>` resource name. */
