@@ -32,6 +32,7 @@ npm run test:scripts   # node:test suite for scripts/ (*.test.mjs)
 npm run localess:setup # Provision Firebase infrastructure and record the project markers
 npm run localess:sync           # Regenerate local project files from remote state
 npm run localess:deploy         # Build and deploy to a Localess-managed project
+npm run localess:check          # Report what a project is still missing (--fix repairs the safe ones)
 
 # Firebase Functions (from /functions directory)
 cd functions && npm run build   # Compile TypeScript functions
@@ -148,6 +149,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Phase 1 — Firebase provisioning (`npm run localess:setup`) | [docs/deployment/firebase-setup.md](docs/deployment/firebase-setup.md) | `scripts/localess.mjs`, `scripts/localess/`, `firebase.json` `auth` block |
 | Phase 2 — `npm run localess:deploy`, `.env.<project-id>`, `LOCALESS_*` build-time config | [docs/deployment/first-deploy.md](docs/deployment/first-deploy.md) | Deploys, `scripts/localess/commands/`, `scripts/localess/config.mjs`, `scripts/localess/generate.mjs`, `scripts/localess/defines.mjs`, region wiring, login provider flags |
 | Phase 3 — Pushing updates, targeted deploys, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Redeploys, `--only` targets, upgrade steps |
+| Health check (`npm run localess:check`), `--fix`, invoker bindings | [docs/deployment/check.md](docs/deployment/check.md) | `scripts/localess/checks.mjs`, `scripts/localess/commands/check.mjs`, diagnosing a broken install |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
 | Admin → Users | [docs/features/admin/admin-users.md](docs/features/admin/admin-users.md) | `features/admin/users/` |

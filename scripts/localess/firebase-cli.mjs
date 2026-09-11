@@ -124,5 +124,14 @@ export const cli = {
 
   createHostingSite: (projectId, siteId) => run(['hosting:sites:create', siteId, '--project', projectId]),
 
+  /**
+   * Every deployed function, with its trigger type and backing Cloud Run service.
+   *
+   * The trigger type is the reason this is used rather than a Cloud Run listing: only
+   * `callableTrigger` and `httpsTrigger` functions are meant to be reachable without
+   * credentials, and nothing about the Cloud Run service itself says which is which.
+   */
+  listFunctions: projectId => runJson(['functions:list', '--project', projectId]),
+
   /** Provisions Identity Platform + the providers declared in `firebase.json`. */
 };

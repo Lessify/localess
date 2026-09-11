@@ -243,18 +243,38 @@ have been deployed once — and takes effect from the second deploy onward.
 
 ### 5. Create the first admin user
 
-Open:
+```bash
+npm run localess:check -- --project <project-id> --fix
+```
+
+It asks for an email, a password and a display name, then creates the account. The browser route
+still works and does the same thing:
 
 ```
 https://<project-id>.web.app/setup
 ```
 
-This is a Localess feature, not a Firebase one — `functions/src/setup.ts` creates the account and
-grants it `role: admin` via `setCustomUserClaims`. It only works while no users exist.
+Either way this is a Localess feature, not a Firebase one — `functions/src/setup.ts` creates the
+account, grants it `role: admin` via `setCustomUserClaims` and seeds the first space. It only works
+while no admin exists.
+
+> **Do this immediately, and prefer the CLI.** The callable cannot require authentication — no
+> account exists yet — and its only guard is whether an admin has already been created. Until one
+> has, anyone who knows the project id can claim it. Running the command in the same session as the
+> deploy closes that window; leaving it for whenever somebody opens a browser does not. See the
+> [security note](check.md#security-note-the-setup-callable).
 
 ---
 
 ## Verifying the deploy
+
+```bash
+npm run localess:check -- --project <project-id>
+```
+
+Reports everything below in one pass, plus the things the table cannot see — most usefully the
+`allUsers` invoker bindings, which a partially failed first deploy silently omits and no later
+deploy restores. See [Checking an installation](check.md).
 
 | Check | How |
 |-------|-----|

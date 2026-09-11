@@ -26,6 +26,7 @@ All three are subcommands of one CLI (`scripts/localess.mjs`); the npm scripts a
 | `npm run localess:setup` | Provisioning infrastructure and recording the project markers |
 | `npm run localess:sync` | Regenerating the local project files from remote state |
 | `npm run localess:deploy` | Building and shipping the application |
+| `npm run localess:check` | Reporting what a project is still missing |
 
 **Setup never deploys.** It enables services and records what it did; applying configuration
 and pushing code is deploy's job. Setup offers to run a deploy when it finishes, but only if
@@ -34,6 +35,10 @@ you say yes.
 **Deploy only touches projects Localess manages.** It refuses any project that does not carry
 the `localess-managed` label, so a mistyped project id cannot install a CMS over something
 unrelated. See [how a project is recognised](firebase-setup.md#how-a-project-is-recognised).
+
+**Check is the one that does not refuse.** A missing `localess-managed` label is one of the
+things it reports, so gating on it would hide the finding you came for. See
+[Checking an installation](check.md).
 
 ---
 

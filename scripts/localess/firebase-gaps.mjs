@@ -80,6 +80,23 @@ async function init() {
       urlPrefix: 'https://storage.googleapis.com',
       apiVersion: 'storage/v1',
     }),
+    // Gen-2 functions are Cloud Run services, and whether one is reachable without
+    // credentials is a Cloud Run IAM question no Firebase surface answers.
+    cloudRun: new Client({
+      urlPrefix: 'https://run.googleapis.com',
+      apiVersion: 'v2',
+    }),
+    // Two different Identity Toolkit surfaces: `v1` holds the account data plane
+    // (`accounts:query`), `admin/v2` holds the project's provider configuration. They share
+    // a host and nothing else.
+    identityToolkit: new Client({
+      urlPrefix: 'https://identitytoolkit.googleapis.com',
+      apiVersion: 'v1',
+    }),
+    identityToolkitAdmin: new Client({
+      urlPrefix: 'https://identitytoolkit.googleapis.com',
+      apiVersion: 'admin/v2',
+    }),
   };
 }
 
@@ -343,6 +360,93 @@ export async function listAllProjectLabels() {
     } while (pageToken);
 
     return byProject;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The IAM policy of the Cloud Run service backing a gen-2 function, or `null` when it
+ * cannot be read.
+ *
+ * Firebase gen-2 functions are Cloud Run services, and an https-triggered one is only
+ * reachable from a browser when `allUsers` holds `roles/run.invoker`. firebase-tools binds
+ * that at function *create* time only, so a function created during a failed deploy and
+ * merely updated afterwards never gets it - the deploy reports "no changes detected" and
+ * the callable keeps returning 403 to every unauthenticated caller.
+ */
+export async function getRunIamPolicy(projectId, region, serviceName) {
+  try {
+    const { cloudRun } = await api();
+    const res = await cloudRun.get(`/projects/${projectId}/locations/${region}/services/${serviceName}:getIamPolicy`, {
+      resolveOnHTTPError: true,
+    });
+    if (res.status >= 400) return null;
+    return res.body ?? {};
+  } catch {
+    return null;
+  }
+}
+
+/** Adds `allUsers` to `roles/run.invoker`, preserving every other binding. */
+export async function addRunInvoker(projectId, region, serviceName) {
+  const { cloudRun } = await api();
+  const policy = await getRunIamPolicy(projectId, region, serviceName);
+  if (policy === null) throw new Error(`Could not read the IAM policy of ${serviceName}`);
+
+  const bindings = policy.bindings ?? [];
+  const invoker = bindings.find(binding => binding.role === 'roles/run.invoker');
+  const merged = invoker
+    ? bindings.map(binding =>
+        binding === invoker ? { ...binding, members: [...new Set([...(binding.members ?? []), 'allUsers'])] } : binding,
+      )
+    : [...bindings, { role: 'roles/run.invoker', members: ['allUsers'] }];
+
+  const res = await cloudRun.post(
+    `/projects/${projectId}/locations/${region}/services/${serviceName}:setIamPolicy`,
+    { policy: { ...policy, bindings: merged } },
+    { resolveOnHTTPError: true },
+  );
+  if (res.status >= 400) throw fail(`Could not make ${serviceName} publicly invocable`, res);
+  return res.body;
+}
+
+/**
+ * A page of Identity Platform accounts, or `null` when they cannot be read.
+ *
+ * Used to answer one question: does an admin exist? There is no server-side filter on
+ * custom claims, so the caller scans a page. `recordsCount` is returned alongside so a
+ * project with more users than the page can hold reports "unknown" rather than "missing".
+ */
+export async function queryIdentityUsers(projectId, limit = 500) {
+  try {
+    const { identityToolkit } = await api();
+    const res = await identityToolkit.post(
+      `/projects/${projectId}/accounts:query`,
+      { returnUserInfo: true, limit: String(limit) },
+      { resolveOnHTTPError: true },
+    );
+    if (res.status >= 400) return null;
+    return { recordsCount: Number(res.body?.recordsCount ?? 0), users: res.body?.userInfo ?? [] };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The Identity Platform config, or `null` when it cannot be read.
+ *
+ * A 404 means Identity Platform was never initialised on the project, which is a real
+ * finding rather than a read failure - it comes back as `{}` so the caller sees "no
+ * providers are on" instead of "could not tell".
+ */
+export async function getIdentityConfig(projectId) {
+  try {
+    const { identityToolkitAdmin } = await api();
+    const res = await identityToolkitAdmin.get(`/projects/${projectId}/config`, { resolveOnHTTPError: true });
+    if (res.status === 404) return {};
+    if (res.status >= 400) return null;
+    return res.body ?? {};
   } catch {
     return null;
   }

@@ -149,23 +149,43 @@ export async function askNewProject(defaultDisplayName, context) {
 export const DEFAULT_ADMIN_NAME = 'Admin';
 
 /**
- * Asks for the first admin's credentials.
+ * Which credentials still have to be asked for, given what was supplied up front.
+ *
+ * Pulled out so a caller can tell, before touching the terminal, whether it is about to
+ * prompt - a non-interactive run has to skip the whole repair rather than hang on a prompt
+ * nobody can answer.
+ */
+export function missingAdminCredentials({ email, password: secret } = {}) {
+  const absent = [];
+  if (validateAdminEmail(email) !== true) absent.push('email');
+  if (validateAdminPassword(secret) !== true) absent.push('password');
+  return absent;
+}
+
+/**
+ * Asks for the first admin's credentials, skipping whatever was already supplied.
  *
  * The password is asked for twice because it is masked: a typo is invisible otherwise, and
- * the cost of getting it wrong is an account nobody can sign in to.
+ * the cost of getting it wrong is an account nobody can sign in to. A supplied password is
+ * taken at face value - it came from the environment, where there was nothing to mistype
+ * against, and asking to confirm a value the user cannot see would be theatre.
  */
-export async function askAdminCredentials(context) {
-  const email = await input({ message: 'Admin email:', validate: validateAdminEmail }, context);
+export async function askAdminCredentials(supplied = {}, context) {
+  const email =
+    validateAdminEmail(supplied.email) === true
+      ? supplied.email
+      : await input({ message: 'Admin email:', validate: validateAdminEmail }, context);
 
-  let secret;
-  for (;;) {
+  let secret = supplied.password;
+  while (validateAdminPassword(secret) !== true) {
     secret = await password({ message: 'Admin password:', mask: true, validate: validateAdminPassword }, context);
     const again = await password({ message: 'Confirm password:', mask: true }, context);
     if (secret === again) break;
     console.log('\n\x1b[33mThe passwords do not match. Try again.\x1b[0m\n');
+    secret = undefined;
   }
 
-  const displayName = await input({ message: 'Display name:', default: DEFAULT_ADMIN_NAME }, context);
+  const displayName = supplied.displayName ?? (await input({ message: 'Display name:', default: DEFAULT_ADMIN_NAME }, context));
 
   return {
     email: email.trim(),

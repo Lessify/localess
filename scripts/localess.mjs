@@ -18,6 +18,7 @@ const COMMANDS = {
   setup: { module: './localess/commands/setup.mjs', summary: 'Provision Firebase infrastructure for a project' },
   deploy: { module: './localess/commands/deploy.mjs', summary: 'Build and deploy Localess to a managed project' },
   sync: { module: './localess/commands/sync.mjs', summary: 'Regenerate local project files from remote state' },
+  check: { module: './localess/commands/check.mjs', summary: 'Report what a project is still missing' },
 };
 
 function printCommands() {

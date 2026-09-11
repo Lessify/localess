@@ -31,7 +31,8 @@
     "localess": "node scripts/localess.mjs",
     "localess:setup": "node scripts/localess.mjs setup",
     "localess:deploy": "node scripts/localess.mjs deploy",
-    "localess:sync": "node scripts/localess.mjs sync"
+    "localess:sync": "node scripts/localess.mjs sync",
+    "localess:check": "node scripts/localess.mjs check"
   },
   "license": "MIT",
   "private": true,

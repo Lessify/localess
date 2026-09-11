@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   CREATE_NEW,
+  missingAdminCredentials,
   validateAdminEmail,
   validateAdminPassword,
   validateProjectId,
@@ -188,4 +189,23 @@ test('validateAdminPassword rejects an empty password', () => {
 
 test('validateAdminPassword does not trim - leading and trailing spaces are part of a password', () => {
   assert.equal(validateAdminPassword('  a b  '), true);
+});
+
+test('missingAdminCredentials reports nothing when both are supplied', () => {
+  assert.deepEqual(missingAdminCredentials({ email: 'a@example.com', password: 'secret1' }), []);
+});
+
+test('missingAdminCredentials names each credential that still has to be asked for', () => {
+  assert.deepEqual(missingAdminCredentials({}), ['email', 'password']);
+  assert.deepEqual(missingAdminCredentials({ email: 'a@example.com' }), ['password']);
+  assert.deepEqual(missingAdminCredentials({ password: 'secret1' }), ['email']);
+});
+
+test('missingAdminCredentials rejects a supplied value that would not pass validation', () => {
+  // An invalid LOCALESS_ADMIN_PASSWORD must produce a prompt, not a failed round trip.
+  assert.deepEqual(missingAdminCredentials({ email: 'nope', password: 'abc' }), ['email', 'password']);
+});
+
+test('missingAdminCredentials tolerates no argument at all', () => {
+  assert.deepEqual(missingAdminCredentials(), ['email', 'password']);
 });
