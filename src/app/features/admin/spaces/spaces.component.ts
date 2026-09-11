@@ -14,14 +14,19 @@ import { LlTableImports, TableDataSource, TableSort } from '@shared/components/t
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
+import { SpaceTemplateService } from '@shared/services/space-template.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
-import { SpaceDialogComponent } from './space-dialog/space-dialog.component';
-import { SpaceDialogModel } from './space-dialog/space-dialog.model';
+import { SpaceCreateDialogComponent } from './space-create-dialog/space-create-dialog.component';
+import { SpaceCreateDialogModel } from './space-create-dialog/space-create-dialog.model';
+import { SpaceEditDialogComponent } from './space-edit-dialog/space-edit-dialog.component';
+import { SpaceEditDialogModel } from './space-edit-dialog/space-edit-dialog.model';
+import { SPACE_TEMPLATES } from './templates';
 
 @Component({
   selector: 'll-spaces',
@@ -50,6 +55,7 @@ import { SpaceDialogModel } from './space-dialog/space-dialog.model';
 })
 export class SpacesComponent implements OnInit, AfterViewInit {
   private readonly spaceService = inject(SpaceService);
+  private readonly spaceTemplateService = inject(SpaceTemplateService);
   private readonly dialog = inject(MatDialog);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
@@ -92,20 +98,41 @@ export class SpacesComponent implements OnInit, AfterViewInit {
 
   openAddDialog(): void {
     this.dialog
-      .open<SpaceDialogComponent, SpaceDialogModel, SpaceDialogModel>(SpaceDialogComponent, {
+      .open<SpaceCreateDialogComponent, undefined, SpaceCreateDialogModel>(SpaceCreateDialogComponent, {
         panelClass: 'sm',
-        data: {
-          name: '',
-        },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.spaceService.create(it!)),
+        switchMap(it =>
+          this.spaceService.create(it!).pipe(
+            switchMap(ref => {
+              const template = SPACE_TEMPLATES.find(t => t.id === it!.template);
+              // EMPTY resolves to a template whose schemas array is empty, and apply()
+              // short-circuits on that without touching Firestore.
+              if (!template) return of({ templateFailed: false });
+              return this.spaceTemplateService.apply(ref.id, template).pipe(
+                map(() => ({ templateFailed: false })),
+                // The space exists and is usable, so a failed template is not a failed creation.
+                // Reporting it as one would be a lie, and would invite the user to retry a create
+                // that already succeeded. There is deliberately no rollback: deleting a space the
+                // user just watched appear is worse than leaving an empty one.
+                catchError((err: unknown) => {
+                  console.error(err);
+                  return of({ templateFailed: true });
+                }),
+              );
+            }),
+          ),
+        ),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Space has been created.');
+        next: result => {
+          if (result.templateFailed) {
+            this.notificationService.warning('Space has been created, but the template could not be applied.');
+          } else {
+            this.notificationService.success('Space has been created.');
+          }
         },
         error: (err: unknown) => {
           console.error(err);
@@ -116,7 +143,7 @@ export class SpacesComponent implements OnInit, AfterViewInit {
 
   openEditDialog(element: Space): void {
     this.dialog
-      .open<SpaceDialogComponent, SpaceDialogModel, SpaceDialogModel>(SpaceDialogComponent, {
+      .open<SpaceEditDialogComponent, SpaceEditDialogModel, SpaceEditDialogModel>(SpaceEditDialogComponent, {
         panelClass: 'sm',
         data: {
           name: element.name,

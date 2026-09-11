@@ -34,6 +34,8 @@ Three schema types:
 
 Field kinds: `TEXT`, `TEXTAREA`, `RICH_TEXT`, `MARKDOWN`, `NUMBER`, `COLOR`, `DATE`, `DATETIME`, `BOOLEAN`, `OPTION`, `OPTIONS`, `SCHEMA` (single node), `SCHEMAS` (array of nodes), `LINK`, `REFERENCE`, `REFERENCES`, `ASSET`, `ASSETS`.
 
+New spaces can be created from a template that seeds a ready-made set of schemas — see [Admin → Spaces](features/admin/admin-spaces.md#space-templates).
+
 ---
 
 ## Content

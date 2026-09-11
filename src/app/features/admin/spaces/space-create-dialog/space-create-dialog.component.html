@@ -1,0 +1,46 @@
+<h2 mat-dialog-title>Create Space</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+    <div hlmField>
+      <label hlmFieldLabel for="name">Name</label>
+      <div hlmInputGroup>
+        <input hlmInputGroupInput id="name" type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+          >{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon
+        >
+      </div>
+      @if (form.controls['name'].errors; as errors) {
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+      }
+    </div>
+
+    @if (canChooseTemplate()) {
+      <fieldset hlmFieldSet>
+        <legend hlmFieldLegend>Template</legend>
+        <p hlmFieldDescription>Start from a ready-made set of schemas.</p>
+        <hlm-radio-group formControlName="template">
+          @for (template of templates; track template.id) {
+            <label hlmFieldLabel [for]="template.id">
+              <div hlmField orientation="horizontal">
+                <div hlmFieldContent>
+                  <div hlmFieldTitle>
+                    <ng-icon hlm size="sm" [name]="template.icon" />
+                    {{ template.name }}
+                  </div>
+                  <div hlmFieldDescription>{{ template.description }}</div>
+                </div>
+                <hlm-radio [value]="template.id" [inputId]="template.id">
+                  <hlm-radio-indicator indicator />
+                </hlm-radio>
+              </div>
+            </label>
+          }
+        </hlm-radio-group>
+      </fieldset>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="flex gap-2">
+  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Create</button>
+</mat-dialog-actions>

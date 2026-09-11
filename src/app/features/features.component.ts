@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth, signOut } from '@angular/fire/auth';
 import { ReactiveFormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
@@ -38,6 +39,7 @@ import {
   lucideLifeBuoy,
   lucideLogOut,
   lucideMoon,
+  lucidePlus,
   lucideSend,
   lucideSettings,
   lucideShieldAlert,
@@ -81,6 +83,8 @@ import { cva } from 'class-variance-authority';
 import { filter, interval, mergeMap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
+import { SpaceCreateDialogComponent } from './admin/spaces/space-create-dialog/space-create-dialog.component';
+import { SpaceCreateDialogModel } from './admin/spaces/space-create-dialog/space-create-dialog.model';
 
 const appTextVariants = cva(
   'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xl font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] ',
@@ -162,6 +166,7 @@ interface SideMenuItem {
       lucideEarth,
       lucideLifeBuoy,
       lucideExternalLink,
+      lucidePlus,
       lucideMoon,
       lucideSun,
       lucideCode,
@@ -173,6 +178,7 @@ interface SideMenuItem {
 })
 export class FeaturesComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
   private readonly reposService = inject(ReposService);
   private auth = inject(Auth);
   private route = inject(ActivatedRoute);
@@ -376,6 +382,18 @@ export class FeaturesComponent implements OnInit {
   onSpaceSelection(space: Space): void {
     this.spaceStore.changeSpace(space);
     this.router.navigate(['features', 'spaces', space.id, 'dashboard']);
+  }
+
+  /**
+   * Offered from the shell rather than a single page, because a user with no spaces has no space
+   * routes to land on - the switcher slot above is empty for exactly the same reason.
+   *
+   * The same dialog Admin -> Spaces opens, so there is one space-creation flow.
+   */
+  openCreateSpace(): void {
+    this.dialog.open<SpaceCreateDialogComponent, undefined, SpaceCreateDialogModel>(SpaceCreateDialogComponent, {
+      panelClass: 'sm',
+    });
   }
 
   async onLogoutClick(): Promise<void> {

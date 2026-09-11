@@ -13,6 +13,14 @@ const ROOT_PATH: PathItem = { name: 'Root', fullSlug: '' };
 const DEFAULT_PATH = [ROOT_PATH];
 export type SpaceState = {
   spaces: Space[];
+  /**
+   * Whether `load()` has resolved at least once, however it resolved.
+   *
+   * Without this, an empty `spaces` is ambiguous: it is also the initial state, so "this user has
+   * no spaces" and "we have not asked yet" look identical and any onboarding prompt flashes on
+   * every login before the response arrives.
+   */
+  loaded: boolean;
   selectedSpaceId: string | undefined;
   selectedEnvironmentBySpaceId: Record<string, string>;
   contentPath: PathItem[];
@@ -29,6 +37,7 @@ export type PathItem = {
 
 const initialState: SpaceState = {
   spaces: [],
+  loaded: false,
   selectedSpaceId: undefined,
   selectedEnvironmentBySpaceId: {},
   contentPath: DEFAULT_PATH,
@@ -98,6 +107,7 @@ export const SpaceStore = signalStore(
                 const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
                 patchState(state, {
                   spaces: [],
+                  loaded: true,
                   selectedSpaceId: undefined,
                   assetPath: DEFAULT_PATH,
                   contentPath: DEFAULT_PATH,
@@ -113,6 +123,7 @@ export const SpaceStore = signalStore(
                     const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
                     patchState(state, {
                       spaces: response,
+                      loaded: true,
                       selectedSpaceId: selectedSpaceId,
                       assetPath: DEFAULT_PATH,
                       contentPath: DEFAULT_PATH,
@@ -124,6 +135,7 @@ export const SpaceStore = signalStore(
                     const environment = resolveEnvironmentForSpace(space, selectedEnvironmentBySpaceId);
                     patchState(state, {
                       spaces: response,
+                      loaded: true,
                       selectedSpaceId: space.id,
                       assetPath: DEFAULT_PATH,
                       contentPath: DEFAULT_PATH,
@@ -136,6 +148,7 @@ export const SpaceStore = signalStore(
                   const environment = resolveEnvironmentForSpace(defaultSpace, selectedEnvironmentBySpaceId);
                   patchState(state, {
                     spaces: response,
+                    loaded: true,
                     selectedSpaceId: defaultSpace.id,
                     assetPath: DEFAULT_PATH,
                     contentPath: DEFAULT_PATH,
@@ -147,6 +160,9 @@ export const SpaceStore = signalStore(
             },
             error: error => {
               console.error('Error loading spaces', error);
+              // Still "loaded": the question was asked and answered, badly. Leaving it false would
+              // hang any consumer waiting to know, and `spaces` stays empty either way.
+              patchState(state, { loaded: true });
             },
           }),
         ),
@@ -220,6 +236,13 @@ export const SpaceStore = signalStore(
       environment: computed(() => state.environment()),
       selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),
       documents: computed(() => state.documents()),
+      /**
+       * This account has no spaces, and we know that for a fact rather than by not having asked.
+       *
+       * Gated on `loaded` deliberately: `spaces` starts empty, so without it every login would
+       * briefly report "no spaces" and flash an onboarding prompt at users who have plenty.
+       */
+      hasNoSpaces: computed(() => state.loaded() && state.spaces().length === 0),
     };
   }),
   withHooks({

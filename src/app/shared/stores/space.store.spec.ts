@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Space } from '@shared/models/space.model';
 import { SpaceService } from '@shared/services/space.service';
-import { of } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { SpaceStore } from './space.store';
 
@@ -36,6 +36,37 @@ describe('SpaceStore', () => {
     expect(store.spaces()).toEqual([]);
     expect(store.selectedSpace()).toBeUndefined();
     expect(store.environment()).toBeUndefined();
+  });
+
+  it('reports hasNoSpaces once an empty response has arrived', () => {
+    const store = createStore([]);
+    expect(store.hasNoSpaces()).toBe(true);
+  });
+
+  it('does not report hasNoSpaces for an account that has spaces', () => {
+    const store = createStore([space('a')]);
+    expect(store.hasNoSpaces()).toBe(false);
+  });
+
+  it('does not report hasNoSpaces before the first load resolves', () => {
+    // `spaces` starts empty, so without the `loaded` gate this would be true on every login and
+    // flash an onboarding prompt at users who have plenty of spaces.
+    TestBed.configureTestingModule({
+      providers: [{ provide: SpaceService, useValue: { findAll: () => NEVER } }],
+    });
+    const store = TestBed.inject(SpaceStore);
+
+    expect(store.spaces()).toEqual([]);
+    expect(store.hasNoSpaces()).toBe(false);
+  });
+
+  it('reports hasNoSpaces when the load fails, rather than waiting forever', () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: SpaceService, useValue: { findAll: () => throwError(() => new Error('boom')) } }],
+    });
+    const store = TestBed.inject(SpaceStore);
+
+    expect(store.hasNoSpaces()).toBe(true);
   });
 
   it('selects the first space by default when nothing is persisted', () => {

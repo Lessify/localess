@@ -28,6 +28,13 @@
               </hlm-dropdown-menu>
             </ng-template>
           </li>
+        } @else if (spaceStore.hasNoSpaces()) {
+          <!-- Fills the slot the space switcher leaves empty, so the shell is never a dead end. -->
+          <li hlmSidebarMenuItem>
+            <button hlmSidebarMenuButton data-testid="create-first-space" (click)="openCreateSpace()">
+              <ng-icon hlm name="lucidePlus" /> <span>Create your first space</span>
+            </button>
+          </li>
         }
       </ul>
     </div>

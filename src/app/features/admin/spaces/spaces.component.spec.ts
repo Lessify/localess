@@ -3,6 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
+import { SpaceTemplateService } from '@shared/services/space-template.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -15,12 +16,15 @@ function space(overrides: Partial<Space> = {}): Space {
 describe('SpacesComponent', () => {
   function setup(spaces: Space[] = []) {
     const findAll = vi.fn().mockReturnValue(of(spaces));
-    const create = vi.fn().mockReturnValue(of(undefined));
+    // `create` resolves to a DocumentReference: the component reads `ref.id` to apply a template.
+    const create = vi.fn().mockReturnValue(of({ id: 'new-space' }));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteSpace = vi.fn().mockReturnValue(of(undefined));
     const success = vi.fn();
     const error = vi.fn();
+    const warning = vi.fn();
     const open = vi.fn();
+    const apply = vi.fn().mockReturnValue(of(undefined));
 
     TestBed.overrideComponent(SpacesComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -28,13 +32,15 @@ describe('SpacesComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: SpaceService, useValue: { findAll, create, update, delete: deleteSpace } },
-        { provide: NotificationService, useValue: { success, error } },
+        { provide: NotificationService, useValue: { success, error, warning } },
         { provide: MatDialog, useValue: { open } },
+        // Stubbed rather than real: the real one injects Firestore, which this spec has no use for.
+        { provide: SpaceTemplateService, useValue: { apply } },
       ],
     });
     const fixture = TestBed.createComponent(SpacesComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, create, update, deleteSpace, success, error, open };
+    return { component: fixture.componentInstance, findAll, create, update, deleteSpace, success, error, warning, open, apply };
   }
 
   it('loads spaces on init', () => {
@@ -62,6 +68,29 @@ describe('SpacesComponent', () => {
 
     expect(create).toHaveBeenCalledWith({ name: 'New Space' });
     expect(success).toHaveBeenCalledWith('Space has been created.');
+  });
+
+  it('openAddDialog() applies the chosen template to the created space', () => {
+    const { component, open, apply } = setup();
+    open.mockReturnValue({ afterClosed: () => of({ name: 'New Space', template: 'BLOG' }) });
+
+    component.openAddDialog();
+
+    expect(apply).toHaveBeenCalledWith('new-space', expect.objectContaining({ id: 'BLOG' }));
+  });
+
+  it('openAddDialog() reports the space as created when only the template failed', () => {
+    // The space exists and is usable. Calling this a failed creation would invite the user to
+    // retry a create that already succeeded.
+    const { component, open, apply, warning, error, success } = setup();
+    apply.mockReturnValue(throwError(() => new Error('permission-denied')));
+    open.mockReturnValue({ afterClosed: () => of({ name: 'New Space', template: 'BLOG' }) });
+
+    component.openAddDialog();
+
+    expect(warning).toHaveBeenCalledWith('Space has been created, but the template could not be applied.');
+    expect(error).not.toHaveBeenCalled();
+    expect(success).not.toHaveBeenCalled();
   });
 
   it('openAddDialog() does nothing when dismissed', () => {

@@ -37,6 +37,13 @@ vi.mock('@angular/fire/firestore', async () => {
     setDoc: vi.fn().mockResolvedValue(undefined),
     updateDoc: vi.fn().mockResolvedValue(undefined),
     deleteDoc: vi.fn().mockResolvedValue(undefined),
+    // Returns a fresh stub per call so a spec can assert set() calls without cross-test bleed.
+    writeBatch: vi.fn(() => ({
+      set: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      commit: vi.fn().mockResolvedValue(undefined),
+    })),
   };
 });
 

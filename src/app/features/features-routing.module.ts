@@ -138,15 +138,17 @@ const hasPermissionAssetRead = () => {
 };
 
 const routes: Routes = [
-  // {
-  //   path: '',
-  //   redirectTo: 'dashboard',
-  //   pathMatch: 'full',
-  // },
   {
     path: '',
     component: FeaturesComponent,
     children: [
+      // Without this, /features renders the shell around an empty outlet. The setup wizard used to
+      // hide that by navigating to /features/welcome itself; it no longer exists.
+      {
+        path: '',
+        redirectTo: 'welcome',
+        pathMatch: 'full',
+      },
       {
         path: 'me',
         title: 'Me',

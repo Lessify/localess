@@ -7,19 +7,19 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
-import { SpaceDialogModel } from './space-dialog.model';
+import { SpaceEditDialogModel } from './space-edit-dialog.model';
 
+/** Renaming an existing space. Templates apply to new spaces only, so there is no picker here. */
 @Component({
-  selector: 'll-space-dialog',
-  templateUrl: './space-dialog.component.html',
-  styleUrls: ['./space-dialog.component.scss'],
+  selector: 'll-space-edit-dialog',
+  templateUrl: './space-edit-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmInputGroupImports],
 })
-export class SpaceDialogComponent implements OnInit {
+export class SpaceEditDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
-  data = inject<SpaceDialogModel>(MAT_DIALOG_DATA);
+  data = inject<SpaceEditDialogModel>(MAT_DIALOG_DATA);
 
   form: FormGroup = this.fb.group({
     name: this.fb.control('', SpaceValidator.NAME),
@@ -27,7 +27,7 @@ export class SpaceDialogComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.data != null) {
-      this.form.patchValue(this.data);
+      this.form.patchValue({ name: this.data.name });
     }
   }
 }
