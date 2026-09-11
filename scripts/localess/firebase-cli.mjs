@@ -96,8 +96,20 @@ export const cli = {
 
   createWebApp: (projectId, displayName) => runJson(['apps:create', 'WEB', displayName, '--project', projectId]),
 
-  /** Writes the web SDK config straight to `outPath`. */
-  writeSdkConfig: (projectId, appId, outPath) => run(['apps:sdkconfig', 'WEB', appId, '--project', projectId, '--out', outPath]),
+  /**
+   * The web SDK config, as the exact bytes `--out` would have written.
+   *
+   * Deliberately not `--out`: that flag refuses to overwrite an existing file, which makes
+   * it the one non-idempotent command in this module and so the one command the teardown
+   * retry above cannot safely repeat. The CLI writes the file, aborts while closing its
+   * event loop, and the retry then dies with "already exists" - leaving a stray `.tmp`
+   * behind and failing the deploy outright. Reading the config and writing it ourselves is
+   * what makes the retry's "every command here is idempotent" premise actually true.
+   */
+  async readSdkConfig(projectId, appId) {
+    const { fileContents } = await runJson(['apps:sdkconfig', 'WEB', appId, '--project', projectId]);
+    return fileContents;
+  },
 
   listFirestoreDatabases: projectId => runJson(['firestore:databases:list', '--project', projectId]),
 

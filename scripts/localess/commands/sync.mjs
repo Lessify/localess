@@ -9,7 +9,7 @@
  * project files across the whole CLI.
  */
 import { parseArgs } from 'node:util';
-import { copyFile, rename, rm } from 'node:fs/promises';
+import { copyFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { cli } from '../firebase-cli.mjs';
@@ -91,14 +91,11 @@ export async function syncLocalFiles(projectId, { region, log }) {
     throw new Error(`${projectId} has no web app. Run: npm run localess:setup -- --project ${projectId}`);
   }
 
-  // `apps:sdkconfig --out` refuses to overwrite, so write beside the target and move it
-  // into place. cloudbuild.yaml does the same for the same reason.
+  // Fetched rather than written by `apps:sdkconfig --out`, which refuses to overwrite and
+  // so cannot be retried - see `readSdkConfig`. Writing it here also means no temp file to
+  // strand when a run fails partway.
   const target = sdkConfigPath(projectId);
-  const temp = `${target}.tmp`;
-  await rm(temp, { force: true });
-  await cli.writeSdkConfig(projectId, apps[0].appId, temp);
-  await rm(target, { force: true });
-  await rename(temp, target);
+  await writeFile(target, await cli.readSdkConfig(projectId, apps[0].appId));
   log.done(`${rel(target)} (app ${apps[0].appId})`);
 
   // The build reads one fixed path, because angular.json's fileReplacements is static and

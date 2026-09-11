@@ -34,8 +34,11 @@ export function resolveConstants(config = {}) {
 /**
  * `--define` argv for `ng build`. A define value is a JavaScript *expression*, so a string
  * needs quotes inside it - `JSON.stringify` produces exactly that, and escapes any quote
- * or newline a login message might contain. Passed through spawn's argv array, so no
- * shell ever sees these.
+ * or newline a login message might contain.
+ *
+ * Those quotes are load-bearing and fragile: they only survive if the caller spawns the
+ * build without a shell, because a shell strips them and esbuild then rejects the value as
+ * "not a JS literal". `deploy.mjs` runs the Angular CLI directly for exactly this reason.
  */
 export function toDefineArgs(config = {}) {
   return Object.entries(resolveConstants(config)).flatMap(([key, value]) => ['--define', `${key}=${JSON.stringify(value)}`]);

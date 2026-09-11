@@ -183,6 +183,30 @@ A bare `deploy` covers every target configured in `firebase.json`:
 The first functions deploy is the slowest part: Cloud Build has to build container images for every
 function.
 
+#### First-deploy retries
+
+A first deploy races the provisioning that precedes it. The `gcf-v2-sources` bucket and the Eventarc
+service agent's permissions are still propagating, so event-triggered functions and `publicv1` can
+fail to be created. `firebase deploy` reports these as warnings and **still exits 0**, so the exit
+code alone cannot be trusted — deploy reads the output instead, and retries the whole command up to
+three times, 30 seconds apart.
+
+The whole command is retried rather than `--only functions` on purpose: hosting released against a
+missing `publicv1` serves a dead `/api/v1/**` rewrite until it is released again.
+
+If functions are still failing after the third attempt, deploy stops and names them. They almost
+always succeed on a later run — wait a few minutes and repeat the same command.
+
+#### Function image cleanup policy
+
+When functions are among the targets, deploy first sets an Artifact Registry cleanup policy for the
+region, so old container images do not accumulate into a slow monthly bill. Without it the CLI wants
+to ask about the policy on every deploy, and `--non-interactive` turns that question into a failed
+deploy of functions that in fact deployed fine.
+
+It is a no-op on a brand-new project — the `gcf-artifacts` repository does not exist until functions
+have been deployed once — and takes effect from the second deploy onward.
+
 ### 5. Create the first admin user
 
 Open:
