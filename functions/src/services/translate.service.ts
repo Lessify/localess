@@ -4,14 +4,14 @@ import {
   firebaseConfig,
   GCP_SUPPORT_LOCALES,
   isEmulatorEnabled,
+  getTranslationService,
   remoteConfigTemplate,
-  translationService,
 } from '../config';
 import { HttpsError } from 'firebase-functions/v2/https';
-import { TargetLanguageCode, Translator } from 'deepl-node';
-import { SourceLanguageCode } from 'deepl-node/dist/types';
+import type { TargetLanguageCode } from 'deepl-node';
+import type { SourceLanguageCode } from 'deepl-node/dist/types';
 import { logger } from 'firebase-functions/v2';
-import { protos } from '@google-cloud/translate';
+import type { protos } from '@google-cloud/translate';
 
 /**
  * Translate content
@@ -43,6 +43,7 @@ export async function translateCloud(content: string, sourceLocale: string | nul
     if (!DEEPL_TARGET_SUPPORT_LOCALES.has(targetLocale)) {
       throw new HttpsError('invalid-argument', `Unsupported target locale : '${targetLocale}'`);
     }
+    const { Translator } = await import('deepl-node');
     const translator = new Translator(deeplApiKey);
     try {
       const result = await translator.translateText(content, sourceLocale as SourceLanguageCode | null, targetLocale as TargetLanguageCode);
@@ -86,6 +87,7 @@ export async function translateWithGoogle(content: string, sourceLocale: string 
     sourceLanguageCode: sourceLocale,
     targetLanguageCode: targetLocale,
   };
+  const translationService = await getTranslationService();
   try {
     const [responseTranslateText] = await translationService.translateText(tRequest);
     if (responseTranslateText.translations && responseTranslateText.translations.length > 0) {

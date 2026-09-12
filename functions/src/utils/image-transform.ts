@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import type sharp from 'sharp';
 
 import { isFlagSet } from './query-flag';
 

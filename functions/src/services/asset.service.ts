@@ -2,10 +2,9 @@ import { DocumentReference, FieldValue, Query, Timestamp, UpdateData } from 'fir
 import { logger } from 'firebase-functions/v2';
 import { bucket, firestoreService } from '../config';
 import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFileMetadata, AssetFolderExport, AssetKind } from '../models';
-import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import os from 'os';
-import { exiftool } from 'exiftool-vendored';
+import { getExiftool, getFfmpeg } from '../utils/lazy-modules';
 
 /**
  * find Content by Full Slug
@@ -97,9 +96,10 @@ export function docAssetToExport(docId: string, asset: Asset): AssetExport | und
  * @param {string} time - time
  * @return {Promise<void>} - void
  */
-export function extractThumbnail(videoPath: string, outputImageName: string, time: string = '00:00:01'): Promise<void> {
+export async function extractThumbnail(videoPath: string, outputImageName: string, time: string = '00:00:01'): Promise<void> {
   const outputPath = `${os.tmpdir()}/${outputImageName}`;
-  if (fs.existsSync(outputPath)) return Promise.resolve();
+  if (fs.existsSync(outputPath)) return;
+  const ffmpeg = await getFfmpeg();
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
       .on('end', () => {
@@ -134,6 +134,7 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
   if (asset.kind === AssetKind.FILE && (asset.type.startsWith('image/') || asset.type.startsWith('video/'))) {
     const tempFilePath = `${os.tmpdir()}/assets-${assetRef.id}`;
     await bucket.file(storagePath).download({ destination: tempFilePath });
+    const exiftool = await getExiftool();
     if (asset.type.startsWith('image/')) {
       // Image
       const { Duration, FileTypeExtension, ImageWidth, ImageHeight } = await exiftool.read(tempFilePath);

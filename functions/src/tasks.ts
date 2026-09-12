@@ -47,8 +47,6 @@ import {
 } from './models';
 import { BATCH_MAX, bucket, firestoreService } from './config';
 import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import archiver from 'archiver';
-import unzipper from 'unzipper';
 import {
   docAssetToExport,
   docContentToExport,
@@ -73,6 +71,7 @@ import {
   updateMetadataByRef,
 } from './services';
 import { tmpdir } from 'os';
+import { getArchiver, getUnzipper } from './utils/lazy-modules';
 import { ZodError } from 'zod';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
@@ -101,7 +100,8 @@ function streamFileToStorage(localPath: string, gcsDestination: string): Promise
  * @param {string} destZipPath output zip file path
  * @return {Promise<void>}
  */
-function compressDir(sourceDir: string, destZipPath: string): Promise<void> {
+async function compressDir(sourceDir: string, destZipPath: string): Promise<void> {
+  const archiver = await getArchiver();
   return new Promise<void>((resolve, reject) => {
     const output = createWriteStream(destZipPath);
     const archive = archiver('zip', { zlib: { level: 9 } });
@@ -120,7 +120,8 @@ function compressDir(sourceDir: string, destZipPath: string): Promise<void> {
  * @param {string} destDir destination directory
  * @return {Promise<void>}
  */
-function uncompressZip(zipPath: string, destDir: string): Promise<void> {
+async function uncompressZip(zipPath: string, destDir: string): Promise<void> {
+  const unzipper = await getUnzipper();
   // eslint-disable-next-line new-cap
   const extractStream = unzipper.Extract({ path: destDir });
   return createReadStream(zipPath).pipe(extractStream).promise();

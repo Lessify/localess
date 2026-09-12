@@ -3,7 +3,7 @@ import { App, initializeApp } from 'firebase-admin/app';
 import { Firestore, getFirestore } from 'firebase-admin/firestore';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import { Auth, getAuth } from 'firebase-admin/auth';
-import { TranslationServiceClient } from '@google-cloud/translate';
+import type { TranslationServiceClient } from '@google-cloud/translate';
 import { FIREBASE_CONFIG, FirebaseConfig } from './models';
 import { getRemoteConfig } from 'firebase-admin/remote-config';
 
@@ -36,7 +36,25 @@ export const authService: Auth = getAuth(app);
 
 export const storageService: Storage = getStorage(app);
 export const bucket = storageService.bucket();
-export const translationService = new TranslationServiceClient();
+
+let translationServiceInstance: TranslationServiceClient | undefined;
+
+/**
+ * Google Cloud translation client, constructed on first use.
+ *
+ * Loading `@google-cloud/translate` costs ~130ms of protobuf parsing, and Firebase loads
+ * this module on every cold start of every function in the codebase — including the public
+ * CDN function, which never translates anything. Constructing it lazily also moves any
+ * credential failure from cold start to the first translate request.
+ * @return {Promise<TranslationServiceClient>} the shared translation client
+ */
+export async function getTranslationService(): Promise<TranslationServiceClient> {
+  if (!translationServiceInstance) {
+    const { TranslationServiceClient } = await import('@google-cloud/translate');
+    translationServiceInstance = new TranslationServiceClient();
+  }
+  return translationServiceInstance;
+}
 
 // Initialize server-side Remote Config
 export const remoteConfigService = getRemoteConfig(app);

@@ -3,7 +3,6 @@ import { Query } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
 import { HttpsError } from 'firebase-functions/v2/https';
 import os from 'os';
-import sharp from 'sharp';
 import {
   bucket,
   CACHE_ASSET_MAX_AGE,
@@ -39,6 +38,7 @@ import {
   translationLocaleCachePath,
 } from '../services';
 import { applySharpTransforms, parseAssetTransformQuery } from '../utils/image-transform';
+import { getSharp } from '../utils/lazy-modules';
 import { redactQuery } from '../utils/log-redact';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
 import {
@@ -481,6 +481,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .join('-');
     // apply resize for valid 'w' parameter and images
     if (asset.type.startsWith('image/') && (width !== undefined || height !== undefined || format !== undefined)) {
+      const sharp = await getSharp();
       if (asset.type === 'image/webp' || asset.type === 'image/gif') {
         // possible animated or single frame webp/gif
         const [file] = await assetFile.download();
@@ -530,6 +531,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
         overwriteType = outputType;
       }
     } else if (asset.type.startsWith('video/') && width !== undefined && thumbnail) {
+      const sharp = await getSharp();
       await assetFile.download({ destination: tempFilePath });
       await extractThumbnail(tempFilePath, `screenshot-${assetId}.webp`);
       await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format, fit }).toFile(
