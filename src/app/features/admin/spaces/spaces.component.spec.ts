@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
@@ -7,6 +8,7 @@ import { SpaceTemplateService } from '@shared/services/space-template.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { SPACE_CREATE_CANCELLED } from './space-create-dialog/space-create-dialog.model';
 import { SpacesComponent } from './spaces.component';
 
 function space(overrides: Partial<Space> = {}): Space {
@@ -25,6 +27,7 @@ describe('SpacesComponent', () => {
     const warning = vi.fn();
     const open = vi.fn();
     const apply = vi.fn().mockReturnValue(of(undefined));
+    const navigate = vi.fn();
 
     TestBed.overrideComponent(SpacesComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -36,11 +39,42 @@ describe('SpacesComponent', () => {
         { provide: MatDialog, useValue: { open } },
         // Stubbed rather than real: the real one injects Firestore, which this spec has no use for.
         { provide: SpaceTemplateService, useValue: { apply } },
+        // Only `clearAction()` needs it, as the target of a relative navigation.
+        { provide: ActivatedRoute, useValue: {} },
+        { provide: Router, useValue: { navigate } },
       ],
     });
     const fixture = TestBed.createComponent(SpacesComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, create, update, deleteSpace, success, error, warning, open, apply };
+
+    /**
+     * Stands in for the router's `withComponentInputBinding()`, which sets every declared input on
+     * each navigation - `undefined` for params that are absent.
+     */
+    const navigateWithAction = (action?: string) => {
+      fixture.componentRef.setInput('action', action);
+      fixture.detectChanges();
+    };
+
+    return {
+      component: fixture.componentInstance,
+      findAll,
+      create,
+      update,
+      deleteSpace,
+      success,
+      error,
+      warning,
+      open,
+      apply,
+      navigate,
+      navigateWithAction,
+    };
+  }
+
+  /** The dialog result the component reacts to. `undefined` means "the browser closed it". */
+  function closesWith(result: unknown) {
+    return { afterClosed: () => of(result) };
   }
 
   it('loads spaces on init', () => {
@@ -60,61 +94,143 @@ describe('SpacesComponent', () => {
     expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'space' }));
   });
 
-  it('openAddDialog() creates the space and notifies success when confirmed', () => {
-    const { component, open, create, success } = setup();
-    open.mockReturnValue({ afterClosed: () => of({ name: 'New Space' }) });
+  describe('?action=create', () => {
+    it('opens the create dialog', () => {
+      const { open, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
 
-    component.openAddDialog();
+      navigateWithAction('create');
 
-    expect(create).toHaveBeenCalledWith({ name: 'New Space' });
-    expect(success).toHaveBeenCalledWith('Space has been created.');
+      expect(open).toHaveBeenCalledWith(expect.anything(), { panelClass: 'sm' });
+    });
+
+    it('does not open the dialog without the param', () => {
+      const { open } = setup();
+
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('ignores an action it does not know', () => {
+      const { open, navigateWithAction } = setup();
+
+      navigateWithAction('destroy-everything');
+
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('opens on a later navigation, not just the first', () => {
+      // Angular reuses the component when only query params change, so ngOnInit runs once. The
+      // sidebar CTA links to this same route, and reading the param once would leave it dead.
+      const { open, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
+
+      navigateWithAction(undefined);
+      navigateWithAction('create');
+
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not stack dialogs when the same action is re-bound', () => {
+      // The router sets every input on every navigation, so 'create' can arrive again unchanged.
+      const { open, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
+
+      navigateWithAction('create');
+      navigateWithAction('create');
+
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it('clears the param when the dialog is dismissed, replacing the history entry', () => {
+      const { open, navigate, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
+
+      navigateWithAction('create');
+
+      expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: {}, replaceUrl: true }));
+    });
+
+    it('leaves the URL alone when the browser closed the dialog', () => {
+      // The CDK disposes the overlay on popstate, so Back closes the dialog and reports
+      // `undefined`. A navigation is already in flight; clearing the param here would drag the
+      // user back to the page they just left.
+      const { open, navigate, create, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith(undefined));
+
+      navigateWithAction('create');
+
+      expect(navigate).not.toHaveBeenCalled();
+      expect(create).not.toHaveBeenCalled();
+    });
   });
 
-  it('openAddDialog() applies the chosen template to the created space', () => {
-    const { component, open, apply } = setup();
-    open.mockReturnValue({ afterClosed: () => of({ name: 'New Space', template: 'BLOG' }) });
+  describe('creating a space', () => {
+    it('creates the space and notifies success when confirmed', () => {
+      const { open, create, success, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
 
-    component.openAddDialog();
+      navigateWithAction('create');
 
-    expect(apply).toHaveBeenCalledWith('new-space', expect.objectContaining({ id: 'BLOG' }));
-  });
+      expect(create).toHaveBeenCalledWith({ name: 'New Space' });
+      expect(success).toHaveBeenCalledWith('Space has been created.');
+    });
 
-  it('openAddDialog() reports the space as created when only the template failed', () => {
-    // The space exists and is usable. Calling this a failed creation would invite the user to
-    // retry a create that already succeeded.
-    const { component, open, apply, warning, error, success } = setup();
-    apply.mockReturnValue(throwError(() => new Error('permission-denied')));
-    open.mockReturnValue({ afterClosed: () => of({ name: 'New Space', template: 'BLOG' }) });
+    it('applies the chosen template to the created space', () => {
+      const { open, apply, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith({ name: 'New Space', template: 'BLOG' }));
 
-    component.openAddDialog();
+      navigateWithAction('create');
 
-    expect(warning).toHaveBeenCalledWith('Space has been created, but the template could not be applied.');
-    expect(error).not.toHaveBeenCalled();
-    expect(success).not.toHaveBeenCalled();
-  });
+      expect(apply).toHaveBeenCalledWith('new-space', expect.objectContaining({ id: 'BLOG' }));
+    });
 
-  it('openAddDialog() does nothing when dismissed', () => {
-    const { component, open, create } = setup();
-    open.mockReturnValue({ afterClosed: () => of(undefined) });
+    it('hands EMPTY to a template service that short-circuits on it', () => {
+      const { open, apply, success, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
 
-    component.openAddDialog();
+      navigateWithAction('create');
 
-    expect(create).not.toHaveBeenCalled();
-  });
+      expect(apply).toHaveBeenCalledWith('new-space', expect.objectContaining({ id: 'EMPTY', schemas: [] }));
+      expect(success).toHaveBeenCalledWith('Space has been created.');
+    });
 
-  it('openAddDialog() notifies an error on failure', () => {
-    const { component, open, create, error } = setup();
-    create.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of({ name: 'New Space' }) });
+    it('reports the space as created when only the template failed', () => {
+      // The space exists and is usable. Calling this a failed creation would invite the user to
+      // retry a create that already succeeded.
+      const { open, apply, warning, error, success, navigateWithAction } = setup();
+      apply.mockReturnValue(throwError(() => new Error('permission-denied')));
+      open.mockReturnValue(closesWith({ name: 'New Space', template: 'BLOG' }));
 
-    component.openAddDialog();
+      navigateWithAction('create');
 
-    expect(error).toHaveBeenCalledWith('Space can not be created.');
+      expect(warning).toHaveBeenCalledWith('Space has been created, but the template could not be applied.');
+      expect(error).not.toHaveBeenCalled();
+      expect(success).not.toHaveBeenCalled();
+    });
+
+    it('does not create anything when cancelled', () => {
+      const { open, create, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
+
+      navigateWithAction('create');
+
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it('notifies an error when the space itself cannot be created', () => {
+      const { open, create, error, navigateWithAction } = setup();
+      create.mockReturnValue(throwError(() => new Error('boom')));
+      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
+
+      navigateWithAction('create');
+
+      expect(error).toHaveBeenCalledWith('Space can not be created.');
+    });
   });
 
   it('openEditDialog() updates the space and notifies success when confirmed', () => {
     const { component, open, update, success } = setup();
-    open.mockReturnValue({ afterClosed: () => of({ name: 'Renamed' }) });
+    open.mockReturnValue(closesWith({ name: 'Renamed' }));
 
     component.openEditDialog(space({ id: 's1' }));
 
@@ -125,7 +241,7 @@ describe('SpacesComponent', () => {
   it('openEditDialog() notifies an error on failure', () => {
     const { component, open, update, error } = setup();
     update.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of({ name: 'Renamed' }) });
+    open.mockReturnValue(closesWith({ name: 'Renamed' }));
 
     component.openEditDialog(space({ id: 's1' }));
 
@@ -134,7 +250,7 @@ describe('SpacesComponent', () => {
 
   it('openDeleteDialog() deletes and notifies success when confirmed', () => {
     const { component, open, deleteSpace, success } = setup();
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    open.mockReturnValue(closesWith(true));
 
     component.openDeleteDialog(space({ id: 's1', name: 'Space 1' }));
 
@@ -144,7 +260,7 @@ describe('SpacesComponent', () => {
 
   it('openDeleteDialog() does not delete when cancelled', () => {
     const { component, open, deleteSpace } = setup();
-    open.mockReturnValue({ afterClosed: () => of(false) });
+    open.mockReturnValue(closesWith(false));
 
     component.openDeleteDialog(space({ id: 's1' }));
 
@@ -154,7 +270,7 @@ describe('SpacesComponent', () => {
   it('openDeleteDialog() notifies an error on failure', () => {
     const { component, open, deleteSpace, error } = setup();
     deleteSpace.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    open.mockReturnValue(closesWith(true));
 
     component.openDeleteDialog(space({ id: 's1', name: 'Space 1' }));
 

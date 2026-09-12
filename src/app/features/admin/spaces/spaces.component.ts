@@ -1,8 +1,22 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, OnInit, signal, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  Injector,
+  input,
+  linkedSignal,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
+import { RouterModule } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
@@ -12,6 +26,7 @@ import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/f
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Space } from '@shared/models/space.model';
+import { SpaceTemplateId } from '@shared/models/space-template.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceTemplateService } from '@shared/services/space-template.service';
@@ -19,14 +34,17 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { of } from 'rxjs';
-import { catchError, filter, map, switchMap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import { SpaceCreateDialogComponent } from './space-create-dialog/space-create-dialog.component';
 import { SpaceCreateDialogModel } from './space-create-dialog/space-create-dialog.model';
 import { SpaceEditDialogComponent } from './space-edit-dialog/space-edit-dialog.component';
 import { SpaceEditDialogModel } from './space-edit-dialog/space-edit-dialog.model';
 import { SPACE_TEMPLATES } from './templates';
+
+/** `?action=create` opens the create dialog. Other values are ignored rather than dispatched. */
+const CREATE_ACTION = 'create';
 
 @Component({
   selector: 'll-spaces',
@@ -36,6 +54,7 @@ import { SPACE_TEMPLATES } from './templates';
   imports: [
     ClipboardModule,
     CommonModule,
+    RouterModule,
     LlTableImports,
     LlPaginatorImports,
     LlFilterToolbarImports,
@@ -70,6 +89,22 @@ export class SpacesComponent implements OnInit, AfterViewInit {
 
   private destroyRef = inject(DestroyRef);
 
+  /**
+   * `?action=create` from the URL, bound by the router's `withComponentInputBinding()`.
+   */
+  readonly action = input<string>();
+  currentAction = linkedSignal<string | undefined>(() => {
+    return this.action();
+  });
+
+  constructor() {
+    effect(() => {
+      if (this.currentAction() === CREATE_ACTION) {
+        this.openAddDialog();
+      }
+    });
+  }
+
   ngOnInit(): void {
     this.dataSource.filterPredicate = FilterPredicateUtils.create<Space>({
       searchFields: space => [space.id, space.name],
@@ -103,32 +138,16 @@ export class SpacesComponent implements OnInit, AfterViewInit {
       })
       .afterClosed()
       .pipe(
-        filter(it => it !== undefined),
-        switchMap(it =>
-          this.spaceService.create(it!).pipe(
-            switchMap(ref => {
-              const template = SPACE_TEMPLATES.find(t => t.id === it!.template);
-              // EMPTY resolves to a template whose schemas array is empty, and apply()
-              // short-circuits on that without touching Firestore.
-              if (!template) return of({ templateFailed: false });
-              return this.spaceTemplateService.apply(ref.id, template).pipe(
-                map(() => ({ templateFailed: false })),
-                // The space exists and is usable, so a failed template is not a failed creation.
-                // Reporting it as one would be a lie, and would invite the user to retry a create
-                // that already succeeded. There is deliberately no rollback: deleting a space the
-                // user just watched appear is worse than leaving an empty one.
-                catchError((err: unknown) => {
-                  console.error(err);
-                  return of({ templateFailed: true });
-                }),
-              );
-            }),
-          ),
+        tap(() => this.clearAction()),
+        filter((result): result is SpaceCreateDialogModel => result !== undefined),
+        switchMap(model =>
+          this.spaceService.create({ name: model.name }).pipe(switchMap(ref => this.applyTemplate(ref.id, model.template))),
         ),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: result => {
-          if (result.templateFailed) {
+        next: ({ templateFailed }) => {
+          if (templateFailed) {
             this.notificationService.warning('Space has been created, but the template could not be applied.');
           } else {
             this.notificationService.success('Space has been created.');
@@ -139,6 +158,30 @@ export class SpacesComponent implements OnInit, AfterViewInit {
           this.notificationService.error('Space can not be created.');
         },
       });
+  }
+
+  private applyTemplate(spaceId: string, templateId: SpaceTemplateId): Observable<{ templateFailed: boolean }> {
+    const template = SPACE_TEMPLATES.find(it => it.id === templateId);
+    // EMPTY resolves to a template whose schemas array is empty, and apply() short-circuits on that
+    // without touching Firestore. An unknown id means nothing to apply either.
+    if (!template) return of({ templateFailed: false });
+
+    return this.spaceTemplateService.apply(spaceId, template).pipe(
+      map(() => ({ templateFailed: false })),
+      // The space exists and is usable, so a failed template is not a failed creation. Reporting it
+      // as one would be a lie, and would invite the user to retry a create that already succeeded.
+      // There is deliberately no rollback: deleting a space the user just watched appear is worse
+      // than leaving an empty one.
+      catchError((err: unknown) => {
+        console.error(err);
+        return of({ templateFailed: true });
+      }),
+    );
+  }
+
+  /** `replaceUrl` so a dismissed dialog is not one Back press away from reopening itself. */
+  private clearAction(): void {
+    this.currentAction.set(undefined);
   }
 
   openEditDialog(element: Space): void {
