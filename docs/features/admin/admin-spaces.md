@@ -35,18 +35,21 @@ Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform
 - `openDeleteDialog(space)` — confirmation dialog then deletes space and all its content
 - `copied()` — shows snackbar when space ID is copied to clipboard
 
-Creating is not a method here — it is driven by the URL. See below.
+- `openAddDialog()` — opens the create dialog; see [Creating a space](#creating-a-space)
 
 ## Creating a space
 
-**`/features/admin/spaces?action=create` opens the create dialog.** Every entry point is a plain
-link to that URL:
+**`/features/admin/spaces?action=create` opens the create dialog**, so a page that is not the spaces
+list can send a user into it with a link rather than code:
 
-| Where | When |
-|-------|------|
-| Admin → Spaces, the "Add Space" button | always |
-| The shell sidebar | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
-| The welcome page | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
+| Where | How | When |
+|-------|-----|------|
+| Admin → Spaces, the "Add Space" button | `openAddDialog()` directly | always |
+| The shell sidebar | link to `?action=create` | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
+| The welcome page | link to `?action=create` | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
+
+The in-page button calls the method — it is already on this component, so a navigation would be
+ceremony. The param exists for the two entry points that are not.
 
 No new route was added: `admin/spaces` already exists and is already guarded by
 `hasPermissionSpaceManagement` (`features-routing.module.ts`). That guard is what keeps the flow
@@ -61,42 +64,43 @@ a CTA is a link — there is no result for a caller to forget.
 ### How the param reaches the component
 
 ```ts
-readonly action = input<string>();          // bound from ?action=create by the router
+readonly action = input<string>();                          // bound from ?action=create
+currentAction = linkedSignal(() => this.action());          // local, so closing can release it
 
 constructor() {
   effect(() => {
-    if (this.action() === CREATE_ACTION) this.openCreateDialog();
+    if (this.currentAction() === CREATE_ACTION) this.openAddDialog();
   });
 }
 ```
 
-`withComponentInputBinding()` is enabled at the root (`app.config.ts`), and this is the same
-mechanism as `spaceId = input.required<string>()` in the space features — no `ActivatedRoute`
-subscription to own, and nothing to unsubscribe.
+`withComponentInputBinding()` is enabled at the root (`app.config.ts`), the same mechanism as
+`spaceId = input.required<string>()` in the space features — no `ActivatedRoute` subscription to
+own, and nothing to unsubscribe.
 
 Reading the param **once** in `ngOnInit` would not work. Angular's default `shouldReuseRoute`
 compares `routeConfig`, so a navigation that changes only query params **reuses the component and
 never re-runs `ngOnInit`**. The sidebar CTA links to this very route and is visible while the user
 has no spaces — including while they are standing on the empty spaces list. Reading once would make
-that button silently do nothing, the exact bug this design exists to remove. The router's binder
-re-sets every declared input on every navigation, so the input keeps up where a one-shot read would
-not — and it sets `undefined` for params that are absent, which is what re-arms the effect after
-`action` is cleared.
+that button silently do nothing. The router's binder re-sets every declared input on every
+navigation (`RoutedComponentInputBinder`), so the input keeps up where a one-shot read would not.
 
-Signal equality then doubles as a re-entrancy guard: re-binding the same `'create'` does not re-run
-the effect, so the dialog cannot stack.
+**Why `linkedSignal` and not the input directly.** The effect holds the dialog open for as long as
+its condition is true, so something has to say "handled". `linkedSignal` seeds from the input but
+stays writable: `clearAction()` sets it to `undefined` when the dialog closes. A plain `input()` is
+read-only, which would have forced a URL rewrite purely to reset component state.
 
-### Closing
+That choice keeps the whole flow read-only with respect to the URL. Nothing here navigates, so none
+of the hazards of writing back arise — no fighting a Back press mid-close, and no need to tell a
+dismissal apart from the CDK disposing the overlay on popstate. Both simply close the dialog, and
+`tap(() => this.clearAction())` runs either way.
 
-`SpacesComponent` clears `action` on close with `replaceUrl: true`, so a dismissed dialog is not one
-Back press away from reopening.
+Signal equality doubles as a re-entrancy guard: re-binding the same `'create'` does not re-run the
+effect, so the dialog cannot stack.
 
-Cancel closes with `SPACE_CREATE_CANCELLED`, not `undefined`, because `undefined` has to mean
-something else. `closeOnNavigation` defaults to true and is implemented as a popstate subscription
-(`@angular/cdk` overlay: `this._location.subscribe(() => this.dispose())`), so pressing Back closes
-the dialog and reports `undefined` — indistinguishable from a dismissal. Clearing the param on that
-path would navigate the user back to the page they just left. A distinct cancel value separates
-"the user dismissed it" from "the browser closed it".
+**Consequence:** `?action=create` stays in the URL after the dialog closes. Reloading that URL
+reopens the dialog, which is what a deep link should do. Navigating away and back re-arms it
+normally, because the input passes through `undefined` on the way.
 
 ### After creation
 
@@ -109,7 +113,7 @@ the dialog. The user stays on the spaces list.
 
 ### SpaceCreateDialogComponent
 Space `name` plus a [template](#space-templates) choice. Returns `{ name, template }`, or
-`SPACE_CREATE_CANCELLED` when dismissed.
+`undefined` when dismissed.
 
 ### SpaceEditDialogComponent
 Space `name` only. Returns `{ name }`.

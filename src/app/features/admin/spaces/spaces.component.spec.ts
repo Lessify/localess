@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute, Router } from '@angular/router';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
@@ -8,7 +7,6 @@ import { SpaceTemplateService } from '@shared/services/space-template.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { SPACE_CREATE_CANCELLED } from './space-create-dialog/space-create-dialog.model';
 import { SpacesComponent } from './spaces.component';
 
 function space(overrides: Partial<Space> = {}): Space {
@@ -27,7 +25,6 @@ describe('SpacesComponent', () => {
     const warning = vi.fn();
     const open = vi.fn();
     const apply = vi.fn().mockReturnValue(of(undefined));
-    const navigate = vi.fn();
 
     TestBed.overrideComponent(SpacesComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -39,9 +36,6 @@ describe('SpacesComponent', () => {
         { provide: MatDialog, useValue: { open } },
         // Stubbed rather than real: the real one injects Firestore, which this spec has no use for.
         { provide: SpaceTemplateService, useValue: { apply } },
-        // Only `clearAction()` needs it, as the target of a relative navigation.
-        { provide: ActivatedRoute, useValue: {} },
-        { provide: Router, useValue: { navigate } },
       ],
     });
     const fixture = TestBed.createComponent(SpacesComponent);
@@ -67,12 +61,11 @@ describe('SpacesComponent', () => {
       warning,
       open,
       apply,
-      navigate,
       navigateWithAction,
     };
   }
 
-  /** The dialog result the component reacts to. `undefined` means "the browser closed it". */
+  /** The dialog result the component reacts to. `undefined` means dismissed. */
   function closesWith(result: unknown) {
     return { afterClosed: () => of(result) };
   }
@@ -97,7 +90,7 @@ describe('SpacesComponent', () => {
   describe('?action=create', () => {
     it('opens the create dialog', () => {
       const { open, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
+      open.mockReturnValue(closesWith(undefined));
 
       navigateWithAction('create');
 
@@ -122,7 +115,7 @@ describe('SpacesComponent', () => {
       // Angular reuses the component when only query params change, so ngOnInit runs once. The
       // sidebar CTA links to this same route, and reading the param once would leave it dead.
       const { open, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
+      open.mockReturnValue(closesWith(undefined));
 
       navigateWithAction(undefined);
       navigateWithAction('create');
@@ -133,7 +126,7 @@ describe('SpacesComponent', () => {
     it('does not stack dialogs when the same action is re-bound', () => {
       // The router sets every input on every navigation, so 'create' can arrive again unchanged.
       const { open, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
+      open.mockReturnValue(closesWith(undefined));
 
       navigateWithAction('create');
       navigateWithAction('create');
@@ -141,30 +134,28 @@ describe('SpacesComponent', () => {
       expect(open).toHaveBeenCalledTimes(1);
     });
 
-    it('clears the param when the dialog is dismissed, replacing the history entry', () => {
-      const { open, navigate, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
-
-      navigateWithAction('create');
-
-      expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: {}, replaceUrl: true }));
-    });
-
-    it('leaves the URL alone when the browser closed the dialog', () => {
-      // The CDK disposes the overlay on popstate, so Back closes the dialog and reports
-      // `undefined`. A navigation is already in flight; clearing the param here would drag the
-      // user back to the page they just left.
-      const { open, navigate, create, navigateWithAction } = setup();
+    it('releases the action once the dialog closes', () => {
+      // `currentAction` is a linkedSignal seeded from the input, so closing can reset it locally
+      // without writing to the URL. Left set, the effect would hold the dialog permanently open.
+      const { component, open, navigateWithAction } = setup();
       open.mockReturnValue(closesWith(undefined));
 
       navigateWithAction('create');
 
-      expect(navigate).not.toHaveBeenCalled();
-      expect(create).not.toHaveBeenCalled();
+      expect(component.currentAction()).toBeUndefined();
     });
   });
 
   describe('creating a space', () => {
+    it('opens the dialog from the Add button, without a navigation', () => {
+      const { component, open } = setup();
+      open.mockReturnValue(closesWith(undefined));
+
+      component.openAddDialog();
+
+      expect(open).toHaveBeenCalledWith(expect.anything(), { panelClass: 'sm' });
+    });
+
     it('creates the space and notifies success when confirmed', () => {
       const { open, create, success, navigateWithAction } = setup();
       open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
@@ -208,9 +199,9 @@ describe('SpacesComponent', () => {
       expect(success).not.toHaveBeenCalled();
     });
 
-    it('does not create anything when cancelled', () => {
+    it('does not create anything when dismissed', () => {
       const { open, create, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith(SPACE_CREATE_CANCELLED));
+      open.mockReturnValue(closesWith(undefined));
 
       navigateWithAction('create');
 
