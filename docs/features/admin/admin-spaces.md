@@ -16,30 +16,100 @@ Platform-level management of Spaces — create new spaces, edit space names, del
 
 ```
 src/app/features/admin/spaces/
-  spaces.component.ts/html/scss      ← space list
-  space-create-dialog/               ← create, with template choice
+  spaces.component.ts/html/scss      ← space list, and the whole create flow
+  space-create-dialog/               ← the form: name + template choice
   space-edit-dialog/                 ← rename
-  templates/                         ← Empty / Blog / E-Commerce schema sets
+  templates/                         ← Empty / Blog / E-Commerce / Marketing schema sets
 ```
 
 ## SpacesComponent
 
 Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform, with a `LlFilterToolbarImports` search toolbar.
 
-**Injected services:** `SpaceService`, `MatDialog`, `NotificationService`
+**Injected services:** `SpaceService`, `SpaceTemplateService`, `MatDialog`, `NotificationService`, `Router`, `ActivatedRoute`
 
 **Key behaviour:**
 - `loadData()` — fetches all spaces via `SpaceService`
-- `onFilterChange(value: FilterToolbarValue)` (`spaces.component.ts:79-81`) — updates the table filter from the toolbar; the predicate is built in `ngOnInit()` via `FilterPredicateUtils.create()` (`spaces.component.ts:11,68-70`), searching across space `id` and `name`
-- `openAddDialog()` — opens `SpaceCreateDialogComponent`, then applies the chosen template
+- `onFilterChange(value: FilterToolbarValue)` — updates the table filter from the toolbar; the predicate is built in `ngOnInit()` via `FilterPredicateUtils.create()`, searching across space `id` and `name`
 - `openEditDialog(space)` — opens `SpaceEditDialogComponent`
 - `openDeleteDialog(space)` — confirmation dialog then deletes space and all its content
 - `copied()` — shows snackbar when space ID is copied to clipboard
 
+Creating is not a method here — it is driven by the URL. See below.
+
+## Creating a space
+
+**`/features/admin/spaces?action=create` opens the create dialog.** Every entry point is a plain
+link to that URL:
+
+| Where | When |
+|-------|------|
+| Admin → Spaces, the "Add Space" button | always |
+| The shell sidebar | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
+| The welcome page | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
+
+No new route was added: `admin/spaces` already exists and is already guarded by
+`hasPermissionSpaceManagement` (`features-routing.module.ts`). That guard is what keeps the flow
+honest — `firestore.rules` requires `admin` or `SPACE_MANAGEMENT` to write a space, so an
+unpermitted user must not reach the dialog at all. The CTAs carry the same check so they don't link
+somewhere the guard will bounce.
+
+Earlier versions had each CTA open the dialog itself. Two of them collected a filled-in form and
+discarded the result: the button appeared to work and created nothing. With the URL as the trigger,
+a CTA is a link — there is no result for a caller to forget.
+
+### How the param reaches the component
+
+```ts
+readonly action = input<string>();          // bound from ?action=create by the router
+
+constructor() {
+  effect(() => {
+    if (this.action() === CREATE_ACTION) this.openCreateDialog();
+  });
+}
+```
+
+`withComponentInputBinding()` is enabled at the root (`app.config.ts`), and this is the same
+mechanism as `spaceId = input.required<string>()` in the space features — no `ActivatedRoute`
+subscription to own, and nothing to unsubscribe.
+
+Reading the param **once** in `ngOnInit` would not work. Angular's default `shouldReuseRoute`
+compares `routeConfig`, so a navigation that changes only query params **reuses the component and
+never re-runs `ngOnInit`**. The sidebar CTA links to this very route and is visible while the user
+has no spaces — including while they are standing on the empty spaces list. Reading once would make
+that button silently do nothing, the exact bug this design exists to remove. The router's binder
+re-sets every declared input on every navigation, so the input keeps up where a one-shot read would
+not — and it sets `undefined` for params that are absent, which is what re-arms the effect after
+`action` is cleared.
+
+Signal equality then doubles as a re-entrancy guard: re-binding the same `'create'` does not re-run
+the effect, so the dialog cannot stack.
+
+### Closing
+
+`SpacesComponent` clears `action` on close with `replaceUrl: true`, so a dismissed dialog is not one
+Back press away from reopening.
+
+Cancel closes with `SPACE_CREATE_CANCELLED`, not `undefined`, because `undefined` has to mean
+something else. `closeOnNavigation` defaults to true and is implemented as a popstate subscription
+(`@angular/cdk` overlay: `this._location.subscribe(() => this.dispose())`), so pressing Back closes
+the dialog and reports `undefined` — indistinguishable from a dismissal. Clearing the param on that
+path would navigate the user back to the page they just left. A distinct cancel value separates
+"the user dismissed it" from "the browser closed it".
+
+### After creation
+
+No manual refresh. `SpaceService.findAll()` is `collectionData`, so the new space reaches the admin
+table and `SpaceStore` through the live snapshot — and since the store selects `response[0]` when
+nothing is selected, a user's first space also becomes their current one, filling the sidebar behind
+the dialog. The user stays on the spaces list.
+
 ## Dialogs
 
 ### SpaceCreateDialogComponent
-Space `name` plus a [template](#space-templates) choice. Returns `{ name, template }`.
+Space `name` plus a [template](#space-templates) choice. Returns `{ name, template }`, or
+`SPACE_CREATE_CANCELLED` when dismissed.
 
 ### SpaceEditDialogComponent
 Space `name` only. Returns `{ name }`.

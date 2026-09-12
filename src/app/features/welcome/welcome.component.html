@@ -3,14 +3,26 @@
 
   @if (spaceStore.hasNoSpaces()) {
     <div class="bg-accent/40 mt-6 flex flex-col items-start gap-3 rounded-lg border p-6">
-      <h3 class="text-lg font-medium">Create your first space</h3>
-      <p class="text-muted-foreground text-sm">
-        A space is where your content, translations and schemas live. Pick a template to start with a ready-made structure.
-      </p>
-      <button hlmBtn data-testid="create-first-space" (click)="openCreateSpace()">
-        <ng-icon hlm size="sm" name="lucidePlus" class="mr-2" />
-        Create a space
-      </button>
+      @if ('SPACE_MANAGEMENT' | canUserPerform | async) {
+        <h3 class="text-lg font-medium">Create your first space</h3>
+        <p class="text-muted-foreground text-sm">
+          A space is where your content, translations and schemas live. Pick a template to start with a ready-made structure.
+        </p>
+        <a hlmBtn data-testid="create-first-space" routerLink="/features/admin/spaces" [queryParams]="{ action: 'create' }">
+          <ng-icon hlm size="sm" name="lucidePlus" class="mr-2" />
+          Create a space
+        </a>
+      } @else {
+        <!--
+          Creating a space needs SPACE_MANAGEMENT. Without this branch, hiding the button would
+          leave a user who has no spaces staring at a blank page with nothing to do and no reason
+          given.
+        -->
+        <h3 class="text-lg font-medium">No spaces yet</h3>
+        <p class="text-muted-foreground text-sm" data-testid="no-space-access">
+          You do not have access to any space yet. Ask an administrator to invite you to one.
+        </p>
+      }
     </div>
   }
 

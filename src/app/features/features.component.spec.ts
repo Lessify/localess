@@ -130,4 +130,5 @@ describe('FeaturesComponent', () => {
     expect(updateDocuments).toHaveBeenCalledWith([{ id: 'doc1' }]);
     expect(findAllDocuments).toHaveBeenCalledTimes(1);
   });
+
 });

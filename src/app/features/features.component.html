@@ -28,12 +28,20 @@
               </hlm-dropdown-menu>
             </ng-template>
           </li>
-        } @else if (spaceStore.hasNoSpaces()) {
-          <!-- Fills the slot the space switcher leaves empty, so the shell is never a dead end. -->
+        } @else if (spaceStore.hasNoSpaces() && ('SPACE_MANAGEMENT' | canUserPerform | async)) {
+          <!--
+            Fills the slot the space switcher leaves empty, so the shell is never a dead end.
+            Gated on SPACE_MANAGEMENT because that is what firestore.rules requires to create a
+            space, and what guards the route this links to.
+          -->
           <li hlmSidebarMenuItem>
-            <button hlmSidebarMenuButton data-testid="create-first-space" (click)="openCreateSpace()">
+            <a
+              hlmSidebarMenuButton
+              data-testid="create-first-space"
+              routerLink="/features/admin/spaces"
+              [queryParams]="{ action: 'create' }">
               <ng-icon hlm name="lucidePlus" /> <span>Create your first space</span>
-            </button>
+            </a>
           </li>
         }
       </ul>
