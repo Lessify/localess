@@ -66,21 +66,27 @@ CACHE_ASSET_MAX_AGE             = DAY * 365     // 31536000s
 
 ### Asset transform bounds
 
-Requested render dimensions are bounded twice before sharp runs:
+**One URL, one output.** Every transform parameter is either honoured exactly as given or rejected
+with `400` — nothing is silently adjusted. That rule exists for the cache, not for tidiness: any
+value the function quietly rewrites means two URLs resolving to identical bytes, and the CDN keys on
+the URL it was handed, so each alias is a separate edge entry and a separate run of sharp.
 
-1. **By the source.** `?w=`/`?h=` are clamped to the stored original's
-   `metadata.width`/`metadata.height`. Upscaling produced a response larger than the original for no
-   visual gain, and an unbounded `w` was an amplification vector on this public, unauthenticated
-   endpoint.
-2. **By a hard ceiling.** `MAX_OUTPUT_DIMENSION` (4096 px), defined in
-   `functions/src/utils/image-transform.ts`.
+Concretely:
 
-`applySharpTransforms` additionally sets `withoutEnlargement: true`, so no caller can produce an
-upscale even by bypassing the clamp.
+- **`?w=`/`?h=` above the source redirect** to the size the source can produce. `?w=5000` on a
+  400 px asset returns `302 → ?w=400`. No upscaling, and every oversized spelling collapses onto one
+  canonical URL rather than returning identical bytes under many — the same trick `cv` uses. With
+  both dimensions the box shrinks proportionally, so `fit` semantics survive. An asset with no
+  recorded dimensions is served as requested, since the source size is unknown.
+- **`MAX_OUTPUT_DIMENSION` (8192 px) rejects rather than clamps.** `?w=9000` is a `400`, checked
+  before the redirect. The ceiling bounds the decoded bitmap sharp must hold — an 8192 px edge is
+  ~200 MB of raw pixels — so raising it means revisiting `memory`/`concurrency` in
+  `functions/src/v1.ts` too.
+- **Only a canonical decimal integer is accepted** for `w`/`h`/`q`. `w=400.9`, `w=0400` and `w=4e2`
+  are all rejected, because each would render identically to `w=400` under a different cache key.
 
-Requests above either bound are **clamped, not rejected** — a `400` would break existing consumers,
-and the goal is fewer bytes rather than more errors. The untransformed original stays reachable by
-omitting `w`/`h`.
+The untransformed original stays reachable by omitting `w`/`h`. See
+[Assets — Parameter Validation](features/spaces/assets.md) for the full matrix.
 
 `image/jpeg` sources are additionally re-encoded to **WebP** by default, which pulls even
 no-parameter requests onto the transform path. `?f=original` opts out and returns the stored bytes

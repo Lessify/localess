@@ -78,7 +78,7 @@ would need ~20M requests to reach 20 GB, while a single multi-MB asset needs onl
 | 2026-05 | Merged `exists()` + `getMetadata()` into single Storage call | ~25% fewer Storage API calls |
 | 2026-05 | In-memory token cache (5 min TTL) | ~50% fewer Firestore reads under load |
 | 2026-05 | Redirect TTL unified to a flat 60s default (no separate draft TTL), overridable per-token via `cacheTtl` | Faster iteration with controlled CDN pressure, tunable per consumer |
-| 2026-09 | Clamp `w`/`h` to source dimensions and to `MAX_OUTPUT_DIMENSION` (4096) | Removes upscaled responses, which exceeded the original's size; closes an amplification vector |
+| 2026-09 | Strict transform params: canonical integers only, `w`/`h` 1–8192, `q` 1–100, all out-of-range rejected rather than clamped | One URL, one output. Clamping and truncation both mapped several URLs onto identical bytes, multiplying CDN entries and sharp runs for the same result. Upscaling is honoured rather than reduced, for the same reason |
 | 2026-09 | `DEFAULT_QUALITY` 85 → 80 | ~15–20% off every transformed JPEG/WebP without an explicit `?q=` |
 | 2026-09 | Default `image/jpeg` output to WebP | ~40% measured on a 400×300 test asset (116 KB → 70 KB), **including bare no-param requests** — the only change that reaches embeds carrying no query string |
 | 2026-09 | ETag + `304` on the asset endpoint, before transform | Revalidation costs a metadata read instead of a re-encode |

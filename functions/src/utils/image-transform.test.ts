@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applySharpTransforms,
-  clampTransformDimensions,
+  canonicalTransformSize,
   DEFAULT_QUALITY,
   isImageFit,
   isImageFormat,
@@ -191,23 +191,31 @@ describe('parseAssetTransformQuery', () => {
       expect(ok({ w: '' }).width).toBeUndefined();
     });
 
-    it('takes the leading integer of a decimal, matching parseInt', () => {
-      expect(ok({ w: '400.9' }).width).toBe(400);
+    it('rejects a decimal rather than truncating it', () => {
+      // `w=400.9` and `w=400` would render identical bytes under two cache keys.
+      expect(parseAssetTransformQuery({ w: '400.9' }).ok).toBe(false);
     });
   });
 
-  describe('quality is clamped', () => {
+  describe('quality is range-checked', () => {
     it('passes an in-range value through', () => {
       expect(ok({ q: '50' }).quality).toBe(50);
     });
 
-    it.each([
-      ['0', 1],
-      ['-10', 1],
-      ['101', 100],
-      ['9999', 100],
-    ])('clamps %s to %i', (raw, expected) => {
-      expect(ok({ q: raw }).quality).toBe(expected);
+    it.each([['1'], ['50'], ['100']])('accepts %s, at and inside the bounds', raw => {
+      expect(ok({ q: raw }).quality).toBe(Number(raw));
+    });
+
+    it.each([['0'], ['-10'], ['101'], ['9999']])('rejects an out-of-range q=%s rather than clamping it', raw => {
+      expect(parseAssetTransformQuery({ q: raw }).ok).toBe(false);
+    });
+
+    it('names the accepted range in the rejection', () => {
+      const result = parseAssetTransformQuery({ q: '150' });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.message).toContain('between 1 and 100');
     });
 
     it.each([[''], [undefined]])('defaults when q is absent (%s)', raw => {
@@ -297,76 +305,36 @@ describe('parseAssetTransformQuery', () => {
   });
 });
 
-describe('clampTransformDimensions', () => {
-  const source1000 = { width: 1000, height: 800 };
-
-  it('leaves a request below the source untouched', () => {
-    expect(clampTransformDimensions({ width: 500 }, source1000)).toEqual({ width: 500, height: undefined });
-  });
-
-  it('leaves a request equal to the source untouched', () => {
-    expect(clampTransformDimensions({ width: 1000 }, source1000)).toEqual({ width: 1000, height: undefined });
-  });
-
-  it('clamps a request above the source down to the source', () => {
-    expect(clampTransformDimensions({ width: 3840 }, source1000)).toEqual({ width: 1000, height: undefined });
-  });
-
-  it('passes the request through when the source width is unknown', () => {
-    expect(clampTransformDimensions({ width: 800 }, {})).toEqual({ width: 800, height: undefined });
-  });
-
-  it('clamps to MAX_OUTPUT_DIMENSION when the source is larger', () => {
-    expect(clampTransformDimensions({ width: 8000 }, { width: 8000 })).toEqual({
-      width: MAX_OUTPUT_DIMENSION,
-      height: undefined,
-    });
-  });
-
-  it('uses the source when it is smaller than the ceiling', () => {
-    expect(clampTransformDimensions({ width: 8000 }, { width: 1000 })).toEqual({ width: 1000, height: undefined });
-  });
-
-  it('caps an unknown-source request at the ceiling', () => {
-    expect(clampTransformDimensions({ width: 9999 }, {})).toEqual({ width: MAX_OUTPUT_DIMENSION, height: undefined });
-  });
-
-  it('clamps height independently of width', () => {
-    expect(clampTransformDimensions({ width: 100, height: 5000 }, source1000)).toEqual({ width: 100, height: 800 });
-  });
-
-  it('returns undefined for a dimension that was not requested', () => {
-    expect(clampTransformDimensions({}, source1000)).toEqual({ width: undefined, height: undefined });
-  });
-
-  it('honours an explicit maxDimension override', () => {
-    expect(clampTransformDimensions({ width: 900 }, {}, 640)).toEqual({ width: 640, height: undefined });
-  });
-});
-
-describe('applySharpTransforms — never enlarges', () => {
-  it('does not upscale when the requested width exceeds the source', async () => {
+describe('applySharpTransforms — upscales when asked', () => {
+  it('enlarges when the requested width exceeds the source', async () => {
     const out = applySharpTransforms(source(), { width: 400, quality: 80 });
 
-    expect(await dimensions(out)).toEqual({ width: 200, height: 100 });
+    expect(await dimensions(out)).toEqual({ width: 400, height: 200 });
   });
 
-  it('does not upscale when the requested height exceeds the source', async () => {
+  it('enlarges when the requested height exceeds the source', async () => {
     const out = applySharpTransforms(source(), { height: 400, quality: 80 });
 
-    expect(await dimensions(out)).toEqual({ width: 200, height: 100 });
+    expect(await dimensions(out)).toEqual({ width: 800, height: 400 });
   });
 
-  it('does not upscale inside a box larger than the source', async () => {
+  it('enlarges inside a box larger than the source', async () => {
     const out = applySharpTransforms(source(), { width: 800, height: 800, quality: 80, fit: 'inside' });
 
-    expect(await dimensions(out)).toEqual({ width: 200, height: 100 });
+    expect(await dimensions(out)).toEqual({ width: 800, height: 400 });
   });
 
   it('still downscales normally', async () => {
     const out = applySharpTransforms(source(), { width: 50, quality: 80 });
 
     expect(await dimensions(out)).toEqual({ width: 50, height: 25 });
+  });
+
+  it('gives distinct sizes for distinct widths, so no two URLs share bytes', async () => {
+    const a = await dimensions(applySharpTransforms(source(), { width: 300, quality: 80 }));
+    const b = await dimensions(applySharpTransforms(source(), { width: 500, quality: 80 }));
+
+    expect(a).not.toEqual(b);
   });
 });
 
@@ -515,8 +483,8 @@ describe('parseAssetTransformQuery — f=original and qualityExplicit', () => {
     expect(ok({ q: '80' }).qualityExplicit).toBe(true);
   });
 
-  it('reports qualityExplicit true even for an out-of-range q that gets clamped', () => {
-    expect(ok({ q: '500' })).toMatchObject({ quality: 100, qualityExplicit: true });
+  it('reports qualityExplicit true for an in-range q at the boundary', () => {
+    expect(ok({ q: '100' })).toMatchObject({ quality: 100, qualityExplicit: true });
   });
 
   it('reports qualityExplicit false for an empty q', () => {
@@ -579,22 +547,72 @@ describe('parseAssetTransformQuery — numeric params are strict', () => {
     });
   });
 
-  describe('quality stays clamped, because a number outside a range has obvious intent', () => {
+  describe('quality is bounded to its documented range, not clamped into it', () => {
+    it.each([['0'], ['-10'], ['101'], ['9999']])('rejects q=%s', raw => {
+      // Clamping would silently serve a quality other than the one requested — the same
+      // leniency that let a malformed `w` pass unnoticed. `@localess/client` rejects these
+      // before a URL is built; this is the server-side half of that rule.
+      expect(parseAssetTransformQuery({ q: raw }).ok).toBe(false);
+    });
+
+  });
+
+  describe('only a canonical integer is accepted, because every alias is a separate cache key', () => {
     it.each([
-      ['0', 1],
-      ['-10', 1],
-      ['101', 100],
-      ['9999', 100],
-    ])('clamps q=%s to %i rather than rejecting', (raw, expected) => {
-      expect(ok({ q: raw }).quality).toBe(expected);
+      ['q', '50.0'],
+      ['q', '50.1'],
+      ['q', '50.5'],
+      ['w', '400.9'],
+      ['w', '0.5'],
+    ])('rejects the decimal %s=%s, which would encode the same as its integer', (param, value) => {
+      expect(parseAssetTransformQuery({ [param]: value }).ok).toBe(false);
+    });
+
+    it.each([
+      ['w', '0400'],
+      ['w', '007'],
+    ])('rejects the leading-zero alias %s=%s', (param, value) => {
+      expect(parseAssetTransformQuery({ [param]: value }).ok).toBe(false);
+    });
+
+    it.each([
+      ['w', '4e2'],
+      ['w', '1e3'],
+      ['w', '0x190'],
+    ])('rejects the non-decimal notation %s=%s', (param, value) => {
+      expect(parseAssetTransformQuery({ [param]: value }).ok).toBe(false);
+    });
+
+    it.each([
+      ['w', ' 400'],
+      ['w', '400 '],
+      ['w', '+400'],
+    ])('rejects the whitespace or sign alias %s=%s', (param, value) => {
+      expect(parseAssetTransformQuery({ [param]: value }).ok).toBe(false);
+    });
+
+    it('says the value must be a whole number', () => {
+      const result = parseAssetTransformQuery({ q: '50.5' });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.message).toContain('whole number');
+    });
+
+    it('still reports a negative integer as out of range, not malformed', () => {
+      const result = parseAssetTransformQuery({ w: '-5' });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.message).toContain(`between 1 and ${MAX_OUTPUT_DIMENSION}`);
+    });
+
+    it.each([['1'], ['400'], ['4096']])('accepts the canonical integer %s', raw => {
+      expect(parseAssetTransformQuery({ w: raw }).ok).toBe(true);
     });
   });
 
-  describe('existing lenient parsing that must not change', () => {
-    it('still takes the leading integer of a decimal', () => {
-      expect(ok({ w: '400.9' }).width).toBe(400);
-    });
-
+  describe('leniency that must not change', () => {
     it('still treats an absent param as absent', () => {
       expect(ok({})).toMatchObject({ width: undefined, height: undefined, quality: DEFAULT_QUALITY });
     });
@@ -607,6 +625,118 @@ describe('parseAssetTransformQuery — numeric params are strict', () => {
 
     it('reports a numeric param before f', () => {
       expect(rejection({ w: 'abc', f: 'bogus' }).param).toBe('w');
+    });
+  });
+});
+
+describe('MAX_OUTPUT_DIMENSION is a rejection, not a clamp', () => {
+  it('is 8192', () => {
+    expect(MAX_OUTPUT_DIMENSION).toBe(8192);
+  });
+
+  it.each([['w'], ['h']])('accepts %s exactly at the ceiling', param => {
+    expect(parseAssetTransformQuery({ [param]: String(MAX_OUTPUT_DIMENSION) }).ok).toBe(true);
+  });
+
+  it.each([['w'], ['h']])('rejects %s one above the ceiling', param => {
+    expect(parseAssetTransformQuery({ [param]: String(MAX_OUTPUT_DIMENSION + 1) }).ok).toBe(false);
+  });
+
+  it('rejects a request large enough to exhaust the instance', () => {
+    // ~7.5GB of raw pixel buffer if it were honoured.
+    expect(parseAssetTransformQuery({ w: '50000' }).ok).toBe(false);
+  });
+
+  it('does not collapse oversized widths onto one output, which clamping used to do', () => {
+    // The point of rejecting rather than clamping: `w=9000` and `w=50000` must not both
+    // succeed and return identical bytes under two cache keys.
+    expect(parseAssetTransformQuery({ w: '9000' }).ok).toBe(false);
+    expect(parseAssetTransformQuery({ w: '50000' }).ok).toBe(false);
+  });
+
+  it('passes an in-range width through untouched, including above a typical source size', () => {
+    // Upscaling is honoured — the parser does not know or care about the source dimensions.
+    expect(parseAssetTransformQuery({ w: '3840' })).toMatchObject({ ok: true, query: { width: 3840 } });
+  });
+});
+
+describe('canonicalTransformSize', () => {
+  const source = { width: 400, height: 300 };
+
+  describe('leaves a request that already fits alone', () => {
+    it.each([[200], [400]])('returns w=%i unchanged', width => {
+      expect(canonicalTransformSize({ width }, source)).toEqual({ width });
+    });
+
+    it('returns an in-range box unchanged', () => {
+      expect(canonicalTransformSize({ width: 200, height: 150 }, source)).toEqual({ width: 200, height: 150 });
+    });
+
+    it('returns an untouched request when no dimension was asked for', () => {
+      expect(canonicalTransformSize({}, source)).toEqual({});
+    });
+  });
+
+  describe('shrinks a single oversized dimension to the source', () => {
+    it('caps width at the source width', () => {
+      expect(canonicalTransformSize({ width: 5000 }, source)).toEqual({ width: 400, height: undefined });
+    });
+
+    it('caps height at the source height', () => {
+      expect(canonicalTransformSize({ height: 5000 }, source)).toEqual({ width: undefined, height: 300 });
+    });
+
+    it('maps every oversized width onto the same canonical value', () => {
+      // This is the point of redirecting: the duplicates collapse onto one URL rather than
+      // onto one *response* under many URLs.
+      expect(canonicalTransformSize({ width: 5000 }, source)).toEqual(canonicalTransformSize({ width: 99999 }, source));
+    });
+  });
+
+  describe('shrinks an oversized box proportionally, preserving its aspect ratio', () => {
+    it('keeps a square box square, so a cover crop still crops', () => {
+      // Clamping per-axis would give 400x300 — a 4:3 box that no longer crops at all.
+      expect(canonicalTransformSize({ width: 5000, height: 5000 }, source)).toEqual({ width: 300, height: 300 });
+    });
+
+    it('keeps a wide box wide', () => {
+      expect(canonicalTransformSize({ width: 4000, height: 1000 }, source)).toEqual({ width: 400, height: 100 });
+    });
+
+    it('keeps a tall box tall', () => {
+      expect(canonicalTransformSize({ width: 1000, height: 4000 }, source)).toEqual({ width: 75, height: 300 });
+    });
+
+    it('never shrinks a dimension below one pixel', () => {
+      expect(canonicalTransformSize({ width: 8000, height: 1 }, source)).toMatchObject({ height: 1 });
+    });
+  });
+
+  describe('is idempotent, so a redirect cannot loop', () => {
+    it.each([
+      [{ width: 5000 }],
+      [{ height: 5000 }],
+      [{ width: 5000, height: 5000 }],
+      [{ width: 4000, height: 1000 }],
+      [{ width: 8000, height: 1 }],
+    ])('re-canonicalising %o is a no-op', requested => {
+      const once = canonicalTransformSize(requested, source);
+
+      expect(canonicalTransformSize(once, source)).toEqual(once);
+    });
+  });
+
+  describe('degrades gracefully when the source size is unknown', () => {
+    it('leaves the request alone with no metadata at all', () => {
+      expect(canonicalTransformSize({ width: 5000 }, {})).toEqual({ width: 5000 });
+    });
+
+    it('caps only the axis it knows about', () => {
+      expect(canonicalTransformSize({ width: 5000 }, { width: 400 })).toEqual({ width: 400, height: undefined });
+    });
+
+    it('leaves height alone when only the source width is known', () => {
+      expect(canonicalTransformSize({ height: 5000 }, { width: 400 })).toEqual({ width: undefined, height: 5000 });
     });
   });
 });

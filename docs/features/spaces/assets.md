@@ -59,12 +59,52 @@ No auth required (public). Responses are cached for 365 days (`Cache-Control: pu
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `w` | integer > 0 | Target width in pixels. Clamped to the source width and to 4096 px — never upscales. |
-| `h` | integer > 0 | Target height in pixels. Clamped to the source height and to 4096 px — never upscales. |
-| `q` | integer 1–100 | Output quality (default: `80`). Applies to JPEG, WebP, AVIF. Ignored for PNG. |
+| `w` | integer 1–8192 | Target width in pixels. Above the source width, **redirects** to the source width. Outside 1–8192 is rejected with `400`. |
+| `h` | integer 1–8192 | Target height in pixels. Above the source height, **redirects** to the source height. Outside 1–8192 is rejected with `400`. |
+| `q` | integer 1–100 | Output quality (default: `80`). Applies to JPEG, WebP, AVIF. Ignored for PNG. Outside 1–100 is rejected with `400`. |
 | `f` | string | Output format: `webp`, `jpeg`, `png`, `avif`, or `original`. **Defaults to `webp` for `image/jpeg` sources**; all other source types keep their original format. Pass `f=original` for the stored bytes untouched. Ignored when `download` is set. |
-| `download` | (flag) | Changes `Content-Disposition` from `inline` to `form-data`, forcing a browser download. |
+| `download` | (flag) | Changes `Content-Disposition` from `inline` to `attachment`, forcing a browser download. Also returns the stored original rather than a re-encode. |
 | `thumbnail` | (flag) | For animated WebP/GIF: extracts the first frame before resizing. For video: extracts a frame with FFmpeg, then resizes with Sharp. |
+
+### Parameter Validation
+
+Every parameter is validated before any work happens. A rejection returns `400` with the offending
+parameter and value, and is **cached for an hour** (`CACHE_BAD_REQUEST_MAX_AGE`) — so a malformed
+URL fails consistently rather than re-entering the function on every request.
+
+`w`, `h` and `q` accept only a **canonical decimal integer** — no fractions, no leading zeros, no
+exponent or hex notation, no surrounding whitespace, no `+` sign.
+
+| Input | Result |
+|-------|--------|
+| `w=abc`, `w=undefined`, `w=NaN`, `q=abc` | `400` — not a number |
+| `w=400.9`, `q=50.5`, `q=50.0`, `w=0.5` | `400` — not a whole number |
+| `w=0400`, `w=4e2`, `w=0x190`, `w=%20400`, `w=+400` | `400` — not canonical |
+| `w=0`, `w=-5`, `w=8193`, `w=50000` | `400` — outside 1–8192 |
+| `q=0`, `q=101`, `q=150` | `400` — outside 1–100 |
+| `f=bogus`, `fit=squish` | `400` — not a recognised value |
+| `w=` (empty) | treated as **omitted**, not invalid |
+| `w=400`, `q=50` | accepted |
+
+### Why fractions and aliases are rejected rather than normalised
+
+This is a caching rule more than a validation one. `q=50`, `q=50.1` and `q=50.5` all encode at
+quality 50 and return **byte-identical** responses — but they are three different URLs, so three CDN
+cache entries, and three runs of Sharp to produce the same bytes. `w=400`, `w=0400` and `w=4e2` do
+the same for resizing.
+
+Normalising them server-side would not help: the CDN keys on the URL it was given, so the duplicate
+entries exist whether or not the function collapses them. Only refusing the alias keeps one value to
+one URL.
+
+**Nothing is silently adjusted.** Every value that would have been rewritten is either rejected
+(`w=9000`, `q=150`, `w=400.9`) or redirected to its canonical form (`w=5000` on a 400 px source).
+Both keep the invariant that one URL maps to exactly one response — a clamp would have broken it by
+serving several URLs the same bytes.
+
+`@localess/client` applies the identical validation in `buildAssetQueryString`, throwing a
+`TypeError` before the URL is built — the same rule enforced one layer earlier, where the failure is
+a stack trace at the call site rather than a cached `400` in production.
 
 ### Default Output Format
 
@@ -99,8 +139,7 @@ able to afford it. `f=original` is the passthrough; `f=<format>` means encode.
 
 ### Resize Behaviour (`w` / `h`)
 
-Sharp is called as `resize(width ?? null, height ?? null)` with its default `cover` fit and
-`withoutEnlargement: true`:
+Sharp is called as `resize(width ?? null, height ?? null)` with its default `cover` fit:
 
 | `w` | `h` | Behaviour |
 |-----|-----|-----------|
@@ -109,11 +148,41 @@ Sharp is called as `resize(width ?? null, height ?? null)` with its default `cov
 | ✓ | ✓ | **`cover` crop** — resizes to fill the exact box, excess edges are cropped |
 | — | — | No resize — only format/quality re-encoding if `f`/`q` provided, or if the source is `image/jpeg` and the WebP default applies |
 
-Both dimensions are clamped before any resize runs: first to the stored original's
-`metadata.width`/`metadata.height`, then to `MAX_OUTPUT_DIMENSION` (4096 px, defined in
-`functions/src/utils/image-transform.ts`). Requests above either bound are clamped rather than
-rejected, and the `Content-Disposition` filename reflects the clamped size. Omit `w`/`h` entirely to
-receive the untouched original (subject to the WebP default above).
+### Oversized requests redirect, they do not upscale
+
+A request larger than the stored original returns a **`302` to the size the source can actually
+produce** — `?w=5000` on a 400×300 asset redirects to `?w=400`. No upscaling, and no duplicate
+content in the CDN: every oversized spelling collapses onto one canonical URL rather than returning
+identical bytes under many. It is the same pattern the `cv` parameter uses for content.
+
+| Request (400×300 source) | Redirects to |
+|--------------------------|--------------|
+| `?w=5000` | `?w=400` |
+| `?h=5000` | `?h=300` |
+| `?w=5000&h=5000&fit=cover` | `?w=300&h=300&fit=cover` |
+| `?w=4000&h=1000` | `?w=400&h=100` |
+| `?w=5000&q=60&f=png` | `?w=400&q=60&f=png` |
+
+**With both dimensions, the box shrinks proportionally rather than per-axis.** `fit` is defined
+against the box's aspect ratio, so capping each axis independently would silently change the
+result: a 5000×5000 request is a square box that crops, while a per-axis cap to 400×300 is a 4:3
+box that does not crop at all.
+
+The redirect target is built by `buildAssetQuery` in a fixed parameter order with valueless flags,
+so it is *the* canonical spelling rather than merely a valid one — otherwise the redirect would
+point at yet another URL for the same bytes. An explicit `q` is preserved; an absent one is not
+back-filled with the default, for the same reason.
+
+**Assets with no recorded dimensions are served as requested.** `metadata.width`/`height` is
+optional, and when absent the function cannot know the source size, so it honours the request
+rather than guessing — older assets keep their previous behaviour until metadata is regenerated.
+
+Separately, `MAX_OUTPUT_DIMENSION` (8192 px) bounds the request itself and is a **rejection**:
+`?w=9000` returns `400` before any redirect is considered. That ceiling exists for memory rather
+than bandwidth — Sharp holds the full decoded bitmap, so an 8192 px edge is roughly 200 MB of raw
+pixels. Raising it means revisiting `memory` and `concurrency` in `functions/src/v1.ts` too.
+
+Omit `w`/`h` entirely to receive the untouched original (subject to the WebP default above).
 
 ### Special Cases
 

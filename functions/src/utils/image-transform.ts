@@ -110,9 +110,11 @@ export function applySharpTransforms(
   if (opts.width || opts.height) {
     // `fit` only means something when both dimensions box the output.
     const boxed = Boolean(opts.width && opts.height);
-    // Belt and braces alongside `clampTransformDimensions`: an upscaled render is larger
-    // than the original for no visual gain, so no caller should be able to request one.
-    const resizeOptions: sharp.ResizeOptions = { withoutEnlargement: true };
+    // Enlargement is deliberately allowed. A caller asking for a width above the source is
+    // taken at their word: silently returning the source size instead would mean two URLs
+    // resolving to identical bytes, which is the cache fragmentation this endpoint avoids.
+    // The upper bound is enforced as a `400` in `parseAssetTransformQuery`, not here.
+    const resizeOptions: sharp.ResizeOptions = {};
     if (boxed && opts.fit) {
       resizeOptions.fit = opts.fit;
       if (opts.fit === 'contain') resizeOptions.background = containBackground(opts.format);
@@ -160,11 +162,20 @@ export const DEFAULT_QUALITY = 80;
 /**
  * Hard ceiling on any transformed output edge, in pixels.
  *
+ * A request above this is **rejected with `400`**, never clamped. Clamping would map every
+ * oversized width onto the same output — `w=9000` and `w=50000` returning identical bytes
+ * under two cache keys — which is the fragmentation this endpoint exists to avoid. Rejecting
+ * keeps one URL to one output.
+ *
+ * The ceiling exists for memory, not for bandwidth: sharp holds the full decoded bitmap, so
+ * an 8192px edge is roughly 200MB of raw pixels. Raising it further needs the instance
+ * `memory`/`concurrency` in `functions/src/v1.ts` revisited with it.
+ *
  * Kept here rather than in `config.ts` deliberately: `config.ts` calls `initializeApp()`
  * at module scope, and importing it would drag Firebase Admin initialisation into this
  * module's unit tests. This file must stay side-effect free.
  */
-export const MAX_OUTPUT_DIMENSION = 4096;
+export const MAX_OUTPUT_DIMENSION = 8192;
 
 /**
  * Resolves the encoder target for a request, or `undefined` to serve the stored bytes.
@@ -222,32 +233,43 @@ export interface SourceDimensions {
 }
 
 /**
- * Bounds a requested render size by the source size and by a hard ceiling.
+ * Reduces a requested render size to the largest one the source can actually produce.
  *
- * Upscaling produces a response *larger than the original* for no visual gain, and an
- * unbounded `w` on a public, unauthenticated endpoint is a bandwidth amplification
- * vector. Each axis is clamped independently; an axis that was not requested stays
- * undefined so sharp keeps preserving the aspect ratio.
- * @param {object} requested Requested width/height, already parsed
+ * The route does not serve this size directly — it **redirects** to it. Serving it under the
+ * original URL is what the earlier clamp did, and it meant `?w=5000` and `?w=99999` returned
+ * identical bytes under two cache keys, so the CDN stored both and sharp ran twice. A redirect
+ * collapses every oversized spelling onto one canonical URL instead, which is the same trick
+ * the `cv` parameter uses for content.
+ *
+ * With both dimensions given the *box* is shrunk proportionally rather than each axis being
+ * capped independently. Capping per axis changes the box's aspect ratio, and `fit` is defined
+ * against that ratio: a 5000x5000 request against a 400x300 source is a square box that crops,
+ * but per-axis capping would turn it into 400x300 — a 4:3 box that no longer crops at all.
+ *
+ * Idempotent by construction, so the redirect cannot loop: the result always fits the source,
+ * and a request that fits is returned untouched.
+ * @param {object} requested Requested width/height, already parsed and validated
  * @param {SourceDimensions} source Intrinsic dimensions of the original, where known
- * @param {number} [maxDimension] Hard ceiling, defaults to {@link MAX_OUTPUT_DIMENSION}
- * @return {object} the clamped width/height
+ * @return {object} the canonical width/height for this source
  */
-export function clampTransformDimensions(
+export function canonicalTransformSize(
   requested: { width?: number; height?: number },
-  source: SourceDimensions,
-  maxDimension: number = MAX_OUTPUT_DIMENSION
+  source: SourceDimensions
 ): { width?: number; height?: number } {
-  const clamp = (value: number | undefined, sourceValue: number | undefined): number | undefined => {
-    if (value === undefined) return undefined;
-    const bounds = [value, maxDimension];
-    if (sourceValue !== undefined) bounds.push(sourceValue);
-    return Math.min(...bounds);
-  };
+  const { width, height } = requested;
+  if (width === undefined && height === undefined) return requested;
+
+  // The largest factor that brings every requested axis inside the source. An axis whose
+  // source dimension is unknown cannot constrain anything, so it is skipped rather than
+  // guessed — older assets without metadata keep their previous behaviour.
+  let scale = 1;
+  if (width !== undefined && source.width !== undefined) scale = Math.min(scale, source.width / width);
+  if (height !== undefined && source.height !== undefined) scale = Math.min(scale, source.height / height);
+  if (scale >= 1) return requested;
 
   return {
-    width: clamp(requested.width, source.width),
-    height: clamp(requested.height, source.height),
+    width: width === undefined ? undefined : Math.max(1, Math.round(width * scale)),
+    height: height === undefined ? undefined : Math.max(1, Math.round(height * scale)),
   };
 }
 
@@ -275,44 +297,47 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
    */
   type NumericResult = { ok: true; value?: number } | { ok: false; error: AssetTransformQueryError };
 
-  const parseNumeric = (param: string, raw: unknown): NumericResult => {
+  /**
+   * Parses a numeric parameter and bounds it, rejecting anything outside the accepted range.
+   *
+   * Out-of-range values are rejected rather than clamped. Clamping silently serves something
+   * other than what was asked for, which is the same leniency that let a malformed `w` pass
+   * unnoticed — and `q=150` is far more often a caller bug than a request for maximum
+   * quality. `@localess/client` applies the identical rule before a URL is even built.
+   * @param {string} param Query parameter name
+   * @param {unknown} raw Raw query value
+   * @param {number} min Smallest accepted value
+   * @param {number} [max] Largest accepted value, where the parameter has an upper bound
+   * @return {NumericResult} absent, a value, or a rejection
+   */
+  const parseNumeric = (param: string, raw: unknown, min: number, max?: number): NumericResult => {
     const value = (raw as string | undefined)?.toString() ?? '';
     // An empty value counts as absent, not invalid — matching `f` and `fit`, so the parser
     // has one rule for "omitted" rather than one per parameter.
     if (value === '') return { ok: true };
+    // Only a canonical decimal integer is accepted, and this is a *caching* rule more than a
+    // parsing one. Every spelling that resolves to the same number is a distinct CDN cache key
+    // producing byte-identical output: `q=50`, `q=50.1` and `q=50.5` all encode at 50, and
+    // `w=400`, `w=0400`, `w=4e2` all resize to 400. Accepting the aliases multiplies edge
+    // entries and re-runs sharp for each, which is the fragmentation this endpoint exists to
+    // avoid. One value, one URL.
+    if (!/^-?(?:0|[1-9]\d*)$/.test(value)) {
+      return { ok: false, error: { param, value, message: `Unsupported '${param}' value '${value}'. Expected a whole number.` } };
+    }
     const parsed = parseInt(value, 10);
-    if (!Number.isFinite(parsed)) {
-      return { ok: false, error: { param, value, message: `Unsupported '${param}' value '${value}'. Expected a number.` } };
+    if (parsed < min || (max !== undefined && parsed > max)) {
+      const range = max !== undefined ? `between ${min} and ${max}` : `greater than or equal to ${min}`;
+      return { ok: false, error: { param, value, message: `Unsupported '${param}' value '${value}'. Expected a number ${range}.` } };
     }
     return { ok: true, value: parsed };
   };
 
-  const widthResult = parseNumeric('w', query.w);
+  const widthResult = parseNumeric('w', query.w, 1, MAX_OUTPUT_DIMENSION);
   if (!widthResult.ok) return widthResult;
-  const heightResult = parseNumeric('h', query.h);
+  const heightResult = parseNumeric('h', query.h, 1, MAX_OUTPUT_DIMENSION);
   if (!heightResult.ok) return heightResult;
-  const qualityResult = parseNumeric('q', query.q);
+  const qualityResult = parseNumeric('q', query.q, 1, 100);
   if (!qualityResult.ok) return qualityResult;
-
-  // Dimensions reject non-positive values: there is no reading of a zero- or negative-width
-  // image, so silently dropping the parameter would serve a differently-sized response than
-  // the caller asked for. Quality is different — it is a *range*, and a number outside it has
-  // an obvious intent, so `q` clamps below instead of rejecting.
-  for (const [param, result] of [
-    ['w', widthResult],
-    ['h', heightResult],
-  ] as const) {
-    if (result.value !== undefined && result.value <= 0) {
-      return {
-        ok: false,
-        error: {
-          param,
-          value: (query[param] as string | undefined)?.toString() ?? '',
-          message: `Unsupported '${param}' value '${result.value}'. Expected a number greater than 0.`,
-        },
-      };
-    }
-  }
 
   const formatRaw = (query.f as string | undefined)?.toString() || undefined;
   if (formatRaw !== undefined && !isRequestedFormat(formatRaw)) {
@@ -343,7 +368,8 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
     query: {
       width: widthResult.value,
       height: heightResult.value,
-      quality: qualityResult.value !== undefined ? Math.min(100, Math.max(1, qualityResult.value)) : DEFAULT_QUALITY,
+      // No clamping needed — `parseNumeric` already rejected anything outside 1–100.
+      quality: qualityResult.value ?? DEFAULT_QUALITY,
       // Tracked separately from `quality` because the resolved number cannot distinguish
       // "the caller asked for 80" from "the caller asked for nothing". Passthrough
       // detection needs that difference: `?f=jpeg&q=80` on a JPEG is a real re-encode

@@ -38,9 +38,10 @@ import {
   spaceTranslationCachePath,
   translationLocaleCachePath,
 } from '../services';
-import { applySharpTransforms, clampTransformDimensions, parseAssetTransformQuery, resolveOutputFormat } from '../utils/image-transform';
+import { applySharpTransforms, canonicalTransformSize, parseAssetTransformQuery, resolveOutputFormat } from '../utils/image-transform';
 import { getSharp } from '../utils/lazy-modules';
 import { buildAssetETag } from '../utils/asset-etag';
+import { buildAssetQuery } from '../utils/asset-query';
 import { buildContentDisposition } from '../utils/content-disposition';
 import { redactQuery } from '../utils/log-redact';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
@@ -481,15 +482,22 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
   logger.info(`[V1:AssetById] asset: ${exists} & ${assetSnapshot.exists}`);
   if (exists && assetSnapshot.exists) {
     const asset = assetSnapshot.data() as AssetFile;
-    // Bound the render by the source and by the hard ceiling, and resolve the output format,
-    // before anything downstream reads them — `outputType`, `outputExt`, the filename suffix
-    // and the ETag must all describe the bytes actually produced.
-    const { width, height } = clampTransformDimensions(parsed.query, {
+    // A request larger than the source redirects to the size the source can actually produce,
+    // rather than upscaling or being silently served at a different size. Redirecting rather
+    // than clamping is what keeps one URL to one response: every oversized spelling collapses
+    // onto the same canonical URL instead of returning identical bytes under many. Same idea
+    // as the `cv` redirect above.
+    const canonical = canonicalTransformSize(parsed.query, {
       width: asset.metadata?.width,
       height: asset.metadata?.height,
     });
-    // `resizing` uses the *clamped* dimensions: a `?w=` that clamped away to nothing must
-    // not count as a resize, or it would defeat the passthrough below.
+    if (canonical.width !== parsed.query.width || canonical.height !== parsed.query.height) {
+      const target = `/api/v1/spaces/${spaceId}/assets/${assetId}${buildAssetQuery({ ...parsed.query, ...canonical })}`;
+      logger.info(`[V1:AssetById] canonical redirect => ${target}`);
+      res.header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`).redirect(target);
+      return;
+    }
+    const { width, height } = canonical;
     const format = resolveOutputFormat({
       requested: parsed.query.format,
       sourceType: asset.type,
