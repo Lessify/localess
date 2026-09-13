@@ -6,6 +6,7 @@ import os from 'os';
 import {
   bucket,
   CACHE_ASSET_MAX_AGE,
+  CACHE_ASSET_NOT_FOUND_MAX_AGE,
   CACHE_BAD_REQUEST_MAX_AGE,
   CACHE_MAX_AGE,
   CACHE_REDIRECT_MAX_AGE_DEFAULT,
@@ -592,7 +593,10 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .sendFile(tempFilePath);
     return;
   } else {
-    res.status(404).header('Cache-Control', 'no-cache').send(new HttpsError('not-found', 'Not found.'));
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_ASSET_NOT_FOUND_MAX_AGE}, s-maxage=${CACHE_ASSET_NOT_FOUND_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found.'));
     return;
   }
 });
