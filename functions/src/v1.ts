@@ -17,6 +17,12 @@ expressApp.use('/', MANAGE);
 // `maxInstances` overrides the codebase-wide `setGlobalOptions({ maxInstances: 1 })` in `index.ts`.
 // This is the only public, unauthenticated-traffic-facing function: a single instance makes it a
 // hard scaling ceiling and a single point of failure for every consumer's CDN cache miss and
-// `cv` redirect. At 600 concurrency per instance this bounds the API at ~6000 concurrent requests
-// while still capping runaway cost.
-export const v1 = onRequest({ memory: '512MiB', maxInstances: 10 }, expressApp);
+// `cv` redirect.
+//
+// `concurrency` is set explicitly rather than left at the Gen 2 default of 80. Since every
+// `image/jpeg` request now decodes and re-encodes through sharp (see `resolveDefaultFormat`),
+// this function is memory-bound on raw pixel buffers rather than on request count: a single
+// 6000x4000 JPEG costs ~72MB decoded, so a handful in flight together is what exhausts an
+// instance, not traffic volume. 20 x 1GiB is the starting point — revisit against observed
+// memory utilisation rather than treating it as tuned.
+export const v1 = onRequest({ memory: '1GiB', concurrency: 20, maxInstances: 10 }, expressApp);

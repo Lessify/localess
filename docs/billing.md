@@ -52,6 +52,22 @@ Once-a-month spikes of 2K → 5M requests suggest a periodic crawler (Googlebot,
 Before optimization: every request read the token from Firestore.
 After optimization: tokens are cached in-memory for 5 minutes (`TOKEN_CACHE_TTL_MS`).
 
+### 4. Hosting bandwidth is billed on cache hits
+
+**Hosting bills bytes egressed to the client, including CDN cache hits** — there is no "cache hit is
+free" carve-out. A 100% edge hit rate and a 0% hit rate cost the same in Hosting bandwidth.
+
+This matters because most of the log above optimizes a *different* meter. The `cv` redirect pattern,
+the token cache and the merged Storage calls all reduce Function invocations, Firestore reads and
+Storage API calls; **none of them reduce the Hosting GB meter**. Only three things do:
+
+1. Fewer bytes per response (format, quality, right-sized images)
+2. Fewer responses on the wire (browser cache, conditional requests)
+3. Bytes that do not leave via Hosting at all (redirect to GCS, or a CDN in front)
+
+When diagnosing a bandwidth spike specifically, start from the asset endpoint — JSON is KB-scale and
+would need ~20M requests to reach 20 GB, while a single multi-MB asset needs only a few thousand.
+
 ---
 
 ## Optimization Decisions Log
@@ -62,6 +78,12 @@ After optimization: tokens are cached in-memory for 5 minutes (`TOKEN_CACHE_TTL_
 | 2026-05 | Merged `exists()` + `getMetadata()` into single Storage call | ~25% fewer Storage API calls |
 | 2026-05 | In-memory token cache (5 min TTL) | ~50% fewer Firestore reads under load |
 | 2026-05 | Redirect TTL unified to a flat 60s default (no separate draft TTL), overridable per-token via `cacheTtl` | Faster iteration with controlled CDN pressure, tunable per consumer |
+| 2026-09 | Clamp `w`/`h` to source dimensions and to `MAX_OUTPUT_DIMENSION` (4096) | Removes upscaled responses, which exceeded the original's size; closes an amplification vector |
+| 2026-09 | `DEFAULT_QUALITY` 85 → 80 | ~15–20% off every transformed JPEG/WebP without an explicit `?q=` |
+| 2026-09 | Default `image/jpeg` output to WebP | ~40% measured on a 400×300 test asset (116 KB → 70 KB), **including bare no-param requests** — the only change that reaches embeds carrying no query string |
+| 2026-09 | ETag + `304` on the asset endpoint, before transform | Revalidation costs a metadata read instead of a re-encode |
+| 2026-09 | Merged `exists()` + `getMetadata()` on the asset path | One Storage round-trip instead of two; same fix applied to the content path in 2026-05 |
+| 2026-09 | `v1` raised to 1GiB with explicit `concurrency: 20` | Companion to the WebP default: every JPEG request now decodes through sharp, making the function memory-bound on pixel buffers rather than request count |
 
 ---
 

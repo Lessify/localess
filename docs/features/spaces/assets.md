@@ -59,23 +59,61 @@ No auth required (public). Responses are cached for 365 days (`Cache-Control: pu
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `w` | integer > 0 | Target width in pixels |
-| `h` | integer > 0 | Target height in pixels |
-| `q` | integer 1–100 | Output quality (default: `85`). Applies to JPEG, WebP, AVIF. Ignored for PNG. |
-| `f` | string | Output format: `webp`, `jpeg`, `png`, or `avif`. Converts the image to this format. |
+| `w` | integer > 0 | Target width in pixels. Clamped to the source width and to 4096 px — never upscales. |
+| `h` | integer > 0 | Target height in pixels. Clamped to the source height and to 4096 px — never upscales. |
+| `q` | integer 1–100 | Output quality (default: `80`). Applies to JPEG, WebP, AVIF. Ignored for PNG. |
+| `f` | string | Output format: `webp`, `jpeg`, `png`, `avif`, or `original`. **Defaults to `webp` for `image/jpeg` sources**; all other source types keep their original format. Pass `f=original` for the stored bytes untouched. Ignored when `download` is set. |
 | `download` | (flag) | Changes `Content-Disposition` from `inline` to `form-data`, forcing a browser download. |
 | `thumbnail` | (flag) | For animated WebP/GIF: extracts the first frame before resizing. For video: extracts a frame with FFmpeg, then resizes with Sharp. |
 
+### Default Output Format
+
+`image/jpeg` sources are re-encoded to **WebP** by default — including requests carrying no query
+parameters at all, which is what pulls a bare `<img src=".../assets/{id}">` onto the transform path.
+WebP is typically 25–35% smaller than JPEG at equivalent perceptual quality.
+
+All other source types are unaffected: PNG (lossy WebP degrades screenshots and line art), GIF and
+animated WebP (passed through untransformed — Sharp cannot resize animations), SVG, and video.
+
+Three ways to opt out, each meaning something different:
+
+| Request | Returns | Use when |
+|---------|---------|----------|
+| `?f=jpeg` | JPEG **re-encoded** at `q=80` | The client cannot render WebP — Outlook and some email clients, Safari below 14, a few link/OG crawlers. Still compressed, so the escape hatch stays cheap. |
+| `?f=original` | The stored bytes, **byte-for-byte**, `inline` | You need the untouched source without forcing a download — full-quality lightbox, print, downstream processing. |
+| `?download` | The stored bytes, **byte-for-byte**, as an attachment | A save-file action. |
+
+`f=original` composes with a resize: `?f=original&w=200` scales to 200 px while keeping the source
+format, i.e. "resize but don't convert me".
+
+### Lossless no-op collapse
+
+Requesting a **lossless** format that the source already is — only `?f=png` on an `image/png` today
+— is served as a passthrough rather than re-encoded, since the encoder would spend CPU producing
+equivalent bytes.
+
+**Lossy formats deliberately do not collapse.** `?f=jpeg` on a JPEG re-encodes at `q=80`, because
+that is a real size reduction (116 KB → 64 KB on a test asset) and the whole purpose of this
+endpoint. Collapsing it would serve the full uncompressed original to precisely the clients least
+able to afford it. `f=original` is the passthrough; `f=<format>` means encode.
+
 ### Resize Behaviour (`w` / `h`)
 
-Sharp is called as `resize(width ?? null, height ?? null)` with its default `cover` fit:
+Sharp is called as `resize(width ?? null, height ?? null)` with its default `cover` fit and
+`withoutEnlargement: true`:
 
 | `w` | `h` | Behaviour |
 |-----|-----|-----------|
 | ✓ | — | Scale to width, height auto — aspect ratio preserved, no crop |
 | — | ✓ | Scale to height, width auto — aspect ratio preserved, no crop |
 | ✓ | ✓ | **`cover` crop** — resizes to fill the exact box, excess edges are cropped |
-| — | — | No resize — only format/quality re-encoding if `f`/`q` provided |
+| — | — | No resize — only format/quality re-encoding if `f`/`q` provided, or if the source is `image/jpeg` and the WebP default applies |
+
+Both dimensions are clamped before any resize runs: first to the stored original's
+`metadata.width`/`metadata.height`, then to `MAX_OUTPUT_DIMENSION` (4096 px, defined in
+`functions/src/utils/image-transform.ts`). Requests above either bound are clamped rather than
+rejected, and the `Content-Disposition` filename reflects the clamped size. Omit `w`/`h` entirely to
+receive the untouched original (subject to the WebP default above).
 
 ### Special Cases
 

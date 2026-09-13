@@ -3,10 +3,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applySharpTransforms,
+  clampTransformDimensions,
   DEFAULT_QUALITY,
   isImageFit,
   isImageFormat,
+  MAX_OUTPUT_DIMENSION,
+  ORIGINAL_FORMAT,
   parseAssetTransformQuery,
+  resolveOutputFormat,
   VALID_FITS,
   VALID_FORMATS,
 } from './image-transform';
@@ -164,6 +168,7 @@ describe('parseAssetTransformQuery', () => {
       width: undefined,
       height: undefined,
       quality: DEFAULT_QUALITY,
+      qualityExplicit: false,
       format: undefined,
       fit: undefined,
       download: false,
@@ -273,10 +278,238 @@ describe('parseAssetTransformQuery', () => {
       width: 400,
       height: 300,
       quality: 80,
+      qualityExplicit: true,
       format: 'webp',
       fit: 'inside',
       download: true,
       thumbnail: true,
     });
+  });
+});
+
+describe('clampTransformDimensions', () => {
+  const source1000 = { width: 1000, height: 800 };
+
+  it('leaves a request below the source untouched', () => {
+    expect(clampTransformDimensions({ width: 500 }, source1000)).toEqual({ width: 500, height: undefined });
+  });
+
+  it('leaves a request equal to the source untouched', () => {
+    expect(clampTransformDimensions({ width: 1000 }, source1000)).toEqual({ width: 1000, height: undefined });
+  });
+
+  it('clamps a request above the source down to the source', () => {
+    expect(clampTransformDimensions({ width: 3840 }, source1000)).toEqual({ width: 1000, height: undefined });
+  });
+
+  it('passes the request through when the source width is unknown', () => {
+    expect(clampTransformDimensions({ width: 800 }, {})).toEqual({ width: 800, height: undefined });
+  });
+
+  it('clamps to MAX_OUTPUT_DIMENSION when the source is larger', () => {
+    expect(clampTransformDimensions({ width: 8000 }, { width: 8000 })).toEqual({
+      width: MAX_OUTPUT_DIMENSION,
+      height: undefined,
+    });
+  });
+
+  it('uses the source when it is smaller than the ceiling', () => {
+    expect(clampTransformDimensions({ width: 8000 }, { width: 1000 })).toEqual({ width: 1000, height: undefined });
+  });
+
+  it('caps an unknown-source request at the ceiling', () => {
+    expect(clampTransformDimensions({ width: 9999 }, {})).toEqual({ width: MAX_OUTPUT_DIMENSION, height: undefined });
+  });
+
+  it('clamps height independently of width', () => {
+    expect(clampTransformDimensions({ width: 100, height: 5000 }, source1000)).toEqual({ width: 100, height: 800 });
+  });
+
+  it('returns undefined for a dimension that was not requested', () => {
+    expect(clampTransformDimensions({}, source1000)).toEqual({ width: undefined, height: undefined });
+  });
+
+  it('honours an explicit maxDimension override', () => {
+    expect(clampTransformDimensions({ width: 900 }, {}, 640)).toEqual({ width: 640, height: undefined });
+  });
+});
+
+describe('applySharpTransforms — never enlarges', () => {
+  it('does not upscale when the requested width exceeds the source', async () => {
+    const out = applySharpTransforms(source(), { width: 400, quality: 80 });
+
+    expect(await dimensions(out)).toEqual({ width: 200, height: 100 });
+  });
+
+  it('does not upscale when the requested height exceeds the source', async () => {
+    const out = applySharpTransforms(source(), { height: 400, quality: 80 });
+
+    expect(await dimensions(out)).toEqual({ width: 200, height: 100 });
+  });
+
+  it('does not upscale inside a box larger than the source', async () => {
+    const out = applySharpTransforms(source(), { width: 800, height: 800, quality: 80, fit: 'inside' });
+
+    expect(await dimensions(out)).toEqual({ width: 200, height: 100 });
+  });
+
+  it('still downscales normally', async () => {
+    const out = applySharpTransforms(source(), { width: 50, quality: 80 });
+
+    expect(await dimensions(out)).toEqual({ width: 50, height: 25 });
+  });
+});
+
+describe('DEFAULT_QUALITY', () => {
+  it('is 80 — the chosen bandwidth/quality trade point', () => {
+    expect(DEFAULT_QUALITY).toBe(80);
+  });
+
+  it('is used when q is absent', () => {
+    const result = parseAssetTransformQuery({});
+
+    expect(result.ok && result.query.quality).toBe(80);
+  });
+
+  it('is overridden by an explicit q', () => {
+    const result = parseAssetTransformQuery({ q: '95' });
+
+    expect(result.ok && result.query.quality).toBe(95);
+  });
+});
+
+describe('resolveOutputFormat', () => {
+  const resolve = (overrides: Partial<Parameters<typeof resolveOutputFormat>[0]> = {}) =>
+    resolveOutputFormat({ sourceType: 'image/jpeg', download: false, qualityExplicit: false, resizing: false, ...overrides });
+
+  describe('the WebP default', () => {
+    it('defaults a jpeg source to webp', () => {
+      expect(resolve()).toBe('webp');
+    });
+
+    it.each([['image/png'], ['image/gif'], ['image/webp'], ['image/avif'], ['image/svg+xml'], ['image/tiff']])(
+      'leaves %s untouched',
+      sourceType => {
+        expect(resolve({ sourceType })).toBeUndefined();
+      }
+    );
+
+    it.each([['video/mp4'], ['video/webm'], ['application/pdf']])('leaves %s untouched', sourceType => {
+      expect(resolve({ sourceType })).toBeUndefined();
+    });
+
+    it('exempts downloads so the stored original is returned', () => {
+      expect(resolve({ download: true })).toBeUndefined();
+    });
+  });
+
+  describe('f=original opts out explicitly', () => {
+    it('keeps a jpeg as jpeg rather than converting to webp', () => {
+      expect(resolve({ requested: ORIGINAL_FORMAT })).toBeUndefined();
+    });
+
+    it('still opts out when combined with a resize, so only the size changes', () => {
+      expect(resolve({ requested: ORIGINAL_FORMAT, resizing: true })).toBeUndefined();
+    });
+
+    it('still opts out when an explicit quality is given', () => {
+      expect(resolve({ requested: ORIGINAL_FORMAT, qualityExplicit: true })).toBeUndefined();
+    });
+
+    it.each([['image/png'], ['image/webp']])('is a no-op for %s, which never defaulted anyway', sourceType => {
+      expect(resolve({ requested: ORIGINAL_FORMAT, sourceType })).toBeUndefined();
+    });
+  });
+
+  describe('requesting a lossless source format collapses to a passthrough', () => {
+    it('serves a png asked for as png as stored, since the re-encode is a true no-op', () => {
+      expect(resolve({ requested: 'png', sourceType: 'image/png' })).toBeUndefined();
+    });
+
+    it('collapses even on a download, where the disposition is the only concern', () => {
+      expect(resolve({ requested: 'png', sourceType: 'image/png', download: true })).toBeUndefined();
+    });
+
+    it('re-encodes when resizing, since the bytes must change anyway', () => {
+      expect(resolve({ requested: 'png', sourceType: 'image/png', resizing: true })).toBe('png');
+    });
+
+    it('re-encodes when an explicit quality is given, since that is a real request', () => {
+      expect(resolve({ requested: 'png', sourceType: 'image/png', qualityExplicit: true })).toBe('png');
+    });
+
+    it('does not collapse a genuine conversion', () => {
+      expect(resolve({ requested: 'png', sourceType: 'image/jpeg' })).toBe('png');
+    });
+
+    it('does not collapse for a source with no encoder equivalent', () => {
+      expect(resolve({ requested: 'png', sourceType: 'image/svg+xml' })).toBe('png');
+    });
+  });
+
+  describe('lossy formats never collapse — the re-encode is a real size reduction', () => {
+    it.each([
+      ['image/jpeg', 'jpeg'],
+      ['image/webp', 'webp'],
+      ['image/avif', 'avif'],
+    ] as const)('%s asked for as %s still re-encodes at the default quality', (sourceType, requested) => {
+      expect(resolve({ requested, sourceType })).toBe(requested);
+    });
+
+    it('keeps ?f=jpeg useful as the escape hatch for clients that cannot render webp', () => {
+      // Must not become a passthrough: that would serve the full uncompressed original to
+      // exactly the clients least able to afford it. `f=original` is the passthrough.
+      expect(resolve({ requested: 'jpeg', sourceType: 'image/jpeg' })).toBe('jpeg');
+    });
+  });
+
+  describe('an explicit format still wins where it means something', () => {
+    it('converts jpeg to avif on request', () => {
+      expect(resolve({ requested: 'avif' })).toBe('avif');
+    });
+
+    it('overrides the download exemption', () => {
+      expect(resolve({ requested: 'webp', download: true })).toBe('webp');
+    });
+
+    it('overrides the webp default with png', () => {
+      expect(resolve({ requested: 'png' })).toBe('png');
+    });
+  });
+});
+
+describe('parseAssetTransformQuery — f=original and qualityExplicit', () => {
+  const ok = (query: Record<string, unknown>) => {
+    const result = parseAssetTransformQuery(query);
+    if (!result.ok) throw new Error(`expected ok, got rejection for ${result.error.param}`);
+    return result.query;
+  };
+
+  it('accepts f=original', () => {
+    expect(ok({ f: 'original' }).format).toBe(ORIGINAL_FORMAT);
+  });
+
+  it('lists original among the accepted values when rejecting a typo', () => {
+    const result = parseAssetTransformQuery({ f: 'orignal' });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.message).toContain('original');
+  });
+
+  it('reports qualityExplicit false when q is absent', () => {
+    expect(ok({}).qualityExplicit).toBe(false);
+  });
+
+  it('reports qualityExplicit true when q is given', () => {
+    expect(ok({ q: '80' }).qualityExplicit).toBe(true);
+  });
+
+  it('reports qualityExplicit true even for an out-of-range q that gets clamped', () => {
+    expect(ok({ q: '500' })).toMatchObject({ quality: 100, qualityExplicit: true });
+  });
+
+  it('reports qualityExplicit false for a non-numeric q', () => {
+    expect(ok({ q: 'abc' }).qualityExplicit).toBe(false);
   });
 });

@@ -37,8 +37,9 @@ import {
   spaceTranslationCachePath,
   translationLocaleCachePath,
 } from '../services';
-import { applySharpTransforms, parseAssetTransformQuery } from '../utils/image-transform';
+import { applySharpTransforms, clampTransformDimensions, parseAssetTransformQuery, resolveOutputFormat } from '../utils/image-transform';
 import { getSharp } from '../utils/lazy-modules';
+import { buildAssetETag } from '../utils/asset-etag';
 import { redactQuery } from '../utils/log-redact';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
 import {
@@ -460,15 +461,40 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .send(new HttpsError('invalid-argument', parsed.error.message));
     return;
   }
-  const { width, height, quality, format, fit, download, thumbnail } = parsed.query;
+  const { quality, fit, download, thumbnail } = parsed.query;
 
   const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
-  const [exists] = await assetFile.exists();
+  // One Storage metadata round-trip serves both purposes: existence, and the `md5Hash`
+  // the ETag below is built from. Mirrors the `exists()`/`getMetadata()` merge already
+  // applied to the content path (see docs/billing.md decision log, 2026-05).
+  let objectMetadata: Record<string, unknown> | undefined;
+  try {
+    [objectMetadata] = await assetFile.getMetadata();
+  } catch {
+    objectMetadata = undefined;
+  }
+  const exists = objectMetadata !== undefined;
   const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
   let overwriteType: string | undefined;
   logger.info(`[V1:AssetById] asset: ${exists} & ${assetSnapshot.exists}`);
   if (exists && assetSnapshot.exists) {
     const asset = assetSnapshot.data() as AssetFile;
+    // Bound the render by the source and by the hard ceiling, and resolve the output format,
+    // before anything downstream reads them — `outputType`, `outputExt`, the filename suffix
+    // and the ETag must all describe the bytes actually produced.
+    const { width, height } = clampTransformDimensions(parsed.query, {
+      width: asset.metadata?.width,
+      height: asset.metadata?.height,
+    });
+    // `resizing` uses the *clamped* dimensions: a `?w=` that clamped away to nothing must
+    // not count as a resize, or it would defeat the passthrough below.
+    const format = resolveOutputFormat({
+      requested: parsed.query.format,
+      sourceType: asset.type,
+      download,
+      qualityExplicit: parsed.query.qualityExplicit,
+      resizing: width !== undefined || height !== undefined,
+    });
     const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
     let filename = `${asset.name}${asset.extension}`;
     const formatMimeMap: Record<string, string> = { webp: 'image/webp', jpeg: 'image/jpeg', png: 'image/png', avif: 'image/avif' };
@@ -479,6 +505,19 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const suffix = [width ? `w${width}` : '', height ? `h${height}` : '', format ? `f${format}` : '', fit ? `fit${fit}` : '']
       .filter(Boolean)
       .join('-');
+
+    // Answered before any download or sharp work: a revalidating client should cost a
+    // metadata read, not a re-encode.
+    const md5Hash = objectMetadata?.['md5Hash'] as string | undefined;
+    if (md5Hash) {
+      const etag = buildAssetETag(md5Hash, suffix, thumbnail);
+      res.header('ETag', etag);
+      if (req.headers['if-none-match'] === etag) {
+        res.status(304).header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`).end();
+        return;
+      }
+    }
+
     // apply resize for valid 'w' parameter and images
     if (asset.type.startsWith('image/') && (width !== undefined || height !== undefined || format !== undefined)) {
       const sharp = await getSharp();

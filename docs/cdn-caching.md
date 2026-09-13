@@ -64,6 +64,33 @@ CACHE_ASSET_MAX_AGE             = DAY * 365     // 31536000s
 | `GET /api/v1/spaces/:spaceId/contents/:contentId` | Token (CONTENT_PUBLIC or DRAFT) | `contents/cache.json` |
 | `GET /api/v1/spaces/:spaceId/assets/:assetId` | None | N/A (no cv) |
 
+### Asset transform bounds
+
+Requested render dimensions are bounded twice before sharp runs:
+
+1. **By the source.** `?w=`/`?h=` are clamped to the stored original's
+   `metadata.width`/`metadata.height`. Upscaling produced a response larger than the original for no
+   visual gain, and an unbounded `w` was an amplification vector on this public, unauthenticated
+   endpoint.
+2. **By a hard ceiling.** `MAX_OUTPUT_DIMENSION` (4096 px), defined in
+   `functions/src/utils/image-transform.ts`.
+
+`applySharpTransforms` additionally sets `withoutEnlargement: true`, so no caller can produce an
+upscale even by bypassing the clamp.
+
+Requests above either bound are **clamped, not rejected** — a `400` would break existing consumers,
+and the goal is fewer bytes rather than more errors. The untransformed original stays reachable by
+omitting `w`/`h`.
+
+`image/jpeg` sources are additionally re-encoded to **WebP** by default, which pulls even
+no-parameter requests onto the transform path. `?f=original` opts out and returns the stored bytes
+byte-for-byte with an `inline` disposition; `?f=jpeg` re-encodes as JPEG at the default quality for
+clients that cannot render WebP. See
+[Assets — Default Output Format](features/spaces/assets.md) for the full matrix.
+
+Transformed responses carry an `ETag` derived from the object's `md5Hash` plus the transform suffix;
+a matching `If-None-Match` returns `304` **before** any download or re-encode.
+
 ---
 
 ## Thundering Herd Problem
