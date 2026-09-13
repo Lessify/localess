@@ -1,3 +1,4 @@
+import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import { onRequest } from 'firebase-functions/v2/https';
@@ -8,6 +9,15 @@ import { DEV_TOOLS } from './v1/dev-tools';
 // API V1
 const expressApp = express();
 expressApp.use(cors({ origin: true }));
+// Every JSON body this API returns — translations, content, links, OpenAPI, schema exports — is
+// highly repetitive text that gzips to a fraction of its size, and egress out of the function is
+// billed by the byte. The default filter keys off the response Content-Type via `compressible`,
+// so the asset route is skipped for free: `image/*`, `video/*`, `application/zip` and
+// `application/pdf` are all marked incompressible upstream, while `image/svg+xml` is not and does
+// get compressed. That is deliberate — it means a new asset MIME type can never accidentally be
+// double-compressed by adding a case here. The 1kb default threshold leaves the small
+// `HttpsError` 404 bodies alone, where gzip framing would only add bytes.
+expressApp.use(compression());
 // 5mb instead of the express default 100kb: schema push payloads carry a whole space's schemas in one body.
 expressApp.use(express.json({ limit: '5mb' }));
 expressApp.use('/', CDN);

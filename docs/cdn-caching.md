@@ -99,6 +99,29 @@ a matching `If-None-Match` returns `304` **before** any download or re-encode.
 
 ---
 
+## Response Compression
+
+`functions/src/v1.ts` mounts `compression()` across the whole API, so every JSON response is gzipped
+when the client sends `Accept-Encoding: gzip`. Measured against the demo dataset, a translation
+locale file goes from ~490 KB to ~93 KB and the OpenAPI document from ~40 KB to ~5 KB — around 80%
+off the wire for the CDN endpoints overall.
+
+The filter is the middleware's default, which decides purely from the response `Content-Type` via
+`compressible`. That is what keeps the asset route out of it without naming it: `image/*`, `video/*`,
+`application/zip` and `application/pdf` are already marked incompressible, so re-encoding an
+already-compressed JPEG never happens, and a new asset MIME type cannot accidentally opt in.
+`image/svg+xml` is the deliberate exception — it is text, so it does get compressed.
+
+Two consequences worth knowing:
+
+- Compressed responses carry `Vary: Accept-Encoding`, so the CDN keys a separate edge entry per
+  encoding. In practice that is two (gzip and identity), since every browser and every mainstream
+  HTTP client advertises gzip.
+- The 1 KB default threshold means small bodies — most notably the `HttpsError` 404s — are sent
+  uncompressed, where gzip framing would only add bytes.
+
+---
+
 ## Thundering Herd Problem
 
 When content is published all consumers have a stale `cv`. Without a cached redirect, every consumer simultaneously invokes the Function → Storage → Firestore chain. The redirect cache (60s default, per-token tunable) limits the stampede to one wave per CDN edge node.
