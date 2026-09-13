@@ -267,12 +267,52 @@ export function clampTransformDimensions(
  * @return {AssetTransformQueryResult} the parsed query, or the rejection reason
  */
 export function parseAssetTransformQuery(query: Record<string, unknown>): AssetTransformQueryResult {
-  const positiveInt = (raw: unknown): number | undefined => {
-    const parsed = parseInt((raw as string | undefined)?.toString() ?? '', 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+  /**
+   * Parsed numeric parameter: absent, a value, or a rejection.
+   *
+   * Three outcomes rather than two, because "the caller omitted it" and "the caller sent
+   * something meaningless" must not collapse into the same `undefined`.
+   */
+  type NumericResult = { ok: true; value?: number } | { ok: false; error: AssetTransformQueryError };
+
+  const parseNumeric = (param: string, raw: unknown): NumericResult => {
+    const value = (raw as string | undefined)?.toString() ?? '';
+    // An empty value counts as absent, not invalid — matching `f` and `fit`, so the parser
+    // has one rule for "omitted" rather than one per parameter.
+    if (value === '') return { ok: true };
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed)) {
+      return { ok: false, error: { param, value, message: `Unsupported '${param}' value '${value}'. Expected a number.` } };
+    }
+    return { ok: true, value: parsed };
   };
 
-  const qualityParsed = parseInt((query.q as string | undefined)?.toString() ?? '', 10);
+  const widthResult = parseNumeric('w', query.w);
+  if (!widthResult.ok) return widthResult;
+  const heightResult = parseNumeric('h', query.h);
+  if (!heightResult.ok) return heightResult;
+  const qualityResult = parseNumeric('q', query.q);
+  if (!qualityResult.ok) return qualityResult;
+
+  // Dimensions reject non-positive values: there is no reading of a zero- or negative-width
+  // image, so silently dropping the parameter would serve a differently-sized response than
+  // the caller asked for. Quality is different — it is a *range*, and a number outside it has
+  // an obvious intent, so `q` clamps below instead of rejecting.
+  for (const [param, result] of [
+    ['w', widthResult],
+    ['h', heightResult],
+  ] as const) {
+    if (result.value !== undefined && result.value <= 0) {
+      return {
+        ok: false,
+        error: {
+          param,
+          value: (query[param] as string | undefined)?.toString() ?? '',
+          message: `Unsupported '${param}' value '${result.value}'. Expected a number greater than 0.`,
+        },
+      };
+    }
+  }
 
   const formatRaw = (query.f as string | undefined)?.toString() || undefined;
   if (formatRaw !== undefined && !isRequestedFormat(formatRaw)) {
@@ -301,14 +341,14 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
   return {
     ok: true,
     query: {
-      width: positiveInt(query.w),
-      height: positiveInt(query.h),
-      quality: Number.isFinite(qualityParsed) ? Math.min(100, Math.max(1, qualityParsed)) : DEFAULT_QUALITY,
+      width: widthResult.value,
+      height: heightResult.value,
+      quality: qualityResult.value !== undefined ? Math.min(100, Math.max(1, qualityResult.value)) : DEFAULT_QUALITY,
       // Tracked separately from `quality` because the resolved number cannot distinguish
       // "the caller asked for 80" from "the caller asked for nothing". Passthrough
       // detection needs that difference: `?f=jpeg&q=80` on a JPEG is a real re-encode
       // request, while a bare `?f=jpeg` is a no-op.
-      qualityExplicit: Number.isFinite(qualityParsed),
+      qualityExplicit: qualityResult.value !== undefined,
       format: formatRaw as RequestedFormat | undefined,
       fit: fitRaw as ImageFit | undefined,
       download: isFlagSet(query.download),

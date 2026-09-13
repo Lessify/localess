@@ -41,6 +41,7 @@ import {
 import { applySharpTransforms, clampTransformDimensions, parseAssetTransformQuery, resolveOutputFormat } from '../utils/image-transform';
 import { getSharp } from '../utils/lazy-modules';
 import { buildAssetETag } from '../utils/asset-etag';
+import { buildContentDisposition } from '../utils/content-disposition';
 import { redactQuery } from '../utils/log-redact';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
 import {
@@ -497,6 +498,12 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       resizing: width !== undefined || height !== undefined,
     });
     const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
+    // Set by the branches where sharp produces the response, so those never touch `/tmp`.
+    // `/tmp` on Cloud Functions is tmpfs — RAM against the instance limit — so writing the
+    // output there and reading it straight back with `sendFile` held every transformed image
+    // in memory twice. The passthrough branches below still use `tempFilePath`; converting
+    // those is the deferred video-streaming work.
+    let output: Buffer | undefined;
     let filename = `${asset.name}${asset.extension}`;
     const formatMimeMap: Record<string, string> = { webp: 'image/webp', jpeg: 'image/jpeg', png: 'image/png', avif: 'image/avif' };
     const formatExtMap: Record<string, string> = { webp: '.webp', jpeg: '.jpg', png: '.png', avif: '.avif' };
@@ -535,7 +542,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
             sharpFile = sharp(file, { page: 0, pages: 1 });
           }
           sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format, fit });
-          await sharpFile.toFile(tempFilePath);
+          output = await sharpFile.toBuffer();
           overwriteType = outputType;
         } else if (isAnimated) {
           // TODO: no way to resize animated files
@@ -546,7 +553,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
             filename = `${asset.name}-${suffix}${outputExt}`;
           }
           sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format, fit });
-          await sharpFile.toFile(tempFilePath);
+          output = await sharpFile.toBuffer();
           overwriteType = outputType;
         }
       } else if (asset.type === 'image/svg+xml') {
@@ -567,7 +574,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           }
         }
         pipeline = applySharpTransforms(pipeline, { width, height, quality, format, fit });
-        await pipeline.toFile(tempFilePath);
+        output = await pipeline.toBuffer();
         overwriteType = outputType;
       }
     } else if (asset.type.startsWith('video/') && width !== undefined && thumbnail) {
@@ -582,17 +589,30 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     } else {
       await assetFile.download({ destination: tempFilePath });
     }
-    let disposition = `inline; filename="${encodeURI(filename)}"`;
-    if (download) {
-      disposition = `form-data; filename="${encodeURI(filename)}"`;
-    }
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-      .header('Content-Disposition', disposition)
-      .contentType(overwriteType || asset.type)
-      .sendFile(tempFilePath);
+      .header('Content-Disposition', buildContentDisposition(filename, download))
+      .contentType(overwriteType || asset.type);
+    if (output) {
+      res.send(output);
+    } else {
+      res.sendFile(tempFilePath);
+    }
     return;
   } else {
+    // Two different failures reach here, and caching them alike is a trap.
+    //
+    // No Firestore document means the asset genuinely does not exist — a deleted asset still
+    // referenced by published content, or a bad ID. That repeats on every page view, so it is
+    // worth caching hard.
+    //
+    // A document that exists while the Storage object does not means an upload is still in
+    // flight (`AssetFile.inProgress`). Caching that would pin a 404 over an asset that is
+    // about to appear — for a week, at the current TTL — so it stays uncached.
+    if (assetSnapshot.exists) {
+      res.status(404).header('Cache-Control', 'no-cache').send(new HttpsError('not-found', 'Not found, upload may still be in progress.'));
+      return;
+    }
     res
       .status(404)
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_NOT_FOUND_MAX_AGE}, s-maxage=${CACHE_ASSET_NOT_FOUND_MAX_AGE}`)

@@ -176,13 +176,19 @@ describe('parseAssetTransformQuery', () => {
     });
   });
 
-  describe('dimensions are lenient', () => {
+  describe('dimensions', () => {
     it('parses positive integers', () => {
       expect(ok({ w: '400', h: '300' })).toMatchObject({ width: 400, height: 300 });
     });
 
-    it.each([['0'], ['-5'], ['abc'], [''], ['NaN']])('ignores a non-positive or non-numeric w: %s', raw => {
-      expect(ok({ w: raw }).width).toBeUndefined();
+    // Previously these were silently ignored. They now reject — see the
+    // 'numeric params are strict' block below for the full rule and its rationale.
+    it.each([['0'], ['-5'], ['abc'], ['NaN']])('rejects a non-positive or non-numeric w: %s', raw => {
+      expect(parseAssetTransformQuery({ w: raw }).ok).toBe(false);
+    });
+
+    it('treats an empty w as absent rather than invalid', () => {
+      expect(ok({ w: '' }).width).toBeUndefined();
     });
 
     it('takes the leading integer of a decimal, matching parseInt', () => {
@@ -204,8 +210,12 @@ describe('parseAssetTransformQuery', () => {
       expect(ok({ q: raw }).quality).toBe(expected);
     });
 
-    it.each([['abc'], [''], [undefined]])('defaults when q is %s', raw => {
+    it.each([[''], [undefined]])('defaults when q is absent (%s)', raw => {
       expect(ok({ q: raw }).quality).toBe(DEFAULT_QUALITY);
+    });
+
+    it('rejects a non-numeric q rather than defaulting', () => {
+      expect(parseAssetTransformQuery({ q: 'abc' }).ok).toBe(false);
     });
   });
 
@@ -509,7 +519,94 @@ describe('parseAssetTransformQuery — f=original and qualityExplicit', () => {
     expect(ok({ q: '500' })).toMatchObject({ quality: 100, qualityExplicit: true });
   });
 
-  it('reports qualityExplicit false for a non-numeric q', () => {
-    expect(ok({ q: 'abc' }).qualityExplicit).toBe(false);
+  it('reports qualityExplicit false for an empty q', () => {
+    expect(ok({ q: '' }).qualityExplicit).toBe(false);
+  });
+});
+
+describe('parseAssetTransformQuery — numeric params are strict', () => {
+  const ok = (query: Record<string, unknown>) => {
+    const result = parseAssetTransformQuery(query);
+    if (!result.ok) throw new Error(`expected ok, got rejection for ${result.error.param}`);
+    return result.query;
+  };
+  const rejection = (query: Record<string, unknown>) => {
+    const result = parseAssetTransformQuery(query);
+    if (result.ok) throw new Error('expected a rejection');
+    return result.error;
+  };
+
+  describe('unparseable values are rejected', () => {
+    it.each([['w'], ['h'], ['q']])('rejects a non-numeric %s, naming the param and value', param => {
+      const error = rejection({ [param]: 'abc' });
+
+      expect(error.param).toBe(param);
+      expect(error.value).toBe('abc');
+      expect(error.message).toContain(param);
+    });
+
+    it('rejects the template-bug case that used to silently work', () => {
+      expect(rejection({ w: 'undefined' }).param).toBe('w');
+    });
+
+    it('rejects NaN', () => {
+      expect(rejection({ w: 'NaN' }).param).toBe('w');
+    });
+  });
+
+  describe('an empty value is absent, not invalid', () => {
+    it.each([['w'], ['h'], ['q']])('treats an empty %s as omitted, matching f and fit', param => {
+      expect(parseAssetTransformQuery({ [param]: '' }).ok).toBe(true);
+    });
+
+    it('leaves width undefined for an empty w', () => {
+      expect(ok({ w: '' }).width).toBeUndefined();
+    });
+
+    it('falls back to the default quality for an empty q', () => {
+      expect(ok({ q: '' })).toMatchObject({ quality: DEFAULT_QUALITY, qualityExplicit: false });
+    });
+  });
+
+  describe('dimensions have no sensible non-positive reading, so those reject', () => {
+    it.each([
+      ['w', '0'],
+      ['w', '-5'],
+      ['h', '0'],
+      ['h', '-5'],
+    ])('rejects %s=%s', (param, value) => {
+      expect(rejection({ [param]: value }).param).toBe(param);
+    });
+  });
+
+  describe('quality stays clamped, because a number outside a range has obvious intent', () => {
+    it.each([
+      ['0', 1],
+      ['-10', 1],
+      ['101', 100],
+      ['9999', 100],
+    ])('clamps q=%s to %i rather than rejecting', (raw, expected) => {
+      expect(ok({ q: raw }).quality).toBe(expected);
+    });
+  });
+
+  describe('existing lenient parsing that must not change', () => {
+    it('still takes the leading integer of a decimal', () => {
+      expect(ok({ w: '400.9' }).width).toBe(400);
+    });
+
+    it('still treats an absent param as absent', () => {
+      expect(ok({})).toMatchObject({ width: undefined, height: undefined, quality: DEFAULT_QUALITY });
+    });
+  });
+
+  describe('rejection ordering is stable', () => {
+    it('reports w before h', () => {
+      expect(rejection({ w: 'abc', h: 'abc' }).param).toBe('w');
+    });
+
+    it('reports a numeric param before f', () => {
+      expect(rejection({ w: 'abc', f: 'bogus' }).param).toBe('w');
+    });
   });
 });
