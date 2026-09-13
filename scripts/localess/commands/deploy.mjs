@@ -158,18 +158,44 @@ async function deployWithRetry(deployArgs, env, { attempts = 3, delayMs = 30000 
 }
 
 /**
- * Sets the Artifact Registry cleanup policy for function images.
+ * What `functions:artifacts:setpolicy` did, read back out of its own output.
+ *
+ * The retention is reported rather than assumed: we deliberately pass no `--days`, so the
+ * number is firebase-tools' default (1 day today) and printing our own copy of it would be
+ * a second source of truth that silently goes stale if that default ever moves.
+ *
+ * Order matters. A run that changes an existing policy prints the OLD retention first, as a
+ * "Note:", so the `Successfully` line has to win over any earlier mention.
+ */
+export function cleanupPolicyOutcome(output) {
+  if (/does not exist in Artifact Registry/i.test(output)) return { state: 'missing-repo' };
+
+  const applied = output.match(/Successfully (?:set up|updated) cleanup policy[\s\S]*?older than (\S+) days/i);
+  if (applied) return { state: 'applied', days: applied[1] };
+
+  const existing = output.match(/cleanup policy already exists that deletes images older than (\S+) days/i);
+  if (existing) return { state: 'unchanged', days: existing[1] };
+
+  return { state: 'unknown' };
+}
+
+/**
+ * Verifies - and if needed sets - the Artifact Registry cleanup policy for function images.
  *
  * Done here rather than in setup because the `gcf-artifacts` repository does not exist
  * until functions have been deployed once - setup would only ever no-op. Without it the
  * CLI asks for the policy on the next deploy and, being `--non-interactive`, fails a
  * deployment that otherwise fully succeeded.
  *
+ * No `--days`: the firebase-tools default of 1 day is what we want. The images are build
+ * artifacts - Cloud Run functions keeps its own copy of what it serves - so nothing at
+ * runtime depends on how long they are kept, and a shorter retention is a smaller bill.
+ *
  * Best-effort: the images are already live, so a missing cleanup policy is a billing
  * footnote, not a failed deploy.
  */
 async function ensureArtifactPolicy(projectId, region, env) {
-  log.step('Setting the function image cleanup policy');
+  log.step('Checking the function image cleanup policy');
   const args = ['functions:artifacts:setpolicy', '--project', projectId, '--location', region, '--force'];
   const { code, output } = await execCapture(process.execPath, [firebaseTools().binPath, ...args], env);
 
@@ -177,7 +203,19 @@ async function ensureArtifactPolicy(projectId, region, env) {
     log.skip(`could not set the cleanup policy (exit ${code})`);
     return;
   }
-  log.done(/does not exist in Artifact Registry/.test(output) ? 'no function images yet; nothing to configure' : region);
+
+  const { state, days } = cleanupPolicyOutcome(output);
+  switch (state) {
+    case 'missing-repo':
+      return log.done('no function images yet; nothing to configure');
+    case 'applied':
+      return log.done(`${region}: images are now deleted after ${days} day(s)`);
+    case 'unchanged':
+      return log.done(`${region}: already deleting images after ${days} day(s)`);
+    default:
+      // Exit 0 with wording we do not recognise still means the CLI was satisfied.
+      return log.done(region);
+  }
 }
 
 async function preflight() {

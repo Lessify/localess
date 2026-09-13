@@ -233,13 +233,36 @@ always succeed on a later run — wait a few minutes and repeat the same command
 
 #### Function image cleanup policy
 
-When functions are among the targets, deploy first sets an Artifact Registry cleanup policy for the
-region, so old container images do not accumulate into a slow monthly bill. Without it the CLI wants
-to ask about the policy on every deploy, and `--non-interactive` turns that question into a failed
-deploy of functions that in fact deployed fine.
+When functions are among the targets, deploy first checks the Artifact Registry cleanup policy for
+the region, and sets it if it is missing or different, so old container images do not accumulate
+into a slow monthly bill. Without a policy the CLI wants to ask about one on every deploy, and
+`--non-interactive` turns that question into a failed deploy of functions that in fact deployed
+fine. The step reports what it found:
+
+```
+Checking the function image cleanup policy
+    + europe-west6: already deleting images after 1 day(s)
+```
+
+**Retention is 1 day**, the firebase-tools default — deploy passes no `--days`, and reports the
+number the CLI itself prints rather than keeping a second copy of it. Anything older than 24 hours
+in `gcf-artifacts` is deleted, tagged or not.
+
+Deleting them is safe. These are *build* artifacts: Cloud Build produces the image, and Cloud Run
+functions takes its own copy at deploy time. Firebase's own documentation is explicit — "these
+images are not required for your deployed functions to run" — so cold starts and scale-ups are
+unaffected, and a 1-day default would otherwise take down every Firebase project a day after it
+deployed. What you give up is the build cache (the next deploy rebuilds cold) and the ability to
+pull the exact image that shipped. Rollback does not depend on them either: `localess:deploy`
+always rebuilds from source. The function source in the `gcf-v2-sources-*` bucket is a separate
+store and is not touched.
 
 It is a no-op on a brand-new project — the `gcf-artifacts` repository does not exist until functions
-have been deployed once — and takes effect from the second deploy onward.
+have been deployed once, and the step says `no function images yet; nothing to configure` — so the
+policy takes effect from the second deploy onward.
+
+Failures here are logged and swallowed. The images are already live, so a policy that could not be
+set is a billing footnote, not a reason to fail a deploy that worked.
 
 ### 5. Create the first admin user
 

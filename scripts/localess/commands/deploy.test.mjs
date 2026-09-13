@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { deployFunctionFailures, isCleanupPolicyOnlyFailure } from './deploy.mjs';
+import { cleanupPolicyOutcome, deployFunctionFailures, isCleanupPolicyOnlyFailure } from './deploy.mjs';
 
 /**
  * Real output from a first deploy to a freshly provisioned project. `firebase deploy`
@@ -51,4 +51,45 @@ test('isCleanupPolicyOnlyFailure recognises the exit-1 that actually deployed ev
 
 test('isCleanupPolicyOnlyFailure does not excuse an ordinary failure', () => {
   assert.equal(isCleanupPolicyOnlyFailure('Error: HTTP Error: 403, Permission denied'), false);
+});
+
+test('cleanupPolicyOutcome reports the retention the CLI just applied', () => {
+  const output = `
+i  You are about to set up a cleanup policy for Cloud Run functions container images in location europe-west6
+i  This policy will automatically delete container images that are older than 1 days
++  Successfully set up cleanup policy that deletes images older than 1 days
+i  Cleanup policy has been set for projects/demo/locations/europe-west6/repositories/gcf-artifacts
+`;
+  assert.deepEqual(cleanupPolicyOutcome(output), { state: 'applied', days: '1' });
+});
+
+test('cleanupPolicyOutcome reports the new retention on an update, not the one being replaced', () => {
+  // The CLI prints the outgoing value first, as a "Note:". Reading that would tell the
+  // operator their images are kept for 30 days when the policy now deletes them after 1.
+  const output = `
+i  Note: This will update an existing policy that currently deletes images older than 30 days
++  Successfully updated cleanup policy to delete images older than 1 days
+`;
+  assert.deepEqual(cleanupPolicyOutcome(output), { state: 'applied', days: '1' });
+});
+
+test('cleanupPolicyOutcome recognises a policy that is already in place', () => {
+  const output = `
+i  A cleanup policy already exists that deletes images older than 1 days.
+i  No changes needed.
+`;
+  assert.deepEqual(cleanupPolicyOutcome(output), { state: 'unchanged', days: '1' });
+});
+
+test('cleanupPolicyOutcome recognises a project whose functions have never been deployed', () => {
+  // `gcf-artifacts` is created by the first functions deploy, so this is the normal first run.
+  const output = `
+i  Repository 'projects/demo/locations/europe-west6/repositories/gcf-artifacts' does not exist in Artifact Registry.
+i  Please deploy your functions first using: firebase deploy --only functions
+`;
+  assert.deepEqual(cleanupPolicyOutcome(output), { state: 'missing-repo' });
+});
+
+test('cleanupPolicyOutcome falls back to unknown rather than guessing', () => {
+  assert.deepEqual(cleanupPolicyOutcome('+  Deploy complete!'), { state: 'unknown' });
 });
