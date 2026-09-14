@@ -53,22 +53,23 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 
 | Route | Serves |
 |---|---|
-| `GET /api/v1/spaces/{spaceId}/assets/{assetId}` | A transformed image. Accepts `w`, `h`, `q`, `f`, `fit`, `thumbnail`. |
+| `GET /api/v1/spaces/{spaceId}/assets/{assetId}` | A rendition. Accepts `w`, `h`, `q`, `f`, `fit`, `thumbnail`. **Re-encodes a still raster at its format default quality even with no parameters.** |
+| `GET /api/v1/spaces/{spaceId}/assets/{assetId}/original` | The stored bytes, exactly as uploaded, `inline`. No parameters. |
 | `GET /api/v1/spaces/{spaceId}/assets/{assetId}/download` | The stored bytes, as an attachment. No parameters. |
 
 No auth required (public). Responses are cached for 365 days (`Cache-Control: public, max-age=31536000`).
 
-`/download` never enters the image pipeline, which is why it takes no parameters: a transform
-parameter on it is rejected with `400` rather than ignored.
+`/original` and `/download` never enter the image pipeline, which is why they take no parameters:
+a transform parameter on either is rejected with `400` rather than ignored. They differ only in
+`Content-Disposition`.
 
-**There is no `/original` route.** The transform route already returns the stored bytes when given
-no parameters — nothing is converted implicitly — so an inline passthrough route would be a second
-URL for byte-identical output. `attachment` is the only thing the transform route cannot express,
-which is why `/download` exists and its sibling does not.
+**`/original` is the only way to get the uploaded file.** A bare `GET /assets/{id}` is a
+*rendition*, not the original — a still raster is re-encoded at its format's default quality. Use
+`/original` where the exact bytes matter: archival, print, downstream processing.
 
-**Removed in v4:** `?download` and `?f=original`. Both return `400`, the first naming `/download`
-and the second saying to omit `f`. Responses already cached under the old spellings keep serving
-for the remainder of their 365-day TTL — only new requests are rejected.
+**Removed in v4:** `?download` and `?f=original`, each returning `400` that names its replacement
+route. Responses already cached under the old spellings keep serving for the remainder of their
+365-day TTL — only new requests are rejected.
 
 ### Query Parameters
 
@@ -79,13 +80,17 @@ These apply to the transform route only.
 | `w` | integer 1–8192 | Target width in pixels. Above the source width, **redirects** to the source width. Outside 1–8192 is rejected with `400`. |
 | `h` | integer 1–8192 | Target height in pixels. Above the source height, **redirects** to the source height. Outside 1–8192 is rejected with `400`. |
 | `q` | integer 1–100 | Output quality. When omitted, each encoder applies its own default (JPEG/WebP 80, AVIF 50) and PNG stays lossless. On PNG an explicit `q` enables palette quantisation — lossy, roughly a third of the lossless size on screenshots. Outside 1–100 is rejected with `400`. |
-| `f` | string | Output format: `webp`, `jpeg`, `png`, or `avif`. **No implicit conversion** — omit it and the stored format is kept. Passing it is the recommended way to cut transfer size. `f=original` was removed in v4 — omit `f` instead. |
+| `f` | string | Output format: `webp`, `jpeg`, `png`, or `avif`. **No implicit conversion** — omit it and the stored format is kept, though the image is still re-encoded at that format default quality. Passing it is the recommended way to cut transfer size. `f=original` was removed in v4 — use `/original`. |
 | `fit` | string | How the image is fitted when **both** `w` and `h` are given: `cover` (default), `contain`, `inside`, `outside`, `fill`. Ignored with a single dimension. An unrecognised value is rejected with `400`. |
 | `thumbnail` | (flag) | For animated WebP/GIF: extracts the first frame before resizing. For video: extracts a frame with FFmpeg, then resizes with Sharp. |
 
 ### Animated images
 
-**Animated GIF and WebP are resized like any other image**, with every frame preserved. Passing
+**A bare request on an animation returns the stored bytes**, unlike a still image: re-encoding an
+animation decodes every frame on each cache miss, and the pixel budget below would turn a plain
+`<img src>` on a large GIF into a `400`. Optimising one stays explicit.
+
+**When asked, animated GIF and WebP are resized like any other image**, with every frame preserved. Passing
 `?f=webp` converts an animated GIF to animated WebP, which is where the large savings are — on a
 test clip, `?w=240&f=webp` produced **4% of the source GIF size**.
 
@@ -148,12 +153,14 @@ a stack trace at the call site rather than a cached `400` in production.
 ### Output Format — nothing is converted implicitly
 
 **`f` is the only thing that changes an image's format.** A request that does not ask for one gets
-back the format that was uploaded. A bare `<img src=".../assets/{id}">` never enters Sharp at all:
-no download, no decode, no re-encode, just the stored bytes.
+back the format that was uploaded — but not the uploaded *bytes*: a still raster is re-encoded at
+its format's default quality. A q95 camera export measured 587 KB and came back 219 KB, a **63%
+saving with no format change**. Quality is a platform concern; format stays yours.
 
-> An earlier revision defaulted `image/jpeg` to WebP. It was removed before release. A format
-> change is the developer's call, and the default put every bare `<img>` through a decode and
-> re-encode on each CDN miss to produce bytes nobody asked for.
+For the stored file untouched, use `/original`.
+
+> An earlier revision defaulted `image/jpeg` to WebP. It was removed before release: converting a
+> format is the developer's call. Normalising *quality* is not the same thing, and is applied.
 
 **Passing `f` is the recommended way to cut transfer size**, and it is worth doing:
 

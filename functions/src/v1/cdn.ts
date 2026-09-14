@@ -530,7 +530,30 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const outputType: string | undefined = format ? formatMimeMap[format] : undefined;
     const outputExt: string = format ? formatExtMap[format] : asset.extension;
 
+    // Drives the download filename, so it names what the *caller* asked for.
     const suffix = [width ? `w${width}` : '', height ? `h${height}` : '', format ? `f${format}` : '', fit ? `fit${fit}` : '']
+      .filter(Boolean)
+      .join('-');
+
+    // The ETag has to describe the **bytes**, not the request. Two requests that resolve to the
+    // same encode must share a tag; two that resolve differently must never collide. So this is
+    // built from the *effective* encode — `encodeAs` and the resolved quality — rather than from
+    // the raw query, which fixes two collisions:
+    //
+    //  - a bare request re-encodes now, so an empty suffix would render as `orig` and clash with
+    //    the `/original` route, which returns genuinely different bytes;
+    //  - `q` never appeared here at all, so `?w=400&q=10` and `?w=400&q=90` shared a tag and could
+    //    serve each other a wrong `304`.
+    //
+    // A passthrough leaves `encodeAs` undefined and carries no params, so it still renders as
+    // `orig` — which is exactly right, because those bytes *are* the stored file.
+    const etagSuffix = [
+      width ? `w${width}` : '',
+      height ? `h${height}` : '',
+      quality !== undefined ? `q${quality}` : '',
+      encodeAs ? `f${encodeAs}` : '',
+      fit ? `fit${fit}` : '',
+    ]
       .filter(Boolean)
       .join('-');
 
@@ -538,7 +561,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     // metadata read, not a re-encode.
     const md5Hash = objectMetadata?.['md5Hash'] as string | undefined;
     if (md5Hash) {
-      const etag = buildAssetETag(md5Hash, suffix, thumbnail);
+      const etag = buildAssetETag(md5Hash, etagSuffix, thumbnail);
       res.header('ETag', etag);
       if (req.headers['if-none-match'] === etag) {
         res.status(304).header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`).end();
@@ -546,8 +569,18 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       }
     }
 
-    // apply resize for valid 'w' parameter and images
-    if (asset.type.startsWith('image/') && (width !== undefined || height !== undefined || format !== undefined)) {
+    // Did the caller ask for anything, or is this a bare URL?
+    const explicitTransform = width !== undefined || height !== undefined || format !== undefined || thumbnail;
+    // A still raster we have an encoder for is normalised to that encoder's default quality even
+    // with no parameters — a q95 camera export off a CMS upload form measured 587 KB, and the same
+    // JPEG at the default came back 219 KB, a 63% saving with no format change. Quality is a
+    // platform concern; format stays the developer's call, which is why only `?f=` can change it.
+    //
+    // `sourceEncoderFormat` is what scopes this: it maps jpeg/png/webp/avif and nothing else, so
+    // GIF, SVG, TIFF and video fall out automatically. GIF is deliberately excluded rather than
+    // mapped — it is palette-based, so re-encoding it gains roughly nothing.
+    const normalisable = sourceEncoderFormat(asset.type) !== undefined;
+    if (asset.type.startsWith('image/') && (explicitTransform || normalisable)) {
       const sharp = await getSharp();
       if (asset.type === 'image/webp' || asset.type === 'image/gif') {
         // possible animated or single frame webp/gif
@@ -567,6 +600,16 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           });
           output = await sharpFile.toBuffer();
           overwriteType = outputType;
+        } else if (isAnimated && !explicitTransform) {
+          // A bare URL on an animation serves the stored bytes. Re-encoding one is the most
+          // expensive thing this endpoint can do — every frame decoded on each cache miss — and
+          // the pixel budget below would turn a plain `<img src>` on a large GIF into a `400`,
+          // leaving it undisplayable. Optimising an animation stays explicit: `?f=webp` measured
+          // at 4% of the source GIF, which is where the win actually is.
+          //
+          // The bytes are already in hand from the probe, so this costs no second download.
+          output = file;
+          filename = `${asset.name}${asset.extension}`;
         } else if (isAnimated) {
           // Resizing decodes every frame at once, so the budget is the whole animation rather
           // than one frame — see MAX_ANIMATED_PIXELS. `probe` already carries the page count, so
@@ -673,91 +716,98 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .send(new HttpsError('not-found', 'Not found.'));
     return;
   }
-});
+});// The stored bytes, untouched. These exist because the transform route above does **not** return
+// them: a still raster is re-encoded at its encoder's default quality even with no parameters, so
+// `GET /assets/:id` is a normalised rendition rather than the uploaded file. These two routes are
+// the escape hatch for when the actual bytes are wanted — archival, print, downstream processing —
+// and they are also a different cost class: no sharp, no transform query, and the pair a redirect
+// to Storage can eventually serve without proxying bytes at all.
+CDN.get(
+  ['/api/v1/spaces/:spaceId/assets/:assetId/original', '/api/v1/spaces/:spaceId/assets/:assetId/download'],
+  async (req, res) => {
+    // One handler, two paths: they differ only in disposition, and duplicating forty lines of
+    // lookup to vary a single header would be worse than branching on the path here.
+    const attachment = req.path.endsWith('/download');
+    const tag = attachment ? '[V1:AssetDownload]' : '[V1:AssetOriginal]';
+    logger.info(tag + ' params: ' + JSON.stringify(req.params));
+    logger.info(tag + ' query: ' + redactQuery(req.query));
+    const { spaceId, assetId } = req.params;
 
-// The stored bytes as an attachment. Its own route rather than a parameter on the route above,
-// because it is a different cost class: it never enters sharp, never parses a transform query,
-// and is the one a redirect to Storage can eventually serve without proxying the bytes at all.
-//
-// There is deliberately no sibling `/original` route. The route above already returns the stored
-// bytes when it is given no parameters — nothing is converted implicitly — so an inline
-// passthrough route would be a second URL for byte-identical output. `attachment` is the only
-// thing the transform route cannot express.
-CDN.get('/api/v1/spaces/:spaceId/assets/:assetId/download', async (req, res) => {
-  logger.info('[V1:AssetDownload] params: ' + JSON.stringify(req.params));
-  logger.info('[V1:AssetDownload] query: ' + redactQuery(req.query));
-  const { spaceId, assetId } = req.params;
-
-  // This route applies no transform, so a transform parameter is a caller error rather than
-  // something to ignore — the same rule `parseAssetTransformQuery` follows for `fit=squish`.
-  const offending = findTransformParam(req.query);
-  if (offending !== undefined) {
-    res
-      .status(400)
-      .header('Cache-Control', `public, max-age=${CACHE_BAD_REQUEST_MAX_AGE}, s-maxage=${CACHE_BAD_REQUEST_MAX_AGE}`)
-      .send(
-        new HttpsError(
-          'invalid-argument',
-          `Unsupported '${offending}' parameter on this route. It serves the stored bytes and applies no transform. ` +
-            'Use GET /api/v1/spaces/{spaceId}/assets/{assetId} for transforms.'
-        )
-      );
-    return;
-  }
-
-  const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
-  // One Storage metadata round-trip serves both purposes: existence, and the `md5Hash` the ETag
-  // below is built from — same merge the transform route above applies.
-  let objectMetadata: Record<string, unknown> | undefined;
-  try {
-    [objectMetadata] = await assetFile.getMetadata();
-  } catch {
-    objectMetadata = undefined;
-  }
-  const exists = objectMetadata !== undefined;
-  const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
-  logger.info(`[V1:AssetDownload] asset: ${exists} & ${assetSnapshot.exists}`);
-
-  if (!exists || !assetSnapshot.exists) {
-    // The same two-flavour 404 as the transform route: a document without a Storage object is an
-    // upload still in flight, and caching that would pin a 404 over an asset about to appear.
-    if (assetSnapshot.exists) {
-      res.status(404).header('Cache-Control', 'no-cache').send(new HttpsError('not-found', 'Not found, upload may still be in progress.'));
+    // These routes apply no transform, so a transform parameter is a caller error rather than
+    // something to ignore — the same rule `parseAssetTransformQuery` follows for `fit=squish`.
+    const offending = findTransformParam(req.query);
+    if (offending !== undefined) {
+      res
+        .status(400)
+        .header('Cache-Control', `public, max-age=${CACHE_BAD_REQUEST_MAX_AGE}, s-maxage=${CACHE_BAD_REQUEST_MAX_AGE}`)
+        .send(
+          new HttpsError(
+            'invalid-argument',
+            `Unsupported '${offending}' parameter on this route. It serves the stored bytes and applies no transform. ` +
+              'Use GET /api/v1/spaces/{spaceId}/assets/{assetId} for transforms.'
+          )
+        );
       return;
     }
-    res
-      .status(404)
-      .header('Cache-Control', `public, max-age=${CACHE_ASSET_NOT_FOUND_MAX_AGE}, s-maxage=${CACHE_ASSET_NOT_FOUND_MAX_AGE}`)
-      .send(new HttpsError('not-found', 'Not found.'));
-    return;
-  }
 
-  const asset = assetSnapshot.data() as AssetFile;
-  // No variant suffix: this route has exactly one response per stored object. Answered before the
-  // download, so a revalidating client costs a metadata read rather than a transfer.
-  const md5Hash = objectMetadata?.['md5Hash'] as string | undefined;
-  if (md5Hash) {
-    const etag = buildAssetETag(md5Hash, '', false);
-    res.header('ETag', etag);
-    if (req.headers['if-none-match'] === etag) {
-      res.status(304).header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`).end();
+    const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
+    // One Storage metadata round-trip serves both purposes: existence, and the `md5Hash` the ETag
+    // below is built from — same merge the transform route above applies.
+    let objectMetadata: Record<string, unknown> | undefined;
+    try {
+      [objectMetadata] = await assetFile.getMetadata();
+    } catch {
+      objectMetadata = undefined;
+    }
+    const exists = objectMetadata !== undefined;
+    const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
+    logger.info(`${tag} asset: ${exists} & ${assetSnapshot.exists}`);
+
+    if (!exists || !assetSnapshot.exists) {
+      // The same two-flavour 404 as the transform route: a document without a Storage object is an
+      // upload still in flight, and caching that would pin a 404 over an asset about to appear.
+      if (assetSnapshot.exists) {
+        res
+          .status(404)
+          .header('Cache-Control', 'no-cache')
+          .send(new HttpsError('not-found', 'Not found, upload may still be in progress.'));
+        return;
+      }
+      res
+        .status(404)
+        .header('Cache-Control', `public, max-age=${CACHE_ASSET_NOT_FOUND_MAX_AGE}, s-maxage=${CACHE_ASSET_NOT_FOUND_MAX_AGE}`)
+        .send(new HttpsError('not-found', 'Not found.'));
       return;
     }
+
+    const asset = assetSnapshot.data() as AssetFile;
+    // `orig` is the suffix reserved for the stored bytes, which is what keeps this tag distinct
+    // from the transform route's — that one always carries its encode target. Answered before the
+    // download, so a revalidating client costs a metadata read rather than a transfer.
+    const md5Hash = objectMetadata?.['md5Hash'] as string | undefined;
+    if (md5Hash) {
+      const etag = buildAssetETag(md5Hash, '', false);
+      res.header('ETag', etag);
+      if (req.headers['if-none-match'] === etag) {
+        res.status(304).header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`).end();
+        return;
+      }
+    }
+
+    // A distinct path from the transform route's `assets-${assetId}`. That route writes
+    // *transformed* output there on the video-thumbnail branch, so sharing the path would let a
+    // concurrent request for the same asset serve the wrong bytes.
+    //
+    // `sendFile` rather than a stream because it implements Range requests, and a video here is
+    // exactly where a client resumes a partial transfer. Streaming is not the fix for the tmpfs
+    // cost — a redirect to Storage is, because GCS handles Range natively.
+    const tempFilePath = `${os.tmpdir()}/assets-stored-${assetId}`;
+    await assetFile.download({ destination: tempFilePath });
+
+    res
+      .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
+      .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, attachment))
+      .contentType(asset.type)
+      .sendFile(tempFilePath);
   }
-
-  // A distinct path from the transform route's `assets-${assetId}`. That route writes *transformed*
-  // output there on the video-thumbnail branch, so sharing the path would let a concurrent request
-  // for the same asset serve the wrong bytes.
-  //
-  // `sendFile` rather than a stream because it implements Range requests, and `/download` on a
-  // video is exactly where a client resumes a partial transfer. Streaming is not the fix for the
-  // tmpfs cost — a redirect to Storage is, because GCS handles Range natively.
-  const tempFilePath = `${os.tmpdir()}/assets-download-${assetId}`;
-  await assetFile.download({ destination: tempFilePath });
-
-  res
-    .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-    .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, true))
-    .contentType(asset.type)
-    .sendFile(tempFilePath);
-});
+);

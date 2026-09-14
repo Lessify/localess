@@ -15,6 +15,7 @@ import {
   VALID_FITS,
   VALID_FORMATS,
 } from './image-transform';
+import { buildAssetETag } from './asset-etag';
 
 /** A 200x100 solid-colour source — deliberately non-square so fit modes differ visibly. */
 function source(): sharp.Sharp {
@@ -499,12 +500,12 @@ describe('parseAssetTransformQuery — removed parameters point at their replace
     return result.error;
   };
 
-  it('rejects f=original and says to omit the parameter instead', () => {
+  it('rejects f=original and names the /original route', () => {
     const error = reject({ f: 'original' });
 
     expect(error.param).toBe('f');
     expect(error.value).toBe('original');
-    expect(error.message).toContain('Omit the parameter');
+    expect(error.message).toContain('/original');
   });
 
   it('rejects a valueless download flag and names the /download route', () => {
@@ -980,5 +981,52 @@ describe('EXIF orientation is baked in, not discarded', () => {
 
     expect({ width, height }).toEqual({ width: 50, height: 25 });
     expect(orientation).toBeUndefined();
+  });
+});
+
+describe('sourceEncoderFormat decides what a bare request normalises', () => {
+  // A bare `GET /assets/:id` re-encodes a still raster at its encoder's default quality — a q95
+  // camera export measured 587KB, the same JPEG at the default 219KB. `sourceEncoderFormat` is
+  // what scopes that: anything it does not map is served as stored.
+  it.each([['image/jpeg'], ['image/png'], ['image/webp'], ['image/avif']])('normalises %s', sourceType => {
+    expect(sourceEncoderFormat(sourceType)).toBeDefined();
+  });
+
+  it.each([
+    ['image/gif', 'palette-based, so re-encoding gains roughly nothing'],
+    ['image/svg+xml', 'not a raster'],
+    ['image/tiff', 'no encoder mapping'],
+    ['video/mp4', 'not an image'],
+  ])('leaves %s as stored (%s)', sourceType => {
+    expect(sourceEncoderFormat(sourceType)).toBeUndefined();
+  });
+});
+
+describe('buildAssetETag distinguishes a normalised rendition from the stored bytes', () => {
+  const MD5 = 'abc123==';
+
+  it('reserves the orig tag for a passthrough', () => {
+    expect(buildAssetETag(MD5, '', false)).toBe(`"${MD5}-orig"`);
+  });
+
+  it('never collides a re-encoded response with the stored bytes', () => {
+    // The bare transform response carries its encode target, so it cannot render as `orig` —
+    // which is what keeps it distinct from what `/original` returns for the same asset.
+    const stored = buildAssetETag(MD5, '', false);
+    const reencoded = buildAssetETag(MD5, 'fjpeg', false);
+
+    expect(reencoded).not.toBe(stored);
+  });
+
+  it('separates two qualities that produce different bytes', () => {
+    // `q` was absent from the suffix, so `?w=400&q=10` and `?w=400&q=90` shared a tag and could
+    // serve each other a wrong 304.
+    expect(buildAssetETag(MD5, 'w400-q10-fjpeg', false)).not.toBe(buildAssetETag(MD5, 'w400-q90-fjpeg', false));
+  });
+
+  it('shares a tag between spellings that resolve to the same encode', () => {
+    // A bare request on a JPEG and an explicit `?f=jpeg` produce identical bytes, so they should
+    // share an entry rather than occupy two.
+    expect(buildAssetETag(MD5, 'fjpeg', false)).toBe(buildAssetETag(MD5, 'fjpeg', false));
   });
 });

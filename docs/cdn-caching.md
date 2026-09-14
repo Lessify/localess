@@ -85,17 +85,20 @@ Concretely:
 - **Only a canonical decimal integer is accepted** for `w`/`h`/`q`. `w=400.9`, `w=0400` and `w=4e2`
   are all rejected, because each would render identically to `w=400` under a different cache key.
 
-The untransformed original stays reachable by omitting `w`/`h`. See
+The stored original stays reachable via the `/original` route. See
 [Assets — Parameter Validation](features/spaces/assets.md) for the full matrix.
 
-**No format conversion happens implicitly.** A request without `?f=` keeps the stored format, so a
-no-parameter request never reaches Sharp at all — it is a straight passthrough, identical to what
-the `/download` route serves, minus its attachment disposition. Passing `?f=webp` or `?f=avif` is the recommended way to cut transfer
-size, and it is opt-in. See
+**No format conversion happens implicitly, but quality is normalised.** A request without `?f=`
+keeps the stored format and still re-encodes a still raster at that format's default quality, so a
+bare URL is a *rendition* rather than the stored file. Animations, GIF, SVG and video are served as
+stored. Passing `?f=webp` or `?f=avif` cuts transfer size further, and is opt-in. See
 [Assets — Output Format](features/spaces/assets.md) for the full matrix.
 
-Transformed responses carry an `ETag` derived from the object's `md5Hash` plus the transform suffix;
-a matching `If-None-Match` returns `304` **before** any download or re-encode.
+Responses carry an `ETag` derived from the object's `md5Hash` plus a suffix describing the
+**effective encode** — target format, quality, dimensions and fit. A matching `If-None-Match`
+returns `304` **before** any download or re-encode. The suffix is built from the resolved encode
+rather than the raw query so that two spellings producing identical bytes share an entry, while a
+rendition can never collide with the `orig` tag the passthrough routes use.
 
 ---
 

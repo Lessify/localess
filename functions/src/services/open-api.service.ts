@@ -934,7 +934,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               name: 'f',
               in: 'query',
               description:
-                'Output image format. Nothing is converted implicitly - omit this and the stored format is kept. ' +
+                'Output image format. Nothing is converted implicitly - omit this and the stored format is kept, though the image is still re-encoded at that format default quality. ' +
                 'Passing webp or avif is the recommended way to reduce transfer size.',
               required: false,
               schema: {
@@ -983,6 +983,42 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
                     format: 'binary',
                   },
                 },
+              },
+            },
+          },
+        },
+      },
+      '/api/v1/spaces/{spaceId}/assets/{assetId}/original': {
+        get: {
+          tags: ['Assets'],
+          summary: 'Get Asset Original',
+          description:
+            'Returns the stored bytes of an Asset exactly as uploaded, served inline. The transform ' +
+            'route re-encodes a still image at its format default quality even with no parameters, so ' +
+            'this is the only way to retrieve the original file. A transform parameter here is rejected with 400.',
+          operationId: 'getAssetOriginal',
+          parameters: [
+            {
+              name: 'spaceId',
+              in: 'path',
+              description: 'Unique identifier for the Space object.',
+              required: true,
+              schema: { type: 'string', example: 'UdV5ygPZuOD1JMO9Qat9' },
+            },
+            {
+              name: 'assetId',
+              in: 'path',
+              description: 'Unique identifier for the Asset object.',
+              required: true,
+              schema: { type: 'string', example: 'UdV5ygPZuOD1JMO9Qat9' },
+            },
+          ],
+          responses: {
+            '200': {
+              description: 'Returns the stored Asset file.',
+              content: {
+                'image/*': { schema: { type: 'string', format: 'binary' } },
+                'application/*': { schema: { type: 'string', format: 'binary' } },
               },
             },
           },

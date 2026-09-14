@@ -382,10 +382,10 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
 
   const formatRaw = (query.f as string | undefined)?.toString() || undefined;
   if (formatRaw === 'original') {
-    // Removed in v4. The message says what to do instead rather than only listing the accepted
-    // set, because a caller reaching this has a working use case, not a typo. Omitting `f` is
-    // now the whole answer: nothing is converted implicitly, so a request without it already
-    // returns the stored format.
+    // Removed in v4. The message names the route rather than only listing the accepted set,
+    // because a caller reaching this has a working use case, not a typo. Omitting `f` is *not*
+    // the answer: that keeps the stored format but still re-encodes at the encoder's default
+    // quality. Only `/original` returns the uploaded bytes.
     return {
       ok: false,
       error: {
@@ -393,7 +393,7 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
         value: formatRaw,
         message:
           `Unsupported 'f' value 'original'. Expected one of: ${VALID_FORMATS.join(', ')}. ` +
-          'Omit the parameter entirely to keep the stored format.',
+          'For the stored bytes, use GET /api/v1/spaces/{spaceId}/assets/{assetId}/original.',
       },
     };
   }
