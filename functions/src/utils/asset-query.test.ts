@@ -1,18 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildAssetQuery } from './asset-query';
-import { AssetTransformQuery, DEFAULT_QUALITY } from './image-transform';
+import { buildAssetQuery, findTransformParam } from './asset-query';
+import { AssetTransformQuery } from './image-transform';
 
 /** A parsed query with everything absent, matching what `parseAssetTransformQuery({})` returns. */
 function empty(): AssetTransformQuery {
   return {
     width: undefined,
     height: undefined,
-    quality: DEFAULT_QUALITY,
-    qualityExplicit: false,
+    quality: undefined,
     format: undefined,
     fit: undefined,
-    download: false,
     thumbnail: false,
   };
 }
@@ -34,55 +32,79 @@ describe('buildAssetQuery', () => {
       qualityExplicit: true,
       format: 'webp',
       fit: 'inside',
-      download: true,
       thumbnail: true,
     };
 
-    expect(buildAssetQuery(query)).toBe('?w=400&h=300&q=75&f=webp&fit=inside&download&thumbnail');
+    expect(buildAssetQuery(query)).toBe('?w=400&h=300&q=75&f=webp&fit=inside&thumbnail');
   });
 
   describe('flags are valueless, matching the canonical form', () => {
-    it('emits download with no value', () => {
-      expect(buildAssetQuery({ ...empty(), download: true })).toBe('?download');
-    });
-
     it('emits thumbnail with no value', () => {
       expect(buildAssetQuery({ ...empty(), thumbnail: true })).toBe('?thumbnail');
     });
 
     it('omits a false flag entirely', () => {
-      expect(buildAssetQuery({ ...empty(), width: 400, download: false, thumbnail: false })).toBe('?w=400');
+      expect(buildAssetQuery({ ...empty(), width: 400, thumbnail: false })).toBe('?w=400');
     });
   });
 
   describe('quality is emitted only when the caller asked for it', () => {
     it('omits the default, so a bare URL does not gain a q', () => {
       // Emitting q=80 here would make the redirect target a *second* URL for identical bytes.
-      expect(buildAssetQuery({ ...empty(), width: 400, qualityExplicit: false })).toBe('?w=400');
+      expect(buildAssetQuery({ ...empty(), width: 400 })).toBe('?w=400');
     });
 
     it('includes an explicit quality', () => {
-      expect(buildAssetQuery({ ...empty(), width: 400, quality: 60, qualityExplicit: true })).toBe('?w=400&q=60');
+      expect(buildAssetQuery({ ...empty(), width: 400, quality: 60 })).toBe('?w=400&q=60');
     });
 
-    it('includes an explicit quality even when it equals the default', () => {
-      expect(buildAssetQuery({ ...empty(), quality: DEFAULT_QUALITY, qualityExplicit: true })).toBe(`?q=${DEFAULT_QUALITY}`);
+    it('includes an explicit quality at the low and high bounds', () => {
+      expect(buildAssetQuery({ ...empty(), quality: 1 })).toBe('?q=1');
+      expect(buildAssetQuery({ ...empty(), quality: 100 })).toBe('?q=100');
     });
   });
 
   describe('round-trips the values a canonical redirect has to preserve', () => {
     it('keeps format and fit alongside a corrected width', () => {
-      const query: AssetTransformQuery = { ...empty(), width: 400, format: 'original', fit: 'cover' };
+      const query: AssetTransformQuery = { ...empty(), width: 400, format: 'jpeg', fit: 'cover' };
 
-      expect(buildAssetQuery(query)).toBe('?w=400&f=original&fit=cover');
+      expect(buildAssetQuery(query)).toBe('?w=400&f=jpeg&fit=cover');
     });
 
     it('keeps a height-only request height-only', () => {
       expect(buildAssetQuery({ ...empty(), height: 300 })).toBe('?h=300');
     });
 
-    it('keeps download alongside a corrected size', () => {
-      expect(buildAssetQuery({ ...empty(), width: 400, download: true })).toBe('?w=400&download');
+    it('keeps thumbnail alongside a corrected size', () => {
+      expect(buildAssetQuery({ ...empty(), width: 400, thumbnail: true })).toBe('?w=400&thumbnail');
     });
+  });
+});
+
+describe('findTransformParam', () => {
+  // The `/download` route applies no transform, so a transform parameter there is a caller error
+  // rather than something to ignore — the same rule the parser follows for `fit=squish`.
+  it.each([['w'], ['h'], ['q'], ['f'], ['fit'], ['thumbnail']])('detects %s', param => {
+    expect(findTransformParam({ [param]: '400' })).toBe(param);
+  });
+
+  it('detects a valueless flag', () => {
+    expect(findTransformParam({ thumbnail: '' })).toBe('thumbnail');
+  });
+
+  it('detects the download parameter removed in v4', () => {
+    expect(findTransformParam({ download: '' })).toBe('download');
+  });
+
+  it('ignores parameters the download route legitimately carries', () => {
+    expect(findTransformParam({ token: 'abc' })).toBeUndefined();
+  });
+
+  it('returns undefined for an empty query', () => {
+    expect(findTransformParam({})).toBeUndefined();
+  });
+
+  it('reports the first offender, so the 400 can name one parameter', () => {
+    expect(findTransformParam({ fit: 'cover', w: '400' })).toBe('w');
   });
 });

@@ -44,26 +44,43 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 - `openMoveDialog(asset)` — move to a different folder path
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
 - `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
-- `onDownload(asset)` — opens the CDN asset URL with `?download` to force a browser download
+- `onDownload(asset)` — opens the asset `/download` route to force a browser download
 - Unsplash integration (if `unsplash_ui_enable` Remote Config flag is `true`) — opens `UnsplashAssetsSelectDialogComponent`
 
 ## CDN Asset Endpoint
 
-```
-GET /api/v1/spaces/:spaceId/assets/:assetId
-```
+### Routes
+
+| Route | Serves |
+|---|---|
+| `GET /api/v1/spaces/{spaceId}/assets/{assetId}` | A transformed image. Accepts `w`, `h`, `q`, `f`, `fit`, `thumbnail`. |
+| `GET /api/v1/spaces/{spaceId}/assets/{assetId}/download` | The stored bytes, as an attachment. No parameters. |
 
 No auth required (public). Responses are cached for 365 days (`Cache-Control: public, max-age=31536000`).
 
+`/download` never enters the image pipeline, which is why it takes no parameters: a transform
+parameter on it is rejected with `400` rather than ignored.
+
+**There is no `/original` route.** The transform route already returns the stored bytes when given
+no parameters — nothing is converted implicitly — so an inline passthrough route would be a second
+URL for byte-identical output. `attachment` is the only thing the transform route cannot express,
+which is why `/download` exists and its sibling does not.
+
+**Removed in v4:** `?download` and `?f=original`. Both return `400`, the first naming `/download`
+and the second saying to omit `f`. Responses already cached under the old spellings keep serving
+for the remainder of their 365-day TTL — only new requests are rejected.
+
 ### Query Parameters
+
+These apply to the transform route only.
 
 | Param | Type | Description |
 |-------|------|-------------|
 | `w` | integer 1–8192 | Target width in pixels. Above the source width, **redirects** to the source width. Outside 1–8192 is rejected with `400`. |
 | `h` | integer 1–8192 | Target height in pixels. Above the source height, **redirects** to the source height. Outside 1–8192 is rejected with `400`. |
-| `q` | integer 1–100 | Output quality (default: `80`). Applies to JPEG, WebP, AVIF. Ignored for PNG. Outside 1–100 is rejected with `400`. |
-| `f` | string | Output format: `webp`, `jpeg`, `png`, `avif`, or `original`. **Defaults to `webp` for `image/jpeg` sources**; all other source types keep their original format. Pass `f=original` for the stored bytes untouched. Ignored when `download` is set. |
-| `download` | (flag) | Changes `Content-Disposition` from `inline` to `attachment`, forcing a browser download. Also returns the stored original rather than a re-encode. |
+| `q` | integer 1–100 | Output quality. When omitted, each encoder applies its own default (JPEG/WebP 80, AVIF 50); PNG ignores it entirely. Outside 1–100 is rejected with `400`. |
+| `f` | string | Output format: `webp`, `jpeg`, `png`, or `avif`. **No implicit conversion** — omit it and the stored format is kept. Passing it is the recommended way to cut transfer size. `f=original` was removed in v4 — omit `f` instead. |
+| `fit` | string | How the image is fitted when **both** `w` and `h` are given: `cover` (default), `contain`, `inside`, `outside`, `fill`. Ignored with a single dimension. An unrecognised value is rejected with `400`. |
 | `thumbnail` | (flag) | For animated WebP/GIF: extracts the first frame before resizing. For video: extracts a frame with FFmpeg, then resizes with Sharp. |
 
 ### Parameter Validation
@@ -106,25 +123,47 @@ serving several URLs the same bytes.
 `TypeError` before the URL is built — the same rule enforced one layer earlier, where the failure is
 a stack trace at the call site rather than a cached `400` in production.
 
-### Default Output Format
+### Output Format — nothing is converted implicitly
 
-`image/jpeg` sources are re-encoded to **WebP** by default — including requests carrying no query
-parameters at all, which is what pulls a bare `<img src=".../assets/{id}">` onto the transform path.
-WebP is typically 25–35% smaller than JPEG at equivalent perceptual quality.
+**`f` is the only thing that changes an image's format.** A request that does not ask for one gets
+back the format that was uploaded. A bare `<img src=".../assets/{id}">` never enters Sharp at all:
+no download, no decode, no re-encode, just the stored bytes.
 
-All other source types are unaffected: PNG (lossy WebP degrades screenshots and line art), GIF and
-animated WebP (passed through untransformed — Sharp cannot resize animations), SVG, and video.
+> An earlier revision defaulted `image/jpeg` to WebP. It was removed before release. A format
+> change is the developer's call, and the default put every bare `<img>` through a decode and
+> re-encode on each CDN miss to produce bytes nobody asked for.
 
-Three ways to opt out, each meaning something different:
+**Passing `f` is the recommended way to cut transfer size**, and it is worth doing:
 
-| Request | Returns | Use when |
-|---------|---------|----------|
-| `?f=jpeg` | JPEG **re-encoded** at `q=80` | The client cannot render WebP — Outlook and some email clients, Safari below 14, a few link/OG crawlers. Still compressed, so the escape hatch stays cheap. |
-| `?f=original` | The stored bytes, **byte-for-byte**, `inline` | You need the untouched source without forcing a download — full-quality lightbox, print, downstream processing. |
-| `?download` | The stored bytes, **byte-for-byte**, as an attachment | A save-file action. |
+| Request | Returns |
+|---------|---------|
+| `?f=webp` | WebP — typically 25–35% smaller than the equivalent JPEG |
+| `?f=avif` | AVIF — usually smaller again, at some encode cost |
+| `?f=jpeg` | JPEG, for clients that cannot render WebP — Outlook and some email clients, Safari below 14, a few link/OG crawlers |
+| *(no `f`)* | The stored bytes, **byte-for-byte**, `inline` |
+| `/download` | The stored bytes, **byte-for-byte**, as an attachment |
 
-`f=original` composes with a resize: `?f=original&w=200` scales to 200 px while keeping the source
-format, i.e. "resize but don't convert me".
+A resize without `f` re-encodes in the **source** format — `?w=200` on a JPEG returns a 200 px
+JPEG. The size changes; the format does not.
+
+### Quality (`q`) — the encoder's default, not ours
+
+When `q` is omitted the endpoint **passes nothing to the encoder**, so each format applies its own
+calibrated default:
+
+| Format | Default when `q` is absent |
+|---|---|
+| JPEG, WebP | 80 |
+| AVIF | 50 |
+| PNG | lossless — `q` has no effect at all |
+
+This is deliberate, because **a quality number is not portable between codecs**. AVIF is
+quantizer-based and sits on a different perceptual curve from JPEG and WebP: 50 there is roughly
+what 80 is here. An earlier revision forced 80 onto every encoder, which made AVIF several times
+larger than its own default and larger than the equivalent WebP — turning the best format on offer
+into the worst one to request.
+
+An explicit `?q=` always wins, for every format.
 
 ### Lossless no-op collapse
 
@@ -132,10 +171,10 @@ Requesting a **lossless** format that the source already is — only `?f=png` on
 — is served as a passthrough rather than re-encoded, since the encoder would spend CPU producing
 equivalent bytes.
 
-**Lossy formats deliberately do not collapse.** `?f=jpeg` on a JPEG re-encodes at `q=80`, because
+**Lossy formats deliberately do not collapse.** `?f=jpeg` on a JPEG re-encodes, because
 that is a real size reduction (116 KB → 64 KB on a test asset) and the whole purpose of this
 endpoint. Collapsing it would serve the full uncompressed original to precisely the clients least
-able to afford it. `f=original` is the passthrough; `f=<format>` means encode.
+able to afford it. Omitting `f` is the passthrough; `f=<format>` means encode.
 
 ### Resize Behaviour (`w` / `h`)
 

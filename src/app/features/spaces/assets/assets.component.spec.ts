@@ -298,7 +298,7 @@ describe('AssetsComponent', () => {
 
       component.onDownload(file({ id: 'a1' }));
 
-      expect(openSpy).toHaveBeenCalledWith('/api/v1/spaces/space-1/assets/a1?download');
+      expect(openSpy).toHaveBeenCalledWith('/api/v1/spaces/space-1/assets/a1/download');
       openSpy.mockRestore();
     });
 

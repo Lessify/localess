@@ -14,30 +14,6 @@ export function isImageFormat(v: unknown): v is ImageFormat {
   return VALID_FORMATS.includes(v as ImageFormat);
 }
 
-/**
- * `f=original` — an explicit opt-out of the default format conversion.
- *
- * Not an encoder target, which is why it is kept out of {@link VALID_FORMATS}: it resolves
- * to "no format change", never to a sharp pipeline call. It exists because once JPEG
- * defaults to WebP there is otherwise no way to ask for the stored bytes *inline* —
- * `?f=jpeg` is a lossy round-trip, not a passthrough, and `?download` forces an
- * attachment disposition the caller may not want.
- */
-export const ORIGINAL_FORMAT = 'original';
-export type RequestedFormat = ImageFormat | typeof ORIGINAL_FORMAT;
-
-/** Everything accepted by `?f=`, including the passthrough sentinel. */
-export const VALID_FORMAT_REQUESTS = [...VALID_FORMATS, ORIGINAL_FORMAT] as const;
-
-/**
- * Check if a value is an accepted `?f=` value.
- * @param {unknown} v Value to check
- * @return {boolean} true if the value is a supported format or `original`
- */
-export function isRequestedFormat(v: unknown): v is RequestedFormat {
-  return VALID_FORMAT_REQUESTS.includes(v as RequestedFormat);
-}
-
 /** Stored MIME types that map onto an encoder target, for passthrough detection. */
 const SOURCE_MIME_TO_FORMAT: Record<string, ImageFormat> = {
   'image/webp': 'webp',
@@ -49,11 +25,11 @@ const SOURCE_MIME_TO_FORMAT: Record<string, ImageFormat> = {
 /**
  * Formats whose encoder is lossless, so re-encoding to the same format only burns CPU.
  *
- * The lossy formats are deliberately excluded. Re-encoding a JPEG as JPEG at
- * {@link DEFAULT_QUALITY} is *not* a no-op — it is a meaningful size reduction, and on a
- * public CDN that reduction is the whole point. Collapsing it to a passthrough would make
- * `?f=jpeg`, the escape hatch for clients that cannot render WebP, serve the full
- * uncompressed original. Callers who want the stored bytes ask for `f=original`.
+ * The lossy formats are deliberately excluded. `?f=jpeg` on a JPEG is an explicit request to
+ * re-encode, and honouring it is a meaningful size reduction; collapsing it to a passthrough
+ * would answer a compression request with the full uncompressed original. A lossless encoder
+ * has no such trade to make, so there the collapse is free. Callers who want the stored bytes
+ * untouched use the `/original` route.
  */
 const LOSSLESS_FORMATS: ReadonlySet<ImageFormat> = new Set<ImageFormat>(['png']);
 
@@ -90,7 +66,8 @@ function containBackground(format?: ImageFormat): { r: number; g: number; b: num
  * @param {object} opts Transform options
  * @param {number} [opts.width] Target width in pixels
  * @param {number} [opts.height] Target height in pixels
- * @param {number} opts.quality Output quality
+ * @param {number} [opts.quality] Output quality. Omitted means "let the encoder decide" —
+ *   see {@link applySharpTransforms} for why that is not the same as passing 80.
  * @param {ImageFormat} [opts.format] Output format
  * @param {ImageFit} [opts.fit] How the image is fitted when BOTH width and height
  *   are given. Ignored otherwise, since sharp preserves aspect ratio with one
@@ -102,7 +79,7 @@ export function applySharpTransforms(
   opts: {
     width?: number;
     height?: number;
-    quality: number;
+    quality?: number;
     format?: ImageFormat;
     fit?: ImageFit;
   }
@@ -121,28 +98,55 @@ export function applySharpTransforms(
     }
     pipeline = pipeline.resize(opts.width ?? null, opts.height ?? null, resizeOptions);
   }
+  // An absent `quality` is passed on as absence, not as a number of our choosing, because a
+  // quality value is **not portable between codecs**. sharp defaults JPEG and WebP to 80 but
+  // AVIF to 50, since AVIF is quantizer-based and sits on a different perceptual curve — the
+  // two scales are not the same scale. Forcing 80 onto AVIF produced files several times
+  // larger than sharp's default and bigger than the equivalent WebP, which made `?f=avif`
+  // the worst format to ask for rather than the best. Per-encoder calibration is the
+  // encoder author's job; an explicit `?q=` is the caller's and always wins.
+  const q = opts.quality === undefined ? {} : { quality: opts.quality };
   if (opts.format === 'jpeg') {
-    pipeline = pipeline.jpeg({ quality: opts.quality });
+    pipeline = pipeline.jpeg(q);
   } else if (opts.format === 'webp') {
-    pipeline = pipeline.webp({ quality: opts.quality });
+    pipeline = pipeline.webp(q);
   } else if (opts.format === 'png') {
+    // PNG ignores `quality` unless `palette` is set, so there is nothing to pass through.
     pipeline = pipeline.png();
   } else if (opts.format === 'avif') {
-    pipeline = pipeline.avif({ quality: opts.quality });
+    pipeline = pipeline.avif(q);
   }
   return pipeline;
+}
+
+/**
+ * The encoder that reproduces a stored MIME type, for a resize that must not change format.
+ *
+ * Used by the route when `?f=` is absent but a width or height put the request on the transform
+ * path anyway: the bytes have to be re-encoded, and they should come back out as what went in.
+ * Returns `undefined` for types with no encoder equivalent here — GIF, SVG, TIFF, video — which
+ * leaves sharp to infer the output format from the input, as before.
+ * @param {string} sourceType Stored asset MIME type
+ * @return {ImageFormat | undefined} the encoder to target, or undefined to let sharp infer
+ */
+export function sourceEncoderFormat(sourceType: string): ImageFormat | undefined {
+  return SOURCE_MIME_TO_FORMAT[sourceType];
 }
 
 /** Resolved, validated transform parameters for an asset request. */
 export interface AssetTransformQuery {
   width?: number;
   height?: number;
-  quality: number;
-  /** Whether `?q=` was supplied, as opposed to {@link DEFAULT_QUALITY} being applied. */
-  qualityExplicit: boolean;
-  format?: RequestedFormat;
+  /**
+   * Output quality, or `undefined` when the caller did not ask for one.
+   *
+   * Deliberately not defaulted here. The endpoint imposes no quality of its own — each encoder
+   * has its own calibrated default and they are not the same number. See
+   * {@link applySharpTransforms}.
+   */
+  quality?: number;
+  format?: ImageFormat;
   fit?: ImageFit;
-  download: boolean;
   thumbnail: boolean;
 }
 
@@ -156,8 +160,6 @@ export interface AssetTransformQueryError {
 }
 
 export type AssetTransformQueryResult = { ok: true; query: AssetTransformQuery } | { ok: false; error: AssetTransformQueryError };
-
-export const DEFAULT_QUALITY = 80;
 
 /**
  * Hard ceiling on any transformed output edge, in pixels.
@@ -182,48 +184,43 @@ export const MAX_OUTPUT_DIMENSION = 8192;
  *
  * `undefined` is what keeps a request *off* the transform path entirely: the route only
  * enters sharp when a width, a height or a format is present. So returning `undefined`
- * here is the passthrough decision, and returning a format is what pulls even a bare
- * request onto the transform path.
+ * here is the passthrough decision, and returning a format is what pulls a request onto
+ * the transform path.
  *
- * The default is WebP for `image/jpeg` only. WebP is ~25–35% smaller than JPEG at
- * equivalent perceptual quality, and photographic JPEG is the case where lossy
- * re-encoding is safe. PNG carries screenshots and line art that lossy WebP visibly
- * degrades, and GIF/animated WebP are passed through untransformed by the route because
- * sharp cannot resize animations.
+ * **Nothing is converted implicitly.** `?f=` is the only thing that changes an image's
+ * format — a request that does not ask for one gets the format it uploaded. An earlier
+ * revision defaulted `image/jpeg` to WebP; that was removed because a format change is the
+ * developer's call, and because it put every bare `<img src>` through a decode and re-encode
+ * on each CDN miss to produce bytes nobody had asked for. Passing `?f=webp` or `?f=avif`
+ * remains the recommended way to cut transfer size — it is now opt-in.
+ *
+ * A caller who wants the stored bytes with no re-encode at all uses the `/original` or
+ * `/download` route, which never reaches this function.
  * @param {object} params Resolution inputs
- * @param {RequestedFormat} [params.requested] Explicit `?f=`, including `original`
+ * @param {ImageFormat} [params.requested] Explicit `?f=`
  * @param {string} params.sourceType Stored asset MIME type
- * @param {boolean} params.download Whether `?download` was set
- * @param {boolean} params.qualityExplicit Whether the caller passed `?q=`
+ * @param {number} [params.quality] Explicit `?q=`, where the caller supplied one
  * @param {boolean} params.resizing Whether a width or height survived clamping
  * @return {ImageFormat | undefined} the format to encode to, or undefined to serve the stored bytes
  */
 export function resolveOutputFormat(params: {
-  requested?: RequestedFormat;
+  requested?: ImageFormat;
   sourceType: string;
-  download: boolean;
-  qualityExplicit: boolean;
+  quality?: number;
   resizing: boolean;
 }): ImageFormat | undefined {
-  const { requested, sourceType, download, qualityExplicit, resizing } = params;
+  const { requested, sourceType, quality, resizing } = params;
 
-  // Explicit opt-out: keep whatever is stored.
-  if (requested === ORIGINAL_FORMAT) return undefined;
+  if (requested === undefined) return undefined;
 
-  if (requested !== undefined) {
-    // Asking for a *lossless* format the source already is, with nothing else to change,
-    // is a genuine no-op: the encoder would spend CPU to produce equivalent bytes. Serve
-    // the stored file instead. An explicit `q` or a resize means the caller does want a
-    // re-encode, so those opt back in. Lossy formats never collapse — see LOSSLESS_FORMATS.
-    if (!resizing && !qualityExplicit && LOSSLESS_FORMATS.has(requested) && SOURCE_MIME_TO_FORMAT[sourceType] === requested) {
-      return undefined;
-    }
-    return requested;
+  // Asking for a *lossless* format the source already is, with nothing else to change,
+  // is a genuine no-op: the encoder would spend CPU to produce equivalent bytes. Serve
+  // the stored file instead. An explicit `q` or a resize means the caller does want a
+  // re-encode, so those opt back in. Lossy formats never collapse — see LOSSLESS_FORMATS.
+  if (!resizing && quality === undefined && LOSSLESS_FORMATS.has(requested) && SOURCE_MIME_TO_FORMAT[sourceType] === requested) {
+    return undefined;
   }
-
-  // A download must hand back the file the user uploaded, with its original extension.
-  if (download) return undefined;
-  return sourceType === 'image/jpeg' ? 'webp' : undefined;
+  return requested;
 }
 
 /** Intrinsic dimensions of the stored original, where known. */
@@ -280,9 +277,9 @@ export function canonicalTransformSize(
  * the route then only has to branch on `ok`. That also makes every parsing and
  * validation rule unit-testable without route-level test infrastructure.
  *
- * Numeric params are lenient by long-standing behaviour: a non-numeric or
- * non-positive `w`/`h` is ignored, and `q` is clamped to 1–100 with a default of
- * {@link DEFAULT_QUALITY}. The two enum params are strict — an unrecognised
+ * `q` is bounded to 1–100 and left **undefined** when absent, so each encoder applies its
+ * own calibrated default rather than one this endpoint invents. The two enum params are
+ * strict — an unrecognised
  * value is rejected so a typo surfaces instead of silently returning an
  * untransformed image. An empty value (`?f=`) counts as absent, not invalid.
  * @param {Record<string, unknown>} query Express request query
@@ -340,13 +337,29 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
   if (!qualityResult.ok) return qualityResult;
 
   const formatRaw = (query.f as string | undefined)?.toString() || undefined;
-  if (formatRaw !== undefined && !isRequestedFormat(formatRaw)) {
+  if (formatRaw === 'original') {
+    // Removed in v4. The message says what to do instead rather than only listing the accepted
+    // set, because a caller reaching this has a working use case, not a typo. Omitting `f` is
+    // now the whole answer: nothing is converted implicitly, so a request without it already
+    // returns the stored format.
     return {
       ok: false,
       error: {
         param: 'f',
         value: formatRaw,
-        message: `Unsupported 'f' value '${formatRaw}'. Expected one of: ${VALID_FORMAT_REQUESTS.join(', ')}.`,
+        message:
+          `Unsupported 'f' value 'original'. Expected one of: ${VALID_FORMATS.join(', ')}. ` +
+          'Omit the parameter entirely to keep the stored format.',
+      },
+    };
+  }
+  if (formatRaw !== undefined && !isImageFormat(formatRaw)) {
+    return {
+      ok: false,
+      error: {
+        param: 'f',
+        value: formatRaw,
+        message: `Unsupported 'f' value '${formatRaw}'. Expected one of: ${VALID_FORMATS.join(', ')}.`,
       },
     };
   }
@@ -363,21 +376,34 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
     };
   }
 
+  // `download` was a disposition flag that also forced the source format — two meanings in one
+  // parameter. It is now its own route. Rejected in any spelling, including combined with a
+  // transform: a resized download no longer exists, so honouring `?download&w=400` by dropping
+  // the resize would silently return something other than what was asked for.
+  if (query.download !== undefined) {
+    return {
+      ok: false,
+      error: {
+        param: 'download',
+        value: (query.download as string | undefined)?.toString() ?? '',
+        message:
+          "The 'download' parameter was removed in v4. " + 'Use GET /api/v1/spaces/{spaceId}/assets/{assetId}/download instead.',
+      },
+    };
+  }
+
   return {
     ok: true,
     query: {
       width: widthResult.value,
       height: heightResult.value,
-      // No clamping needed — `parseNumeric` already rejected anything outside 1–100.
-      quality: qualityResult.value ?? DEFAULT_QUALITY,
-      // Tracked separately from `quality` because the resolved number cannot distinguish
-      // "the caller asked for 80" from "the caller asked for nothing". Passthrough
-      // detection needs that difference: `?f=jpeg&q=80` on a JPEG is a real re-encode
-      // request, while a bare `?f=jpeg` is a no-op.
-      qualityExplicit: qualityResult.value !== undefined,
-      format: formatRaw as RequestedFormat | undefined,
+      // No clamping needed — `parseNumeric` already rejected anything outside 1–100. Left
+      // undefined when absent rather than defaulted, which is what lets the lossless no-op
+      // collapse tell "the caller asked for 80" from "the caller asked for nothing":
+      // `?f=png&q=80` on a PNG is a real re-encode request, while a bare `?f=png` is a no-op.
+      quality: qualityResult.value,
+      format: formatRaw as ImageFormat | undefined,
       fit: fitRaw as ImageFit | undefined,
-      download: isFlagSet(query.download),
       thumbnail: isFlagSet(query.thumbnail),
     },
   };

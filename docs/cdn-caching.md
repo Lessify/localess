@@ -88,11 +88,11 @@ Concretely:
 The untransformed original stays reachable by omitting `w`/`h`. See
 [Assets — Parameter Validation](features/spaces/assets.md) for the full matrix.
 
-`image/jpeg` sources are additionally re-encoded to **WebP** by default, which pulls even
-no-parameter requests onto the transform path. `?f=original` opts out and returns the stored bytes
-byte-for-byte with an `inline` disposition; `?f=jpeg` re-encodes as JPEG at the default quality for
-clients that cannot render WebP. See
-[Assets — Default Output Format](features/spaces/assets.md) for the full matrix.
+**No format conversion happens implicitly.** A request without `?f=` keeps the stored format, so a
+no-parameter request never reaches Sharp at all — it is a straight passthrough, identical to what
+the `/download` route serves, minus its attachment disposition. Passing `?f=webp` or `?f=avif` is the recommended way to cut transfer
+size, and it is opt-in. See
+[Assets — Output Format](features/spaces/assets.md) for the full matrix.
 
 Transformed responses carry an `ETag` derived from the object's `md5Hash` plus the transform suffix;
 a matching `If-None-Match` returns `304` **before** any download or re-encode.

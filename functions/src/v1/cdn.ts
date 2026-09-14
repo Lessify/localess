@@ -38,10 +38,16 @@ import {
   spaceTranslationCachePath,
   translationLocaleCachePath,
 } from '../services';
-import { applySharpTransforms, canonicalTransformSize, parseAssetTransformQuery, resolveOutputFormat } from '../utils/image-transform';
+import {
+  applySharpTransforms,
+  canonicalTransformSize,
+  parseAssetTransformQuery,
+  resolveOutputFormat,
+  sourceEncoderFormat,
+} from '../utils/image-transform';
 import { getSharp } from '../utils/lazy-modules';
 import { buildAssetETag } from '../utils/asset-etag';
-import { buildAssetQuery } from '../utils/asset-query';
+import { buildAssetQuery, findTransformParam } from '../utils/asset-query';
 import { buildContentDisposition } from '../utils/content-disposition';
 import { redactQuery } from '../utils/log-redact';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
@@ -464,7 +470,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .send(new HttpsError('invalid-argument', parsed.error.message));
     return;
   }
-  const { quality, fit, download, thumbnail } = parsed.query;
+  const { quality, fit, thumbnail } = parsed.query;
 
   const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
   // One Storage metadata round-trip serves both purposes: existence, and the `md5Hash`
@@ -501,10 +507,14 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     const format = resolveOutputFormat({
       requested: parsed.query.format,
       sourceType: asset.type,
-      download,
-      qualityExplicit: parsed.query.qualityExplicit,
+      quality,
       resizing: width !== undefined || height !== undefined,
     });
+    // What the pipeline encodes to, as opposed to what the *response* is labelled as. A resize
+    // with no `?f=` still has to re-encode, and it should hand back what it was given — so the
+    // source's own encoder is the target. `format` stays undefined there, which is what keeps
+    // the content type and filename extension unchanged.
+    const encodeAs = format ?? sourceEncoderFormat(asset.type);
     const tempFilePath = `${os.tmpdir()}/assets-${assetId}`;
     // Set by the branches where sharp produces the response, so those never touch `/tmp`.
     // `/tmp` on Cloud Functions is tmpfs — RAM against the instance limit — so writing the
@@ -549,7 +559,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           if (isAnimated) {
             sharpFile = sharp(file, { page: 0, pages: 1 });
           }
-          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format, fit });
+          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format: encodeAs, fit });
           output = await sharpFile.toBuffer();
           overwriteType = outputType;
         } else if (isAnimated) {
@@ -560,7 +570,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           if (suffix) {
             filename = `${asset.name}-${suffix}${outputExt}`;
           }
-          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format, fit });
+          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format: encodeAs, fit });
           output = await sharpFile.toBuffer();
           overwriteType = outputType;
         }
@@ -573,15 +583,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           filename = `${asset.name}-${suffix}${outputExt}`;
         }
         const [file] = await assetFile.download();
-        let pipeline = sharp(file);
-        if (!format) {
-          if (asset.type === 'image/jpeg') {
-            pipeline = pipeline.jpeg({ quality });
-          } else if (asset.type === 'image/webp') {
-            pipeline = pipeline.webp({ quality });
-          }
-        }
-        pipeline = applySharpTransforms(pipeline, { width, height, quality, format, fit });
+        const pipeline = applySharpTransforms(sharp(file), { width, height, quality, format: encodeAs, fit });
         output = await pipeline.toBuffer();
         overwriteType = outputType;
       }
@@ -589,7 +591,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       const sharp = await getSharp();
       await assetFile.download({ destination: tempFilePath });
       await extractThumbnail(tempFilePath, `screenshot-${assetId}.webp`);
-      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format, fit }).toFile(
+      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format: encodeAs, fit }).toFile(
         tempFilePath
       );
       overwriteType = format ? formatMimeMap[format] : 'image/webp';
@@ -599,7 +601,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     }
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-      .header('Content-Disposition', buildContentDisposition(filename, download))
+      .header('Content-Disposition', buildContentDisposition(filename, false))
       .contentType(overwriteType || asset.type);
     if (output) {
       res.send(output);
@@ -627,4 +629,91 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .send(new HttpsError('not-found', 'Not found.'));
     return;
   }
+});
+
+// The stored bytes as an attachment. Its own route rather than a parameter on the route above,
+// because it is a different cost class: it never enters sharp, never parses a transform query,
+// and is the one a redirect to Storage can eventually serve without proxying the bytes at all.
+//
+// There is deliberately no sibling `/original` route. The route above already returns the stored
+// bytes when it is given no parameters — nothing is converted implicitly — so an inline
+// passthrough route would be a second URL for byte-identical output. `attachment` is the only
+// thing the transform route cannot express.
+CDN.get('/api/v1/spaces/:spaceId/assets/:assetId/download', async (req, res) => {
+  logger.info('[V1:AssetDownload] params: ' + JSON.stringify(req.params));
+  logger.info('[V1:AssetDownload] query: ' + redactQuery(req.query));
+  const { spaceId, assetId } = req.params;
+
+  // This route applies no transform, so a transform parameter is a caller error rather than
+  // something to ignore — the same rule `parseAssetTransformQuery` follows for `fit=squish`.
+  const offending = findTransformParam(req.query);
+  if (offending !== undefined) {
+    res
+      .status(400)
+      .header('Cache-Control', `public, max-age=${CACHE_BAD_REQUEST_MAX_AGE}, s-maxage=${CACHE_BAD_REQUEST_MAX_AGE}`)
+      .send(
+        new HttpsError(
+          'invalid-argument',
+          `Unsupported '${offending}' parameter on this route. It serves the stored bytes and applies no transform. ` +
+            'Use GET /api/v1/spaces/{spaceId}/assets/{assetId} for transforms.'
+        )
+      );
+    return;
+  }
+
+  const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
+  // One Storage metadata round-trip serves both purposes: existence, and the `md5Hash` the ETag
+  // below is built from — same merge the transform route above applies.
+  let objectMetadata: Record<string, unknown> | undefined;
+  try {
+    [objectMetadata] = await assetFile.getMetadata();
+  } catch {
+    objectMetadata = undefined;
+  }
+  const exists = objectMetadata !== undefined;
+  const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
+  logger.info(`[V1:AssetDownload] asset: ${exists} & ${assetSnapshot.exists}`);
+
+  if (!exists || !assetSnapshot.exists) {
+    // The same two-flavour 404 as the transform route: a document without a Storage object is an
+    // upload still in flight, and caching that would pin a 404 over an asset about to appear.
+    if (assetSnapshot.exists) {
+      res.status(404).header('Cache-Control', 'no-cache').send(new HttpsError('not-found', 'Not found, upload may still be in progress.'));
+      return;
+    }
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_ASSET_NOT_FOUND_MAX_AGE}, s-maxage=${CACHE_ASSET_NOT_FOUND_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found.'));
+    return;
+  }
+
+  const asset = assetSnapshot.data() as AssetFile;
+  // No variant suffix: this route has exactly one response per stored object. Answered before the
+  // download, so a revalidating client costs a metadata read rather than a transfer.
+  const md5Hash = objectMetadata?.['md5Hash'] as string | undefined;
+  if (md5Hash) {
+    const etag = buildAssetETag(md5Hash, '', false);
+    res.header('ETag', etag);
+    if (req.headers['if-none-match'] === etag) {
+      res.status(304).header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`).end();
+      return;
+    }
+  }
+
+  // A distinct path from the transform route's `assets-${assetId}`. That route writes *transformed*
+  // output there on the video-thumbnail branch, so sharing the path would let a concurrent request
+  // for the same asset serve the wrong bytes.
+  //
+  // `sendFile` rather than a stream because it implements Range requests, and `/download` on a
+  // video is exactly where a client resumes a partial transfer. Streaming is not the fix for the
+  // tmpfs cost — a redirect to Storage is, because GCS handles Range natively.
+  const tempFilePath = `${os.tmpdir()}/assets-download-${assetId}`;
+  await assetFile.download({ destination: tempFilePath });
+
+  res
+    .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
+    .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, true))
+    .contentType(asset.type)
+    .sendFile(tempFilePath);
 });

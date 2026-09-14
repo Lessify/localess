@@ -18,7 +18,8 @@ Content delivery with cache-busting and asset transformation. All content/transl
 | `GET`  | `/api/v1/spaces/:spaceId/links`                | `CONTENT_PUBLIC`, `CONTENT_DRAFT`, or `DEV_TOOLS` | `cv`, `kind`, `parentSlug`, `excludeChildren`, `token`                |
 | `GET`  | `/api/v1/spaces/:spaceId/contents/slugs/*slug` | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
 | `GET`  | `/api/v1/spaces/:spaceId/contents/:contentId`  | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
-| `GET`  | `/api/v1/spaces/:spaceId/assets/:assetId`      | None (public)                                     | `w`, `h`, `q`, `f`, `download`, `thumbnail`                           |
+| `GET`  | `/api/v1/spaces/:spaceId/assets/:assetId`      | None (public)                                     | `w`, `h`, `q`, `f`, `fit`, `thumbnail`                                |
+| `GET`  | `/api/v1/spaces/:spaceId/assets/:assetId/download` | None (public)                                 | *(none — a transform param is rejected with 400)*                     |
 
 **Notable behaviors:**
 
@@ -26,11 +27,14 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
 - **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `resolveAssets()` (`functions/src/services/content.service.ts:305`).
-- **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f`/`fit` params). `q` defaults to `85`, clamped to `1–100`; ignored for PNG. Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG and animated GIF/WebP are passed through unsized. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
+- **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f`/`fit` params). Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG and animated GIF/WebP are passed through unsized. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
+- **No implicit format conversion** — `f` is the only thing that changes an image format. Without it the stored format is kept, so a no-parameter request never enters Sharp. A resize without `f` re-encodes in the source format. Passing `f=webp` or `f=avif` is the recommended way to cut transfer size.
+- **`q` is not defaulted by the endpoint** — it is **rejected** outside `1–100` rather than clamped, and when omitted nothing is passed to the encoder, so each format applies its own calibrated default: JPEG and WebP 80, AVIF 50, PNG lossless. A quality number is not portable between codecs, which is why one flat value is not imposed on all of them. An explicit `q` always wins.
 - **`fit` param** — `cover` (default) · `contain` · `inside` · `outside` · `fill`. **Ignored unless both `w` and `h` are present**, since Sharp preserves aspect ratio with a single dimension. `contain` pads: transparent for `png`/`webp`/`avif`, opaque white otherwise (a transparent pad would flatten to black on a JPEG).
 - **Invalid `f` or `fit`** — returns `400 invalid-argument` naming the accepted values. An empty value (`?f=`) counts as absent, not invalid. The `400` is sent with `Cache-Control: public, max-age=3600` so a bad URL is served from the CDN instead of re-entering the function; the TTL is deliberately short because the accepted value set can grow with a deploy.
 - **`thumbnail` param** — Only meaningful for animated WebP/GIF (extracts first frame) and video (requires `w`; extracts a frame via FFmpeg). Has no effect on other image types.
-- **`download` param** — Switches `Content-Disposition` from `inline` to `form-data` (forces browser download).
+- **`/download`** — serves the stored bytes as an `attachment`. Never enters Sharp, and rejects `w`/`h`/`q`/`f`/`fit`/`thumbnail`/`download` with `400` rather than ignoring them. There is no `/original` sibling: the transform route already returns the stored bytes when given no parameters, so an inline passthrough route would be a second URL for identical output.
+- **Removed in v4** — the `?download` flag and `f=original`. Both return `400` with a message naming the replacement route. Responses already cached under the old spellings keep serving for the remainder of their 365-day TTL.
 
 #### Asset resize combinations (`w` / `h`)
 

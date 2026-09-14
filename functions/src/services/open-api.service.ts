@@ -919,20 +919,23 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'q',
               in: 'query',
-              description: 'Image quality (1–100). Applies to JPEG and WebP. Defaults to 85.',
+              description:
+                'Image quality (1-100). When omitted, each encoder applies its own default: JPEG and WebP 80, ' +
+                'AVIF 50. Ignored for PNG, which is lossless.',
               required: false,
               schema: {
                 type: 'integer',
                 minimum: 1,
                 maximum: 100,
-                default: 85,
-                example: 85,
+                example: 80,
               },
             },
             {
               name: 'f',
               in: 'query',
-              description: 'Output image format. Converts the image to the specified format.',
+              description:
+                'Output image format. Nothing is converted implicitly - omit this and the stored format is kept. ' +
+                'Passing webp or avif is the recommended way to reduce transfer size.',
               required: false,
               schema: {
                 type: 'string',
@@ -941,13 +944,16 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               },
             },
             {
-              name: 'download',
+              name: 'fit',
               in: 'query',
-              description: 'In case you wish to download the asset.',
+              description:
+                'How the image is fitted when both w and h are given. Ignored with a single dimension, ' +
+                'since the aspect ratio is preserved regardless.',
               required: false,
               schema: {
-                type: 'boolean',
-                example: false,
+                type: 'string',
+                enum: ['cover', 'contain', 'inside', 'outside', 'fill'],
+                example: 'inside',
               },
             },
             {
@@ -977,6 +983,41 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
                     format: 'binary',
                   },
                 },
+              },
+            },
+          },
+        },
+      },
+      '/api/v1/spaces/{spaceId}/assets/{assetId}/download': {
+        get: {
+          tags: ['Assets'],
+          summary: 'Download Asset',
+          description:
+            'Returns the stored bytes of an Asset with an attachment disposition, so the browser saves ' +
+            'rather than displays it. Applies no transform.',
+          operationId: 'downloadAsset',
+          parameters: [
+            {
+              name: 'spaceId',
+              in: 'path',
+              description: 'Unique identifier for the Space object.',
+              required: true,
+              schema: { type: 'string', example: 'UdV5ygPZuOD1JMO9Qat9' },
+            },
+            {
+              name: 'assetId',
+              in: 'path',
+              description: 'Unique identifier for the Asset object.',
+              required: true,
+              schema: { type: 'string', example: 'UdV5ygPZuOD1JMO9Qat9' },
+            },
+          ],
+          responses: {
+            '200': {
+              description: 'Returns the stored Asset file as an attachment.',
+              content: {
+                'image/*': { schema: { type: 'string', format: 'binary' } },
+                'application/*': { schema: { type: 'string', format: 'binary' } },
               },
             },
           },

@@ -4,13 +4,12 @@ import { describe, expect, it } from 'vitest';
 import {
   applySharpTransforms,
   canonicalTransformSize,
-  DEFAULT_QUALITY,
   isImageFit,
   isImageFormat,
   MAX_OUTPUT_DIMENSION,
-  ORIGINAL_FORMAT,
   parseAssetTransformQuery,
   resolveOutputFormat,
+  sourceEncoderFormat,
   VALID_FITS,
   VALID_FORMATS,
 } from './image-transform';
@@ -156,6 +155,67 @@ describe('applySharpTransforms — existing behaviour is unchanged', () => {
   });
 });
 
+describe('applySharpTransforms — quality is the encoder decision unless the caller makes it', () => {
+  /**
+   * Gradient plus noise, which compresses like a photograph rather than a flat fill.
+   * A solid colour compresses to near-nothing at every quality and would hide the difference.
+   */
+  function photographic(): sharp.Sharp {
+    const width = 400;
+    const height = 300;
+    const raw = Buffer.alloc(width * height * 3);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 3;
+        const noise = Math.round(Math.sin(x * 0.7) * Math.cos(y * 0.9) * 40);
+        raw[i] = Math.max(0, Math.min(255, Math.round((x * 255) / width) + noise));
+        raw[i + 1] = Math.max(0, Math.min(255, Math.round((y * 255) / height) + noise));
+        raw[i + 2] = (x * y) % 255;
+      }
+    }
+    return sharp(raw, { raw: { width, height, channels: 3 } });
+  }
+
+  const size = async (opts: Parameters<typeof applySharpTransforms>[1]) =>
+    (await applySharpTransforms(photographic(), opts).toBuffer()).length;
+
+  // The regression this guards: quality is not portable between codecs. sharp defaults AVIF to
+  // 50 and JPEG/WebP to 80 because AVIF sits on a different perceptual curve. An earlier
+  // revision passed a flat 80 to every encoder, which made AVIF several times larger than
+  // sharp's default and larger than the equivalent WebP — so `?f=avif`, the best format on
+  // offer, became the worst one to ask for.
+  it('lets sharp pick the avif default rather than imposing the jpeg/webp number', async () => {
+    expect(await size({ format: 'avif' })).toBeLessThan(await size({ format: 'avif', quality: 80 }));
+  });
+
+  it('still honours an explicit quality for avif', async () => {
+    expect(await size({ format: 'avif', quality: 30 })).toBeLessThan(await size({ format: 'avif', quality: 90 }));
+  });
+
+  it('still honours an explicit quality for jpeg and webp', async () => {
+    expect(await size({ format: 'jpeg', quality: 30 })).toBeLessThan(await size({ format: 'jpeg', quality: 90 }));
+    expect(await size({ format: 'webp', quality: 30 })).toBeLessThan(await size({ format: 'webp', quality: 90 }));
+  });
+});
+
+describe('sourceEncoderFormat', () => {
+  it.each([
+    ['image/jpeg', 'jpeg'],
+    ['image/webp', 'webp'],
+    ['image/png', 'png'],
+    ['image/avif', 'avif'],
+  ] as const)('maps %s onto its own encoder, so a resize keeps the format', (sourceType, expected) => {
+    expect(sourceEncoderFormat(sourceType)).toBe(expected);
+  });
+
+  it.each([['image/gif'], ['image/svg+xml'], ['image/tiff'], ['video/mp4'], ['application/pdf']])(
+    'returns undefined for %s, leaving sharp to infer the output',
+    sourceType => {
+      expect(sourceEncoderFormat(sourceType)).toBeUndefined();
+    }
+  );
+});
+
 describe('parseAssetTransformQuery', () => {
   const ok = (query: Record<string, unknown>) => {
     const result = parseAssetTransformQuery(query);
@@ -167,11 +227,9 @@ describe('parseAssetTransformQuery', () => {
     expect(ok({})).toEqual({
       width: undefined,
       height: undefined,
-      quality: DEFAULT_QUALITY,
-      qualityExplicit: false,
+      quality: undefined,
       format: undefined,
       fit: undefined,
-      download: false,
       thumbnail: false,
     });
   });
@@ -218,8 +276,8 @@ describe('parseAssetTransformQuery', () => {
       expect(result.error.message).toContain('between 1 and 100');
     });
 
-    it.each([[''], [undefined]])('defaults when q is absent (%s)', raw => {
-      expect(ok({ q: raw }).quality).toBe(DEFAULT_QUALITY);
+    it.each([[''], [undefined]])('leaves quality undefined when q is absent (%s)', raw => {
+      expect(ok({ q: raw }).quality).toBeUndefined();
     });
 
     it('rejects a non-numeric q rather than defaulting', () => {
@@ -278,28 +336,18 @@ describe('parseAssetTransformQuery', () => {
   });
 
   describe('flags are presence-based', () => {
-    it.each([[''], ['true'], ['false'], ['1']])('treats download=%s as set', raw => {
-      expect(ok({ download: raw }).download).toBe(true);
-    });
-
-    it('treats an absent download as unset', () => {
-      expect(ok({}).download).toBe(false);
-    });
-
-    it.each([[''], ['true'], ['false']])('treats thumbnail=%s as set', raw => {
+    it.each([[''], ['true'], ['false'], ['1']])('treats thumbnail=%s as set', raw => {
       expect(ok({ thumbnail: raw }).thumbnail).toBe(true);
     });
   });
 
   it('parses a full query', () => {
-    expect(ok({ w: '400', h: '300', q: '80', f: 'webp', fit: 'inside', download: '', thumbnail: '' })).toEqual({
+    expect(ok({ w: '400', h: '300', q: '80', f: 'webp', fit: 'inside', thumbnail: '' })).toEqual({
       width: 400,
       height: 300,
       quality: 80,
-      qualityExplicit: true,
       format: 'webp',
       fit: 'inside',
-      download: true,
       thumbnail: true,
     });
   });
@@ -338,18 +386,23 @@ describe('applySharpTransforms — upscales when asked', () => {
   });
 });
 
-describe('DEFAULT_QUALITY', () => {
-  it('is 80 — the chosen bandwidth/quality trade point', () => {
-    expect(DEFAULT_QUALITY).toBe(80);
-  });
-
-  it('is used when q is absent', () => {
+describe('quality is not defaulted by the endpoint', () => {
+  // Each encoder has its own calibrated default and they are not the same number — sharp uses
+  // 80 for JPEG and WebP but 50 for AVIF, because the scales are not comparable. Leaving `q`
+  // undefined is what lets each encoder apply its own.
+  it('leaves quality undefined when q is absent', () => {
     const result = parseAssetTransformQuery({});
 
-    expect(result.ok && result.query.quality).toBe(80);
+    expect(result.ok && result.query.quality).toBeUndefined();
   });
 
-  it('is overridden by an explicit q', () => {
+  it('leaves quality undefined for an empty q', () => {
+    const result = parseAssetTransformQuery({ q: '' });
+
+    expect(result.ok && result.query.quality).toBeUndefined();
+  });
+
+  it('carries an explicit q through', () => {
     const result = parseAssetTransformQuery({ q: '95' });
 
     expect(result.ok && result.query.quality).toBe(95);
@@ -358,11 +411,13 @@ describe('DEFAULT_QUALITY', () => {
 
 describe('resolveOutputFormat', () => {
   const resolve = (overrides: Partial<Parameters<typeof resolveOutputFormat>[0]> = {}) =>
-    resolveOutputFormat({ sourceType: 'image/jpeg', download: false, qualityExplicit: false, resizing: false, ...overrides });
+    resolveOutputFormat({ sourceType: 'image/jpeg', resizing: false, ...overrides });
 
-  describe('the WebP default', () => {
-    it('defaults a jpeg source to webp', () => {
-      expect(resolve()).toBe('webp');
+  describe('nothing is converted without an explicit f', () => {
+    // A format change is the developer's call. `?f=` is the only thing that triggers one, and
+    // it is the recommended way to cut transfer size — opt-in, not imposed.
+    it('leaves a jpeg source untouched', () => {
+      expect(resolve()).toBeUndefined();
     });
 
     it.each([['image/png'], ['image/gif'], ['image/webp'], ['image/avif'], ['image/svg+xml'], ['image/tiff']])(
@@ -372,31 +427,18 @@ describe('resolveOutputFormat', () => {
       }
     );
 
+    it('stays a passthrough even when resizing, so only the size changes', () => {
+      expect(resolve({ resizing: true })).toBeUndefined();
+    });
+
+    it('stays a passthrough when only a quality is given', () => {
+      expect(resolve({ quality: 50 })).toBeUndefined();
+    });
+
     it.each([['video/mp4'], ['video/webm'], ['application/pdf']])('leaves %s untouched', sourceType => {
       expect(resolve({ sourceType })).toBeUndefined();
     });
 
-    it('exempts downloads so the stored original is returned', () => {
-      expect(resolve({ download: true })).toBeUndefined();
-    });
-  });
-
-  describe('f=original opts out explicitly', () => {
-    it('keeps a jpeg as jpeg rather than converting to webp', () => {
-      expect(resolve({ requested: ORIGINAL_FORMAT })).toBeUndefined();
-    });
-
-    it('still opts out when combined with a resize, so only the size changes', () => {
-      expect(resolve({ requested: ORIGINAL_FORMAT, resizing: true })).toBeUndefined();
-    });
-
-    it('still opts out when an explicit quality is given', () => {
-      expect(resolve({ requested: ORIGINAL_FORMAT, qualityExplicit: true })).toBeUndefined();
-    });
-
-    it.each([['image/png'], ['image/webp']])('is a no-op for %s, which never defaulted anyway', sourceType => {
-      expect(resolve({ requested: ORIGINAL_FORMAT, sourceType })).toBeUndefined();
-    });
   });
 
   describe('requesting a lossless source format collapses to a passthrough', () => {
@@ -404,16 +446,12 @@ describe('resolveOutputFormat', () => {
       expect(resolve({ requested: 'png', sourceType: 'image/png' })).toBeUndefined();
     });
 
-    it('collapses even on a download, where the disposition is the only concern', () => {
-      expect(resolve({ requested: 'png', sourceType: 'image/png', download: true })).toBeUndefined();
-    });
-
     it('re-encodes when resizing, since the bytes must change anyway', () => {
       expect(resolve({ requested: 'png', sourceType: 'image/png', resizing: true })).toBe('png');
     });
 
     it('re-encodes when an explicit quality is given, since that is a real request', () => {
-      expect(resolve({ requested: 'png', sourceType: 'image/png', qualityExplicit: true })).toBe('png');
+      expect(resolve({ requested: 'png', sourceType: 'image/png', quality: 50 })).toBe('png');
     });
 
     it('does not collapse a genuine conversion', () => {
@@ -436,7 +474,7 @@ describe('resolveOutputFormat', () => {
 
     it('keeps ?f=jpeg useful as the escape hatch for clients that cannot render webp', () => {
       // Must not become a passthrough: that would serve the full uncompressed original to
-      // exactly the clients least able to afford it. `f=original` is the passthrough.
+      // exactly the clients least able to afford it. The `/original` route is the passthrough.
       expect(resolve({ requested: 'jpeg', sourceType: 'image/jpeg' })).toBe('jpeg');
     });
   });
@@ -446,49 +484,70 @@ describe('resolveOutputFormat', () => {
       expect(resolve({ requested: 'avif' })).toBe('avif');
     });
 
-    it('overrides the download exemption', () => {
-      expect(resolve({ requested: 'webp', download: true })).toBe('webp');
-    });
-
     it('overrides the webp default with png', () => {
       expect(resolve({ requested: 'png' })).toBe('png');
     });
   });
 });
 
-describe('parseAssetTransformQuery — f=original and qualityExplicit', () => {
+describe('parseAssetTransformQuery — removed parameters point at their replacement route', () => {
+  const reject = (query: Record<string, unknown>) => {
+    const result = parseAssetTransformQuery(query);
+    if (result.ok) throw new Error('expected a rejection');
+    return result.error;
+  };
+
+  it('rejects f=original and says to omit the parameter instead', () => {
+    const error = reject({ f: 'original' });
+
+    expect(error.param).toBe('f');
+    expect(error.value).toBe('original');
+    expect(error.message).toContain('Omit the parameter');
+  });
+
+  it('rejects a valueless download flag and names the /download route', () => {
+    const error = reject({ download: '' });
+
+    expect(error.param).toBe('download');
+    expect(error.message).toContain('/download');
+  });
+
+  it('rejects download=true as well, since the flag is presence-based', () => {
+    expect(reject({ download: 'true' }).param).toBe('download');
+  });
+
+  it('rejects download even when it is combined with a transform', () => {
+    expect(reject({ w: '400', download: '' }).param).toBe('download');
+  });
+
+  it('still accepts the four encoder formats', () => {
+    for (const f of ['webp', 'jpeg', 'png', 'avif']) {
+      expect(parseAssetTransformQuery({ f }).ok).toBe(true);
+    }
+  });
+});
+
+describe('parseAssetTransformQuery — quality presence', () => {
   const ok = (query: Record<string, unknown>) => {
     const result = parseAssetTransformQuery(query);
     if (!result.ok) throw new Error(`expected ok, got rejection for ${result.error.param}`);
     return result.query;
   };
 
-  it('accepts f=original', () => {
-    expect(ok({ f: 'original' }).format).toBe(ORIGINAL_FORMAT);
+  it('leaves quality undefined when q is absent', () => {
+    expect(ok({}).quality).toBeUndefined();
   });
 
-  it('lists original among the accepted values when rejecting a typo', () => {
-    const result = parseAssetTransformQuery({ f: 'orignal' });
-
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.message).toContain('original');
+  it('carries q through when given', () => {
+    expect(ok({ q: '80' }).quality).toBe(80);
   });
 
-  it('reports qualityExplicit false when q is absent', () => {
-    expect(ok({}).qualityExplicit).toBe(false);
+  it('carries an in-range q at the boundary', () => {
+    expect(ok({ q: '100' })).toMatchObject({ quality: 100 });
   });
 
-  it('reports qualityExplicit true when q is given', () => {
-    expect(ok({ q: '80' }).qualityExplicit).toBe(true);
-  });
-
-  it('reports qualityExplicit true for an in-range q at the boundary', () => {
-    expect(ok({ q: '100' })).toMatchObject({ quality: 100, qualityExplicit: true });
-  });
-
-  it('reports qualityExplicit false for an empty q', () => {
-    expect(ok({ q: '' }).qualityExplicit).toBe(false);
+  it('leaves quality undefined for an empty q', () => {
+    expect(ok({ q: '' }).quality).toBeUndefined();
   });
 });
 
@@ -531,8 +590,8 @@ describe('parseAssetTransformQuery — numeric params are strict', () => {
       expect(ok({ w: '' }).width).toBeUndefined();
     });
 
-    it('falls back to the default quality for an empty q', () => {
-      expect(ok({ q: '' })).toMatchObject({ quality: DEFAULT_QUALITY, qualityExplicit: false });
+    it('leaves quality undefined for an empty q', () => {
+      expect(ok({ q: '' }).quality).toBeUndefined();
     });
   });
 
@@ -614,7 +673,7 @@ describe('parseAssetTransformQuery — numeric params are strict', () => {
 
   describe('leniency that must not change', () => {
     it('still treats an absent param as absent', () => {
-      expect(ok({})).toMatchObject({ width: undefined, height: undefined, quality: DEFAULT_QUALITY });
+      expect(ok({})).toMatchObject({ width: undefined, height: undefined, quality: undefined });
     });
   });
 
