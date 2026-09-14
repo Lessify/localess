@@ -27,12 +27,14 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
 - **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `resolveAssets()` (`functions/src/services/content.service.ts:305`).
-- **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f`/`fit` params). Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG and animated GIF/WebP are passed through unsized. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
+- **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f`/`fit` params). Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG is passed through unsized; animated GIF/WebP are resized with all frames preserved. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
 - **No implicit format conversion** — `f` is the only thing that changes an image format. Without it the stored format is kept, so a no-parameter request never enters Sharp. A resize without `f` re-encodes in the source format. Passing `f=webp` or `f=avif` is the recommended way to cut transfer size.
 - **`q` is not defaulted by the endpoint** — it is **rejected** outside `1–100` rather than clamped, and when omitted nothing is passed to the encoder, so each format applies its own calibrated default: JPEG and WebP 80, AVIF 50, PNG lossless. A quality number is not portable between codecs, which is why one flat value is not imposed on all of them. An explicit `q` always wins.
 - **`fit` param** — `cover` (default) · `contain` · `inside` · `outside` · `fill`. **Ignored unless both `w` and `h` are present**, since Sharp preserves aspect ratio with a single dimension. `contain` pads: transparent for `png`/`webp`/`avif`, opaque white otherwise (a transparent pad would flatten to black on a JPEG).
 - **Invalid `f` or `fit`** — returns `400 invalid-argument` naming the accepted values. An empty value (`?f=`) counts as absent, not invalid. The `400` is sent with `Cache-Control: public, max-age=3600` so a bad URL is served from the CDN instead of re-entering the function; the TTL is deliberately short because the accepted value set can grow with a deploy.
-- **`thumbnail` param** — Only meaningful for animated WebP/GIF (extracts first frame) and video (requires `w`; extracts a frame via FFmpeg). Has no effect on other image types.
+- **`thumbnail` param** — Collapses an animated WebP/GIF to its first frame, and extracts a video frame via FFmpeg (requires `w`). Has no effect on other image types. Since animations now resize with every frame intact, `thumbnail` is how you ask for a *still* rather than how you make resizing work.
+- **EXIF orientation is applied** — Sharp strips the orientation tag on re-encode, so a rotated source is baked into the pixels. Without it a portrait phone photo returned landscape with its aspect ratio transposed.
+- **Embedded colour profiles are carried through** — via `keepIccProfile()`. Sources without one gain nothing; tagging every response as sRGB would add ~506 bytes each.
 - **`/download`** — serves the stored bytes as an `attachment`. Never enters Sharp, and rejects `w`/`h`/`q`/`f`/`fit`/`thumbnail`/`download` with `400` rather than ignoring them. There is no `/original` sibling: the transform route already returns the stored bytes when given no parameters, so an inline passthrough route would be a second URL for identical output.
 - **Removed in v4** — the `?download` flag and `f=original`. Both return `400` with a message naming the replacement route. Responses already cached under the old spellings keep serving for the remainder of their 365-day TTL.
 
@@ -66,9 +68,9 @@ invalidate the CDN. **`inside` is usually what a CMS thumbnail wants** — opt i
 ignored and the untransformed image was returned; it now returns `400 invalid-argument`, matching
 `fit`. A typo in a format no longer fails quietly.
 
-**Special cases that bypass resize entirely:**
+**Special cases:**
 - `image/svg+xml` — always passed through; `w`/`h`/`f` are ignored
-- Animated WebP or GIF **without** `thumbnail` — passed through (Sharp cannot resize animated files)
+- Animated WebP or GIF **without** `thumbnail` — resized with all frames preserved; `f=webp` converts GIF to animated WebP. Rejected with `400` above `MAX_ANIMATED_PIXELS` (12 Mpx total), since resizing decodes every frame at once
 - Animated WebP or GIF **with** `thumbnail` — first frame extracted, then `w`/`h`/`f` apply normally
 
 ---

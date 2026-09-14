@@ -41,6 +41,8 @@ import {
 import {
   applySharpTransforms,
   canonicalTransformSize,
+  isAnimatedPages,
+  MAX_ANIMATED_PIXELS,
   parseAssetTransformQuery,
   resolveOutputFormat,
   sourceEncoderFormat,
@@ -550,27 +552,63 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       if (asset.type === 'image/webp' || asset.type === 'image/gif') {
         // possible animated or single frame webp/gif
         const [file] = await assetFile.download();
-        let sharpFile = sharp(file);
-        const sharpFileMetadata = await sharpFile.metadata();
-        const isAnimated = sharpFileMetadata.pages !== undefined;
+        const probe = await sharp(file).metadata();
+        const isAnimated = isAnimatedPages(probe.pages);
         if (thumbnail) {
+          // An explicit request for a still, so collapse to the first frame whatever the source.
           const thumbnailSuffix = suffix ? `${suffix}-thumbnail` : 'thumbnail';
           filename = `${asset.name}-${thumbnailSuffix}${outputExt}`;
-          if (isAnimated) {
-            sharpFile = sharp(file, { page: 0, pages: 1 });
-          }
-          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format: encodeAs, fit });
+          const sharpFile = applySharpTransforms(sharp(file, { page: 0, pages: 1, autoOrient: true }), {
+            width,
+            height,
+            quality,
+            format: encodeAs,
+            fit,
+          });
           output = await sharpFile.toBuffer();
           overwriteType = outputType;
         } else if (isAnimated) {
-          // TODO: no way to resize animated files
-          filename = `${asset.name}${asset.extension}`;
-          await assetFile.download({ destination: tempFilePath });
+          // Resizing decodes every frame at once, so the budget is the whole animation rather
+          // than one frame — see MAX_ANIMATED_PIXELS. `probe` already carries the page count, so
+          // the guard costs nothing beyond the metadata read that detected the animation.
+          const frameHeight = probe.pageHeight ?? probe.height ?? 0;
+          const decodedPixels = (probe.width ?? 0) * frameHeight * (probe.pages ?? 1);
+          if (decodedPixels > MAX_ANIMATED_PIXELS) {
+            res
+              .status(400)
+              .header('Cache-Control', `public, max-age=${CACHE_BAD_REQUEST_MAX_AGE}, s-maxage=${CACHE_BAD_REQUEST_MAX_AGE}`)
+              .send(
+                new HttpsError(
+                  'invalid-argument',
+                  `Animation is too large to transform: ${probe.width}x${frameHeight} over ${probe.pages} frames is ` +
+                    `${decodedPixels} pixels, above the ${MAX_ANIMATED_PIXELS} limit. Request '?thumbnail' for a still frame.`
+                )
+              );
+            return;
+          }
+          if (suffix) {
+            filename = `${asset.name}-${suffix}${outputExt}`;
+          }
+          const sharpFile = applySharpTransforms(sharp(file, { animated: true, autoOrient: true }), {
+            width,
+            height,
+            quality,
+            format: encodeAs,
+            fit,
+          });
+          output = await sharpFile.toBuffer();
+          overwriteType = outputType;
         } else {
           if (suffix) {
             filename = `${asset.name}-${suffix}${outputExt}`;
           }
-          sharpFile = applySharpTransforms(sharpFile, { width, height, quality, format: encodeAs, fit });
+          const sharpFile = applySharpTransforms(sharp(file, { autoOrient: true }), {
+            width,
+            height,
+            quality,
+            format: encodeAs,
+            fit,
+          });
           output = await sharpFile.toBuffer();
           overwriteType = outputType;
         }
@@ -583,7 +621,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           filename = `${asset.name}-${suffix}${outputExt}`;
         }
         const [file] = await assetFile.download();
-        const pipeline = applySharpTransforms(sharp(file), { width, height, quality, format: encodeAs, fit });
+        const pipeline = applySharpTransforms(sharp(file, { autoOrient: true }), { width, height, quality, format: encodeAs, fit });
         output = await pipeline.toBuffer();
         overwriteType = outputType;
       }
@@ -591,7 +629,13 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       const sharp = await getSharp();
       await assetFile.download({ destination: tempFilePath });
       await extractThumbnail(tempFilePath, `screenshot-${assetId}.webp`);
-      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`), { width, height, quality, format: encodeAs, fit }).toFile(
+      await applySharpTransforms(sharp(`${os.tmpdir()}/screenshot-${assetId}.webp`, { autoOrient: true }), {
+        width,
+        height,
+        quality,
+        format: encodeAs,
+        fit,
+      }).toFile(
         tempFilePath
       );
       overwriteType = format ? formatMimeMap[format] : 'image/webp';

@@ -4,8 +4,10 @@ import { describe, expect, it } from 'vitest';
 import {
   applySharpTransforms,
   canonicalTransformSize,
+  isAnimatedPages,
   isImageFit,
   isImageFormat,
+  MAX_ANIMATED_PIXELS,
   MAX_OUTPUT_DIMENSION,
   parseAssetTransformQuery,
   resolveOutputFormat,
@@ -797,5 +799,186 @@ describe('canonicalTransformSize', () => {
     it('leaves height alone when only the source width is known', () => {
       expect(canonicalTransformSize({ height: 5000 }, { width: 400 })).toEqual({ width: undefined, height: 5000 });
     });
+  });
+});
+
+describe('isAnimatedPages', () => {
+  // The regression this guards: a **static GIF reports `pages: 1`**, and the old test was
+  // `pages !== undefined`, so every still GIF was treated as animated and passed through
+  // untransformed — `?w=400` on one silently did nothing. Only a static WebP reports undefined.
+  it('treats an absent page count as a still image', () => {
+    expect(isAnimatedPages(undefined)).toBe(false);
+  });
+
+  it('treats a single page as a still image, not an animation', () => {
+    expect(isAnimatedPages(1)).toBe(false);
+  });
+
+  it.each([[2], [6], [24], [120]])('treats %i pages as an animation', pages => {
+    expect(isAnimatedPages(pages)).toBe(true);
+  });
+});
+
+describe('applySharpTransforms — colour profile', () => {
+  /** sRGB input carrying an embedded profile. */
+  async function tagged(): Promise<Buffer> {
+    return sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 200, g: 120, b: 60 } } })
+      .withIccProfile('p3')
+      .png()
+      .toBuffer();
+  }
+
+  it('carries a source profile through a transform instead of dropping it', async () => {
+    const out = await applySharpTransforms(sharp(await tagged()), { width: 16, format: 'png' }).toBuffer();
+
+    expect((await sharp(out).metadata()).icc).toBeDefined();
+  });
+
+  it('adds no profile, and no bytes, to a source that never had one', async () => {
+    // `withIccProfile('srgb')` would tag every response at a measured +506 bytes each. Keeping
+    // rather than converting is what makes an untagged source cost nothing.
+    const untagged = sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 200, g: 120, b: 60 } } }).png();
+    const out = await applySharpTransforms(untagged, { width: 16, format: 'png' }).toBuffer();
+
+    expect((await sharp(out).metadata()).icc).toBeUndefined();
+  });
+});
+
+describe('applySharpTransforms — png quality is opt-in', () => {
+  /** Screenshot-like: flat bands with edges, which is what PNG actually carries in a CMS. */
+  function screenshot(): sharp.Sharp {
+    const width = 400;
+    const height = 300;
+    const raw = Buffer.alloc(width * height * 3);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 3;
+        const band = Math.floor(y / 30) % 4;
+        const colour = [
+          [250, 250, 252],
+          [230, 235, 245],
+          [40, 44, 52],
+          [90, 140, 220],
+        ][band];
+        const edge = x % 97 < 2 ? -40 : 0;
+        raw[i] = Math.max(0, colour[0] + edge);
+        raw[i + 1] = Math.max(0, colour[1] + edge);
+        raw[i + 2] = Math.max(0, colour[2] + edge);
+      }
+    }
+    return sharp(raw, { raw: { width, height, channels: 3 } });
+  }
+
+  const size = async (opts: Parameters<typeof applySharpTransforms>[1]) => (await applySharpTransforms(screenshot(), opts).toBuffer()).length;
+
+  it('stays lossless without an explicit quality', async () => {
+    const out = await applySharpTransforms(screenshot(), { format: 'png' }).toBuffer();
+    const { paletteBitDepth } = await sharp(out).metadata();
+
+    // A quantised PNG reports a palette bit depth; a lossless one does not.
+    expect(paletteBitDepth).toBeUndefined();
+  });
+
+  it('quantises to a palette when a quality is given, cutting size substantially', async () => {
+    const lossless = await size({ format: 'png' });
+    const quantised = await size({ format: 'png', quality: 60 });
+
+    expect(quantised).toBeLessThan(lossless);
+  });
+});
+
+describe('MAX_ANIMATED_PIXELS', () => {
+  // Resizing an animation decodes every frame at once, so the budget is the whole animation
+  // rather than one frame. The API runs at 1GiB with concurrency 20, so one oversized request
+  // does not merely fail itself — it takes the container down for the other nineteen tenants.
+  const decoded = (width: number, frameHeight: number, pages: number) => width * frameHeight * pages;
+
+  it('clears a typical short clip', () => {
+    expect(decoded(480, 270, 24)).toBeLessThan(MAX_ANIMATED_PIXELS);
+  });
+
+  it('clears a long clip at modest dimensions', () => {
+    expect(decoded(480, 270, 90)).toBeLessThan(MAX_ANIMATED_PIXELS);
+  });
+
+  it('refuses an animation that would exhaust the instance', () => {
+    expect(decoded(1000, 1000, 100)).toBeGreaterThan(MAX_ANIMATED_PIXELS);
+  });
+
+  it('stays well inside the 1GiB instance budget at 4 bytes per pixel', () => {
+    expect(MAX_ANIMATED_PIXELS * 4).toBeLessThan(64 * 1024 * 1024);
+  });
+});
+
+describe('applySharpTransforms — animations survive a resize', () => {
+  /** A genuinely multi-frame GIF; frames must differ or the encoder collapses them to one. */
+  async function animatedGif(frames: number, width = 120, height = 90): Promise<Buffer> {
+    const raw = Buffer.alloc(width * height * frames * 3);
+    for (let f = 0; f < frames; f++) {
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = (f * height + y) * width * 3 + x * 3;
+          raw[i] = (x * 2 + f * 40) % 255;
+          raw[i + 1] = (y * 2 + f * 20) % 255;
+          raw[i + 2] = (f * 40) % 255;
+        }
+      }
+    }
+    return sharp(raw, { raw: { width, height: height * frames, channels: 3, pageHeight: height } })
+      .gif()
+      .toBuffer();
+  }
+
+  it('keeps every frame when resizing, rather than passing the animation through', async () => {
+    const gif = await animatedGif(6);
+    const out = await applySharpTransforms(sharp(gif, { animated: true }), { width: 60, format: undefined }).toBuffer();
+    const meta = await sharp(out, { animated: true }).metadata();
+
+    expect(meta.pages).toBe(6);
+    expect(meta.width).toBe(60);
+  });
+
+  it('converts an animation to webp on request, keeping every frame', async () => {
+    const gif = await animatedGif(6);
+    const out = await applySharpTransforms(sharp(gif, { animated: true }), { width: 60, format: 'webp' }).toBuffer();
+    const meta = await sharp(out, { animated: true }).metadata();
+
+    expect(meta.format).toBe('webp');
+    expect(meta.pages).toBe(6);
+  });
+
+  it('produces a smaller file than the untransformed source, which is the whole point', async () => {
+    const gif = await animatedGif(6, 240, 180);
+    const out = await applySharpTransforms(sharp(gif, { animated: true }), { width: 120, format: 'webp' }).toBuffer();
+
+    expect(out.length).toBeLessThan(gif.length);
+  });
+});
+
+describe('EXIF orientation is baked in, not discarded', () => {
+  /** A 200x100 JPEG tagged Orientation=6, i.e. one that renders as 100x200. */
+  async function rotatedPortrait(): Promise<Buffer> {
+    return sharp({ create: { width: 200, height: 100, channels: 3, background: { r: 200, g: 50, b: 50 } } })
+      .withMetadata({ orientation: 6 })
+      .jpeg()
+      .toBuffer();
+  }
+
+  it('honours the orientation tag, so a portrait photo stays portrait', async () => {
+    const out = await applySharpTransforms(sharp(await rotatedPortrait(), { autoOrient: true }), { width: 50 }).toBuffer();
+    const { width, height } = await sharp(out).metadata();
+
+    expect({ width, height }).toEqual({ width: 50, height: 100 });
+  });
+
+  it('would otherwise produce a landscape image from a portrait source', async () => {
+    // Pins why `autoOrient` is required rather than optional: sharp strips the orientation tag on
+    // re-encode, so without it the client has nothing left to correct with, and the **aspect ratio
+    // itself** is transposed — the surrounding layout breaks, not just the rotation.
+    const out = await applySharpTransforms(sharp(await rotatedPortrait()), { width: 50 }).toBuffer();
+    const { width, height, orientation } = await sharp(out).metadata();
+
+    expect({ width, height }).toEqual({ width: 50, height: 25 });
+    expect(orientation).toBeUndefined();
   });
 });

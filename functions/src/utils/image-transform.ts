@@ -105,18 +105,62 @@ export function applySharpTransforms(
   // larger than sharp's default and bigger than the equivalent WebP, which made `?f=avif`
   // the worst format to ask for rather than the best. Per-encoder calibration is the
   // encoder author's job; an explicit `?q=` is the caller's and always wins.
-  const q = opts.quality === undefined ? {} : { quality: opts.quality };
+  const quality = opts.quality;
+  const q = quality === undefined ? {} : { quality };
+
+  // Carry the source colour profile through when there is one. sharp drops it otherwise, and an
+  // untagged wide-gamut image is interpreted as sRGB by the renderer, which shifts its colours.
+  //
+  // `keepIccProfile()` rather than `withIccProfile('srgb')` deliberately. Converting would tag
+  // *every* response, including the overwhelming majority that never carried a profile, at a
+  // measured **+506 bytes each** — on a 5 KB thumbnail that is a 10% tax to declare a colour
+  // space the renderer already assumes. Keeping costs zero bytes for untagged sources and is
+  // strictly less lossy for tagged ones.
+  pipeline = pipeline.keepIccProfile();
+
   if (opts.format === 'jpeg') {
     pipeline = pipeline.jpeg(q);
   } else if (opts.format === 'webp') {
     pipeline = pipeline.webp(q);
   } else if (opts.format === 'png') {
-    // PNG ignores `quality` unless `palette` is set, so there is nothing to pass through.
-    pipeline = pipeline.png();
+    // PNG's `quality` only does anything alongside `palette`, which quantises to an 8-bit palette
+    // — lossy, and visibly banding on a photograph stored as PNG. So it is opt-in via an explicit
+    // `?q=`: a bare `?f=png` stays lossless, `?f=png&q=60` quantises. Measured at roughly a third
+    // of the lossless size on screenshot-like content, which is what PNG usually carries here.
+    pipeline = quality === undefined ? pipeline.png() : pipeline.png({ palette: true, quality });
   } else if (opts.format === 'avif') {
     pipeline = pipeline.avif(q);
   }
   return pipeline;
+}
+
+/**
+ * Largest decoded animation this endpoint will resize, in pixels across every frame.
+ *
+ * Resizing an animation decodes **all** frames at once, so the memory cost is
+ * `width * pageHeight * pages`, not the single-frame cost {@link MAX_OUTPUT_DIMENSION} bounds.
+ * `functions/src/v1.ts` runs the API at `memory: '1GiB'` with `concurrency: 20`, so one request
+ * that decodes 400 MB does not merely fail itself — it takes the container down for the other
+ * nineteen tenants.
+ *
+ * 12 megapixels is roughly 48 MB of RGBA, and sharp needs working space on top of that. It clears
+ * the common cases comfortably — a 480x270 clip stays under the cap until about 90 frames — while
+ * refusing the 1000x1000x100 uploads that would exhaust the instance. **Tune this against real
+ * assets**; it is a conservative starting point, not a measured optimum.
+ */
+export const MAX_ANIMATED_PIXELS = 12_000_000;
+
+/**
+ * Whether sharp's reported page count means a genuine animation.
+ *
+ * Not `pages !== undefined`, which is what this used to be and is wrong: a **static GIF reports
+ * `pages: 1`**, so every still GIF was treated as animated and passed through untransformed —
+ * `?w=400` on one silently did nothing. Only a static WebP reports `undefined`.
+ * @param {number} [pages] `pages` from sharp metadata
+ * @return {boolean} true when the image has more than one frame
+ */
+export function isAnimatedPages(pages?: number): boolean {
+  return (pages ?? 1) > 1;
 }
 
 /**
