@@ -25,7 +25,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
     AssetMetadata: {
       type: 'object',
       description: 'Resolved Asset metadata returned when resolveAsset=true.',
-      required: ['id', 'name', 'extension', 'type'],
+      required: ['id', 'name', 'extension', 'type', 'size'],
       properties: {
         id: {
           type: 'string',
@@ -52,6 +52,26 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
           description: 'Alternative text for the Asset.',
           example: 'A hero image',
         },
+        width: {
+          type: 'integer',
+          description: 'Rendered width in pixels, with EXIF orientation already applied.',
+          example: 1600,
+        },
+        height: {
+          type: 'integer',
+          description: 'Rendered height in pixels, with EXIF orientation already applied.',
+          example: 1200,
+        },
+        size: {
+          type: 'integer',
+          description: 'File size in bytes.',
+          example: 284718,
+        },
+        duration: {
+          type: 'integer',
+          description: 'Playback length in whole seconds, for video and animated images.',
+          example: 65,
+        },
       },
       example: {
         id: 'WLWc4vOACzG1QjK9AEo9',
@@ -59,6 +79,9 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
         extension: '.jpg',
         type: 'image/jpeg',
         alt: 'A hero image',
+        width: 1600,
+        height: 1200,
+        size: 284718,
       },
     },
     ContentAsset: {

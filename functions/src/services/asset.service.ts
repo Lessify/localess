@@ -5,6 +5,8 @@ import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFileMetadata, Asse
 import fs from 'fs';
 import os from 'os';
 import { getExiftool, getFfmpeg } from '../utils/lazy-modules';
+import { resolveOrientedDimensions } from '../utils/image-orientation';
+import { normaliseDuration } from '../utils/media-duration';
 
 /**
  * find Content by Full Slug
@@ -137,27 +139,28 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
     const exiftool = await getExiftool();
     if (asset.type.startsWith('image/')) {
       // Image
-      const { Duration, FileTypeExtension, ImageWidth, ImageHeight } = await exiftool.read(tempFilePath);
+      const { Duration, FileTypeExtension, ImageWidth, ImageHeight, Orientation } = await exiftool.read(tempFilePath);
       update.metadata = {
         type: 'image',
       };
       if (FileTypeExtension) {
         update.metadata.format = FileTypeExtension;
       }
-      if (Duration) {
-        update.metadata.duration = Duration;
+      // Normalised rather than assigned raw. This branch used to store exiftool's value straight
+      // through while the video branch below parsed it, so an animated GIF could hold a clock
+      // string where a video beside it held seconds.
+      const imageDuration = normaliseDuration(Duration);
+      if (imageDuration !== undefined) {
+        update.metadata.duration = imageDuration;
       }
-      // calculate orientation
-      if (ImageWidth && ImageHeight) {
-        update.metadata.height = ImageHeight;
-        update.metadata.width = ImageWidth;
-        if (ImageWidth > ImageHeight) {
-          update.metadata.orientation = 'landscape';
-        } else if (ImageHeight > ImageWidth) {
-          update.metadata.orientation = 'portrait';
-        } else {
-          update.metadata.orientation = 'squarish';
-        }
+      // exiftool reports the *stored* dimensions and the orientation tag separately, so these have
+      // to be combined — reading the dimensions alone recorded a rotated portrait photo as
+      // landscape, and transposed the width/height that `canonicalTransformSize` relies on.
+      const { width, height, orientation } = resolveOrientedDimensions(ImageWidth, ImageHeight, Orientation);
+      if (width !== undefined && height !== undefined) {
+        update.metadata.width = width;
+        update.metadata.height = height;
+        update.metadata.orientation = orientation;
       }
     } else if (asset.type.startsWith('video/')) {
       // Video
@@ -169,21 +172,11 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
       if (FileTypeExtension) {
         update.metadata.format = FileTypeExtension;
       }
-      if (Duration) {
-        if (typeof Duration === 'number') {
-          update.metadata.duration = Number.parseInt(Duration.toString());
-        } else if (typeof Duration === 'string') {
-          // WebM Format Duration: '00:01:05.161000000'
-          const strDuration = Duration as string;
-          const ftr = [3600, 60, 1];
-          const durationSplit = strDuration.split(':');
-          if (durationSplit.length === 3) {
-            update.metadata.duration = 0;
-            for (let idx = 0; idx < durationSplit.length; idx++) {
-              update.metadata.duration += Number.parseInt(durationSplit[idx]) * ftr[idx];
-            }
-          }
-        }
+      // Handles both the clock form exiftool reports for WebM ('00:01:05.161000000') and the plain
+      // number other containers give, so image and video agree on what `duration` means.
+      const videoDuration = normaliseDuration(Duration);
+      if (videoDuration !== undefined) {
+        update.metadata.duration = videoDuration;
       }
       // calculate orientation
       if (ImageWidth && ImageHeight) {

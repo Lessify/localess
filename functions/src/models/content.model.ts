@@ -111,6 +111,29 @@ export interface AssetMetadata {
   extension: string;
   type: string;
   alt?: string;
+  /**
+   * Rendered width in pixels, with EXIF orientation already applied.
+   *
+   * Carried so a consumer can reserve the right layout box before the image loads, rather than
+   * paying a request to find out how big it is.
+   */
+  width?: number;
+  /** Rendered height in pixels, with EXIF orientation already applied. */
+  height?: number;
+  /**
+   * File size in bytes.
+   *
+   * The one thing a consumer cannot derive from anything else here, and the field a download
+   * affordance needs — "Brochure, PDF, 2.4 MB" — now that `/download` is its own route.
+   */
+  size: number;
+  /**
+   * Playback length in whole seconds, for video and animated images.
+   *
+   * Normalised on read as well as on write: documents written before that inconsistency was fixed
+   * may hold a clock string, and this contract promises a number.
+   */
+  duration?: number;
 }
 
 export interface ContentAsset {

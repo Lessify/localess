@@ -344,9 +344,36 @@ export async function resolveAssets(spaceId: string, content: ContentDocumentSto
       name: asset.name,
       extension: asset.extension,
       type: asset.type,
+      size: asset.size,
     };
     if (asset.alt) {
       contentAsset.alt = asset.alt;
+    }
+    // Everything below is already on the document this read returned, so exposing it costs nothing
+    // extra — no Storage call, no second read. Dimensions let a consumer reserve the layout box
+    // before the image loads; duration lets a video card render "3:42" without fetching the file.
+    //
+    // Deliberately *not* forwarded: `orientation` (one line from width and height, and duplicated
+    // state that can disagree), `format` (duplicates `extension` and `type`), `metadata.type`
+    // (duplicates the MIME prefix, and this object already has a `type`), and `source` (an internal,
+    // sometimes private URL with no consumer value).
+    const metadata = asset.metadata;
+    if (metadata) {
+      if (metadata.width !== undefined) {
+        contentAsset.width = metadata.width;
+      }
+      if (metadata.height !== undefined) {
+        contentAsset.height = metadata.height;
+      }
+      // Passed straight through: `duration` is normalised once, where metadata is generated, so
+      // the stored value is already whole seconds. The `in` check is for the oldest variant of
+      // `AssetFileMetadata`, which predates the field entirely, and the `typeof` check is **not**
+      // redundant despite the type — documents written before normalisation was unified may still
+      // hold a clock string, and emitting one would break the `number` this API promises. The
+      // space's regenerate-metadata task rewrites them; until it runs, they are omitted.
+      if ('duration' in metadata && typeof metadata.duration === 'number') {
+        contentAsset.duration = metadata.duration;
+      }
     }
     resolvedAssets[assetId] = contentAsset;
   });
