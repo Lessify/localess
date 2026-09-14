@@ -79,7 +79,7 @@ These apply to the transform route only.
 |-------|------|-------------|
 | `w` | integer 1–8192 | Target width in pixels. Above the source width, **redirects** to the source width. Outside 1–8192 is rejected with `400`. |
 | `h` | integer 1–8192 | Target height in pixels. Above the source height, **redirects** to the source height. Outside 1–8192 is rejected with `400`. |
-| `q` | integer 1–100 | Output quality. When omitted, each encoder applies its own default (JPEG/WebP 80, AVIF 50) and PNG stays lossless. On PNG an explicit `q` enables palette quantisation — lossy, roughly a third of the lossless size on screenshots. Outside 1–100 is rejected with `400`. |
+| `q` | integer 1–100 | Output quality. When omitted, each encoder applies its own default (JPEG/WebP 80, AVIF 50) and PNG stays lossless. JPEG is encoded with **mozjpeg**, which is ~20% smaller at the same quality value. On PNG an explicit `q` enables palette quantisation — lossy, roughly a third of the lossless size on screenshots. Outside 1–100 is rejected with `400`. |
 | `f` | string | Output format: `webp`, `jpeg`, `png`, or `avif`. **No implicit conversion** — omit it and the stored format is kept, though the image is still re-encoded at that format default quality. Passing it is the recommended way to cut transfer size. `f=original` was removed in v4 — use `/original`. |
 | `fit` | string | How the image is fitted when **both** `w` and `h` are given: `cover` (default), `contain`, `inside`, `outside`, `fill`. Ignored with a single dimension. An unrecognised value is rejected with `400`. |
 | `thumbnail` | (flag) | For animated WebP/GIF: extracts the first frame before resizing. For video: extracts a frame with FFmpeg, then resizes with Sharp. |

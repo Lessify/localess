@@ -119,7 +119,13 @@ export function applySharpTransforms(
   pipeline = pipeline.keepIccProfile();
 
   if (opts.format === 'jpeg') {
-    pipeline = pipeline.jpeg(q);
+    // mozjpeg's encoder settings — trellis quantisation, overshoot deringing, optimised scans —
+    // produce a measurably smaller file at the *same* quality value, so this costs no fidelity.
+    // It is not sharp's default because it is slower: roughly 5x the encode time on a 1200x900
+    // source, ~19ms to ~108ms. That trade is worth taking here because encoding happens once per
+    // URL per cache miss under a 365-day TTL, while the saved bytes are paid for on every hit —
+    // and since a bare request re-encodes, this applies to essentially all JPEG traffic.
+    pipeline = pipeline.jpeg({ ...q, mozjpeg: true });
   } else if (opts.format === 'webp') {
     pipeline = pipeline.webp(q);
   } else if (opts.format === 'png') {

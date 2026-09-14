@@ -1030,3 +1030,46 @@ describe('buildAssetETag distinguishes a normalised rendition from the stored by
     expect(buildAssetETag(MD5, 'fjpeg', false)).toBe(buildAssetETag(MD5, 'fjpeg', false));
   });
 });
+
+describe('applySharpTransforms — jpeg uses the mozjpeg encoder', () => {
+  /** Gradient plus noise, which compresses like a photograph rather than a flat fill. */
+  function photo(): sharp.Sharp {
+    const width = 600;
+    const height = 450;
+    const raw = Buffer.alloc(width * height * 3);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 3;
+        const noise = Math.round(Math.sin(x * 0.05) * Math.cos(y * 0.07) * 30);
+        raw[i] = Math.max(0, Math.min(255, Math.round((x * 255) / width) + noise));
+        raw[i + 1] = Math.max(0, Math.min(255, Math.round((y * 255) / height) + noise));
+        raw[i + 2] = (x * y) % 255;
+      }
+    }
+    return sharp(raw, { raw: { width, height, channels: 3 } });
+  }
+
+  it('produces a smaller file than the stock encoder at the same quality', async () => {
+    const stock = (await photo().jpeg({ quality: 80 }).toBuffer()).length;
+    const ours = (await applySharpTransforms(photo(), { format: 'jpeg', quality: 80 }).toBuffer()).length;
+
+    // Same quality value, fewer bytes — mozjpeg changes the encoder settings, not the fidelity
+    // target. Measured around 20% on this source; asserted loosely so a libjpeg-turbo upgrade
+    // that narrows the gap does not fail the suite.
+    expect(ours).toBeLessThan(stock);
+  });
+
+  it('still honours an explicit quality', async () => {
+    const low = (await applySharpTransforms(photo(), { format: 'jpeg', quality: 30 }).toBuffer()).length;
+    const high = (await applySharpTransforms(photo(), { format: 'jpeg', quality: 90 }).toBuffer()).length;
+
+    expect(low).toBeLessThan(high);
+  });
+
+  it('still applies when quality is left to the encoder default', async () => {
+    const stock = (await photo().jpeg().toBuffer()).length;
+    const ours = (await applySharpTransforms(photo(), { format: 'jpeg' }).toBuffer()).length;
+
+    expect(ours).toBeLessThan(stock);
+  });
+});
