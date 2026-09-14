@@ -162,18 +162,35 @@ For the stored file untouched, use `/original`.
 > An earlier revision defaulted `image/jpeg` to WebP. It was removed before release: converting a
 > format is the developer's call. Normalising *quality* is not the same thing, and is applied.
 
-**Passing `f` is the recommended way to cut transfer size**, and it is worth doing:
-
 | Request | Returns |
 |---------|---------|
-| `?f=webp` | WebP — typically 25–35% smaller than the equivalent JPEG |
-| `?f=avif` | AVIF — usually smaller again, at some encode cost |
+| `?f=avif` | AVIF — consistently the smallest, at roughly 2.5× the encode time |
+| `?f=webp` | WebP — usually smaller than JPEG, but **content-dependent**; see below |
 | `?f=jpeg` | JPEG, for clients that cannot render WebP — Outlook and some email clients, Safari below 14, a few link/OG crawlers |
-| *(no `f`)* | The stored bytes, **byte-for-byte**, `inline` |
+| `/original` | The stored bytes, **byte-for-byte**, `inline` |
 | `/download` | The stored bytes, **byte-for-byte**, as an attachment |
 
 A resize without `f` re-encodes in the **source** format — `?w=200` on a JPEG returns a 200 px
 JPEG. The size changes; the format does not.
+
+### How much do the formats actually save?
+
+Less predictably than the usual "WebP is 25–35% smaller than JPEG" figure suggests — and less so
+again now that JPEG output uses mozjpeg, which narrows the gap. Measured against mozjpeg JPEG at
+the same default quality, on two 1600×1200 sources chosen to bracket the range:
+
+| Source content | `?f=webp` | `?f=avif` |
+|---|---|---|
+| Smooth, photo-like gradients | −20% | −63% |
+| Fine grain / sensor noise | **+84%** | −37% |
+
+**AVIF is smaller on both. WebP is not a safe default** — on grainy content it produced a file
+substantially *larger* than the mozjpeg JPEG it would replace, and film grain, sensor noise and
+textured photography are ordinary CMS uploads.
+
+These are synthetic fixtures picked to show the spread, not a survey of real assets. **Measure
+against your own library** before standardising on a format, particularly before building a
+`<picture>` ladder that assumes WebP always wins.
 
 ### Quality (`q`) — the encoder's default, not ours
 
