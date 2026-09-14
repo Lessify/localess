@@ -4,9 +4,11 @@ import { bucket, firestoreService } from '../config';
 import { Asset, AssetExport, AssetFile, AssetFileExport, AssetFileMetadata, AssetFolderExport, AssetKind } from '../models';
 import fs from 'fs';
 import os from 'os';
-import { getExiftool, getFfmpeg } from '../utils/lazy-modules';
-import { resolveOrientedDimensions } from '../utils/image-orientation';
+import { getExiftool, getFfmpeg, getSharp } from '../utils/lazy-modules';
+import { resolveOrientedDimensions, resolveRotatedDimensions } from '../utils/media-orientation';
 import { normaliseDuration } from '../utils/media-duration';
+import { pickEmbeddedAlt } from '../utils/embedded-alt';
+import { isAnimatedPages } from '../utils/image-transform';
 
 /**
  * find Content by Full Slug
@@ -139,10 +141,18 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
     const exiftool = await getExiftool();
     if (asset.type.startsWith('image/')) {
       // Image
-      const { Duration, FileTypeExtension, ImageWidth, ImageHeight, Orientation } = await exiftool.read(tempFilePath);
+      const tags = await exiftool.read(tempFilePath);
+      const { Duration, FileTypeExtension, ImageWidth, ImageHeight, Orientation } = tags;
       update.metadata = {
         type: 'image',
       };
+      // Alt text is the field editors skip most, and it is an accessibility requirement rather
+      // than a nicety. Anything from a stock library, a press wire or a photographer's export
+      // already carries a caption, so an empty field gets a reasonable default. Never overwrites.
+      const embeddedAlt = pickEmbeddedAlt(tags as Record<string, unknown>, asset.alt);
+      if (embeddedAlt) {
+        update.alt = embeddedAlt;
+      }
       if (FileTypeExtension) {
         update.metadata.format = FileTypeExtension;
       }
@@ -162,10 +172,28 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
         update.metadata.height = height;
         update.metadata.orientation = orientation;
       }
+      // sharp rather than exiftool for these two. `pages` is what lets the transform route reject
+      // an oversized animation *before* downloading it, instead of downloading and probing to find
+      // out. Header-only read, so it costs little — and it must not cost the asset its exiftool
+      // data if sharp cannot parse the format.
+      try {
+        const sharp = await getSharp();
+        const { pages, hasAlpha } = await sharp(tempFilePath).metadata();
+        // Only a genuine animation is recorded: a static GIF reports `pages: 1` while a static
+        // WebP reports nothing, so storing the raw value would make "has pages" meaningless.
+        if (isAnimatedPages(pages)) {
+          update.metadata.pages = pages;
+        }
+        if (hasAlpha !== undefined) {
+          update.metadata.hasAlpha = hasAlpha;
+        }
+      } catch (e) {
+        logger.warn(`[updateMetadataByRef] sharp could not read ${assetRef.path}`, e);
+      }
     } else if (asset.type.startsWith('video/')) {
       // Video
       const metadata = await exiftool.read(tempFilePath);
-      const { FileTypeExtension, Duration, ImageWidth, ImageHeight } = metadata;
+      const { FileTypeExtension, Duration, ImageWidth, ImageHeight, Rotation } = metadata;
       update.metadata = {
         type: 'video',
       };
@@ -178,17 +206,14 @@ export async function updateMetadataByRef(assetRef: DocumentReference): Promise<
       if (videoDuration !== undefined) {
         update.metadata.duration = videoDuration;
       }
-      // calculate orientation
-      if (ImageWidth && ImageHeight) {
-        update.metadata.height = ImageHeight;
-        update.metadata.width = ImageWidth;
-        if (ImageWidth > ImageHeight) {
-          update.metadata.orientation = 'landscape';
-        } else if (ImageHeight > ImageWidth) {
-          update.metadata.orientation = 'portrait';
-        } else {
-          update.metadata.orientation = 'squarish';
-        }
+      // A portrait phone video stores landscape dimensions and a rotation of 90, exactly as a
+      // rotated photo stores landscape dimensions and an EXIF orientation tag. Reading the
+      // dimensions without the rotation recorded it as landscape and transposed width/height.
+      const rotated = resolveRotatedDimensions(ImageWidth, ImageHeight, Rotation);
+      if (rotated.width !== undefined && rotated.height !== undefined) {
+        update.metadata.width = rotated.width;
+        update.metadata.height = rotated.height;
+        update.metadata.orientation = rotated.orientation;
       }
     }
   } else {

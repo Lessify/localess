@@ -74,14 +74,14 @@ interface StoredAsset {
   type: string;
   extension: string;
   /** Omitted to simulate an asset whose dimensions were never recorded. */
-  metadata?: { width: number; height: number };
+  metadata?: { width?: number; height?: number; pages?: number; type?: string };
   /** Simulates an upload still in flight: the Firestore doc exists, the object does not. */
   storageMissing?: boolean;
   /** Simulates a deleted asset still referenced by published content. */
   documentMissing?: boolean;
 }
 
-function given(asset: StoredAsset): void {
+function given(asset: StoredAsset): { download: ReturnType<typeof vi.fn> } {
   const file = {
     getMetadata: asset.storageMissing ? vi.fn().mockRejectedValue(new Error('not found')) : vi.fn().mockResolvedValue([{ md5Hash: MD5 }]),
     download: vi.fn().mockImplementation(async (options?: { destination: string }) => {
@@ -99,6 +99,7 @@ function given(asset: StoredAsset): void {
       data: () => ({ name: 'photo', extension: asset.extension, type: asset.type, metadata: asset.metadata }),
     }),
   } as never);
+  return file;
 }
 
 function app(): Express {
@@ -269,5 +270,47 @@ describe('asset routes — parameters removed in v4', () => {
 
     expect(res.status).toBe(400);
     expect(res.headers['cache-control']).toContain('max-age=3600');
+  });
+});
+
+describe('asset routes — the animation budget is enforced before the download', () => {
+  it('rejects an oversized animation off stored metadata, without fetching the file', async () => {
+    // 2000 x 2000 across 100 frames is 400 million pixels, far above MAX_ANIMATED_PIXELS.
+    const file = given({
+      bytes: await animatedGifFixture(4),
+      type: 'image/gif',
+      extension: '.gif',
+      metadata: { type: 'image', width: 2000, height: 2000, pages: 100 },
+    });
+
+    const res = await request(app()).get(`${URL}?w=200`);
+
+    expect(res.status).toBe(400);
+    expect(res.text).toContain('too large');
+    // The whole point of storing `pages`: no download happens at all.
+    expect(file.download).not.toHaveBeenCalled();
+  });
+
+  it('still serves a thumbnail of an oversized animation, which decodes one frame', async () => {
+    given({
+      bytes: await animatedGifFixture(4),
+      type: 'image/gif',
+      extension: '.gif',
+      metadata: { type: 'image', width: 2000, height: 2000, pages: 100 },
+    });
+
+    const res = await request(app()).get(`${URL}?w=40&thumbnail`);
+
+    expect(res.status).toBe(200);
+  });
+
+  it('falls through to the post-download check when metadata predates the pages field', async () => {
+    const gif = await animatedGifFixture(4);
+    given({ bytes: gif, type: 'image/gif', extension: '.gif' });
+
+    const res = await request(app()).get(`${URL}?w=40`);
+
+    // Small enough to pass either way — what this pins is that a missing `pages` does not reject.
+    expect(res.status).toBe(200);
   });
 });

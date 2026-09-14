@@ -157,6 +157,22 @@ export function applySharpTransforms(
 export const MAX_ANIMATED_PIXELS = 12_000_000;
 
 /**
+ * Total pixels sharp has to hold to resize an animation — every frame at once.
+ *
+ * Shared by the two places that enforce {@link MAX_ANIMATED_PIXELS}: the cheap check against
+ * stored metadata, which runs *before* the file is downloaded, and the authoritative one against
+ * the decoded header afterwards. Keeping the arithmetic in one place is what stops the two
+ * drifting into disagreeing about which animations are allowed.
+ * @param {number} [width] Frame width
+ * @param {number} [frameHeight] Height of a single frame, not the whole strip
+ * @param {number} [pages] Frame count
+ * @return {number} pixels across every frame, or 0 when any input is unknown
+ */
+export function decodedAnimationPixels(width?: number, frameHeight?: number, pages?: number): number {
+  return (width ?? 0) * (frameHeight ?? 0) * (pages ?? 0);
+}
+
+/**
  * Whether sharp's reported page count means a genuine animation.
  *
  * Not `pages !== undefined`, which is what this used to be and is wrong: a **static GIF reports

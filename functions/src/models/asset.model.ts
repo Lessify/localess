@@ -55,6 +55,17 @@ export type AssetFileMetadata =
        * space's regenerate-metadata task rewrites them.
        */
       duration?: number;
+      /**
+       * Frame count, recorded only for genuine animations.
+       *
+       * A static GIF reports one page and a static WebP reports none, so storing the raw value
+       * would make the field's presence meaningless. Held on the document so the transform route
+       * can reject an oversized animation *before* downloading it, rather than downloading and
+       * probing to find out.
+       */
+      pages?: number;
+      /** Whether the image carries an alpha channel, so a consumer knows a background matters. */
+      hasAlpha?: boolean;
     }
   | {
       type: 'video';

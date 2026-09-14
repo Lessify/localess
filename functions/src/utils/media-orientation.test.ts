@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveOrientedDimensions } from './image-orientation';
+import { resolveOrientedDimensions, resolveRotatedDimensions } from './media-orientation';
 
 describe('resolveOrientedDimensions', () => {
   describe('orientations that rotate a quarter turn transpose the axes', () => {
@@ -63,6 +63,46 @@ describe('resolveOrientedDimensions', () => {
       [undefined, undefined],
     ])('returns nothing when width is %s and height is %s', (width, height) => {
       expect(resolveOrientedDimensions(width, height, 6)).toEqual({});
+    });
+  });
+});
+
+describe('resolveRotatedDimensions', () => {
+  describe('a quarter turn transposes the axes', () => {
+    // The video equivalent of the EXIF bug: a portrait phone video stores landscape dimensions
+    // and a rotation of 90, and the video branch never read the rotation at all.
+    it.each([[90], [270], [-90], [450]])('swaps width and height for %i degrees', rotation => {
+      expect(resolveRotatedDimensions(1920, 1080, rotation)).toEqual({
+        width: 1080,
+        height: 1920,
+        orientation: 'portrait',
+      });
+    });
+  });
+
+  describe('a half turn or none leaves the axes alone', () => {
+    it.each([[0], [180], [360], [-180]])('keeps width and height for %i degrees', rotation => {
+      expect(resolveRotatedDimensions(1920, 1080, rotation)).toEqual({
+        width: 1920,
+        height: 1080,
+        orientation: 'landscape',
+      });
+    });
+
+    it('keeps them when no rotation is reported', () => {
+      expect(resolveRotatedDimensions(1920, 1080, undefined)).toMatchObject({ width: 1920, height: 1080 });
+    });
+  });
+
+  describe('an unreadable rotation is treated as none rather than guessed at', () => {
+    it.each([['90'], ['abc'], [null], [{}], [Number.NaN]])('ignores %s', value => {
+      expect(resolveRotatedDimensions(1920, 1080, value)).toMatchObject({ width: 1920, height: 1080 });
+    });
+  });
+
+  describe('missing dimensions', () => {
+    it('returns nothing', () => {
+      expect(resolveRotatedDimensions(undefined, 1080, 90)).toEqual({});
     });
   });
 });

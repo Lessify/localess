@@ -58,3 +58,43 @@ export function resolveOrientedDimensions(width?: number, height?: number, exifO
 
   return { width: renderedWidth, height: renderedHeight, orientation };
 }
+
+/**
+ * Rotations that transpose the axes, in degrees. A quarter turn either way swaps width and height;
+ * 0 and 180 leave them alone.
+ */
+const AXIS_SWAPPING_ROTATIONS: ReadonlySet<number> = new Set([90, 270]);
+
+/**
+ * Resolves the dimensions a video actually renders at, from its stored dimensions plus its
+ * rotation.
+ *
+ * The video equivalent of {@link resolveOrientedDimensions}, and it exists for the same bug: a
+ * portrait phone video stores landscape dimensions and a rotation of 90, so reading the dimensions
+ * alone recorded it as landscape. The video branch of metadata extraction read `ImageWidth` and
+ * `ImageHeight` and never looked at `Rotation` at all.
+ *
+ * Separate from the image function because the inputs differ in kind — EXIF orientation is an
+ * enum of 1-8 describing flips and turns, while video rotation is a plain angle. Collapsing them
+ * into one function would mean a parameter that means different things depending on the caller.
+ *
+ * Angles are normalised first, so `-90` and `270` are the same quarter turn, and anything that is
+ * not a number is treated as no rotation rather than guessed at.
+ * @param {number} [width] Stored width, as reported by exiftool
+ * @param {number} [height] Stored height, as reported by exiftool
+ * @param {unknown} [rotation] The raw `Rotation` tag, in degrees
+ * @return {OrientedDimensions} the rendered dimensions and the shape they imply
+ */
+export function resolveRotatedDimensions(width?: number, height?: number, rotation?: unknown): OrientedDimensions {
+  if (width === undefined || height === undefined) {
+    return {};
+  }
+
+  let normalised: number | undefined;
+  if (typeof rotation === 'number' && Number.isFinite(rotation)) {
+    normalised = ((Math.round(rotation) % 360) + 360) % 360;
+  }
+  const swapped = normalised !== undefined && AXIS_SWAPPING_ROTATIONS.has(normalised);
+
+  return resolveOrientedDimensions(swapped ? height : width, swapped ? width : height, undefined);
+}

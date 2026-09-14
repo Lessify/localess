@@ -41,6 +41,7 @@ import {
 import {
   applySharpTransforms,
   canonicalTransformSize,
+  decodedAnimationPixels,
   isAnimatedPages,
   MAX_ANIMATED_PIXELS,
   parseAssetTransformQuery,
@@ -580,6 +581,33 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     // GIF, SVG, TIFF and video fall out automatically. GIF is deliberately excluded rather than
     // mapped — it is palette-based, so re-encoding it gains roughly nothing.
     const normalisable = sourceEncoderFormat(asset.type) !== undefined;
+
+    // Reject an oversized animation *before* paying to download it, when the stored metadata knows
+    // how many frames it has. The authoritative check still runs after the download — assets
+    // uploaded before `pages` was recorded have nothing to check here — but for everything else
+    // this turns a full download plus probe into a rejection off one Firestore read.
+    //
+    // `thumbnail` is excluded deliberately: it decodes only the first frame, so the budget that
+    // bounds a whole-animation decode does not apply to it.
+    if (explicitTransform && !thumbnail && asset.metadata && 'pages' in asset.metadata) {
+      const storedPixels = decodedAnimationPixels(asset.metadata.width, asset.metadata.height, asset.metadata.pages);
+      if (storedPixels > MAX_ANIMATED_PIXELS) {
+        logger.info(`[V1:AssetById] animation rejected before download: ${storedPixels} pixels`);
+        res
+          .status(400)
+          .header('Cache-Control', `public, max-age=${CACHE_BAD_REQUEST_MAX_AGE}, s-maxage=${CACHE_BAD_REQUEST_MAX_AGE}`)
+          .send(
+            new HttpsError(
+              'invalid-argument',
+              `Animation is too large to transform: ${asset.metadata.width}x${asset.metadata.height} over ` +
+                `${asset.metadata.pages} frames is ${storedPixels} pixels, above the ${MAX_ANIMATED_PIXELS} limit. ` +
+                "Request '?thumbnail' for a still frame."
+            )
+          );
+        return;
+      }
+    }
+
     if (asset.type.startsWith('image/') && (explicitTransform || normalisable)) {
       const sharp = await getSharp();
       if (asset.type === 'image/webp' || asset.type === 'image/gif') {
@@ -615,7 +643,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
           // than one frame — see MAX_ANIMATED_PIXELS. `probe` already carries the page count, so
           // the guard costs nothing beyond the metadata read that detected the animation.
           const frameHeight = probe.pageHeight ?? probe.height ?? 0;
-          const decodedPixels = (probe.width ?? 0) * frameHeight * (probe.pages ?? 1);
+          const decodedPixels = decodedAnimationPixels(probe.width, frameHeight, probe.pages);
           if (decodedPixels > MAX_ANIMATED_PIXELS) {
             res
               .status(400)
