@@ -21,7 +21,6 @@ import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
 import { CoreModule } from '@core/core.module';
 import { PAGINATOR_DEFAULT_OPTIONS } from '@shared/components/paginator/paginator.component';
-import { provideMarkdown } from 'ngx-markdown';
 
 import { environment } from '../environments/environment';
 import { routes } from './app-routing';
@@ -32,7 +31,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding(), withNavigationErrorHandler(console.error)),
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
     provideNativeDateAdapter(),
-    provideMarkdown(),
     importProvidersFrom(CoreModule, AuthGuardModule),
     // Firebase
     provideFirebaseApp(() => initializeApp(environment.firebase)),
