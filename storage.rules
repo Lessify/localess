@@ -1,9 +1,47 @@
 rules_version = '2';
+
+// Mirrors the space/permission model in firestore.rules. Cloud Functions reach Storage through
+// the Admin SDK, which bypasses these rules entirely, so the public asset CDN
+// (`/api/v1/spaces/{spaceId}/assets/{assetId}`) is unaffected by anything here - these rules
+// govern only what the browser SDK may do.
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read: if request.auth!=null;
-      allow write: if request.auth!=null;
+
+    // Security Functions - kept in step with firestore.rules
+    function isSignedIn() {
+      return request.auth != null;
     }
+    function hasRole(role) {
+      return request.auth.token.role == role;
+    }
+    function hasPermission(permission) {
+      return hasRole('custom') && permission in request.auth.token.permissions;
+    }
+    function hasAnyPermission(permissions) {
+      return hasRole('custom') && request.auth.token.permissions.hasAny(permissions);
+    }
+
+    // Assets - binary counterpart of the `spaces/{spaceId}/assets/{assetId}` Firestore document,
+    // and granted the same way. The browser only ever uploads here; reads go through the CDN.
+    match /spaces/{spaceId}/assets/{assetId}/{file=**} {
+      allow read: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_READ','CONTENT_READ']));
+      allow create: if isSignedIn() && (hasRole('admin') || hasPermission('ASSET_CREATE'));
+      allow update: if isSignedIn() && (hasRole('admin') || hasPermission('ASSET_UPDATE'));
+      allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('ASSET_DELETE'));
+    }
+
+    // Tasks - import/export payloads, including the `tasks/tmp/{timestamp}` staging path the
+    // importer uploads to before a task document exists. Same permission set as the Firestore
+    // `tasks` collection, since a task file is just the payload of that task.
+    match /spaces/{spaceId}/tasks/{taskId}/{file=**} {
+      allow read: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
+      allow create: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','CONTENT_IMPORT','SCHEMA_IMPORT','TRANSLATION_IMPORT']));
+      allow update: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','CONTENT_IMPORT','SCHEMA_IMPORT','TRANSLATION_IMPORT']));
+      allow delete: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
+    }
+
+    // Everything else - notably `spaces/{spaceId}/contents/**`, the published/draft JSON the
+    // publish flow writes and the CDN serves - is written and read only by the Admin SDK. No
+    // match means no browser access, which is the intended default.
   }
 }
