@@ -49,6 +49,14 @@
         { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "name", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "webhooks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "enabled", "order": "ASCENDING" },
+        { "fieldPath": "events", "arrayConfig": "CONTAINS" }
+      ]
     }
   ],
   "fieldOverrides": []
