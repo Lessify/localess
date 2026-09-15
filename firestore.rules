@@ -103,10 +103,5 @@ service cloud.firestore {
       allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SETTINGS_MANAGEMENT'));
       allow write: if isSignedIn() && (hasRole('admin') || hasPermission('SETTINGS_MANAGEMENT'));
     }
-
-    match /{document=**} {
-      allow read: if isSignedIn() && hasAnyRole(['custom','admin']);
-      allow write: if isSignedIn() && hasRole('admin');
-    }
   }
 }
