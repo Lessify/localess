@@ -26,7 +26,7 @@
         <markdown [data]="mdText.value" class="block w-full px-3 py-3"></markdown>
       }
       <div hlmInputGroupAddon align="block-start" class="flex flex-wrap border-b">
-        <button hlmInputGroupButton size="icon-xs" hlmTooltip="View Markdown Rendered Preview" (click)="preview.set(!preview())">
+        <button hlmInputGroupButton size="icon-xs" hlmTooltip="View Markdown Rendered Preview" (click)="togglePreview()">
           <ng-icon [name]="preview() ? 'lucideEyeOff' : 'lucideEye'" />
         </button>
         <hlm-separator orientation="vertical" class="h-4!" />

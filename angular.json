@@ -42,11 +42,10 @@
               "src/styles.css",
               "src/styles.scss"
             ],
-            "scripts": [
-              "node_modules/prismjs/prism.js"
-            ],
+            "scripts": [],
             "allowedCommonJsDependencies": [
-              "@stoplight/elements/web-components.min.js"
+              "@stoplight/elements/web-components.min.js",
+              "prismjs"
             ],
             "browser": "src/main.ts",
             "stylePreprocessorOptions": {

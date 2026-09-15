@@ -85,4 +85,33 @@ describe('MarkdownEditorComponent', () => {
 
     expect(error).toHaveBeenCalledWith('Can not be translation.', expect.anything());
   });
+
+  // Order matters: this must run before the test that opens a preview. `test.isolate: true` gives
+  // this file its own module registry, so the dynamic import below has not run yet at this point.
+  it('does not load Prism until the preview is opened', () => {
+    const { component } = setup({ _id: 'c1', schema: 's1' });
+
+    expect(component.preview()).toBe(false);
+    expect((globalThis as Record<string, unknown>)['Prism']).toBeUndefined();
+  });
+
+  it('loads Prism before showing the preview', async () => {
+    const { component } = setup({ _id: 'c1', schema: 's1' });
+
+    await component.togglePreview();
+
+    expect(component.preview()).toBe(true);
+    // ngx-markdown highlights by calling the global Prism and skips silently when it is absent,
+    // so the global has to exist by the time <markdown> renders.
+    expect((globalThis as Record<string, unknown>)['Prism']).toBeDefined();
+  });
+
+  it('closes the preview without reloading Prism', async () => {
+    const { component } = setup({ _id: 'c1', schema: 's1' });
+    await component.togglePreview();
+
+    await component.togglePreview();
+
+    expect(component.preview()).toBe(false);
+  });
 });

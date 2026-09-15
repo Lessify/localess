@@ -63,8 +63,30 @@ export class MarkdownEditorComponent {
 
   preview = signal(false);
 
+  /**
+   * Prism is loaded on demand the first time the preview opens.
+   *
+   * ngx-markdown highlights code blocks by calling the global `Prism` and silently skips
+   * highlighting when it is missing, so the bundle has to be in place *before* `<markdown>`
+   * renders. Loading it here rather than through angular.json's global `scripts` keeps ~57kB off
+   * every page - the preview is the only thing in the app that needs it.
+   */
+  private prismLoaded = false;
+
   //Settings
   settingsStore = inject(LocalSettingsStore);
+
+  async togglePreview(): Promise<void> {
+    if (this.preview()) {
+      this.preview.set(false);
+      return;
+    }
+    if (!this.prismLoaded) {
+      await import('prismjs');
+      this.prismLoaded = true;
+    }
+    this.preview.set(true);
+  }
 
   translate(fieldName: string, sourceLocale: string, targetLocale: string): void {
     // get source locale content

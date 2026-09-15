@@ -36,4 +36,20 @@ describe('ContentsModule', () => {
     expect(rendered.querySelector('h1')?.textContent).toBe('Heading');
     expect(rendered.querySelector('strong')?.textContent).toBe('bold');
   });
+
+  it('highlights fenced code blocks once Prism is loaded', async () => {
+    // What the markdown editor does before opening a preview: ngx-markdown calls the global
+    // Prism and silently skips highlighting when it is missing, so this is the real regression
+    // guard for loading prismjs on demand instead of as a global script.
+    await import('prismjs');
+    TestBed.configureTestingModule({ imports: [ContentsModule], providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(MarkdownHostComponent);
+    fixture.componentInstance.markdown = '```js\nconst answer = 42;\n```';
+    const rendered: HTMLElement = fixture.nativeElement;
+
+    fixture.detectChanges();
+
+    await vi.waitFor(() => expect(rendered.querySelector('code .token')).not.toBeNull());
+    expect(rendered.querySelector('code .token')?.textContent).toBe('const');
+  });
 });
