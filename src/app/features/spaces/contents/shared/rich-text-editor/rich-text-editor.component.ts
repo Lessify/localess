@@ -47,8 +47,9 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Strike from '@tiptap/extension-strike';
 import Text from '@tiptap/extension-text';
 import Underline from '@tiptap/extension-underline';
-import { common, createLowlight } from 'lowlight';
 import { TiptapEditorDirective } from 'ngx-tiptap';
+
+import { createRichTextLowlight } from './lowlight';
 
 @Component({
   selector: 'll-rich-text-editor',
@@ -99,7 +100,7 @@ export class RichTextEditorComponent implements OnDestroy {
 
   //Settings
   settingsStore = inject(LocalSettingsStore);
-  lowlight = createLowlight(common);
+  lowlight = createRichTextLowlight();
 
   editor = new Editor({
     extensions: [

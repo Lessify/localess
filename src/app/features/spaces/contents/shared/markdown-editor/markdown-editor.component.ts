@@ -17,7 +17,6 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { common, createLowlight } from 'lowlight';
 import { MarkdownComponent } from 'ngx-markdown';
 
 @Component({
@@ -66,7 +65,6 @@ export class MarkdownEditorComponent {
 
   //Settings
   settingsStore = inject(LocalSettingsStore);
-  lowlight = createLowlight(common);
 
   translate(fieldName: string, sourceLocale: string, targetLocale: string): void {
     // get source locale content

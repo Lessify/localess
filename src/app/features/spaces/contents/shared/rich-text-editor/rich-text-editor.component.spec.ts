@@ -56,4 +56,11 @@ describe('RichTextEditorComponent', () => {
 
     expect(destroySpy).toHaveBeenCalled();
   });
+  it('highlights a code block through the TipTap integration', () => {
+    const { component } = setup();
+
+    component.editor.commands.setContent('<pre><code class="language-typescript">const answer: number = 42;</code></pre>');
+
+    expect(component.editor.view.dom.innerHTML).toContain('hljs-');
+  });
 });
