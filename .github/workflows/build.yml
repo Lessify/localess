@@ -23,7 +23,10 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npm --prefix functions install
       - run: npm test -- --watch=false
+      - run: npm --prefix functions test
+      - run: npm run test:scripts
 
   build:
     name: Lint and Build
@@ -43,6 +46,7 @@ jobs:
       - run: npm ci
       - run: npm --prefix functions install
       - run: npm run lint
+      - run: npm --prefix functions run lint
       # - run: npm run prettier
       - run: npm run build
       - run: npm --prefix functions run build

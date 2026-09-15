@@ -706,9 +706,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
         quality,
         format: encodeAs,
         fit,
-      }).toFile(
-        tempFilePath
-      );
+      }).toFile(tempFilePath);
       overwriteType = format ? formatMimeMap[format] : 'image/webp';
       filename = `${asset.name}-${suffix || `w${width}`}-thumbnail${format ? formatExtMap[format] : '.webp'}`;
     } else {
@@ -744,98 +742,92 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .send(new HttpsError('not-found', 'Not found.'));
     return;
   }
-});// The stored bytes, untouched. These exist because the transform route above does **not** return
+}); // The stored bytes, untouched. These exist because the transform route above does **not** return
 // them: a still raster is re-encoded at its encoder's default quality even with no parameters, so
 // `GET /assets/:id` is a normalised rendition rather than the uploaded file. These two routes are
 // the escape hatch for when the actual bytes are wanted — archival, print, downstream processing —
 // and they are also a different cost class: no sharp, no transform query, and the pair a redirect
 // to Storage can eventually serve without proxying bytes at all.
-CDN.get(
-  ['/api/v1/spaces/:spaceId/assets/:assetId/original', '/api/v1/spaces/:spaceId/assets/:assetId/download'],
-  async (req, res) => {
-    // One handler, two paths: they differ only in disposition, and duplicating forty lines of
-    // lookup to vary a single header would be worse than branching on the path here.
-    const attachment = req.path.endsWith('/download');
-    const tag = attachment ? '[V1:AssetDownload]' : '[V1:AssetOriginal]';
-    logger.info(tag + ' params: ' + JSON.stringify(req.params));
-    logger.info(tag + ' query: ' + redactQuery(req.query));
-    const { spaceId, assetId } = req.params;
+CDN.get(['/api/v1/spaces/:spaceId/assets/:assetId/original', '/api/v1/spaces/:spaceId/assets/:assetId/download'], async (req, res) => {
+  // One handler, two paths: they differ only in disposition, and duplicating forty lines of
+  // lookup to vary a single header would be worse than branching on the path here.
+  const attachment = req.path.endsWith('/download');
+  const tag = attachment ? '[V1:AssetDownload]' : '[V1:AssetOriginal]';
+  logger.info(tag + ' params: ' + JSON.stringify(req.params));
+  logger.info(tag + ' query: ' + redactQuery(req.query));
+  const { spaceId, assetId } = req.params;
 
-    // These routes apply no transform, so a transform parameter is a caller error rather than
-    // something to ignore — the same rule `parseAssetTransformQuery` follows for `fit=squish`.
-    const offending = findTransformParam(req.query);
-    if (offending !== undefined) {
-      res
-        .status(400)
-        .header('Cache-Control', `public, max-age=${CACHE_BAD_REQUEST_MAX_AGE}, s-maxage=${CACHE_BAD_REQUEST_MAX_AGE}`)
-        .send(
-          new HttpsError(
-            'invalid-argument',
-            `Unsupported '${offending}' parameter on this route. It serves the stored bytes and applies no transform. ` +
-              'Use GET /api/v1/spaces/{spaceId}/assets/{assetId} for transforms.'
-          )
-        );
-      return;
-    }
-
-    const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
-    // One Storage metadata round-trip serves both purposes: existence, and the `md5Hash` the ETag
-    // below is built from — same merge the transform route above applies.
-    let objectMetadata: Record<string, unknown> | undefined;
-    try {
-      [objectMetadata] = await assetFile.getMetadata();
-    } catch {
-      objectMetadata = undefined;
-    }
-    const exists = objectMetadata !== undefined;
-    const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
-    logger.info(`${tag} asset: ${exists} & ${assetSnapshot.exists}`);
-
-    if (!exists || !assetSnapshot.exists) {
-      // The same two-flavour 404 as the transform route: a document without a Storage object is an
-      // upload still in flight, and caching that would pin a 404 over an asset about to appear.
-      if (assetSnapshot.exists) {
-        res
-          .status(404)
-          .header('Cache-Control', 'no-cache')
-          .send(new HttpsError('not-found', 'Not found, upload may still be in progress.'));
-        return;
-      }
-      res
-        .status(404)
-        .header('Cache-Control', `public, max-age=${CACHE_ASSET_NOT_FOUND_MAX_AGE}, s-maxage=${CACHE_ASSET_NOT_FOUND_MAX_AGE}`)
-        .send(new HttpsError('not-found', 'Not found.'));
-      return;
-    }
-
-    const asset = assetSnapshot.data() as AssetFile;
-    // `orig` is the suffix reserved for the stored bytes, which is what keeps this tag distinct
-    // from the transform route's — that one always carries its encode target. Answered before the
-    // download, so a revalidating client costs a metadata read rather than a transfer.
-    const md5Hash = objectMetadata?.['md5Hash'] as string | undefined;
-    if (md5Hash) {
-      const etag = buildAssetETag(md5Hash, '', false);
-      res.header('ETag', etag);
-      if (req.headers['if-none-match'] === etag) {
-        res.status(304).header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`).end();
-        return;
-      }
-    }
-
-    // A distinct path from the transform route's `assets-${assetId}`. That route writes
-    // *transformed* output there on the video-thumbnail branch, so sharing the path would let a
-    // concurrent request for the same asset serve the wrong bytes.
-    //
-    // `sendFile` rather than a stream because it implements Range requests, and a video here is
-    // exactly where a client resumes a partial transfer. Streaming is not the fix for the tmpfs
-    // cost — a redirect to Storage is, because GCS handles Range natively.
-    const tempFilePath = `${os.tmpdir()}/assets-stored-${assetId}`;
-    await assetFile.download({ destination: tempFilePath });
-
+  // These routes apply no transform, so a transform parameter is a caller error rather than
+  // something to ignore — the same rule `parseAssetTransformQuery` follows for `fit=squish`.
+  const offending = findTransformParam(req.query);
+  if (offending !== undefined) {
     res
-      .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-      .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, attachment))
-      .contentType(asset.type)
-      .sendFile(tempFilePath);
+      .status(400)
+      .header('Cache-Control', `public, max-age=${CACHE_BAD_REQUEST_MAX_AGE}, s-maxage=${CACHE_BAD_REQUEST_MAX_AGE}`)
+      .send(
+        new HttpsError(
+          'invalid-argument',
+          `Unsupported '${offending}' parameter on this route. It serves the stored bytes and applies no transform. ` +
+            'Use GET /api/v1/spaces/{spaceId}/assets/{assetId} for transforms.'
+        )
+      );
+    return;
   }
-);
+
+  const assetFile = bucket.file(`spaces/${spaceId}/assets/${assetId}/original`);
+  // One Storage metadata round-trip serves both purposes: existence, and the `md5Hash` the ETag
+  // below is built from — same merge the transform route above applies.
+  let objectMetadata: Record<string, unknown> | undefined;
+  try {
+    [objectMetadata] = await assetFile.getMetadata();
+  } catch {
+    objectMetadata = undefined;
+  }
+  const exists = objectMetadata !== undefined;
+  const assetSnapshot = await firestoreService.doc(`spaces/${spaceId}/assets/${assetId}`).get();
+  logger.info(`${tag} asset: ${exists} & ${assetSnapshot.exists}`);
+
+  if (!exists || !assetSnapshot.exists) {
+    // The same two-flavour 404 as the transform route: a document without a Storage object is an
+    // upload still in flight, and caching that would pin a 404 over an asset about to appear.
+    if (assetSnapshot.exists) {
+      res.status(404).header('Cache-Control', 'no-cache').send(new HttpsError('not-found', 'Not found, upload may still be in progress.'));
+      return;
+    }
+    res
+      .status(404)
+      .header('Cache-Control', `public, max-age=${CACHE_ASSET_NOT_FOUND_MAX_AGE}, s-maxage=${CACHE_ASSET_NOT_FOUND_MAX_AGE}`)
+      .send(new HttpsError('not-found', 'Not found.'));
+    return;
+  }
+
+  const asset = assetSnapshot.data() as AssetFile;
+  // `orig` is the suffix reserved for the stored bytes, which is what keeps this tag distinct
+  // from the transform route's — that one always carries its encode target. Answered before the
+  // download, so a revalidating client costs a metadata read rather than a transfer.
+  const md5Hash = objectMetadata?.['md5Hash'] as string | undefined;
+  if (md5Hash) {
+    const etag = buildAssetETag(md5Hash, '', false);
+    res.header('ETag', etag);
+    if (req.headers['if-none-match'] === etag) {
+      res.status(304).header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`).end();
+      return;
+    }
+  }
+
+  // A distinct path from the transform route's `assets-${assetId}`. That route writes
+  // *transformed* output there on the video-thumbnail branch, so sharing the path would let a
+  // concurrent request for the same asset serve the wrong bytes.
+  //
+  // `sendFile` rather than a stream because it implements Range requests, and a video here is
+  // exactly where a client resumes a partial transfer. Streaming is not the fix for the tmpfs
+  // cost — a redirect to Storage is, because GCS handles Range natively.
+  const tempFilePath = `${os.tmpdir()}/assets-stored-${assetId}`;
+  await assetFile.download({ destination: tempFilePath });
+
+  res
+    .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
+    .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, attachment))
+    .contentType(asset.type)
+    .sendFile(tempFilePath);
+});

@@ -452,8 +452,7 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
       error: {
         param: 'download',
         value: (query.download as string | undefined)?.toString() ?? '',
-        message:
-          "The 'download' parameter was removed in v4. " + 'Use GET /api/v1/spaces/{spaceId}/assets/{assetId}/download instead.',
+        message: "The 'download' parameter was removed in v4. " + 'Use GET /api/v1/spaces/{spaceId}/assets/{assetId}/download instead.',
       },
     };
   }

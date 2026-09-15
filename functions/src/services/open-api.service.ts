@@ -957,7 +957,8 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               name: 'f',
               in: 'query',
               description:
-                'Output image format. Nothing is converted implicitly - omit this and the stored format is kept, though the image is still re-encoded at that format default quality. ' +
+                'Output image format. Nothing is converted implicitly - omit this and the stored format is kept, ' +
+                'though the image is still re-encoded at that format default quality. ' +
                 'Passing webp or avif is the recommended way to reduce transfer size.',
               required: false,
               schema: {
