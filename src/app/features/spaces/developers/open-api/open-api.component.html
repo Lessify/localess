@@ -1,4 +1,6 @@
-@if (openApiDocument$ | async; as openApiDocument) {
+@let openApiDocument = openApiDocument$ | async;
+
+@if (openApiDocument && elementsReady()) {
   <elements-api apiDescriptionDocument="{{ openApiDocument }}" router="memory" layout="sidebar" />
 } @else {
   <hlm-progress class="h-0.5">

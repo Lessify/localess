@@ -7,6 +7,10 @@ import { vi } from 'vitest';
 
 import { OpenApiComponent } from './open-api.component';
 
+// The real bundle is ~2MB of prebuilt web components and only registers a custom element,
+// so the tests stub it out rather than loading it.
+vi.mock('@stoplight/elements/web-components.min.js', () => ({}));
+
 describe('OpenApiComponent', () => {
   function setup(selectedSpaceId: string | undefined) {
     const generate = vi.fn().mockReturnValue(of('openapi: 3.0.0'));
@@ -34,5 +38,19 @@ describe('OpenApiComponent', () => {
 
     expect(generate).not.toHaveBeenCalled();
     expect(component.openApiDocument$).toBeUndefined();
+  });
+
+  it('holds back <elements-api> until the Stoplight bundle has loaded', async () => {
+    const { component } = setup('space-1');
+
+    expect(component['elementsReady']()).toBe(false);
+
+    await vi.waitFor(() => expect(component['elementsReady']()).toBe(true));
+  });
+
+  it('loads the Stoplight bundle even when no space is selected', async () => {
+    const { component } = setup(undefined);
+
+    await vi.waitFor(() => expect(component['elementsReady']()).toBe(true));
   });
 });
