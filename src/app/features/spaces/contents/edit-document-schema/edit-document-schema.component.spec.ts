@@ -3,6 +3,7 @@
 // — see that file for why this isn't a local vi.mock here.
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Firestore } from '@angular/fire/firestore';
 import { Functions } from '@angular/fire/functions';
 import { Router } from '@angular/router';
 import { ContentData } from '@shared/models/content.model';
@@ -25,6 +26,8 @@ function setup(config: { schemas?: Schema[]; data?: ContentData; locale?: Locale
       // On a non-default locale the translate menu renders, and its canUserPerform pipe reads
       // UserStore, which would otherwise pull in Firebase Auth.
       { provide: UserStore, useValue: { role: signal('admin'), permissions: signal([]) } },
+      // The same menu asks LocaleService which locales the provider supports, and that injects Firestore.
+      { provide: Firestore, useValue: {} },
     ],
   });
   const fixture = TestBed.createComponent(EditDocumentSchemaComponent);

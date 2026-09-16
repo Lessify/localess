@@ -11,15 +11,15 @@
   size="icon-xs"
   align="end"
   [class]="placementClass()"
-  [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false"
+  [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false || disabled()"
   [hlmDropdownMenuTrigger]="translationMenu"
-  hlmTooltip="Translate the field with AI">
+  [hlmTooltip]="tooltip()">
   <ng-icon name="lucideLanguages" />
 </button>
 <ng-template #translationMenu>
   <hlm-dropdown-menu>
     @for (locale of sourceLocales(); track locale.id) {
-      <button hlmDropdownMenuItem (click)="translateFrom.emit(locale.id)">
+      <button hlmDropdownMenuItem [disabled]="!canTranslateFrom(locale)" (click)="translateFrom.emit(locale.id)">
         Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
       </button>
     }

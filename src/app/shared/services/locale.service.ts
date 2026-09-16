@@ -3,7 +3,7 @@ import { arrayRemove, arrayUnion, doc, Firestore, serverTimestamp, UpdateData, u
 import { traceUntilFirst } from '@angular/fire/performance';
 import { from, Observable, of } from 'rxjs';
 
-import { Locale } from '../models/locale.model';
+import { Locale, toProviderLocale } from '../models/locale.model';
 import { Space } from '../models/space.model';
 
 @Injectable({ providedIn: 'root' })
@@ -40,14 +40,28 @@ export class LocaleService {
     return of(AVAILABLE_LOCALES);
   }
 
-  /** Whether a locale can be the *source* of a translation. */
-  isLocaleTranslatableFrom(locale: string): boolean {
-    return SOURCE_SUPPORT_LOCALES.has(locale);
+  /**
+   * Whether a locale can be the *source* of a translation.
+   *
+   * On the content side the locale id can be the `default` sentinel rather than a language, so
+   * callers there pass the space's fallback and it is resolved first - see `toProviderLocale()`.
+   * Without a fallback the sentinel resolves to itself and is reported unsupported, which is the
+   * safe answer: that is exactly what the provider would be sent.
+   * @param locale locale id, possibly `CONTENT_DEFAULT_LOCALE.id`
+   * @param fallbackLocale the space's fallback locale id, when `locale` may be the sentinel
+   */
+  isLocaleTranslatableFrom(locale: string, fallbackLocale?: string): boolean {
+    return SOURCE_SUPPORT_LOCALES.has(toProviderLocale(locale, fallbackLocale));
   }
 
-  /** Whether a locale can be the *target* of a translation. */
-  isLocaleTranslatableTo(locale: string): boolean {
-    return TARGET_SUPPORT_LOCALES.has(locale);
+  /**
+   * Whether a locale can be the *target* of a translation. Resolves the `default` sentinel the same
+   * way as {@link isLocaleTranslatableFrom}.
+   * @param locale locale id, possibly `CONTENT_DEFAULT_LOCALE.id`
+   * @param fallbackLocale the space's fallback locale id, when `locale` may be the sentinel
+   */
+  isLocaleTranslatableTo(locale: string, fallbackLocale?: string): boolean {
+    return TARGET_SUPPORT_LOCALES.has(toProviderLocale(locale, fallbackLocale));
   }
 }
 

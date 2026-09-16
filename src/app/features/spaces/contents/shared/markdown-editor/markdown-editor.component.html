@@ -41,6 +41,7 @@
           <ll-translate-menu
             [selectedLocale]="selectedLocale()"
             [availableLocales]="availableLocales()"
+            [fallbackLocale]="fallbackLocale()"
             (translateFrom)="translate(field.name, $event, selectedLocaleId())" />
         }
       </div>

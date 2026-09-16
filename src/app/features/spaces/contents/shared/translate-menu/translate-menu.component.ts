@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { provideIcons } from '@ng-icons/core';
 import { lucideLanguages } from '@ng-icons/lucide';
 import { Locale } from '@shared/models/locale.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { LocaleService } from '@shared/services/locale.service';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
@@ -26,8 +27,16 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   providers: [provideIcons({ lucideLanguages })],
 })
 export class TranslateMenuComponent {
+  private readonly localeService = inject(LocaleService);
+
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();
+
+  /**
+   * The space's fallback locale, needed to decide what the provider supports: the selected locale
+   * can be the `default` sentinel, which is a storage key rather than a language.
+   */
+  fallbackLocale = input<Locale>();
 
   /**
    * Where the host puts this button, which decides how it is nudged into place:
@@ -49,4 +58,30 @@ export class TranslateMenuComponent {
   translateFrom = output<string>();
 
   sourceLocales = computed(() => this.availableLocales().filter(locale => locale.id !== this.selectedLocale().id));
+
+  /**
+   * Whether the field's locale can be a translation *target*. The whole button is disabled when it
+   * cannot: every item in the menu would translate into it, so there is nothing left to offer.
+   */
+  canTranslateToSelected = computed(() => this.localeService.isLocaleTranslatableTo(this.selectedLocale().id, this.fallbackLocale()?.id));
+
+  /** Whether any source at all is offerable, so the button is not opened onto a fully disabled menu. */
+  hasTranslatableSource = computed(() => this.sourceLocales().some(locale => this.canTranslateFrom(locale)));
+
+  disabled = computed(() => !this.canTranslateToSelected() || !this.hasTranslatableSource());
+
+  tooltip = computed(() => {
+    if (!this.canTranslateToSelected()) {
+      return `${this.selectedLocale().name} is not supported as a translation target`;
+    }
+    if (!this.hasTranslatableSource()) {
+      return 'No other locale of this space is supported as a translation source';
+    }
+    return 'Translate the field with AI';
+  });
+
+  /** Whether a locale can be the source for this field, i.e. the provider accepts translating out of it. */
+  canTranslateFrom(locale: Locale): boolean {
+    return this.localeService.isLocaleTranslatableFrom(locale.id, this.fallbackLocale()?.id);
+  }
 }

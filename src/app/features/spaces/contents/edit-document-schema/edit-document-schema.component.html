@@ -31,6 +31,7 @@
                       placement="addon"
                       [selectedLocale]="selectedLocale()"
                       [availableLocales]="availableLocales()"
+                      [fallbackLocale]="space()?.localeFallback"
                       (translateFrom)="translate(field.name, $event, selectedLocaleId())" />
                   </div>
                 }
@@ -74,6 +75,7 @@
                       placement="addon"
                       [selectedLocale]="selectedLocale()"
                       [availableLocales]="availableLocales()"
+                      [fallbackLocale]="space()?.localeFallback"
                       (translateFrom)="translate(field.name, $event, selectedLocaleId())" />
                   </div>
                 }
