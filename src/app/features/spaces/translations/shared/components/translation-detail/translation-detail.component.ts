@@ -144,7 +144,38 @@ export class TranslationDetailComponent {
     if (sourceLocale.id === targetLocale.id) {
       return false;
     }
-    return this.localeService.isLocaleTranslatableFrom(sourceLocale.id) && this.localeService.isLocaleTranslatableTo(targetLocale.id);
+    return this.canTranslateFrom(sourceLocale) && this.canTranslateTo(targetLocale);
+  }
+
+  /**
+   * Whether the provider accepts this locale at each end.
+   *
+   * Only the translate button is gated by this. The two selects choose which locale is displayed
+   * and hand-edited as well as which one would be translated, so every locale of the space stays
+   * selectable there - a locale the provider does not know is still one an author writes by hand.
+   */
+  canTranslateFrom(locale: Locale): boolean {
+    return this.localeService.isLocaleTranslatableFrom(locale.id);
+  }
+
+  canTranslateTo(locale: Locale): boolean {
+    return this.localeService.isLocaleTranslatableTo(locale.id);
+  }
+
+  /** Says why the translate button is off, rather than leaving a dead button unexplained. */
+  translateTooltip(): string {
+    const source = this.selectedSourceLocale();
+    const target = this.selectedTargetLocale();
+    if (source.id === target.id) {
+      return `Pick a target other than ${target.name}`;
+    }
+    if (!this.canTranslateFrom(source)) {
+      return `${source.name} is not supported as a translation source`;
+    }
+    if (!this.canTranslateTo(target)) {
+      return `${target.name} is not supported as a translation target`;
+    }
+    return 'Translate';
   }
 
   openEditIdDialog(translation: Translation): void {

@@ -95,6 +95,56 @@ describe('TranslationDetailComponent', () => {
     expect(component.isLocaleTranslatable(en, de)).toBe(false);
   });
 
+  it('canTranslateFrom()/canTranslateTo() ask their own direction', () => {
+    const { component, isLocaleTranslatableFrom, isLocaleTranslatableTo } = setup();
+    isLocaleTranslatableTo.mockReturnValue(false);
+
+    expect(component.canTranslateFrom(de)).toBe(true);
+    expect(component.canTranslateTo(de)).toBe(false);
+    expect(isLocaleTranslatableFrom).toHaveBeenCalledWith('de');
+    expect(isLocaleTranslatableTo).toHaveBeenCalledWith('de');
+  });
+
+  /**
+   * The button carries the whole guard here. The selects also choose which locale is shown and
+   * hand-edited, so they keep offering every locale of the space - only the machine translation is
+   * withheld, and the tooltip says why instead of leaving a dead button.
+   */
+  describe('translateTooltip()', () => {
+    it('explains an identical pair', () => {
+      const { component } = setup();
+      component.selectedTargetLocale.set(component.selectedSourceLocale());
+
+      expect(component.translateTooltip()).toContain('Pick a target other than');
+    });
+
+    it('explains an unsupported source', () => {
+      const { component, isLocaleTranslatableFrom } = setup();
+      isLocaleTranslatableFrom.mockReturnValue(false);
+      component.selectedSourceLocale.set(en);
+      component.selectedTargetLocale.set(de);
+
+      expect(component.translateTooltip()).toBe('English is not supported as a translation source');
+    });
+
+    it('explains an unsupported target', () => {
+      const { component, isLocaleTranslatableTo } = setup();
+      isLocaleTranslatableTo.mockReturnValue(false);
+      component.selectedSourceLocale.set(en);
+      component.selectedTargetLocale.set(de);
+
+      expect(component.translateTooltip()).toBe('German is not supported as a translation target');
+    });
+
+    it('falls back to the plain label when the pair works', () => {
+      const { component } = setup();
+      component.selectedSourceLocale.set(en);
+      component.selectedTargetLocale.set(de);
+
+      expect(component.translateTooltip()).toBe('Translate');
+    });
+  });
+
   it('refuses a target locale that is only supported as a source', () => {
     const { component, isLocaleTranslatableTo } = setup();
     isLocaleTranslatableTo.mockReturnValue(false);

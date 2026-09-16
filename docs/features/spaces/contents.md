@@ -157,11 +157,11 @@ Its `placement` input exists because the two contexts need different nudging to 
 **Unsupported locales are disabled, not offered.** A space can hold any of the 500 selectable locales, but the provider accepts roughly 200,
 and it answers the two directions separately — Google's `SupportedLanguage` carries `supportSource` and `supportTarget`. So:
 
-| Where                                      | What is disabled                                                                                                                                                               |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| per-field menu (`ll-translate-menu`)       | each item whose source locale is not supported _from_; the whole trigger when the field's own locale is not supported _to_, or when no source is left — the tooltip says which |
-| Translate Locale dialog                    | each option in the source select not supported _from_, each in the target select not supported _to_; the Translate button while either end is unsupported                      |
-| Translations screen (`translation-detail`) | the same, on its two locale selects                                                                                                                                            |
+| Where                                      | What is disabled                                                                                                                                                                                         |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| per-field menu (`ll-translate-menu`)       | each item whose source locale is not supported _from_; the whole trigger when the field's own locale is not supported _to_, or when no source is left — the tooltip says which                           |
+| Translate Locale dialog                    | each option in the source select not supported _from_, each in the target select not supported _to_; the Translate button while either end is unsupported                                                |
+| Translations screen (`translation-detail`) | only the translate button, never the locale selects - those also choose which locale is displayed and hand-edited, so they keep offering every locale ([details](translations.md#translationscomponent)) |
 
 All three ask `LocaleService.isLocaleTranslatableFrom()` / `isLocaleTranslatableTo()`, which resolve the `default` sentinel through the
 fallback locale first — hence the `fallbackLocale` input on the menu and `localeFallback` on the dialog model. Without a fallback the

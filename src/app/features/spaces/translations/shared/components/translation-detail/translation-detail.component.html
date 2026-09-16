@@ -36,7 +36,7 @@
               size="icon"
               variant="outline"
               (click)="translate()"
-              hlmTooltip="Translate"
+              [hlmTooltip]="translateTooltip()"
               [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
               @if (isTranslateLoading()) {
                 <hlm-spinner class="size-4" />
