@@ -3,26 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, input, OnDestroy } from '@a
 import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import {
-  lucideBold,
-  lucideCode,
-  lucideCodeSquare,
-  lucideHeading1,
-  lucideHeading2,
-  lucideHeading3,
-  lucideHeading4,
-  lucideHeading5,
-  lucideHeading6,
-  lucideInfo,
-  lucideItalic,
-  lucideLanguages,
-  lucideLink,
-  lucideList,
-  lucideListOrdered,
-  lucidePilcrow,
-  lucideStrikethrough,
-  lucideUnderline,
-} from '@ng-icons/lucide';
+import { lucideInfo, lucideLanguages } from '@ng-icons/lucide';
 import { SchemaFieldRichText } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -31,6 +12,7 @@ import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Editor, Extension } from '@tiptap/core';
+import Blockquote from '@tiptap/extension-blockquote';
 import Bold from '@tiptap/extension-bold';
 import BulletList from '@tiptap/extension-bullet-list';
 import Code from '@tiptap/extension-code';
@@ -38,6 +20,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import Document from '@tiptap/extension-document';
 import Heading from '@tiptap/extension-heading';
 import History from '@tiptap/extension-history';
+import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Italic from '@tiptap/extension-italic';
 import Link from '@tiptap/extension-link';
 import ListItem from '@tiptap/extension-list-item';
@@ -49,6 +32,7 @@ import Text from '@tiptap/extension-text';
 import Underline from '@tiptap/extension-underline';
 import { TiptapEditorDirective } from 'ngx-tiptap';
 
+import { EditorToolbarComponent } from '../editor-toolbar/editor-toolbar.component';
 import { createRichTextLowlight } from './lowlight';
 
 @Component({
@@ -65,27 +49,12 @@ import { createRichTextLowlight } from './lowlight';
     HlmIconImports,
     HlmInputGroupImports,
     HlmSeparatorImports,
+    EditorToolbarComponent,
   ],
   providers: [
     provideIcons({
       lucideLanguages,
       lucideInfo,
-      lucidePilcrow,
-      lucideHeading1,
-      lucideHeading2,
-      lucideHeading3,
-      lucideHeading4,
-      lucideHeading5,
-      lucideHeading6,
-      lucideBold,
-      lucideItalic,
-      lucideStrikethrough,
-      lucideUnderline,
-      lucideCode,
-      lucideLink,
-      lucideListOrdered,
-      lucideList,
-      lucideCodeSquare,
     }),
   ],
 })
@@ -95,8 +64,6 @@ export class RichTextEditorComponent implements OnDestroy {
   // Input
   form = input.required<AbstractControl>();
   component = input.required<SchemaFieldRichText>();
-
-  fnKey: string = /(Mac|iPhone|iPod|iPad)/i.test(window.navigator.userAgent) ? 'Cmd' : 'Ctrl';
 
   //Settings
   settingsStore = inject(LocalSettingsStore);
@@ -129,6 +96,9 @@ export class RichTextEditorComponent implements OnDestroy {
       ListItem,
       OrderedList,
       BulletList,
+      // Backs the blockquote and horizontal rule buttons in the shared toolbar.
+      Blockquote,
+      HorizontalRule,
       Code,
       CodeBlockLowlight.configure({
         lowlight: this.lowlight,
@@ -145,22 +115,6 @@ export class RichTextEditorComponent implements OnDestroy {
       },
     },
   });
-
-  setLink(): void {
-    const previousUrl = this.editor.getAttributes('link')['href'];
-    const url = window.prompt('URL', previousUrl);
-    // cancelled
-    if (url === null) {
-      return;
-    }
-    // empty
-    if (url === '') {
-      this.editor.chain().focus().unsetLink().run();
-      return;
-    }
-    // update link
-    this.editor.chain().focus().setLink({ href: url, target: '_blank' }).run();
-  }
 
   ngOnDestroy(): void {
     this.editor.destroy();

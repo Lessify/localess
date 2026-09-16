@@ -110,11 +110,14 @@ Fully client-side user preferences, persisted to `localStorage`. No Firestore in
   assetLayout: 'list' | 'grid',
   assetDialogLayout: 'list' | 'grid',
   translationLayout: 'list' | 'tree',
+  markdownMode: 'source' | 'wysiwyg',  // how MARKDOWN fields are edited
   lastSeenVersion: string
 }
 ```
 
 Theme switching applies CSS classes + `data-theme` attribute to `<html>` immediately. `'auto'` follows the OS `prefers-color-scheme` media query.
+
+`markdownMode` is the author's chosen way of editing MARKDOWN content fields — raw markdown or the visual editor — remembered across reloads and shared by every markdown field at once. See [Contents → Field Editors](features/spaces/contents.md#the-mode-is-a-remembered-user-preference).
 
 ---
 

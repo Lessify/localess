@@ -10,26 +10,33 @@
       }
     </label>
     <div hlmInputGroup>
-      <textarea
-        #mdText
-        hlmInputGroupTextarea
-        type="text"
-        [id]="'schema-field-' + field.name"
-        [formControl]="form()"
-        [placeholder]="default() ?? ''"
-        [attr.minlength]="field.minLength"
-        [attr.maxlength]="field.maxLength"
-        [class.hidden]="preview()"
-        autocomplete="off">
-      </textarea>
-      @if (preview()) {
-        <markdown [data]="mdText.value" class="block w-full px-3 py-3"></markdown>
+      @if (mode() === 'wysiwyg' && editor(); as editor) {
+        <tiptap-editor [id]="'schema-field-' + field.name" class="block w-full" [editor]="editor"></tiptap-editor>
+      } @else {
+        <textarea
+          hlmInputGroupTextarea
+          type="text"
+          [id]="'schema-field-' + field.name"
+          [formControl]="form()"
+          [placeholder]="default() ?? ''"
+          [attr.minlength]="field.minLength"
+          [attr.maxlength]="field.maxLength"
+          autocomplete="off">
+        </textarea>
       }
       <div hlmInputGroupAddon align="block-start" class="flex flex-wrap border-b">
-        <button hlmInputGroupButton size="icon-xs" hlmTooltip="View Markdown Rendered Preview" (click)="togglePreview()">
-          <ng-icon [name]="preview() ? 'lucideEyeOff' : 'lucideEye'" />
+        <button
+          hlmInputGroupButton
+          size="icon-xs"
+          [disabled]="mode() === 'source' && lossy()"
+          [hlmTooltip]="modeTooltip()"
+          (click)="toggleMode()">
+          <ng-icon [name]="mode() === 'wysiwyg' ? 'lucideFileCode' : 'lucideEye'" />
         </button>
         <hlm-separator orientation="vertical" class="h-4!" />
+        <!-- Rendered in source mode too, just inert, so the addon row keeps its height and the
+             buttons do not shift around the mode toggle on every switch. -->
+        <ll-editor-toolbar [editor]="editor()" [disabled]="mode() === 'source' || form().disabled" />
         @if (field.translatable && !isDefaultLocale()) {
           <button
             hlmInputGroupButton

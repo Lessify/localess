@@ -1,19 +1,14 @@
 @use '@angular/material' as mat;
 
-markdown {
-  @import "prismjs/themes/prism-okaidia";
-}
-
 @import 'styles/background';
 @import 'styles/cdk-drag-and-drop';
+@import 'styles/content-editor';
 @import 'styles/image';
 @import 'styles/layout';
 @import 'styles/ll-paginator';
-@import 'styles/markdown';
 @import 'styles/mat-dialog';
 @import 'styles/mat-paginator';
 @import 'styles/mat-table';
-@import 'styles/rich-text-editor';
 
 /* You can add global styles to this file, and also import other style files */
 html {

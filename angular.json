@@ -44,8 +44,7 @@
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
-              "@stoplight/elements/web-components.min.js",
-              "prismjs"
+              "@stoplight/elements/web-components.min.js"
             ],
             "browser": "src/main.ts",
             "stylePreprocessorOptions": {

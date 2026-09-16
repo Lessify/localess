@@ -7,6 +7,8 @@ export type Theme = 'light' | 'dark' | 'auto';
 export type EditorSize = '' | 'sm' | 'md' | 'lg' | 'xl';
 export type DataLayout = 'list' | 'grid';
 export type TranslationLayout = 'list' | 'tree';
+/** How a MARKDOWN field is edited: raw markdown text, or the visual editor. */
+export type MarkdownMode = 'source' | 'wysiwyg';
 
 export interface LocalSettingsState {
   theme: Theme;
@@ -17,6 +19,7 @@ export interface LocalSettingsState {
   assetLayout: DataLayout;
   assetDialogLayout: DataLayout;
   translationLayout: TranslationLayout;
+  markdownMode: MarkdownMode;
   lastSeenVersion: string;
 }
 
@@ -29,6 +32,9 @@ export const initialState: LocalSettingsState = {
   assetLayout: 'list',
   assetDialogLayout: 'list',
   translationLayout: 'list',
+  // Authors who write markdown by hand are the ones a MARKDOWN field is for, and this keeps the
+  // field behaving as it always has until someone opts into the visual editor.
+  markdownMode: 'source',
   lastSeenVersion: '',
 };
 
@@ -107,6 +113,10 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { translationLayout });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), translationLayout }));
       },
+      setMarkdownMode: (markdownMode: MarkdownMode): void => {
+        patchState(store, { markdownMode });
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), markdownMode }));
+      },
       setLastSeenVersion: (lastSeenVersion: string): void => {
         patchState(store, { lastSeenVersion });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), lastSeenVersion }));
@@ -123,6 +133,7 @@ export const LocalSettingsStore = signalStore(
       assetLayout: computed(() => store.assetLayout()),
       assetDialogLayout: computed(() => store.assetDialogLayout()),
       translationLayout: computed(() => store.translationLayout()),
+      markdownMode: computed(() => store.markdownMode()),
       lastSeenVersion: computed(() => store.lastSeenVersion()),
     };
   }),

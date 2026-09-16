@@ -3,6 +3,7 @@ import { FormControl } from '@angular/forms';
 import { SchemaFieldRichText } from '@shared/models/schema.model';
 import { vi } from 'vitest';
 
+import { TOOLBAR_REQUIRED_MARKS, TOOLBAR_REQUIRED_NODES } from '../editor-toolbar/editor-toolbar.component';
 import { RichTextEditorComponent } from './rich-text-editor.component';
 
 describe('RichTextEditorComponent', () => {
@@ -15,39 +16,6 @@ describe('RichTextEditorComponent', () => {
     return { component: fixture.componentInstance, fixture };
   }
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('setLink() clears an empty url', () => {
-    const { component } = setup();
-    vi.stubGlobal('prompt', vi.fn().mockReturnValue(''));
-    component.editor.chain().focus().setLink({ href: 'https://example.com' }).run();
-
-    component.setLink();
-
-    expect(component.editor.getAttributes('link')['href']).toBeUndefined();
-  });
-
-  it('setLink() does nothing when the prompt is cancelled', () => {
-    const { component } = setup();
-    component.editor.chain().focus().setLink({ href: 'https://example.com' }).run();
-    vi.stubGlobal('prompt', vi.fn().mockReturnValue(null));
-
-    component.setLink();
-
-    expect(component.editor.getAttributes('link')['href']).toBe('https://example.com');
-  });
-
-  it('setLink() sets the link to the entered url', () => {
-    const { component } = setup();
-    vi.stubGlobal('prompt', vi.fn().mockReturnValue('https://example.com'));
-
-    component.setLink();
-
-    expect(component.editor.getAttributes('link')['href']).toBe('https://example.com');
-  });
-
   it('destroys the editor on component destroy', () => {
     const { component, fixture } = setup();
     const destroySpy = vi.spyOn(component.editor, 'destroy');
@@ -56,11 +24,25 @@ describe('RichTextEditorComponent', () => {
 
     expect(destroySpy).toHaveBeenCalled();
   });
+
   it('highlights a code block through the TipTap integration', () => {
     const { component } = setup();
 
     component.editor.commands.setContent('<pre><code class="language-typescript">const answer: number = 42;</code></pre>');
 
     expect(component.editor.view.dom.innerHTML).toContain('hljs-');
+  });
+
+  /**
+   * The counterpart of the same assertion in the shared toolbar's spec, against the same two
+   * lists. `EditorToolbarComponent` renders one fixed set of buttons for both field editors, so
+   * every type it acts on has to be registered here too - otherwise a button looks fine and
+   * silently does nothing.
+   */
+  it('registers every mark and node the shared toolbar acts on', () => {
+    const { component } = setup();
+
+    expect(Object.keys(component.editor.schema.marks)).toEqual(expect.arrayContaining(TOOLBAR_REQUIRED_MARKS));
+    expect(Object.keys(component.editor.schema.nodes)).toEqual(expect.arrayContaining(TOOLBAR_REQUIRED_NODES));
   });
 });

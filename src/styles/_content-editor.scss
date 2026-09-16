@@ -1,0 +1,163 @@
+/**
+ * Shared styling for the two TipTap-backed content field editors.
+ *
+ * Scoped to both hosts: the markdown editor's WYSIWYG mode renders the same ProseMirror tree as
+ * the rich text editor, so anything styled for one has to be styled for the other. Tailwind's
+ * preflight strips the browser defaults from headings, blockquotes and lists, which is why every
+ * block node needs an explicit rule here - an unstyled node renders as plain body text.
+ */
+ll-rich-text-editor,
+ll-markdown-editor {
+  .border-color {
+    border-color: var(--mat-sys-outline);
+  }
+
+  .tiptap {
+    :first-child {
+      margin-top: 0;
+    }
+
+    /* Code and preformatted text styles */
+    code {
+      background: color-mix(in srgb, var(--mat-sys-primary-container) 50%, transparent);
+      border-radius: 0.5rem;
+      color: var(--mat-sys-on-surface);
+      font-size: 0.85rem;
+      padding: 0.3em 0.3em;
+    }
+    /* Code Block */
+    pre {
+      border-radius: 0.5rem;
+      border: 1px solid var(--mat-sys-outline-variant);
+      color: var(--mat-sys-on-surface);
+      font-family: 'JetBrainsMono', monospace;
+      margin: 1.5rem 0;
+      padding: 0.75rem 1rem;
+
+      code {
+        background: none;
+        color: inherit;
+        font-size: 0.8rem;
+        padding: 0;
+      }
+    }
+    /* Link styles */
+    a {
+      color: var(--mat-sys-primary);
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    /* Blockquote styles */
+    blockquote {
+      border-left: 3px solid var(--mat-sys-outline-variant);
+      color: var(--mat-sys-on-surface-variant);
+      margin: 1.5rem 0;
+      padding-left: 1rem;
+
+      p {
+        margin: 0.5rem 0;
+      }
+    }
+    /* Horizontal rule */
+    hr {
+      border: none;
+      border-top: 1px solid var(--mat-sys-outline-variant);
+      margin: 1.5rem 0;
+    }
+    /* List styles */
+    ul {
+      list-style: disc;
+    }
+    ol {
+      list-style: decimal;
+    }
+    ul,
+    ol {
+      padding: 0 1rem;
+      margin: 1.25rem 1rem 1.25rem 0.4rem;
+
+      li p {
+        margin-top: 0.25em;
+        margin-bottom: 0.25em;
+      }
+    }
+    /* Task list: a flat checklist rather than a bulleted list */
+    ul[data-type='taskList'] {
+      list-style: none;
+      margin-left: 0;
+      padding: 0;
+
+      li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+
+        > label {
+          flex: 0 0 auto;
+          margin-top: 0.25rem;
+          user-select: none;
+        }
+        > div {
+          flex: 1 1 auto;
+        }
+      }
+    }
+    /* Tables: TipTap wraps each one in .tableWrapper */
+    .tableWrapper {
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+
+      th,
+      td {
+        border: 1px solid var(--mat-sys-outline-variant);
+        padding: 0.375rem 0.5rem;
+        text-align: left;
+        vertical-align: top;
+
+        p {
+          margin: 0;
+        }
+      }
+      th {
+        background: color-mix(in srgb, var(--mat-sys-surface-variant) 50%, transparent);
+        font-weight: 600;
+      }
+    }
+    /* Images */
+    img {
+      height: auto;
+      max-width: 100%;
+    }
+    /* Heading styles */
+    h1 {
+      font-weight: 700;
+      font-size: 1.5rem;
+      line-height: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-weight: 600;
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    h3 {
+      font-weight: 600;
+      font-size: 1rem;
+      line-height: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    h4,
+    h5,
+    h6 {
+      font-size: 1rem;
+    }
+  }
+}

@@ -1,23 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal, untracked } from '@angular/core';
 import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideEye, lucideEyeOff, lucideInfo, lucideLanguages } from '@ng-icons/lucide';
+import { lucideEye, lucideFileCode, lucideInfo, lucideLanguages } from '@ng-icons/lucide';
 import { ContentData } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { SchemaFieldMarkdown } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { LocalSettingsStore, MarkdownMode } from '@shared/stores/local-settings.store';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { MarkdownComponent } from 'ngx-markdown';
+import { Editor } from '@tiptap/core';
+import { TiptapEditorDirective } from 'ngx-tiptap';
+
+import { EditorToolbarComponent } from '../editor-toolbar/editor-toolbar.component';
+import { createMarkdownExtensions, hasUnsupportedMarkdown } from './markdown-extensions';
 
 @Component({
   selector: 'll-markdown-editor',
@@ -27,25 +31,26 @@ import { MarkdownComponent } from 'ngx-markdown';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    TiptapEditorDirective,
     HlmFieldImports,
     HlmTooltipImports,
     HlmIconImports,
     HlmInputGroupImports,
     HlmSeparatorImports,
-    MarkdownComponent,
     HlmDropdownMenuImports,
     CanUserPerformPipe,
+    EditorToolbarComponent,
   ],
   providers: [
     provideIcons({
       lucideLanguages,
       lucideInfo,
       lucideEye,
-      lucideEyeOff,
+      lucideFileCode,
     }),
   ],
 })
-export class MarkdownEditorComponent {
+export class MarkdownEditorComponent implements OnDestroy {
   readonly fe = inject(FormErrorHandlerService);
   private readonly translateService = inject(TranslateService);
   private readonly notificationService = inject(NotificationService);
@@ -61,37 +66,76 @@ export class MarkdownEditorComponent {
   isDefaultLocale = computed(() => this.selectedLocale().id === CONTENT_DEFAULT_LOCALE.id);
   selectedLocaleId = computed(() => this.selectedLocale().id);
 
-  preview = signal(false);
+  private readonly settingsStore = inject(LocalSettingsStore);
 
   /**
-   * Prism is loaded on demand the first time the preview opens.
+   * The effective mode for this field.
    *
-   * ngx-markdown highlights code blocks by calling the global `Prism` and silently skips
-   * highlighting when it is missing, so the bundle has to be in place *before* `<markdown>`
-   * renders. Loading it here rather than through angular.json's global `scripts` keeps ~57kB off
-   * every page - the preview is the only thing in the app that needs it.
+   * Authors settle into one way of working - hand-written markdown or the visual editor - so the
+   * choice is a remembered user preference rather than per-field state, and it survives a reload.
+   * A field whose content WYSIWYG mode cannot represent is shown as source regardless, which is
+   * what keeps the preference from ever destroying content. Deriving that here rather than setting
+   * a mode signal at each call site makes it structurally true instead of something to remember.
    */
-  private prismLoaded = false;
+  mode = computed<MarkdownMode>(() => (this.lossy() ? 'source' : this.settingsStore.markdownMode()));
 
-  //Settings
-  settingsStore = inject(LocalSettingsStore);
+  /**
+   * Built when WYSIWYG mode first becomes effective rather than up front - a schema can hold many
+   * markdown fields, and a source-preferring author never opens one of them in WYSIWYG mode.
+   */
+  editor = signal<Editor | null>(null);
 
-  async togglePreview(): Promise<void> {
-    if (this.preview()) {
-      this.preview.set(false);
+  /** Whether the stored markdown holds constructs WYSIWYG mode would destroy. */
+  lossy = signal(false);
+
+  modeTooltip = computed(() => {
+    if (this.mode() === 'wysiwyg') return 'Edit as Markdown';
+    if (this.lossy()) return 'The visual editor cannot represent the HTML or footnotes in this field';
+    return 'Edit in the visual editor';
+  });
+
+  constructor() {
+    // Re-subscribes if the bound control is swapped out, so `lossy` always tracks the live value.
+    effect(onCleanup => {
+      const control = this.form();
+      this.lossy.set(hasUnsupportedMarkdown(control.value));
+      const subscription = control.valueChanges.subscribe(value => this.lossy.set(hasUnsupportedMarkdown(value)));
+      onCleanup(() => subscription.unsubscribe());
+    });
+
+    // Loading the editor reactively rather than from the toggle handler is what makes a remembered
+    // `wysiwyg` preference work: on a reload there is no click to hang the setup off.
+    effect(() => {
+      if (this.mode() !== 'wysiwyg') return;
+      const control = this.form();
+      untracked(() => {
+        const editor = this.ensureEditor();
+        editor.setEditable(!control.disabled, false);
+        // `emitUpdate: false` matters: merely looking at a document must not rewrite the stored
+        // markdown. Only a real edit writes back, through the `update` handler in `ensureEditor`.
+        editor.commands.setContent(control.value ?? '', { contentType: 'markdown', emitUpdate: false });
+      });
+    });
+  }
+
+  toggleMode(): void {
+    if (this.mode() === 'wysiwyg') {
+      this.settingsStore.setMarkdownMode('source');
       return;
     }
-    if (!this.prismLoaded) {
-      await import('prismjs');
-      this.prismLoaded = true;
+    // Checked again here rather than trusting `lossy` alone: this is the point where content would
+    // actually be destroyed, so it is the one place the guard has to be correct.
+    if (hasUnsupportedMarkdown(this.form().value)) {
+      this.notificationService.error(
+        'This field contains HTML or footnotes, which the visual editor cannot represent. Edit it as Markdown.',
+      );
+      return;
     }
-    this.preview.set(true);
+    this.settingsStore.setMarkdownMode('wysiwyg');
   }
 
   translate(fieldName: string, sourceLocale: string, targetLocale: string): void {
     // get source locale content
-    // this.data[`${field.name}_i18n_${this.selectedLocaleId()}`];
-    //debugger;
     let content = '';
     if (sourceLocale === CONTENT_DEFAULT_LOCALE.id) {
       content = this.data()[fieldName];
@@ -109,7 +153,7 @@ export class MarkdownEditorComponent {
         })
         .subscribe({
           next: result => {
-            this.form().setValue(result);
+            this.applyValue(result);
             this.notificationService.success('Translated');
           },
           error: err => {
@@ -124,5 +168,44 @@ export class MarkdownEditorComponent {
           },
         });
     }
+  }
+
+  /**
+   * Writes markdown that came from outside the editor (an AI translation) into the form, keeping
+   * WYSIWYG mode in sync.
+   *
+   * `setValue` fires `valueChanges` synchronously, so a translation carrying HTML has already
+   * flipped `lossy` - and with it `mode` - by the time this reads it: the field drops to source
+   * without the author's stored preference changing.
+   */
+  private applyValue(markdown: string): void {
+    this.form().setValue(markdown);
+    if (this.mode() !== 'wysiwyg') return;
+    this.editor()?.commands.setContent(markdown, { contentType: 'markdown', emitUpdate: false });
+  }
+
+  private ensureEditor(): Editor {
+    const existing = untracked(this.editor);
+    if (existing) return existing;
+    const editor = new Editor({
+      // Same placeholder source mode shows, so both modes hint the default locale's value.
+      extensions: createMarkdownExtensions({ placeholder: this.default() }),
+      editorProps: {
+        attributes: {
+          class: 'p-2 border-color rounded-b-md outline-hidden',
+          spellcheck: 'false',
+        },
+      },
+    });
+    // The form control is the single source of truth and always holds markdown, in both modes.
+    // ngx-tiptap's own value accessor only emits `json` or `html`, so the control is bound by hand
+    // here instead of with `[formControl]`.
+    editor.on('update', ({ editor }) => this.form().setValue(editor.getMarkdown()));
+    this.editor.set(editor);
+    return editor;
+  }
+
+  ngOnDestroy(): void {
+    this.editor()?.destroy();
   }
 }

@@ -106,6 +106,29 @@ describe('LocalSettingsStore', () => {
     expect(JSON.parse(localStorage.getItem(LS_KEY)!).translationLayout).toBe('tree');
   });
 
+  it('defaults markdownMode to source', () => {
+    const store = createStore();
+    expect(store.markdownMode()).toBe('source');
+  });
+
+  it('setMarkdownMode updates the markdownMode signal and persists it', () => {
+    const store = createStore();
+    store.setMarkdownMode('wysiwyg');
+    expect(store.markdownMode()).toBe('wysiwyg');
+    expect(JSON.parse(localStorage.getItem(LS_KEY)!).markdownMode).toBe('wysiwyg');
+  });
+
+  // The point of persisting it: an author picks a way of working once and keeps it across reloads.
+  it('restores a stored markdownMode into a freshly constructed store', () => {
+    const store = createStore();
+    store.setMarkdownMode('wysiwyg');
+
+    TestBed.resetTestingModule();
+    const reloaded = createStore();
+
+    expect(reloaded.markdownMode()).toBe('wysiwyg');
+  });
+
   it('setLastSeenVersion updates the lastSeenVersion signal and persists it', () => {
     const store = createStore();
     store.setLastSeenVersion('3.2.0');
