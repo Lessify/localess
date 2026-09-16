@@ -1,0 +1,27 @@
+<!--
+  `align="end"` is read by `hlmDropdownMenuTrigger` on this same element, not by
+  `hlmInputGroupButton`, and it is load-bearing: this button always sits at the right-hand edge of
+  its field, so with the default `start` alignment the menu opens rightward into the viewport edge.
+  CDK then clamps its width to whatever is left - about 300px - and the longest item ("Translate
+  from English (Default) to German") needs 293px against 292px available, wrapping onto a second
+  line. Anchoring the menu's right edge to the button lets it grow leftwards instead.
+-->
+<button
+  hlmInputGroupButton
+  size="icon-xs"
+  align="end"
+  [class]="placementClass()"
+  [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false"
+  [hlmDropdownMenuTrigger]="translationMenu"
+  hlmTooltip="Translate the field with AI">
+  <ng-icon name="lucideLanguages" />
+</button>
+<ng-template #translationMenu>
+  <hlm-dropdown-menu>
+    @for (locale of sourceLocales(); track locale.id) {
+      <button hlmDropdownMenuItem (click)="translateFrom.emit(locale.id)">
+        Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
+      </button>
+    }
+  </hlm-dropdown-menu>
+</ng-template>

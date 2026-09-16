@@ -33,7 +33,6 @@ import {
   sortSchemaEnumValue,
 } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
@@ -59,6 +58,7 @@ import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-edit
 import { ReferenceSelectComponent } from '../shared/reference-select/reference-select.component';
 import { ReferencesSelectComponent } from '../shared/references-select/references-select.component';
 import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
+import { TranslateMenuComponent } from '../shared/translate-menu/translate-menu.component';
 import { SchemaSelectChange } from './edit-document-schema.model';
 
 @Component({
@@ -68,9 +68,9 @@ import { SchemaSelectChange } from './edit-document-schema.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    CanUserPerformPipe,
     CommonModule,
     RichTextEditorComponent,
+    TranslateMenuComponent,
     LinkSelectComponent,
     ReferenceSelectComponent,
     ReferencesSelectComponent,

@@ -8,6 +8,8 @@ import {
   remoteConfigTemplate,
 } from '../config';
 import { HttpsError } from 'firebase-functions/v2/https';
+import { TranslateFormat } from '../models';
+import { deeplTranslateOptions, googleMimeType } from '../utils/translate-format.utils';
 import type { TargetLanguageCode } from 'deepl-node';
 import type { SourceLanguageCode } from 'deepl-node/dist/types';
 import { logger } from 'firebase-functions/v2';
@@ -18,8 +20,14 @@ import type { protos } from '@google-cloud/translate';
  * @param {string} content
  * @param {string | null} sourceLocale
  * @param {string} targetLocale
+ * @param {TranslateFormat} format `html` translates text nodes and passes markup through untouched
  */
-export async function translateCloud(content: string, sourceLocale: string | null, targetLocale: string): Promise<string> {
+export async function translateCloud(
+  content: string,
+  sourceLocale: string | null,
+  targetLocale: string,
+  format: TranslateFormat = 'text'
+): Promise<string> {
   let deeplApiKey: string | undefined = undefined;
   if (isEmulatorEnabled) {
     // Read from local env
@@ -46,7 +54,12 @@ export async function translateCloud(content: string, sourceLocale: string | nul
     const { Translator } = await import('deepl-node');
     const translator = new Translator(deeplApiKey);
     try {
-      const result = await translator.translateText(content, sourceLocale as SourceLanguageCode | null, targetLocale as TargetLanguageCode);
+      const result = await translator.translateText(
+        content,
+        sourceLocale as SourceLanguageCode | null,
+        targetLocale as TargetLanguageCode,
+        deeplTranslateOptions(format)
+      );
       return result.text;
     } catch (e) {
       logger.error(e);
@@ -54,7 +67,7 @@ export async function translateCloud(content: string, sourceLocale: string | nul
     }
   } else {
     // Google Translate
-    return await translateWithGoogle(content, sourceLocale, targetLocale);
+    return await translateWithGoogle(content, sourceLocale, targetLocale, format);
   }
 }
 
@@ -63,8 +76,14 @@ export async function translateCloud(content: string, sourceLocale: string | nul
  * @param {string} content
  * @param {string | null} sourceLocale
  * @param {string} targetLocale
+ * @param {TranslateFormat} format `html` translates text nodes and passes markup through untouched
  */
-export async function translateWithGoogle(content: string, sourceLocale: string | undefined | null, targetLocale: string): Promise<string> {
+export async function translateWithGoogle(
+  content: string,
+  sourceLocale: string | undefined | null,
+  targetLocale: string,
+  format: TranslateFormat = 'text'
+): Promise<string> {
   if (sourceLocale && !GCP_SUPPORT_LOCALES.has(sourceLocale)) {
     throw new HttpsError('invalid-argument', `Unsupported source locale : '${sourceLocale}'`);
   }
@@ -83,7 +102,7 @@ export async function translateWithGoogle(content: string, sourceLocale: string 
   const tRequest: protos.google.cloud.translation.v3.ITranslateTextRequest = {
     parent: `projects/${projectId}/locations/${locationId}`,
     contents: [content],
-    mimeType: 'text/plain',
+    mimeType: googleMimeType(format),
     sourceLanguageCode: sourceLocale,
     targetLanguageCode: targetLocale,
   };

@@ -7,11 +7,9 @@ import { lucideEye, lucideFileCode, lucideInfo, lucideLanguages } from '@ng-icon
 import { ContentData } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { SchemaFieldMarkdown } from '@shared/models/schema.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore, MarkdownMode } from '@shared/stores/local-settings.store';
-import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
@@ -21,6 +19,7 @@ import { Editor } from '@tiptap/core';
 import { TiptapEditorDirective } from 'ngx-tiptap';
 
 import { EditorToolbarComponent } from '../editor-toolbar/editor-toolbar.component';
+import { TranslateMenuComponent } from '../translate-menu/translate-menu.component';
 import { createMarkdownExtensions, hasUnsupportedMarkdown } from './markdown-extensions';
 
 @Component({
@@ -37,9 +36,8 @@ import { createMarkdownExtensions, hasUnsupportedMarkdown } from './markdown-ext
     HlmIconImports,
     HlmInputGroupImports,
     HlmSeparatorImports,
-    HlmDropdownMenuImports,
-    CanUserPerformPipe,
     EditorToolbarComponent,
+    TranslateMenuComponent,
   ],
   providers: [
     provideIcons({

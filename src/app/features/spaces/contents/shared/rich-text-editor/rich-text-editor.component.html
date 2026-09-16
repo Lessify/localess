@@ -14,6 +14,12 @@
       </tiptap-editor>
       <div hlmInputGroupAddon align="block-start" class="flex flex-wrap border-b">
         <ll-editor-toolbar [editor]="editor" [disabled]="form().disabled" />
+        @if (field.translatable && !isDefaultLocale()) {
+          <ll-translate-menu
+            [selectedLocale]="selectedLocale()"
+            [availableLocales]="availableLocales()"
+            (translateFrom)="translate(field.name, $event, selectedLocaleId())" />
+        }
       </div>
     </div>
     @if (field.maxLength) {

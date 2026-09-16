@@ -31,6 +31,7 @@ src/app/features/spaces/contents/
   shared/
     document-status/                     ← published/draft/unpublished badge
     editor-toolbar/                      ← formatting toolbar shared by both editors below
+    translate-menu/                      ← AI translate button + locale menu, shared by both
     markdown-editor/                     ← MARKDOWN field editor (source + WYSIWYG modes)
     rich-text-editor/                    ← RICH_TEXT field editor (TipTap, stores JSON)
 ```
@@ -89,7 +90,7 @@ Both are TipTap-based, but they store different things, and that difference is t
 | Field kind | `RICH_TEXT` | `MARKDOWN` |
 | Form control value | TipTap JSON doc (`outputFormat="json"` via ngx-tiptap's value accessor) | **markdown string, in both modes** |
 | API payload | `ContentRichText` node tree | `type: string` |
-| AI translate | not offered (`translate.utils.ts` — nested JSON unsupported) | supported |
+| AI translate | HTML interchange (see below) | plain text |
 
 Both use the same `EditorToolbarComponent`, so they offer identical formatting tools. The remaining UI differences are structural, not stylistic: the markdown editor adds a source/WYSIWYG mode toggle (rich text has no text form to switch to) and an AI translate button (rich text is not AI-translatable).
 
@@ -108,6 +109,45 @@ Two implementation notes:
 
 - **Active states are a signal**, refreshed on the editor's `transaction` event, not `editor.isActive(...)` calls in the template. ngx-tiptap marks its own *host* view for check on each transaction; that never reaches this child component, and its `editor` input keeps the same reference, so under OnPush the buttons would freeze on first render.
 - **`display: contents` on the host** keeps the buttons in the flex flow of the input group's addon row.
+
+### AI translation
+
+`ll-translate-menu` (`shared/translate-menu/`) is the one copy of the translate button and its source-locale dropdown, used by **every** translatable field — TEXT and TEXTAREA in `edit-document-schema.component.html`, plus both editors. Each host still runs its own translation, because the field kinds send different things to the provider; the component only reports which locale to translate from, via `(translateFrom)`.
+
+Its `placement` input exists because the two contexts need different nudging to land the button in the same place on screen:
+
+| `placement` | Used by | Why |
+|---|---|---|
+| `toolbar` (default) | RICH_TEXT / MARKDOWN editors | `ms-auto` pushes it to the end of the block-start toolbar row. An `align="inline-end"` addon can't be used: an input group containing a block-start addon is switched to `flex-col`, so the addon would stack *below* the editor. |
+| `addon` | TEXT / TEXTAREA | Sits alone in an `align="inline-end"` addon. That addon pulls a button flush with `has-[>button]:me-[-0.3rem]`, which only matches a **direct** child — this component sits in between — so the offset is reapplied on the button itself. |
+
+The trigger also carries `align="end"`, which is **load-bearing**. That attribute is read by `hlmDropdownMenuTrigger`, not by `hlmInputGroupButton` — the two directives share the element. Because the button always sits at the right-hand edge of its field, the default `start` alignment opens the menu rightward into the viewport edge; CDK then clamps it to the ~300px that remain and the longest item ("Translate from English (Default) to German") wraps, needing 293px against 292px available. Anchoring the menu's right edge to the trigger lets it grow leftwards instead.
+
+`TranslateData` carries a `format?: 'text' | 'html'` (default `text`) which the `translate` function threads to the provider:
+
+| | `format: 'text'` | `format: 'html'` |
+|---|---|---|
+| Google | `mimeType: 'text/plain'` | `mimeType: 'text/html'` |
+| DeepL | no options | `{ tagHandling: 'html' }` |
+
+In HTML mode **both providers pass markup through untouched and translate only text nodes**, which is what makes a RICH_TEXT field translatable without losing its structure or marks:
+
+```
+stored JSON → generateHTML() → provider (format: 'html') → editor.setContent(html) → JSON
+```
+
+The last step goes through ngx-tiptap's value accessor (`setContent` emits an `update`), so the translated document reaches the form control the same way a keystroke would. MARKDOWN fields keep sending plain text — markdown *is* text, so there is nothing to protect.
+
+Two things to know when touching this:
+
+- **`generateHTML` must be given the same extension list as the editor.** A mismatch does not error — it silently drops whichever nodes the shorter list lacks. Hence `rich-text-extensions.ts`, read by both the `Editor` and the translate path, with `rich-text-extensions.spec.ts` asserting a JSON → HTML → JSON round trip per node and mark.
+- **The emulator stub is format-aware.** `translate.ts` returns a canned string when emulated; for `html` it appends a `<p>` so the result still parses, instead of feeding the editor a stray text node.
+
+#### Not yet covered: whole-document translate
+
+There are two translation paths, and only the per-field button above handles RICH_TEXT. The bulk `translateLocale` onCall (`functions/src/contents.ts`) walks every field server-side and still skips RICH_TEXT via `isSchemaFieldKindAITranslatable`.
+
+**Do not just flip that flag to `true`.** It gates the server-side path, which would then hand the raw JSON document to Google as plain text and write the mangled result back to Firestore. Enabling it needs JSON↔HTML conversion in `functions/`, and TipTap's `generateHTML`/`generateJSON` require a `window` — they throw in plain Node — so that means a DOM shim (jsdom/happy-dom) plus the extension list shared across both npm projects. The `format` flag above is already in place for it. (Also note that path calls `translateWithGoogle` directly, so it ignores DeepL even when configured.)
 
 ### Styling
 

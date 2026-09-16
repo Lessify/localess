@@ -27,27 +27,11 @@
                   autocomplete="off" />
                 @if (field.translatable && !isDefaultLocale()) {
                   <div hlmInputGroupAddon align="inline-end">
-                    <button
-                      hlmInputGroupButton
-                      variant="ghost"
-                      size="icon-xs"
-                      align="end"
-                      [disabled]="isDefaultLocale() || ('CONTENT_UPDATE' | canUserPerform | async) === false"
-                      [hlmDropdownMenuTrigger]="translationMenu"
-                      hlmTooltip="Translate the field with AI">
-                      <ng-icon name="lucideLanguages" />
-                    </button>
-                    <ng-template #translationMenu>
-                      <hlm-dropdown-menu>
-                        @for (locale of availableLocales(); track locale.id) {
-                          @if (locale.id !== selectedLocaleId()) {
-                            <button hlmDropdownMenuItem (click)="translate(field.name, locale.id, selectedLocaleId())">
-                              Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
-                            </button>
-                          }
-                        }
-                      </hlm-dropdown-menu>
-                    </ng-template>
+                    <ll-translate-menu
+                      placement="addon"
+                      [selectedLocale]="selectedLocale()"
+                      [availableLocales]="availableLocales()"
+                      (translateFrom)="translate(field.name, $event, selectedLocaleId())" />
                   </div>
                 }
               </div>
@@ -86,27 +70,11 @@
                 </textarea>
                 @if (field.translatable && !isDefaultLocale()) {
                   <div hlmInputGroupAddon align="inline-end">
-                    <button
-                      hlmInputGroupButton
-                      variant="ghost"
-                      size="icon-xs"
-                      align="end"
-                      [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false"
-                      [hlmDropdownMenuTrigger]="translationMenu"
-                      hlmTooltip="Translate the field with AI">
-                      <ng-icon name="lucideLanguages" />
-                    </button>
-                    <ng-template #translationMenu>
-                      <hlm-dropdown-menu>
-                        @for (locale of availableLocales(); track locale.id) {
-                          @if (locale.id !== selectedLocaleId()) {
-                            <button hlmDropdownMenuItem (click)="translate(field.name, locale.id, selectedLocaleId())">
-                              Translate from <b>{{ locale.name }}</b> to <b>{{ selectedLocale().name }}</b>
-                            </button>
-                          }
-                        }
-                      </hlm-dropdown-menu>
-                    </ng-template>
+                    <ll-translate-menu
+                      placement="addon"
+                      [selectedLocale]="selectedLocale()"
+                      [availableLocales]="availableLocales()"
+                      (translateFrom)="translate(field.name, $event, selectedLocaleId())" />
                   </div>
                 }
               </div>
@@ -123,7 +91,12 @@
           <!--RICH_TEXT-->
           @case ('RICH_TEXT') {
             @if (form.controls[field.name]; as control) {
-              <ll-rich-text-editor [form]="control" [component]="field" />
+              <ll-rich-text-editor
+                [data]="data()"
+                [form]="control"
+                [component]="field"
+                [selectedLocale]="selectedLocale()"
+                [availableLocales]="availableLocales()" />
             }
           }
           <!--MARKDOWN-->
