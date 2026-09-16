@@ -140,10 +140,3 @@ export function isContentLink(arg: any): arg is ContentLink {
 export function isContentReference(arg: any): arg is ContentReference {
   return arg.kind === 'REFERENCE';
 }
-
-export interface TranslateContentLocaleData {
-  spaceId: string;
-  contentId: string;
-  sourceLocaleId?: string;
-  targetLocaleId: string;
-}

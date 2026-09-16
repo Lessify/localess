@@ -96,7 +96,8 @@
                 [form]="control"
                 [component]="field"
                 [selectedLocale]="selectedLocale()"
-                [availableLocales]="availableLocales()" />
+                [availableLocales]="availableLocales()"
+                [fallbackLocale]="space()?.localeFallback" />
             }
           }
           <!--MARKDOWN-->
@@ -108,7 +109,8 @@
                 [component]="field"
                 [default]="isDefaultLocale() ? undefined : data()[field.name]"
                 [selectedLocale]="selectedLocale()"
-                [availableLocales]="availableLocales()" />
+                [availableLocales]="availableLocales()"
+                [fallbackLocale]="space()?.localeFallback" />
             }
           }
           <!--NUMBER-->

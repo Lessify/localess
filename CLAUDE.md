@@ -132,7 +132,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 
 | Topic | File | Read when working on |
 |-------|------|----------------------|
-| Domain concepts (Space, Content, Schema, Translation, Asset) | [docs/concepts.md](docs/concepts.md) | Any new feature, onboarding |
+| Domain concepts (Space, Content, Schema, Translation, Asset), **how localised values are stored** | [docs/concepts.md](docs/concepts.md) | Any new feature, onboarding, anything reading/writing a localised field |
 | CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](docs/cdn-caching.md) | `functions/src/v1/cdn.ts`, public API |
 | V1 API — all endpoints, routers, middleware, token permissions | [docs/v1-functions-api.md](docs/v1-functions-api.md) | Any work in `functions/src/v1/` |
 | Publish flow & cache invalidation | [docs/publish-flow.md](docs/publish-flow.md) | Content/translation publish, tasks |

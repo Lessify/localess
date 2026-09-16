@@ -8,4 +8,6 @@ export interface TranslateLocaleDialogModel {
 export type TranslateLocaleDialogReturn = {
   sourceLocale: string;
   targetLocale: string;
+  /** Replace translations that already have a value instead of filling only the empty ones. */
+  overwrite: boolean;
 };

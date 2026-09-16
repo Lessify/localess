@@ -20,8 +20,18 @@ describe('TranslateLocaleDialogComponent', () => {
   it('defaults both source and target to the first locale', () => {
     const { component } = setup({ locales: [en, de] });
 
-    expect(component.form.value).toEqual({ sourceLocale: 'en', targetLocale: 'en' });
+    expect(component.form.value).toEqual({ sourceLocale: 'en', targetLocale: 'en', overwrite: false });
     expect(component.form.valid).toBe(true);
+  });
+
+  // Off by default: filling only empty translations is safe to run twice, overwriting is not.
+  it('defaults overwrite to off and carries the author’s choice out of the dialog', () => {
+    const { component } = setup({ locales: [en, de] });
+    expect(component.form.value.overwrite).toBe(false);
+
+    component.form.controls['overwrite'].setValue(true);
+
+    expect(component.form.value.overwrite).toBe(true);
   });
 
   it('localeItemToString() shows the locale name, or falls back to the raw value', () => {

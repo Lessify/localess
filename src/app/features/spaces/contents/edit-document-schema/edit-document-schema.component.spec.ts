@@ -1,6 +1,7 @@
 // EditDocumentSchemaComponent transitively imports TranslateService (and thus @angular/fire/functions),
 // which is mocked globally in src/test-setup.ts (registered via the test builder's setupFiles option)
 // — see that file for why this isn't a local vi.mock here.
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Functions } from '@angular/fire/functions';
 import { Router } from '@angular/router';
@@ -8,6 +9,8 @@ import { ContentData } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { describe, expect, it, vi } from 'vitest';
+import { UserStore } from '@shared/stores/user.store';
+
 import { EditDocumentSchemaComponent } from './edit-document-schema.component';
 
 function schema(fields: SchemaComponent['fields'], id = 'root-1'): SchemaComponent {
@@ -19,6 +22,9 @@ function setup(config: { schemas?: Schema[]; data?: ContentData; locale?: Locale
     providers: [
       { provide: Functions, useValue: {} },
       { provide: Router, useValue: {} },
+      // On a non-default locale the translate menu renders, and its canUserPerform pipe reads
+      // UserStore, which would otherwise pull in Firebase Auth.
+      { provide: UserStore, useValue: { role: signal('admin'), permissions: signal([]) } },
     ],
   });
   const fixture = TestBed.createComponent(EditDocumentSchemaComponent);
@@ -193,6 +199,61 @@ describe('EditDocumentSchemaComponent', () => {
       const nodeA = { id: 'a', type: SchemaType.NODE, displayName: 'Alpha' } as SchemaComponent;
       const { component } = setup({ schemas: [nodeA] });
       expect(component.filterSchema(['a', 'missing'])).toEqual([nodeA]);
+    });
+  });
+
+/**
+   * The write half of the locale storage rule: what the author types has to land under the right
+   * key. The default locale writes the bare field name, every other locale writes
+   * `{field}_i18n_{locale}` and must leave the default value alone.
+   *
+   * See docs/concepts.md "How localised values are stored".
+   */
+  describe('writing form values back to data', () => {
+    const translatable = schema([{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true } as never]);
+
+    function typeAndFlush(component: EditDocumentSchemaComponent, value: string) {
+      component.form.controls['title'].setValue(value);
+      // the form -> data subscription is debounced by 500ms
+      vi.advanceTimersByTime(600);
+    }
+
+    it('writes to the bare field name on the default locale', () => {
+      vi.useFakeTimers();
+      const data: ContentData = { _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello' };
+      const { component } = setup({ schemas: [translatable], data, locale: CONTENT_DEFAULT_LOCALE });
+
+      typeAndFlush(component, 'Changed');
+
+      expect(data['title']).toBe('Changed');
+      expect(data['title_i18n_default']).toBeUndefined();
+      vi.useRealTimers();
+    });
+
+    it('writes to the suffixed key on another locale, leaving the default untouched', () => {
+      vi.useFakeTimers();
+      const data: ContentData = { _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello' };
+      const { component } = setup({ schemas: [translatable], data, locale: { id: 'de', name: 'German' } });
+
+      typeAndFlush(component, 'Hallo');
+
+      expect(data['title_i18n_de']).toBe('Hallo');
+      expect(data['title']).toBe('Hello');
+      vi.useRealTimers();
+    });
+
+    // Clearing a translation removes the key rather than storing an empty string, so serving falls
+    // back to the default locale again.
+    it('removes the suffixed key when the translation is cleared', () => {
+      vi.useFakeTimers();
+      const data: ContentData = { _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+      const { component } = setup({ schemas: [translatable], data, locale: { id: 'de', name: 'German' } });
+
+      typeAndFlush(component, '');
+
+      expect(data['title_i18n_de']).toBeUndefined();
+      expect(data['title']).toBe('Hello');
+      vi.useRealTimers();
     });
   });
 

@@ -223,23 +223,4 @@ describe('ContentService', () => {
     expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'content-unpublish');
   });
 
-  it('translateLocale() omits the sourceLocaleId when it is the default content locale', async () => {
-    const service = setup();
-    const callable = vi.fn().mockReturnValue(of(undefined));
-    vi.mocked(httpsCallableData).mockReturnValue(callable);
-
-    await firstValueFrom(service.translateLocale('space-1', 'c1', 'default', 'de'));
-
-    expect(callable).toHaveBeenCalledWith({ spaceId: 'space-1', contentId: 'c1', sourceLocaleId: undefined, targetLocaleId: 'de' });
-  });
-
-  it('translateLocale() passes through a non-default sourceLocaleId', async () => {
-    const service = setup();
-    const callable = vi.fn().mockReturnValue(of(undefined));
-    vi.mocked(httpsCallableData).mockReturnValue(callable);
-
-    await firstValueFrom(service.translateLocale('space-1', 'c1', 'fr', 'de'));
-
-    expect(callable).toHaveBeenCalledWith({ spaceId: 'space-1', contentId: 'c1', sourceLocaleId: 'fr', targetLocaleId: 'de' });
-  });
 });

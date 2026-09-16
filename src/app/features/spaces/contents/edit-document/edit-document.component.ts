@@ -44,7 +44,7 @@ import {
 } from '@shared/components/translate-locale-dialog';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale, toProviderLocale } from '@shared/models/locale.model';
 import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { TokenPermission } from '@shared/models/token.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -53,6 +53,7 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { PlatformService } from '@shared/services/platform.service';
 import { TokenService } from '@shared/services/token.service';
+import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
@@ -69,7 +70,8 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { filter, switchMap } from 'rxjs/operators';
+import { EMPTY } from 'rxjs';
+import { filter, map, switchMap } from 'rxjs/operators';
 import { v4 } from 'uuid';
 
 import { ContentPreviewComponent } from '../content-preview/content-preview.component';
@@ -140,6 +142,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
   private readonly contentHelperService = inject(ContentHelperService);
+  private readonly translateService = inject(TranslateService);
   readonly fe = inject(FormErrorHandlerService);
 
   // Input
@@ -208,6 +211,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
 
   documentData: ContentData = { _id: '', _schema: '', schema: '' };
+  /** Bumped to rebuild the schema form after a bulk translation mutates the document in place. */
+  formRefresh = signal(0);
   selectedDocumentData: ContentData = { _id: '', _schema: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
   private savedDocumentData = signal<ContentData | undefined>(undefined);
@@ -619,23 +624,57 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.notificationService.success(`Full Slug copied to clipboard.`);
   }
 
+  /**
+   * Translates the whole document into the selected locale.
+   *
+   * Runs against the in-memory document rather than the server's copy, so unsaved edits are
+   * included rather than overwritten, and the result is applied to the form for review - nothing
+   * reaches Firestore until the author presses Save.
+   */
   openTranslateLocaleDialog(): void {
     this.dialog
       .open<TranslateLocaleDialogComponent, TranslateLocaleDialogModel, TranslateLocaleDialogReturn>(TranslateLocaleDialogComponent, {
         panelClass: 'sm',
-        data: {
-          locales: this.availableLocales(),
-          description: 'Save all your changes before running the Translation, otherwise you will lose all changes.',
-        },
+        data: { locales: this.availableLocales() },
       })
       .afterClosed()
       .pipe(
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.translateLocale(this.spaceId(), this.contentId(), it.sourceLocale, it.targetLocale)),
+        switchMap(it => {
+          const fields = this.contentHelperService.collectTranslatableFields(
+            this.documentData,
+            this.schemas(),
+            it.sourceLocale,
+            it.targetLocale,
+            { overwrite: it.overwrite },
+          );
+          if (fields.length === 0) {
+            this.notificationService.success('Nothing to translate: every field already has a translation.');
+            return EMPTY;
+          }
+          const byId = new Map(fields.map(field => [field.id, field]));
+          const fallbackLocaleId = this.selectedSpace()?.localeFallback.id;
+          return this.translateService
+            .translateBatch({
+              items: fields.map(({ id, content, format }) => ({ id, content, format })),
+              sourceLocale: toProviderLocale(it.sourceLocale, fallbackLocaleId),
+              targetLocale: toProviderLocale(it.targetLocale, fallbackLocaleId),
+            })
+            .pipe(map(result => ({ result, byId, total: fields.length })));
+        }),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Locale Translate run with success.');
+        next: ({ result, byId, total }) => {
+          for (const item of result.items) byId.get(item.id)?.apply(item.content);
+          // The document is mutated in place, so the form has to be rebuilt from it.
+          this.formRefresh.update(v => v + 1);
+          if (result.failed.length > 0) {
+            this.notificationService.error(
+              `Translated ${result.items.length} of ${total} fields. ${result.failed.length} could not be translated.`,
+            );
+          } else {
+            this.notificationService.success(`Translated ${result.items.length} fields. Review them and press Save.`);
+          }
         },
         error: () => {
           this.notificationService.error('Locale Translate failed.');

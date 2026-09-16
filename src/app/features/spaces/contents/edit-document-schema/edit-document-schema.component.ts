@@ -22,7 +22,7 @@ import { provideIcons } from '@ng-icons/core';
 import { lucideBookCopy, lucideCirclePlus, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash, lucideX } from '@ng-icons/lucide';
 import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icons';
 import { ContentAsset, ContentData, ContentDocument, ContentReference } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale, toProviderLocale } from '@shared/models/locale.model';
 import {
   Schema,
   SchemaComponent,
@@ -129,6 +129,13 @@ export class EditDocumentSchemaComponent {
   readonly space = input<Space>();
   readonly data = input<ContentData>({ _id: '', _schema: '', schema: '' });
   schemas = input.required<Schema[]>();
+  /**
+   * Incremented by the parent to force a regeneration after it mutates the document in place.
+   *
+   * The regeneration effect below keys off the document id and the selected locale, neither of
+   * which changes when a bulk translation writes new values into the same document.
+   */
+  readonly refresh = input(0);
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();
   // Form Highlight
@@ -222,6 +229,7 @@ export class EditDocumentSchemaComponent {
     effect(() => {
       this.documentId();
       this.selectedLocaleId();
+      this.refresh();
       untracked(() => this.onChanged());
     });
   }
@@ -482,8 +490,8 @@ export class EditDocumentSchemaComponent {
       this.translateService
         .translate({
           content: content,
-          sourceLocale: sourceLocale !== CONTENT_DEFAULT_LOCALE.id ? sourceLocale : null,
-          targetLocale: targetLocale,
+          sourceLocale: toProviderLocale(sourceLocale, this.space()?.localeFallback.id),
+          targetLocale: toProviderLocale(targetLocale, this.space()?.localeFallback.id),
         })
         .subscribe({
           next: result => {

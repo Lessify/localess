@@ -371,4 +371,187 @@ describe('ContentHelperService', () => {
       expect(form.value).toEqual({ uri: 'ref-1', kind: 'REFERENCE' });
     });
   });
+describe('collectTranslatableFields', () => {
+    function nodeSchema(fields: SchemaField[], id: string): SchemaComponent {
+      return { id, type: SchemaType.NODE, fields } as SchemaComponent;
+    }
+
+    it('collects a translatable TEXT field whose target is empty', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      const fields = service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de');
+
+      expect(fields).toHaveLength(1);
+      expect(fields[0].content).toBe('Hello');
+      expect(fields[0].format).toBe('text');
+    });
+
+    it('applies a translation onto the target locale key, leaving the source alone', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')[0].apply('Hallo');
+
+      expect(data['title_i18n_de']).toBe('Hallo');
+      expect(data['title']).toBe('Hello');
+    });
+
+    it('skips a field whose target already has a value', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      expect(service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
+    });
+
+    it('includes a filled target when overwrite is requested', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      expect(service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de', { overwrite: true })).toHaveLength(1);
+    });
+
+    it('skips fields that are not translatable and kinds that are not text', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', count: 5 };
+      const schemas = [
+        rootSchema([
+          field({ name: 'title', kind: SchemaFieldKind.TEXT }),
+          field({ name: 'count', kind: SchemaFieldKind.NUMBER, translatable: true }),
+        ]),
+      ];
+
+      expect(service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
+    });
+
+    it('skips a field with no source value', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: '' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      expect(service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
+    });
+
+    it('reads the locale-suffixed key when the source is not the default locale', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      expect(service.collectTranslatableFields(data, schemas, 'fr', 'de')[0].content).toBe('Bonjour');
+    });
+
+    it('recurses into SCHEMA and SCHEMAS children', () => {
+      const { service } = setup();
+      const data: ContentData = {
+        _id: 'c1',
+        schema: 'root-1',
+        hero: { _id: 'c2', schema: 'block', title: 'Hero' },
+        rows: [
+          { _id: 'c3', schema: 'block', title: 'One' },
+          { _id: 'c4', schema: 'block', title: 'Two' },
+        ],
+      };
+      const schemas = [
+        rootSchema([field({ name: 'hero', kind: SchemaFieldKind.SCHEMA }), field({ name: 'rows', kind: SchemaFieldKind.SCHEMAS })]),
+        nodeSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })], 'block'),
+      ];
+
+      const fields = service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de');
+
+      expect(fields.map(it => it.content).sort()).toEqual(['Hero', 'One', 'Two']);
+    });
+
+    // RICH_TEXT travels as HTML because that is the only shape a provider can translate without
+    // flattening the document.
+    it('serializes RICH_TEXT to HTML and parses the translation back to a document', () => {
+      const { service } = setup();
+      const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }] };
+      const data: ContentData = { _id: 'c1', schema: 'root-1', body: doc };
+      const schemas = [rootSchema([field({ name: 'body', kind: SchemaFieldKind.RICH_TEXT, translatable: true })])];
+
+      const fields = service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de');
+      expect(fields[0].format).toBe('html');
+      expect(fields[0].content).toBe('<p>Hello</p>');
+
+      fields[0].apply('<p>Hallo</p>');
+
+      expect(data['body_i18n_de']).toMatchObject({ type: 'doc' });
+      expect(data['body_i18n_de'].content[0].content[0].text).toBe('Hallo');
+    });
+
+    it('skips an empty RICH_TEXT document', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', body: { type: 'doc', content: [{ type: 'paragraph' }] } };
+      const schemas = [rootSchema([field({ name: 'body', kind: SchemaFieldKind.RICH_TEXT, translatable: true })])];
+
+      expect(service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
+    });
+
+    // Whitespace is nothing to translate: sending it costs a provider request and returns
+    // whitespace back.
+    it('skips a source value that is only whitespace', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: '   ' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      expect(service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
+    });
+
+    it('treats a whitespace-only target as empty and fills it', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', title_i18n_de: '  ' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      expect(service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toHaveLength(1);
+    });
+
+    it('skips a RICH_TEXT document whose only text is whitespace', () => {
+      const { service } = setup();
+      const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '   ' }] }] };
+      const data: ContentData = { _id: 'c1', schema: 'root-1', body: doc };
+      const schemas = [rootSchema([field({ name: 'body', kind: SchemaFieldKind.RICH_TEXT, translatable: true })])];
+
+      expect(service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
+    });
+
+    // The default locale's value lives under the bare field name, at either end of the translation.
+    it('writes to the bare field name when the target is the default locale', () => {
+      const { service } = setup();
+      const data: ContentData = { _id: 'c1', schema: 'root-1', title_i18n_de: 'Hallo' };
+      const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
+
+      const fields = service.collectTranslatableFields(data, schemas, 'de', CONTENT_DEFAULT_LOCALE.id);
+      expect(fields).toHaveLength(1);
+      expect(fields[0].content).toBe('Hallo');
+
+      fields[0].apply('Hello');
+
+      expect(data['title']).toBe('Hello');
+      expect(data['title_i18n_default']).toBeUndefined();
+    });
+
+    it('gives every field a unique id', () => {
+      const { service } = setup();
+      const data: ContentData = {
+        _id: 'c1',
+        schema: 'root-1',
+        rows: [
+          { _id: 'c2', schema: 'block', title: 'One' },
+          { _id: 'c3', schema: 'block', title: 'Two' },
+        ],
+      };
+      const schemas = [
+        rootSchema([field({ name: 'rows', kind: SchemaFieldKind.SCHEMAS })]),
+        nodeSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })], 'block'),
+      ];
+
+      const ids = service.collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de').map(it => it.id);
+
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+  });
 });

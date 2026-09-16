@@ -18,13 +18,13 @@ import type { protos } from '@google-cloud/translate';
 /**
  * Translate content
  * @param {string} content
- * @param {string | null} sourceLocale
+ * @param {string} sourceLocale
  * @param {string} targetLocale
  * @param {TranslateFormat} format `html` translates text nodes and passes markup through untouched
  */
 export async function translateCloud(
   content: string,
-  sourceLocale: string | null,
+  sourceLocale: string,
   targetLocale: string,
   format: TranslateFormat = 'text'
 ): Promise<string> {
@@ -56,7 +56,7 @@ export async function translateCloud(
     try {
       const result = await translator.translateText(
         content,
-        sourceLocale as SourceLanguageCode | null,
+        sourceLocale as SourceLanguageCode,
         targetLocale as TargetLanguageCode,
         deeplTranslateOptions(format)
       );
@@ -72,9 +72,13 @@ export async function translateCloud(
 }
 
 /**
- * Translate content with Google Translate
+ * Translate content with Google Translate.
+ *
+ * Keeps a nullable source locale: `translations.ts` calls this directly for translation keys,
+ * where null still means auto-detect. The content path resolves `default` to the space's fallback
+ * before it gets here, so it always passes a real locale.
  * @param {string} content
- * @param {string | null} sourceLocale
+ * @param {string | undefined | null} sourceLocale source locale, or null to auto-detect
  * @param {string} targetLocale
  * @param {TranslateFormat} format `html` translates text nodes and passes markup through untouched
  */
@@ -114,6 +118,87 @@ export async function translateWithGoogle(
     } else {
       return '';
     }
+  } catch (e) {
+    logger.error(e);
+    throw new HttpsError('failed-precondition', `Cloud Translation API has not been used in project ${projectId} before or it is disabled`);
+  }
+}
+
+/**
+ * Translate many strings in a single provider round-trip.
+ *
+ * Both providers accept an array, so a batch of N costs one request rather than N. Results
+ * are returned in input order; callers rely on that to map them back to their ids.
+ * @param {Array} contents strings to translate
+ * @param {string} sourceLocale source locale
+ * @param {string} targetLocale target locale
+ * @param {TranslateFormat} format `html` translates text nodes and passes markup through
+ * @return {Promise} translations, in input order
+ */
+export async function translateCloudBatch(
+  contents: string[],
+  sourceLocale: string,
+  targetLocale: string,
+  format: TranslateFormat = 'text'
+): Promise<string[]> {
+  if (contents.length === 0) return [];
+
+  let deeplApiKey: string | undefined = undefined;
+  if (isEmulatorEnabled) {
+    deeplApiKey = process.env.DEEPL_API_KEY;
+  } else {
+    try {
+      await remoteConfigTemplate.load();
+      const config = remoteConfigTemplate.evaluate();
+      deeplApiKey = config.getString('deepl_api_key');
+    } catch (error) {
+      logger.warn(error);
+    }
+  }
+
+  if (deeplApiKey) {
+    if (sourceLocale && !DEEPL_SOURCE_SUPPORT_LOCALES.has(sourceLocale)) {
+      throw new HttpsError('invalid-argument', `Unsupported source locale : '${sourceLocale}'`);
+    }
+    if (!DEEPL_TARGET_SUPPORT_LOCALES.has(targetLocale)) {
+      throw new HttpsError('invalid-argument', `Unsupported target locale : '${targetLocale}'`);
+    }
+    const { Translator } = await import('deepl-node');
+    const translator = new Translator(deeplApiKey);
+    try {
+      const results = await translator.translateText(
+        contents,
+        sourceLocale as SourceLanguageCode,
+        targetLocale as TargetLanguageCode,
+        deeplTranslateOptions(format)
+      );
+      return results.map(it => it.text);
+    } catch (e) {
+      logger.error(e);
+      throw new HttpsError('failed-precondition', 'DeepL Translation API is not configured properly.');
+    }
+  }
+
+  if (sourceLocale && !GCP_SUPPORT_LOCALES.has(sourceLocale)) {
+    throw new HttpsError('invalid-argument', `Unsupported source locale : '${sourceLocale}'`);
+  }
+  if (!GCP_SUPPORT_LOCALES.has(targetLocale)) {
+    throw new HttpsError('invalid-argument', `Unsupported target locale : '${targetLocale}'`);
+  }
+
+  const projectId = firebaseConfig.projectId;
+  const locationId = firebaseConfig.locationId && firebaseConfig.locationId.startsWith('us-') ? 'us-central1' : 'global';
+  const tRequest: protos.google.cloud.translation.v3.ITranslateTextRequest = {
+    parent: `projects/${projectId}/locations/${locationId}`,
+    contents,
+    mimeType: googleMimeType(format),
+    sourceLanguageCode: sourceLocale,
+    targetLanguageCode: targetLocale,
+  };
+  const translationService = await getTranslationService();
+  try {
+    const [response] = await translationService.translateText(tRequest);
+    return (response.translations ?? []).map(it => it.translatedText || '');
   } catch (e) {
     logger.error(e);
     throw new HttpsError('failed-precondition', `Cloud Translation API has not been used in project ${projectId} before or it is disabled`);

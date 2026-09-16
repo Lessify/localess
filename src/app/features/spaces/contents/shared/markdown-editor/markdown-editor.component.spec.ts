@@ -292,12 +292,35 @@ describe('MarkdownEditorComponent', () => {
       expect(error).toHaveBeenCalledWith('No content to translate');
     });
 
+    /**
+     * `default` is a storage sentinel, not a language: it stands for the space's fallback locale.
+     * Told what that is, the provider gets the real source language instead of auto-detecting.
+     */
+    it('sends the fallback language when the source is the default locale', () => {
+      const { component, fixture, translate } = setup({ _id: 'c1', schema: 's1', body: 'Hello' });
+      fixture.componentRef.setInput('fallbackLocale', { id: 'en', name: 'English' });
+
+      component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
+
+      expect(translate).toHaveBeenCalledWith({ content: 'Hello', sourceLocale: 'en', targetLocale: 'de' });
+    });
+
+    // A space always has a fallback, so an unresolved sentinel means the space never arrived.
+    // Sending it on gets a clear rejection from the provider instead of a silent auto-detect.
+    it('sends the sentinel on when no fallback locale is supplied', () => {
+      const { component, translate } = setup({ _id: 'c1', schema: 's1', body: 'Hello' });
+
+      component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
+
+      expect(translate).toHaveBeenCalledWith({ content: 'Hello', sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de' });
+    });
+
     it('uses the plain field for the default locale and sets the result on the form', () => {
       const { component, translate, success, control } = setup({ _id: 'c1', schema: 's1', body: 'Hello' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
-      expect(translate).toHaveBeenCalledWith({ content: 'Hello', sourceLocale: null, targetLocale: 'de' });
+      expect(translate).toHaveBeenCalledWith({ content: 'Hello', sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de' });
       expect(control.value).toBe('translated');
       expect(success).toHaveBeenCalledWith('Translated');
     });

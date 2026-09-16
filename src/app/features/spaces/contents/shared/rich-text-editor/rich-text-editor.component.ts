@@ -5,7 +5,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { provideIcons } from '@ng-icons/core';
 import { lucideInfo, lucideLanguages } from '@ng-icons/lucide';
 import { ContentData } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale, toProviderLocale } from '@shared/models/locale.model';
 import { SchemaFieldRichText } from '@shared/models/schema.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
@@ -57,6 +57,8 @@ export class RichTextEditorComponent implements OnDestroy {
   component = input.required<SchemaFieldRichText>();
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();
+  /** The space fallback locale, i.e. the real language the `default` locale stands for. */
+  fallbackLocale = input<Locale>();
 
   isDefaultLocale = computed(() => this.selectedLocale().id === CONTENT_DEFAULT_LOCALE.id);
   selectedLocaleId = computed(() => this.selectedLocale().id);
@@ -95,8 +97,8 @@ export class RichTextEditorComponent implements OnDestroy {
     this.translateService
       .translate({
         content,
-        sourceLocale: sourceLocale !== CONTENT_DEFAULT_LOCALE.id ? sourceLocale : null,
-        targetLocale,
+        sourceLocale: toProviderLocale(sourceLocale, this.fallbackLocale()?.id),
+        targetLocale: toProviderLocale(targetLocale, this.fallbackLocale()?.id),
         format: 'html',
       })
       .subscribe({

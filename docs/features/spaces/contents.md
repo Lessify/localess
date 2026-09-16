@@ -92,7 +92,7 @@ Both are TipTap-based, but they store different things, and that difference is t
 | API payload | `ContentRichText` node tree | `type: string` |
 | AI translate | HTML interchange (see below) | plain text |
 
-Both use the same `EditorToolbarComponent`, so they offer identical formatting tools. The remaining UI differences are structural, not stylistic: the markdown editor adds a source/WYSIWYG mode toggle (rich text has no text form to switch to) and an AI translate button (rich text is not AI-translatable).
+Both use the same `EditorToolbarComponent`, so they offer identical formatting tools, and both carry the same `ll-translate-menu`. The one remaining UI difference is structural, not stylistic: the markdown editor adds a source/WYSIWYG mode toggle, because rich text has no text form to switch to.
 
 ### The shared toolbar
 
@@ -143,11 +143,31 @@ Two things to know when touching this:
 - **`generateHTML` must be given the same extension list as the editor.** A mismatch does not error — it silently drops whichever nodes the shorter list lacks. Hence `rich-text-extensions.ts`, read by both the `Editor` and the translate path, with `rich-text-extensions.spec.ts` asserting a JSON → HTML → JSON round trip per node and mark.
 - **The emulator stub is format-aware.** `translate.ts` returns a canned string when emulated; for `html` it appends a `<p>` so the result still parses, instead of feeding the editor a stray text node.
 
-#### Not yet covered: whole-document translate
+#### Whole-document translation
 
-There are two translation paths, and only the per-field button above handles RICH_TEXT. The bulk `translateLocale` onCall (`functions/src/contents.ts`) walks every field server-side and still skips RICH_TEXT via `isSchemaFieldKindAITranslatable`.
+Driven from the browser, not the server. `ContentHelperService.collectTranslatableFields()` walks `documentData`, serializing RICH_TEXT with `generateHTML(json, createRichTextExtensions())` and everything else as plain text, and returns entries carrying an `apply` closure. Those go to the `translate` callable's batch mode as `{id, content, format}`; `translateItems` (`functions/src/utils/translate-batch.ts`) groups by format, chunks to 27,000 code points and translates each chunk in **one** provider round-trip — both Google and DeepL accept arrays.
 
-**Do not just flip that flag to `true`.** It gates the server-side path, which would then hand the raw JSON document to Google as plain text and write the mangled result back to Firestore. Enabling it needs JSON↔HTML conversion in `functions/`, and TipTap's `generateHTML`/`generateJSON` require a `window` — they throw in plain Node — so that means a DOM shim (jsdom/happy-dom) plus the extension list shared across both npm projects. The `format` flag above is already in place for it. (Also note that path calls `translateWithGoogle` directly, so it ignores DeepL even when configured.)
+**Locale ids are not language codes.** `default` is a storage sentinel, not a language — see [Concepts → How localised values are stored](../../concepts.md#how-localised-values-are-stored) for the rule and why the bare field name holds the default. `availableLocales` rewrites the space's fallback locale to that sentinel and labels it "English (Default)", so it is what every locale picker returns.
+
+`toProviderLocale(localeId, fallbackLocaleId)` in `locale.model.ts` resolves it back to the real language before a request leaves the browser, so the provider is told the source language instead of auto-detecting, and translating *into* the default locale asks for a language that exists. **All four** request builders use it — the whole-document dialog, `edit-document-schema` for TEXT/TEXTAREA, and the two editors' per-field buttons, which take a `fallbackLocale` input for the purpose.
+
+`sourceLocale` is a plain `string` — not nullable — the whole way down, because a space always has a fallback locale and every request therefore knows its language. Nothing asks the provider to auto-detect. If the sentinel somehow cannot be resolved, the raw `default` is sent and the provider rejects it, which surfaces the missing space instead of quietly translating from a guessed language.
+
+(`translateWithGoogle` keeps a nullable source locale: `translations.ts` calls it directly for translation keys, a separate path where auto-detect still applies.)
+
+**Blank values are never sent.** `isBlankValue()` skips absent values, strings that are only whitespace, and TipTap documents whose only content is empty paragraphs or a lone image — a provider request that returns whitespace is wasted. The same check decides whether a target counts as already translated, so a target holding `"   "` is filled rather than skipped.
+
+Results are applied through the closures, which mutate `documentData` — so the existing dirty check enables Save and **nothing is persisted until the author presses it**. That is the point: machine output is reviewable, and unsaved edits are included rather than overwritten. The dialog's old "Save all your changes before running the Translation" warning is gone for that reason.
+
+Because the mutation happens in place, neither the document id nor the selected locale changes, so the schema form would not rebuild on its own — `EditDocumentComponent.formRefresh` is a counter the parent bumps, read by `EditDocumentSchemaComponent`'s regeneration effect.
+
+Three things worth knowing:
+
+- It requires the editor to be open; there is no headless whole-document translate. The per-field `translate` endpoint remains available programmatically.
+- A single RICH_TEXT field whose HTML exceeds 27,000 code points cannot be sent (Google caps a request at 30,000) and is reported in `failed[]`. It is not split — splitting HTML at safe boundaries is its own problem.
+- This is why `functions/` carries no `@tiptap` dependency. Doing the conversion server-side needs `@tiptap/html`, whose `happy-dom` peer measured **365 ms** to load — more than all seven packages in `LAZY_ONLY_PACKAGES` combined — and would require the extension list to be duplicated across both npm projects, where a mismatch silently drops nodes rather than erroring.
+
+`translations.ts` keeps its own server-side `translateLocale` for translation keys. It is a different feature that shares the name, and it still bypasses DeepL and fans out with an unbounded `Promise.all`.
 
 ### Styling
 

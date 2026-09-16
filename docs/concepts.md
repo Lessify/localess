@@ -57,6 +57,64 @@ Key properties on a `ContentDocument`:
 - `data` — the content payload (typed by the Schema)
 - `assets`, `links`, `references` — IDs of related resources for resolution
 
+### How localised values are stored
+
+One `data` payload holds every locale. Which key a value lives under depends on the locale:
+
+| locale | key | example |
+|---|---|---|
+| **default** | the **bare field name** | `title` |
+| any other | `{fieldName}_i18n_{localeId}` | `title_i18n_de` |
+
+```jsonc
+{
+  "_id": "…", "schema": "page",
+  "title": "Hello",             // default locale
+  "title_i18n_de": "Hallo",     // German
+  "title_i18n_fr": "Bonjour"    // French
+}
+```
+
+Three consequences follow, and all of them are load-bearing:
+
+**The default locale is the fallback value.** It sits in the bare key precisely so a reader can ask
+for `_i18n_<locale>` and fall back to it when the translation is missing. `extractContent()` — the
+publish/serve path, in both `ContentHelperService` and `functions/src/services/content.service.ts` —
+does exactly that, which is why an untranslated field still serves content rather than a blank.
+
+**The editor deliberately does *not* fall back.** `extractSchemaContent()` returns the locale's own
+value, empty if absent, so an author can see what is still untranslated. The default value is shown
+as the input's *placeholder* instead — visible, but not mistaken for a real translation.
+
+**`default` is a storage sentinel, not a language.** `CONTENT_DEFAULT_LOCALE.id` is the literal
+string `default`, and `availableLocales` rewrites the space's `localeFallback` to it (labelled
+"English (Default)"). So the id that identifies the bare key is never a language code. Anything
+talking to a translation provider must resolve it first — see `toProviderLocale()` in
+`locale.model.ts` and [Contents → AI translation](features/spaces/contents.md#ai-translation).
+
+**`_i18n_` is reserved.** Schema field names are rejected if they contain it, on both sides:
+`CommonValidator.SCHEMA_FIELD_NAME_TRANSLATION` in the UI and a `refine` in
+`functions/src/models/schema.zod.ts`. A field called `title_i18n_de` would be indistinguishable
+from a German translation of `title`.
+
+> Any code that reads or writes a localised value applies the table above — writing the default to
+> `title_i18n_default` produces a key nothing reads, and reading the default from that key finds
+> nothing.
+
+The rule is enforced by tests at every site that applies it, so a regression fails the build rather
+than reaching the API:
+
+| site | guarded by |
+|---|---|
+| serve/publish (functions) | `services/content.service.test.ts` |
+| serve/publish (frontend) | `content-helper.service.spec.ts` → `extractContent` |
+| editor form ← data | `content-helper.service.spec.ts` → `extractSchemaContent` |
+| editor form → data | `edit-document-schema.component.spec.ts` → `writing form values back to data` |
+| whole-document translation | `content-helper.service.spec.ts` → `collectTranslatableFields` |
+| per-field translation | `markdown-editor` / `rich-text-editor` specs |
+| `previewField` | `edit-document-schema.component.spec.ts` → `previewText` |
+| reserved `_i18n_` in field names | `schema.validator.spec.ts` (UI), `schema.zod.test.ts` (functions) |
+
 > See [Publish Flow](publish-flow.md) for how drafts become published JSON files.
 
 ---
