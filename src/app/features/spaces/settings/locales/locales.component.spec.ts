@@ -20,7 +20,8 @@ describe('LocalesComponent', () => {
     const create = vi.fn().mockReturnValue(of(undefined));
     const deleteLocale = vi.fn().mockReturnValue(of(undefined));
     const markAsFallback = vi.fn().mockReturnValue(of(undefined));
-    const isLocaleTranslatable = vi.fn().mockReturnValue(true);
+    const isLocaleTranslatableFrom = vi.fn().mockReturnValue(true);
+    const isLocaleTranslatableTo = vi.fn().mockReturnValue(false);
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
@@ -30,7 +31,7 @@ describe('LocalesComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: LocaleService, useValue: { create, delete: deleteLocale, markAsFallback, isLocaleTranslatable } },
+        { provide: LocaleService, useValue: { create, delete: deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
@@ -38,7 +39,7 @@ describe('LocalesComponent', () => {
     });
     const fixture = TestBed.createComponent(LocalesComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, create, deleteLocale, markAsFallback, isLocaleTranslatable, success, error, open };
+    return { component: fixture.componentInstance, create, deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo, success, error, open };
   }
 
   const en: Locale = { id: 'en', name: 'English' };
@@ -142,12 +143,13 @@ describe('LocalesComponent', () => {
     expect(error).toHaveBeenCalledWith("Locale 'German' can not be marked as fallback.");
   });
 
-  it('isSupport() delegates to the locale service', () => {
-    const { component, isLocaleTranslatable } = setup(space([en]));
+  // The two columns are answered by two different predicates - a locale can be one-way.
+  it('reports source and target support separately', () => {
+    const { component, isLocaleTranslatableFrom, isLocaleTranslatableTo } = setup(space([en]));
 
-    const result = component.isSupport('en');
-
-    expect(isLocaleTranslatable).toHaveBeenCalledWith('en');
-    expect(result).toBe(true);
+    expect(component.isTranslatableFrom('en')).toBe(true);
+    expect(component.isTranslatableTo('en')).toBe(false);
+    expect(isLocaleTranslatableFrom).toHaveBeenCalledWith('en');
+    expect(isLocaleTranslatableTo).toHaveBeenCalledWith('en');
   });
 });

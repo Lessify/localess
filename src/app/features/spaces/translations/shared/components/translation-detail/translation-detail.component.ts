@@ -144,7 +144,7 @@ export class TranslationDetailComponent {
     if (sourceLocale.id === targetLocale.id) {
       return false;
     }
-    return this.localeService.isLocaleTranslatable(sourceLocale.id) && this.localeService.isLocaleTranslatable(targetLocale.id);
+    return this.localeService.isLocaleTranslatableFrom(sourceLocale.id) && this.localeService.isLocaleTranslatableTo(targetLocale.id);
   }
 
   openEditIdDialog(translation: Translation): void {

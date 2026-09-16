@@ -2,7 +2,8 @@ import {
   DEEPL_SOURCE_SUPPORT_LOCALES,
   DEEPL_TARGET_SUPPORT_LOCALES,
   firebaseConfig,
-  GCP_SUPPORT_LOCALES,
+  GCP_SOURCE_SUPPORT_LOCALES,
+  GCP_TARGET_SUPPORT_LOCALES,
   isEmulatorEnabled,
   getTranslationService,
   remoteConfigTemplate,
@@ -88,10 +89,10 @@ export async function translateWithGoogle(
   targetLocale: string,
   format: TranslateFormat = 'text'
 ): Promise<string> {
-  if (sourceLocale && !GCP_SUPPORT_LOCALES.has(sourceLocale)) {
+  if (sourceLocale && !GCP_SOURCE_SUPPORT_LOCALES.has(sourceLocale)) {
     throw new HttpsError('invalid-argument', `Unsupported source locale : '${sourceLocale}'`);
   }
-  if (!GCP_SUPPORT_LOCALES.has(targetLocale)) {
+  if (!GCP_TARGET_SUPPORT_LOCALES.has(targetLocale)) {
     throw new HttpsError('invalid-argument', `Unsupported target locale : '${targetLocale}'`);
   }
 
@@ -179,10 +180,10 @@ export async function translateCloudBatch(
     }
   }
 
-  if (sourceLocale && !GCP_SUPPORT_LOCALES.has(sourceLocale)) {
+  if (sourceLocale && !GCP_SOURCE_SUPPORT_LOCALES.has(sourceLocale)) {
     throw new HttpsError('invalid-argument', `Unsupported source locale : '${sourceLocale}'`);
   }
-  if (!GCP_SUPPORT_LOCALES.has(targetLocale)) {
+  if (!GCP_TARGET_SUPPORT_LOCALES.has(targetLocale)) {
     throw new HttpsError('invalid-argument', `Unsupported target locale : '${targetLocale}'`);
   }
 

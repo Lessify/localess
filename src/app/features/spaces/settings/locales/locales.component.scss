@@ -4,9 +4,13 @@ td {
     width: 100px;
     max-width: 100px;
   }
-  &.ll-column-isTranslatable {
-    width: 115px;
-    max-width: 115px;
+  &.ll-column-translateFrom {
+    width: 120px;
+    max-width: 120px;
+  }
+  &.ll-column-translateTo {
+    width: 120px;
+    max-width: 120px;
   }
   &.ll-column-isFallback {
     width: 90px;

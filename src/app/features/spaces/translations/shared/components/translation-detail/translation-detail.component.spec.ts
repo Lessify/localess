@@ -28,7 +28,8 @@ describe('TranslationDetailComponent', () => {
     const update = vi.fn().mockReturnValue(of(undefined));
     const updateId = vi.fn().mockReturnValue(of(undefined));
     const deleteTranslation = vi.fn().mockReturnValue(of(undefined));
-    const isLocaleTranslatable = vi.fn().mockReturnValue(true);
+    const isLocaleTranslatableFrom = vi.fn().mockReturnValue(true);
+    const isLocaleTranslatableTo = vi.fn().mockReturnValue(true);
     const translate = vi.fn().mockReturnValue(of('translated'));
     const success = vi.fn();
     const error = vi.fn();
@@ -38,7 +39,7 @@ describe('TranslationDetailComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: TranslationService, useValue: { update, updateId, delete: deleteTranslation } },
-        { provide: LocaleService, useValue: { isLocaleTranslatable } },
+        { provide: LocaleService, useValue: { isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
         { provide: TranslateService, useValue: { translate } },
@@ -51,7 +52,7 @@ describe('TranslationDetailComponent', () => {
     fixture.componentRef.setInput('availableLocales', [en, de]);
     fixture.componentRef.setInput('localeFallback', en);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, update, updateId, deleteTranslation, translate, success, error, open };
+    return { component: fixture.componentInstance, update, updateId, deleteTranslation, translate, success, error, open, isLocaleTranslatableFrom, isLocaleTranslatableTo };
   }
 
   it('identifyTranslationStatus() delegates to the shared util using availableLocales', () => {
@@ -74,6 +75,31 @@ describe('TranslationDetailComponent', () => {
 
     expect(component.isLocaleTranslatable(en, en)).toBe(false);
     expect(component.isLocaleTranslatable(en, de)).toBe(true);
+  });
+
+  // Each end is checked against its own direction: a source-only locale must not be offered as a
+  // target, and the reverse.
+  it('asks the source predicate about the source and the target predicate about the target', () => {
+    const { component, isLocaleTranslatableFrom, isLocaleTranslatableTo } = setup();
+
+    component.isLocaleTranslatable(en, de);
+
+    expect(isLocaleTranslatableFrom).toHaveBeenCalledWith('en');
+    expect(isLocaleTranslatableTo).toHaveBeenCalledWith('de');
+  });
+
+  it('refuses a source locale that is only supported as a target', () => {
+    const { component, isLocaleTranslatableFrom } = setup();
+    isLocaleTranslatableFrom.mockReturnValue(false);
+
+    expect(component.isLocaleTranslatable(en, de)).toBe(false);
+  });
+
+  it('refuses a target locale that is only supported as a source', () => {
+    const { component, isLocaleTranslatableTo } = setup();
+    isLocaleTranslatableTo.mockReturnValue(false);
+
+    expect(component.isLocaleTranslatable(en, de)).toBe(false);
   });
 
   describe('translate', () => {

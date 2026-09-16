@@ -67,7 +67,19 @@ export const remoteConfigTemplate = remoteConfigService.initServerTemplate({
 });
 
 // Translation
-export const GCP_SUPPORT_LOCALES = new Set([
+/**
+ * Locales Google Cloud Translation accepts.
+ *
+ * Split by direction because the v3 API models support per direction - `SupportedLanguage` carries
+ * `supportSource` and `supportTarget`, and they are allowed to differ. Google currently documents
+ * its set as any-to-any, so every code below is bidirectional and the two one-way lists are empty.
+ * They exist so a language we later observe to be one-way is a one-line move rather than a
+ * restructure, and so the two call sites stop being interchangeable by accident.
+ *
+ * Kept in step with the same three lists in `src/app/shared/services/locale.service.ts`;
+ * `gcp-locales-parity.test.ts` fails if they drift.
+ */
+const GCP_BIDIRECTIONAL_LOCALES = [
   'ab',
   'ace',
   'ach',
@@ -265,7 +277,16 @@ export const GCP_SUPPORT_LOCALES = new Set([
   'zh-CN',
   'zh-TW',
   'zu',
-]);
+];
+
+/** Accepted only as a translation source. Empty until Google is observed to have one. */
+const GCP_SOURCE_ONLY_LOCALES: string[] = [];
+
+/** Accepted only as a translation target. Empty until Google is observed to have one. */
+const GCP_TARGET_ONLY_LOCALES: string[] = [];
+
+export const GCP_SOURCE_SUPPORT_LOCALES = new Set([...GCP_BIDIRECTIONAL_LOCALES, ...GCP_SOURCE_ONLY_LOCALES]);
+export const GCP_TARGET_SUPPORT_LOCALES = new Set([...GCP_BIDIRECTIONAL_LOCALES, ...GCP_TARGET_ONLY_LOCALES]);
 
 // DeepL Support Languages
 export const DEEPL_SOURCE_SUPPORT_LOCALES = new Set([

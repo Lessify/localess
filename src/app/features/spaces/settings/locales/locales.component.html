@@ -21,10 +21,20 @@
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
         <td llCell *llCellDef="let element">{{ element.name }}</td>
       </ng-container>
-      <ng-container llColumnDef="isTranslatable">
-        <th llHeaderCell *llHeaderCellDef>Translatable</th>
+      <ng-container llColumnDef="translateFrom">
+        <th llHeaderCell *llHeaderCellDef>Translate From</th>
         <td llCell *llCellDef="let element">
-          @if (isSupport(element.id)) {
+          @if (isTranslatableFrom(element.id)) {
+            <ng-icon name="lucideCheck" />
+          } @else {
+            <ng-icon name="lucideX" />
+          }
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="translateTo">
+        <th llHeaderCell *llHeaderCellDef>Translate To</th>
+        <td llCell *llCellDef="let element">
+          @if (isTranslatableTo(element.id)) {
             <ng-icon name="lucideCheck" />
           } @else {
             <ng-icon name="lucideX" />

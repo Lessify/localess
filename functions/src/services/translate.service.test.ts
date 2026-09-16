@@ -7,7 +7,10 @@ vi.mock('../config', () => ({
   isEmulatorEnabled: false,
   remoteConfigTemplate: { load: vi.fn().mockRejectedValue(new Error('no remote config')), evaluate: vi.fn() },
   getTranslationService: vi.fn(async () => ({ translateText })),
-  GCP_SUPPORT_LOCALES: new Set(['en', 'de']),
+  // Deliberately lopsided so the two directions cannot be satisfied by the same set:
+  // 'fr' is source-only, 'it' target-only.
+  GCP_SOURCE_SUPPORT_LOCALES: new Set(['en', 'de', 'fr']),
+  GCP_TARGET_SUPPORT_LOCALES: new Set(['en', 'de', 'it']),
   DEEPL_SOURCE_SUPPORT_LOCALES: new Set(['en']),
   DEEPL_TARGET_SUPPORT_LOCALES: new Set(['de']),
 }));
@@ -41,5 +44,27 @@ describe('translateCloudBatch', () => {
   it('returns an empty array without calling the provider for no items', async () => {
     expect(await translateCloudBatch([], 'en', 'de')).toEqual([]);
     expect(translateText).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Google models source and target support separately (`supportSource`/`supportTarget` on
+   * `SupportedLanguage`), so each end is validated against its own set. Checking both against one
+   * set would let a target-only locale through as a source, and the provider would reject it after
+   * we already paid for the round-trip.
+   */
+  it('rejects a source locale that is only supported as a target', async () => {
+    await expect(translateCloudBatch(['one'], 'it', 'de')).rejects.toThrow("Unsupported source locale : 'it'");
+    expect(translateText).not.toHaveBeenCalled();
+  });
+
+  it('rejects a target locale that is only supported as a source', async () => {
+    await expect(translateCloudBatch(['one'], 'en', 'fr')).rejects.toThrow("Unsupported target locale : 'fr'");
+    expect(translateText).not.toHaveBeenCalled();
+  });
+
+  it('accepts a source-only locale as the source and a target-only locale as the target', async () => {
+    translateText.mockResolvedValue([{ translations: [{ translatedText: 'uno' }] }]);
+
+    expect(await translateCloudBatch(['one'], 'fr', 'it')).toEqual(['uno']);
   });
 });

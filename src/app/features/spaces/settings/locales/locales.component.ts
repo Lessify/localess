@@ -61,7 +61,7 @@ export class LocalesComponent implements AfterViewInit {
 
   private readonly locales = signal<Locale[]>([]);
   readonly dataSource = new TableDataSource<Locale>(this.locales, this.injector);
-  displayedColumns: string[] = ['id', 'name', 'isTranslatable', 'isFallback', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'translateFrom', 'translateTo', 'isFallback', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
@@ -153,7 +153,15 @@ export class LocalesComponent implements AfterViewInit {
     }
   }
 
-  isSupport(locale: string): boolean {
-    return this.localeService.isLocaleTranslatable(locale);
+  /**
+   * Google models source and target support separately, so the list reports them separately - a
+   * locale usable as a source is not automatically usable as a target.
+   */
+  isTranslatableFrom(locale: string): boolean {
+    return this.localeService.isLocaleTranslatableFrom(locale);
+  }
+
+  isTranslatableTo(locale: string): boolean {
+    return this.localeService.isLocaleTranslatableTo(locale);
   }
 }

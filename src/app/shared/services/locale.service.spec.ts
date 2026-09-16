@@ -59,9 +59,15 @@ describe('LocaleService', () => {
     expect(doc).not.toHaveBeenCalled();
   });
 
-  it('isLocaleTranslatable() reflects the supported-locale set', () => {
+  it('isLocaleTranslatableFrom() reflects the source-support set', () => {
     const service = setup();
-    expect(service.isLocaleTranslatable('de')).toBe(true);
-    expect(service.isLocaleTranslatable('not-a-real-locale')).toBe(false);
+    expect(service.isLocaleTranslatableFrom('de')).toBe(true);
+    expect(service.isLocaleTranslatableFrom('not-a-real-locale')).toBe(false);
+  });
+
+  it('isLocaleTranslatableTo() reflects the target-support set', () => {
+    const service = setup();
+    expect(service.isLocaleTranslatableTo('de')).toBe(true);
+    expect(service.isLocaleTranslatableTo('not-a-real-locale')).toBe(false);
   });
 });
