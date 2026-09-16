@@ -2,10 +2,12 @@ th,
 td {
   &.ll-column-active {
     max-width: 75px;
+    text-align: center;
   }
 
   &.ll-column-providers {
     max-width: 95px;
+    text-align: center;
   }
 
   &.ll-column-role {
@@ -25,5 +27,6 @@ td {
   &.ll-column-actions {
     width: 80px;
     max-width: 80px;
+    text-align: center;
   }
 }

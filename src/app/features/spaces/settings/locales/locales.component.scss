@@ -7,17 +7,21 @@ td {
   &.ll-column-translateFrom {
     width: 120px;
     max-width: 120px;
+    text-align: center;
   }
   &.ll-column-translateTo {
     width: 120px;
     max-width: 120px;
+    text-align: center;
   }
   &.ll-column-isFallback {
     width: 90px;
     max-width: 90px;
+    text-align: center;
   }
   &.ll-column-actions {
     width: 80px;
     max-width: 80px;
+    text-align: center;
   }
 }

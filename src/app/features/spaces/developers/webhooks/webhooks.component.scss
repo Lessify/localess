@@ -7,6 +7,7 @@ td {
   &.ll-column-events {
     width: 80px;
     max-width: 80px;
+    text-align: center;
   }
   &.ll-column-createdAt {
     max-width: 120px;
@@ -18,5 +19,6 @@ td {
   &.ll-column-actions {
     width: 80px;
     max-width: 80px;
+    text-align: center;
   }
 }

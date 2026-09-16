@@ -11,6 +11,7 @@ td {
   &.ll-column-status {
     width: 80px;
     max-width: 80px;
+    text-align: center;
   }
 
   &.ll-column-description {
@@ -25,5 +26,6 @@ td {
   &.ll-column-actions {
     width: 80px;
     max-width: 80px;
+    text-align: center;
   }
 }
