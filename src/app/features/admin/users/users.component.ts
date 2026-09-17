@@ -12,7 +12,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -34,6 +33,7 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
@@ -50,9 +50,9 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
-import { UserDialogModel } from './user-dialog/user-dialog.model';
+import { UserDialogContext, UserDialogResult } from './user-dialog/user-dialog.model';
 import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';
-import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialog.model';
+import { UserInviteDialogResult } from './user-invite-dialog/user-invite-dialog.model';
 
 @Component({
   selector: 'll-users',
@@ -88,9 +88,7 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
   ],
 })
 export class UsersComponent implements OnInit, AfterViewInit {
-  private readonly dialog = inject(MatDialog);
-
-  private readonly hlmDialog = inject(HlmDialogService);
+  private readonly dialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
   private readonly userService = inject(UserService);
@@ -156,11 +154,11 @@ export class UsersComponent implements OnInit, AfterViewInit {
 
   inviteDialog(): void {
     this.dialog
-      .open<UserInviteDialogComponent, void, UserInviteDialogResponse>(UserInviteDialogComponent, {
-        panelClass: 'sm',
+      .open<UserInviteDialogResult>(UserInviteDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.userService.invite(it!)),
       )
@@ -176,16 +174,16 @@ export class UsersComponent implements OnInit, AfterViewInit {
 
   openEditDialog(element: User): void {
     this.dialog
-      .open<UserDialogComponent, UserDialogModel, UserDialogModel>(UserDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<UserDialogResult, UserDialogContext>(UserDialogComponent, {
+        context: {
           role: element.role,
           permissions: element.permissions,
           lock: element.lock,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.userService.update(element.id, it!)),
       )
@@ -201,7 +199,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
   }
 
   openDeleteDialog(element: User): void {
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Delete User',

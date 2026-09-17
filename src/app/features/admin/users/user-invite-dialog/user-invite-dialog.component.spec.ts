@@ -1,14 +1,18 @@
 import { TestBed } from '@angular/core/testing';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { vi } from 'vitest';
 
 import { USER_PERMISSION_GROUPS } from '../user-permissions';
 import { UserInviteDialogComponent } from './user-invite-dialog.component';
 
 describe('UserInviteDialogComponent', () => {
   function setup() {
+    const close = vi.fn();
     TestBed.overrideComponent(UserInviteDialogComponent, { set: { template: '<div></div>' } });
+    TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }] });
     const fixture = TestBed.createComponent(UserInviteDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('exposes every permission group', () => {
@@ -79,5 +83,13 @@ describe('UserInviteDialogComponent', () => {
     component.togglePermission('USER_MANAGEMENT', false);
 
     expect(component.form.value.permissions).toEqual(['SPACE_MANAGEMENT']);
+  });
+it('closes with the form value when saved', () => {
+    const { component, close } = setup();
+    component.form.patchValue({ email: 'new@example.com', password: 'secret123' });
+
+    component.save();
+
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ email: 'new@example.com', password: 'secret123' }));
   });
 });

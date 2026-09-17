@@ -1,6 +1,7 @@
 import { UserPermission, UserRole } from '@shared/models/user.model';
 
-export interface UserInviteDialogResponse {
+/** The dialog takes no context: an invite starts from a blank form. */
+export interface UserInviteDialogResult {
   displayName?: string;
   email: string;
   password: string;

@@ -1,21 +1,21 @@
-<h2 mat-dialog-title>Edit Space</h2>
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
-    <div hlmField>
-      <label hlmFieldLabel for="name">Name</label>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput id="name" type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
-        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
-          >{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon
-        >
-      </div>
-      @if (form.controls['name'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Edit Space</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex flex-col gap-4">
+  <div hlmField>
+    <label hlmFieldLabel for="name">Name</label>
+    <div hlmInputGroup>
+      <input hlmInputGroupInput id="name" type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
+      <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+        >{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon
+      >
     </div>
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
-</mat-dialog-actions>
+    @if (form.controls['name'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>

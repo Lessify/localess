@@ -1,86 +1,86 @@
-<h2 mat-dialog-title>User Invite</h2>
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
-    <div hlmField>
-      <label hlmFieldLabel for="email">Email</label>
-      <input hlmInput id="email" type="email" formControlName="email" required autocomplete="off" class="w-full" />
-      @if (form.controls['email'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
-    </div>
-
-    <div hlmField>
-      <label hlmFieldLabel for="password">Password</label>
-      <input hlmInput id="password" type="password" formControlName="password" required autocomplete="off" class="w-full" />
-      @if (form.controls['password'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
-    </div>
-
-    <div hlmField>
-      <label hlmFieldLabel for="displayName">Display Name</label>
-      <input hlmInput id="displayName" type="text" formControlName="displayName" autocomplete="off" class="w-full" />
-      @if (form.controls['displayName'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
-    </div>
-
-    <div hlmField>
-      <label hlmFieldLabel for="role">Role</label>
-      <hlm-select id="role" formControlName="role" [itemToString]="roleItemToString">
-        <hlm-select-trigger class="w-full">
-          <hlm-select-value placeholder="None" />
-        </hlm-select-trigger>
-        <hlm-select-content *hlmSelectPortal>
-          <hlm-select-item [value]="null">None</hlm-select-item>
-          <hlm-select-item value="custom">Custom</hlm-select-item>
-          <hlm-select-item value="admin">Admin</hlm-select-item>
-        </hlm-select-content>
-      </hlm-select>
-      @if (form.controls['role'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
-    </div>
-
-    @if (form.value.role === 'custom') {
-      <div class="flex items-center gap-3">
-        <hlm-switch
-          formControlName="lock"
-          inputId="lock"
-          [hlmTooltip]="'When Enabled the user will not be able to change his password and other personal data.'" />
-        <label hlmLabel for="lock">Lock User</label>
-      </div>
-
-      <div class="flex flex-col gap-4">
-        <p class="text-sm font-semibold">Permissions</p>
-
-        @for (group of permissionGroups; track group.label; let last = $last) {
-          <div class="flex flex-col gap-2">
-            <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
-            <div class="flex flex-col gap-2">
-              @for (perm of group.permissions; track perm.id) {
-                <div class="flex items-start gap-3">
-                  <hlm-checkbox
-                    [inputId]="perm.id"
-                    [checked]="isPermissionSelected(perm.id)"
-                    (checkedChange)="togglePermission(perm.id, $event)" />
-                  <div class="grid gap-1.5 leading-none">
-                    <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
-                    <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-          @if (!last) {
-            <hlm-separator />
-          }
-        }
-      </div>
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>User Invite</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
+  <div hlmField>
+    <label hlmFieldLabel for="email">Email</label>
+    <input hlmInput id="email" type="email" formControlName="email" required autocomplete="off" class="w-full" />
+    @if (form.controls['email'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
     }
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Invite</button>
-</mat-dialog-actions>
+  </div>
+
+  <div hlmField>
+    <label hlmFieldLabel for="password">Password</label>
+    <input hlmInput id="password" type="password" formControlName="password" required autocomplete="off" class="w-full" />
+    @if (form.controls['password'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  <div hlmField>
+    <label hlmFieldLabel for="displayName">Display Name</label>
+    <input hlmInput id="displayName" type="text" formControlName="displayName" autocomplete="off" class="w-full" />
+    @if (form.controls['displayName'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  <div hlmField>
+    <label hlmFieldLabel for="role">Role</label>
+    <hlm-select id="role" formControlName="role" [itemToString]="roleItemToString">
+      <hlm-select-trigger class="w-full">
+        <hlm-select-value placeholder="None" />
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        <hlm-select-item [value]="null">None</hlm-select-item>
+        <hlm-select-item value="custom">Custom</hlm-select-item>
+        <hlm-select-item value="admin">Admin</hlm-select-item>
+      </hlm-select-content>
+    </hlm-select>
+    @if (form.controls['role'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  @if (form.value.role === 'custom') {
+    <div class="flex items-center gap-3">
+      <hlm-switch
+        formControlName="lock"
+        inputId="lock"
+        [hlmTooltip]="'When Enabled the user will not be able to change his password and other personal data.'" />
+      <label hlmLabel for="lock">Lock User</label>
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <p class="text-sm font-semibold">Permissions</p>
+
+      @for (group of permissionGroups; track group.label; let last = $last) {
+        <div class="flex flex-col gap-2">
+          <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
+          <div class="flex flex-col gap-2">
+            @for (perm of group.permissions; track perm.id) {
+              <div class="flex items-start gap-3">
+                <hlm-checkbox
+                  [inputId]="perm.id"
+                  [checked]="isPermissionSelected(perm.id)"
+                  (checkedChange)="togglePermission(perm.id, $event)" />
+                <div class="grid gap-1.5 leading-none">
+                  <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
+                  <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+        @if (!last) {
+          <hlm-separator />
+        }
+      }
+    </div>
+  }
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Invite</button>
+</hlm-dialog-footer>

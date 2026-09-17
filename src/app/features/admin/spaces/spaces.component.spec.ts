@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
@@ -25,7 +25,6 @@ describe('SpacesComponent', () => {
     const error = vi.fn();
     const warning = vi.fn();
     const open = vi.fn();
-    const openConfirm = vi.fn();
     const apply = vi.fn().mockReturnValue(of(undefined));
 
     TestBed.overrideComponent(SpacesComponent, {
@@ -35,8 +34,7 @@ describe('SpacesComponent', () => {
       providers: [
         { provide: SpaceService, useValue: { findAll, create, update, delete: deleteSpace } },
         { provide: NotificationService, useValue: { success, error, warning } },
-        { provide: MatDialog, useValue: { open } },
-        { provide: HlmDialogService, useValue: { open: openConfirm } },
+        { provide: HlmDialogService, useValue: { open } },
         // Stubbed rather than real: the real one injects Firestore, which this spec has no use for.
         { provide: SpaceTemplateService, useValue: { apply } },
       ],
@@ -63,19 +61,13 @@ describe('SpacesComponent', () => {
       error,
       warning,
       open,
-      openConfirm,
       apply,
       navigateWithAction,
     };
   }
 
-  /** The dialog result the component reacts to. `undefined` means dismissed. */
+  /** The dialog result the component reacts to. `undefined` means dismissed - Spartan closes that way on Cancel. */
   function closesWith(result: unknown) {
-    return { afterClosed: () => of(result) };
-  }
-
-  /** Same, for the Spartan confirmation dialog: the result arrives on `closed$`, which does not complete. */
-  function confirmsWith(result: unknown) {
     return { closed$: of(result) };
   }
 
@@ -103,7 +95,7 @@ describe('SpacesComponent', () => {
 
       navigateWithAction('create');
 
-      expect(open).toHaveBeenCalledWith(expect.anything(), { panelClass: 'sm' });
+      expect(open).toHaveBeenCalledWith(expect.anything(), { contentClass: DIALOG_WIDTH_SM });
     });
 
     it('does not open the dialog without the param', () => {
@@ -162,7 +154,7 @@ describe('SpacesComponent', () => {
 
       component.openAddDialog();
 
-      expect(open).toHaveBeenCalledWith(expect.anything(), { panelClass: 'sm' });
+      expect(open).toHaveBeenCalledWith(expect.anything(), { contentClass: DIALOG_WIDTH_SM });
     });
 
     it('creates the space and notifies success when confirmed', () => {
@@ -249,8 +241,8 @@ describe('SpacesComponent', () => {
   });
 
   it('openDeleteDialog() deletes and notifies success when confirmed', () => {
-    const { component, openConfirm, deleteSpace, success } = setup();
-    openConfirm.mockReturnValue(confirmsWith(true));
+    const { component, open, deleteSpace, success } = setup();
+    open.mockReturnValue(closesWith(true));
 
     component.openDeleteDialog(space({ id: 's1', name: 'Space 1' }));
 
@@ -259,8 +251,8 @@ describe('SpacesComponent', () => {
   });
 
   it('openDeleteDialog() does not delete when cancelled', () => {
-    const { component, openConfirm, deleteSpace } = setup();
-    openConfirm.mockReturnValue(confirmsWith(undefined));
+    const { component, open, deleteSpace } = setup();
+    open.mockReturnValue(closesWith(undefined));
 
     component.openDeleteDialog(space({ id: 's1' }));
 
@@ -268,9 +260,9 @@ describe('SpacesComponent', () => {
   });
 
   it('openDeleteDialog() notifies an error on failure', () => {
-    const { component, openConfirm, deleteSpace, error } = setup();
+    const { component, open, deleteSpace, error } = setup();
     deleteSpace.mockReturnValue(throwError(() => new Error('boom')));
-    openConfirm.mockReturnValue(confirmsWith(true));
+    open.mockReturnValue(closesWith(true));
 
     component.openDeleteDialog(space({ id: 's1', name: 'Space 1' }));
 

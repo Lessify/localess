@@ -15,7 +15,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { RouterModule } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -26,6 +25,7 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
@@ -43,9 +43,9 @@ import { Observable, of } from 'rxjs';
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { SpaceCreateDialogComponent } from './space-create-dialog/space-create-dialog.component';
-import { SpaceCreateDialogModel } from './space-create-dialog/space-create-dialog.model';
+import { SpaceCreateDialogResult } from './space-create-dialog/space-create-dialog.model';
 import { SpaceEditDialogComponent } from './space-edit-dialog/space-edit-dialog.component';
-import { SpaceEditDialogModel } from './space-edit-dialog/space-edit-dialog.model';
+import { SpaceEditDialogContext, SpaceEditDialogResult } from './space-edit-dialog/space-edit-dialog.model';
 import { SPACE_TEMPLATES } from './templates';
 
 /** `?action=create` opens the create dialog. Other values are ignored rather than dispatched. */
@@ -80,8 +80,7 @@ const CREATE_ACTION = 'create';
 export class SpacesComponent implements OnInit, AfterViewInit {
   private readonly spaceService = inject(SpaceService);
   private readonly spaceTemplateService = inject(SpaceTemplateService);
-  private readonly dialog = inject(MatDialog);
-  private readonly hlmDialog = inject(HlmDialogService);
+  private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
@@ -139,13 +138,13 @@ export class SpacesComponent implements OnInit, AfterViewInit {
 
   openAddDialog(): void {
     this.dialog
-      .open<SpaceCreateDialogComponent, undefined, SpaceCreateDialogModel>(SpaceCreateDialogComponent, {
-        panelClass: 'sm',
+      .open<SpaceCreateDialogResult>(SpaceCreateDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         tap(() => this.clearAction()),
-        filter((result): result is SpaceCreateDialogModel => result !== undefined),
+        filter((result): result is SpaceCreateDialogResult => result !== undefined),
         switchMap(model =>
           this.spaceService.create({ name: model.name }).pipe(switchMap(ref => this.applyTemplate(ref.id, model.template))),
         ),
@@ -192,14 +191,14 @@ export class SpacesComponent implements OnInit, AfterViewInit {
 
   openEditDialog(element: Space): void {
     this.dialog
-      .open<SpaceEditDialogComponent, SpaceEditDialogModel, SpaceEditDialogModel>(SpaceEditDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<SpaceEditDialogResult, SpaceEditDialogContext>(SpaceEditDialogComponent, {
+        context: {
           name: element.name,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.spaceService.update(element.id, it!)),
       )
@@ -215,7 +214,7 @@ export class SpacesComponent implements OnInit, AfterViewInit {
   }
 
   openDeleteDialog(element: Space): void {
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Delete Space',

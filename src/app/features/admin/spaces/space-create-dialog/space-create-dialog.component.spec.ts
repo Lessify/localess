@@ -1,19 +1,28 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UserStore } from '@shared/stores/user.store';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { vi } from 'vitest';
 
 import { SPACE_TEMPLATES } from '../templates';
 
 import { SpaceCreateDialogComponent } from './space-create-dialog.component';
+
+/** Set by `setup`; the dialog now hands its result back through `BrnDialogRef.close()`. */
+let close: ReturnType<typeof vi.fn>;
 
 function userStoreStub(role: string, permissions: string[] = []) {
   return { role: signal(role), permissions: signal(permissions), isRoleAdmin: signal(role === 'admin') };
 }
 
 async function setup(store: ReturnType<typeof userStoreStub>) {
+  close = vi.fn();
   await TestBed.configureTestingModule({
     imports: [SpaceCreateDialogComponent],
-    providers: [{ provide: UserStore, useValue: store }],
+    providers: [
+      { provide: UserStore, useValue: store },
+      { provide: BrnDialogRef, useValue: { close } },
+    ],
   }).compileComponents();
   const fixture: ComponentFixture<SpaceCreateDialogComponent> = TestBed.createComponent(SpaceCreateDialogComponent);
   fixture.detectChanges();
@@ -53,5 +62,13 @@ describe('SpaceCreateDialogComponent', () => {
     // An absent choice must mean EMPTY, not undefined - the caller looks the value up by id.
     const fixture = await setup(userStoreStub('custom', ['SPACE_MANAGEMENT']));
     expect(fixture.componentInstance.form.value.template).toBe('EMPTY');
+  });
+it('closes with the form value when saved', async () => {
+    const fixture = await setup(userStoreStub('admin'));
+    fixture.componentInstance.form.patchValue({ name: 'New Space' });
+
+    fixture.componentInstance.save();
+
+    expect(close).toHaveBeenCalledWith({ name: 'New Space', template: 'EMPTY' });
   });
 });

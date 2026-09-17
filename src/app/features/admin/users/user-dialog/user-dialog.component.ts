@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
@@ -13,15 +14,15 @@ import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 import { USER_PERMISSION_GROUPS } from '../user-permissions';
-import { UserDialogModel } from './user-dialog.model';
+import { UserDialogContext, UserDialogResult } from './user-dialog.model';
 
 @Component({
   selector: 'll-user-dialog',
   templateUrl: './user-dialog.component.html',
-  styleUrls: ['./user-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'grid gap-4' },
   imports: [
-    MatDialogModule,
+    HlmDialogImports,
     ReactiveFormsModule,
     HlmButtonImports,
     HlmFieldImports,
@@ -36,7 +37,10 @@ import { UserDialogModel } from './user-dialog.model';
 export class UserDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
-  data = inject<UserDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<UserDialogResult>>(BrnDialogRef);
+
+  /** Optional so a dialog opened without a context still renders, with an unset role. */
+  private readonly context = injectBrnDialogContext<UserDialogContext>({ optional: true });
 
   form: FormGroup = this.fb.group({
     role: this.fb.control<string | undefined>(undefined),
@@ -47,8 +51,9 @@ export class UserDialogComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
 
   ngOnInit(): void {
-    if (this.data != null) {
-      this.form.patchValue({ ...this.data, role: this.data.role ?? null });
+    // `?.` because the injection above is optional - without it this throws when no context was passed.
+    if (this.context != null) {
+      this.form.patchValue({ ...this.context, role: this.context.role ?? null });
     }
   }
 
@@ -67,5 +72,9 @@ export class UserDialogComponent implements OnInit {
     const current: string[] = this.form.controls['permissions'].value ?? [];
     const updated = checked ? [...current, permission] : current.filter((p: string) => p !== permission);
     this.form.controls['permissions'].setValue(updated);
+  }
+
+  save(): void {
+    this.dialogRef.close(this.form.value as UserDialogResult);
   }
 }

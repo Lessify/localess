@@ -1,18 +1,26 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { UserPermission } from '@shared/models/user.model';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { vi } from 'vitest';
 
 import { USER_PERMISSION_GROUPS } from '../user-permissions';
-import { UserDialogModel } from './user-dialog.model';
+import { UserDialogContext } from './user-dialog.model';
 import { UserDialogComponent } from './user-dialog.component';
 
 describe('UserDialogComponent', () => {
-  function setup(data: UserDialogModel | null) {
+  function setup(context: UserDialogContext | null) {
+    const close = vi.fn();
     TestBed.overrideComponent(UserDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(UserDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('exposes every permission group', () => {
@@ -68,5 +76,12 @@ describe('UserDialogComponent', () => {
     component.togglePermission('USER_MANAGEMENT', false);
 
     expect(component.form.value.permissions).toEqual(['SPACE_MANAGEMENT']);
+  });
+it('closes with the form value when saved', () => {
+    const { component, close } = setup({ role: 'admin' });
+
+    component.save();
+
+    expect(close).toHaveBeenCalledWith({ role: 'admin', permissions: null, lock: null });
   });
 });
