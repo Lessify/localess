@@ -1,0 +1,72 @@
+// How much of a circle the two flags share when a locale has both. The pair is then this much
+// narrower than two separate circles, which is where the host's aspect ratio comes from.
+$overlap: 0.15;
+
+:host {
+  // Two circles that overlap slightly, the language flag in front. A single circle cut in half read
+  // as one smudged flag at 16px, and two fully separate circles read as two unrelated things - the
+  // overlap ties them together while still showing two flags.
+  //
+  // The box is *always* as wide as a pair, even for a locale with one flag, so that a list mixing
+  // the two keeps its text on one vertical line - a badge that shrank to its content pushed every
+  // one-flag row's label left of the others. The lone circle is pinned to the leading edge, so the
+  // language flag lines up as well; what varies between rows is the empty space after it.
+  //
+  // The caller sets the *height* (`h-4` today) and the aspect ratio turns it into a width, which is
+  // also what lets the offsets below be percentages: a definite width means they resolve cleanly
+  // instead of against an auto-sized box.
+  position: relative;
+  display: inline-block;
+  flex: none;
+  aspect-ratio: #{2 - $overlap};
+  vertical-align: middle;
+}
+
+.ll-locale-icon__disc {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 9999px;
+
+  // Flags are circular artwork on a transparent background, so a white flag - Japan's, or the white
+  // band of Italy's - has no visible edge against a light row. One hairline of the theme's border
+  // colour outlines each circle, and on the front one it also separates it from the flag behind.
+  &::after {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    box-shadow: inset 0 0 0 1px var(--border);
+    content: '';
+  }
+}
+
+// Pinned to the two ends of the box: at `2 - overlap` wide, that leaves exactly `overlap` of a
+// circle shared between them.
+.ll-locale-icon__disc--language {
+  left: 0;
+  z-index: 1;
+}
+
+.ll-locale-icon__disc--region {
+  right: 0;
+}
+
+.ll-locale-icon__flag {
+  width: 100%;
+  height: 100%;
+}
+
+.ll-locale-icon__code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--muted-foreground);
+  background-color: var(--muted);
+}

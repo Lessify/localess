@@ -17,9 +17,17 @@
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="id">Id</th>
         <td llCell *llCellDef="let element">{{ element.id }}</td>
       </ng-container>
+      <ng-container llColumnDef="icon">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="icon">Icon</th>
+        <td llCell *llCellDef="let element">
+          <ll-locale-icon [locale]="element.id" />
+        </td>
+      </ng-container>
       <ng-container llColumnDef="name">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
-        <td llCell *llCellDef="let element">{{ element.name }}</td>
+        <td llCell *llCellDef="let element">
+          {{ element.name }}
+        </td>
       </ng-container>
       <ng-container llColumnDef="translateFrom">
         <th llHeaderCell *llHeaderCellDef>Translate From</th>

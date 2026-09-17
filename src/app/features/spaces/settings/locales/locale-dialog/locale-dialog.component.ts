@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { LocaleValidator } from '@shared/validators/locale.validator';
@@ -16,7 +17,16 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
   templateUrl: './locale-dialog.component.html',
   styleUrls: ['./locale-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, CommonModule, MatButtonModule, HlmComboboxImports, HlmFieldImports, HlmButtonImports],
+  imports: [
+    MatDialogModule,
+    ReactiveFormsModule,
+    CommonModule,
+    MatButtonModule,
+    HlmComboboxImports,
+    HlmFieldImports,
+    HlmButtonImports,
+    LocaleIconComponent,
+  ],
 })
 export class LocaleDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

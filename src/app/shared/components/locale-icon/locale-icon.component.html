@@ -1,0 +1,13 @@
+@let locale = icon();
+<span class="ll-locale-icon__disc ll-locale-icon__disc--language">
+  @if (locale.start.flag) {
+    <img class="ll-locale-icon__flag" [src]="locale.start.flag" alt="" />
+  } @else {
+    <span class="ll-locale-icon__code">{{ locale.start.code }}</span>
+  }
+</span>
+@if (locale.end) {
+  <span class="ll-locale-icon__disc ll-locale-icon__disc--region">
+    <img class="ll-locale-icon__flag" [src]="locale.end.flag" alt="" />
+  </span>
+}

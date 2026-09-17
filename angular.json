@@ -36,7 +36,12 @@
               "src/favicon-32x32.png",
               "src/site.webmanifest",
               "src/assets",
-              "src/scripts"
+              "src/scripts",
+              {
+                "glob": "**/*.svg",
+                "input": "node_modules/circle-flags/flags",
+                "output": "assets/flags"
+              }
             ],
             "styles": [
               "src/styles.css",

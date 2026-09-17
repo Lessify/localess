@@ -75,9 +75,66 @@ The same lists live twice - in `functions/src/config.ts`, which validates the re
 which decides what the UI offers and enables the translate button. `functions/src/gcp-locales-parity.test.ts` reads both files and fails if
 they drift, because a locale the UI offers and the backend rejects only surfaces after the user pays for the round-trip.
 
+### Locale icons
+
+`ll-locale-icon` (`src/app/shared/components/locale-icon/`) renders the badge shown in the locales table and in the add-locale dropdown.
+**Currently wired up in Space Settings only** — the content and translation screens still show plain text.
+
+A flag cannot identify a language: one language is spoken in many countries, and picking a country for a bare `de` or `ar` means guessing.
+So the icon shows what the locale id actually says and nothing more:
+
+| Locale id          | Icon                                 | Why                                                                            |
+| ------------------ | ------------------------------------ | ------------------------------------------------------------------------------ |
+| `de-CH`, `it-CH`   | two circles — language, then country | the id names both, and the two flags differ. The case the component exists for |
+| `de-DE`, `en-GB`   | one circle                           | both flags are the _same picture_; showing it twice reads as a rendering bug   |
+| `agq-CM`           | country flag only                    | no language flag exists for Aghem                                              |
+| `de`, `zh-Hans`    | language flag only                   | the id names no region — nothing to infer one from                             |
+| `ar-001`, `es-419` | language circle, then the UN flag    | UN M49 macro-regions ("World", "Latin America") belong to no country           |
+| `asa`, `bez`       | the language code as text            | neither flag exists                                                            |
+
+`localeIcon()` splits the id with **`Intl.Locale`**, which reads scripts correctly (`shi-Latn-MA` → region `MA`) and, crucially, does not
+infer: `en` has no region and stays that way. `maximize()` would turn it into `en-Latn-US`, which is the wrong answer for a content locale.
+
+Two consequences worth knowing:
+
+- **Scripts are invisible.** `zh-Hans` and `zh-Hant` get the same icon, as do `sr-Cyrl`/`sr-Latn`. Flags cannot express a writing system.
+  That, plus the fact that a flag never names a language, is why the icon is `aria-hidden` and every call site keeps the locale name beside
+  it.
+- **English is the UK flag.** circle-flags uses it for the `en` language, so `en-GB` collapses to one circle while `en-US` shows 🇬🇧 🇺🇸.
+  Change it in `LANGUAGE_FLAGS` handling if that reads wrong for your authors.
+
+**Two whole circles that overlap slightly, language in front.** This took two passes to get right. Halving one circle with a hairline
+divider read as a single smudged flag at 16px; two fully separate circles read as two unrelated icons. They now share **15% of a circle**
+(`$overlap` in the stylesheet), which reads as one badge made of two flags, and the language circle sits on top (`z-index` on `--language`)
+so it is the one that stays whole.
+
+Both circles are **absolutely positioned** against the two ends of the host — `left: 0` and `right: 0` — rather than offset with a negative
+margin. At `2 - $overlap` wide that leaves exactly the intended overlap, and it avoids percentage margins, which resolve against an
+auto-sized flex container and would be unreliable.
+
+The badge is therefore **wider than it is tall** — ~30px at `h-4` — and it keeps that width **even for a locale with one flag**. That is
+deliberate: a badge that shrank to its content pulled the label of every one-flag row left of its neighbours, so a filtered list (search
+"German" in the add-locale dropdown) came out visibly ragged. The lone circle is pinned to the leading edge, so the language flag lines up
+too; what varies between rows is only the empty space after it.
+
+Consequently the host sets a **height only** (`h-4`), never `size-*`: a fixed width clips the second flag, which is what a `size-4` host
+class did before this was understood. The width comes from an `aspect-ratio`, which also gives the box a definite width for the percentage
+offsets above. Changing `h-4` to `h-5` is all it takes to resize the badge.
+
+A hairline `var(--border)` ring is drawn inside each circle, because the flags are circular artwork on a transparent background: a white
+flag like Japan's, or the white band of Italy's, has no visible edge against a light row without it.
+
+**Where the data comes from.** Flags are the `circle-flags` package (MIT), copied into `assets/flags` by an `angular.json` asset glob — all
+633 files, since restricting the glob would have to be regenerated whenever a locale is added. The component cannot stat that folder at
+runtime, so the available codes are baked into `locale-flags.ts` by `scripts/generate-locale-flags.mjs`; a wrong constant would point an
+`<img>` at a missing asset, which behind the Hosting SPA rewrite serves `index.html` instead of a 404.
+`scripts/generate-locale-flags.test.mjs` (part of `npm run test:scripts`) fails when the constants and the installed package disagree —
+re-run the generator after upgrading it. The collapse list is computed by **comparing file contents**, not by mapping a language to "its"
+country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en-GB` wrong.
+
 ### LocaleDialogComponent
 
-Form: locale `id` (BCP 47 code, e.g. `en`, `de`, `fr-CH`) and display `name`.
+Form: locale `id` (BCP 47 code, e.g. `en`, `de`, `fr-CH`) and display `name`. Each option carries its locale icon.
 
 ---
 

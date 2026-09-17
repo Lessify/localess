@@ -10,7 +10,10 @@
             <hlm-combobox-empty>No locale found.</hlm-combobox-empty>
             <div hlmComboboxList>
               @for (locale of filteredOptions(); track locale.id) {
-                <hlm-combobox-item [value]="locale">{{ locale.name }}</hlm-combobox-item>
+                <hlm-combobox-item [value]="locale">
+                  <ll-locale-icon class="mr-2" [locale]="locale.id" />
+                  {{ locale.name }}
+                </hlm-combobox-item>
               }
             </div>
           </hlm-combobox-content>

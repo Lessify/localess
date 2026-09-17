@@ -6,6 +6,7 @@ import { provideIcons } from '@ng-icons/core';
 import { lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
 import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Locale } from '@shared/models/locale.model';
@@ -31,6 +32,7 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
     LlTableImports,
     LlPaginatorImports,
     LlFilterToolbarImports,
+    LocaleIconComponent,
     HlmProgressImports,
     HlmButtonImports,
     HlmIconImports,
@@ -61,7 +63,7 @@ export class LocalesComponent implements AfterViewInit {
 
   private readonly locales = signal<Locale[]>([]);
   readonly dataSource = new TableDataSource<Locale>(this.locales, this.injector);
-  displayedColumns: string[] = ['id', 'name', 'translateFrom', 'translateTo', 'isFallback', 'actions'];
+  displayedColumns: string[] = ['id', 'icon', 'name', 'translateFrom', 'translateTo', 'isFallback', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
