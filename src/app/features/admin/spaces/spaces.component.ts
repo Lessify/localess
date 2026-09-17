@@ -20,8 +20,12 @@ import { RouterModule } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
@@ -31,11 +35,12 @@ import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceTemplateService } from '@shared/services/space-template.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Observable, of } from 'rxjs';
-import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { SpaceCreateDialogComponent } from './space-create-dialog/space-create-dialog.component';
 import { SpaceCreateDialogModel } from './space-create-dialog/space-create-dialog.model';
@@ -76,6 +81,7 @@ export class SpacesComponent implements OnInit, AfterViewInit {
   private readonly spaceService = inject(SpaceService);
   private readonly spaceTemplateService = inject(SpaceTemplateService);
   private readonly dialog = inject(MatDialog);
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
@@ -209,15 +215,17 @@ export class SpacesComponent implements OnInit, AfterViewInit {
   }
 
   openDeleteDialog(element: Space): void {
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Delete Space',
           content: `Are you sure about deleting Space with name '${element.name}'.\n This action can not be undone.`,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.spaceService.delete(element.id)),
       )

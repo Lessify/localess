@@ -28,8 +28,12 @@ import {
   lucideUserPlus,
   lucideX,
 } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
@@ -37,12 +41,13 @@ import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogModel } from './user-dialog/user-dialog.model';
@@ -84,6 +89,8 @@ import { UserInviteDialogResponse } from './user-invite-dialog/user-invite-dialo
 })
 export class UsersComponent implements OnInit, AfterViewInit {
   private readonly dialog = inject(MatDialog);
+
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
   private readonly userService = inject(UserService);
@@ -194,15 +201,17 @@ export class UsersComponent implements OnInit, AfterViewInit {
   }
 
   openDeleteDialog(element: User): void {
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Delete User',
           content: `Are you sure about deleting User with email '${element.email}'.`,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.userService.delete(element.id)),
       )

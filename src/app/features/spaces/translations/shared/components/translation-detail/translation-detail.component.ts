@@ -5,8 +5,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowRight, lucideCopy, lucideLanguages, lucidePencil, lucideReplace, lucideSave, lucideTrash } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { Translation, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -17,6 +21,7 @@ import { TranslateService } from '@shared/services/translate.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
@@ -24,7 +29,7 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import { EditDialogComponent, EditDialogModel } from '../../../edit-dialog';
 import { EditIdDialogComponent, EditIdDialogModel } from '../../../edit-id-dialog';
@@ -73,6 +78,7 @@ export class TranslationDetailComponent {
   private readonly localeService = inject(LocaleService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translateService = inject(TranslateService);
   private readonly translationService = inject(TranslationService);
@@ -233,16 +239,18 @@ export class TranslationDetailComponent {
   }
 
   openDeleteDialog(element: Translation): void {
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Delete Translation',
           content: `Are you sure about deleting Translation with ID '${element.id}'.`,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
-        filter(it => it),
+      .closed$.pipe(
+        take(1),
+        filter(it => it || false),
         switchMap(() => this.translationService.delete(this.spaceId(), element.id)),
       )
       .subscribe({

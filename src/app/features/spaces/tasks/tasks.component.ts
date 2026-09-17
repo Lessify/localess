@@ -12,7 +12,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -24,7 +23,12 @@ import {
   lucideOctagonAlert,
   lucideTrash,
 } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
@@ -34,13 +38,14 @@ import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { saveAs } from 'file-saver-es';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 const TASK_KIND_LABELS: Record<TaskKind, string> = {
   [TaskKind.ASSET_EXPORT]: 'Asset Export',
@@ -93,7 +98,7 @@ const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
 })
 export class TasksComponent implements OnInit, AfterViewInit {
   private readonly taskService = inject(TaskService);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
@@ -176,14 +181,16 @@ export class TasksComponent implements OnInit, AfterViewInit {
 
   openDeleteDialog(element: Task): void {
     this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Delete Task',
           content: `Are you sure about deleting Task with id '${element.id}'.`,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.taskService.delete(this.spaceId(), element.id)),
       )

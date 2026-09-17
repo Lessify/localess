@@ -29,8 +29,12 @@ import {
   lucideUploadCloud,
   lucideWorkflow,
 } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import {
   FilterDef,
   FilterOption,
@@ -46,11 +50,12 @@ import { SchemaService } from '@shared/services/schema.service';
 import { TaskService } from '@shared/services/task.service';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogModel } from './add-dialog/add-dialog.model';
@@ -97,6 +102,8 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   private readonly schemaService = inject(SchemaService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(MatDialog);
+
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
@@ -227,15 +234,17 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   openDeleteDialog(event: MouseEvent, element: Schema): void {
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Delete Schema',
           content: `Are you sure about deleting Schema with name '${element.id}'.\n Any Content document associated with the Schema will not work anymore.`,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.schemaService.delete(this.spaceId(), element.id)),
       )

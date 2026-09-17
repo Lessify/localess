@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Content, ContentDocument, ContentFolder, ContentKind } from '@shared/models/content.model';
 import { Schema, SchemaType } from '@shared/models/schema.model';
@@ -47,6 +48,7 @@ describe('ContentsComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const openConfirm = vi.fn();
     const changeContentPath = vi.fn();
 
     TestBed.overrideComponent(ContentsComponent, {
@@ -73,6 +75,7 @@ describe('ContentsComponent', () => {
         { provide: TokenService, useValue: { findFirstByPermission } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open: openConfirm } },
         { provide: Router, useValue: { navigate } },
         { provide: SpaceStore, useValue: { contentPath: signal([]), changeContentPath } },
       ],
@@ -99,6 +102,7 @@ describe('ContentsComponent', () => {
       success,
       error,
       open,
+      openConfirm,
       changeContentPath,
     };
   }
@@ -187,23 +191,23 @@ describe('ContentsComponent', () => {
 
   describe('openDeleteDialog', () => {
     it('deletes a folder with folder-specific messaging when confirmed', () => {
-      const { component, open, deleteContent, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, deleteContent, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
       const element = folder({ name: 'Folder' });
 
       component.openDeleteDialog(element);
 
-      expect(open).toHaveBeenCalledWith(
+      expect(openConfirm).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ data: expect.objectContaining({ title: 'Delete Folder' }) }),
+        expect.objectContaining({ context: expect.objectContaining({ title: 'Delete Folder' }) }),
       );
       expect(deleteContent).toHaveBeenCalledWith('space-1', element);
       expect(success).toHaveBeenCalledWith("Folder 'Folder' has been deleted.");
     });
 
     it('deletes a document with document-specific messaging when confirmed', () => {
-      const { component, open, deleteContent, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, deleteContent, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
       const element = doc({ name: 'Page' });
 
       component.openDeleteDialog(element);
@@ -213,8 +217,8 @@ describe('ContentsComponent', () => {
     });
 
     it('does not delete when cancelled', () => {
-      const { component, open, deleteContent } = setup();
-      open.mockReturnValue({ afterClosed: () => of(false) });
+      const { component, openConfirm, deleteContent } = setup();
+      openConfirm.mockReturnValue({ closed$: of(undefined) });
 
       component.openDeleteDialog(doc());
 
@@ -237,8 +241,8 @@ describe('ContentsComponent', () => {
 
   describe('openCloneDialog', () => {
     it('clones and notifies success when confirmed', () => {
-      const { component, open, cloneDocument, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, cloneDocument, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
       const element = doc({ name: 'Page' });
 
       component.openCloneDialog(element);
@@ -250,8 +254,8 @@ describe('ContentsComponent', () => {
 
   describe('openPublishDialog / openUnpublishDialog', () => {
     it('publishes a document with document-specific messaging', () => {
-      const { component, open, publish, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, publish, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
       const element = doc({ id: 'c1', name: 'Page' });
 
       component.openPublishDialog(element);
@@ -261,8 +265,8 @@ describe('ContentsComponent', () => {
     });
 
     it('publishes a folder with folder-specific messaging', () => {
-      const { component, open, publish, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, publish, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
       const element = folder({ id: 'f1', name: 'Folder' });
 
       component.openPublishDialog(element);
@@ -272,8 +276,8 @@ describe('ContentsComponent', () => {
     });
 
     it('unpublishes with success messaging', () => {
-      const { component, open, unpublish, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, unpublish, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
       const element = doc({ id: 'c1', name: 'Page' });
 
       component.openUnpublishDialog(element);

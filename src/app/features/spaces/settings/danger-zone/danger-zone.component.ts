@@ -1,17 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import { provideIcons } from '@ng-icons/core';
 import { lucideShredder } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 @Component({
   selector: 'll-space-settings-danger-zone',
@@ -26,7 +31,7 @@ import { filter, switchMap } from 'rxjs/operators';
   ],
 })
 export class DangerZoneComponent {
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(HlmDialogService);
   private readonly translationService = inject(TranslationService);
   private readonly notificationService = inject(NotificationService);
 
@@ -39,14 +44,16 @@ export class DangerZoneComponent {
 
   deleteTranslations(selectedSpaceId: string) {
     this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Delete All Translations',
           content: `Are you sure about deleting All Translations.\n This action can not be undone.`,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.translationService.deleteAll(selectedSpaceId)),
       )

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
@@ -24,6 +25,7 @@ describe('SpacesComponent', () => {
     const error = vi.fn();
     const warning = vi.fn();
     const open = vi.fn();
+    const openConfirm = vi.fn();
     const apply = vi.fn().mockReturnValue(of(undefined));
 
     TestBed.overrideComponent(SpacesComponent, {
@@ -34,6 +36,7 @@ describe('SpacesComponent', () => {
         { provide: SpaceService, useValue: { findAll, create, update, delete: deleteSpace } },
         { provide: NotificationService, useValue: { success, error, warning } },
         { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open: openConfirm } },
         // Stubbed rather than real: the real one injects Firestore, which this spec has no use for.
         { provide: SpaceTemplateService, useValue: { apply } },
       ],
@@ -60,6 +63,7 @@ describe('SpacesComponent', () => {
       error,
       warning,
       open,
+      openConfirm,
       apply,
       navigateWithAction,
     };
@@ -68,6 +72,11 @@ describe('SpacesComponent', () => {
   /** The dialog result the component reacts to. `undefined` means dismissed. */
   function closesWith(result: unknown) {
     return { afterClosed: () => of(result) };
+  }
+
+  /** Same, for the Spartan confirmation dialog: the result arrives on `closed$`, which does not complete. */
+  function confirmsWith(result: unknown) {
+    return { closed$: of(result) };
   }
 
   it('loads spaces on init', () => {
@@ -240,8 +249,8 @@ describe('SpacesComponent', () => {
   });
 
   it('openDeleteDialog() deletes and notifies success when confirmed', () => {
-    const { component, open, deleteSpace, success } = setup();
-    open.mockReturnValue(closesWith(true));
+    const { component, openConfirm, deleteSpace, success } = setup();
+    openConfirm.mockReturnValue(confirmsWith(true));
 
     component.openDeleteDialog(space({ id: 's1', name: 'Space 1' }));
 
@@ -250,8 +259,8 @@ describe('SpacesComponent', () => {
   });
 
   it('openDeleteDialog() does not delete when cancelled', () => {
-    const { component, open, deleteSpace } = setup();
-    open.mockReturnValue(closesWith(false));
+    const { component, openConfirm, deleteSpace } = setup();
+    openConfirm.mockReturnValue(confirmsWith(undefined));
 
     component.openDeleteDialog(space({ id: 's1' }));
 
@@ -259,9 +268,9 @@ describe('SpacesComponent', () => {
   });
 
   it('openDeleteDialog() notifies an error on failure', () => {
-    const { component, open, deleteSpace, error } = setup();
+    const { component, openConfirm, deleteSpace, error } = setup();
     deleteSpace.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue(closesWith(true));
+    openConfirm.mockReturnValue(confirmsWith(true));
 
     component.openDeleteDialog(space({ id: 's1', name: 'Space 1' }));
 

@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { Locale } from '@shared/models/locale.model';
 import { Space } from '@shared/models/space.model';
 import { LocaleService } from '@shared/services/locale.service';
@@ -25,10 +24,9 @@ describe('LocalesComponent', () => {
     const isLocaleTranslatableTo = vi.fn().mockReturnValue(false);
     const success = vi.fn();
     const error = vi.fn();
-    const open = vi.fn();
-    // The add dialog is the one on Spartan, so it opens through a different service and hands its
-    // result back on `closed$` rather than `afterClosed()`.
-    const openAdd = vi.fn();
+    // Both dialogs run on Spartan now, so one mock covers them - the result arrives on `closed$`,
+    // which (unlike `afterClosed()`) never completes, hence the component's `take(1)`.
+    const openDialog = vi.fn();
 
     TestBed.overrideComponent(LocalesComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -37,14 +35,13 @@ describe('LocalesComponent', () => {
       providers: [
         { provide: LocaleService, useValue: { create, delete: deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
-        { provide: MatDialog, useValue: { open } },
-        { provide: HlmDialogService, useValue: { open: openAdd } },
+        { provide: HlmDialogService, useValue: { open: openDialog } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
       ],
     });
     const fixture = TestBed.createComponent(LocalesComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, create, deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo, success, error, open, openAdd };
+    return { component: fixture.componentInstance, create, deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo, success, error, openDialog };
   }
 
   const en: Locale = { id: 'en', name: 'English' };
@@ -72,8 +69,8 @@ describe('LocalesComponent', () => {
   });
 
   it('openAddDialog() creates the locale and notifies success when confirmed', () => {
-    const { component, openAdd, create, success } = setup(space([en]));
-    openAdd.mockReturnValue({ closed$: of({ locale: de }) });
+    const { component, openDialog, create, success } = setup(space([en]));
+    openDialog.mockReturnValue({ closed$: of({ locale: de }) });
 
     component.openAddDialog();
 
@@ -82,8 +79,8 @@ describe('LocalesComponent', () => {
   });
 
   it('openAddDialog() does nothing when dismissed', () => {
-    const { component, openAdd, create } = setup(space([en]));
-    openAdd.mockReturnValue({ closed$: of(undefined) });
+    const { component, openDialog, create } = setup(space([en]));
+    openDialog.mockReturnValue({ closed$: of(undefined) });
 
     component.openAddDialog();
 
@@ -91,9 +88,9 @@ describe('LocalesComponent', () => {
   });
 
   it('openAddDialog() notifies an error on failure', () => {
-    const { component, openAdd, create, error } = setup(space([en]));
+    const { component, openDialog, create, error } = setup(space([en]));
     create.mockReturnValue(throwError(() => new Error('boom')));
-    openAdd.mockReturnValue({ closed$: of({ locale: de }) });
+    openDialog.mockReturnValue({ closed$: of({ locale: de }) });
 
     component.openAddDialog();
 
@@ -101,8 +98,8 @@ describe('LocalesComponent', () => {
   });
 
   it('openDeleteDialog() deletes, removes it locally, and notifies success when confirmed', () => {
-    const { component, open, deleteLocale, success } = setup(space([en, de]));
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    const { component, openDialog, deleteLocale, success } = setup(space([en, de]));
+    openDialog.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(de);
 
@@ -112,8 +109,8 @@ describe('LocalesComponent', () => {
   });
 
   it('openDeleteDialog() does not delete when cancelled', () => {
-    const { component, open, deleteLocale } = setup(space([en, de]));
-    open.mockReturnValue({ afterClosed: () => of(false) });
+    const { component, openDialog, deleteLocale } = setup(space([en, de]));
+    openDialog.mockReturnValue({ closed$: of(undefined) });
 
     component.openDeleteDialog(de);
 
@@ -121,9 +118,9 @@ describe('LocalesComponent', () => {
   });
 
   it('openDeleteDialog() notifies an error on failure', () => {
-    const { component, open, deleteLocale, error } = setup(space([en, de]));
+    const { component, openDialog, deleteLocale, error } = setup(space([en, de]));
     deleteLocale.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    openDialog.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(de);
 

@@ -1,10 +1,14 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
@@ -50,7 +54,6 @@ import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-
 })
 export class LocalesComponent implements AfterViewInit {
   readonly localeService = inject(LocaleService);
-  private readonly dialog = inject(MatDialog);
   private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
@@ -94,9 +97,9 @@ export class LocalesComponent implements AfterViewInit {
   }
 
   /**
-   * The one dialog on Spartan rather than Material, on trial. Two differences that matter:
-   * `closed$` does not complete the way `afterClosed()` does, hence `take(1)`, and the context is
-   * an object - `HlmDialogService` spreads it, so an array would arrive as index keys.
+   * Two Spartan differences that matter here: `closed$` does not complete the way `afterClosed()`
+   * does, hence `take(1)`, and the context is an object - `HlmDialogService` spreads it, so an
+   * array would arrive as index keys.
    */
   openAddDialog(): void {
     const { id, locales } = this.spaceStore.selectedSpace()!;
@@ -123,15 +126,17 @@ export class LocalesComponent implements AfterViewInit {
 
   openDeleteDialog(element: Locale): void {
     const spaceId = this.spaceStore.selectedSpaceId();
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Delete Locale',
           content: `Are you sure about deleting Locale with name '${element.name}'.`,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.localeService.delete(spaceId!, element)),
       )

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { AssetFile, AssetFolder, AssetKind } from '@shared/models/asset.model';
 import { AssetService } from '@shared/services/asset.service';
 import { NotificationService } from '@shared/services/notification.service';
@@ -41,6 +42,7 @@ describe('AssetsComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const openConfirm = vi.fn();
     const changeAssetPath = vi.fn();
 
     TestBed.overrideComponent(AssetsComponent, { set: { template: '<ll-paginator [length]="0" />' } });
@@ -53,6 +55,7 @@ describe('AssetsComponent', () => {
         { provide: TaskService, useValue: { createAssetImportTask, createAssetExportTask, createAssetRegenerateMetadataTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open: openConfirm } },
         { provide: UnsplashPluginService, useValue: { enabled: () => false } },
         { provide: SpaceStore, useValue: { assetPath: signal(assetPath), changeAssetPath } },
       ],
@@ -76,6 +79,7 @@ describe('AssetsComponent', () => {
       success,
       error,
       open,
+      openConfirm,
       changeAssetPath,
     };
   }
@@ -198,8 +202,8 @@ describe('AssetsComponent', () => {
 
   describe('openDeleteDialog', () => {
     it('deletes and notifies success when confirmed', () => {
-      const { component, open, deleteAsset, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, deleteAsset, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
 
       component.openDeleteDialog(file({ id: 'a1', name: 'photo' }));
 
@@ -208,8 +212,8 @@ describe('AssetsComponent', () => {
     });
 
     it('does not delete when cancelled', () => {
-      const { component, open, deleteAsset } = setup();
-      open.mockReturnValue({ afterClosed: () => of(false) });
+      const { component, openConfirm, deleteAsset } = setup();
+      openConfirm.mockReturnValue({ closed$: of(undefined) });
 
       component.openDeleteDialog(file({ id: 'a1' }));
 
@@ -336,8 +340,8 @@ describe('AssetsComponent', () => {
     });
 
     it('openRegenerateMetadataDialog() creates the task when confirmed', () => {
-      const { component, open, createAssetRegenerateMetadataTask, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, createAssetRegenerateMetadataTask, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
 
       component.openRegenerateMetadataDialog();
 

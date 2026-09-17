@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Locale } from '@shared/models/locale.model';
 import { Translation, TranslationStatus, TranslationType } from '@shared/models/translation.model';
 import { LocaleService } from '@shared/services/locale.service';
@@ -34,6 +35,7 @@ describe('TranslationDetailComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const openConfirm = vi.fn();
 
     TestBed.overrideComponent(TranslationDetailComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
@@ -42,6 +44,7 @@ describe('TranslationDetailComponent', () => {
         { provide: LocaleService, useValue: { isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open: openConfirm } },
         { provide: TranslateService, useValue: { translate } },
         { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(isActionSave) } },
       ],
@@ -52,7 +55,7 @@ describe('TranslationDetailComponent', () => {
     fixture.componentRef.setInput('availableLocales', [en, de]);
     fixture.componentRef.setInput('localeFallback', en);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, update, updateId, deleteTranslation, translate, success, error, open, isLocaleTranslatableFrom, isLocaleTranslatableTo };
+    return { component: fixture.componentInstance, update, updateId, deleteTranslation, translate, success, error, open, openConfirm, isLocaleTranslatableFrom, isLocaleTranslatableTo };
   }
 
   it('identifyTranslationStatus() delegates to the shared util using availableLocales', () => {
@@ -228,8 +231,8 @@ describe('TranslationDetailComponent', () => {
 
   describe('openDeleteDialog', () => {
     it('deletes and notifies success when confirmed', () => {
-      const { component, open, deleteTranslation, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of(true) });
+      const { component, openConfirm, deleteTranslation, success } = setup();
+      openConfirm.mockReturnValue({ closed$: of(true) });
 
       component.openDeleteDialog(translation({ id: 't1' }));
 
@@ -238,8 +241,8 @@ describe('TranslationDetailComponent', () => {
     });
 
     it('does not delete when cancelled', () => {
-      const { component, open, deleteTranslation } = setup();
-      open.mockReturnValue({ afterClosed: () => of(false) });
+      const { component, openConfirm, deleteTranslation } = setup();
+      openConfirm.mockReturnValue({ closed$: of(undefined) });
 
       component.openDeleteDialog(translation({ id: 't1' }));
 

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Space } from '@shared/models/space.model';
 import { Token, TokenPermission } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -33,6 +34,7 @@ describe('TokensComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const openConfirm = vi.fn();
 
     TestBed.overrideComponent(TokensComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -42,12 +44,13 @@ describe('TokensComponent', () => {
         { provide: TokenService, useValue: { findAll, create, update, delete: deleteToken, regenerate } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open: openConfirm } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
       ],
     });
     const fixture = TestBed.createComponent(TokensComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, create, update, deleteToken, regenerate, success, error, open };
+    return { component: fixture.componentInstance, findAll, create, update, deleteToken, regenerate, success, error, open, openConfirm };
   }
 
   it('starts loading until a space is selected', () => {
@@ -129,8 +132,8 @@ describe('TokensComponent', () => {
   });
 
   it('openDeleteDialog() deletes and notifies success when confirmed', () => {
-    const { component, open, deleteToken, success } = setup([], space());
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    const { component, openConfirm, deleteToken, success } = setup([], space());
+    openConfirm.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(token({ id: 't1', name: 'CI' }));
 
@@ -139,8 +142,8 @@ describe('TokensComponent', () => {
   });
 
   it('openDeleteDialog() does not delete when cancelled', () => {
-    const { component, open, deleteToken } = setup([], space());
-    open.mockReturnValue({ afterClosed: () => of(false) });
+    const { component, openConfirm, deleteToken } = setup([], space());
+    openConfirm.mockReturnValue({ closed$: of(undefined) });
 
     component.openDeleteDialog(token({ id: 't1' }));
 
@@ -148,9 +151,9 @@ describe('TokensComponent', () => {
   });
 
   it('openDeleteDialog() notifies an error on failure', () => {
-    const { component, open, deleteToken, error } = setup([], space());
+    const { component, openConfirm, deleteToken, error } = setup([], space());
     deleteToken.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    openConfirm.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(token({ id: 't1', name: 'CI' }));
 
@@ -158,19 +161,21 @@ describe('TokensComponent', () => {
   });
 
   it('openRegenerateDialog() regenerates and notifies success when confirmed', () => {
-    const { component, open, regenerate, success } = setup([], space());
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    const { component, openConfirm, regenerate, success } = setup([], space());
+    openConfirm.mockReturnValue({ closed$: of(true) });
     const element = token({ id: 't1', name: 'CI' });
 
     component.openRegenerateDialog(element);
 
-    expect(open).toHaveBeenCalledWith(
+    expect(openConfirm).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        data: {
+        context: {
           title: 'Regenerate Token',
           content:
             "Are you sure you want to regenerate the token 'CI'? All clients using the current token will immediately lose access and must be updated with the new token.",
+          // Nothing is deleted, but every existing client irreversibly loses access.
+          variant: 'destructive',
         },
       }),
     );
@@ -179,8 +184,8 @@ describe('TokensComponent', () => {
   });
 
   it('openRegenerateDialog() does not regenerate when cancelled', () => {
-    const { component, open, regenerate } = setup([], space());
-    open.mockReturnValue({ afterClosed: () => of(false) });
+    const { component, openConfirm, regenerate } = setup([], space());
+    openConfirm.mockReturnValue({ closed$: of(undefined) });
 
     component.openRegenerateDialog(token({ id: 't1' }));
 
@@ -188,9 +193,9 @@ describe('TokensComponent', () => {
   });
 
   it('openRegenerateDialog() notifies an error on failure', () => {
-    const { component, open, regenerate, error } = setup([], space());
+    const { component, openConfirm, regenerate, error } = setup([], space());
     regenerate.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    openConfirm.mockReturnValue({ closed$: of(true) });
 
     component.openRegenerateDialog(token({ id: 't1', name: 'CI' }));
 

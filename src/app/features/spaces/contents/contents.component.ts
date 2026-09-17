@@ -25,8 +25,12 @@ import {
   lucideUploadCloud,
   lucideWebhookOff,
 } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import {
@@ -49,12 +53,13 @@ import { TokenService } from '@shared/services/token.service';
 import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
 import { AddFolderDialogComponent, AddFolderDialogModel } from './add-folder-dialog';
@@ -112,6 +117,8 @@ export class ContentsComponent implements AfterViewInit {
   private readonly tokenService = inject(TokenService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(MatDialog);
+
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
@@ -260,15 +267,17 @@ export class ContentsComponent implements AfterViewInit {
       messageSuccess = `Document '${element.name}' has been deleted.`;
       messageError = `Document '${element.name}' can not be deleted.`;
     }
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: title,
           content: content,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.contentService.delete(this.spaceId(), element)),
       )
@@ -307,15 +316,16 @@ export class ContentsComponent implements AfterViewInit {
   }
 
   openCloneDialog(element: ContentDocument): void {
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Clone Document',
           content: `Are you sure about clone the Document with name: ${element.name}.`,
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.contentService.cloneDocument(this.spaceId(), element)),
       )
@@ -346,15 +356,16 @@ export class ContentsComponent implements AfterViewInit {
       messageSuccess = `Document '${element.name}' has been published.`;
       messageError = `Document '${element.name}' can not be published.`;
     }
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: title,
           content: content,
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.contentService.publish(this.spaceId(), element.id)),
       )
@@ -385,15 +396,17 @@ export class ContentsComponent implements AfterViewInit {
       messageSuccess = `Document '${element.name}' has been unpublished.`;
       messageError = `Document '${element.name}' can not be unpublished.`;
     }
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: title,
           content: content,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.contentService.unpublish(this.spaceId(), element.id)),
       )

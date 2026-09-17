@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Task, TaskKind, TaskStatus } from '@shared/models/task.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -48,7 +48,7 @@ describe('TasksComponent', () => {
         { provide: TaskService, useValue: { findAll, downloadUrl, delete: deleteTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
-        { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open } },
       ],
     });
     const fixture = TestBed.createComponent(TasksComponent);
@@ -103,7 +103,7 @@ describe('TasksComponent', () => {
 
   it('openDeleteDialog() deletes and notifies success when confirmed', () => {
     const { component, open, deleteTask, success } = setup();
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    open.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(task({ id: 't1' }));
 
@@ -113,7 +113,7 @@ describe('TasksComponent', () => {
 
   it('openDeleteDialog() does not delete when cancelled', () => {
     const { component, open, deleteTask } = setup();
-    open.mockReturnValue({ afterClosed: () => of(false) });
+    open.mockReturnValue({ closed$: of(undefined) });
 
     component.openDeleteDialog(task({ id: 't1' }));
 
@@ -122,7 +122,7 @@ describe('TasksComponent', () => {
 
   it('openDeleteDialog() notifies an error when deletion fails', () => {
     const { component, open, deleteTask, error } = setup();
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    open.mockReturnValue({ closed$: of(true) });
     deleteTask.mockReturnValue(throwError(() => new Error('boom')));
 
     component.openDeleteDialog(task({ id: 't1' }));

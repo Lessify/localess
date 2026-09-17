@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -30,6 +31,7 @@ describe('SchemasComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const openConfirm = vi.fn();
 
     TestBed.overrideComponent(SchemasComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -40,6 +42,7 @@ describe('SchemasComponent', () => {
         { provide: TaskService, useValue: { createSchemaImportTask, createSchemaExportTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open: openConfirm } },
         { provide: Router, useValue: { navigate } },
       ],
     });
@@ -58,6 +61,7 @@ describe('SchemasComponent', () => {
       success,
       error,
       open,
+      openConfirm,
     };
   }
 
@@ -154,9 +158,9 @@ describe('SchemasComponent', () => {
   });
 
   it('openDeleteDialog() prevents default, deletes, and notifies success when confirmed', () => {
-    const { component, open, deleteSchema, success } = setup();
+    const { component, openConfirm, deleteSchema, success } = setup();
     const event = fakeEvent();
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    openConfirm.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(event, schema({ id: 's1' }));
 
@@ -166,8 +170,8 @@ describe('SchemasComponent', () => {
   });
 
   it('openDeleteDialog() does not delete when cancelled', () => {
-    const { component, open, deleteSchema } = setup();
-    open.mockReturnValue({ afterClosed: () => of(false) });
+    const { component, openConfirm, deleteSchema } = setup();
+    openConfirm.mockReturnValue({ closed$: of(undefined) });
 
     component.openDeleteDialog(fakeEvent(), schema({ id: 's1' }));
 

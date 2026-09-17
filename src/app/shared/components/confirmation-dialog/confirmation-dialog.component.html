@@ -1,8 +1,8 @@
-<h2 mat-dialog-title>{{ data.title }}</h2>
-<mat-dialog-content>
-  <p class="whitespace-pre-wrap"> {{ data.content }} </p>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="false">Cancel</button>
-  <button hlmBtn variant="destructive" [mat-dialog-close]="true">OK</button>
-</mat-dialog-actions>
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>{{ context.title }}</h2>
+  <p hlmDialogDescription class="whitespace-pre-wrap">{{ context.content }}</p>
+</hlm-dialog-header>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [variant]="okVariant" (click)="confirm()">OK</button>
+</hlm-dialog-footer>

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
@@ -26,6 +27,7 @@ describe('UsersComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const openConfirm = vi.fn();
 
     TestBed.overrideComponent(UsersComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -35,11 +37,12 @@ describe('UsersComponent', () => {
         { provide: UserService, useValue: { findAll, invite, update, delete: deleteUser, sync } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open: openConfirm } },
       ],
     });
     const fixture = TestBed.createComponent(UsersComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, invite, update, deleteUser, sync, success, error, open };
+    return { component: fixture.componentInstance, findAll, invite, update, deleteUser, sync, success, error, open, openConfirm };
   }
 
   it('loads users on init', () => {
@@ -117,8 +120,8 @@ describe('UsersComponent', () => {
   });
 
   it('openDeleteDialog() deletes and notifies success when confirmed', () => {
-    const { component, open, deleteUser, success } = setup();
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    const { component, openConfirm, deleteUser, success } = setup();
+    openConfirm.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(user({ id: 'u1', email: 'user@example.com' }));
 
@@ -127,8 +130,8 @@ describe('UsersComponent', () => {
   });
 
   it('openDeleteDialog() does not delete when cancelled', () => {
-    const { component, open, deleteUser } = setup();
-    open.mockReturnValue({ afterClosed: () => of(false) });
+    const { component, openConfirm, deleteUser } = setup();
+    openConfirm.mockReturnValue({ closed$: of(undefined) });
 
     component.openDeleteDialog(user({ id: 'u1' }));
 
@@ -136,9 +139,9 @@ describe('UsersComponent', () => {
   });
 
   it('openDeleteDialog() notifies an error on failure', () => {
-    const { component, open, deleteUser, error } = setup();
+    const { component, openConfirm, deleteUser, error } = setup();
     deleteUser.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    openConfirm.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(user({ id: 'u1', email: 'user@example.com' }));
 

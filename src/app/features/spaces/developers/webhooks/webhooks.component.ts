@@ -14,7 +14,12 @@ import {
   lucideWebhook,
   lucideWebhookOff,
 } from '@ng-icons/lucide';
-import { ConfirmationDialogComponent, ConfirmationDialogModel } from '@shared/components/confirmation-dialog';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
@@ -24,11 +29,12 @@ import { WebHookService } from '@shared/services/webhook.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import { WebhookDialogComponent } from './webhook-dialog/webhook-dialog.component';
 import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
@@ -65,6 +71,8 @@ import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
 export class WebhooksComponent implements AfterViewInit {
   private readonly webhookService = inject(WebHookService);
   private readonly dialog = inject(MatDialog);
+
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
@@ -189,15 +197,17 @@ export class WebhooksComponent implements AfterViewInit {
 
   openDeleteDialog(element: WebHook): void {
     const spaceId = this.spaceStore.selectedSpaceId();
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Delete Webhook',
           content: `Are you sure about deleting Webhook with name '${element.name}'.`,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.webhookService.delete(spaceId!, element.id)),
       )

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslationService } from '@shared/services/translation.service';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -21,7 +21,7 @@ describe('DangerZoneComponent', () => {
       providers: [
         { provide: TranslationService, useValue: { deleteAll } },
         { provide: NotificationService, useValue: { success, error } },
-        { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open } },
         { provide: SpaceStore, useValue: { selectedSpaceId: signal('space-1') } },
       ],
     });
@@ -32,7 +32,7 @@ describe('DangerZoneComponent', () => {
 
   it('deletes all translations and notifies success when confirmed', () => {
     const { component, open, deleteAll, success } = setup();
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    open.mockReturnValue({ closed$: of(true) });
 
     component.deleteTranslations('space-1');
 
@@ -42,7 +42,7 @@ describe('DangerZoneComponent', () => {
 
   it('does nothing when cancelled', () => {
     const { component, open, deleteAll } = setup();
-    open.mockReturnValue({ afterClosed: () => of(false) });
+    open.mockReturnValue({ closed$: of(undefined) });
 
     component.deleteTranslations('space-1');
 
@@ -52,7 +52,7 @@ describe('DangerZoneComponent', () => {
   it('notifies an error on failure', () => {
     const { component, open, deleteAll, error } = setup();
     deleteAll.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of(true) });
+    open.mockReturnValue({ closed$: of(true) });
 
     component.deleteTranslations('space-1');
 

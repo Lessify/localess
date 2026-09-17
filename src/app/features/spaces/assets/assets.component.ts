@@ -43,8 +43,12 @@ import {
 } from '@ng-icons/lucide';
 import { tablerBrandUnsplash } from '@ng-icons/tabler-icons';
 import { AssetCardComponent } from '@shared/components/asset-card/asset-card.component';
-import { ConfirmationDialogComponent } from '@shared/components/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogModel } from '@shared/components/confirmation-dialog/confirmation-dialog.model';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
@@ -76,6 +80,7 @@ import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
@@ -83,7 +88,7 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Subject } from 'rxjs';
-import { concatMap, filter, map, switchMap, tap } from 'rxjs/operators';
+import { concatMap, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
 import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
@@ -158,6 +163,8 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(MatDialog);
+
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
   readonly unsplashPluginService = inject(UnsplashPluginService);
@@ -419,15 +426,17 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       title = 'Delete Asset';
       content = `Are you sure about deleting Asset with name: ${element.name}.`;
     }
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: title,
           content: content,
+          variant: 'destructive',
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.assetService.delete(this.spaceId(), element.id)),
       )
@@ -566,15 +575,16 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   }
 
   openRegenerateMetadataDialog(): void {
-    this.dialog
-      .open<ConfirmationDialogComponent, ConfirmationDialogModel, boolean>(ConfirmationDialogComponent, {
-        data: {
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
           title: 'Regenerate Metadata',
           content: `Are you sure about regenerating assets metadata? It is a long running job, it may take from few minutes till one hour.`,
         },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it || false),
         switchMap(() => this.taskService.createAssetRegenerateMetadataTask(this.spaceId())),
       )
