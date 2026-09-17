@@ -1,16 +1,24 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { WebHook, WebHookEvent } from '@shared/models/webhook.model';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { vi } from 'vitest';
 
 import { WebhookDialogComponent } from './webhook-dialog.component';
 
 describe('WebhookDialogComponent', () => {
-  function setup(data: WebHook | undefined) {
+  function setup(context: WebHook | undefined) {
+    const close = vi.fn();
     TestBed.overrideComponent(WebhookDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(WebhookDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('lists every webhook event as a selectable option', () => {
@@ -69,5 +77,13 @@ describe('WebhookDialogComponent', () => {
     component.form.setValue({ name: 'Slack', url: 'https://example.com', events: [], secret: '' });
 
     expect(component.form.controls['events'].valid).toBe(false);
+  });
+  it('closes with the form value when saved', () => {
+    const { component, close } = setup(undefined);
+    component.form.patchValue({ name: 'Slack', url: 'https://example.com', events: [] });
+
+    component.save();
+
+    expect(close).toHaveBeenCalledWith({ name: 'Slack', url: 'https://example.com', events: [], secret: '' });
   });
 });

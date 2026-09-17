@@ -1,7 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -20,6 +19,7 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
@@ -37,7 +37,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
 import { WebhookDialogComponent } from './webhook-dialog/webhook-dialog.component';
-import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
+import { WebhookDialogContext, WebhookDialogResult } from './webhook-dialog/webhook-dialog.model';
 
 @Component({
   selector: 'll-space-developers-webhooks',
@@ -70,9 +70,7 @@ import { WebhookDialogModel } from './webhook-dialog/webhook-dialog.model';
 })
 export class WebhooksComponent implements AfterViewInit {
   private readonly webhookService = inject(WebHookService);
-  private readonly dialog = inject(MatDialog);
-
-  private readonly hlmDialog = inject(HlmDialogService);
+  private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
@@ -146,11 +144,11 @@ export class WebhooksComponent implements AfterViewInit {
   openAddDialog(): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<WebhookDialogComponent, undefined, WebhookDialogModel>(WebhookDialogComponent, {
-        panelClass: 'md',
+      .open<WebhookDialogResult>(WebhookDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.webhookService.create(spaceId!, it!)),
       )
@@ -166,12 +164,12 @@ export class WebhooksComponent implements AfterViewInit {
   openEditDialog(element: WebHook): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<WebhookDialogComponent, WebHook, WebhookDialogModel>(WebhookDialogComponent, {
-        panelClass: 'md',
-        data: element,
+      .open<WebhookDialogResult, WebhookDialogContext>(WebhookDialogComponent, {
+        context: element,
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.webhookService.update(spaceId!, element.id, it!)),
       )
@@ -197,7 +195,7 @@ export class WebhooksComponent implements AfterViewInit {
 
   openDeleteDialog(element: WebHook): void {
     const spaceId = this.spaceStore.selectedSpaceId();
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Delete Webhook',

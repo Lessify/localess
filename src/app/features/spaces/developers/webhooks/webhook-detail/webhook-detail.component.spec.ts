@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@shared/models/webhook.model';
@@ -31,7 +30,6 @@ describe('WebhookDetailComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
-    const openConfirm = vi.fn();
 
     TestBed.overrideComponent(WebhookDetailComponent, { set: { template: '<ll-paginator [length]="0" />' } });
     TestBed.configureTestingModule({
@@ -39,15 +37,14 @@ describe('WebhookDetailComponent', () => {
         { provide: WebHookService, useValue: { findById, findLogs, update, updateStatus, delete: deleteWebhook } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
-        { provide: MatDialog, useValue: { open } },
-        { provide: HlmDialogService, useValue: { open: openConfirm } },
+        { provide: HlmDialogService, useValue: { open } },
         { provide: SpaceStore, useValue: { selectedSpaceId: signal('space-1') } },
       ],
     });
     const fixture = TestBed.createComponent(WebhookDetailComponent);
     fixture.componentRef.setInput('webhookId', 'w1');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findById, findLogs, update, updateStatus, deleteWebhook, navigate, success, error, open, openConfirm };
+    return { component: fixture.componentInstance, findById, findLogs, update, updateStatus, deleteWebhook, navigate, success, error, open };
   }
 
   it('loads the webhook and its logs on init', () => {
@@ -86,7 +83,7 @@ describe('WebhookDetailComponent', () => {
   it('openEditDialog() updates the webhook and notifies success when confirmed', () => {
     const { component, open, update, success } = setup(webhook({ id: 'w1' }));
     const model = { name: 'Renamed', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED] };
-    open.mockReturnValue({ afterClosed: () => of(model) });
+    open.mockReturnValue({ closed$: of(model) });
 
     component.openEditDialog();
 
@@ -97,7 +94,7 @@ describe('WebhookDetailComponent', () => {
   it('openEditDialog() notifies an error on failure', () => {
     const { component, open, update, error } = setup(webhook({ id: 'w1' }));
     update.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of({ name: 'Renamed', url: 'https://example.com', events: [] }) });
+    open.mockReturnValue({ closed$: of({ name: 'Renamed', url: 'https://example.com', events: [] }) });
 
     component.openEditDialog();
 
@@ -123,8 +120,8 @@ describe('WebhookDetailComponent', () => {
   });
 
   it('openDeleteDialog() deletes, notifies success, and navigates back when confirmed', () => {
-    const { component, openConfirm, deleteWebhook, success, navigate } = setup(webhook({ id: 'w1', name: 'Slack' }));
-    openConfirm.mockReturnValue({ closed$: of(true) });
+    const { component, open, deleteWebhook, success, navigate } = setup(webhook({ id: 'w1', name: 'Slack' }));
+    open.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog();
 
@@ -134,8 +131,8 @@ describe('WebhookDetailComponent', () => {
   });
 
   it('openDeleteDialog() does not delete when cancelled', () => {
-    const { component, openConfirm, deleteWebhook } = setup(webhook({ id: 'w1' }));
-    openConfirm.mockReturnValue({ closed$: of(undefined) });
+    const { component, open, deleteWebhook } = setup(webhook({ id: 'w1' }));
+    open.mockReturnValue({ closed$: of(undefined) });
 
     component.openDeleteDialog();
 
@@ -143,9 +140,9 @@ describe('WebhookDetailComponent', () => {
   });
 
   it('openDeleteDialog() notifies an error on failure', () => {
-    const { component, openConfirm, deleteWebhook, error } = setup(webhook({ id: 'w1', name: 'Slack' }));
+    const { component, open, deleteWebhook, error } = setup(webhook({ id: 'w1', name: 'Slack' }));
     deleteWebhook.mockReturnValue(throwError(() => new Error('boom')));
-    openConfirm.mockReturnValue({ closed$: of(true) });
+    open.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog();
 
