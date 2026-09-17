@@ -1,3 +1,3 @@
-export interface AddDialogModel {
+export interface AddDialogContext {
   reservedIds: string[];
 }

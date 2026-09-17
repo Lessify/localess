@@ -14,7 +14,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -35,6 +34,7 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import {
   FilterDef,
   FilterOption,
@@ -58,12 +58,12 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
-import { AddDialogModel } from './add-dialog/add-dialog.model';
-import { EditIdDialogComponent, EditIdDialogModel } from './edit-id-dialog';
+import { AddDialogContext } from './add-dialog/add-dialog.model';
+import { EditIdDialogComponent, EditIdDialogContext, EditIdDialogResult } from './edit-id-dialog';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { ExportDialogResult } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { ImportDialogResult } from './import-dialog/import-dialog.model';
 
 @Component({
   selector: 'll-schemas',
@@ -101,9 +101,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
   private readonly taskService = inject(TaskService);
-  private readonly dialog = inject(MatDialog);
-
-  private readonly hlmDialog = inject(HlmDialogService);
+  private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
@@ -174,14 +172,14 @@ export class SchemasComponent implements OnInit, AfterViewInit {
 
   openAddDialog(): void {
     this.dialog
-      .open<AddDialogComponent, AddDialogModel, SchemaCreate>(AddDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<SchemaCreate, AddDialogContext>(AddDialogComponent, {
+        context: {
           reservedIds: this.schemaIds(),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.schemaService.create(this.spaceId(), it!)),
       )
@@ -200,15 +198,15 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     event.preventDefault();
     event.stopImmediatePropagation();
     this.dialog
-      .open<EditIdDialogComponent, EditIdDialogModel, string>(EditIdDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<EditIdDialogResult, EditIdDialogContext>(EditIdDialogComponent, {
+        context: {
           id: element.id,
           reservedIds: this.schemaIds(),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.schemaService.updateId(this.spaceId(), element, it!)),
       )
@@ -234,7 +232,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   openDeleteDialog(event: MouseEvent, element: Schema): void {
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Delete Schema',
@@ -261,11 +259,11 @@ export class SchemasComponent implements OnInit, AfterViewInit {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
-        panelClass: 'sm',
+      .open<ImportDialogResult>(ImportDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.taskService.createSchemaImportTask(this.spaceId(), it!.file)),
       )
@@ -287,11 +285,11 @@ export class SchemasComponent implements OnInit, AfterViewInit {
 
   openExportDialog() {
     this.dialog
-      .open<ExportDialogComponent, void, ExportDialogReturn>(ExportDialogComponent, {
-        panelClass: 'sm',
+      .open<ExportDialogResult>(ExportDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(() => this.taskService.createSchemaExportTask(this.spaceId())),
       )

@@ -1,30 +1,30 @@
-<h2 mat-dialog-title>Edit Schema ID</h2>
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
-    <div hlmField>
-      <label hlmFieldLabel for="id">Id</label>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput id="id" type="text" formControlName="id" maxlength="50" autocomplete="off" />
-        <hlm-input-group-addon align="inline-end">
-          <button hlmBtn size="icon" variant="ghost" type="button" (click)="normalizeId()">
-            <ng-icon hlm size="sm" name="lucideWand2" />
-          </button>
-          <span class="text-muted-foreground text-xs">{{ form.controls['id'].value?.length || 0 }}/50</span>
-        </hlm-input-group-addon>
-      </div>
-      <hlm-field-description>Will be used in OpenAPI Schema Name.</hlm-field-description>
-      @if (form.controls['id'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Edit Schema ID</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex flex-col gap-4">
+  <div hlmField>
+    <label hlmFieldLabel for="id">Id</label>
+    <div hlmInputGroup>
+      <input hlmInputGroupInput id="id" type="text" formControlName="id" maxlength="50" autocomplete="off" />
+      <hlm-input-group-addon align="inline-end">
+        <button hlmBtn size="icon" variant="ghost" type="button" (click)="normalizeId()">
+          <ng-icon hlm size="sm" name="lucideWand2" />
+        </button>
+        <span class="text-muted-foreground text-xs">{{ form.controls['id'].value?.length || 0 }}/50</span>
+      </hlm-input-group-addon>
     </div>
-  </form>
-  <p class="text-destructive text-sm">
-    <strong>Warning:</strong>
-    Changing the ID will affect the relation between other Schema and OpenAPI Schema Name. It will also affect the API endpoint and the data
-    stored in the database.
-  </p>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="ghost" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value.id" [disabled]="!form.valid">Save</button>
-</mat-dialog-actions>
+    <hlm-field-description>Will be used in OpenAPI Schema Name.</hlm-field-description>
+    @if (form.controls['id'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+</form>
+<p class="text-destructive text-sm">
+  <strong>Warning:</strong>
+  Changing the ID will affect the relation between other Schema and OpenAPI Schema Name. It will also affect the API endpoint and the data
+  stored in the database.
+</p>
+<hlm-dialog-footer>
+  <button hlmBtn variant="ghost" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>

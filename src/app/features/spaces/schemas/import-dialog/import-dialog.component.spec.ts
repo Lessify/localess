@@ -1,13 +1,17 @@
 import { TestBed } from '@angular/core/testing';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { vi } from 'vitest';
 
 import { ImportDialogComponent } from './import-dialog.component';
 
 describe('ImportDialogComponent', () => {
   function setup() {
+    const close = vi.fn();
+    TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }] });
     TestBed.overrideComponent(ImportDialogComponent, { set: { template: '<div></div>' } });
     const fixture = TestBed.createComponent(ImportDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   function fileChangeEvent(file: File): Event {
@@ -53,5 +57,14 @@ describe('ImportDialogComponent', () => {
 
     expect(component.fileName).toBe('');
     expect(component.form.value.file).toBeNull();
+  });
+  it('closes with the picked file when importing', () => {
+    const { component, close } = setup();
+    const file = new File([''], 'schemas.lls.zip');
+    component.form.patchValue({ file });
+
+    component.save();
+
+    expect(close).toHaveBeenCalledWith({ file });
   });
 });

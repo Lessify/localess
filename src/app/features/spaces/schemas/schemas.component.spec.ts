@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
@@ -31,7 +30,6 @@ describe('SchemasComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
-    const openConfirm = vi.fn();
 
     TestBed.overrideComponent(SchemasComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -41,8 +39,7 @@ describe('SchemasComponent', () => {
         { provide: SchemaService, useValue: { findAll, create, updateId, delete: deleteSchema } },
         { provide: TaskService, useValue: { createSchemaImportTask, createSchemaExportTask } },
         { provide: NotificationService, useValue: { success, error } },
-        { provide: MatDialog, useValue: { open } },
-        { provide: HlmDialogService, useValue: { open: openConfirm } },
+        { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
       ],
     });
@@ -61,7 +58,6 @@ describe('SchemasComponent', () => {
       success,
       error,
       open,
-      openConfirm,
     };
   }
 
@@ -98,11 +94,11 @@ describe('SchemasComponent', () => {
 
   it('openAddDialog() creates the schema and notifies success when confirmed', () => {
     const { component, open, create, success } = setup([schema({ id: 'existing' })]);
-    open.mockReturnValue({ afterClosed: () => of({ id: 'new', type: SchemaType.NODE }) });
+    open.mockReturnValue({ closed$: of({ id: 'new', type: SchemaType.NODE }) });
 
     component.openAddDialog();
 
-    expect(open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ data: { reservedIds: ['existing'] } }));
+    expect(open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ context: { reservedIds: ['existing'] } }));
     expect(create).toHaveBeenCalledWith('space-1', { id: 'new', type: SchemaType.NODE });
     expect(success).toHaveBeenCalledWith('Schema has been created.');
   });
@@ -110,7 +106,7 @@ describe('SchemasComponent', () => {
   it('openAddDialog() notifies an error on failure', () => {
     const { component, open, create, error } = setup();
     create.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of({ id: 'new', type: SchemaType.NODE }) });
+    open.mockReturnValue({ closed$: of({ id: 'new', type: SchemaType.NODE }) });
 
     component.openAddDialog();
 
@@ -120,7 +116,7 @@ describe('SchemasComponent', () => {
   it('openEditIdDialog() prevents default, updates the id, and notifies success', () => {
     const { component, open, updateId, success } = setup();
     const event = fakeEvent();
-    open.mockReturnValue({ afterClosed: () => of('new-id') });
+    open.mockReturnValue({ closed$: of('new-id') });
     const element = schema({ id: 's1' });
 
     component.openEditIdDialog(event, element);
@@ -134,7 +130,7 @@ describe('SchemasComponent', () => {
   it('openEditIdDialog() notifies an error on failure', () => {
     const { component, open, updateId, error } = setup();
     updateId.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of('new-id') });
+    open.mockReturnValue({ closed$: of('new-id') });
 
     component.openEditIdDialog(fakeEvent(), schema({ id: 's1' }));
 
@@ -158,9 +154,9 @@ describe('SchemasComponent', () => {
   });
 
   it('openDeleteDialog() prevents default, deletes, and notifies success when confirmed', () => {
-    const { component, openConfirm, deleteSchema, success } = setup();
+    const { component, open, deleteSchema, success } = setup();
     const event = fakeEvent();
-    openConfirm.mockReturnValue({ closed$: of(true) });
+    open.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(event, schema({ id: 's1' }));
 
@@ -170,8 +166,8 @@ describe('SchemasComponent', () => {
   });
 
   it('openDeleteDialog() does not delete when cancelled', () => {
-    const { component, openConfirm, deleteSchema } = setup();
-    openConfirm.mockReturnValue({ closed$: of(undefined) });
+    const { component, open, deleteSchema } = setup();
+    open.mockReturnValue({ closed$: of(undefined) });
 
     component.openDeleteDialog(fakeEvent(), schema({ id: 's1' }));
 
@@ -181,7 +177,7 @@ describe('SchemasComponent', () => {
   it('openImportDialog() creates the import task and notifies success', () => {
     const { component, open, createSchemaImportTask, success } = setup();
     const file = new File(['data'], 'schemas.zip');
-    open.mockReturnValue({ afterClosed: () => of({ file }) });
+    open.mockReturnValue({ closed$: of({ file }) });
 
     component.openImportDialog();
 
@@ -191,7 +187,7 @@ describe('SchemasComponent', () => {
 
   it('openExportDialog() creates the export task and notifies success', () => {
     const { component, open, createSchemaExportTask, success } = setup();
-    open.mockReturnValue({ afterClosed: () => of({}) });
+    open.mockReturnValue({ closed$: of({}) });
 
     component.openExportDialog();
 

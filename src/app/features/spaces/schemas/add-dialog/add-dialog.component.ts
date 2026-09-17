@@ -1,15 +1,16 @@
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NameUtils } from '@core/utils/name-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFileBox, lucideList, lucideWandSparkles, lucideWorkflow } from '@ng-icons/lucide';
-import { SchemaType, schemaTypeDescriptions } from '@shared/models/schema.model';
+import { SchemaCreate, SchemaType, schemaTypeDescriptions } from '@shared/models/schema.model';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { SchemaValidator } from '@shared/validators/schema.validator';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
@@ -17,15 +18,15 @@ import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
-import { AddDialogModel } from './add-dialog.model';
+import { AddDialogContext } from './add-dialog.model';
 
 @Component({
   selector: 'll-schema-add-dialog',
   templateUrl: './add-dialog.component.html',
-  styleUrls: ['./add-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'grid gap-4' },
   imports: [
-    MatDialogModule,
+    HlmDialogImports,
     ReactiveFormsModule,
     HlmButtonImports,
     HlmFieldImports,
@@ -47,14 +48,17 @@ import { AddDialogModel } from './add-dialog.model';
 export class AddDialogComponent {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
-  data = inject<AddDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<SchemaCreate>>(BrnDialogRef);
+
+  /** Required: the caller always passes the ids already taken, which the id validator needs. */
+  private readonly context = injectBrnDialogContext<AddDialogContext>();
 
   schemaTypeDescriptions = schemaTypeDescriptions;
   types: string[] = Object.keys(SchemaType);
 
   form: FormGroup = this.fb.group({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
-    id: this.fb.control<string | undefined>('', [...SchemaValidator.ID, CommonValidator.reservedName(this.data.reservedIds)]),
+    id: this.fb.control<string | undefined>('', [...SchemaValidator.ID, CommonValidator.reservedName(this.context.reservedIds)]),
     type: this.fb.control<SchemaType>(SchemaType.NODE, SchemaValidator.TYPE),
   });
 
@@ -80,5 +84,9 @@ export class AddDialogComponent {
     if (this.form.value.id) {
       this.form.controls['id'].setValue(NameUtils.schemaId(this.form.value.id));
     }
+  }
+
+  save(): void {
+    this.dialogRef.close(this.form.value as SchemaCreate);
   }
 }

@@ -1,11 +1,11 @@
-<h2 mat-dialog-title>Schema Export</h2>
-<mat-dialog-content>
-  <p class="py-2">Export all schemas.</p>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="{}">
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Schema Export</h2>
+</hlm-dialog-header>
+<p class="py-2">Export all schemas.</p>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn (click)="save()">
     <ng-icon hlm size="sm" name="lucideCloudDownload" />
     Export
   </button>
-</mat-dialog-actions>
+</hlm-dialog-footer>
