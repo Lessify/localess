@@ -1,10 +1,10 @@
 import { TranslationType } from '@shared/models/translation.model';
 
-export interface AddDialogModel {
+export interface AddDialogContext {
   reservedIds: string[];
 }
 
-export interface AddDialogReturnModel {
+export interface AddDialogResult {
   id: string;
   type: TranslationType;
   value: string;

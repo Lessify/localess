@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -16,10 +15,11 @@ import {
   lucideUpload,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import {
   TranslateLocaleDialogComponent,
-  TranslateLocaleDialogModel,
-  TranslateLocaleDialogReturn,
+  TranslateLocaleDialogContext,
+  TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { TokenPermission } from '@shared/models/token.model';
@@ -33,6 +33,7 @@ import { TranslationService } from '@shared/services/translation.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
@@ -40,13 +41,13 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, forkJoin, of } from 'rxjs';
-import { catchError, filter, map, switchMap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 
-import { AddDialogComponent, AddDialogModel, AddDialogReturnModel } from './add-dialog';
+import { AddDialogComponent, AddDialogContext, AddDialogResult } from './add-dialog';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { ExportDialogContext, ExportDialogResult } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogModel, ImportDialogReturn } from './import-dialog/import-dialog.model';
+import { ImportDialogContext, ImportDialogResult } from './import-dialog/import-dialog.model';
 import { TranslationDetailComponent } from './shared/components/translation-detail/translation-detail.component';
 import { TranslationFilterComponent, TranslationFilterCriteria } from './shared/components/translation-filter/translation-filter.component';
 import { TranslationListComponent } from './shared/components/translation-list/translation-list.component';
@@ -90,7 +91,7 @@ export class TranslationsComponent implements OnInit {
   private readonly translationService = inject(TranslationService);
   private readonly taskService = inject(TaskService);
   private readonly notificationService = inject(NotificationService);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translateService = inject(TranslateService);
   private readonly tokenService = inject(TokenService);
@@ -197,14 +198,14 @@ export class TranslationsComponent implements OnInit {
     const space = this.selectedSpace();
     if (!space) return;
     this.dialog
-      .open<AddDialogComponent, AddDialogModel, AddDialogReturnModel>(AddDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<AddDialogResult, AddDialogContext>(AddDialogComponent, {
+        context: {
           reservedIds: this.translationIds(),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         // Resolve every locale value client-side (fallback + optional auto-translated locales)
         // BEFORE writing anything, so `create()` performs a single Firestore write with all
@@ -263,14 +264,14 @@ export class TranslationsComponent implements OnInit {
 
   openImportDialog(locales: Locale[]): void {
     this.dialog
-      .open<ImportDialogComponent, ImportDialogModel, ImportDialogReturn>(ImportDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<ImportDialogResult, ImportDialogContext>(ImportDialogComponent, {
+        context: {
           locales: locales,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => {
           if (it?.kind === 'FLAT') {
@@ -299,14 +300,14 @@ export class TranslationsComponent implements OnInit {
 
   openExportDialog(locales: Locale[]): void {
     this.dialog
-      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
+        context: {
           locales: locales,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => {
           console.log(it);
@@ -337,14 +338,14 @@ export class TranslationsComponent implements OnInit {
 
   openTranslateLocaleDialog(locales: Locale[]): void {
     this.dialog
-      .open<TranslateLocaleDialogComponent, TranslateLocaleDialogModel, TranslateLocaleDialogReturn>(TranslateLocaleDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<TranslateLocaleDialogResult, TranslateLocaleDialogContext>(TranslateLocaleDialogComponent, {
+        context: {
           locales: locales,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.translationService.translateLocale(this.spaceId(), it.sourceLocale, it.targetLocale)),
       )

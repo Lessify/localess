@@ -1,16 +1,16 @@
 import { Locale } from '@shared/models/locale.model';
 
-export interface ExportDialogModel {
+export interface ExportDialogContext {
   locales: Locale[];
 }
 
-export type ExportDialogReturn = ExportFullDialogReturn | ExportFlatDialogReturn;
+export type ExportDialogResult = ExportFullDialogResult | ExportFlatDialogResult;
 
-export interface ExportFullDialogReturn {
+export interface ExportFullDialogResult {
   kind: 'FULL';
 }
 
-export interface ExportFlatDialogReturn {
+export interface ExportFlatDialogResult {
   kind: 'FLAT';
   locale: string;
 }

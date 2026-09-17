@@ -1,17 +1,17 @@
 import { Locale } from '@shared/models/locale.model';
 
-export interface ImportDialogModel {
+export interface ImportDialogContext {
   locales: Locale[];
 }
 
-export type ImportDialogReturn = ImportFullDialogReturn | ImportFlatDialogReturn;
+export type ImportDialogResult = ImportFullDialogResult | ImportFlatDialogResult;
 
-export interface ImportFullDialogReturn {
+export interface ImportFullDialogResult {
   kind: 'FULL';
   file: File;
 }
 
-export interface ImportFlatDialogReturn {
+export interface ImportFlatDialogResult {
   kind: 'FLAT';
   locale: string;
   file: File;

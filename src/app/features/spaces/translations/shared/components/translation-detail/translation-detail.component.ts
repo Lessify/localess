@@ -1,7 +1,6 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, linkedSignal, output, signal } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowRight, lucideCopy, lucideLanguages, lucidePencil, lucideReplace, lucideSave, lucideTrash } from '@ng-icons/lucide';
@@ -11,6 +10,7 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { Translation, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -31,8 +31,8 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
-import { EditDialogComponent, EditDialogModel } from '../../../edit-dialog';
-import { EditIdDialogComponent, EditIdDialogModel } from '../../../edit-id-dialog';
+import { EditDialogComponent, EditDialogContext, EditDialogResult } from '../../../edit-dialog';
+import { EditIdDialogComponent, EditIdDialogContext, EditIdDialogResult } from '../../../edit-id-dialog';
 import { identifyTranslationStatus } from '../../models/translation.model';
 import { TranslationStringEditComponent } from '../translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from '../translation-string-view/translation-string-view.component';
@@ -77,8 +77,7 @@ export class TranslationDetailComponent {
   readonly platformService = inject(PlatformService);
   private readonly localeService = inject(LocaleService);
   private readonly notificationService = inject(NotificationService);
-  private readonly dialog = inject(MatDialog);
-  private readonly hlmDialog = inject(HlmDialogService);
+  private readonly dialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translateService = inject(TranslateService);
   private readonly translationService = inject(TranslationService);
@@ -186,15 +185,15 @@ export class TranslationDetailComponent {
 
   openEditIdDialog(translation: Translation): void {
     this.dialog
-      .open<EditIdDialogComponent, EditIdDialogModel, string>(EditIdDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<EditIdDialogResult, EditIdDialogContext>(EditIdDialogComponent, {
+        context: {
           id: translation.id,
           reservedIds: this.reservedIds(),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => {
           return this.translationService.updateId(this.spaceId(), translation, it!);
@@ -213,12 +212,12 @@ export class TranslationDetailComponent {
 
   openEditDialog(translation: Translation): void {
     this.dialog
-      .open<EditDialogComponent, Translation, EditDialogModel>(EditDialogComponent, {
-        panelClass: 'sm',
-        data: ObjectUtils.clone(translation),
+      .open<EditDialogResult, EditDialogContext>(EditDialogComponent, {
+        context: ObjectUtils.clone(translation),
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => {
           const tu: TranslationUpdate = {
@@ -239,7 +238,7 @@ export class TranslationDetailComponent {
   }
 
   openDeleteDialog(element: Translation): void {
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Delete Translation',

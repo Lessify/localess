@@ -1,6 +1,6 @@
 import { Locale } from '@shared/models/locale.model';
 
-export interface TranslateLocaleDialogModel {
+export interface TranslateLocaleDialogContext {
   locales: Locale[];
   /**
    * The space's fallback locale. Required from the content side, where `locales` carries the
@@ -18,7 +18,7 @@ export interface TranslateLocaleDialogModel {
   description?: string;
 }
 
-export type TranslateLocaleDialogReturn = {
+export type TranslateLocaleDialogResult = {
   sourceLocale: string;
   targetLocale: string;
   /** Replace translations that already have a value instead of filling only the empty ones. */

@@ -1,73 +1,73 @@
-<h2 mat-dialog-title>Add Translation</h2>
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
-    <div hlmField>
-      <label hlmFieldLabel for="id">ID</label>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput id="id" type="text" formControlName="id" required autocomplete="off" />
-        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
-          >{{ form.controls['id'].value?.length || 0 }}/150</hlm-input-group-addon
-        >
-      </div>
-      @if (form.controls['id'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Add Translation</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex max-h-[60vh] flex-col gap-4 overflow-x-hidden overflow-y-auto">
+  <div hlmField>
+    <label hlmFieldLabel for="id">ID</label>
+    <div hlmInputGroup>
+      <input hlmInputGroupInput id="id" type="text" formControlName="id" required autocomplete="off" />
+      <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+        >{{ form.controls['id'].value?.length || 0 }}/150</hlm-input-group-addon
+      >
+    </div>
+    @if (form.controls['id'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  <div hlmField>
+    <label hlmFieldLabel for="value">Value</label>
+    <hlm-input-group>
+      <textarea hlmInputGroupTextarea id="value" formControlName="value"></textarea>
+      <hlm-input-group-addon align="block-end">
+        <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['value'].value?.length || 0 }}/1000</span>
+      </hlm-input-group-addon>
+    </hlm-input-group>
+    @if (form.controls['value'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  <div hlmField>
+    <label hlmFieldLabel for="description">Description</label>
+    <hlm-input-group>
+      <textarea hlmInputGroupTextarea id="description" formControlName="description"></textarea>
+      <hlm-input-group-addon align="block-end">
+        <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['description'].value?.length || 0 }}/250</span>
+      </hlm-input-group-addon>
+    </hlm-input-group>
+    @if (form.controls['description'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  <div hlmField>
+    <label hlmFieldLabel for="labels">Labels</label>
+    <input
+      #labelInput
+      hlmInput
+      id="labels"
+      type="text"
+      autocomplete="off"
+      placeholder="Add label..."
+      class="w-full"
+      (keydown.enter)="$event.preventDefault(); addLabel(labelInput.value); labelInput.value = ''" />
+    <div class="flex flex-wrap gap-2">
+      @for (label of form.controls['labels'].value; track label) {
+        <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
+          <ng-icon hlm size="xs" name="lucideCircleX" />
+          {{ label }}
+        </button>
       }
     </div>
+  </div>
 
-    <div hlmField>
-      <label hlmFieldLabel for="value">Value</label>
-      <hlm-input-group>
-        <textarea hlmInputGroupTextarea id="value" formControlName="value"></textarea>
-        <hlm-input-group-addon align="block-end">
-          <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['value'].value?.length || 0 }}/1000</span>
-        </hlm-input-group-addon>
-      </hlm-input-group>
-      @if (form.controls['value'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
-    </div>
-
-    <div hlmField>
-      <label hlmFieldLabel for="description">Description</label>
-      <hlm-input-group>
-        <textarea hlmInputGroupTextarea id="description" formControlName="description"></textarea>
-        <hlm-input-group-addon align="block-end">
-          <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['description'].value?.length || 0 }}/250</span>
-        </hlm-input-group-addon>
-      </hlm-input-group>
-      @if (form.controls['description'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
-    </div>
-
-    <div hlmField>
-      <label hlmFieldLabel for="labels">Labels</label>
-      <input
-        #labelInput
-        hlmInput
-        id="labels"
-        type="text"
-        autocomplete="off"
-        placeholder="Add label..."
-        class="w-full"
-        (keydown.enter)="$event.preventDefault(); addLabel(labelInput.value); labelInput.value = ''" />
-      <div class="flex flex-wrap gap-2">
-        @for (label of form.controls['labels'].value; track label) {
-          <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
-            <ng-icon hlm size="xs" name="lucideCircleX" />
-            {{ label }}
-          </button>
-        }
-      </div>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <hlm-switch formControlName="autoTranslate" inputId="autoTranslate" />
-      <label hlmLabel for="autoTranslate">Translate other locales</label>
-    </div>
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
-</mat-dialog-actions>
+  <div class="flex items-center gap-3">
+    <hlm-switch formControlName="autoTranslate" inputId="autoTranslate" />
+    <label hlmLabel for="autoTranslate">Translate other locales</label>
+  </div>
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>

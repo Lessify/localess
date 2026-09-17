@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { vi } from 'vitest';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Locale } from '@shared/models/locale.model';
 
-import { ExportDialogModel } from './export-dialog.model';
+import { ExportDialogContext } from './export-dialog.model';
 import { ExportDialogComponent } from './export-dialog.component';
 
 describe('ExportDialogComponent', () => {
@@ -11,12 +13,18 @@ describe('ExportDialogComponent', () => {
     { id: 'de', name: 'German' },
   ];
 
-  function setup(data: ExportDialogModel) {
+  function setup(context: ExportDialogContext) {
+    const close = vi.fn();
     TestBed.overrideComponent(ExportDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(ExportDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('defaults to a FULL export with no locale selected', () => {

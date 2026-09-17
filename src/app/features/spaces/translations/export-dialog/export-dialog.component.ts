@@ -1,27 +1,31 @@
 import { KeyValue } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCloudDownload } from '@ng-icons/lucide';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 
-import { ExportDialogModel } from './export-dialog.model';
+import { ExportDialogContext, ExportDialogResult } from './export-dialog.model';
 
 @Component({
   selector: 'll-translation-export-dialog',
   templateUrl: './export-dialog.component.html',
-  styleUrls: ['./export-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmSelectImports],
+  host: { class: 'grid gap-4' },
+  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmSelectImports],
   providers: [provideIcons({ lucideCloudDownload })],
 })
 export class ExportDialogComponent {
   private readonly fb = inject(FormBuilder);
-  data = inject<ExportDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<ExportDialogResult>>(BrnDialogRef);
+
+  /** Required: the locale picker for a FLAT export is built from it. */
+  readonly context = injectBrnDialogContext<ExportDialogContext>();
 
   exportKinds: KeyValue<string, string>[] = [
     { key: 'FULL', value: 'FULL' },
@@ -38,6 +42,10 @@ export class ExportDialogComponent {
   };
 
   protected readonly localeItemToString = (value: string): string => {
-    return this.data.locales.find(l => l.id === value)?.name ?? value;
+    return this.context.locales.find(l => l.id === value)?.name ?? value;
   };
+
+  save(): void {
+    this.dialogRef.close(this.form.value as ExportDialogResult);
+  }
 }

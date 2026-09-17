@@ -1,16 +1,24 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { vi } from 'vitest';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 
-import { AddDialogModel } from './add-dialog.model';
+import { AddDialogContext } from './add-dialog.model';
 import { AddDialogComponent } from './add-dialog.component';
 
 describe('AddDialogComponent', () => {
-  function setup(data: AddDialogModel) {
+  function setup(context: AddDialogContext) {
+    const close = vi.fn();
     TestBed.overrideComponent(AddDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(AddDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('starts with STRING type and no auto-translate', () => {
@@ -61,5 +69,13 @@ describe('AddDialogComponent', () => {
     component.removeLabel('ui');
 
     expect(component.form.value.labels).toEqual(['marketing']);
+  });
+it('closes with the form value when saved', () => {
+    const { component, close } = setup({ reservedIds: [] });
+    component.form.patchValue({ id: 'greeting', value: 'Hello' });
+
+    component.save();
+
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ id: 'greeting', value: 'Hello' }));
   });
 });

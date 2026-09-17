@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { vi } from 'vitest';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Translation, TranslationType } from '@shared/models/translation.model';
 
 import { EditDialogComponent } from './edit-dialog.component';
@@ -9,12 +11,18 @@ function translation(overrides: Partial<Translation> = {}): Translation {
 }
 
 describe('EditDialogComponent', () => {
-  function setup(data: Translation | null) {
+  function setup(context: Translation | null) {
+    const close = vi.fn();
     TestBed.overrideComponent(EditDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(EditDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('patches the form with the given translation data', () => {

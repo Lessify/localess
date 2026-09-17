@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Locale } from '@shared/models/locale.model';
 import { Space } from '@shared/models/space.model';
 import { Token, TokenPermission } from '@shared/models/token.model';
@@ -58,8 +58,8 @@ describe('TranslationsComponent', () => {
           useValue: { findAll, create, publish, updateLocale, translateLocale },
         },
         { provide: TaskService, useValue: { createTranslationImportTask, createTranslationExportTask } },
+        { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
-        { provide: MatDialog, useValue: { open } },
         { provide: TranslateService, useValue: { translate } },
         { provide: TokenService, useValue: { findFirstByPermission } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(resolvedSpace) } },
@@ -146,7 +146,7 @@ describe('TranslationsComponent', () => {
     it('creates the translation with only the fallback locale when auto-translate is off', () => {
       const { component, open, create, success } = setup();
       open.mockReturnValue({
-        afterClosed: () => of({ id: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '' }),
+        closed$: of({ id: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '' }),
       });
 
       component.openAddDialog();
@@ -164,8 +164,7 @@ describe('TranslationsComponent', () => {
     it('auto-translates the other locales when requested for STRING type', () => {
       const { component, open, create, translate } = setup();
       open.mockReturnValue({
-        afterClosed: () =>
-          of({ id: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '', autoTranslate: true }),
+        closed$: of({ id: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '', autoTranslate: true }),
       });
 
       component.openAddDialog();
@@ -184,8 +183,7 @@ describe('TranslationsComponent', () => {
       const { component, open, create, translate } = setup();
       translate.mockReturnValue(throwError(() => new Error('boom')));
       open.mockReturnValue({
-        afterClosed: () =>
-          of({ id: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '', autoTranslate: true }),
+        closed$: of({ id: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '', autoTranslate: true }),
       });
 
       component.openAddDialog();
@@ -211,7 +209,7 @@ describe('TranslationsComponent', () => {
       const { component, open, create, error } = setup();
       create.mockReturnValue(throwError(() => new Error('boom')));
       open.mockReturnValue({
-        afterClosed: () => of({ id: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '' }),
+        closed$: of({ id: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '' }),
       });
 
       component.openAddDialog();
@@ -224,7 +222,7 @@ describe('TranslationsComponent', () => {
     it('creates a FLAT import task with the chosen locale', () => {
       const { component, open, createTranslationImportTask, success } = setup();
       const file = new File(['data'], 'de.json');
-      open.mockReturnValue({ afterClosed: () => of({ kind: 'FLAT', locale: 'de', file }) });
+      open.mockReturnValue({ closed$: of({ kind: 'FLAT', locale: 'de', file }) });
 
       component.openImportDialog([en, de]);
 
@@ -235,7 +233,7 @@ describe('TranslationsComponent', () => {
     it('creates a FULL import task without a locale', () => {
       const { component, open, createTranslationImportTask } = setup();
       const file = new File(['data'], 'export.llt.zip');
-      open.mockReturnValue({ afterClosed: () => of({ kind: 'FULL', file }) });
+      open.mockReturnValue({ closed$: of({ kind: 'FULL', file }) });
 
       component.openImportDialog([en, de]);
 
@@ -245,7 +243,7 @@ describe('TranslationsComponent', () => {
     it('notifies an error on failure', () => {
       const { component, open, createTranslationImportTask, error } = setup();
       createTranslationImportTask.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of({ kind: 'FULL', file: new File([], 'a.zip') }) });
+      open.mockReturnValue({ closed$: of({ kind: 'FULL', file: new File([], 'a.zip') }) });
 
       component.openImportDialog([en, de]);
 
@@ -256,7 +254,7 @@ describe('TranslationsComponent', () => {
   describe('openExportDialog', () => {
     it('creates a FLAT export task with the chosen locale', () => {
       const { component, open, createTranslationExportTask, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ kind: 'FLAT', locale: 'de' }) });
+      open.mockReturnValue({ closed$: of({ kind: 'FLAT', locale: 'de' }) });
 
       component.openExportDialog([en, de]);
 
@@ -266,7 +264,7 @@ describe('TranslationsComponent', () => {
 
     it('creates a FULL export task without a locale', () => {
       const { component, open, createTranslationExportTask } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ kind: 'FULL' }) });
+      open.mockReturnValue({ closed$: of({ kind: 'FULL' }) });
 
       component.openExportDialog([en, de]);
 
@@ -277,7 +275,7 @@ describe('TranslationsComponent', () => {
   describe('openTranslateLocaleDialog', () => {
     it('translates the locale and notifies success when confirmed', () => {
       const { component, open, translateLocale, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: 'en', targetLocale: 'de' }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de' }) });
 
       component.openTranslateLocaleDialog([en, de]);
 
@@ -288,7 +286,7 @@ describe('TranslationsComponent', () => {
     it('notifies an error on failure', () => {
       const { component, open, translateLocale, error } = setup();
       translateLocale.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: 'en', targetLocale: 'de' }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de' }) });
 
       component.openTranslateLocaleDialog([en, de]);
 

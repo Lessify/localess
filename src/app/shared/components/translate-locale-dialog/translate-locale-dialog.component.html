@@ -1,49 +1,49 @@
-<h2 mat-dialog-title>Translate Locale</h2>
-<mat-dialog-content>
-  <form [formGroup]="form">
-    <div hlmFieldGroup class="w-full">
-      <div hlmField>
-        <label hlmFieldLabel for="sourceLocale">Source Locale</label>
-        <hlm-select id="sourceLocale" formControlName="sourceLocale" [itemToString]="localeItemToString">
-          <hlm-select-trigger class="w-full">
-            <hlm-select-value />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            @for (locale of data.locales; track locale.id) {
-              <hlm-select-item [value]="locale.id" [disabled]="!canTranslateFrom(locale)">{{ localeLabel(locale) }}</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
-      </div>
-      <div hlmField>
-        <label hlmFieldLabel for="targetLocale">Target Locale</label>
-        <hlm-select id="targetLocale" formControlName="targetLocale" [itemToString]="localeItemToString">
-          <hlm-select-trigger class="w-full">
-            <hlm-select-value />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            @for (locale of data.locales; track locale.id) {
-              <hlm-select-item [value]="locale.id" [disabled]="!canTranslateTo(locale)">{{ localeLabel(locale) }}</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
-      </div>
-      <div hlmField class="flex-row items-center gap-3">
-        <hlm-checkbox inputId="overwrite" formControlName="overwrite" />
-        <label hlmFieldLabel for="overwrite">Overwrite existing translations</label>
-      </div>
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Translate Locale</h2>
+</hlm-dialog-header>
+<form [formGroup]="form">
+  <div hlmFieldGroup class="w-full">
+    <div hlmField>
+      <label hlmFieldLabel for="sourceLocale">Source Locale</label>
+      <hlm-select id="sourceLocale" formControlName="sourceLocale" [itemToString]="localeItemToString">
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (locale of context.locales; track locale.id) {
+            <hlm-select-item [value]="locale.id" [disabled]="!canTranslateFrom(locale)">{{ localeLabel(locale) }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
     </div>
-  </form>
-</mat-dialog-content>
-@if (data.description) {
-  <mat-dialog-content>{{ data.description }}</mat-dialog-content>
+    <div hlmField>
+      <label hlmFieldLabel for="targetLocale">Target Locale</label>
+      <hlm-select id="targetLocale" formControlName="targetLocale" [itemToString]="localeItemToString">
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (locale of context.locales; track locale.id) {
+            <hlm-select-item [value]="locale.id" [disabled]="!canTranslateTo(locale)">{{ localeLabel(locale) }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    </div>
+    <div hlmField class="flex-row items-center gap-3">
+      <hlm-checkbox inputId="overwrite" formControlName="overwrite" />
+      <label hlmFieldLabel for="overwrite">Overwrite existing translations</label>
+    </div>
+  </div>
+</form>
+@if (context.description) {
+  <p class="text-muted-foreground text-sm">{{ context.description }}</p>
 }
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
   <button
     hlmBtn
-    [mat-dialog-close]="form.value"
-    [disabled]="!form.valid || form.value.sourceLocale === form.value.targetLocale || !isSelectionTranslatable()">
+    [disabled]="!form.valid || form.value.sourceLocale === form.value.targetLocale || !isSelectionTranslatable()"
+    (click)="save()">
     Translate
   </button>
-</mat-dialog-actions>
+</hlm-dialog-footer>

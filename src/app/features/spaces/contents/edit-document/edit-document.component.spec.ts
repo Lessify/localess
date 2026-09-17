@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { ContentDocument, ContentKind } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
@@ -73,10 +73,10 @@ describe('EditDocumentComponent', () => {
         { provide: ContentService, useValue: { publish, unpublish, updateDocumentData } },
         { provide: TranslateService, useValue: { translateBatch } },
         { provide: TokenService, useValue: { findFirstByPermission } },
+        { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: PlatformService, useValue: { isActionSave } },
         { provide: Router, useValue: { navigate } },
-        { provide: MatDialog, useValue: { open } },
         {
           provide: SpaceStore,
           useValue: {
@@ -503,17 +503,17 @@ describe('EditDocumentComponent', () => {
     // it in both lists, so it has to be told which one that is.
     it('tells the dialog which locale the document is open in', () => {
       const { component, open } = translatableSetup();
-      open.mockReturnValue({ afterClosed: () => of(undefined) });
+      open.mockReturnValue({ closed$: of(undefined) });
       component.selectedLocale.set(de);
 
       component.openTranslateLocaleDialog();
 
-      expect(open.mock.calls[0][1].data).toMatchObject({ selectedLocale: 'de', localeFallback: en });
+      expect(open.mock.calls[0][1].context).toMatchObject({ selectedLocale: 'de', localeFallback: en });
     });
 
     it('sends the collected fields as one batch and applies the results to the document', () => {
       const { component, open, translateBatch, success } = translatableSetup();
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
       translateBatch.mockImplementation((data: { items: { id: string }[] }) =>
         of({ items: data.items.map(it => ({ id: it.id, content: 'Hallo' })), failed: [] }),
       );
@@ -538,7 +538,7 @@ describe('EditDocumentComponent', () => {
       const { component, open, translateBatch } = setup(documentOf({ _id: 'd1', schema: 'root1', title_i18n_de: 'Hallo' }), {
         schemas: [translatableSchema],
       });
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: 'de', targetLocale: CONTENT_DEFAULT_LOCALE.id, overwrite: false }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: 'de', targetLocale: CONTENT_DEFAULT_LOCALE.id, overwrite: false }) });
       translateBatch.mockImplementation((data: { items: { id: string }[] }) =>
         of({ items: data.items.map(it => ({ id: it.id, content: 'Hello' })), failed: [] }),
       );
@@ -553,7 +553,7 @@ describe('EditDocumentComponent', () => {
     it('rebuilds the form so the applied values are visible', () => {
       const { component, open, translateBatch } = translatableSetup();
       const before = component.formRefresh();
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
       translateBatch.mockImplementation((data: { items: { id: string }[] }) =>
         of({ items: data.items.map(it => ({ id: it.id, content: 'Hallo' })), failed: [] }),
       );
@@ -568,7 +568,7 @@ describe('EditDocumentComponent', () => {
         documentOf({ _id: 'd1', schema: 'root1', title: 'Hello', title_i18n_de: 'Hallo' }),
         { schemas: [translatableSchema] },
       );
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: true }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: true }) });
       translateBatch.mockImplementation((data: { items: { id: string }[] }) =>
         of({ items: data.items.map(it => ({ id: it.id, content: 'Neu' })), failed: [] }),
       );
@@ -583,7 +583,7 @@ describe('EditDocumentComponent', () => {
         documentOf({ _id: 'd1', schema: 'root1', title: 'Hello', title_i18n_de: 'Hallo' }),
         { schemas: [translatableSchema] },
       );
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
 
       component.openTranslateLocaleDialog();
 
@@ -593,7 +593,7 @@ describe('EditDocumentComponent', () => {
 
     it('reports partial failures rather than swallowing them', () => {
       const { component, open, translateBatch, error } = translatableSetup();
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
       translateBatch.mockReturnValue(of({ items: [], failed: [{ id: 'd1.title', reason: 'too large' }] }));
 
       component.openTranslateLocaleDialog();
@@ -604,7 +604,7 @@ describe('EditDocumentComponent', () => {
     it('notifies an error on failure, leaving the document untouched', () => {
       const { component, open, translateBatch, error } = translatableSetup();
       translateBatch.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
 
       component.openTranslateLocaleDialog();
 

@@ -1,34 +1,40 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { TranslationValidator } from '@shared/validators/translation.validator';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
-import { EditIdDialogModel } from './edit-id-dialog.model';
+import { EditIdDialogContext, EditIdDialogResult } from './edit-id-dialog.model';
 
 @Component({
   selector: 'll-translation-edit-id-dialog',
   templateUrl: './edit-id-dialog.component.html',
-  styleUrls: ['./edit-id-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmInputGroupImports],
+  host: { class: 'grid gap-4' },
+  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmInputGroupImports],
 })
 export class EditIdDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
-  data = inject<EditIdDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<EditIdDialogResult>>(BrnDialogRef);
+
+  /** Required: the caller always passes the current id and the ids already taken. */
+  private readonly context = injectBrnDialogContext<EditIdDialogContext>();
 
   form: FormGroup = this.fb.group({
-    id: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.data.reservedIds)]),
+    id: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedIds)]),
   });
 
   ngOnInit(): void {
-    if (this.data != null) {
-      this.form.patchValue({ id: this.data.id });
-    }
+    this.form.patchValue({ id: this.context.id });
+  }
+
+  save(): void {
+    this.dialogRef.close(this.form.value.id as EditIdDialogResult);
   }
 }

@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { vi } from 'vitest';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Locale } from '@shared/models/locale.model';
 
-import { ImportDialogModel } from './import-dialog.model';
+import { ImportDialogContext } from './import-dialog.model';
 import { ImportDialogComponent } from './import-dialog.component';
 
 describe('ImportDialogComponent', () => {
@@ -11,12 +13,18 @@ describe('ImportDialogComponent', () => {
     { id: 'de', name: 'German' },
   ];
 
-  function setup(data: ImportDialogModel) {
+  function setup(context: ImportDialogContext) {
+    const close = vi.fn();
     TestBed.overrideComponent(ImportDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(ImportDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   function fileChangeEvent(file: File): Event {

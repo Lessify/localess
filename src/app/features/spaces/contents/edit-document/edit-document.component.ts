@@ -12,7 +12,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
@@ -37,10 +36,11 @@ import {
   lucideVectorSquare,
   lucideWebhookOff,
 } from '@ng-icons/lucide';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import {
   TranslateLocaleDialogComponent,
-  TranslateLocaleDialogModel,
-  TranslateLocaleDialogReturn,
+  TranslateLocaleDialogContext,
+  TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
@@ -60,6 +60,7 @@ import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
@@ -71,7 +72,7 @@ import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { EMPTY } from 'rxjs';
-import { filter, map, switchMap } from 'rxjs/operators';
+import { filter, map, switchMap, take } from 'rxjs/operators';
 import { v4 } from 'uuid';
 
 import { ContentPreviewComponent } from '../content-preview/content-preview.component';
@@ -140,7 +141,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   private readonly contentService = inject(ContentService);
   private readonly tokenService = inject(TokenService);
   private readonly notificationService = inject(NotificationService);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(HlmDialogService);
   private readonly contentHelperService = inject(ContentHelperService);
   private readonly translateService = inject(TranslateService);
   readonly fe = inject(FormErrorHandlerService);
@@ -633,16 +634,16 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
    */
   openTranslateLocaleDialog(): void {
     this.dialog
-      .open<TranslateLocaleDialogComponent, TranslateLocaleDialogModel, TranslateLocaleDialogReturn>(TranslateLocaleDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<TranslateLocaleDialogResult, TranslateLocaleDialogContext>(TranslateLocaleDialogComponent, {
+        context: {
           locales: this.availableLocales(),
           localeFallback: this.selectedSpace()?.localeFallback,
           selectedLocale: this.selectedLocale().id,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => {
           const fields = this.contentHelperService.collectTranslatableFields(

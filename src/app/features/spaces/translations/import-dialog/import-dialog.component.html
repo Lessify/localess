@@ -1,55 +1,55 @@
-<h2 mat-dialog-title>Translations Import</h2>
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Translations Import</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex flex-col gap-4">
+  <div hlmField>
+    <label hlmFieldLabel for="kind">Type</label>
+    <hlm-select id="kind" formControlName="kind" [itemToString]="kindItemToString">
+      <hlm-select-trigger class="w-full">
+        <hlm-select-value />
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        @for (kind of exportKinds; track kind.key) {
+          <hlm-select-item [value]="kind.key">{{ kind.value }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
+  </div>
+
+  @if (form.value.kind === 'FLAT') {
     <div hlmField>
-      <label hlmFieldLabel for="kind">Type</label>
-      <hlm-select id="kind" formControlName="kind" [itemToString]="kindItemToString">
+      <label hlmFieldLabel for="locale">Locale</label>
+      <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">
         <hlm-select-trigger class="w-full">
-          <hlm-select-value />
+          <hlm-select-value placeholder="Select locale..." />
         </hlm-select-trigger>
         <hlm-select-content *hlmSelectPortal>
-          @for (kind of exportKinds; track kind.key) {
-            <hlm-select-item [value]="kind.key">{{ kind.value }}</hlm-select-item>
+          @for (locale of context.locales; track locale.id) {
+            <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
           }
         </hlm-select-content>
       </hlm-select>
     </div>
+  }
 
-    @if (form.value.kind === 'FLAT') {
-      <div hlmField>
-        <label hlmFieldLabel for="locale">Locale</label>
-        <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">
-          <hlm-select-trigger class="w-full">
-            <hlm-select-value placeholder="Select locale..." />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            @for (locale of data.locales; track locale.id) {
-              <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
-      </div>
+  <div class="flex flex-col gap-2">
+    <button hlmBtn type="button" variant="outline" (click)="fileInput.click()">
+      <ng-icon hlm size="sm" name="lucideUpload" />
+      Upload File
+    </button>
+    @if (fileName) {
+      <p class="text-muted-foreground text-sm">{{ fileName }}</p>
     }
-
-    <div class="flex flex-col gap-2">
-      <button hlmBtn type="button" variant="outline" (click)="fileInput.click()">
-        <ng-icon hlm size="sm" name="lucideUpload" />
-        Upload File
-      </button>
-      @if (fileName) {
-        <p class="text-muted-foreground text-sm">{{ fileName }}</p>
-      }
-      @if (fileWrong) {
-        <p class="text-destructive text-sm">The selected file does not comply with import extension (*{{ fileAccept }}).</p>
-      }
-    </div>
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">
+    @if (fileWrong) {
+      <p class="text-destructive text-sm">The selected file does not comply with import extension (*{{ fileAccept }}).</p>
+    }
+  </div>
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">
     <ng-icon hlm size="sm" name="lucideUploadCloud" />
     Import
   </button>
-</mat-dialog-actions>
+</hlm-dialog-footer>
 <input hidden type="file" [accept]="fileAccept" #fileInput (change)="onFileChange($event)" />

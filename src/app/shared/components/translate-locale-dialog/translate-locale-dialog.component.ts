@@ -1,26 +1,30 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 
-import { TranslateLocaleDialogModel } from './translate-locale-dialog.model';
+import { TranslateLocaleDialogContext, TranslateLocaleDialogResult } from './translate-locale-dialog.model';
 
 @Component({
   selector: 'll-translate-locale-dialog',
   templateUrl: './translate-locale-dialog.component.html',
-  styleUrls: ['./translate-locale-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmCheckboxImports, HlmFieldImports, HlmSelectImports],
+  host: { class: 'grid gap-4' },
+  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmCheckboxImports, HlmFieldImports, HlmSelectImports],
 })
 export class TranslateLocaleDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly localeService = inject(LocaleService);
-  data = inject<TranslateLocaleDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<TranslateLocaleDialogResult>>(BrnDialogRef);
+
+  /** Required: every caller passes the space's locales, which both selects are built from. */
+  readonly context = injectBrnDialogContext<TranslateLocaleDialogContext>();
 
   form: FormGroup = this.fb.group({
     // The source defaults to the default locale: that is the one an author fills in first, so it is
@@ -33,7 +37,7 @@ export class TranslateLocaleDialogComponent {
     // The target defaults to the locale the caller is showing - translating into the locale you are
     // looking at is why the dialog is opened.
     targetLocale: this.fb.control(
-      this.preselect(this.data.selectedLocale, it => this.canTranslateTo(it)),
+      this.preselect(this.context.selectedLocale, it => this.canTranslateTo(it)),
       [Validators.required],
     ),
     // Off by default: filling only empty translations is safe to run twice, overwriting is not.
@@ -45,11 +49,11 @@ export class TranslateLocaleDialogComponent {
    * content side labels the fallback - so support is decided on the resolved locale.
    */
   canTranslateFrom(locale: Locale): boolean {
-    return this.localeService.isLocaleTranslatableFrom(locale.id, this.data.localeFallback?.id);
+    return this.localeService.isLocaleTranslatableFrom(locale.id, this.context.localeFallback?.id);
   }
 
   canTranslateTo(locale: Locale): boolean {
-    return this.localeService.isLocaleTranslatableTo(locale.id, this.data.localeFallback?.id);
+    return this.localeService.isLocaleTranslatableTo(locale.id, this.context.localeFallback?.id);
   }
 
   /**
@@ -59,7 +63,7 @@ export class TranslateLocaleDialogComponent {
    */
   isSelectionTranslatable(): boolean {
     const { sourceLocale, targetLocale } = this.form.value;
-    const find = (id: string) => this.data.locales.find(it => it.id === id);
+    const find = (id: string) => this.context.locales.find(it => it.id === id);
     const source = find(sourceLocale);
     const target = find(targetLocale);
     return source !== undefined && target !== undefined && this.canTranslateFrom(source) && this.canTranslateTo(target);
@@ -70,7 +74,7 @@ export class TranslateLocaleDialogComponent {
    * can tell which end was filled in for them.
    */
   localeLabel(locale: Locale): string {
-    return locale.id === this.data.selectedLocale ? `${locale.name} (Currently Selected)` : locale.name;
+    return locale.id === this.context.selectedLocale ? `${locale.name} (Currently Selected)` : locale.name;
   }
 
   /**
@@ -81,15 +85,19 @@ export class TranslateLocaleDialogComponent {
    * the whole list - and so the first entry - may be unsupported, hence the `null`.
    */
   private preselect(preferred: string | undefined, isSupported: (locale: Locale) => boolean): string | null {
-    const wanted = this.data.locales.find(it => it.id === preferred);
+    const wanted = this.context.locales.find(it => it.id === preferred);
     if (wanted && isSupported(wanted)) {
       return wanted.id;
     }
-    return this.data.locales.find(isSupported)?.id ?? null;
+    return this.context.locales.find(isSupported)?.id ?? null;
   }
 
   protected readonly localeItemToString = (value: string): string => {
-    const locale = this.data.locales.find(l => l.id === value);
+    const locale = this.context.locales.find(l => l.id === value);
     return locale ? this.localeLabel(locale) : value;
   };
+
+  save(): void {
+    this.dialogRef.close(this.form.value as TranslateLocaleDialogResult);
+  }
 }

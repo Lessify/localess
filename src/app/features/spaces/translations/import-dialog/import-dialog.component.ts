@@ -1,28 +1,32 @@
 import { KeyValue } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { provideIcons } from '@ng-icons/core';
 import { lucideUpload, lucideUploadCloud } from '@ng-icons/lucide';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 
-import { ImportDialogModel } from './import-dialog.model';
+import { ImportDialogContext, ImportDialogResult } from './import-dialog.model';
 
 @Component({
   selector: 'll-translation-import-dialog',
   templateUrl: './import-dialog.component.html',
-  styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmSelectImports],
+  host: { class: 'grid gap-4' },
+  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmSelectImports],
   providers: [provideIcons({ lucideUpload, lucideUploadCloud })],
 })
 export class ImportDialogComponent implements OnInit {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
-  data = inject<ImportDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<ImportDialogResult>>(BrnDialogRef);
+
+  /** Required: the locale picker for a FLAT import is built from it. */
+  readonly context = injectBrnDialogContext<ImportDialogContext>();
 
   exportKinds: KeyValue<string, string>[] = [
     { key: 'FULL', value: 'FULL' },
@@ -43,7 +47,7 @@ export class ImportDialogComponent implements OnInit {
   };
 
   protected readonly localeItemToString = (value: string): string => {
-    return this.data.locales.find(l => l.id === value)?.name ?? value;
+    return this.context.locales.find(l => l.id === value)?.name ?? value;
   };
 
   ngOnInit(): void {
@@ -67,5 +71,9 @@ export class ImportDialogComponent implements OnInit {
       }
     }
     this.cd.markForCheck();
+  }
+
+  save(): void {
+    this.dialogRef.close(this.form.value as ImportDialogResult);
   }
 }
