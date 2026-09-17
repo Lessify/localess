@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { ContentDocument, ContentKind } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldReferences } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
@@ -22,8 +22,8 @@ describe('ReferencesSelectComponent', () => {
     TestBed.overrideComponent(ReferencesSelectComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
+        { provide: HlmDialogService, useValue: { open } },
         { provide: ContentService, useValue: { findByIds } },
-        { provide: MatDialog, useValue: { open } },
       ],
     });
     const fb = TestBed.inject(FormBuilder);
@@ -61,7 +61,7 @@ describe('ReferencesSelectComponent', () => {
   it('openReferenceSelectDialog() appends selected documents and rebuilds the form', () => {
     const { component, open, form } = setup([]);
     const selected = [doc('c1', 'New')];
-    open.mockReturnValue({ afterClosed: () => of(selected) });
+    open.mockReturnValue({ closed$: of(selected) });
 
     component.openReferenceSelectDialog();
 

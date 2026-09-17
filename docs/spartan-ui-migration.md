@@ -394,6 +394,26 @@ that are both tall and full of input groups.
 
 Hiding the x axis clips nothing real — the only thing out there is the sub-pixel addon bleed, inside the group's own rounded border.
 
+### Capping the dialog's own height (full-screen dialogs)
+
+A dialog whose **content** scrolls - a picker with a table or card grid rather than a form - needs the
+height cap on `contentClass` instead, with a three-row host:
+
+```ts
+host: { class: 'grid grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden' }
+```
+
+and the scrolling middle as `<div class="min-h-0 overflow-x-hidden overflow-y-auto">`.
+
+**The cap alone is not enough.** `.spartan-dialog-content` is a grid whose single item is the
+component host, and a grid item defaults to `min-height: auto` - it will not shrink below its
+content. `max-h` caps the box while the host grows past it, taking the footer off-screen (measured
+in the running app: 936px box, 2742px host, footer at 2786px against a 960px viewport). Adding
+`min-height: 0` to the host changes nothing, because the row is still `auto`-sized.
+
+What fixes it is forcing the row: **`grid-rows-[minmax(0,1fr)]` on `contentClass`**, which is why
+`DIALOG_WIDTH_FULL_SCREEN` carries it. `dialog-width.spec.ts` guards the pairing.
+
 Unchanged by the migration: the dialog still grows when a validation message appears (~28px per line), because that is content-driven.
 Reserve space for the message if the resize matters.
 

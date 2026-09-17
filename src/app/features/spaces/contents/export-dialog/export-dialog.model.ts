@@ -1,10 +1,8 @@
-export interface ExportDialogModel {
+export interface ExportDialogContext {
   spaceId: string;
 }
 
-export interface ExportDialogReturn {
-  /**
-   * content id
-   */
+export interface ExportDialogResult {
+  /** content id */
   path?: string;
 }

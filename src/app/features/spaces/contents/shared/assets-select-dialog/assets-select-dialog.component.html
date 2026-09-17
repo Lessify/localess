@@ -1,55 +1,58 @@
-<h2 mat-dialog-title>
-  <span>Assets</span>
-  <div class="float-right mt-1 flex items-center gap-4">
-    @if (fileUploadQueue().length > 0) {
-      <span hlmBadge class="h-6">
-        <hlm-spinner />
-        Uploading ... ({{ fileUploadQueue().length }})
-      </span>
-    }
-    <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.assetDialogLayout()">
-      <button hlmToggleGroupItem value="list" hlmTooltip="List Layout" (click)="settingsStore.setAssetDialogLayout('list')">
-        <ng-icon hlm size="sm" name="lucideLayoutList" />
-      </button>
-      <button hlmToggleGroupItem value="grid" hlmTooltip="Grid Layout" (click)="settingsStore.setAssetDialogLayout('grid')">
-        <ng-icon hlm size="sm" name="lucideLayoutGrid" />
-      </button>
-    </hlm-toggle-group>
-    @if ('ASSET_CREATE' | canUserPerform | async) {
-      <button hlmBtn variant="outline" (click)="fileInput.click()">
-        <ng-icon hlm size="sm" name="lucideUpload" />
-        Upload Assets
-      </button>
-      <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
-    }
-  </div>
-</h2>
-@if (isLoading()) {
-  <hlm-progress class="h-0.5">
-    <hlm-progress-indicator />
-  </hlm-progress>
-}
-<nav hlmBreadcrumb class="px-6 py-2">
-  <ol hlmBreadcrumbList>
-    @for (pathItem of assetPath; track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
-      @if (!isFirst) {
-        <li hlmBreadcrumbSeparator></li>
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>
+    <span>Assets</span>
+    <div class="float-right mt-1 flex items-center gap-4">
+      @if (fileUploadQueue().length > 0) {
+        <span hlmBadge class="h-6">
+          <hlm-spinner />
+          Uploading ... ({{ fileUploadQueue().length }})
+        </span>
       }
-      <li hlmBreadcrumbItem>
-        @if (isFirst) {
-          <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
-            <ng-icon name="lucideFolderRoot" />
-          </button>
-        } @else if (isLast) {
-          <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
-        } @else {
-          <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)"> {{ pathItem.name }} </button>
+      <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.assetDialogLayout()">
+        <button hlmToggleGroupItem value="list" hlmTooltip="List Layout" (click)="settingsStore.setAssetDialogLayout('list')">
+          <ng-icon hlm size="sm" name="lucideLayoutList" />
+        </button>
+        <button hlmToggleGroupItem value="grid" hlmTooltip="Grid Layout" (click)="settingsStore.setAssetDialogLayout('grid')">
+          <ng-icon hlm size="sm" name="lucideLayoutGrid" />
+        </button>
+      </hlm-toggle-group>
+      @if ('ASSET_CREATE' | canUserPerform | async) {
+        <button hlmBtn variant="outline" (click)="fileInput.click()">
+          <ng-icon hlm size="sm" name="lucideUpload" />
+          Upload Assets
+        </button>
+        <input hidden type="file" multiple #fileInput (change)="onFileUpload($event)" />
+      }
+    </div>
+  </h2>
+  @if (isLoading()) {
+    <hlm-progress class="h-0.5">
+      <hlm-progress-indicator />
+    </hlm-progress>
+  }
+  <nav hlmBreadcrumb class="px-6 py-2">
+    <ol hlmBreadcrumbList>
+      @for (pathItem of assetPath; track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
+        @if (!isFirst) {
+          <li hlmBreadcrumbSeparator></li>
         }
-      </li>
-    }
-  </ol>
-</nav>
-<mat-dialog-content>
+        <li hlmBreadcrumbItem>
+          @if (isFirst) {
+            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
+              <ng-icon name="lucideFolderRoot" />
+            </button>
+          } @else if (isLast) {
+            <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
+          } @else {
+            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)"> {{ pathItem.name }} </button>
+          }
+        </li>
+      }
+    </ol>
+  </nav>
+</hlm-dialog-header>
+<!-- The middle grid row: the table scrolls here, so the footer stays reachable. -->
+<div class="min-h-0 overflow-x-hidden overflow-y-auto">
   @if (settingsStore.assetDialogLayout() === 'list') {
     <div llTableContainer>
       <table ll-table [dataSource]="dataSource" llTableSort>
@@ -95,7 +98,7 @@
                   alt="thumbnail"
                   loading="lazy"
                   [loaderParams]="{ thumbnail: true }"
-                  ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ element.id }}" />
+                  ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ element.id }}" />
               }
             }
           </td>
@@ -154,7 +157,7 @@
   } @else {
     <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 py-2">
       @for (item of dataSource.renderedData(); track item.id) {
-        <ll-asset-card [item]="item" [spaceId]="data.spaceId" [showFooter]="item.kind === 'FILE'" (assetSelect)="onAssetSelect($event)">
+        <ll-asset-card [item]="item" [spaceId]="context.spaceId" [showFooter]="item.kind === 'FILE'" (assetSelect)="onAssetSelect($event)">
           @if (item.kind === 'FILE') {
             <hlm-checkbox [checked]="selection.isSelected(item)" (checkedChange)="selection.toggle(item)" />
           }
@@ -163,17 +166,17 @@
     </div>
   }
   <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
+</div>
+<hlm-dialog-footer>
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">
     Deselect All ({{ selection.selected.length }})
   </button>
-  <button hlmBtn variant="ghost" [mat-dialog-close]="undefined">Close</button>
-  <button hlmBtn [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
+  <button hlmBtn variant="ghost" hlmDialogClose>Close</button>
+  <button hlmBtn [disabled]="selection.isEmpty()" (click)="save()">
     @if (selection.selected.length > 1) {
       Add Selected Assets ({{ selection.selected.length }})
     } @else {
       Add Selected Asset
     }
   </button>
-</mat-dialog-actions>
+</hlm-dialog-footer>

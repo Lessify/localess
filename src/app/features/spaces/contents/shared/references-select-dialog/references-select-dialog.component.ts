@@ -14,7 +14,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -26,9 +25,11 @@ import { Schema, SchemaType } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
 import { SchemaService } from '@shared/services/schema.service';
 import { PathItem } from '@shared/stores/space.store';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
@@ -36,15 +37,18 @@ import { BehaviorSubject, combineLatest } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 import { DocumentStatusComponent } from '../document-status/document-status.component';
-import { ReferencesSelectDialogModel } from './references-select-dialog.model';
+import { ReferencesSelectDialogContext, ReferencesSelectDialogResult } from './references-select-dialog.model';
 
 @Component({
   selector: 'll-references-select-dialog',
   templateUrl: './references-select-dialog.component.html',
   styleUrls: ['./references-select-dialog.component.scss'],
+  // Three rows: header, a scrolling middle, pinned footer. `minmax(0,1fr)` is what lets the middle
+  // row shrink below its content so it scrolls rather than pushing the footer off-screen.
+  host: { class: 'grid grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatDialogModule,
+    HlmDialogImports,
     LlTableImports,
     LlPaginatorImports,
     CommonModule,
@@ -68,7 +72,10 @@ export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit, O
   private readonly contentService = inject(ContentService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly injector = inject(Injector);
-  data = inject<ReferencesSelectDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<ReferencesSelectDialogResult>>(BrnDialogRef);
+
+  /** Required: scopes the browser to a space, and `multiple` decides the selection mode. */
+  private readonly context = injectBrnDialogContext<ReferencesSelectDialogContext>();
 
   sort = viewChild.required(TableSort);
   paginator = viewChild.required(Paginator);
@@ -78,7 +85,7 @@ export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit, O
   contents = signal<Content[]>([]);
   readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
   displayedColumns: string[] = ['select', 'status', 'name', 'schema', 'updatedAt'];
-  selection = new SelectionModel<ContentDocument>(this.data.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
+  selection = new SelectionModel<ContentDocument>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   contentPath: PathItem[] = [];
 
   get parentPath(): string {
@@ -111,8 +118,8 @@ export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit, O
         switchMap(path => {
           this.contentPath = path;
           return combineLatest([
-            this.schemasService.findAll(this.data.spaceId, SchemaType.ROOT),
-            this.contentService.findAll(this.data.spaceId, this.parentPath),
+            this.schemasService.findAll(this.context.spaceId, SchemaType.ROOT),
+            this.contentService.findAll(this.context.spaceId, this.parentPath),
           ]);
         }),
         takeUntilDestroyed(this.destroyRef),
@@ -155,5 +162,9 @@ export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit, O
 
   ngOnDestroy(): void {
     this.path$.complete();
+  }
+
+  save(): void {
+    this.dialogRef.close(this.selection.selected as ReferencesSelectDialogResult);
   }
 }

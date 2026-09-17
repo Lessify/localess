@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { ContentFolder } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { MoveDialogModel } from './move-dialog.model';
+import { MoveDialogContext } from './move-dialog.model';
 import { MoveDialogComponent } from './move-dialog.component';
 
 describe('MoveDialogComponent', () => {
@@ -13,18 +14,20 @@ describe('MoveDialogComponent', () => {
     vi.useRealTimers();
   });
 
-  function setup(data: MoveDialogModel, results: ContentFolder[] = []) {
+  function setup(context: MoveDialogContext, results: ContentFolder[] = []) {
+    const close = vi.fn();
     const findAllFoldersByName = vi.fn().mockReturnValue(of(results));
     TestBed.overrideComponent(MoveDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
         { provide: ContentService, useValue: { findAllFoldersByName } },
       ],
     });
     const fixture = TestBed.createComponent(MoveDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAllFoldersByName };
+    return { component: fixture.componentInstance, close, findAllFoldersByName };
   }
 
   it('starts with an invalid, unset path', () => {

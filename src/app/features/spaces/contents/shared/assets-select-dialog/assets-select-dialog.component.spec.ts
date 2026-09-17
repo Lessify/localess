@@ -1,12 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { Auth } from '@angular/fire/auth';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Asset, AssetFile, AssetFolder, AssetKind } from '@shared/models/asset.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { AssetService } from '@shared/services/asset.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { AssetsSelectDialogModel } from './assets-select-dialog.model';
+import { AssetsSelectDialogContext } from './assets-select-dialog.model';
 import { AssetsSelectDialogComponent } from './assets-select-dialog.component';
 
 function file(overrides: Partial<AssetFile> = {}): AssetFile {
@@ -22,7 +24,8 @@ describe('AssetsSelectDialogComponent', () => {
     vi.clearAllMocks();
   });
 
-  function setup(data: AssetsSelectDialogModel, assets: Asset[] = []) {
+  function setup(context: AssetsSelectDialogContext, assets: Asset[] = []) {
+    const close = vi.fn();
     const findAll = vi.fn().mockReturnValue(of(assets));
     const createFile = vi.fn().mockReturnValue(of({ id: 'new' }));
     const error = vi.fn();
@@ -32,14 +35,15 @@ describe('AssetsSelectDialogComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
         { provide: AssetService, useValue: { findAll, createFile } },
         { provide: NotificationService, useValue: { error } },
       ],
     });
     const fixture = TestBed.createComponent(AssetsSelectDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, createFile, error };
+    return { component: fixture.componentInstance, close, findAll, createFile, error };
   }
 
   it('loads root assets on init', () => {
@@ -112,5 +116,30 @@ describe('AssetsSelectDialogComponent', () => {
     component.onFileUpload({ target: input } as unknown as Event);
 
     expect(error).toHaveBeenCalledWith('Asset can not be uploaded.');
+  });
+/**
+   * Renders the real template, unlike `setup` above, which stubs it out.
+   *
+   * `strictTemplates` is off in this project, so a template binding to a member that does not
+   * exist compiles cleanly and silently evaluates to `undefined`. That is exactly how the asset
+   * thumbnails shipped pointing at `/api/v1/spaces/undefined/assets/...`. Only a render catches it.
+   */
+  it('builds thumbnail URLs from the dialog context, not a missing member', async () => {
+    const asset = file({ id: 'a1', type: 'image/png' });
+    await TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: { spaceId: 'space-1' } },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+        { provide: AssetService, useValue: { findAll: vi.fn().mockReturnValue(of([asset])), createFile: vi.fn() } },
+        { provide: NotificationService, useValue: { error: vi.fn() } },
+        { provide: Auth, useValue: { currentUser: null } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AssetsSelectDialogComponent);
+    fixture.detectChanges();
+
+    const html: string = fixture.nativeElement.innerHTML;
+
+    expect(html).not.toContain('/spaces/undefined/');
   });
 });

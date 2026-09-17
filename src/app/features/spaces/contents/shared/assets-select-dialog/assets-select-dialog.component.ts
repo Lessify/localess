@@ -13,7 +13,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -41,10 +40,12 @@ import { AssetService } from '@shared/services/asset.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { PathItem } from '@shared/stores/space.store';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
@@ -53,17 +54,20 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { concatMap, switchMap, tap } from 'rxjs/operators';
 
-import { AssetsSelectDialogModel } from './assets-select-dialog.model';
+import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-select-dialog.model';
 
 @Component({
   selector: 'll-assets-select-dialog',
   templateUrl: './assets-select-dialog.component.html',
   styleUrls: ['./assets-select-dialog.component.scss'],
+  // Three rows: header, a scrolling middle, pinned footer. `minmax(0,1fr)` is what lets the middle
+  // row shrink below its content so it scrolls rather than pushing the footer off-screen.
+  host: { class: 'grid grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AssetCardComponent,
     CommonModule,
-    MatDialogModule,
+    HlmDialogImports,
     LlPaginatorImports,
     CanUserPerformPipe,
     LlTableImports,
@@ -101,7 +105,10 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   private readonly notificationService = inject(NotificationService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly injector = inject(Injector);
-  data = inject<AssetsSelectDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<AssetsSelectDialogResult>>(BrnDialogRef);
+
+  /** Required: scopes the browser to a space, and `multiple` decides the selection mode. */
+  readonly context = injectBrnDialogContext<AssetsSelectDialogContext>();
 
   sort = viewChild(TableSort);
   paginator = viewChild.required(Paginator);
@@ -109,7 +116,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   private readonly assets = signal<Asset[]>([]);
   readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'updatedAt'];
-  selection = new SelectionModel<Asset>(this.data.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
+  selection = new SelectionModel<Asset>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   assetPath: PathItem[] = [];
 
   fileUploadQueue = signal<File[]>([]);
@@ -149,7 +156,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
       .pipe(
         switchMap(path => {
           this.assetPath = path;
-          return this.assetService.findAll(this.data.spaceId, this.parentPath, this.data.fileType);
+          return this.assetService.findAll(this.context.spaceId, this.parentPath, this.context.fileType);
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -169,7 +176,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
     this.fileUploadQueue$
       .pipe(
         tap(console.log),
-        concatMap(it => this.assetService.createFile(this.data.spaceId, this.parentPath, it)),
+        concatMap(it => this.assetService.createFile(this.context.spaceId, this.parentPath, it)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
@@ -230,5 +237,9 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
         }
       }
     }
+  }
+
+  save(): void {
+    this.dialogRef.close(this.selection.selected as AssetsSelectDialogResult);
   }
 }

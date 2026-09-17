@@ -1,37 +1,37 @@
-<h2 mat-dialog-title>Add Folder</h2>
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
-    <div hlmField>
-      <label hlmFieldLabel for="name">Name</label>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput id="name" type="text" formControlName="name" autocomplete="off" />
-        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
-          >{{ form.controls['name'].value?.length || 0 }}/250</hlm-input-group-addon
-        >
-      </div>
-      @if (form.controls['name'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Add Folder</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex flex-col gap-4">
+  <div hlmField>
+    <label hlmFieldLabel for="name">Name</label>
+    <div hlmInputGroup>
+      <input hlmInputGroupInput id="name" type="text" formControlName="name" autocomplete="off" />
+      <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+        >{{ form.controls['name'].value?.length || 0 }}/250</hlm-input-group-addon
+      >
     </div>
+    @if (form.controls['name'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
 
-    <div hlmField>
-      <label hlmFieldLabel for="slug">Slug</label>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput id="slug" type="text" formControlName="slug" autocomplete="off" />
-        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
-          >{{ form.controls['slug'].value?.length || 0 }}/250</hlm-input-group-addon
-        >
-        <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeSlug()" hlmTooltip="Normalize Slug">
-          <ng-icon hlm size="sm" name="lucideWandSparkles" />
-        </button>
-      </div>
-      @if (form.controls['slug'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
+  <div hlmField>
+    <label hlmFieldLabel for="slug">Slug</label>
+    <div hlmInputGroup>
+      <input hlmInputGroupInput id="slug" type="text" formControlName="slug" autocomplete="off" />
+      <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+        >{{ form.controls['slug'].value?.length || 0 }}/250</hlm-input-group-addon
+      >
+      <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeSlug()" hlmTooltip="Normalize Slug">
+        <ng-icon hlm size="sm" name="lucideWandSparkles" />
+      </button>
     </div>
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
-</mat-dialog-actions>
+    @if (form.controls['slug'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>

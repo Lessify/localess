@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Content, ContentFolder, ContentKind } from '@shared/models/content.model';
 import { Schema, SchemaType } from '@shared/models/schema.model';
 import { ContentService } from '@shared/services/content.service';
@@ -7,7 +8,7 @@ import { SchemaService } from '@shared/services/schema.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { ReferencesSelectDialogModel } from './references-select-dialog.model';
+import { ReferencesSelectDialogContext } from './references-select-dialog.model';
 import { ReferencesSelectDialogComponent } from './references-select-dialog.component';
 
 function folder(overrides: Partial<ContentFolder> = {}): ContentFolder {
@@ -15,7 +16,8 @@ function folder(overrides: Partial<ContentFolder> = {}): ContentFolder {
 }
 
 describe('ReferencesSelectDialogComponent', () => {
-  function setup(data: ReferencesSelectDialogModel, contents: Content[] = [], schemas: Schema[] = []) {
+  function setup(context: ReferencesSelectDialogContext, contents: Content[] = [], schemas: Schema[] = []) {
+    const close = vi.fn();
     const findAllSchemas = vi.fn().mockReturnValue(of(schemas));
     const findAllContents = vi.fn().mockReturnValue(of(contents));
 
@@ -24,14 +26,15 @@ describe('ReferencesSelectDialogComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
         { provide: SchemaService, useValue: { findAll: findAllSchemas } },
         { provide: ContentService, useValue: { findAll: findAllContents } },
       ],
     });
     const fixture = TestBed.createComponent(ReferencesSelectDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAllSchemas, findAllContents };
+    return { component: fixture.componentInstance, close, findAllSchemas, findAllContents };
   }
 
   it('loads root schemas and content on init', () => {

@@ -1,10 +1,8 @@
-export interface MoveDialogModel {
+export interface MoveDialogContext {
   spaceId: string;
 }
 
-export interface MoveDialogReturn {
-  /**
-   * content full slug
-   */
+export interface MoveDialogResult {
+  /** content full slug */
   path: string;
 }

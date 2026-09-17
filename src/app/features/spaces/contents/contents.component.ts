@@ -2,7 +2,6 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
@@ -31,6 +30,7 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import {
@@ -61,12 +61,12 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { filter, switchMap, take, tap } from 'rxjs/operators';
 
-import { AddDocumentDialogComponent, AddDocumentDialogModel } from './add-document-dialog';
-import { AddFolderDialogComponent, AddFolderDialogModel } from './add-folder-dialog';
-import { EditDialogComponent, EditDialogModel } from './edit-dialog';
-import { ExportDialogComponent, ExportDialogModel, ExportDialogReturn } from './export-dialog';
-import { ImportDialogComponent, ImportDialogReturn } from './import-dialog';
-import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { AddDocumentDialogComponent, AddDocumentDialogContext } from './add-document-dialog';
+import { AddFolderDialogComponent, AddFolderDialogContext } from './add-folder-dialog';
+import { EditDialogComponent, EditDialogContext } from './edit-dialog';
+import { ExportDialogComponent, ExportDialogContext, ExportDialogResult } from './export-dialog';
+import { ImportDialogComponent, ImportDialogResult } from './import-dialog';
+import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
 import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
 @Component({
@@ -116,7 +116,7 @@ export class ContentsComponent implements AfterViewInit {
   private readonly contentService = inject(ContentService);
   private readonly tokenService = inject(TokenService);
   private readonly taskService = inject(TaskService);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(HlmDialogService);
 
   private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
@@ -179,16 +179,16 @@ export class ContentsComponent implements AfterViewInit {
 
   openAddDocumentDialog(): void {
     this.dialog
-      .open<AddDocumentDialogComponent, AddDocumentDialogModel, ContentDocumentCreate>(AddDocumentDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<ContentDocumentCreate, AddDocumentDialogContext>(AddDocumentDialogComponent, {
+        context: {
           schemas: this.schemas,
           reservedNames: this.contents().map(it => it.name),
           reservedSlugs: this.contents().map(it => it.slug),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.contentService.createDocument(this.spaceId(), this.parentPath, it!)),
       )
@@ -204,15 +204,15 @@ export class ContentsComponent implements AfterViewInit {
 
   openAddFolderDialog(): void {
     this.dialog
-      .open<AddFolderDialogComponent, AddFolderDialogModel, ContentFolderCreate>(AddFolderDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<ContentFolderCreate, AddFolderDialogContext>(AddFolderDialogComponent, {
+        context: {
           reservedNames: this.contents().map(it => it.name),
           reservedSlugs: this.contents().map(it => it.slug),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.contentService.createFolder(this.spaceId(), this.parentPath, it!)),
       )
@@ -228,16 +228,16 @@ export class ContentsComponent implements AfterViewInit {
 
   openEditDialog(element: Content): void {
     this.dialog
-      .open<EditDialogComponent, EditDialogModel, ContentUpdate>(EditDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<ContentUpdate, EditDialogContext>(EditDialogComponent, {
+        context: {
           content: ObjectUtils.clone(element),
           reservedNames: this.contents().map(it => it.name),
           reservedSlugs: this.contents().map(it => it.slug),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.contentService.update(this.spaceId(), element.id, this.parentPath, it!)),
       )
@@ -267,7 +267,7 @@ export class ContentsComponent implements AfterViewInit {
       messageSuccess = `Document '${element.name}' has been deleted.`;
       messageError = `Document '${element.name}' can not be deleted.`;
     }
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: title,
@@ -294,14 +294,14 @@ export class ContentsComponent implements AfterViewInit {
 
   openMoveDialog(element: Content) {
     this.dialog
-      .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<MoveDialogResult, MoveDialogContext>(MoveDialogComponent, {
+        context: {
           spaceId: this.spaceId(),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.contentService.move(this.spaceId(), element.id, it!.path, element.slug)),
       )
@@ -316,7 +316,7 @@ export class ContentsComponent implements AfterViewInit {
   }
 
   openCloneDialog(element: ContentDocument): void {
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Clone Document',
@@ -356,7 +356,7 @@ export class ContentsComponent implements AfterViewInit {
       messageSuccess = `Document '${element.name}' has been published.`;
       messageError = `Document '${element.name}' can not be published.`;
     }
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: title,
@@ -396,7 +396,7 @@ export class ContentsComponent implements AfterViewInit {
       messageSuccess = `Document '${element.name}' has been unpublished.`;
       messageError = `Document '${element.name}' can not be unpublished.`;
     }
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: title,
@@ -475,11 +475,11 @@ export class ContentsComponent implements AfterViewInit {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
-        panelClass: 'sm',
+      .open<ImportDialogResult>(ImportDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         tap(console.log),
         switchMap(it => this.taskService.createContentImportTask(this.spaceId(), it!.file)),
@@ -502,14 +502,14 @@ export class ContentsComponent implements AfterViewInit {
 
   openExportDialog() {
     this.dialog
-      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
+        context: {
           spaceId: this.spaceId(),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.taskService.createContentExportTask(this.spaceId(), it?.path)),
       )

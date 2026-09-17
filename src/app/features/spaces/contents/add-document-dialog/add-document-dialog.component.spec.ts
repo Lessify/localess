@@ -1,19 +1,27 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { vi } from 'vitest';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Schema } from '@shared/models/schema.model';
 
-import { AddDocumentDialogModel } from './add-document-dialog.model';
+import { AddDocumentDialogContext } from './add-document-dialog.model';
 import { AddDocumentDialogComponent } from './add-document-dialog.component';
 
 describe('AddDocumentDialogComponent', () => {
   const schemas: Schema[] = [{ id: 's1', displayName: 'Page' } as Schema];
 
-  function setup(data: AddDocumentDialogModel) {
+  function setup(context: AddDocumentDialogContext) {
+    const close = vi.fn();
     TestBed.overrideComponent(AddDocumentDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(AddDocumentDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, fixture };
+    return { component: fixture.componentInstance, close, fixture };
   }
 
   it('starts with empty, invalid controls', () => {

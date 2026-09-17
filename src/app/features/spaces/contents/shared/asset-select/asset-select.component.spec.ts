@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { AssetFile, AssetKind } from '@shared/models/asset.model';
 import { SchemaFieldAsset, SchemaFieldKind } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
@@ -18,8 +18,8 @@ describe('AssetSelectComponent', () => {
     TestBed.overrideComponent(AssetSelectComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
+        { provide: HlmDialogService, useValue: { open } },
         { provide: AssetService, useValue: { findById } },
-        { provide: MatDialog, useValue: { open } },
       ],
     });
     const fb = TestBed.inject(FormBuilder);
@@ -54,7 +54,7 @@ describe('AssetSelectComponent', () => {
   it('openAssetSelectDialog() sets the asset and form fields from the dialog result', () => {
     const { component, open, form } = setup(null);
     const selected = { id: 'a2', kind: AssetKind.FILE, name: 'new', type: 'image/png' } as AssetFile;
-    open.mockReturnValue({ afterClosed: () => of([selected]) });
+    open.mockReturnValue({ closed$: of([selected]) });
 
     component.openAssetSelectDialog();
 
@@ -64,7 +64,7 @@ describe('AssetSelectComponent', () => {
 
   it('openAssetSelectDialog() does nothing when the dialog is dismissed', () => {
     const { component, open } = setup(null);
-    open.mockReturnValue({ afterClosed: () => of(undefined) });
+    open.mockReturnValue({ closed$: of(undefined) });
 
     component.openAssetSelectDialog();
 

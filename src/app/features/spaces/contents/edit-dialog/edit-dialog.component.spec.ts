@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { vi } from 'vitest';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Content, ContentKind } from '@shared/models/content.model';
 
-import { EditDialogModel } from './edit-dialog.model';
+import { EditDialogContext } from './edit-dialog.model';
 import { EditDialogComponent } from './edit-dialog.component';
 
 function folder(overrides: Partial<Content> = {}): Content {
@@ -10,12 +12,18 @@ function folder(overrides: Partial<Content> = {}): Content {
 }
 
 describe('EditDialogComponent', () => {
-  function setup(data: EditDialogModel) {
+  function setup(context: EditDialogContext) {
+    const close = vi.fn();
     TestBed.overrideComponent(EditDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(EditDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('patches the form from the given content', () => {

@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFileSymlink, lucideTrash } from '@ng-icons/lucide';
+import { DIALOG_WIDTH_XL } from '@shared/components/dialog/dialog-width';
 import { Content, ContentDocument } from '@shared/models/content.model';
 import { SchemaFieldKind, SchemaFieldReference } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
@@ -12,14 +12,16 @@ import { ContentService } from '@shared/services/content.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { take } from 'rxjs';
 
 import { DocumentStatusComponent } from '../document-status/document-status.component';
-import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '../references-select-dialog';
+import { ReferencesSelectDialogComponent, ReferencesSelectDialogContext } from '../references-select-dialog';
 
 @Component({
   selector: 'll-reference-select',
@@ -48,7 +50,7 @@ import { ReferencesSelectDialogComponent, ReferencesSelectDialogModel } from '..
 })
 export class ReferenceSelectComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(HlmDialogService);
   private readonly contentService = inject(ContentService);
 
   // Input
@@ -81,14 +83,14 @@ export class ReferenceSelectComponent implements OnInit {
 
   openReferenceSelectDialog(): void {
     this.dialog
-      .open<ReferencesSelectDialogComponent, ReferencesSelectDialogModel, ContentDocument[] | undefined>(ReferencesSelectDialogComponent, {
-        panelClass: 'xl',
-        data: {
+      .open<ContentDocument[], ReferencesSelectDialogContext>(ReferencesSelectDialogComponent, {
+        context: {
           spaceId: this.space().id,
           multiple: false,
         },
+        contentClass: DIALOG_WIDTH_XL,
       })
-      .afterClosed()
+      .closed$.pipe(take(1))
       .subscribe({
         next: selectedDocuments => {
           if (selectedDocuments && selectedDocuments.length > 0) {

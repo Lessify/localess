@@ -2,11 +2,10 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFile, lucideFilePlusCorner, lucideGripVertical, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
-import { DIALOG_WIDTH_IMAGE_PREVIEW } from '@shared/components/dialog/dialog-width';
+import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW } from '@shared/components/dialog/dialog-width';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
@@ -26,7 +25,7 @@ import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { take } from 'rxjs/operators';
 
-import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-select-dialog';
+import { AssetsSelectDialogComponent, AssetsSelectDialogContext } from '../assets-select-dialog';
 
 @Component({
   selector: 'll-assets-select',
@@ -61,8 +60,7 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-
 export class AssetsSelectComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
-  private readonly dialog = inject(MatDialog);
-  private readonly hlmDialog = inject(HlmDialogService);
+  private readonly dialog = inject(HlmDialogService);
   private readonly assetService = inject(AssetService);
 
   // Inputs
@@ -102,7 +100,7 @@ export class AssetsSelectComponent implements OnInit {
   }
 
   openImagePreview(element: AssetFile): void {
-    this.hlmDialog
+    this.dialog
       .open<void, ImagePreviewDialogContext>(ImagePreviewDialogComponent, {
         context: {
           spaceId: this.space().id,
@@ -120,15 +118,15 @@ export class AssetsSelectComponent implements OnInit {
 
   openAssetSelectDialog(): void {
     this.dialog
-      .open<AssetsSelectDialogComponent, AssetsSelectDialogModel, AssetFile[] | undefined>(AssetsSelectDialogComponent, {
-        panelClass: 'full-screen',
-        data: {
+      .open<AssetFile[], AssetsSelectDialogContext>(AssetsSelectDialogComponent, {
+        context: {
           spaceId: this.space().id,
           multiple: true,
           fileType: this.component().fileTypes?.at(0),
         },
+        contentClass: DIALOG_WIDTH_FULL_SCREEN,
       })
-      .afterClosed()
+      .closed$.pipe(take(1))
       .subscribe({
         next: selectedAssets => {
           if (selectedAssets) {

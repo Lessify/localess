@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Content, ContentKind } from '@shared/models/content.model';
 import { ContentService } from '@shared/services/content.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { ExportDialogModel } from './export-dialog.model';
+import { ExportDialogContext } from './export-dialog.model';
 import { ExportDialogComponent } from './export-dialog.component';
 
 describe('ExportDialogComponent', () => {
@@ -13,18 +14,20 @@ describe('ExportDialogComponent', () => {
     vi.useRealTimers();
   });
 
-  function setup(data: ExportDialogModel, results: Content[] = []) {
+  function setup(context: ExportDialogContext, results: Content[] = []) {
+    const close = vi.fn();
     const findAllByName = vi.fn().mockReturnValue(of(results));
     TestBed.overrideComponent(ExportDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
         { provide: ContentService, useValue: { findAllByName } },
       ],
     });
     const fixture = TestBed.createComponent(ExportDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAllByName };
+    return { component: fixture.componentInstance, close, findAllByName };
   }
 
   it('starts with no path selected', () => {

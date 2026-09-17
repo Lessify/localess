@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { AssetFile, AssetKind } from '@shared/models/asset.model';
 import { SchemaFieldAssets, SchemaFieldKind } from '@shared/models/schema.model';
 import { Space } from '@shared/models/space.model';
@@ -22,8 +22,8 @@ describe('AssetsSelectComponent', () => {
     TestBed.overrideComponent(AssetsSelectComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
+        { provide: HlmDialogService, useValue: { open } },
         { provide: AssetService, useValue: { findByIds } },
-        { provide: MatDialog, useValue: { open } },
       ],
     });
     const fb = TestBed.inject(FormBuilder);
@@ -54,7 +54,7 @@ describe('AssetsSelectComponent', () => {
   it('openAssetSelectDialog() appends selected assets and rebuilds the form', () => {
     const { component, open, form } = setup([]);
     const selected = [file('a1', 'New')];
-    open.mockReturnValue({ afterClosed: () => of(selected) });
+    open.mockReturnValue({ closed$: of(selected) });
 
     component.openAssetSelectDialog();
 
